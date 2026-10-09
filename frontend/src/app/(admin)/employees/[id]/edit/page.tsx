@@ -14,9 +14,11 @@ import {
   Calendar,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
+import { organizationService } from '@/services/organizationService';
 import { bankService } from '@/services/bankService';
 import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
 import type { Bank } from '@/types/api';
+import type { Team } from '@/types/organization';
 import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience, EmployeeBankAccount } from '@/types/employee';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { NATIONALITIES } from '@/constants/nationalities';
@@ -25,7 +27,6 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
-import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -198,9 +199,17 @@ function EmployeeEditPageContent() {
   ];
 
   // Form State
-  // หัวหน้างานโดยตรง
-  const [managerId, setManagerId] = useState<number | ''>('');
-  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+  // ทีมจากโครงสร้างองค์กร (เฉพาะที่เปิดใช้งาน)
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamId, setTeamId] = useState<number | null>(null);
+  const [employeeDeptId, setEmployeeDeptId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    organizationService
+      .getTeams()
+      .then((list) => setTeams(list.filter((t) => t.status === 'ACTIVE')))
+      .catch(() => setTeams([]));
+  }, []);
 
   // สัญชาติ / ศาสนา / สถานภาพสมรส จากเมนู ข้อมูลหลัก
   const lookups = useMasterLookups();
@@ -283,7 +292,8 @@ function EmployeeEditPageContent() {
       try {
         setLoading(true);
         const emp = await employeeService.getById(employeeId);
-        setManagerId(emp.managerEmployeeId ?? '');
+        setTeamId(emp.teamId ?? null);
+        setEmployeeDeptId(emp.departmentId);
         setEducations((emp.educations ?? []).map((e) => ({ ...e, gpa: e.gpa != null ? Number(e.gpa) : undefined })));
         setWorkExperiences(emp.workExperiences ?? []);
         setTaxSso({
@@ -295,11 +305,6 @@ function EmployeeEditPageContent() {
           disabilityDeductionCount: emp.disabilityDeductionCount ?? 0,
         });
         setSsoMasked(emp.socialSecurity?.socialSecurityNoMasked ?? null);
-        // รายชื่อพนักงานสำหรับเลือกหัวหน้างาน (โหลดไม่ได้ก็ยังแก้ข้อมูลอื่นได้)
-        employeeService
-          .getAll()
-          .then(setAllEmployees)
-          .catch((e) => console.error('Failed to load employees for manager select:', e));
 
         const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
         const primaryEducation = emp.educations?.[0];
@@ -443,8 +448,8 @@ function EmployeeEditPageContent() {
       const payload: Partial<CreateEmployeePayload> = {
         ...formData,
         employeeCode: formData.employeeCode.trim(),
-        setManager: true,
-        managerEmployeeId: managerId === '' ? null : managerId,
+        teamId: teamId || null,
+        setTeam: true,
         // ประวัติการศึกษา/การทำงานส่งทั้งชุด (แทนช่องวุฒิการศึกษาเดี่ยวแบบเดิม)
         educations: educations.filter((e) => e.educationLevel?.trim() || e.institution?.trim()),
         workExperiences: workExperiences.filter((w) => w.companyName?.trim()),
@@ -668,21 +673,45 @@ function EmployeeEditPageContent() {
                     />
                   </div>
 
-                  {/* หัวหน้างานโดยตรง */}
+                  {/* ทีมที่สังกัด (Team) */}
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
-                      <span>หัวหน้างานโดยตรง</span>
-                      <FieldInfoTooltip text='ใช้กับขั้นอนุมัติ "หัวหน้างานตรง" ในสายการอนุมัติ' />
+                      <span>ทีมที่สังกัด (Team)</span>
+                      <FieldInfoTooltip text="เมื่อเลือกทีม ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมโดยอัตโนมัติ" />
                     </label>
-                    <EmployeeSelect
-                      employees={allEmployees}
-                      value={managerId}
-                      onChange={(empId) => setManagerId(empId)}
-                      emptyLabel="ไม่มีหัวหน้างาน"
-                      placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
-                      excludeEmployeeIds={[employeeId]}
+                    <CustomSelect
+                      value={teamId ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value === '' ? null : Number(e.target.value);
+                        setTeamId(val);
+                      }}
+                      className="w-full cursor-pointer"
                       buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
-                    />
+                    >
+                      <option value="">ไม่มีสังกัดทีม (ไม่ได้ระบุ)</option>
+                      {(() => {
+                        const relevantTeams = employeeDeptId
+                          ? teams.filter((t) => t.departmentId === employeeDeptId)
+                          : teams;
+                        return relevantTeams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.teamName} ({t.teamCode})
+                          </option>
+                        ));
+                      })()}
+                    </CustomSelect>
+                    {(() => {
+                      const currentTeam = teams.find((t) => t.id === teamId);
+                      if (!currentTeam) return null;
+                      return (
+                        <div className="mt-1.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-between text-xs">
+                          <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม (หัวหน้างานอัตโนมัติ):</span>
+                          <span className="font-semibold text-[#0B2046] dark:text-blue-300">
+                            {currentTeam.leadEmployeeName || 'ยังไม่มีหัวหน้าทีม'}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* ประเภทพนักงาน — แก้ได้เฉพาะผู้มีสิทธิ์แก้ไขข้อมูลพนักงาน */}

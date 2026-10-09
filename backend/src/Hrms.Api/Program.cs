@@ -278,6 +278,23 @@ using (var scope = app.Services.CreateScope())
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_uploaded_at timestamptz NULL;
 
             ALTER TABLE hrms.approval_instance ADD COLUMN IF NOT EXISTS flow_snapshot_json text NULL;
+
+            -- ระบบทีม (Team Master)
+            CREATE TABLE IF NOT EXISTS hrms.team (
+                id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                department_id bigint NOT NULL REFERENCES hrms.department(id) ON DELETE CASCADE,
+                team_code varchar(50) NOT NULL,
+                team_name varchar(255) NOT NULL,
+                lead_employee_id bigint NULL REFERENCES hrms.employee(id) ON DELETE SET NULL,
+                description text NULL,
+                status varchar(20) NOT NULL DEFAULT 'ACTIVE',
+                created_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT uq_team_dept_code UNIQUE (department_id, team_code)
+            );
+
+            ALTER TABLE hrms.employee_assignment ADD COLUMN IF NOT EXISTS team_id bigint NULL REFERENCES hrms.team(id) ON DELETE SET NULL;
+            CREATE INDEX IF NOT EXISTS idx_employee_assignment_team_id ON hrms.employee_assignment(team_id) WHERE is_current = true;
         ");
 
         // Backfill flow_snapshot_json ให้กับ approval_instance ที่ยังไม่มี snapshot

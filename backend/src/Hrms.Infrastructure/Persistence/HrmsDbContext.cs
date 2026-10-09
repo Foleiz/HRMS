@@ -44,6 +44,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<CompanyBankAccount> CompanyBankAccounts => Set<CompanyBankAccount>();
     public DbSet<Division> Divisions => Set<Division>();
     public DbSet<Department> Departments => Set<Department>();
+    public DbSet<Team> Teams => Set<Team>();
     public DbSet<Position> Positions => Set<Position>();
     public DbSet<EmployeeLevel> EmployeeLevels => Set<EmployeeLevel>();
     public DbSet<EmployeeAssignment> EmployeeAssignments => Set<EmployeeAssignment>();
@@ -758,6 +759,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.PositionId).HasColumnName("position_id").IsRequired();
             entity.Property(e => e.EmployeeLevelId).HasColumnName("employee_level_id");
             entity.Property(e => e.EmployeeTypeId).HasColumnName("employee_type_id");
+            entity.Property(e => e.TeamId).HasColumnName("team_id");
             entity.Property(e => e.ManagerEmployeeId).HasColumnName("manager_employee_id");
             entity.Property(e => e.EffectiveFrom).HasColumnName("effective_from").IsRequired();
             entity.Property(e => e.EffectiveTo).HasColumnName("effective_to");
@@ -779,6 +781,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .HasForeignKey(e => e.DepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne(e => e.Team)
+                .WithMany(t => t.Assignments)
+                .HasForeignKey(e => e.TeamId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             entity.HasOne(e => e.Position)
                 .WithMany()
                 .HasForeignKey(e => e.PositionId)
@@ -792,6 +799,32 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.ManagerEmployee)
                 .WithMany()
                 .HasForeignKey(e => e.ManagerEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: Team
+        modelBuilder.Entity<Team>(entity =>
+        {
+            entity.ToTable("team", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.DepartmentId).HasColumnName("department_id").IsRequired();
+            entity.Property(e => e.TeamCode).HasColumnName("team_code").IsRequired().HasMaxLength(50);
+            entity.Property(e => e.TeamName).HasColumnName("team_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.LeadEmployeeId).HasColumnName("lead_employee_id");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20).HasDefaultValue("ACTIVE");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
+            entity.HasOne(e => e.Department)
+                .WithMany(d => d.Teams)
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LeadEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.LeadEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 

@@ -298,7 +298,7 @@ public class GeneralRequestService : IGeneralRequestService
                     {
                         "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
                         "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
-                        "MANAGER" => "หัวหน้างานโดยตรง",
+                        "MANAGER" => "หัวหน้าทีมของผู้ยื่น",
                         "DEPARTMENT_HEAD" => "หัวหน้าแผนก",
                         "DIVISION_HEAD" => "หัวหน้าฝ่าย",
                         "HR" => "ฝ่ายทรัพยากรบุคคล",

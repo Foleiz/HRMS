@@ -6,6 +6,11 @@ namespace Hrms.Application.Features.Employees.DTOs;
 /// </summary>
 public class UpdateEmployeeRequest
 {
+    /// <summary>true = อัปเดตทีมตาม TeamId (null = ไม่มีทีม) — ไม่ส่ง = ไม่แก้</summary>
+    public bool SetTeam { get; set; }
+    /// <summary>ทีมที่สังกัด (Team Id)</summary>
+    public long? TeamId { get; set; }
+
     /// <summary>true = อัปเดตหัวหน้างานตาม ManagerEmployeeId (null = ไม่มีหัวหน้า) — ไม่ส่ง = ไม่แก้</summary>
     public bool SetManager { get; set; }
     /// <summary>หัวหน้างานโดยตรง (Employee Id)</summary>

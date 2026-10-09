@@ -535,13 +535,24 @@ export default function EmployeeDetailView({
                 </div>
               </div>
 
+              {/* ทีมที่สังกัด */}
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
+                  ท
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ทีมที่สังกัด</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.teamName || '-'}</p>
+                </div>
+              </div>
+
               {/* หัวหน้างานโดยตรง */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
                   ห
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้างานโดยตรง</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้างาน</p>
                   {employee.managerEmployeeId ? (
                     <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-[#0B2046] dark:text-blue-400 hover:underline">
                       {employee.managerName || '-'}

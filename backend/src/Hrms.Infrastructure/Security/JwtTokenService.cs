@@ -61,7 +61,8 @@ public class JwtTokenService : ITokenService
             new("employee_code", user.EmployeeCode),
             new("full_name", user.FullName),
             new("department_id", user.DepartmentId?.ToString() ?? ""),
-            new("division_id", user.DivisionId?.ToString() ?? "")
+            new("division_id", user.DivisionId?.ToString() ?? ""),
+            new("team_id", user.TeamId?.ToString() ?? "")
         };
 
         // เพิ่ม Role Claims

@@ -101,6 +101,45 @@ public class UpdateDepartmentDto
 }
 #endregion
 
+#region Team DTOs
+public class TeamDto
+{
+    public long Id { get; set; }
+    public long DepartmentId { get; set; }
+    public string DepartmentName { get; set; } = string.Empty;
+    public string DivisionName { get; set; } = string.Empty;
+    public string TeamCode { get; set; } = string.Empty;
+    public string TeamName { get; set; } = string.Empty;
+    public long? LeadEmployeeId { get; set; }
+    public string? LeadEmployeeName { get; set; }
+    public string? LeadEmployeeCode { get; set; }
+    public string? Description { get; set; }
+    public int MemberCount { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+}
+
+public class CreateTeamDto
+{
+    public long DepartmentId { get; set; }
+    public string? TeamCode { get; set; }
+    public string TeamName { get; set; } = string.Empty;
+    public long? LeadEmployeeId { get; set; }
+    public string? Description { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+}
+
+public class UpdateTeamDto
+{
+    public long DepartmentId { get; set; }
+    public string TeamName { get; set; } = string.Empty;
+    public long? LeadEmployeeId { get; set; }
+    public string? Description { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+}
+#endregion
+
 #region Position DTOs
 public class PositionDto
 {

@@ -9,6 +9,9 @@ import {
   Department,
   CreateDepartmentRequest,
   UpdateDepartmentRequest,
+  Team,
+  CreateTeamRequest,
+  UpdateTeamRequest,
   Position,
   CreatePositionRequest,
   UpdatePositionRequest,
@@ -92,6 +95,32 @@ export const organizationService = {
 
   async deleteDepartment(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<object>>(`/organization/departments/${id}`);
+  },
+
+  // Teams
+  async getTeams(departmentId?: number): Promise<Team[]> {
+    const url = departmentId ? `/organization/teams?departmentId=${departmentId}` : '/organization/teams';
+    const res = await apiClient.get<ApiResponse<Team[]>>(url);
+    return res.data.data || [];
+  },
+
+  async getTeam(id: number): Promise<Team> {
+    const res = await apiClient.get<ApiResponse<Team>>(`/organization/teams/${id}`);
+    return res.data.data!;
+  },
+
+  async createTeam(data: CreateTeamRequest): Promise<Team> {
+    const res = await apiClient.post<ApiResponse<Team>>('/organization/teams', data);
+    return res.data.data!;
+  },
+
+  async updateTeam(id: number, data: UpdateTeamRequest): Promise<Team> {
+    const res = await apiClient.put<ApiResponse<Team>>(`/organization/teams/${id}`, data);
+    return res.data.data!;
+  },
+
+  async deleteTeam(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<object>>(`/organization/teams/${id}`);
   },
 
   // Positions

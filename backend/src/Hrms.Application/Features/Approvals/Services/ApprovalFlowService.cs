@@ -389,6 +389,18 @@ public class ApprovalFlowService : IApprovalFlowService
                     break;
 
                 case "MANAGER":
+                    if (currentAssignment?.TeamId.HasValue == true)
+                    {
+                        var teamLeadId = await _context.Teams.AsNoTracking()
+                            .Where(t => t.Id == currentAssignment.TeamId.Value)
+                            .Select(t => t.LeadEmployeeId)
+                            .FirstOrDefaultAsync(cancellationToken);
+                        if (teamLeadId.HasValue)
+                        {
+                            approver = await GetSimulatedApproverAsync(teamLeadId.Value, cancellationToken);
+                            break;
+                        }
+                    }
                     if (currentAssignment?.ManagerEmployeeId.HasValue == true)
                     {
                         approver = await GetSimulatedApproverAsync(currentAssignment.ManagerEmployeeId.Value, cancellationToken);
@@ -517,7 +529,7 @@ public class ApprovalFlowService : IApprovalFlowService
     {
         return approverType switch
         {
-            "MANAGER" => "หัวหน้างานโดยตรง",
+            "MANAGER" => "หัวหน้าทีมของผู้ยื่น",
             "DEPARTMENT_HEAD" => "ผู้จัดการแผนก",
             "DIVISION_HEAD" => "หัวหน้าฝ่าย",
             "HR" => "ฝ่ายบุคคล",

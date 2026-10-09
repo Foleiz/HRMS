@@ -41,7 +41,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 import { bankService } from '@/services/bankService';
 import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
 import { organizationService } from '@/services/organizationService';
-import type { Position } from '@/types/organization';
+import type { Position, Team } from '@/types/organization';
 import type { Bank } from '@/types/api';
 
 interface DepartmentItem {
@@ -131,6 +131,15 @@ export default function EmployeesPage() {
       .getPositions()
       .then((list) => setPositions(list.filter((p) => p.status === 'ACTIVE')))
       .catch(() => setPositions([]));
+  }, []);
+
+  // ทีมจากโครงสร้างองค์กร (เฉพาะที่เปิดใช้งาน)
+  const [teams, setTeams] = useState<Team[]>([]);
+  useEffect(() => {
+    organizationService
+      .getTeams()
+      .then((list) => setTeams(list.filter((t) => t.status === 'ACTIVE')))
+      .catch(() => setTeams([]));
   }, []);
 
   // ธนาคารจากข้อมูลหลัก (ใช้ตรวจจำนวนหลักเลขบัญชีตามที่ตั้งไว้ในข้อมูลหลัก)
@@ -231,6 +240,7 @@ export default function EmployeesPage() {
     bankName: '',
     accountNumber: '',
     positionName: '',
+    teamId: null as number | null,
     employeeType: '',
     managerEmployeeId: null,
     familyMembers: [],
@@ -768,6 +778,8 @@ export default function EmployeesPage() {
         accountNumber: formData.accountNumber?.trim() ? formData.accountNumber.replace(/\D/g, '') : undefined,
         positionName: formData.positionName && formData.positionName !== 'เลือกตำแหน่ง' ? formData.positionName : undefined,
         positionId: formData.positionId,
+        teamId: formData.teamId || null,
+        setTeam: true,
         employeeType: formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
         managerEmployeeId: formData.managerEmployeeId || null,
         setManager: true,
@@ -1777,17 +1789,43 @@ export default function EmployeesPage() {
 
                         <div>
                           <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                            หัวหน้างานโดยตรง (Direct Manager)
+                            ทีมที่สังกัด (Team)
                           </label>
-                          <EmployeeSelect
-                            employees={employees}
-                            value={formData.managerEmployeeId ?? ''}
-                            onChange={(empId) => setFormData((prev) => ({ ...prev, managerEmployeeId: empId === '' ? null : empId }))}
-                            emptyLabel="ไม่มีหัวหน้างาน (ไม่มี)"
-                            placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
-                          />
+                          <CustomSelect
+                            value={formData.teamId ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value === '' ? null : Number(e.target.value);
+                              setFormData((prev) => ({ ...prev, teamId: val }));
+                            }}
+                            className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 cursor-pointer"
+                          >
+                            <option value="">ไม่มีสังกัดทีม (ไม่ได้ระบุ)</option>
+                            {(() => {
+                              const selectedPos = positions.find((p) => p.id === formData.positionId || p.positionName === formData.positionName);
+                              const relevantTeams = selectedPos?.departmentId
+                                ? teams.filter((t) => t.departmentId === selectedPos.departmentId)
+                                : teams;
+                              return relevantTeams.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.teamName} ({t.teamCode})
+                                </option>
+                              ));
+                            })()}
+                          </CustomSelect>
+                          {(() => {
+                            const currentTeam = teams.find((t) => t.id === formData.teamId);
+                            if (!currentTeam) return null;
+                            return (
+                              <div className="mt-1.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-between text-xs">
+                                <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม (หัวหน้างานอัตโนมัติ):</span>
+                                <span className="font-semibold text-[#0B2046] dark:text-blue-300">
+                                  {currentTeam.leadEmployeeName || 'ยังไม่มีหัวหน้าทีม'}
+                                </span>
+                              </div>
+                            );
+                          })()}
                           <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                            ใช้สำหรับสายการอนุมัติคำขอ (เช่น การลา, เอกสาร)
+                            เมื่อเลือกทีม ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมโดยอัตโนมัติ
                           </p>
                         </div>
 

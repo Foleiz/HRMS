@@ -262,9 +262,10 @@ public class AuthService : IAuthService
             }
         ).Distinct().ToListAsync(cancellationToken);
 
-        // ดึงแผนกและฝ่ายปัจจุบันของพนักงาน เพื่อใช้จำกัดขอบเขตการมองเห็นข้อมูล (Data Scoping)
+        // ดึงแผนก ฝ่าย และทีมปัจจุบันของพนักงาน เพื่อใช้จำกัดขอบเขตการมองเห็นข้อมูล (Data Scoping)
         long? departmentId = null;
         long? divisionId = null;
+        long? teamId = null;
         if (user.EmployeeId > 0)
         {
             var currentAssignment = await _dbContext.EmployeeAssignments
@@ -276,6 +277,7 @@ public class AuthService : IAuthService
             {
                 departmentId = currentAssignment.DepartmentId > 0 ? currentAssignment.DepartmentId : null;
                 divisionId = currentAssignment.DivisionId > 0 ? currentAssignment.DivisionId : null;
+                teamId = currentAssignment.TeamId > 0 ? currentAssignment.TeamId : null;
             }
         }
 
@@ -292,7 +294,8 @@ public class AuthService : IAuthService
             Permissions = permissions,
             DataScopes = dataScopes,
             DepartmentId = departmentId,
-            DivisionId = divisionId
+            DivisionId = divisionId,
+            TeamId = teamId
         };
     }
 }

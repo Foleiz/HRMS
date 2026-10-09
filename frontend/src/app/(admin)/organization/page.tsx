@@ -43,6 +43,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 import {
   Division,
   Department,
+  Team,
   Position,
   EmployeeLevel,
   Company,
@@ -50,6 +51,8 @@ import {
   UpdateDivisionRequest,
   CreateDepartmentRequest,
   UpdateDepartmentRequest,
+  CreateTeamRequest,
+  UpdateTeamRequest,
   CreatePositionRequest,
   UpdatePositionRequest,
   UpdateCompanyRequest,
@@ -65,7 +68,7 @@ import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import OrgChartView from '@/components/organization/OrgChartView';
 
-type TabType = 'divisions' | 'departments' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts' | 'orgchart';
+type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts' | 'orgchart';
 
 const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon: any }> = {
   STATUTORY: { label: 'กฎหมายแรงงาน', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Shield },
@@ -105,6 +108,7 @@ export default function OrganizationPage() {
   const tabTitles: Record<TabType, string> = {
     divisions: 'จัดการฝ่าย',
     departments: 'จัดการแผนก',
+    teams: 'จัดการทีม',
     positions: 'จัดการตำแหน่งงาน',
     levels: 'ระดับพนักงาน',
     benefits: 'สวัสดิการและสิทธิประโยชน์',
@@ -116,7 +120,7 @@ export default function OrganizationPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType;
-      if (tabParam && ['divisions', 'departments', 'positions', 'levels', 'benefits', 'company', 'bank-accounts', 'orgchart'].includes(tabParam)) {
+      if (tabParam && ['divisions', 'departments', 'teams', 'positions', 'levels', 'benefits', 'company', 'bank-accounts', 'orgchart'].includes(tabParam)) {
         setActiveTab(tabParam);
       }
     }
@@ -175,6 +179,7 @@ export default function OrganizationPage() {
   // Data states
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [levels, setLevels] = useState<EmployeeLevel[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
@@ -201,6 +206,15 @@ export default function OrganizationPage() {
     departmentCode: '',
     departmentName: '',
     headEmployeeId: undefined,
+    status: 'ACTIVE',
+  });
+
+  const [teamForm, setTeamForm] = useState<CreateTeamRequest & { id?: number }>({
+    departmentId: 0,
+    teamCode: '',
+    teamName: '',
+    leadEmployeeId: null,
+    description: '',
     status: 'ACTIVE',
   });
 
@@ -265,9 +279,10 @@ export default function OrganizationPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [divs, depts, pos, lvls, comp, ben, emps, bAccounts, bList] = await Promise.all([
+      const [divs, depts, teamList, pos, lvls, comp, ben, emps, bAccounts, bList] = await Promise.all([
         organizationService.getDivisions().catch(() => []),
         organizationService.getDepartments().catch(() => []),
+        organizationService.getTeams().catch(() => []),
         organizationService.getPositions().catch(() => []),
         organizationService.getLevels().catch(() => []),
         organizationService.getCompany().catch(() => null),
@@ -278,6 +293,7 @@ export default function OrganizationPage() {
       ]);
       setDivisions(divs || []);
       setDepartments(depts || []);
+      setTeams(teamList || []);
       setPositions(pos || []);
       setLevels(lvls || []);
       setCompany(comp || null);
@@ -406,6 +422,57 @@ export default function OrganizationPage() {
       loadData();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก');
+    }
+  };
+
+  // Handlers for Team
+  const handleOpenTeamModal = (team?: Team) => {
+    if (team) {
+      setModalMode('edit');
+      setTeamForm({
+        id: team.id,
+        departmentId: team.departmentId,
+        teamCode: team.teamCode,
+        teamName: team.teamName,
+        leadEmployeeId: team.leadEmployeeId ?? null,
+        description: team.description ?? '',
+        status: team.status,
+      });
+    } else {
+      setModalMode('create');
+      setTeamForm({
+        departmentId: departments[0]?.id || 0,
+        teamCode: '',
+        teamName: '',
+        leadEmployeeId: null,
+        description: '',
+        status: 'ACTIVE',
+      });
+    }
+    setModalOpen(true);
+  };
+
+  const handleSaveTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (modalMode === 'create') {
+        await organizationService.createTeam(teamForm);
+        showSuccess('เพิ่มข้อมูลทีมสำเร็จ');
+      } else if (teamForm.id) {
+        await organizationService.updateTeam(teamForm.id, {
+          departmentId: teamForm.departmentId,
+          teamName: teamForm.teamName,
+          leadEmployeeId: teamForm.leadEmployeeId,
+          description: teamForm.description,
+          status: teamForm.status,
+        });
+        showSuccess('แก้ไขข้อมูลทีมสำเร็จ');
+      }
+      setModalOpen(false);
+      loadData();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก'));
     }
   };
 
@@ -710,6 +777,9 @@ export default function OrganizationPage() {
       } else if (itemToDelete.type === 'department') {
         await organizationService.deleteDepartment(itemToDelete.id);
         showSuccess(`ลบแผนก ${itemToDelete.name} สำเร็จ`);
+      } else if (itemToDelete.type === 'team') {
+        await organizationService.deleteTeam(itemToDelete.id);
+        showSuccess(`ลบทีม ${itemToDelete.name} สำเร็จ`);
       } else if (itemToDelete.type === 'position') {
         await organizationService.deletePosition(itemToDelete.id);
         showSuccess(`ลบตำแหน่ง ${itemToDelete.name} สำเร็จ`);
@@ -750,6 +820,15 @@ export default function OrganizationPage() {
     .filter((d) =>
       d.departmentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.departmentCode.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+  const filteredTeams = teams
+    .filter((t) => (filterDeptId === 'ALL' ? true : t.departmentId.toString() === filterDeptId))
+    .filter((t) =>
+      t.teamName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.teamCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.departmentName && t.departmentName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (t.leadEmployeeName && t.leadEmployeeName.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
   const filteredPositions = positions
@@ -811,6 +890,20 @@ export default function OrganizationPage() {
               }`}
             >
               จัดการแผนก
+            </button>
+          )}
+
+          {canViewStruct && (
+            <button
+              type="button"
+              onClick={() => { setActiveTab('teams'); setSearchQuery(''); }}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'teams'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
+              }`}
+            >
+              จัดการทีม
             </button>
           )}
 
@@ -1116,6 +1209,143 @@ export default function OrganizationPage() {
                               onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')}
                               title="ลบ"
                               className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: TEAMS */}
+        {activeTab === 'teams' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหาชื่อทีม หรือรหัสทีม..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  />
+                </div>
+
+                <CustomSelect
+                  value={filterDeptId}
+                  onChange={(val) => setFilterDeptId(val)}
+                  placeholder="ทุกแผนก"
+                  className="min-w-[150px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกแผนก' },
+                    ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
+                  ]}
+                />
+              </div>
+
+              <button
+                onClick={() => handleOpenTeamModal()}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                เพิ่มทีม
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+                <thead className="bg-[#0B2046] text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสทีม</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">ชื่อทีม</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">หัวหน้าทีม (Team Lead)</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">สังกัดแผนก</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">จำนวนสมาชิก</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">วันที่สร้าง</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">แก้ไขล่าสุด</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        กำลังโหลดข้อมูลทีม...
+                      </td>
+                    </tr>
+                  ) : filteredTeams.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
+                        ไม่พบข้อมูลทีม
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredTeams.map((team) => (
+                      <tr key={team.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="py-3 px-4 font-mono font-medium text-slate-600 dark:text-slate-300">
+                          {team.teamCode}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
+                          {team.teamName}
+                          {team.description && (
+                            <div className="text-[11px] font-normal text-slate-400 dark:text-slate-500 truncate max-w-xs">
+                              {team.description}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">{renderHeadCell(team.leadEmployeeName)}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                          {team.departmentName}
+                          {team.divisionName && (
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 ml-1">({team.divisionName})</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 whitespace-nowrap dark:bg-blue-900/20 dark:text-blue-400">
+                            {team.memberCount} คน
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{formatThaiDate(team.createdAt)}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{formatThaiDate(team.updatedAt)}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
+                              team.status === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
+                                : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                team.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
+                              }`}
+                            ></span>
+                            {team.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenTeamModal(team)}
+                              title="แก้ไข"
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:hover:bg-slate-800"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleConfirmDelete(team.id, team.teamName, 'team')}
+                              title="ลบ"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:bg-rose-900/20"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -2020,6 +2250,128 @@ export default function OrganizationPage() {
                   type="button"
                   onClick={() => setModalOpen(false)}
                   className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
+                >
+                  บันทึกข้อมูล
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Create / Edit Modal (Team) */}
+      {modalOpen && activeTab === 'teams' && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                {modalMode === 'create' ? 'เพิ่มทีมใหม่' : 'แก้ไขข้อมูลทีม'}
+              </h3>
+              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveTeam} className="space-y-4 pt-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก *</label>
+                <CustomSelect
+                  required
+                  value={teamForm.departmentId}
+                  onChange={(e) => setTeamForm({ ...teamForm, departmentId: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
+                >
+                  <option value={0} disabled>เลือกแผนก</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </CustomSelect>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  รหัสทีม {modalMode === 'create' && <span className="text-slate-400 font-normal">(เว้นว่างเพื่อให้ระบบสร้างอัตโนมัติ)</span>}
+                </label>
+                <input
+                  type="text"
+                  placeholder={modalMode === 'create' ? 'ระบบสร้างให้อัตโนมัติ (TEAM...)' : ''}
+                  disabled={modalMode === 'edit'}
+                  value={teamForm.teamCode || ''}
+                  onChange={(e) => setTeamForm({ ...teamForm, teamCode: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อทีม *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="เช่น ทีมพัฒนา Frontend, ทีมขาย B2B"
+                  value={teamForm.teamName}
+                  onChange={(e) => setTeamForm({ ...teamForm, teamName: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  หัวหน้าทีม (Team Lead)
+                </label>
+                <EmployeeSelect
+                  employees={employees}
+                  value={teamForm.leadEmployeeId || ''}
+                  onChange={(empId) =>
+                    setTeamForm({
+                      ...teamForm,
+                      leadEmployeeId: empId === '' ? null : Number(empId),
+                    })
+                  }
+                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                  emptyLabel="ไม่ระบุหัวหน้าทีม"
+                  required={false}
+                />
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                  เมื่อพนักงานสังกัดทีมนี้ ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมคนนี้โดยอัตโนมัติ
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">คำอธิบาย</label>
+                <textarea
+                  rows={2}
+                  placeholder="รายละเอียดหน้าที่ความรับผิดชอบของทีม..."
+                  value={teamForm.description || ''}
+                  onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
+                <CustomSelect
+                  value={teamForm.status}
+                  onChange={(e) => setTeamForm({ ...teamForm, status: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
+                >
+                  <option value="ACTIVE">ใช้งานอยู่</option>
+                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
+                </CustomSelect>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700"
                 >
                   ยกเลิก
                 </button>

@@ -137,6 +137,46 @@ public class OrganizationController : ControllerBase
     }
     #endregion
 
+    #region Teams
+    [HttpGet("teams")]
+    public async Task<IActionResult> GetTeams([FromQuery] long? departmentId, CancellationToken cancellationToken)
+    {
+        var list = await _orgService.GetAllTeamsAsync(departmentId, cancellationToken);
+        return Ok(ApiResponse<List<TeamDto>>.Ok(list));
+    }
+
+    [HttpGet("teams/{id}")]
+    public async Task<IActionResult> GetTeam(long id, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.GetTeamByIdAsync(id, cancellationToken);
+        return Ok(ApiResponse<TeamDto>.Ok(result));
+    }
+
+    [HttpPost("teams")]
+    [RequirePermission("ORG_STRUCT_CREATE")]
+    public async Task<IActionResult> CreateTeam([FromBody] CreateTeamDto request, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.CreateTeamAsync(request, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, ApiResponse<TeamDto>.Ok(result, "เพิ่มข้อมูลทีมสำเร็จ"));
+    }
+
+    [HttpPut("teams/{id}")]
+    [RequirePermission("ORG_STRUCT_EDIT")]
+    public async Task<IActionResult> UpdateTeam(long id, [FromBody] UpdateTeamDto request, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.UpdateTeamAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<TeamDto>.Ok(result, "แก้ไขข้อมูลทีมสำเร็จ"));
+    }
+
+    [HttpDelete("teams/{id}")]
+    [RequirePermission("ORG_STRUCT_EDIT")]
+    public async Task<IActionResult> DeleteTeam(long id, CancellationToken cancellationToken)
+    {
+        await _orgService.DeleteTeamAsync(id, cancellationToken);
+        return Ok(ApiResponse<object?>.Ok(null, "ลบข้อมูลทีมสำเร็จ"));
+    }
+    #endregion
+
     #region Positions
     [HttpGet("positions")]
     public async Task<IActionResult> GetPositions([FromQuery] long? departmentId, CancellationToken cancellationToken)

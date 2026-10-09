@@ -19,4 +19,6 @@ public interface ICurrentUserService
     long? DepartmentId { get; }
     /// <summary>ฝ่ายปัจจุบันของ User ที่ login (จาก JWT claim division_id)</summary>
     long? DivisionId { get; }
+    /// <summary>ทีมปัจจุบันของ User ที่ login (จาก JWT claim team_id)</summary>
+    long? TeamId { get; }
 }

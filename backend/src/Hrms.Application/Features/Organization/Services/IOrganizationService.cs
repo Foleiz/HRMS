@@ -26,6 +26,13 @@ public interface IOrganizationService
     Task<DepartmentDto> UpdateDepartmentAsync(long id, UpdateDepartmentDto request, CancellationToken cancellationToken = default);
     Task DeleteDepartmentAsync(long id, CancellationToken cancellationToken = default);
 
+    // Teams
+    Task<List<TeamDto>> GetAllTeamsAsync(long? departmentId = null, CancellationToken cancellationToken = default);
+    Task<TeamDto> GetTeamByIdAsync(long id, CancellationToken cancellationToken = default);
+    Task<TeamDto> CreateTeamAsync(CreateTeamDto request, CancellationToken cancellationToken = default);
+    Task<TeamDto> UpdateTeamAsync(long id, UpdateTeamDto request, CancellationToken cancellationToken = default);
+    Task DeleteTeamAsync(long id, CancellationToken cancellationToken = default);
+
     // Positions
     Task<List<PositionDto>> GetAllPositionsAsync(long? departmentId = null, CancellationToken cancellationToken = default);
     Task<PositionDto> GetPositionByIdAsync(long id, CancellationToken cancellationToken = default);

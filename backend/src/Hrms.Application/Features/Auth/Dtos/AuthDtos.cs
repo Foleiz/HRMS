@@ -38,6 +38,8 @@ public class UserInfoDto
     public long? DepartmentId { get; set; }
     /// <summary>ฝ่ายปัจจุบันของพนักงาน (จาก employee_assignment) ใช้สำหรับ DIVISION scope</summary>
     public long? DivisionId { get; set; }
+    /// <summary>ทีมปัจจุบันของพนักงาน (จาก employee_assignment) ใช้สำหรับ TEAM scope</summary>
+    public long? TeamId { get; set; }
 }
 
 /// <summary>

@@ -31,6 +31,7 @@ public interface IHrmsDbContext
     DbSet<CompanyBankAccount> CompanyBankAccounts { get; }
     DbSet<Division> Divisions { get; }
     DbSet<Department> Departments { get; }
+    DbSet<Team> Teams { get; }
     DbSet<Position> Positions { get; }
     DbSet<EmployeeLevel> EmployeeLevels { get; }
     DbSet<EmployeeAssignment> EmployeeAssignments { get; }
