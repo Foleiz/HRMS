@@ -524,20 +524,29 @@ public class AttendanceDailyService : IAttendanceDailyService
             {
                 if (existingMap.TryGetValue(emp.Id, out var existingRecord))
                 {
-                    // If existing record has no shift or needs scheduled times refreshed
+                    // If existing record has an assigned shift match, update to it and recalculate
                     if (shiftByEmp.TryGetValue(emp.Id, out var esMatch) && esMatch.Shift != null)
                     {
-                        if (existingRecord.ShiftId == null || existingRecord.ShiftId == esMatch.ShiftId)
+                        existingRecord.ShiftId = esMatch.ShiftId;
+                        existingRecord.Shift = esMatch.Shift;
+                        PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
+                        if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
                         {
-                            existingRecord.ShiftId = esMatch.ShiftId;
-                            PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
-                            if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
-                            {
-                                RecalculateAttendance(existingRecord, esMatch.Shift);
-                            }
+                            RecalculateAttendance(existingRecord, esMatch.Shift);
                         }
                     }
-                    else if (existingRecord.ShiftId == null && existingRecord.ScheduledStart == null)
+                    else if (existingRecord.ShiftId != null)
+                    {
+                        // ไม่มีกะที่ตรงกับวันนี้แล้ว → ใช้เวลาทำงานปกติของบริษัท
+                        existingRecord.ShiftId = null;
+                        existingRecord.Shift = null;
+                        companySchedule.PopulateScheduledTimes(existingRecord, date);
+                        if (existingRecord.ScheduledStart != null && (existingRecord.ActualIn != null || existingRecord.ActualOut != null) && existingRecord.Status != "LEAVE")
+                        {
+                            RecalculateAttendance(existingRecord);
+                        }
+                    }
+                    else if (existingRecord.ScheduledStart == null)
                     {
                         // ไม่มีกะ และยังไม่มีเวลาตามตาราง → ใช้เวลาทำงานปกติของบริษัท
                         companySchedule.PopulateScheduledTimes(existingRecord, date);
@@ -664,6 +673,11 @@ public class AttendanceDailyService : IAttendanceDailyService
 
     public static void RecalculateAttendance(AttendanceDaily record, ShiftEntity? shiftOverride = null)
     {
+        if (record.Status == "LEAVE")
+        {
+            return;
+        }
+
         if (record.IsAbsent)
         {
             record.Status = "ABSENT";
@@ -858,8 +872,92 @@ public class AttendanceDailyService : IAttendanceDailyService
         return MapToDto(record, assign);
     }
 
+    private async Task<int> RecalculateMyAttendanceInternalAsync(long employeeId, int year, int month, CancellationToken cancellationToken)
+    {
+        await _ensureLock.WaitAsync(cancellationToken);
+        try
+        {
+            var startDate = new DateOnly(year, month, 1);
+            var endDate = startDate.AddMonths(1).AddDays(-1);
+
+            var records = await _context.AttendanceDailies
+                .Include(a => a.Shift)
+                .Where(a => a.EmployeeId == employeeId && a.WorkDate >= startDate && a.WorkDate <= endDate)
+                .ToListAsync(cancellationToken);
+
+            if (records.Count == 0) return 0;
+
+            var activeShifts = await _context.EmployeeShifts
+                .AsNoTracking()
+                .Include(es => es.Shift)
+                .Where(es => es.EmployeeId == employeeId && es.EffectiveFrom <= endDate && (es.EffectiveTo == null || es.EffectiveTo >= startDate))
+                .ToListAsync(cancellationToken);
+
+            var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+            int changedCount = 0;
+
+            foreach (var r in records)
+            {
+                var esMatch = activeShifts
+                    .Where(es => es.EffectiveFrom <= r.WorkDate && (es.EffectiveTo == null || es.EffectiveTo >= r.WorkDate))
+                    .OrderByDescending(es => es.EffectiveFrom)
+                    .FirstOrDefault();
+
+                if (esMatch?.Shift != null)
+                {
+                    var shift = esMatch.Shift;
+                    bool shiftIdDiff = r.ShiftId != esMatch.ShiftId;
+                    var scheduledStartLocal = r.ScheduledStart.HasValue ? ToThaiLocalTime(r.ScheduledStart.Value) : (DateTime?)null;
+                    var expectedStart = new DateTime(r.WorkDate.Year, r.WorkDate.Month, r.WorkDate.Day, shift.StartTime.Hour, shift.StartTime.Minute, 0);
+                    bool timeDiff = scheduledStartLocal != expectedStart;
+
+                    if (shiftIdDiff || timeDiff)
+                    {
+                        r.ShiftId = esMatch.ShiftId;
+                        r.Shift = shift;
+                        PopulateScheduledTimes(r, shift, r.WorkDate);
+                        if (r.ActualIn != null || r.ActualOut != null)
+                        {
+                            RecalculateAttendance(r, shift);
+                        }
+                        changedCount++;
+                    }
+                }
+                else if (r.ShiftId != null)
+                {
+                    r.ShiftId = null;
+                    r.Shift = null;
+                    companySchedule.PopulateScheduledTimes(r, r.WorkDate);
+                    if (r.ActualIn != null || r.ActualOut != null)
+                    {
+                        RecalculateAttendance(r);
+                    }
+                    changedCount++;
+                }
+            }
+
+            if (changedCount > 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            return changedCount;
+        }
+        finally
+        {
+            _ensureLock.Release();
+        }
+    }
+
+    public async Task<int> RecalculateMyAttendanceAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default)
+    {
+        return await RecalculateMyAttendanceInternalAsync(employeeId, year, month, cancellationToken);
+    }
+
     public async Task<List<AttendanceDailyDto>> GetMyAttendanceHistoryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default)
     {
+        await RecalculateMyAttendanceInternalAsync(employeeId, year, month, cancellationToken);
+
         var startDate = new DateOnly(year, month, 1);
         var endDate = startDate.AddMonths(1).AddDays(-1);
 

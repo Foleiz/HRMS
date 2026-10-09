@@ -63,6 +63,7 @@ export default function EssAttendancePage() {
   const [historyList, setHistoryList] = useState<AttendanceDaily[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MyAttendanceMonthlySummary | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   // Adjustments list
   const [adjustmentsList, setAdjustmentsList] = useState<AttendanceAdjustment[]>([]);
@@ -103,6 +104,20 @@ export default function EssAttendancePage() {
       setIsLoadingHistory(false);
     }
   }, [selectedYear, selectedMonth, toast]);
+
+  const handleRecalculate = async () => {
+    try {
+      setIsRecalculating(true);
+      await essAttendanceService.recalculateMyAttendance(selectedYear, selectedMonth);
+      toast.success('คำนวณเวลาเข้างานและสถานะใหม่เรียบร้อยแล้ว');
+      await loadHistory();
+    } catch (err: unknown) {
+      console.error('Failed to recalculate:', err);
+      toast.error('ไม่สามารถคำนวณเวลาใหม่ได้');
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
 
   // ─────────────────────────────────────────────────────────────
   // Load Adjustments
@@ -454,6 +469,17 @@ export default function EssAttendancePage() {
                   </option>
                 ))}
               </CustomSelect>
+
+              {/* Recalculate Button (รูปแบบเดียวกับหน้าตรวจบันทึกเวลา) */}
+              <button
+                type="button"
+                onClick={handleRecalculate}
+                disabled={isRecalculating || isLoadingHistory}
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg transition disabled:opacity-50 cursor-pointer"
+                title="ประมวลผลคำนวณเวลาใหม่สำหรับเดือนนี้"
+              >
+                <RotateCcw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin text-[#0B2046] dark:text-blue-400' : ''}`} />
+              </button>
             </div>
           </div>
 
