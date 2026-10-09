@@ -814,21 +814,160 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             query = query.Where(i => i.DocumentType == documentType);
         }
 
-        var instanceIds = await query
-            .Select(i => i.Id)
-            .ToListAsync(cancellationToken);
-
         if (isAdmin)
         {
-            return instanceIds;
+            return await query.Select(i => i.Id).ToListAsync(cancellationToken);
         }
 
-        var allowed = new List<long>();
-        foreach (var id in instanceIds)
+        // 1. ดึง instances พร้อม ApprovalFlow, Steps และ Actions ในคิวรีเดียว
+        var instances = await query
+            .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+            .Include(i => i.Actions)
+            .ToListAsync(cancellationToken);
+
+        if (instances.Count == 0)
         {
-            if (await IsUserInWorkflowInternalAsync(id, employeeId, includeRequester: false, cancellationToken))
+            return new List<long>();
+        }
+
+        // 2. ดึงข้อมูลผู้ยื่นคำขอแบบชุด (Batch lookup)
+        var requesterMap = new Dictionary<string, Dictionary<long, long>>();
+
+        var leaveReqIds = instances.Where(i => i.DocumentType == "LEAVE_REQUEST").Select(i => i.SourceDocumentId).Distinct().ToList();
+        if (leaveReqIds.Count > 0)
+        {
+            var lMap = await _context.LeaveRequests.AsNoTracking()
+                .Where(r => leaveReqIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.EmployeeId, cancellationToken);
+            requesterMap["LEAVE_REQUEST"] = lMap;
+        }
+
+        var certReqIds = instances.Where(i => i.DocumentType == "CERTIFICATE_REQUEST").Select(i => i.SourceDocumentId).Distinct().ToList();
+        if (certReqIds.Count > 0)
+        {
+            var cMap = await _context.CertificateRequests.AsNoTracking()
+                .Where(r => certReqIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.EmployeeId, cancellationToken);
+            requesterMap["CERTIFICATE_REQUEST"] = cMap;
+        }
+
+        var resignReqIds = instances.Where(i => i.DocumentType == "RESIGNATION_REQUEST").Select(i => i.SourceDocumentId).Distinct().ToList();
+        if (resignReqIds.Count > 0)
+        {
+            var rMap = await _context.ResignationRequests.AsNoTracking()
+                .Where(r => resignReqIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.EmployeeId, cancellationToken);
+            requesterMap["RESIGNATION_REQUEST"] = rMap;
+        }
+
+        var genReqIds = instances.Where(i => i.DocumentType == "GENERAL_REQUEST").Select(i => i.SourceDocumentId).Distinct().ToList();
+        if (genReqIds.Count > 0)
+        {
+            var gMap = await _context.GeneralRequests.AsNoTracking()
+                .Where(r => genReqIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.EmployeeId, cancellationToken);
+            requesterMap["GENERAL_REQUEST"] = gMap;
+        }
+
+        var benefitReqIds = instances.Where(i => i.DocumentType == "BENEFIT_CLAIM").Select(i => i.SourceDocumentId).Distinct().ToList();
+        if (benefitReqIds.Count > 0)
+        {
+            var bMap = await _context.EmployeeBenefitClaims.AsNoTracking()
+                .Where(r => benefitReqIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.EmployeeId, cancellationToken);
+            requesterMap["BENEFIT_CLAIM"] = bMap;
+        }
+
+        // 3. ดึง assignments ของผู้ยื่นคำขอทั้งหมด
+        var allRequesterIds = requesterMap.Values.SelectMany(m => m.Values).Distinct().ToList();
+        var assignmentMap = await _context.EmployeeAssignments.AsNoTracking()
+            .Where(a => allRequesterIds.Contains(a.EmployeeId) && a.IsCurrent)
+            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
+
+        // 4. ข้อมูลบริบทของผู้ใช้ (Roles, Departments, Divisions ที่ดูแล)
+        var userRoleIds = userAccount?.UserRoles.Select(ur => ur.RoleId).ToHashSet() ?? new();
+        var isHr = userAccount?.UserRoles.Any(ur => ur.Role.RoleCode == "HR" || ur.Role.RoleCode == "HR_MGR") == true;
+        var isCeo = userAccount?.UserRoles.Any(ur => ur.Role.RoleCode == "CEO") == true;
+
+        var managedDeptIds = await _context.Departments.AsNoTracking()
+            .Where(d => d.HeadEmployeeId == employeeId)
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        var managedDivIds = await _context.Divisions.AsNoTracking()
+            .Where(d => d.HeadEmployeeId == employeeId)
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
+
+        var allowed = new List<long>();
+        foreach (var inst in instances)
+        {
+            if (inst.Actions.Any(a => a.ApproverEmployeeId == employeeId))
             {
-                allowed.Add(id);
+                allowed.Add(inst.Id);
+                continue;
+            }
+
+            if (inst.ApprovalFlow?.Steps == null) continue;
+
+            long? requesterEmpId = null;
+            if (requesterMap.TryGetValue(inst.DocumentType, out var map) && map.TryGetValue(inst.SourceDocumentId, out var rId))
+            {
+                requesterEmpId = rId;
+            }
+
+            if (requesterEmpId.HasValue && requesterEmpId.Value == employeeId)
+            {
+                continue;
+            }
+
+            assignmentMap.TryGetValue(requesterEmpId ?? -1, out var reqAssign);
+
+            bool isEligible = false;
+            foreach (var step in inst.ApprovalFlow.Steps)
+            {
+                var approverType = (step.ApproverType ?? "").ToUpperInvariant();
+                if (approverType == "EMPLOYEE" && step.ApproverEmployeeId == employeeId)
+                {
+                    isEligible = true;
+                    break;
+                }
+                if (approverType == "MANAGER" && reqAssign != null && reqAssign.ManagerEmployeeId == employeeId)
+                {
+                    isEligible = true;
+                    break;
+                }
+                if (approverType == "DEPARTMENT_HEAD" && reqAssign != null && managedDeptIds.Contains(reqAssign.DepartmentId))
+                {
+                    isEligible = true;
+                    break;
+                }
+                if (approverType == "DIVISION_HEAD" && reqAssign != null && managedDivIds.Contains(reqAssign.DivisionId))
+                {
+                    isEligible = true;
+                    break;
+                }
+                if (approverType == "ROLE" && step.ApproverRoleId.HasValue && userRoleIds.Contains(step.ApproverRoleId.Value))
+                {
+                    isEligible = true;
+                    break;
+                }
+                if (approverType == "HR" && isHr)
+                {
+                    isEligible = true;
+                    break;
+                }
+                if (approverType == "CEO" && isCeo)
+                {
+                    isEligible = true;
+                    break;
+                }
+            }
+
+            if (isEligible)
+            {
+                allowed.Add(inst.Id);
             }
         }
 

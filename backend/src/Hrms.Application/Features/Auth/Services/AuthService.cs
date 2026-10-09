@@ -32,6 +32,10 @@ public class AuthService : IAuthService
         { "kanya.j", "Kanya@Staff2026" },
         { "Test001", "Test001@User2026" },
         { "Test002", "Test002@User2026" },
+        { "test.finance", "Test#Fin2026" },
+        { "test.lead", "Test#Lead2026" },
+        { "test.employee", "Test#Emp2026" },
+        { "test.employee2", "Test#Emp2026b" },
     };
 
     public AuthService(
