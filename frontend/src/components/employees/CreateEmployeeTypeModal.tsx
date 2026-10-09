@@ -78,6 +78,21 @@ const PAYOUT_LABELS: Record<string, string> = {
   DIRECT: 'คุ้มครองโดยตรง',
 };
 
+const formatBenefitRate = (b: BenefitItem) => {
+  if (!b.defaultCoverageAmount || Number(b.defaultCoverageAmount) === 0) {
+    return b.isStatutory ? 'ตามสิทธิ์กฎหมาย' : 'ตามระเบียบบริษัท';
+  }
+  const amt = Number(b.defaultCoverageAmount).toLocaleString('th-TH');
+  const freqMap: Record<string, string> = {
+    DAILY: 'วันทำงาน',
+    MONTHLY: 'เดือน',
+    YEARLY: 'ปี',
+    PER_OCCURRENCE: 'ครั้ง',
+  };
+  const freq = freqMap[b.defaultFrequency] || 'เดือน';
+  return `${amt} บ./${freq}`;
+};
+
 export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = ({
   isOpen,
   onClose,
@@ -92,7 +107,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   // Dynamic Benefits
   const [availableBenefits, setAvailableBenefits] = useState<BenefitItem[]>([]);
   const [selectedBenefitIds, setSelectedBenefitIds] = useState<number[]>([]);
-  const [benefitDetails, setBenefitDetails] = useState<Record<number, { coverageAmount: number; frequency: string }>>({});
   const [loadingBenefits, setLoadingBenefits] = useState(false);
 
   // Search & Filter
@@ -147,17 +161,9 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
       setWageType(initialData.wageType || 'MONTHLY');
       setStatus(initialData.status || 'ACTIVE');
 
-      // Initialize selected benefit IDs & details
+      // Initialize selected benefit IDs
       if (initialData.benefits && initialData.benefits.length > 0) {
         setSelectedBenefitIds(initialData.benefits.map((b) => b.id));
-        const details: Record<number, { coverageAmount: number; frequency: string }> = {};
-        initialData.benefits.forEach((b) => {
-          details[b.id] = {
-            coverageAmount: b.coverageAmount ?? b.defaultCoverageAmount ?? 0,
-            frequency: b.frequency ?? b.defaultFrequency ?? (b.category === 'ALLOWANCE' && b.benefitCode.includes('MEAL') ? 'DAILY' : b.category === 'HEALTH' ? 'YEARLY' : 'MONTHLY'),
-          };
-        });
-        setBenefitDetails(details);
       } else {
         // Fallback to statutory flags if benefits array empty
         const ids: number[] = [];
@@ -237,50 +243,14 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   if (!isOpen) return null;
 
   const toggleBenefit = (id: number) => {
-    setSelectedBenefitIds((prev) => {
-      const willSelect = !prev.includes(id);
-      if (willSelect) {
-        const item = availableBenefits.find((b) => b.id === id);
-        setBenefitDetails((d) => ({
-          ...d,
-          [id]: d[id] || {
-            coverageAmount: item?.coverageAmount ?? item?.defaultCoverageAmount ?? (item?.category === 'ALLOWANCE' ? 50 : item?.category === 'HEALTH' ? 2000 : 0),
-            frequency: item?.frequency ?? item?.defaultFrequency ?? (item?.category === 'ALLOWANCE' && item?.benefitCode.includes('MEAL') ? 'DAILY' : item?.category === 'HEALTH' ? 'YEARLY' : 'MONTHLY'),
-          },
-        }));
-        return [...prev, id];
-      } else {
-        return prev.filter((item) => item !== id);
-      }
-    });
-  };
-
-  const updateBenefitDetail = (id: number, field: 'coverageAmount' | 'frequency', val: any) => {
-    setBenefitDetails((prev) => ({
-      ...prev,
-      [id]: {
-        coverageAmount: prev[id]?.coverageAmount ?? 0,
-        frequency: prev[id]?.frequency ?? 'MONTHLY',
-        [field]: val,
-      },
-    }));
+    setSelectedBenefitIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
   };
 
   const handleSelectAllInView = () => {
     const idsToAdd = filteredBenefits.map((b) => b.id);
     setSelectedBenefitIds((prev) => Array.from(new Set([...prev, ...idsToAdd])));
-    // Initialize details for newly selected
-    filteredBenefits.forEach((b) => {
-      if (!benefitDetails[b.id]) {
-        setBenefitDetails((d) => ({
-          ...d,
-          [b.id]: {
-            coverageAmount: b.coverageAmount ?? b.defaultCoverageAmount ?? 0,
-            frequency: b.frequency ?? b.defaultFrequency ?? 'MONTHLY',
-          },
-        }));
-      }
-    });
   };
 
   const handleSelectStatutoryOnly = () => {
@@ -311,11 +281,14 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     const hasOT = selectedCodes.includes('OT');
     const hasPVD = selectedCodes.includes('PVD');
 
-    const benefitAssignments = selectedBenefitIds.map((id) => ({
-      benefitItemId: id,
-      coverageAmount: Number(benefitDetails[id]?.coverageAmount) || 0,
-      frequency: benefitDetails[id]?.frequency || 'MONTHLY',
-    }));
+    const benefitAssignments = selectedBenefitIds.map((id) => {
+      const b = availableBenefits.find((item) => item.id === id);
+      return {
+        benefitItemId: id,
+        coverageAmount: Number(b?.defaultCoverageAmount) || 0,
+        frequency: b?.defaultFrequency || 'MONTHLY',
+      };
+    });
 
     try {
       setIsSubmitting(true);
@@ -481,7 +454,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                     </span>
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    เลือกสวัสดิการที่จะมอบให้พนักงานในประเภทสัญญานี้ พร้อมกำหนดวงเงิน/รอบจ่าย
+                    เลือกสวัสดิการที่จะมอบให้พนักงานในประเภทสัญญานี้ (กำหนดวงเงินและเงื่อนไขที่ จัดการสวัสดิการกลาง)
                   </p>
                 </div>
               </div>
@@ -683,12 +656,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
               >
                 {filteredBenefits.map((b) => {
                   const isChecked = selectedBenefitIds.includes(b.id);
-                  const isMonetary =
-                    b.category === 'ALLOWANCE' ||
-                    b.category === 'HEALTH' ||
-                    b.category === 'FINANCIAL' ||
-                    b.category === 'WELLNESS' ||
-                    b.category === 'OTHER';
                   const meta = CATEGORY_META[b.category] || CATEGORY_META.OTHER;
                   const Icon = meta.icon;
                   const payoutText = PAYOUT_LABELS[b.payoutType] || b.payoutType;
@@ -696,22 +663,23 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   return (
                     <div
                       key={b.id}
-                      className={`p-3 rounded-xl border transition-all ${
+                      onClick={() => toggleBenefit(b.id)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
                         isChecked
-                          ? 'bg-white dark:bg-slate-800 border-blue-400/80 dark:border-blue-500/60 shadow-xs ring-1 ring-blue-500/20'
+                          ? 'bg-blue-50/60 dark:bg-blue-950/25 border-blue-400 dark:border-blue-500/60 shadow-xs ring-1 ring-blue-500/20'
                           : 'bg-white/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/70 hover:bg-white dark:hover:bg-slate-800'
                       }`}
                     >
-                      <label className="flex items-start gap-2.5 cursor-pointer">
+                      <div className="flex items-start gap-2.5">
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => toggleBenefit(b.id)}
-                          className="w-4 h-4 mt-0.5 rounded text-[#0B2046] dark:text-blue-500 border-slate-300 dark:border-slate-600 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+                          onChange={() => {}} // Click handled by parent container
+                          className="w-4 h-4 mt-0.5 rounded text-[#0B2046] dark:text-blue-500 border-slate-300 dark:border-slate-600 focus:ring-[#0B2046] dark:focus:ring-blue-500 cursor-pointer pointer-events-none"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-800 dark:text-slate-100 font-semibold leading-tight">
+                            <span className="text-slate-800 dark:text-slate-100 font-semibold leading-tight text-xs">
                               {b.benefitName}
                             </span>
 
@@ -721,6 +689,11 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                             >
                               <Icon className="w-2.5 h-2.5" />
                               {b.isStatutory ? 'สิทธิตามกฎหมาย' : meta.label}
+                            </span>
+
+                            {/* Standard Quota / Rate Badge from Central Settings */}
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-600">
+                              {formatBenefitRate(b)}
                             </span>
 
                             {/* Payout Type Badge */}
@@ -737,42 +710,20 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                             </span>
                           )}
                         </div>
-                      </label>
 
-                      {/* Configurable Amount & Frequency when Selected */}
-                      {isChecked && isMonetary && (
-                        <div className="mt-2.5 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap sm:flex-nowrap items-center gap-2.5 pl-6">
-                          <div className="flex-1 min-w-[130px]">
-                            <label className="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">
-                              วงเงิน / อัตราจ่าย (บาท)
-                            </label>
-                            <input
-                              type="number"
-                              min={0}
-                              step={b.category === 'ALLOWANCE' ? '10' : '100'}
-                              value={benefitDetails[b.id]?.coverageAmount ?? 0}
-                              onChange={(e) => updateBenefitDetail(b.id, 'coverageAmount', Number(e.target.value))}
-                              className="w-full h-8 px-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500"
-                              placeholder="0.00"
-                            />
-                          </div>
-                          <div className="w-full sm:w-56">
-                            <label className="block text-[10px] font-medium text-slate-600 dark:text-slate-400 mb-0.5">
-                              รอบการคำนวณ / จ่าย
-                            </label>
-                            <CustomSelect
-                              value={benefitDetails[b.id]?.frequency ?? 'MONTHLY'}
-                              onChange={(e) => updateBenefitDetail(b.id, 'frequency', e.target.value)}
-                              className="w-full h-8 px-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500"
-                            >
-                              <option value="DAILY">บาท / วันทำงานจริง (เข้าสลิป)</option>
-                              <option value="MONTHLY">บาท / เดือน (เข้าสลิป)</option>
-                              <option value="YEARLY">บาท / ปี (วงเงินคุ้มครอง)</option>
-                              <option value="PER_OCCURRENCE">บาท / ครั้งที่เบิก</option>
-                            </CustomSelect>
-                          </div>
+                        {/* Status Check Pill */}
+                        <div className="shrink-0 text-right">
+                          <span
+                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                              isChecked
+                                ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500'
+                            }`}
+                          >
+                            {isChecked ? 'ได้รับสิทธิ์' : 'ไม่ได้สิทธิ์'}
+                          </span>
                         </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}
