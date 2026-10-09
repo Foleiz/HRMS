@@ -119,11 +119,25 @@ public class ApprovalFlowsController : ControllerBase
     [HttpPost("simulate")]
     [ProducesResponseType(typeof(ApiResponse<WorkflowSimulationResultDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [RequirePermission("SETTINGS_ROLES_VIEW,SETTINGS_USERS_VIEW")]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<ApiResponse<WorkflowSimulationResultDto>>> Simulate(
         [FromBody] WorkflowSimulationRequest request,
         CancellationToken cancellationToken)
     {
+        var currentEmpId = _currentUser.EmployeeId;
+        var isPrivileged = _currentUser.HasRole("ADMIN")
+            || _currentUser.HasRole("SYSTEM_SUPER")
+            || _currentUser.HasPermission("SETTINGS_ROLES_VIEW")
+            || _currentUser.HasPermission("SETTINGS_USERS_VIEW")
+            || _currentUser.HasPermission("APPROVAL_LEAVE_VIEW")
+            || _currentUser.HasPermission("APPROVAL_EMP_VIEW");
+
+        // อนุญาตให้พนักงานจำลองสายการอนุมัติสำหรับตนเอง หรือผู้ใช้ที่มีสิทธิ์ตั้งค่า/ตรวจสอบ
+        if (!isPrivileged && (!currentEmpId.HasValue || request.EmployeeId != currentEmpId.Value))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<WorkflowSimulationResultDto>.Fail("คุณไม่มีสิทธิ์จำลองสายการอนุมัตินี้"));
+        }
+
         try
         {
             var result = await _flowService.SimulateWorkflowAsync(request, cancellationToken);

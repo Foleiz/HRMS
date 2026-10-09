@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
    * ตรวจสอบว่าหน้าที่เปิดอยู่ยังคงมีสิทธิ์เข้าถึงหรือไม่
    * หากไม่มีสิทธิ์ จะแจ้งเตือนผู้ใช้งานและนำทางกลับไปยังหน้าหลัก
    */
-  const checkRoutePermission = useCallback((freshUser: UserProfile | null) => {
+  const checkRoutePermission = useCallback((freshUser: UserProfile | null, isRevoked: boolean = false) => {
     if (typeof window === 'undefined' || !freshUser) return;
     const currentPath = window.location.pathname;
     if (currentPath === '/login' || currentPath === '/') return;
@@ -43,14 +43,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const access = isPathAccessible(currentPath, freshUser);
     if (!access.allowed && !isAlertingRef.current) {
       isAlertingRef.current = true;
+      const pageTitle = access.rule?.title || currentPath;
       hrmsSwal.fire({
         icon: 'warning',
-        title: 'สิทธิ์การเข้าถึงถูกเปลี่ยนแปลง',
-        text: `ผู้ดูแลระบบได้ปรับปรุงสิทธิ์การใช้งานของคุณ ทำให้ไม่สามารถเข้าถึงหน้า "${access.rule?.title || currentPath}" ได้อีกต่อไป ระบบกำลังนำคุณกลับสู่หน้าหลัก`,
+        title: isRevoked ? 'สิทธิ์การเข้าถึงถูกเปลี่ยนแปลง' : 'ไม่มีสิทธิ์เข้าถึงหน้านี้',
+        text: isRevoked
+          ? `ผู้ดูแลระบบได้ปรับปรุงสิทธิ์การใช้งานของคุณ ทำให้ไม่สามารถเข้าถึงหน้า "${pageTitle}" ได้อีกต่อไป ระบบกำลังนำคุณกลับสู่หน้าหลัก`
+          : `คุณไม่มีสิทธิ์เข้าถึงหน้า "${pageTitle}" ระบบกำลังนำคุณกลับสู่หน้าหลัก`,
         confirmButtonText: 'ตกลง',
       }).then(() => {
         isAlertingRef.current = false;
-        router.push('/');
+        // หากผู้ใช้นำทางไปหน้าอื่นที่มีสิทธิ์แล้ว (เช่น คลิก sidebar) ไม่ต้อง redirect กลับหน้าหลัก
+        const latestPath = window.location.pathname;
+        const latestAccess = isPathAccessible(latestPath, freshUser);
+        if (!latestAccess.allowed) {
+          router.push('/');
+        }
       });
     }
   }, [router]);
@@ -67,12 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const freshProfile = await authService.getMe();
       setUser(freshProfile);
       localStorage.setItem('hrms_user', JSON.stringify(freshProfile));
-      checkRoutePermission(freshProfile);
       return freshProfile;
     } catch {
       return null;
     }
-  }, [checkRoutePermission]);
+  }, []);
 
   // Initial Auth Check
   useEffect(() => {
@@ -89,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const freshProfile = await authService.getMe();
             setUser(freshProfile);
             localStorage.setItem('hrms_user', JSON.stringify(freshProfile));
-            checkRoutePermission(freshProfile);
+            checkRoutePermission(freshProfile, false);
           } catch {
             // หากดึงไม่สำเร็จหรือ token หมดอายุจะถูกเคลียร์ใน interceptor
           }
@@ -132,7 +139,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const handleForbidden = async () => {
       const fresh = await refreshProfile();
       if (fresh) {
-        checkRoutePermission(fresh);
+        checkRoutePermission(fresh, true);
       }
     };
 
@@ -155,8 +162,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 4. ตรวจสอบสิทธิ์การเข้าถึง Route ทุกครั้งที่มีการเปลี่ยนหน้า
   useEffect(() => {
+    // หากมีการเปลี่ยนหน้า และมี Dialog สิทธิ์ค้างอยู่ ให้ปิด Dialog ทันที เพื่อไม่ให้ค้างข้ามหน้า
+    if (hrmsSwal.isVisible()) {
+      isAlertingRef.current = false;
+      hrmsSwal.close();
+    }
+
     if (!isLoading && user && pathname) {
-      checkRoutePermission(user);
+      checkRoutePermission(user, false);
     }
   }, [pathname, user, isLoading, checkRoutePermission]);
 

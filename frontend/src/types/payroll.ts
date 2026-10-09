@@ -379,6 +379,8 @@ export interface PayrollTransferList {
   paymentMethod?: 'BANK_BATCH' | 'DIRECT_TRANSFER' | null;
   status: string;
   totalEmployees: number;
+  totalPeriodEmployees?: number;
+  payableEmployees?: number;
   transferredCount: number;
   pendingCount: number;
   totalNetSalary: number;

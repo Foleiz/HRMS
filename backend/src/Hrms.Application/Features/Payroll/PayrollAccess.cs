@@ -31,7 +31,7 @@ public static class PayrollAccess
     {
         "PAYROLL_VIEW", "PAYROLL_HR_VIEW", "PAYROLL_FINANCE_VIEW", "PAYROLL_ADMIN_VIEW",
         "PAYROLL_CALC_VIEW", "PAYROLL_BANK_VIEW", "PAYROLL_TAX_VIEW", "PAYROLL_STRUCTURE_VIEW",
-        "PAYROLL_ITEMS_VIEW", "PAYROLL_BONUS_VIEW", "APPROVAL_PAYROLL_VIEW"
+        "PAYROLL_ITEMS_VIEW", "PAYROLL_BONUS_VIEW"
     };
 
     private static readonly string[] HrRoles = { "HR_ADMIN", "HR_MGR" };

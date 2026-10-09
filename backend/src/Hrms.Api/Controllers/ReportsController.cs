@@ -112,7 +112,7 @@ public class ReportsController : ControllerBase
     /// ดึงรายงานสรุปภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และประกันสังคม (สปส. 1-10) ประจำเดือน
     /// </summary>
     [HttpGet("financial/payroll-tax")]
-    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW,REPORT_VIEW")]
+    [RequirePermission("PAYROLL_TAX_VIEW,PAYROLL_HR_VIEW,PAYROLL_FINANCE_VIEW,PAYROLL_ADMIN_VIEW,PAYROLL_VIEW")]
     public async Task<ActionResult<ApiResponse<PayrollTaxSummaryDto>>> GetPayrollTaxSummaryReport(
         [FromQuery] int? year,
         [FromQuery] int? month,

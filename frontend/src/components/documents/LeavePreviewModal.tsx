@@ -356,6 +356,7 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
     employeeId: data?.employeeId,
     timeline: data?.timeline,
     canApproveCurrentStep: data?.canApproveCurrentStep,
+    isExistingDocument: !!data?.requestId,
   });
 
   if (!isOpen || !data) return null;

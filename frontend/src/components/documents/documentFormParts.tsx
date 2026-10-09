@@ -160,7 +160,7 @@ export const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = 
   <td style={{ width: '50%', border: '1px solid #000', verticalAlign: 'top', padding: 0 }}>
     <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{heading}</div>
     {/* เว้นระยะด้านบนให้พอสำหรับรูปลายเซ็น ไม่ให้ชนเส้นหัวตาราง */}
-    <div style={{ padding: '9mm 2mm 1mm 2mm' }}>
+    <div style={{ padding: '7.5mm 2mm 1mm 2mm' }}>
       <div>
         ลงชื่อ
         <span
@@ -180,8 +180,15 @@ export const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = 
           ) : null}
         </span>
       </div>
-      <div>ตำแหน่ง<Fill value={slot.positionHint || (slot.approverType === 'CEO' ? 'กรรมการผู้จัดการ' : '')} minWidth="54.5mm" /></div>
-      <div>วันที่<Fill value={slot.signedDate} minWidth="60mm" /></div>
+      <div style={{ paddingLeft: '8.5mm', marginTop: '0.5mm' }}>
+        (<Fill value={slot.signedName || ''} minWidth="53mm" />)
+      </div>
+      <div style={{ marginTop: '0.5mm' }}>
+        ตำแหน่ง<Fill value={slot.positionHint || (slot.approverType === 'CEO' ? 'กรรมการผู้จัดการ' : slot.approverType === 'HR' ? 'เจ้าหน้าที่ฝ่ายบุคคล' : '')} minWidth="54.5mm" />
+      </div>
+      <div style={{ marginTop: '0.5mm' }}>
+        วันที่<Fill value={slot.signedDate} minWidth="60mm" />
+      </div>
     </div>
   </td>
   );
@@ -460,8 +467,9 @@ export const useApprovalSlots = (params: {
   employeeId?: number | null;
   timeline?: ApprovalTimeline | null;
   canApproveCurrentStep?: boolean;
+  isExistingDocument?: boolean;
 }): ApprovalSlot[] => {
-  const { isOpen, documentType, employeeId, timeline, canApproveCurrentStep } = params;
+  const { isOpen, documentType, employeeId, timeline, canApproveCurrentStep, isExistingDocument } = params;
   const { user } = useAuth();
   const [viewerPosition, setViewerPosition] = useState<string | null>(null);
   const cacheKey = `${employeeId}_${documentType}`;
@@ -487,7 +495,7 @@ export const useApprovalSlots = (params: {
   }, [showViewerPreview, user?.employeeId]);
 
   useEffect(() => {
-    if (!isOpen || hasTimeline || !employeeId) {
+    if (!isOpen || hasTimeline || !employeeId || isExistingDocument) {
       return;
     }
     let isMounted = true;
