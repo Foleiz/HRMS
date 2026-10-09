@@ -161,7 +161,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         }
 
         var total = records.Count;
-        var present = records.Count(r => r.Status == "PRESENT");
+        var present = records.Count(r => r.Status == "PRESENT" || r.Status == "HOLIDAY_WORK");
         var late = records.Count(r => r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
         var early = records.Count(r => r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY");
         var leave = records.Count(r => r.Status == "LEAVE");
@@ -721,6 +721,13 @@ public class AttendanceDailyService : IAttendanceDailyService
         }
 
         // 4. Update Status
+        if (record.Status == "HOLIDAY_WORK")
+        {
+            record.LateMinutes = 0;
+            record.EarlyLeaveMinutes = 0;
+            return;
+        }
+
         if (lateMinutes > 0 && earlyMinutes > 0)
         {
             record.Status = "LATE_AND_EARLY";
@@ -888,7 +895,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             Year = year,
             Month = month,
             TotalWorkDays = records.Count(r => r.Status != "OFF" && r.Status != "HOLIDAY"),
-            PresentCount = records.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && r.Status != "ABSENT")),
+            PresentCount = records.Count(r => r.Status == "PRESENT" || r.Status == "HOLIDAY_WORK" || (r.ActualIn != null && r.Status != "ABSENT")),
             LateCount = records.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY"),
             TotalLateMinutes = records.Sum(r => r.LateMinutes),
             EarlyLeaveCount = records.Count(r => r.EarlyLeaveMinutes > 0 || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY"),
@@ -970,7 +977,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             {
                 var empRecords = dailies.Where(d => d.EmployeeId == emp.Id).ToList();
                 totalWorkDays = empRecords.Count(r => r.Status != "OFF" && r.Status != "HOLIDAY");
-                actualWorkDays = empRecords.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && r.Status != "ABSENT" && r.Status != "LEAVE"));
+                actualWorkDays = empRecords.Count(r => (r.Status == "PRESENT" || r.Status == "HOLIDAY_WORK" || r.Status == "LATE" || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY" || (r.WorkedMinutes > 0 || r.ActualIn != null)) && !r.IsAbsent && r.Status != "ABSENT" && r.Status != "LEAVE" && r.Status != "OFF" && r.Status != "HOLIDAY");
                 lateDays = empRecords.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
                 lateMinutes = empRecords.Sum(r => r.LateMinutes);
                 earlyLeaveDays = empRecords.Count(r => r.EarlyLeaveMinutes > 0 || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY");
@@ -1047,7 +1054,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             var empRecords = dailies.Where(d => d.EmployeeId == emp.Id).ToList();
 
             var totalWorkDays = empRecords.Count(r => r.Status != "OFF" && r.Status != "HOLIDAY");
-            var actualWorkDays = empRecords.Count(r => r.Status == "PRESENT" || (r.ActualIn != null && r.Status != "ABSENT" && r.Status != "LEAVE"));
+            var actualWorkDays = empRecords.Count(r => (r.Status == "PRESENT" || r.Status == "HOLIDAY_WORK" || r.Status == "LATE" || r.Status == "EARLY_LEAVE" || r.Status == "LATE_AND_EARLY" || (r.WorkedMinutes > 0 || r.ActualIn != null)) && !r.IsAbsent && r.Status != "ABSENT" && r.Status != "LEAVE" && r.Status != "OFF" && r.Status != "HOLIDAY");
             var totalWorkedMinutes = empRecords.Sum(r => r.WorkedMinutes);
             var lateDays = empRecords.Count(r => r.LateMinutes > 0 || r.Status == "LATE" || r.Status == "LATE_AND_EARLY");
             var lateMinutes = empRecords.Sum(r => r.LateMinutes);
@@ -1055,6 +1062,8 @@ public class AttendanceDailyService : IAttendanceDailyService
             var earlyLeaveMinutes = empRecords.Sum(r => r.EarlyLeaveMinutes);
             var leaveDays = (decimal)empRecords.Count(r => r.Status == "LEAVE");
             var absentDays = empRecords.Count(r => (r.IsAbsent || r.Status == "ABSENT") && r.Status != "LEAVE");
+            var holidayWorkMinutes = empRecords.Where(r => r.Status == "HOLIDAY_WORK").Sum(r => r.WorkedMinutes);
+            var otHours = Math.Round((decimal)holidayWorkMinutes / 60m, 2);
 
             if (summaryMap.TryGetValue(emp.Id, out var existing))
             {
@@ -1067,7 +1076,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                 existing.TotalEarlyLeaveMinutes = earlyLeaveMinutes;
                 existing.TotalLeaveDays = leaveDays;
                 existing.TotalAbsentDays = absentDays;
-                existing.TotalOvertimeHours = 0;
+                existing.TotalOvertimeHours = otHours;
                 existing.GeneratedAt = nowUtc;
             }
             else
@@ -1086,7 +1095,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                     TotalEarlyLeaveMinutes = earlyLeaveMinutes,
                     TotalLeaveDays = leaveDays,
                     TotalAbsentDays = absentDays,
-                    TotalOvertimeHours = 0,
+                    TotalOvertimeHours = otHours,
                     GeneratedAt = nowUtc
                 };
                 _context.AttendanceMonthlySummaries.Add(newSummary);

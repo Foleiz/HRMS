@@ -283,6 +283,16 @@ public class AttendanceImportService : IAttendanceImportService
             }
         }
 
+        var holidays = (await _context.Holidays.AsNoTracking()
+            .Where(h => h.CompanyId == CompanyWorkSchedule.DefaultCompanyId)
+            .Select(h => h.HolidayDate)
+            .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var approvedLeaves = await _context.LeaveRequests.AsNoTracking()
+            .Where(l => l.Status == "APPROVED")
+            .ToListAsync(cancellationToken);
+
         var rowCtx = new RowProcessingContext
         {
             Rows = rawRows,
@@ -302,7 +312,9 @@ public class AttendanceImportService : IAttendanceImportService
             FailedRecords = failedRecords,
             MinDate = minDate,
             MaxDate = maxDate,
-            CompanySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken)
+            CompanySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken),
+            Holidays = holidays,
+            ApprovedLeaves = approvedLeaves
         };
         await ProcessRowsAsync(rowCtx, cancellationToken);
         totalRecords = rowCtx.TotalRecords;
@@ -311,6 +323,64 @@ public class AttendanceImportService : IAttendanceImportService
         minDate = rowCtx.MinDate;
         maxDate = rowCtx.MaxDate;
 
+        // Auto-generate missing absence records for working days within the imported date range
+        var todayThai = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
+        var rangeStart = customDateFrom ?? minDate;
+        var rangeEnd = customDateTo ?? maxDate;
+
+        if (rangeStart.HasValue && rangeEnd.HasValue && rowCtx.ProcessedEmployeeIds.Count > 0)
+        {
+            var effectiveEnd = rangeEnd.Value < todayThai ? rangeEnd.Value : todayThai;
+            foreach (var empId in rowCtx.ProcessedEmployeeIds)
+            {
+                for (var curDate = rangeStart.Value; curDate <= effectiveEnd; curDate = curDate.AddDays(1))
+                {
+                    var key = (empId, curDate);
+                    if (!dailyDict.ContainsKey(key))
+                    {
+                        var empShift = ResolveEmployeeShift(employeeShifts, empId, curDate);
+                        var shift = empShift?.Shift;
+                        var dow = (int)curDate.DayOfWeek;
+                        bool isWorkDay = empShift != null
+                            ? (empShift.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains(dow)
+                            : rowCtx.CompanySchedule.IsWorkingDay(curDate);
+                        bool isHoliday = holidays.Contains(curDate);
+
+                        if (isWorkDay && !isHoliday)
+                        {
+                            var hasApprovedLeave = approvedLeaves.Any(l => l.EmployeeId == empId
+                                && DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.StartDatetime)) <= curDate
+                                && DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.EndDatetime)) >= curDate);
+
+                            var missingRecord = new AttendanceDaily
+                            {
+                                EmployeeId = empId,
+                                WorkDate = curDate,
+                                ImportBatchId = batch.Id,
+                                ShiftId = shift?.Id,
+                                IsAbsent = !hasApprovedLeave,
+                                Status = hasApprovedLeave ? "LEAVE" : "ABSENT",
+                                WorkedMinutes = 0,
+                                LateMinutes = 0,
+                                EarlyLeaveMinutes = 0
+                            };
+
+                            if (shift != null)
+                            {
+                                AttendanceDailyService.PopulateScheduledTimes(missingRecord, shift, curDate);
+                            }
+                            else
+                            {
+                                rowCtx.CompanySchedule.PopulateScheduledTimes(missingRecord, curDate);
+                            }
+
+                            _context.AttendanceDailies.Add(missingRecord);
+                            dailyDict[key] = missingRecord;
+                        }
+                    }
+                }
+            }
+        }
 
         // 8. Save errors and batch updates
         if (errorsList.Count > 0)
@@ -1024,6 +1094,12 @@ public class AttendanceImportService : IAttendanceImportService
         public DateOnly? MaxDate { get; set; }
         /// <summary>วัน/เวลาทำงานปกติของบริษัท — ใช้กับพนักงานที่ไม่มีกะ</summary>
         public CompanyWorkSchedule CompanySchedule { get; init; } = CompanyWorkSchedule.Default();
+        /// <summary>วันหยุดตามประเพณีของบริษัท</summary>
+        public HashSet<DateOnly> Holidays { get; init; } = new();
+        /// <summary>พนักงานที่ถูกประมวลผลในรอบนี้</summary>
+        public HashSet<long> ProcessedEmployeeIds { get; init; } = new();
+        /// <summary>คำขอลาที่ได้รับอนุมัติแล้ว</summary>
+        public List<LeaveRequest> ApprovedLeaves { get; init; } = new();
     }
 
     /// <summary>ประมวลผลแถวข้อมูลเวลา → AttendanceDaily (ตรรกะเดียวกับการนำเข้าไฟล์เดิมทุกประการ)</summary>
@@ -1178,6 +1254,8 @@ public class AttendanceImportService : IAttendanceImportService
             if (!minDate.HasValue || workDate < minDate.Value) minDate = workDate;
             if (!maxDate.HasValue || workDate > maxDate.Value) maxDate = workDate;
 
+            ctx.ProcessedEmployeeIds.Add(employee.Id);
+
             // =============================================================
             // PATH A: Daily Summary (Syaco deliy format)
             // ข้อมูลเป็นสรุปรายวัน ไม่มีเวลาสแกนจริง
@@ -1185,18 +1263,111 @@ public class AttendanceImportService : IAttendanceImportService
             // =============================================================
             if (isDailySummary)
             {
-                // ตรวจสอบสัญลักษณ์สถานะวัน
-                // W = Weekend (วันหยุดสัปดาห์), H = Holiday (วันหยุดพิเศษ) → ข้ามแถวนี้ ไม่นับเป็น error
-                var sym = symbolRaw?.Trim().ToUpperInvariant() ?? "";
-                if (sym == "W" || sym == "H")
+
+                // ตรวจสอบวันทำงานและวันหยุดของบริษัท/กะของพนักงาน
+                var dailyEmpShift = ResolveEmployeeShift(employeeShifts, employee.Id, workDate);
+                var shift = dailyEmpShift?.Shift;
+                var dow = (int)workDate.DayOfWeek;
+                bool isScheduledWorkDay = dailyEmpShift != null
+                    ? (dailyEmpShift.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains(dow)
+                    : companySchedule.IsWorkingDay(workDate);
+
+                bool isPublicHoliday = ctx.Holidays.Contains(workDate);
+                bool isCompanyHolidayOrOff = !isScheduledWorkDay || isPublicHoliday;
+
+                // พยายามดึงเวลาเข้า-ออกจริงจากคอลัมน์ "เข้า-ออก" (Sj1) รูปแบบ "HH:MM-HH:MM"
+                DateTime? actualInUtc = null;
+                DateTime? actualOutUtc = null;
+                if (!string.IsNullOrWhiteSpace(stateRaw))
                 {
-                    totalRecords--;
+                    var timeRangeMatch = Regex.Match(stateRaw, @"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})");
+                    if (timeRangeMatch.Success)
+                    {
+                        actualInUtc = ParseTimeToUtc(timeRangeMatch.Groups[1].Value, workDate);
+                        actualOutUtc = ParseTimeToUtc(timeRangeMatch.Groups[2].Value, workDate);
+                    }
+                }
+
+                // ตรวจสอบสถานะการมาทำงานจริงจากไฟล์
+                var sym = symbolRaw?.Trim().ToUpperInvariant() ?? "";
+                var stateNorm = stateRaw?.Trim().ToUpperInvariant() ?? "";
+                bool hasWorked = (actualInUtc != null || actualOutUtc != null)
+                    || (workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
+                    || (!string.IsNullOrWhiteSpace(sym) && sym != "W" && sym != "H")
+                    || (!string.IsNullOrWhiteSpace(stateNorm) && stateNorm != "0" && stateNorm != "W" && stateNorm != "H");
+
+                // กรณีไม่ได้มาทำงาน
+                if (!hasWorked)
+                {
+                    // ถ้าวันนั้นเป็นวันหยุดบริษัท/วันหยุดประจำสัปดาห์ตามตารางจริง และไม่ได้มาทำงาน → ข้ามแถว
+                    if (isCompanyHolidayOrOff)
+                    {
+                        totalRecords--;
+                        continue;
+                    }
+
+                    // ถ้าวันนั้นบริษัทกำหนดให้เป็นวันทำงานปกติ แต่ไม่มีการบันทึกเวลาทำงาน
+                    var keyAbsent = (employee.Id, workDate);
+                    if (!dailyDict.TryGetValue(keyAbsent, out var dailyRecordAbsent))
+                    {
+                        if (!bulkPreloaded)
+                        {
+                            dailyRecordAbsent = await _context.AttendanceDailies
+                                .Include(a => a.Shift)
+                                .FirstOrDefaultAsync(a => a.EmployeeId == employee.Id && a.WorkDate == workDate, cancellationToken);
+                        }
+
+                        if (dailyRecordAbsent == null)
+                        {
+                            dailyRecordAbsent = new AttendanceDaily
+                            {
+                                EmployeeId = employee.Id,
+                                WorkDate = workDate,
+                                ImportBatchId = batch.Id
+                            };
+                            _context.AttendanceDailies.Add(dailyRecordAbsent);
+                        }
+                        dailyDict[keyAbsent] = dailyRecordAbsent;
+                    }
+
+                    dailyRecordAbsent.ImportBatchId = batch.Id;
+
+                    var hasApprovedLeave = ctx.ApprovedLeaves.Any(l => l.EmployeeId == employee.Id
+                        && DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.StartDatetime)) <= workDate
+                        && DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.EndDatetime)) >= workDate);
+
+                    if (dailyRecordAbsent.Status == "LEAVE" || hasApprovedLeave)
+                    {
+                        dailyRecordAbsent.Status = "LEAVE";
+                        dailyRecordAbsent.IsAbsent = false;
+                    }
+                    else
+                    {
+                        dailyRecordAbsent.IsAbsent = true;
+                        dailyRecordAbsent.Status = "ABSENT";
+                    }
+
+                    if (shift != null)
+                    {
+                        dailyRecordAbsent.ShiftId = shift.Id;
+                        AttendanceDailyService.PopulateScheduledTimes(dailyRecordAbsent, shift, workDate);
+                    }
+                    else
+                    {
+                        companySchedule.PopulateScheduledTimes(dailyRecordAbsent, workDate);
+                    }
+
+                    dailyRecordAbsent.ActualIn = null;
+                    dailyRecordAbsent.ActualOut = null;
+                    dailyRecordAbsent.WorkedMinutes = 0;
+                    dailyRecordAbsent.LateMinutes = 0;
+                    dailyRecordAbsent.EarlyLeaveMinutes = 0;
+
+                    successRecords++;
                     continue;
                 }
 
-                // Fetch or create AttendanceDaily record
-                // ถ้า bulkPreloaded=true แปลว่า dailyDict มีข้อมูลครบทั้งช่วงวันที่แล้วจาก Preload
-                // ด้านบน ไม่พบ = ไม่มีจริง จึงข้าม query ซ้ำทีละแถว (ลดเวลารวมของไฟล์ที่มีหลายแถว)
+                // กรณีมาทำงานจริง
                 var key = (employee.Id, workDate);
                 if (!dailyDict.TryGetValue(key, out var dailyRecord))
                 {
@@ -1215,90 +1386,126 @@ public class AttendanceImportService : IAttendanceImportService
                             WorkDate = workDate,
                             ImportBatchId = batch.Id
                         };
-
-                        var shift = ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
-                        if (shift != null)
-                        {
-                            dailyRecord.ShiftId = shift.Id;
-                            AttendanceDailyService.PopulateScheduledTimes(dailyRecord, shift, workDate);
-                        }
-                        else
-                        {
-                            // ไม่มีกะ → ใช้เวลาทำงานปกติของบริษัท
-                            companySchedule.PopulateScheduledTimes(dailyRecord, workDate);
-                        }
-
                         _context.AttendanceDailies.Add(dailyRecord);
                     }
-
                     dailyDict[key] = dailyRecord;
                 }
 
                 dailyRecord.ImportBatchId = batch.Id;
+                dailyRecord.IsAbsent = false;
+                dailyRecord.ActualIn = actualInUtc;
+                dailyRecord.ActualOut = actualOutUtc;
 
-                // ตั้งค่าสถานะจากสัญลักษณ์/stateRaw
-                // stateRaw อาจเป็น "N-N", "DV" (ทำงาน) หรือว่าง/0 (ขาดงาน)
-                var stateNorm = stateRaw?.Trim().ToUpperInvariant() ?? "";
-                bool hasWorked = !string.IsNullOrWhiteSpace(sym) && sym != "W" && sym != "H"
-                    || !string.IsNullOrWhiteSpace(stateNorm) && stateNorm != "0";
-
-                if (!hasWorked && workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
-                    hasWorked = true;
-
-                if (dailyRecord.Status == "LEAVE" && !hasWorked)
+                // กรณีทำงานในวันหยุดบริษัท / วันหยุดประจำสัปดาห์
+                if (isCompanyHolidayOrOff)
                 {
-                    // พนักงานมีคำขอลาที่ได้รับอนุมัติแล้วในระบบ และไม่มีบันทึกเวลาทำงาน
-                    // ให้คงสถานะวันลาไว้เสมอ ไม่เขียนทับเป็น ABSENT (ขาดงาน)
-                    dailyRecord.IsAbsent = false;
+                    dailyRecord.ShiftId = shift?.Id;
+                    dailyRecord.ScheduledStart = null;
+                    dailyRecord.ScheduledEnd = null;
+                    dailyRecord.Status = "HOLIDAY_WORK";
+                    dailyRecord.LateMinutes = 0;
+                    dailyRecord.EarlyLeaveMinutes = 0;
+
+                    if (workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
+                    {
+                        dailyRecord.WorkedMinutes = (int)Math.Round(workedHoursRaw.Value * 60);
+                    }
+                    else if (actualInUtc.HasValue && actualOutUtc.HasValue)
+                    {
+                        var totalMin = (int)Math.Max(0, (actualOutUtc.Value - actualInUtc.Value).TotalMinutes);
+                        var breakMin = shift?.BreakMinutes ?? 60;
+                        dailyRecord.WorkedMinutes = Math.Max(0, totalMin - breakMin);
+                    }
+                    else
+                    {
+                        dailyRecord.WorkedMinutes = 480;
+                    }
+
+                    successRecords++;
+                    continue;
+                }
+
+                // กรณีทำงานในวันทำงานปกติของบริษัท
+                if (shift != null)
+                {
+                    dailyRecord.ShiftId = shift.Id;
+                    AttendanceDailyService.PopulateScheduledTimes(dailyRecord, shift, workDate);
                 }
                 else
                 {
-                    dailyRecord.IsAbsent = !hasWorked;
-                    dailyRecord.Status = hasWorked ? "PRESENT" : "ABSENT";
+                    companySchedule.PopulateScheduledTimes(dailyRecord, workDate);
                 }
 
-                // ActualIn/ActualOut: ปกติ Daily Summary ไม่มีข้อมูลเวลาสแกนจริง (คงเป็น null)
-                // ยกเว้นบางแถวที่มีคอลัมน์ "เข้า-ออก" เป็นช่วงเวลาจริง เช่น "09:53-18:13"
-                // ซึ่งจะถูกแยกเป็น ActualIn/ActualOut ด้านล่าง (หลัง sym/hasWorked ตรวจสอบแล้ว)
-
-                // บันทึก WorkedMinutes จาก Shichu2 (ชั่วโมงทำงานจริง → แปลงเป็นนาที)
-                if (workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
+                // คำนวณนาทีมาสายเทียบกับ ScheduledStart ของบริษัท/กะ
+                if (dailyRecord.ScheduledStart.HasValue && actualInUtc.HasValue)
                 {
-                    dailyRecord.WorkedMinutes = (int)Math.Round(workedHoursRaw.Value * 60);
+                    var actualInLocal = AttendanceDailyService.ToThaiLocalTime(actualInUtc.Value);
+                    var schedStartLocal = AttendanceDailyService.ToThaiLocalTime(dailyRecord.ScheduledStart.Value);
+                    var lateGrace = shift?.LateGraceMinutes ?? 10;
+                    var lateThreshold = schedStartLocal.AddMinutes(lateGrace);
+                    if (actualInLocal > lateThreshold)
+                    {
+                        dailyRecord.LateMinutes = (int)Math.Max(0, (actualInLocal - schedStartLocal).TotalMinutes);
+                    }
+                    else
+                    {
+                        dailyRecord.LateMinutes = 0;
+                    }
                 }
-
-                // บันทึก LateMinutes จาก Cdshi
-                if (lateMinutesRaw.HasValue)
+                else if (lateMinutesRaw.HasValue)
                 {
                     dailyRecord.LateMinutes = (int)Math.Round(lateMinutesRaw.Value);
                 }
 
-                // บันทึก EarlyLeaveMinutes จาก Ztshi
-                if (earlyLeaveMinRaw.HasValue)
+                // คำนวณนาทีออกก่อนเวลาเทียบกับ ScheduledEnd ของบริษัท/กะ
+                if (dailyRecord.ScheduledEnd.HasValue && actualOutUtc.HasValue)
+                {
+                    var actualOutLocal = AttendanceDailyService.ToThaiLocalTime(actualOutUtc.Value);
+                    var schedEndLocal = AttendanceDailyService.ToThaiLocalTime(dailyRecord.ScheduledEnd.Value);
+                    var earlyGrace = shift?.EarlyLeaveGraceMinutes ?? 5;
+                    var earlyThreshold = schedEndLocal.AddMinutes(-earlyGrace);
+                    if (actualOutLocal < earlyThreshold)
+                    {
+                        dailyRecord.EarlyLeaveMinutes = (int)Math.Max(0, (schedEndLocal - actualOutLocal).TotalMinutes);
+                    }
+                    else
+                    {
+                        dailyRecord.EarlyLeaveMinutes = 0;
+                    }
+                }
+                else if (earlyLeaveMinRaw.HasValue)
                 {
                     dailyRecord.EarlyLeaveMinutes = (int)Math.Round(earlyLeaveMinRaw.Value);
                 }
 
-                // พยายามดึงเวลาเข้า-ออกจริงจากคอลัมน์ "เข้า-ออก" (Sj1) รูปแบบ "HH:MM-HH:MM"
-                // เช่น "09:53-18:13" (บางแถวมีตัวอักษรต่อท้าย เช่น "09:59-15:58E" ให้ตัดทิ้งเฉพาะส่วนตัวเลข)
-                // เก็บไว้เพื่อแสดงผลเวลาเข้าออกจริงในหน้าตรวจเวลา โดยไม่กระทบสถิติ Worked/Late/EarlyLeave
-                // ที่ดึงจากคอลัมน์ของอุปกรณ์ (Shichu2/Cdshi/Ztshi) ด้านบนซึ่งถือเป็นค่าหลัก
-                if (hasWorked && !string.IsNullOrWhiteSpace(stateRaw))
+                // ชั่วโมงทำงานจริง
+                if (workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
                 {
-                    var timeRangeMatch = Regex.Match(stateRaw, @"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})");
-                    if (timeRangeMatch.Success)
-                    {
-                        var actualInUtc = ParseTimeToUtc(timeRangeMatch.Groups[1].Value, workDate);
-                        var actualOutUtc = ParseTimeToUtc(timeRangeMatch.Groups[2].Value, workDate);
-                        if (actualInUtc.HasValue)
-                        {
-                            dailyRecord.ActualIn = actualInUtc.Value;
-                        }
-                        if (actualOutUtc.HasValue)
-                        {
-                            dailyRecord.ActualOut = actualOutUtc.Value;
-                        }
-                    }
+                    dailyRecord.WorkedMinutes = (int)Math.Round(workedHoursRaw.Value * 60);
+                }
+                else if (actualInUtc.HasValue && actualOutUtc.HasValue)
+                {
+                    var totalMin = (int)Math.Max(0, (actualOutUtc.Value - actualInUtc.Value).TotalMinutes);
+                    var breakMin = shift?.BreakMinutes ?? 60;
+                    dailyRecord.WorkedMinutes = Math.Max(0, totalMin - breakMin);
+                }
+
+                // กำหนดสถานะตามการมาสาย / ออกก่อน
+                if (dailyRecord.LateMinutes > 0 && dailyRecord.EarlyLeaveMinutes > 0)
+                {
+                    dailyRecord.Status = "LATE_AND_EARLY";
+                }
+                else if (dailyRecord.LateMinutes > 0)
+                {
+                    dailyRecord.Status = "LATE";
+                }
+                else if (dailyRecord.EarlyLeaveMinutes > 0)
+                {
+                    dailyRecord.Status = "EARLY_LEAVE";
+                }
+                else
+                {
+                    dailyRecord.Status = "PRESENT";
                 }
 
                 successRecords++;
@@ -1390,8 +1597,25 @@ public class AttendanceImportService : IAttendanceImportService
 
             punchDailyRecord.ImportBatchId = batch.Id;
 
-            var activeShift = punchDailyRecord.Shift ?? ResolveShiftForEmployee(employeeShifts, employee.Id, workDate);
-            if (activeShift != null)
+            var punchEmpShift = ResolveEmployeeShift(employeeShifts, employee.Id, workDate);
+            var activeShift = punchDailyRecord.Shift ?? punchEmpShift?.Shift;
+            var punchDow = (int)workDate.DayOfWeek;
+            bool isPunchWorkDay = punchEmpShift != null
+                ? (punchEmpShift.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains(punchDow)
+                : companySchedule.IsWorkingDay(workDate);
+            bool isPunchHoliday = ctx.Holidays.Contains(workDate);
+            bool isPunchHolidayOrOff = !isPunchWorkDay || isPunchHoliday;
+
+            if (isPunchHolidayOrOff)
+            {
+                punchDailyRecord.ShiftId = activeShift?.Id;
+                punchDailyRecord.ScheduledStart = null;
+                punchDailyRecord.ScheduledEnd = null;
+                punchDailyRecord.LateMinutes = 0;
+                punchDailyRecord.EarlyLeaveMinutes = 0;
+                punchDailyRecord.Status = "HOLIDAY_WORK";
+            }
+            else if (activeShift != null)
             {
                 punchDailyRecord.ShiftId = activeShift.Id;
                 punchDailyRecord.Shift = activeShift;
@@ -1451,13 +1675,17 @@ public class AttendanceImportService : IAttendanceImportService
     }
 
 
-    private static ShiftEntity? ResolveShiftForEmployee(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
+    private static EmployeeShift? ResolveEmployeeShift(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
     {
         return employeeShifts
             .Where(es => es.EmployeeId == employeeId && es.EffectiveFrom <= workDate && (es.EffectiveTo == null || es.EffectiveTo >= workDate))
             .OrderByDescending(es => es.EffectiveFrom)
-            .Select(es => es.Shift)
             .FirstOrDefault();
+    }
+
+    private static ShiftEntity? ResolveShiftForEmployee(List<EmployeeShift> employeeShifts, long employeeId, DateOnly workDate)
+    {
+        return ResolveEmployeeShift(employeeShifts, employeeId, workDate)?.Shift;
     }
 
     /// <summary>

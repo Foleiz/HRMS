@@ -1073,6 +1073,13 @@ function DailyAttendanceContent() {
             <span>ตรงเวลา</span>
           </span>
         );
+      case 'HOLIDAY_WORK':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>ทำงานวันหยุด</span>
+          </span>
+        );
       case 'LATE':
         return (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
@@ -2947,6 +2954,7 @@ function DailyAttendanceContent() {
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
                 >
                   <option value="PRESENT">ตรงเวลา</option>
+                  <option value="HOLIDAY_WORK">ทำงานวันหยุด</option>
                   <option value="LATE">มาสาย</option>
                   <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
                   <option value="LATE_AND_EARLY">สายและออกก่อน</option>
