@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -34,19 +34,19 @@ export default function ExpiringDocumentsPage() {
   const [checking, setChecking] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
-  // ใช้รหัสสิทธิ์เดียวกับ backend (EMP_DOC_VIEW) แทนการดูชื่อบทบาท
-  const isHr = hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_DOC_VIEW');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+  const isHr = canViewDocs;
 
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees', show: canViewProfile },
     { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
-    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', active: true, show: canViewProfile },
+    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', active: true, show: canViewDocs },
   ].filter((t) => t.show);
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function ExpiringDocumentsPage() {
     }
   };
 
-  if (!canViewProfile || !isHr) {
+  if (!canViewDocs) {
     return (
       <AccessDenied
         title="ไม่มีสิทธิ์ดูเอกสารใกล้หมดอายุ"

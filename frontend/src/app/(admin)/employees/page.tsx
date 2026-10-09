@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import { employeeService } from '@/services/employeeService';
@@ -109,6 +110,7 @@ export const autoFormatPhone = (val: string): string => {
 
 
 export default function EmployeesPage() {
+  const router = useRouter();
   const { user, hasPermission, hasRole, getDataScope } = useAuth();
   const toast = useToast();
   const { setBreadcrumb } = useBreadcrumb();
@@ -870,18 +872,32 @@ export default function EmployeesPage() {
     'bg-indigo-600 text-white',
   ];
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
-  const canViewOrg = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+
+  useEffect(() => {
+    if (!canViewProfile) {
+      if (canViewContracts) {
+        router.replace('/employees/contracts');
+      } else if (canViewTransfers) {
+        router.replace('/employees/transfers');
+      } else if (canViewTypes) {
+        router.replace('/employees/types');
+      } else if (canViewDocs) {
+        router.replace('/employees/documents');
+      }
+    }
+  }, [canViewProfile, canViewContracts, canViewTransfers, canViewTypes, canViewDocs, router]);
 
   const subNavTabs = [
     { title: 'จัดการพนักงาน', href: '/employees', active: true, show: canViewProfile },
     { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', show: canViewContracts },
-    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewProfile },
+    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewDocs },
   ].filter((tab) => tab.show);
 
   if (!canViewProfile) {
@@ -1299,14 +1315,16 @@ export default function EmployeesPage() {
                               </Link>
 
                               {/* 2. แก้ไขข้อมูลพนักงาน */}
-                              <Link
-                                href={`/employees/${emp.id}/edit`}
-                                onClick={close}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors font-medium"
-                              >
-                                <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                                <span>แก้ไขข้อมูลพนักงาน</span>
-                              </Link>
+                              {(hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_PROFILE_EDIT')) && (
+                                <Link
+                                  href={`/employees/${emp.id}/edit`}
+                                  onClick={close}
+                                  className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors font-medium"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                                  <span>แก้ไขข้อมูลพนักงาน</span>
+                                </Link>
+                              )}
 
                               {/* 4. เปลี่ยนสถานะการจ้างงาน */}
                               {(hasRole('ADMIN') || hasPermission('EMP_PROFILE_EDIT')) && (

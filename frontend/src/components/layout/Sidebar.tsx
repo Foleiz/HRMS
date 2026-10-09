@@ -111,21 +111,21 @@ const menuGroups: MenuGroup[] = [
         href: '/team-leave-calendar',
         matchPrefix: '/team-leave-calendar',
         icon: CalendarRange,
-        requiredPermissions: ['ESS_LEAVE_VIEW', 'LEAVE_BALANCE_VIEW'],
+        requiredPermissions: ['ESS_LEAVE_VIEW'],
       },
       {
         title: 'บันทึกเวลาของฉัน',
         href: '/ess/attendance',
         matchPrefix: '/ess/attendance',
         icon: Clock,
-        requiredPermissions: ['ESS_TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_VIEW'],
+        requiredPermissions: ['ESS_TIME_VIEW'],
       },
       {
         title: 'สวัสดิการของฉัน',
         href: '/ess/benefits',
         matchPrefix: '/ess/benefits',
         icon: Gift,
-        requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_PROFILE_VIEW'],
+        requiredPermissions: ['ESS_BENEFIT_VIEW'],
       },
     ],
   },
@@ -139,6 +139,7 @@ const menuGroups: MenuGroup[] = [
         matchPrefix: '/payroll',
         icon: CreditCard,
         requiredPermissions: [
+          'PAYROLL_PERIOD_VIEW',
           'PAYROLL_HR_VIEW',
           'PAYROLL_FINANCE_VIEW',
           'PAYROLL_ADMIN_VIEW',
@@ -173,6 +174,7 @@ const menuGroups: MenuGroup[] = [
           'EMP_CONTRACT_VIEW',
           'EMP_TRANSFER_VIEW',
           'EMP_TYPE_VIEW',
+          'EMP_DOC_VIEW',
         ],
       },
       {
@@ -387,6 +389,30 @@ export const Sidebar: React.FC = () => {
     return longestMatch.href === item.href;
   };
 
+  const resolveItemHref = (item: MenuItem) => {
+    if (item.href === '/employees') {
+      if (hasPermission('EMP_PROFILE_VIEW')) return '/employees';
+      if (hasPermission('EMP_CONTRACT_VIEW')) return '/employees/contracts';
+      if (hasPermission('EMP_TRANSFER_VIEW')) return '/employees/transfers';
+      if (hasPermission('EMP_TYPE_VIEW')) return '/employees/types';
+      if (hasPermission('EMP_DOC_VIEW')) return '/employees/documents';
+    }
+    if (item.href === '/attendance/daily') {
+      if (hasPermission('TIME_DAILY_VIEW')) return '/attendance/daily';
+      if (hasPermission('TIME_IMPORT_VIEW')) return '/attendance/daily?tab=import';
+    }
+    if (item.href === '/payroll') {
+      if (hasPermission('PAYROLL_PERIOD_VIEW')) return '/payroll?tab=periods';
+      if (hasPermission('PAYROLL_HR_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW') || hasPermission('PAYROLL_ADMIN_VIEW') || hasPermission('PAYROLL_CALC_VIEW') || hasPermission('PAYROLL_VIEW')) return '/payroll';
+      if (hasPermission('PAYROLL_STRUCTURE_VIEW')) return '/payroll?tab=structures';
+      if (hasPermission('PAYROLL_ITEMS_VIEW')) return '/payroll?tab=items';
+      if (hasPermission('PAYROLL_BONUS_VIEW')) return '/payroll?tab=bonus';
+      if (hasPermission('PAYROLL_BANK_VIEW')) return '/payroll?tab=bank-transfer';
+      if (hasPermission('PAYROLL_TAX_VIEW')) return '/payroll?tab=tax-sso';
+    }
+    return item.href;
+  };
+
   // ===== Sidebar Inner Content (shared between Desktop and Mobile) =====
   const sidebarContent = (
     <>
@@ -471,7 +497,7 @@ export const Sidebar: React.FC = () => {
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={resolveItemHref(item)}
                   onClick={handleSelectMenu}
                   title={isCollapsed && isDesktop ? item.title : undefined}
                   className={`flex items-center gap-3.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
