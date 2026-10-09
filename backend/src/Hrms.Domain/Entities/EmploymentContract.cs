@@ -28,6 +28,13 @@ public class EmploymentContract : BaseEntity
     /// <summary>นำประเภทพนักงานของสัญญานี้ไปอัปเดตข้อมูลพนักงานแล้วเมื่อ (null = ยังไม่ได้ใช้)</summary>
     public DateTime? EmployeeTypeAppliedAt { get; set; }
 
+    // เอกสารสัญญาจ้างแนบ (Document Attachment)
+    public string? DocumentFileName { get; set; }
+    public byte[]? DocumentFileData { get; set; }
+    public string? DocumentMimeType { get; set; }
+    public long? DocumentFileSize { get; set; }
+    public DateTime? DocumentUploadedAt { get; set; }
+
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual EmployeeType? EmployeeType { get; set; }

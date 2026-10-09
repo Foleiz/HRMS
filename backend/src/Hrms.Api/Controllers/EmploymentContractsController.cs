@@ -161,6 +161,58 @@ public class EmploymentContractsController : ControllerBase
         var result = await _contractService.DeleteAsync(id, cancellationToken);
         return Ok(ApiResponse<bool>.Ok(result, "ลบสัญญาจ้างงานสำเร็จ"));
     }
+
+    /// <summary>
+    /// ดาวน์โหลดหรือเปิดดูไฟล์เอกสารสัญญาจ้างงาน (รองรับ parameter inline=true เพื่อ preview ในเบราว์เซอร์)
+    /// </summary>
+    [HttpGet("{id:long}/document")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDocument(
+        long id,
+        [FromQuery] bool inline = false,
+        CancellationToken cancellationToken = default)
+    {
+        var file = await _contractService.GetDocumentFileAsync(id, cancellationToken);
+        if (inline)
+        {
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Uri.EscapeDataString(file.FileName)}\"";
+            return File(file.Data, file.MimeType);
+        }
+        return File(file.Data, file.MimeType, file.FileName);
+    }
+
+    /// <summary>
+    /// แนบหรือเปลี่ยนไฟล์เอกสารสัญญาจ้างงาน
+    /// </summary>
+    [HttpPost("{id:long}/document")]
+    [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_EDIT,EMP_CONTRACT_CREATE")]
+    [RequestSizeLimit(12 * 1024 * 1024)]
+    public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> AttachDocument(
+        long id,
+        [FromBody] UploadContractDocumentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _contractService.AttachDocumentAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<EmploymentContractDto>.Ok(result, "แนบเอกสารสัญญาจ้างงานสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ลบไฟล์เอกสารสัญญาจ้างงานที่แนบไว้
+    /// </summary>
+    [HttpDelete("{id:long}/document")]
+    [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_EDIT")]
+    public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> DeleteDocument(
+        long id,
+        CancellationToken cancellationToken)
+    {
+        var result = await _contractService.DeleteDocumentAsync(id, cancellationToken);
+        return Ok(ApiResponse<EmploymentContractDto>.Ok(result, "ลบไฟล์เอกสารสัญญาจ้างงานสำเร็จ"));
+    }
 }
 
 public class TerminateContractRequest

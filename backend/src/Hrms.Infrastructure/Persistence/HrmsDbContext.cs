@@ -931,6 +931,11 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ProbationNotifiedAt).HasColumnName("probation_notified_at");
             entity.Property(e => e.ExpiryNotifiedAt).HasColumnName("expiry_notified_at");
             entity.Property(e => e.EmployeeTypeAppliedAt).HasColumnName("employee_type_applied_at");
+            entity.Property(e => e.DocumentFileName).HasColumnName("document_file_name").HasMaxLength(255);
+            entity.Property(e => e.DocumentFileData).HasColumnName("document_file_data");
+            entity.Property(e => e.DocumentMimeType).HasColumnName("document_mime_type").HasMaxLength(100);
+            entity.Property(e => e.DocumentFileSize).HasColumnName("document_file_size");
+            entity.Property(e => e.DocumentUploadedAt).HasColumnName("document_uploaded_at");
 
             entity.HasOne(e => e.Employee)
                 .WithMany(e => e.Contracts)

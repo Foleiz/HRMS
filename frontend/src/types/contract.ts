@@ -23,6 +23,12 @@ export interface EmploymentContract {
   status: 'ACTIVE' | 'PENDING_APPROVAL' | 'COMPLETED' | 'TERMINATED' | 'CANCELLED' | string;
   statusDisplay: string;
   approvalInstanceId?: number;
+  hasDocument?: boolean;
+  documentFileName?: string;
+  documentFileSize?: number;
+  documentMimeType?: string;
+  documentUploadedAt?: string;
+  documentUrl?: string;
 }
 
 export interface ContractSummaryStats {
@@ -40,6 +46,8 @@ export interface CreateContractRequest {
   startDate: string;
   endDate?: string;
   status?: string;
+  documentFileName?: string;
+  documentFileData?: string;
 }
 
 export interface UpdateContractRequest {
@@ -51,6 +59,8 @@ export interface UpdateContractRequest {
   terminationDate?: string;
   terminationReason?: string;
   status?: string;
+  documentFileName?: string;
+  documentFileData?: string;
 }
 
 export interface EmployeeCareerTimeline {

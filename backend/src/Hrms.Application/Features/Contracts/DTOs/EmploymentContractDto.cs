@@ -29,4 +29,12 @@ public class EmploymentContractDto
     public string Status { get; set; } = string.Empty;
     public string StatusDisplay { get; set; } = string.Empty;
     public long? ApprovalInstanceId { get; set; }
+
+    // เอกสารแนบสัญญาจ้าง
+    public bool HasDocument { get; set; }
+    public string? DocumentFileName { get; set; }
+    public long? DocumentFileSize { get; set; }
+    public string? DocumentMimeType { get; set; }
+    public DateTime? DocumentUploadedAt { get; set; }
+    public string? DocumentUrl { get; set; }
 }
