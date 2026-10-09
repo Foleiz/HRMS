@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -56,6 +56,80 @@ const autoFormatPhone = (val: string): string => {
   }
   return digits;
 };
+
+function FieldInfoTooltip({
+  text,
+  align = 'left',
+}: {
+  text: string;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  const alignClass =
+    align === 'right'
+      ? 'right-0'
+      : align === 'center'
+      ? 'left-1/2 -translate-x-1/2'
+      : 'left-0';
+
+  const arrowClass =
+    align === 'right'
+      ? 'right-2'
+      : align === 'center'
+      ? 'left-1/2 -translate-x-1/2'
+      : 'left-2';
+
+  return (
+    <span ref={ref} className="relative inline-flex items-center ml-1.5">
+      <button
+        type="button"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen((prev) => !prev);
+        }}
+        className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-700/60 transition-colors cursor-pointer text-[10px] font-bold shrink-0 focus:outline-none shadow-2xs"
+        title="คลิกเพื่อดูคำอธิบาย"
+        aria-label="คลิกเพื่อดูคำอธิบาย"
+      >
+        !
+      </button>
+
+      {open && (
+        <span
+          className={`absolute bottom-full mb-2 z-50 w-64 p-2.5 bg-slate-900/95 dark:bg-slate-800 text-white text-[11px] leading-relaxed rounded-lg shadow-xl backdrop-blur-sm border border-slate-700 pointer-events-auto animate-in fade-in zoom-in-95 duration-150 normal-case font-normal text-left ${alignClass}`}
+        >
+          <span className="flex items-start gap-1.5">
+            <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-amber-400 text-slate-900 text-[10px] font-black shrink-0 mt-0.5">
+              !
+            </span>
+            <span className="font-normal text-slate-100">{text}</span>
+          </span>
+          <span
+            className={`absolute top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900/95 dark:border-t-slate-800 ${arrowClass}`}
+          />
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function EmployeeEditPage() {
   return (
@@ -569,8 +643,8 @@ function EmployeeEditPageContent() {
                   <div className="space-y-4">
                     {/* Row 1: รหัสพนักงาน */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span></span>
                       </label>
                       <input
                         type="text"
@@ -579,13 +653,13 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
                         className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
-                      <div className="min-h-[18px]" />
                     </div>
 
                     {/* Row 2: รหัสเครื่องสแกนนิ้ว (Biometric ID) */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        รหัสเครื่องสแกนนิ้ว (Biometric ID)
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>รหัสเครื่องสแกนนิ้ว (Biometric ID)</span>
+                        <FieldInfoTooltip text="รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)" />
                       </label>
                       <input
                         type="text"
@@ -594,15 +668,13 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
-                      <p className="min-h-[32px] text-[11px] leading-[16px] text-slate-400 dark:text-slate-400 mt-1">
-                        รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)
-                      </p>
                     </div>
 
                     {/* Row 3: หัวหน้างานโดยตรง */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        หัวหน้างานโดยตรง
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>หัวหน้างานโดยตรง</span>
+                        <FieldInfoTooltip text='ใช้กับขั้นอนุมัติ "หัวหน้างานตรง" ในสายการอนุมัติ' />
                       </label>
                       <EmployeeSelect
                         employees={allEmployees}
@@ -613,15 +685,17 @@ function EmployeeEditPageContent() {
                         excludeEmployeeIds={[employeeId]}
                         buttonClassName="!rounded-lg !text-xs"
                       />
-                      <p className="min-h-[18px] text-[11px] leading-[18px] text-slate-400 dark:text-slate-400 mt-1">
-                        ใช้กับขั้นอนุมัติ &quot;หัวหน้างานตรง&quot; ในสายการอนุมัติ
-                      </p>
                     </div>
 
                     {/* Row 4: ประเภทพนักงาน */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        ประเภทพนักงาน
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>ประเภทพนักงาน</span>
+                        <FieldInfoTooltip
+                          text={canEditEmployeeType
+                            ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
+                            : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
+                        />
                       </label>
                       {canEditEmployeeType ? (
                         <CustomSelect
@@ -642,17 +716,12 @@ function EmployeeEditPageContent() {
                           {formData.employeeType || '-'}
                         </div>
                       )}
-                      <p className="min-h-[32px] text-[11px] leading-[16px] text-slate-400 dark:text-slate-400 mt-1">
-                        {canEditEmployeeType
-                          ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
-                          : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
-                      </p>
                     </div>
 
                     {/* Row 5: คำนำหน้า */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>คำนำหน้า (Prefix) <span className="text-rose-500">*</span></span>
                       </label>
                       <CustomSelect
                         value={formData.prefix}
@@ -673,13 +742,12 @@ function EmployeeEditPageContent() {
                         <option value="นางสาว">นางสาว</option>
                         <option value="นาง">นาง</option>
                       </CustomSelect>
-                      <div className="min-h-[18px]" />
                     </div>
 
                     {/* Row 6: ชื่อ */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        ชื่อ (First Name) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>ชื่อ (First Name) <span className="text-rose-500">*</span></span>
                       </label>
                       <input
                         type="text"
@@ -689,13 +757,12 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
-                      <div className="min-h-[18px]" />
                     </div>
 
                     {/* Row 7: นามสกุล */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        นามสกุล (Last Name) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>นามสกุล (Last Name) <span className="text-rose-500">*</span></span>
                       </label>
                       <input
                         type="text"
@@ -705,7 +772,6 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
-                      <div className="min-h-[18px]" />
                     </div>
                   </div>
 
@@ -713,8 +779,9 @@ function EmployeeEditPageContent() {
                   <div className="space-y-4">
                     {/* Row 1: เลขบัตรประชาชน */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span></span>
+                        <FieldInfoTooltip text="ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้" />
                       </label>
                       <input
                         type="text"
@@ -724,15 +791,12 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
-                      <p className="min-h-[18px] text-[11px] leading-[18px] text-slate-400 dark:text-slate-400 mt-1">
-                        ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้
-                      </p>
                     </div>
 
                     {/* Row 2: วันเกิด */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>วันเกิด (Date of Birth) <span className="text-rose-500">*</span></span>
                       </label>
                       <ThaiDatePicker
                         value={formData.birthDate}
@@ -740,13 +804,12 @@ function EmployeeEditPageContent() {
                         className="w-full h-11"
                         buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5 border-slate-200 focus:!ring-1 focus:!ring-[#0B2046]"
                       />
-                      <div className="min-h-[32px] mt-1" />
                     </div>
 
                     {/* Row 3: เพศ */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        เพศ (Gender) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>เพศ (Gender) <span className="text-rose-500">*</span></span>
                       </label>
                       <CustomSelect
                         value={formData.gender}
@@ -759,26 +822,24 @@ function EmployeeEditPageContent() {
                         <option value="หญิง">หญิง</option>
                         <option value="ไม่ระบุ">ไม่ระบุ</option>
                       </CustomSelect>
-                      <div className="min-h-[18px] mt-1" />
                     </div>
 
                     {/* Row 4: สัญชาติ */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        สัญชาติ (Nationality) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>สัญชาติ (Nationality) <span className="text-rose-500">*</span></span>
                       </label>
                       <NationalitySelect
                         value={formData.nationality}
                         onChange={(val) => setFormData({ ...formData, nationality: val })}
                         className="h-11 rounded-lg text-xs"
                       />
-                      <div className="min-h-[32px] mt-1" />
                     </div>
 
                     {/* Row 5: ศาสนา */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span></span>
                       </label>
                       <CustomSelect
                         value={formData.religion}
@@ -796,13 +857,12 @@ function EmployeeEditPageContent() {
                           <option value={formData.religion}>{formData.religion}</option>
                         )}
                       </CustomSelect>
-                      <div className="min-h-[18px]" />
                     </div>
 
                     {/* Row 6: สถานภาพสมรส */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span></span>
                       </label>
                       <CustomSelect
                         value={formData.maritalStatus}
@@ -820,13 +880,12 @@ function EmployeeEditPageContent() {
                           <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
                         )}
                       </CustomSelect>
-                      <div className="min-h-[18px]" />
                     </div>
 
                     {/* Row 7: สถานภาพทางทหาร */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span></span>
                       </label>
                       <CustomSelect
                         value={formData.militaryStatus}
@@ -839,7 +898,6 @@ function EmployeeEditPageContent() {
                         <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
                         <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
                       </CustomSelect>
-                      <div className="min-h-[18px]" />
                     </div>
                   </div>
 
@@ -847,8 +905,8 @@ function EmployeeEditPageContent() {
                   <div className="space-y-4">
                     {/* Row 1: อีเมล์ */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        อีเมล์ (E-mail) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>อีเมล์ (E-mail) <span className="text-rose-500">*</span></span>
                       </label>
                       <input
                         type="email"
@@ -857,13 +915,12 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
-                      <div className="min-h-[18px]" />
                     </div>
 
                     {/* Row 2: อีเมลองค์กร */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span></span>
                       </label>
                       <input
                         type="email"
@@ -872,13 +929,12 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                       />
-                      <div className="min-h-[32px] mt-1" />
                     </div>
 
                     {/* Row 3: เบอร์โทรศัพท์ส่วนตัว */}
                     <div>
-                      <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
+                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                        <span>เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span></span>
                       </label>
                       <input
                         type="text"
@@ -888,7 +944,6 @@ function EmployeeEditPageContent() {
                         onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
                         className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
-                      <div className="min-h-[18px] mt-1" />
                     </div>
                   </div>
                 </div>
@@ -900,8 +955,8 @@ function EmployeeEditPageContent() {
                     <div className="space-y-4">
                       {/* ประเภทที่อยู่ Radio Buttons */}
                       <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          ประเภทที่อยู่ <span className="text-rose-500">*</span>
+                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                          <span>ประเภทที่อยู่ <span className="text-rose-500">*</span></span>
                         </label>
                         <div className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-between overflow-x-auto">
                           {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
@@ -918,13 +973,12 @@ function EmployeeEditPageContent() {
                             </label>
                           ))}
                         </div>
-                        <div className="min-h-[18px]" />
                       </div>
 
                       {/* บ้านเลขที่ */}
                       <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          บ้านเลขที่ <span className="text-rose-500">*</span>
+                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                          <span>บ้านเลขที่ <span className="text-rose-500">*</span></span>
                         </label>
                         <input
                           type="text"
@@ -933,7 +987,6 @@ function EmployeeEditPageContent() {
                           onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
                           className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
-                        <div className="min-h-[18px]" />
                       </div>
                     </div>
 
@@ -941,8 +994,8 @@ function EmployeeEditPageContent() {
                     <div className="space-y-4">
                       {/* ตำบล / แขวง */}
                       <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          ตำบล / แขวง <span className="text-rose-500">*</span>
+                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                          <span>ตำบล / แขวง <span className="text-rose-500">*</span></span>
                         </label>
                         <input
                           type="text"
@@ -951,13 +1004,12 @@ function EmployeeEditPageContent() {
                           onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
                           className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
-                        <div className="min-h-[18px]" />
                       </div>
 
                       {/* อำเภอ / เขต */}
                       <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          อำเภอ / เขต <span className="text-rose-500">*</span>
+                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                          <span>อำเภอ / เขต <span className="text-rose-500">*</span></span>
                         </label>
                         <input
                           type="text"
@@ -966,14 +1018,13 @@ function EmployeeEditPageContent() {
                           onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                           className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                         />
-                        <div className="min-h-[18px]" />
                       </div>
 
                       {/* จังหวัด และ รหัสไปรษณีย์ (แบ่งครึ่งเท่ากัน grid 2 คอลัมน์) */}
                       <div className="grid grid-cols-2 gap-6 lg:gap-8">
                         <div>
-                          <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                            จังหวัด <span className="text-rose-500">*</span>
+                          <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                            <span>จังหวัด <span className="text-rose-500">*</span></span>
                           </label>
                           <input
                             type="text"
@@ -982,11 +1033,10 @@ function EmployeeEditPageContent() {
                             onChange={(e) => setFormData({ ...formData, province: e.target.value })}
                             className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
                           />
-                          <div className="min-h-[18px]" />
                         </div>
                         <div>
-                          <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                            รหัสไปรษณีย์ <span className="text-rose-500">*</span>
+                          <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                            <span>รหัสไปรษณีย์ <span className="text-rose-500">*</span></span>
                           </label>
                           <input
                             type="text"
@@ -996,7 +1046,6 @@ function EmployeeEditPageContent() {
                             onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                             className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                           />
-                          <div className="min-h-[18px]" />
                         </div>
                       </div>
                     </div>
@@ -1005,8 +1054,12 @@ function EmployeeEditPageContent() {
                     <div className="space-y-4">
                       {/* ชื่อธนาคาร */}
                       <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          ชื่อธนาคาร
+                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                          <span>ชื่อธนาคาร</span>
+                          <FieldInfoTooltip
+                            text="เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)"
+                            align="right"
+                          />
                         </label>
                         <CustomSelect
                           value={formData.bankId ?? ''}
@@ -1027,16 +1080,21 @@ function EmployeeEditPageContent() {
                             </option>
                           ))}
                         </CustomSelect>
-                        <div className="min-h-[18px]" />
                       </div>
 
                       {/* เลขที่บัญชี */}
                       <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          เลขที่บัญชี
-                          {banks.find((b) => b.id === formData.bankId)?.accountDigits
-                            ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
-                            : ''}
+                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
+                          <span>
+                            เลขที่บัญชี
+                            {banks.find((b) => b.id === formData.bankId)?.accountDigits
+                              ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
+                              : ''}
+                          </span>
+                          <FieldInfoTooltip
+                            text="เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม"
+                            align="right"
+                          />
                         </label>
                         <input
                           type="text"
@@ -1052,34 +1110,31 @@ function EmployeeEditPageContent() {
                           onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
                           className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                         />
-                        <span className="min-h-[18px] text-[10px] text-slate-400 block mt-1">
-                          เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม
-                        </span>
                       </div>
 
-                      {/* คำแนะนำ & แบนเนอร์สถานะบัญชีธนาคาร */}
-                      <div className="space-y-2 pt-1">
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                          เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)
-                        </p>
-                        {pendingBank && (
-                          <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
-                            มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
-                            {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
-                          </div>
-                        )}
-                        {!pendingBank && rejectedBank && (
-                          <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
-                            คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
-                            {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
-                          </div>
-                        )}
-                      </div>
+                      {/* แบนเนอร์สถานะบัญชีธนาคาร (ถ้ามี) */}
+                      {(pendingBank || rejectedBank) && (
+                        <div className="space-y-2 pt-1">
+                          {pendingBank && (
+                            <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                              มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
+                              {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
+                            </div>
+                          )}
+                          {!pendingBank && rejectedBank && (
+                            <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                              คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                              {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
 
             {/* ============================================================ */}
             {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
