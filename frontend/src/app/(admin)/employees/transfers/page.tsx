@@ -1,45 +1,33 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Plus,
   Search,
-  CheckCircle2,
   Clock,
-  MoreVertical,
   ChevronLeft,
   ChevronRight,
   Loader2,
-  AlertCircle,
-  Eye,
   Building2,
-  UserCheck,
   FileText,
   Download,
-  GitPullRequest,
-  Archive,
-  XCircle,
+  Calendar,
 } from 'lucide-react';
 import { transferService } from '@/services/transferService';
-import { employeeService } from '@/services/employeeService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { confirmAction, showError, hrmsSwal } from '@/lib/sweetalert';
+import { showError } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
-import { Employee } from '@/types/employee';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
-import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
-import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
 export default function TransfersPage() {
-  const { hasPermission, hasRole } = useAuth();
+  const { hasPermission } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
-  const [activeTab, setActiveTab] = useState<'transfers' | 'timeline'>('transfers');
 
   // Sync breadcrumb
   useEffect(() => {
@@ -54,14 +42,12 @@ export default function TransfersPage() {
     promotionsThisMonthCount: 0,
   });
   const [transfers, setTransfers] = useState<EmployeeTransfer[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Filters & Search
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedType, setSelectedType] = useState<string>('ALL');
-  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -76,74 +62,22 @@ export default function TransfersPage() {
     code: string;
   }>({ id: null, name: '', code: '' });
 
-  // Approval Timeline Modal State
-  const [selectedApprovalInfo, setSelectedApprovalInfo] = useState<GenericApprovalRequestInfo | null>(null);
-  const [isApprovalModalOpen, setIsApprovalModalOpen] = useState<boolean>(false);
-
   // Load Data
   const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [statsData, transfersData, empsData] = await Promise.all([
+      const [statsData, transfersData] = await Promise.all([
         transferService.getStats(),
         transferService.getAll(),
-        employeeService.getAll(),
       ]);
       setStats(statsData);
       setTransfers(transfersData || []);
-      setEmployees(empsData || []);
     } catch (err: any) {
       console.error('Failed to load transfers:', err);
       setError(err.response?.data?.message || err.message || 'ไม่สามารถโหลดข้อมูลการโยกย้ายได้');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleApprove = async (id: number) => {
-    const isConfirmed = await confirmAction({
-      title: 'ยืนยันการอนุมัติคำขอย้ายงาน',
-      text: 'ยืนยันการอนุมัติคำขอนี้ใช่หรือไม่? ระบบจะปรับปรุงตำแหน่ง/สังกัดของพนักงานทันที',
-      confirmButtonText: 'อนุมัติคำขอ',
-      cancelButtonText: 'ยกเลิก',
-    });
-    if (!isConfirmed) return;
-
-    try {
-      await transferService.approve(id);
-      fetchData();
-    } catch (err: any) {
-      console.error('Failed to approve transfer:', err);
-      showError('ไม่สามารถอนุมัติคำขอได้', err.response?.data?.message);
-    }
-  };
-
-  const handleReject = async (id: number) => {
-    const { value: reason, isConfirmed } = await hrmsSwal.fire({
-      title: 'ระบุเหตุผลที่ไม่อนุมัติ',
-      input: 'textarea',
-      inputPlaceholder: 'กรอกเหตุผลที่ไม่อนุมัติ (ถ้ามี)...',
-      showCancelButton: true,
-      confirmButtonText: 'ปฏิเสธคำขอ',
-      cancelButtonText: 'ยกเลิก',
-      customClass: {
-        popup: 'rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 dark:bg-slate-900 p-6',
-        title: 'text-lg font-bold text-slate-800 dark:text-slate-100 pt-2',
-        confirmButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all shadow-sm shadow-blue-200 cursor-pointer',
-        cancelButton: 'inline-flex items-center justify-center px-6 py-2.5 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-200 hover:bg-slate-300 active:scale-95 transition-all mr-3 border border-slate-300 cursor-pointer',
-        input: 'rounded-xl border border-slate-200 p-3 text-sm focus:ring-2 focus:ring-blue-500 w-full',
-        actions: 'gap-3 mt-4 w-full flex justify-end',
-      },
-    });
-    if (!isConfirmed) return;
-
-    try {
-      await transferService.reject(id, reason);
-      fetchData();
-    } catch (err: any) {
-      console.error('Failed to reject transfer:', err);
-      showError('ไม่สามารถปฏิเสธคำขอได้', err.response?.data?.message);
     }
   };
 
@@ -156,65 +90,39 @@ export default function TransfersPage() {
     }
   };
 
-  const handleViewApprovalTimeline = (transfer: EmployeeTransfer) => {
-    setSelectedApprovalInfo({
-      id: transfer.id,
-      requestNo: transfer.requestNo,
-      employeeName: transfer.employeeName,
-      subtitle: `ประเภท: ${transfer.transferTypeDisplay} • ย้ายไป: ${transfer.toDisplay} (มีผล: ${transfer.effectiveDateDisplay})`,
-      fetchTimeline: (id: number) => transferService.getApprovalTimeline(id),
-    });
-    setIsApprovalModalOpen(true);
-  };
-
   useEffect(() => {
     fetchData();
   }, []);
-
-
-
 
   // Filtered Transfers
   const filteredTransfers = useMemo(() => {
     return transfers.filter((item) => {
       const matchSearch =
         !searchTerm ||
-        item.requestNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.employeeCode.toLowerCase().includes(searchTerm.toLowerCase());
+        (item.employeeName && item.employeeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.employeeCode && item.employeeCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.orderNo && item.orderNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.fromPositionName && item.fromPositionName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.fromDepartmentName && item.fromDepartmentName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.toPositionName && item.toPositionName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.toDepartmentName && item.toDepartmentName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.fromDisplay && item.fromDisplay.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.toDisplay && item.toDisplay.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchType =
         selectedType === 'ALL' || item.transferType === selectedType;
 
-      const matchStatus =
-        selectedStatus === 'ALL' || item.status === selectedStatus;
-
-      return matchSearch && matchType && matchStatus;
+      return matchSearch && matchType;
     });
-  }, [transfers, searchTerm, selectedType, selectedStatus]);
-
-  // Filtered Employees for Tab 2
-  const filteredEmployees = useMemo(() => {
-    return employees.filter((emp) => {
-      if (!searchTerm) return true;
-      const term = searchTerm.toLowerCase();
-      const name = `${emp.firstName} ${emp.lastName}`.toLowerCase();
-      const code = emp.employeeCode.toLowerCase();
-      const dept = (emp.departmentName || '').toLowerCase();
-      const pos = (emp.positionName || '').toLowerCase();
-      return name.includes(term) || code.includes(term) || dept.includes(term) || pos.includes(term);
-    });
-  }, [employees, searchTerm]);
+  }, [transfers, searchTerm, selectedType]);
 
   // Pagination slice
   const paginatedTransfers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredTransfers.slice(start, start + pageSize);
-  }, [filteredTransfers, currentPage]);
+  }, [filteredTransfers, currentPage, pageSize]);
 
-  const totalPages = Math.ceil(
-    (activeTab === 'transfers' ? filteredTransfers.length : filteredEmployees.length) / pageSize
-  ) || 1;
+  const totalPages = Math.ceil(filteredTransfers.length / pageSize) || 1;
 
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
   const canViewTypes = hasPermission('EMP_TYPE_VIEW');
@@ -242,7 +150,7 @@ export default function TransfersPage() {
 
   return (
     <div className="space-y-5 font-sans pb-12">
-      {/* 1. Sub-Navigation Tabs ตรงตามภาพและ Design System */}
+      {/* 1. Sub-Navigation Tabs ตรงตาม Design System */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {subNavTabs.map((tab) => (
@@ -261,27 +169,32 @@ export default function TransfersPage() {
         </nav>
       </div>
 
-      {/* 2. Top Section: 3 Stat KPI Cards ตรงตาม Mockup 100% */}
+      {/* 2. Top Section: 3 Stat KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card 1: คำขอรออนุมัติ */}
+        {/* Card 1: ประวัติการโยกย้ายทั้งหมด */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
-          <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-            คำขอรออนุมัติ
+          <div>
+            <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
+              ประวัติการโยกย้ายทั้งหมด
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+              บันทึกคำสั่งและประวัติการย้ายงาน
+            </p>
           </div>
-          <div className="bg-slate-100/90 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
-            {stats.pendingRequestsCount}
+          <div className="bg-slate-100/90 dark:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+            {transfers.length}
           </div>
         </div>
 
         {/* Card 2: ย้ายแผนกเดือนนี้ */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <span className="bg-[#fef3c7] text-[#92400e] text-xs font-semibold px-2 py-0.5 rounded-md">
+            <span className="bg-[#fef3c7] dark:bg-amber-950/40 text-[#92400e] dark:text-amber-300 text-xs font-semibold px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
               ย้ายแผนก
             </span>
             <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">เดือนนี้</span>
           </div>
-          <div className="bg-slate-100/90 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+          <div className="bg-slate-100/90 dark:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
             {stats.transfersThisMonthCount}
           </div>
         </div>
@@ -291,59 +204,36 @@ export default function TransfersPage() {
           <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
             เลื่อนตำแหน่งเดือนนี้
           </div>
-          <div className="bg-slate-100/90 text-[#16a34a] text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+          <div className="bg-emerald-50 dark:bg-emerald-950/40 text-[#16a34a] dark:text-emerald-400 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center border border-emerald-200 dark:border-emerald-800">
             {stats.promotionsThisMonthCount}
           </div>
         </div>
       </div>
 
-      {/* 3. Primary Action Button (+ สร้างคำขอย้าย) ทางขวาตรงตาม Mockup */}
+      {/* 3. Primary Action Button (+ บันทึกคำสั่งแต่งตั้ง/โยกย้าย) */}
       <div className="flex items-center justify-end">
         <button
           onClick={() => setIsCreateModalOpen(true)}
           className="h-10 px-5 bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>สร้างคำขอย้าย</span>
+          <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
         </button>
       </div>
 
-      {/* 4. Sub-Tabs & Filter / Table Container */}
+      {/* 4. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
-        {/* Tab Switcher: คำขอย้าย/เลื่อนตำแหน่ง vs ประวัติรายบุคคล ตรงตาม Mockup */}
+        {/* Table Header Controls */}
         <div className="border-b border-slate-200 dark:border-slate-700 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex space-x-8 text-sm font-medium">
-            <button
-              onClick={() => {
-                setActiveTab('transfers');
-                setCurrentPage(1);
-              }}
-              className={`pb-3 transition-all cursor-pointer ${
-                activeTab === 'transfers'
-                  ? 'border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              คำขอย้าย/เลื่อนตำแหน่ง
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('timeline');
-                setCurrentPage(1);
-              }}
-              className={`pb-3 transition-all cursor-pointer ${
-                activeTab === 'timeline'
-                  ? 'border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              ประวัติรายบุคคล
+            <button className="pb-3 border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold cursor-default">
+              ประวัติการโยกย้ายตำแหน่ง (รายบุคคล)
             </button>
           </div>
 
           {/* Search & Filter Controls */}
           <div className="flex flex-wrap items-center gap-3 pb-3">
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-72">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -352,93 +242,80 @@ export default function TransfersPage() {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder={
-                  activeTab === 'transfers'
-                    ? 'ค้นหาชื่อ, รหัส หรือ เลขที่คำขอ...'
-                    : 'ค้นหาชื่อ, รหัส หรือ แผนก...'
-                }
-                className="w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                placeholder="ค้นหาชื่อ, รหัส, ตำแหน่ง หรือ เลขที่คำสั่ง..."
+                className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
               />
             </div>
 
-            {activeTab === 'transfers' && (
-              <>
-                <CustomSelect
-                  value={selectedType}
-                  onChange={(val) => {
-                    setSelectedType(val);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="ประเภททั้งหมด"
-                  className="min-w-[170px]"
-                  options={[
-                    { value: 'ALL', label: 'ประเภททั้งหมด' },
-                    { value: 'DEPARTMENT_TRANSFER', label: 'ย้ายแผนก' },
-                    { value: 'PROMOTION', label: 'เลื่อนตำแหน่ง' },
-                    { value: 'TRANSFER_AND_PROMOTION', label: 'โอนย้ายและเลื่อนตำแหน่ง' },
-                    { value: 'PROMOTION_AND_SUPERVISOR', label: 'เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน' },
-                  ]}
-                />
-
-                <CustomSelect
-                  value={selectedStatus}
-                  onChange={(val) => {
-                    setSelectedStatus(val);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="สถานะทั้งหมด"
-                  className="min-w-[150px]"
-                  options={[
-                    { value: 'ALL', label: 'สถานะทั้งหมด' },
-                    { value: 'PENDING', label: 'รอดำเนินการ' },
-                    { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                    { value: 'REJECTED', label: 'ปฏิเสธ' },
-                  ]}
-                />
-              </>
-            )}
+            <CustomSelect
+              value={selectedType}
+              onChange={(val) => {
+                setSelectedType(val);
+                setCurrentPage(1);
+              }}
+              placeholder="ประเภททั้งหมด"
+              className="min-w-[170px]"
+              options={[
+                { value: 'ALL', label: 'ประเภททั้งหมด' },
+                { value: 'DEPARTMENT_TRANSFER', label: 'ย้ายแผนก' },
+                { value: 'PROMOTION', label: 'เลื่อนตำแหน่ง' },
+                { value: 'TRANSFER_AND_PROMOTION', label: 'โอนย้ายและเลื่อนตำแหน่ง' },
+                { value: 'PROMOTION_AND_SUPERVISOR', label: 'เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน' },
+              ]}
+            />
           </div>
         </div>
 
-        {/* 5. TAB 1 CONTENT: Table ตรงตาม Mockup 100% */}
-        {activeTab === 'transfers' && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">เลขที่คำขอ</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">จาก</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ไปยัง</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภท</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">วันที่มีผล</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
-                  <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
+        {/* 5. TABLE: เอาไว้ดูว่ามีใครย้ายตำแหน่งไหนไปไหนวันที่เท่าไหร่ */}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-slate-100 dark:border-slate-700 text-slate-400 text-xs font-normal whitespace-nowrap bg-slate-50/50 dark:bg-slate-800/50">
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">วันที่มีผล</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">จากตำแหน่ง / แผนกเดิม</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">ไปยังตำแหน่ง / แผนกใหม่</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทการปรับเปลี่ยน</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">เลขที่คำสั่ง / เอกสาร</th>
+                <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">ไทม์ไลน์การทำงาน</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#0B2046] dark:text-blue-400" />
+                      <span>กำลังโหลดประวัติการโยกย้ายตำแหน่ง...</span>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300 text-xs">
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
-                        <span>กำลังโหลดข้อมูลการโยกย้าย...</span>
+              ) : paginatedTransfers.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    ไม่พบข้อมูลประวัติการโยกย้ายตำแหน่ง
+                  </td>
+                </tr>
+              ) : (
+                paginatedTransfers.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                    {/* วันที่มีผล */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-semibold">
+                        <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>{item.effectiveDateDisplay}</span>
                       </div>
                     </td>
-                  </tr>
-                ) : paginatedTransfers.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลคำขอย้าย/เลื่อนตำแหน่ง
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedTransfers.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                      {/* เลขที่คำขอ และ ประเภทการบันทึก */}
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+
+                    {/* พนักงาน (มีใคร) */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-600">
+                          {item.employeeName?.charAt(0) || 'E'}
+                        </div>
+                        <div>
                           <button
+                            type="button"
                             onClick={() => {
                               setSelectedTimelineEmployee({
                                 id: item.employeeId,
@@ -447,272 +324,134 @@ export default function TransfersPage() {
                               });
                               setIsTimelineModalOpen(true);
                             }}
-                            className="hover:underline hover:text-blue-700 cursor-pointer font-bold text-slate-900 dark:text-slate-100"
+                            className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer text-left block"
                           >
-                            {item.requestNo}
+                            {item.employeeName}
                           </button>
-                          {item.recordType === 'ARCHIVE' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <Archive className="w-2.5 h-2.5" />
-                              คำสั่งย้อนหลัง
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200">
-                              <GitPullRequest className="w-2.5 h-2.5" />
-                              ขออนุมัติ
-                            </span>
-                          )}
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                            รหัส: {item.employeeCode}
+                          </span>
                         </div>
+                      </div>
+                    </td>
 
-                        {item.orderNo && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            เลขที่: <span className="font-medium text-slate-700 dark:text-slate-300">{item.orderNo}</span>
-                          </p>
+                    {/* จากตำแหน่ง/แผนกเดิม (ย้ายตำแหน่งไหน) */}
+                    <td className="py-4 px-6">
+                      <div className="space-y-0.5">
+                        <p className="font-medium text-slate-700 dark:text-slate-300">
+                          {item.fromPositionName || item.fromDisplay || 'ไม่ระบุ'}
+                        </p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                          <Building2 className="w-3 h-3 shrink-0" />
+                          <span>{item.fromDepartmentName || '-'}</span>
+                        </p>
+                      </div>
+                    </td>
+
+                    {/* ไปยังตำแหน่ง/แผนกใหม่ (ไปไหน) */}
+                    <td className="py-4 px-6">
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-blue-700 dark:text-blue-400">
+                          {item.toPositionName || item.toDisplay || 'ไม่ระบุ'}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                          <Building2 className="w-3 h-3 text-blue-500 shrink-0" />
+                          <span>{item.toDepartmentName || '-'}</span>
+                        </p>
+                      </div>
+                    </td>
+
+                    {/* ประเภทการปรับเปลี่ยน */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      {item.transferType === 'DEPARTMENT_TRANSFER' ? (
+                        <span className="bg-[#fef3c7] dark:bg-amber-950/40 text-[#92400e] dark:text-amber-300 text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block border border-amber-200 dark:border-amber-800">
+                          {item.transferTypeDisplay}
+                        </span>
+                      ) : item.transferType === 'PROMOTION' ? (
+                        <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block border border-emerald-200 dark:border-emerald-800">
+                          {item.transferTypeDisplay}
+                        </span>
+                      ) : (
+                        <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block border border-blue-200 dark:border-blue-800">
+                          {item.transferTypeDisplay}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* เลขที่คำสั่ง / เอกสาร */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <div className="space-y-1">
+                        {item.orderNo ? (
+                          <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
+                            {item.orderNo}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400 dark:text-slate-500 block">-</span>
                         )}
-
                         {item.hasDocument && (
-                          <div className="mt-1">
+                          <div>
                             <button
                               type="button"
                               onClick={() => handleDownloadDocument(item)}
-                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer font-medium bg-blue-50/70 hover:bg-blue-100/70 px-2 py-0.5 rounded-md transition-colors"
+                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium bg-blue-50/70 dark:bg-blue-900/20 hover:bg-blue-100/70 px-2 py-0.5 rounded-md transition-colors"
                               title={item.documentName || 'ดาวน์โหลดเอกสารคำสั่ง'}
                             >
                               <FileText className="w-3 h-3 text-blue-600 shrink-0" />
-                              <span className="max-w-[150px] truncate">{item.documentName || 'เอกสารคำสั่งย้าย'}</span>
+                              <span className="max-w-[130px] truncate">{item.documentName || 'เอกสารคำสั่ง'}</span>
                               <Download className="w-2.5 h-2.5 text-blue-500 shrink-0 ml-0.5" />
                             </button>
                           </div>
                         )}
-                      </td>
-
-                      {/* พนักงาน */}
-                      <td className="py-4 px-6">
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">{item.employeeName}</span>
-                        <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal"> · {item.employeeCode}</span>
-                      </td>
-
-                      {/* จาก */}
-                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400 font-normal">
-                        {item.fromDisplay}
-                      </td>
-
-                      {/* ไปยัง */}
-                      <td className="py-4 px-6 text-slate-800 dark:text-slate-200 font-medium">
-                        {item.toDisplay}
-                      </td>
-
-                      {/* ประเภท (Badge หลากสีตรงตาม Mockup) */}
-                      <td className="py-4 px-6">
-                        {item.transferType === 'DEPARTMENT_TRANSFER' ? (
-                          <span className="bg-[#fef3c7] text-[#92400e] text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block">
-                            {item.transferTypeDisplay}
-                          </span>
-                        ) : item.transferType === 'PROMOTION' ? (
-                          <span className="text-slate-800 dark:text-slate-200 text-xs font-medium">
-                            {item.transferTypeDisplay}
-                          </span>
-                        ) : (
-                          <span className="text-slate-800 dark:text-slate-200 text-xs font-medium">
-                            {item.transferTypeDisplay}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* วันที่มีผล */}
-                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400 font-normal">
-                        {item.effectiveDateDisplay}
-                      </td>
-
-                      {/* สถานะ (Bullet Indicator ตรงตาม Mockup) */}
-                      <td className="py-4 px-6 whitespace-nowrap">
-                        {item.status === 'PENDING' ? (
-                          <span className="inline-flex items-center gap-1.5 text-amber-600 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                            รอดำเนินการ
-                          </span>
-                        ) : item.status === 'APPROVED' ? (
-                          <span className="inline-flex items-center gap-1.5 text-[#16a34a] font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#16a34a]" />
-                            อนุมัติแล้ว
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 text-rose-600 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                            ปฏิเสธ
-                          </span>
-                        )}
-                      </td>
-
-                      {/* การจัดการ / Action Menu */}
-                      <td className="py-4 px-6 text-right whitespace-nowrap">
-                        <ActionDropdown
-                          menuClassName="w-52"
-                          items={[
-                            ...(item.recordType === 'REQUEST' || item.approvalInstanceId
-                              ? [
-                                  {
-                                    label: 'ดูผังการอนุมัติ',
-                                    icon: <GitPullRequest className="w-3.5 h-3.5 text-blue-600" />,
-                                    onClick: () => handleViewApprovalTimeline(item),
-                                  },
-                                ]
-                              : []),
-                            ...(item.hasDocument
-                              ? [
-                                  {
-                                    label: 'ดาวน์โหลดเอกสารคำสั่ง',
-                                    icon: <Download className="w-3.5 h-3.5 text-indigo-600" />,
-                                    onClick: () => handleDownloadDocument(item),
-                                  },
-                                ]
-                              : []),
-                            {
-                              label: 'ประวัติรายบุคคล',
-                              icon: <Clock className="w-3.5 h-3.5 text-emerald-600" />,
-                              onClick: () => {
-                                setSelectedTimelineEmployee({
-                                  id: item.employeeId,
-                                  name: item.employeeName,
-                                  code: item.employeeCode,
-                                });
-                                setIsTimelineModalOpen(true);
-                              },
-                            },
-                            ...(item.status === 'PENDING'
-                              ? [
-                                  {
-                                    label: 'อนุมัติคำขอ',
-                                    icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
-                                    className: 'text-[#16a34a] hover:bg-emerald-50',
-                                    onClick: () => handleApprove(item.id),
-                                  },
-                                  {
-                                    label: 'ไม่อนุมัติคำขอ',
-                                    icon: <XCircle className="w-3.5 h-3.5 text-rose-500" />,
-                                    danger: true,
-                                    onClick: () => handleReject(item.id),
-                                  },
-                                ]
-                              : []),
-                          ]}
-                        />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 6. TAB 2 CONTENT: ประวัติรายบุคคล (ทำเหมือนหน้าสัญญาจ้างงาน 100%) */}
-        {activeTab === 'timeline' && (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[750px] text-left border-collapse text-sm whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">รหัสพนักงาน</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ชื่อ-นามสกุล</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">แผนก / สังกัด</th>
-                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ตำแหน่งปัจจุบัน</th>
-                  <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">ไทม์ไลน์การทำงาน</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300 text-xs">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
-                        <span>กำลังโหลดรายชื่อพนักงาน...</span>
                       </div>
                     </td>
-                  </tr>
-                ) : filteredEmployees.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลพนักงาน
+
+                    {/* ไทม์ไลน์การทำงาน / การจัดการ */}
+                    <td className="py-4 px-6 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => {
+                          setSelectedTimelineEmployee({
+                            id: item.employeeId,
+                            name: item.employeeName,
+                            code: item.employeeCode,
+                          });
+                          setIsTimelineModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-[#0B2046] hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 rounded-lg transition-all font-medium text-xs cursor-pointer shadow-2xs"
+                        title="ดูประวัติการทำงานและสายอาชีพรายบุคคล"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-emerald-600 hover:text-white" />
+                        <span>ประวัติรายบุคคล</span>
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  filteredEmployees
-                    .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                    .map((emp) => (
-                      <tr key={emp.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                        <td className="py-4 px-6 font-semibold text-slate-900 dark:text-slate-100">
-                          {emp.employeeCode}
-                        </td>
-                        <td className="py-4 px-6 font-medium text-slate-800 dark:text-slate-200">
-                          {emp.firstName} {emp.lastName}
-                        </td>
-                        <td className="py-4 px-6 text-slate-600 dark:text-slate-400">
-                          {emp.departmentName || '-'}
-                        </td>
-                        <td className="py-4 px-6 text-slate-800 dark:text-slate-200 font-medium">
-                          {emp.positionName || '-'}
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <button
-                            onClick={() => {
-                              setSelectedTimelineEmployee({
-                                id: emp.id,
-                                name: `${emp.firstName} ${emp.lastName}`,
-                                code: emp.employeeCode,
-                              });
-                              setIsTimelineModalOpen(true);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-[#0B2046] hover:text-white text-slate-700 dark:text-slate-300 rounded-lg transition-all font-medium cursor-pointer"
-                          >
-                            <Clock className="w-3.5 h-3.5 text-emerald-600 hover:text-white" />
-                            <span>ดูประวัติรายบุคคล</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-        {/* 7. Pagination Footer (< 1 2 3 4 >) ตรงตาม Mockup 100% */}
+        {/* 6. Pagination Footer */}
         <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
             <span>แสดง</span>
             <CustomSelect
               value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
+              onChange={(val) => {
+                setPageSize(Number(val));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-            </CustomSelect>
+              className="min-w-[70px]"
+              options={[
+                { value: 10, label: '10' },
+                { value: 20, label: '20' },
+                { value: 50, label: '50' },
+                { value: 100, label: '100' },
+                { value: 200, label: '200' },
+              ]}
+            />
             <span>แถวต่อหน้า</span>
             <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-              (แสดง{' '}
-              {activeTab === 'transfers'
-                ? paginatedTransfers.length > 0
-                  ? (currentPage - 1) * pageSize + 1
-                  : 0
-                : filteredEmployees.length > 0
-                ? (currentPage - 1) * pageSize + 1
-                : 0}{' '}
-              ถึง{' '}
-              {activeTab === 'transfers'
-                ? Math.min(currentPage * pageSize, filteredTransfers.length)
-                : Math.min(currentPage * pageSize, filteredEmployees.length)}{' '}
-              จาก{' '}
-              {activeTab === 'transfers'
-                ? filteredTransfers.length
-                : filteredEmployees.length}{' '}
-              รายการ)
+              (แสดง {filteredTransfers.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} ถึง {Math.min(currentPage * pageSize, filteredTransfers.length)} จาก {filteredTransfers.length} รายการ)
             </span>
           </div>
 
@@ -720,7 +459,7 @@ export default function TransfersPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -731,8 +470,8 @@ export default function TransfersPage() {
                 onClick={() => setCurrentPage(page)}
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   currentPage === page
-                    ? 'bg-[#0B2046] text-white font-bold'
-                    : 'border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                    ? 'bg-[#0B2046] dark:bg-white text-white dark:text-slate-900 font-bold'
+                    : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
                 {page}
@@ -742,7 +481,7 @@ export default function TransfersPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -750,14 +489,14 @@ export default function TransfersPage() {
         </div>
       </div>
 
-      {/* 8. Create Transfer Modal ตรงตาม Mockup 2 */}
+      {/* 7. Create Transfer Modal */}
       <CreateTransferModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={fetchData}
       />
 
-      {/* 9. Career & Assignment Timeline Modal (ทำเหมือนหน้าสัญญาจ้างงาน 100%) */}
+      {/* 8. Career & Assignment Timeline Modal */}
       <EmployeeTimelineModal
         isOpen={isTimelineModalOpen}
         onClose={() => setIsTimelineModalOpen(false)}
@@ -765,17 +504,6 @@ export default function TransfersPage() {
         employeeName={selectedTimelineEmployee.name}
         employeeCode={selectedTimelineEmployee.code}
       />
-
-      {/* 10. Approval Workflow Timeline Modal */}
-      <ApprovalTimelineModal
-        isOpen={isApprovalModalOpen}
-        onClose={() => {
-          setIsApprovalModalOpen(false);
-          setSelectedApprovalInfo(null);
-        }}
-        requestInfo={selectedApprovalInfo}
-      />
     </div>
   );
 }
-
