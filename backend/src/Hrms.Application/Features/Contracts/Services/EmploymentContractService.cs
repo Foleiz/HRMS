@@ -1,5 +1,6 @@
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
+using Hrms.Application.Common.Utilities;
 using Hrms.Application.Features.Contracts.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +12,8 @@ namespace Hrms.Application.Features.Contracts.Services;
 /// </summary>
 public class EmploymentContractService : IEmploymentContractService
 {
+    private const long MaxFileBytes = 10 * 1024 * 1024; // 10 MB
+
     private readonly IHrmsDbContext _context;
 
     public EmploymentContractService(IHrmsDbContext context)
@@ -253,6 +256,17 @@ public class EmploymentContractService : IEmploymentContractService
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
         };
 
+        if (!string.IsNullOrWhiteSpace(request.DocumentFileData))
+        {
+            var (bytes, mime) = FileDataDecoder.Decode(request.DocumentFileData, request.DocumentFileName);
+            if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
+            contract.DocumentFileData = bytes;
+            contract.DocumentMimeType = mime;
+            contract.DocumentFileName = string.IsNullOrWhiteSpace(request.DocumentFileName) ? "contract" : Path.GetFileName(request.DocumentFileName.Trim());
+            contract.DocumentFileSize = bytes.LongLength;
+            contract.DocumentUploadedAt = DateTime.UtcNow;
+        }
+
         _context.EmploymentContracts.Add(contract);
 
         // สัญญาที่เริ่มวันนี้หรือก่อนหน้า → อัปเดตประเภทพนักงานทันที (สัญญาล่วงหน้าจะถูกอัปเดตเมื่อถึงวันเริ่ม)
@@ -328,6 +342,25 @@ public class EmploymentContractService : IEmploymentContractService
 
         if (!string.IsNullOrWhiteSpace(request.Status))
             contract.Status = request.Status;
+
+        if (request.DocumentFileData == "REMOVE")
+        {
+            contract.DocumentFileData = null;
+            contract.DocumentMimeType = null;
+            contract.DocumentFileName = null;
+            contract.DocumentFileSize = null;
+            contract.DocumentUploadedAt = null;
+        }
+        else if (!string.IsNullOrWhiteSpace(request.DocumentFileData))
+        {
+            var (bytes, mime) = FileDataDecoder.Decode(request.DocumentFileData, request.DocumentFileName);
+            if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
+            contract.DocumentFileData = bytes;
+            contract.DocumentMimeType = mime;
+            contract.DocumentFileName = string.IsNullOrWhiteSpace(request.DocumentFileName) ? "contract" : Path.GetFileName(request.DocumentFileName.Trim());
+            contract.DocumentFileSize = bytes.LongLength;
+            contract.DocumentUploadedAt = DateTime.UtcNow;
+        }
 
         // เปลี่ยนประเภท/วันเริ่ม/สถานะของสัญญา → ประเมินการอัปเดตประเภทพนักงานใหม่
         if (contract.EmployeeTypeId != oldTypeId || contract.StartDate != oldStart || contract.Status != oldStatus)
@@ -455,6 +488,82 @@ public class EmploymentContractService : IEmploymentContractService
         return true;
     }
 
+    public async Task<ContractDocumentFile> GetDocumentFileAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var contract = await _context.EmploymentContracts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (contract == null)
+        {
+            throw new NotFoundException("สัญญาจ้างงาน", id);
+        }
+
+        if (contract.DocumentFileData == null || contract.DocumentFileData.Length == 0)
+        {
+            throw new NotFoundException("ไม่พบไฟล์เอกสารสัญญาจ้างที่แนบไว้");
+        }
+
+        return new ContractDocumentFile
+        {
+            Data = contract.DocumentFileData,
+            FileName = string.IsNullOrWhiteSpace(contract.DocumentFileName) ? $"contract_{id}.pdf" : contract.DocumentFileName,
+            MimeType = string.IsNullOrWhiteSpace(contract.DocumentMimeType) ? "application/pdf" : contract.DocumentMimeType
+        };
+    }
+
+    public async Task<EmploymentContractDto> AttachDocumentAsync(
+        long id,
+        UploadContractDocumentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var contract = await _context.EmploymentContracts
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (contract == null)
+        {
+            throw new NotFoundException("สัญญาจ้างงาน", id);
+        }
+
+        if (string.IsNullOrWhiteSpace(request.FileData))
+        {
+            throw new ValidationException("กรุณาระบุไฟล์เอกสารสัญญา");
+        }
+
+        var (bytes, mime) = FileDataDecoder.Decode(request.FileData, request.FileName);
+        if (bytes.LongLength == 0) throw new ValidationException("ไฟล์แนบว่างเปล่า");
+        if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
+
+        contract.DocumentFileData = bytes;
+        contract.DocumentMimeType = mime;
+        contract.DocumentFileName = string.IsNullOrWhiteSpace(request.FileName) ? "contract" : Path.GetFileName(request.FileName.Trim());
+        contract.DocumentFileSize = bytes.LongLength;
+        contract.DocumentUploadedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetByIdAsync(contract.Id, cancellationToken);
+    }
+
+    public async Task<EmploymentContractDto> DeleteDocumentAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var contract = await _context.EmploymentContracts
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (contract == null)
+        {
+            throw new NotFoundException("สัญญาจ้างงาน", id);
+        }
+
+        contract.DocumentFileData = null;
+        contract.DocumentMimeType = null;
+        contract.DocumentFileName = null;
+        contract.DocumentFileSize = null;
+        contract.DocumentUploadedAt = null;
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetByIdAsync(contract.Id, cancellationToken);
+    }
+
     private static EmploymentContractDto MapToDto(EmploymentContract c)
     {
         var currentAssignment = c.Employee?.Assignments?.FirstOrDefault(a => a.IsCurrent);
@@ -466,6 +575,10 @@ public class EmploymentContractService : IEmploymentContractService
             effectiveEndDate = c.ContractEndDate;
         else if (c.TerminationDate.HasValue)
             effectiveEndDate = c.TerminationDate;
+
+        var hasDoc = !string.IsNullOrWhiteSpace(c.DocumentFileName) ||
+                     (c.DocumentFileSize.HasValue && c.DocumentFileSize.Value > 0) ||
+                     (c.DocumentFileData != null && c.DocumentFileData.Length > 0);
 
         return new EmploymentContractDto
         {
@@ -494,7 +607,13 @@ public class EmploymentContractService : IEmploymentContractService
             TerminationReason = c.TerminationReason,
             Status = c.Status,
             StatusDisplay = GetStatusDisplay(c.Status),
-            ApprovalInstanceId = c.ApprovalInstanceId
+            ApprovalInstanceId = c.ApprovalInstanceId,
+            HasDocument = hasDoc,
+            DocumentFileName = c.DocumentFileName,
+            DocumentFileSize = c.DocumentFileSize,
+            DocumentMimeType = c.DocumentMimeType,
+            DocumentUploadedAt = c.DocumentUploadedAt,
+            DocumentUrl = hasDoc ? $"/api/employment-contracts/{c.Id}/document" : null
         };
     }
 

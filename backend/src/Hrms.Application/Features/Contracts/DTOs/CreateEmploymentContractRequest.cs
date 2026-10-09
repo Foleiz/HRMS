@@ -12,4 +12,9 @@ public class CreateEmploymentContractRequest
     public DateOnly StartDate { get; set; }
     public DateOnly? EndDate { get; set; } // วันที่สิ้นสุด / ครบทดลองงาน
     public string? Status { get; set; } = "ACTIVE"; // ACTIVE, PENDING_APPROVAL
+
+    // เอกสารแนบสัญญาจ้าง
+    public string? DocumentFileName { get; set; }
+    /// <summary>ไฟล์แบบ base64 (รองรับทั้ง data URL และ base64 ล้วน)</summary>
+    public string? DocumentFileData { get; set; }
 }

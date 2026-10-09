@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { X, Calendar, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { X, Calendar, Loader2, AlertCircle, ExternalLink, Upload, Trash2, FileText } from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { CreateContractRequest } from '@/types/contract';
 import { EmployeeType } from '@/types/employeeType';
@@ -34,6 +34,9 @@ export default function CreateContractModal({
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [fileData, setFileData] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
 
   // โหลดรายการประเภทสัญญา/การจ้างงานแบบไดนามิกจากระบบ
   useEffect(() => {
@@ -47,6 +50,9 @@ export default function CreateContractModal({
       d.setDate(d.getDate() + 119);
       setEndDate(d.toISOString().split('T')[0]);
       setErrorMessage(null);
+      setFileData(null);
+      setFileName(null);
+      setFileSize(null);
 
       // โหลดประเภทการจ้างงาน/สัญญาจ้าง
       employeeTypeService
@@ -123,6 +129,30 @@ export default function CreateContractModal({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('ไฟล์มีขนาดเกิน 10 MB กรุณาเลือกไฟล์ใหม่');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileData(reader.result as string);
+      setFileName(file.name);
+      setFileSize(file.size);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveFile = () => {
+    setFileData(null);
+    setFileName(null);
+    setFileSize(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!employeeId) {
@@ -143,6 +173,8 @@ export default function CreateContractModal({
         startDate,
         endDate: endDate || undefined,
         status: 'ACTIVE',
+        documentFileName: fileName || undefined,
+        documentFileData: fileData || undefined,
       });
       onClose();
     } catch (err: unknown) {
@@ -159,14 +191,14 @@ export default function CreateContractModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="pt-6 pb-2 text-center relative px-6">
+        <div className="pt-6 pb-2 text-center relative px-6 shrink-0">
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">สร้างสัญญาจ้างใหม่</h2>
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            className="absolute top-5 right-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -174,14 +206,14 @@ export default function CreateContractModal({
 
         {/* Error Alert */}
         {errorMessage && (
-          <div className="mx-6 my-2 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs">
+          <div className="mx-6 my-2 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs shrink-0">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
             <span className="leading-relaxed">{errorMessage}</span>
           </div>
         )}
 
-        {/* Form Body ตรงตาม Mockup */}
-        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
           {/* 1. พนักงาน * */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
@@ -259,13 +291,59 @@ export default function CreateContractModal({
               minDate={startDate || undefined}
               onChange={(val) => setEndDate(val)}
             />
-            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 font-normal">
               เว้นว่างได้หากเป็นสัญญาไม่มีกำหนด
             </p>
           </div>
 
+          {/* 5. แนบเอกสารสัญญาจ้างงาน */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              แนบเอกสารสัญญาจ้าง (ไม่บังคับ)
+            </label>
+            {!fileData ? (
+              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#0B2046] dark:hover:border-blue-500 rounded-xl cursor-pointer bg-slate-50/50 dark:bg-slate-800/40 hover:bg-blue-50/20 transition-all group">
+                <Upload className="w-6 h-6 text-slate-400 group-hover:text-[#0B2046] dark:group-hover:text-blue-400 mb-1.5 transition-colors" />
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  คลิกเพื่อเลือกไฟล์สัญญา หรือลากไฟล์มาวาง
+                </span>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  รองรับ PDF, PNG, JPG, DOCX (สูงสุด 10 MB)
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+            ) : (
+              <div className="flex items-center justify-between p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/60">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">{fileName}</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      {fileSize ? (fileSize / (1024 * 1024) >= 1 ? (fileSize / (1024 * 1024)).toFixed(2) + ' MB' : (fileSize / 1024).toFixed(0) + ' KB') : ''}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors cursor-pointer"
+                  title="ลบไฟล์แนบ"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Buttons Footer */}
-          <div className="pt-4 flex items-center justify-end gap-3">
+          <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700/60">
             <button
               type="button"
               onClick={onClose}

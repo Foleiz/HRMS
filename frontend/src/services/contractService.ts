@@ -67,4 +67,37 @@ export const contractService = {
   async delete(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<null>>(`/employment-contracts/${id}`);
   },
+
+  // แนบหรือเปลี่ยนไฟล์เอกสารสัญญาจ้างงาน
+  async uploadDocument(id: number, fileData: string, fileName: string): Promise<EmploymentContract> {
+    const res = await apiClient.post<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}/document`, {
+      fileData,
+      fileName,
+    });
+    return res.data.data;
+  },
+
+  // ลบไฟล์เอกสารสัญญาจ้างงานที่แนบไว้
+  async deleteDocument(id: number): Promise<EmploymentContract> {
+    const res = await apiClient.delete<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}/document`);
+    return res.data.data;
+  },
+
+  // ดึง Blob สำหรับ Preview หรือ Download
+  async getDocumentBlob(id: number, inline: boolean = false): Promise<{ blob: Blob; fileName: string; mimeType: string }> {
+    const res = await apiClient.get(`/employment-contracts/${id}/document`, {
+      params: inline ? { inline: true } : undefined,
+      responseType: 'blob',
+    });
+    const mimeType = String(res.headers['content-type'] || 'application/pdf');
+    let fileName = `contract_${id}.pdf`;
+    const disposition = res.headers['content-disposition'] ? String(res.headers['content-disposition']) : '';
+    if (disposition && disposition.indexOf('filename=') !== -1) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        fileName = decodeURIComponent(match[1].replace(/['"]/g, ''));
+      }
+    }
+    return { blob: res.data, fileName, mimeType };
+  },
 };

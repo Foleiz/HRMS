@@ -22,4 +22,19 @@ public interface IEmploymentContractService
     /// ใช้กับสัญญาที่ลงวันที่เริ่มล่วงหน้า — คืนจำนวนสัญญาที่นำไปใช้
     /// </summary>
     Task<int> ApplyDueEmployeeTypesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// ดึงไฟล์เอกสารสัญญาจ้างงานสำหรับ Preview / Download
+    /// </summary>
+    Task<ContractDocumentFile> GetDocumentFileAsync(long id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// แนบ/เปลี่ยนไฟล์เอกสารสัญญาจ้างงาน
+    /// </summary>
+    Task<EmploymentContractDto> AttachDocumentAsync(long id, UploadContractDocumentRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// ลบไฟล์เอกสารสัญญาจ้างงาน
+    /// </summary>
+    Task<EmploymentContractDto> DeleteDocumentAsync(long id, CancellationToken cancellationToken = default);
 }

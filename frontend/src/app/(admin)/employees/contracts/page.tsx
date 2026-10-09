@@ -20,6 +20,7 @@ import {
   Layers,
   X,
   Loader2,
+  Paperclip,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -318,6 +319,11 @@ export default function ContractsPage() {
                         </Link>
                         <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">·</span>
                         <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">{contract.employeeCode}</span>
+                        {contract.hasDocument && (
+                          <span title={`มีเอกสารสัญญาแนบ: ${contract.documentFileName ?? ''}`} className="inline-flex items-center text-blue-600">
+                            <Paperclip className="w-3.5 h-3.5" />
+                          </span>
+                        )}
                       </div>
                     </td>
 
@@ -476,6 +482,10 @@ export default function ContractsPage() {
           setSelectedContract(null);
         }}
         onTerminate={handleTerminateContract}
+        onUpdateContract={(updated) => {
+          setContracts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+          setSelectedContract(updated);
+        }}
       />
 
       <EmployeeTimelineModal
