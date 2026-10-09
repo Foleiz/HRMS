@@ -295,42 +295,38 @@ export default function PayrollPage() {
   const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
 
   // สิทธิ์การเข้าถึงแต่ละแท็บย่อย (อิงตามการติ๊กสิทธิ์จริงในหน้าบทบาทและสิทธิ์)
-  const canViewBonus = isAdmin || hasPermission('PAYROLL_BONUS_VIEW');
-  const canCalculateBonus = isAdmin || hasPermission('PAYROLL_BONUS_CREATE');
-  const canEditBonus = isAdmin || hasPermission('PAYROLL_BONUS_EDIT');
+  const canViewBonus = hasPermission('PAYROLL_BONUS_VIEW');
+  const canCalculateBonus = hasPermission('PAYROLL_BONUS_CREATE');
+  const canEditBonus = hasPermission('PAYROLL_BONUS_EDIT');
   const canApproveBonus =
-    isAdmin ||
     hasPermission('PAYROLL_BONUS_APPROVE') ||
     hasPermission('PAYROLL_BONUS_EDIT') ||
     hasPermission('PAYROLL_BONUS_CREATE') ||
     hasPermission('PAYROLL_HR_APPROVE') ||
     hasPermission('PAYROLL_HR_CREATE');
-  const canExportBonus = isAdmin || hasPermission('PAYROLL_BONUS_VIEW') || hasPermission('PAYROLL_BANK_VIEW');
+  const canExportBonus = hasPermission('PAYROLL_BONUS_VIEW') || hasPermission('PAYROLL_BANK_VIEW');
 
-  const canViewStructures = isAdmin || hasPermission('PAYROLL_STRUCTURE_VIEW') || hasPermission('PAYROLL_HR_VIEW');
-  const canViewItems = isAdmin || hasPermission('PAYROLL_ITEMS_VIEW') || hasPermission('PAYROLL_HR_VIEW');
-  const canViewBankTransfer = isAdmin || hasPermission('PAYROLL_BANK_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW');
-  const canViewTaxSso = isAdmin || hasPermission('PAYROLL_TAX_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW');
+  const canViewStructures = hasPermission('PAYROLL_STRUCTURE_VIEW');
+  const canViewItems = hasPermission('PAYROLL_ITEMS_VIEW');
+  const canViewBankTransfer = hasPermission('PAYROLL_BANK_VIEW');
+  const canViewTaxSso = hasPermission('PAYROLL_TAX_VIEW');
   const canViewProcess =
-    isAdmin ||
     hasPermission('PAYROLL_CALC_VIEW') ||
     hasPermission('PAYROLL_HR_VIEW') ||
     hasPermission('PAYROLL_FINANCE_VIEW') ||
     hasPermission('PAYROLL_ADMIN_VIEW');
 
+  const canViewPeriods = hasPermission('PAYROLL_PERIOD_VIEW');
+
   const canViewOverview =
-    isAdmin ||
     hasPermission('PAYROLL_VIEW') ||
-    canViewProcess ||
-    canViewStructures ||
-    canViewItems ||
-    canViewBonus ||
-    canViewBankTransfer ||
-    canViewTaxSso;
+    hasPermission('PAYROLL_ADMIN_VIEW') ||
+    hasPermission('PAYROLL_HR_VIEW') ||
+    hasPermission('PAYROLL_FINANCE_VIEW');
 
   const canViewPayroll =
-    isAdmin ||
     hasPermission('PAYROLL_VIEW') ||
+    hasPermission('PAYROLL_PERIOD_VIEW') ||
     hasPermission('PAYROLL_CALC_VIEW') ||
     hasPermission('PAYROLL_SLIP_VIEW') ||
     hasPermission('PAYROLL_BONUS_VIEW') ||
@@ -1582,8 +1578,10 @@ export default function PayrollPage() {
       actionToast = 'CEO อนุมัติรอบเงินเดือนเรียบร้อยแล้ว (สถานะ: อนุมัติแล้ว)';
     } else if (selectedPeriod.status === 'APPROVED' || selectedPeriod.status === 'PROCESSING') {
       if (selectedPeriod.paymentMethod === 'DIRECT_TRANSFER' || !selectedPeriod.paymentMethod) {
-        setActiveTab('bank-transfer');
-        showToast('กรุณาไปที่แท็บ "โอนเงินธนาคาร" เพื่อโอนเงินและแนบสลิปให้ครบทุกคนก่อนยืนยันจ่ายเงิน');
+        if (canViewBankTransfer) {
+          setActiveTab('bank-transfer');
+        }
+        showToast('กรุณาโอนเงินและแนบสลิปให้ครบทุกคนก่อนยืนยันจ่ายเงิน');
         return;
       }
       nextStatus = 'PAID';
@@ -1799,7 +1797,7 @@ export default function PayrollPage() {
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
     ...(canViewOverview ? [{ id: 'overview' as ActiveTab, label: 'ภาพรวม' }] : []),
-    ...(canViewProcess || canViewOverview ? [{ id: 'periods' as ActiveTab, label: 'รอบเงินเดือน' }] : []),
+    ...(canViewPeriods ? [{ id: 'periods' as ActiveTab, label: 'รอบเงินเดือน' }] : []),
     ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'โครงสร้างเงินเดือน' }] : []),
     ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
     ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
@@ -1947,14 +1945,16 @@ export default function PayrollPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
             <div className="flex items-center justify-between mb-2">
               <h2 className="text-base font-bold text-slate-900 dark:text-white">รอบเงินเดือนล่าสุด</h2>
-              <button
-                type="button"
-                onClick={() => setActiveTab('periods')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-              >
-                <span>ดูทั้งหมด</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              {canViewPeriods && (
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('periods')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                >
+                  <span>ดูทั้งหมด</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {(!overview?.recentPeriods || overview.recentPeriods.length === 0) ? (
@@ -1966,22 +1966,26 @@ export default function PayrollPage() {
               <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {overview.recentPeriods.map((p, idx) => {
                   const targetPeriod = periods.find(x => p.periodName.includes(x.periodName) || x.periodName.includes(p.periodName));
+                  const canNavigate = canViewProcess || canViewPeriods;
                   return (
                     <div
                       key={idx}
                       onClick={() => {
-                        if (targetPeriod) {
+                        if (!canNavigate) return;
+                        if (canViewProcess && targetPeriod) {
                           handlePeriodChange(targetPeriod.id);
                           setActiveTab('process');
-                        } else {
+                        } else if (canViewPeriods) {
                           setIsAllPeriodsModalOpen(true);
                         }
                       }}
-                      className="py-4 flex items-center justify-between text-sm hover:bg-slate-50/50 dark:hover:bg-slate-700/30 px-2 rounded-xl transition-colors cursor-pointer group"
-                      title="คลิกเพื่อเปิดดูรายละเอียดรอบนี้"
+                      className={`py-4 flex items-center justify-between text-sm px-2 rounded-xl transition-colors ${
+                        canNavigate ? 'hover:bg-slate-50/50 dark:hover:bg-slate-700/30 cursor-pointer group' : 'cursor-default'
+                      }`}
+                      title={canNavigate ? 'คลิกเพื่อเปิดดูรายละเอียดรอบนี้' : undefined}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046] dark:group-hover:text-blue-400 transition-colors">
+                        <span className={`font-semibold text-slate-800 dark:text-slate-200 ${canNavigate ? 'group-hover:text-[#0B2046] dark:group-hover:text-blue-400 transition-colors' : ''}`}>
                           {p.periodName}
                         </span>
                       </div>
@@ -2759,18 +2763,20 @@ export default function PayrollPage() {
                                             className="h-8 pl-8 pr-3 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 w-48 sm:w-60"
                                           />
                                         </div>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            handlePeriodChange(p.id);
-                                            setActiveTab('process');
-                                          }}
-                                          className="h-8 inline-flex items-center gap-1 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                                          title="ไปที่หน้าประมวลผลเงินเดือนรอบนี้"
-                                        >
-                                          <span>ไปที่หน้าประมวลผล</span>
-                                          <ArrowRight className="w-3 h-3" />
-                                        </button>
+                                        {canViewProcess && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              handlePeriodChange(p.id);
+                                              setActiveTab('process');
+                                            }}
+                                            className="h-8 inline-flex items-center gap-1 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                                            title="ไปที่หน้าประมวลผลเงินเดือนรอบนี้"
+                                          >
+                                            <span>ไปที่หน้าประมวลผล</span>
+                                            <ArrowRight className="w-3 h-3" />
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
 
@@ -3362,7 +3368,7 @@ export default function PayrollPage() {
                     const isDone = currentStep > s.step;
                     const isPeriodCurrent = currentStep === s.step;
                     const isViewing = s.tabKey === 'BANK' ? false : processSubTab === s.tabKey;
-                    const canClick = isAdmin;
+                    const canClick = isAdmin && (s.tabKey !== 'BANK' || canViewBankTransfer);
                     const content = (
                       <>
                         <div className="flex items-center justify-between">
@@ -3835,16 +3841,18 @@ export default function PayrollPage() {
                     </div>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('structures');
-                    setStructureSubTab('employees');
-                  }}
-                  className="self-start sm:self-auto px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
-                >
-                  จัดการฐานเงินเดือน →
-                </button>
+                {canViewStructures && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('structures');
+                      setStructureSubTab('employees');
+                    }}
+                    className="self-start sm:self-auto px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+                  >
+                    จัดการฐานเงินเดือน →
+                  </button>
+                )}
               </div>
             )}
 
@@ -4834,12 +4842,14 @@ export default function PayrollPage() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-12 text-center">
               <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-slate-400 text-sm">กรุณาเลือกรอบเงินเดือนก่อน</p>
-              <button
-                onClick={() => setActiveTab('process')}
-                className="mt-3 px-4 py-2 bg-[#0B2046] text-white rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                ไปที่แท็บประมวลผล
-              </button>
+              {canViewProcess && (
+                <button
+                  onClick={() => setActiveTab('process')}
+                  className="mt-3 px-4 py-2 bg-[#0B2046] text-white rounded-xl text-xs font-semibold cursor-pointer"
+                >
+                  ไปที่แท็บประมวลผล
+                </button>
+              )}
             </div>
           )}
 
@@ -5524,13 +5534,15 @@ export default function PayrollPage() {
                       <span className="font-bold">{newPeriodForm.startDate || '-'}</span> ถึง{' '}
                       <span className="font-bold">{newPeriodForm.endDate || '-'}</span> มาใช้คำนวณเบี้ยขยันและรายการหักโดยอัตโนมัติ
                     </p>
-                    <Link
-                      href="/attendance/daily?tab=import"
-                      className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold mt-1"
-                    >
-                      <span>อัปโหลดหรือระบุรอบไฟล์บันทึกเวลาที่นี่</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </Link>
+                    {(hasPermission('TIME_IMPORT') || hasPermission('TIME_VIEW') || hasPermission('TIME_DAILY_IMPORT') || hasPermission('TIME_DAILY_VIEW')) && (
+                      <Link
+                        href="/attendance/daily?tab=import"
+                        className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-semibold mt-1"
+                      >
+                        <span>อัปโหลดหรือระบุรอบไฟล์บันทึกเวลาที่นี่</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
@@ -5775,19 +5787,21 @@ export default function PayrollPage() {
                             </td>
                             <td className="py-3 px-4 text-center">
                               <div className="flex items-center justify-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handlePeriodChange(p.id);
-                                    setActiveTab('process');
-                                    setIsAllPeriodsModalOpen(false);
-                                  }}
-                                  className="px-2.5 py-1 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1"
-                                  title="เปิดดูและประมวลผลรอบนี้"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  <span>เปิดดู</span>
-                                </button>
+                                {canViewProcess && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handlePeriodChange(p.id);
+                                      setActiveTab('process');
+                                      setIsAllPeriodsModalOpen(false);
+                                    }}
+                                    className="px-2.5 py-1 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    title="เปิดดูและประมวลผลรอบนี้"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>เปิดดู</span>
+                                  </button>
+                                )}
                                 {p.status !== 'CLOSED' && canAccessHrView && (
                                   <button
                                     type="button"

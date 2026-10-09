@@ -163,6 +163,11 @@ export default function EmployeeDetailView({
   const canManageDocuments =
     hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_DOC_CREATE') || hasPermission('EMP_DOC_EDIT');
 
+  const canEditEmployee =
+    isProfilePage ||
+    hasPermission('EMP_PROFILE_EDIT') ||
+    hasPermission('EMP_EDIT');
+
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
@@ -585,14 +590,16 @@ export default function EmployeeDetailView({
             </div>
 
             {/* ปุ่มแก้ไขข้อมูล: ตำแหน่งเดิม แต่มีเฉพาะ icon อย่างเดียว */}
-            <button
-              type="button"
-              onClick={handleEditClick}
-              className="w-8 h-8 rounded-lg bg-[#0B2046] hover:bg-[#153468] text-white flex items-center justify-center transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
-              title="แก้ไขข้อมูล"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-            </button>
+            {canEditEmployee && (
+              <button
+                type="button"
+                onClick={handleEditClick}
+                className="w-8 h-8 rounded-lg bg-[#0B2046] hover:bg-[#153468] text-white flex items-center justify-center transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
+                title="แก้ไขข้อมูล"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           {/* ============================================================ */}

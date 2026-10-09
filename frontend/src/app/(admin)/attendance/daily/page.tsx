@@ -89,15 +89,24 @@ function DailyAttendanceContent() {
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
-  const canViewDaily = hasPermission('TIME_DAILY_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
-  const canViewImport = hasPermission('TIME_IMPORT_VIEW') || hasPermission('TIME_VIEW') || hasRole('ADMIN');
+  const canViewDaily = hasPermission('TIME_DAILY_VIEW');
+  const canViewImport = hasPermission('TIME_IMPORT_VIEW');
   const canViewAnyTime = canViewDaily || canViewImport;
+  const canEditTime = hasPermission('TIME_DAILY_EDIT');
 
   // Active Tab: 'daily' | 'import' | 'adjustments' | 'monthly'
   const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments' | 'monthly') || (canViewDaily ? 'daily' : 'import');
   const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments' | 'monthly'>(
     initialTab === 'import' || initialTab === 'adjustments' || initialTab === 'monthly' ? initialTab : (canViewDaily ? 'daily' : 'import')
   );
+
+  useEffect(() => {
+    if (!canViewDaily && activeTab === 'daily') {
+      if (canViewImport) {
+        setActiveTab('import');
+      }
+    }
+  }, [canViewDaily, canViewImport, activeTab]);
 
   // Sync breadcrumb with activeTab
   useEffect(() => {
@@ -1370,15 +1379,17 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => handleTabChange('import')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
-              >
-                <UploadCloud className="w-4 h-4" />
-                <span>นำเข้าไฟล์เวลา</span>
-              </button>
-            </div>
+            {canViewImport && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => handleTabChange('import')}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
+                >
+                  <UploadCloud className="w-4 h-4" />
+                  <span>นำเข้าไฟล์เวลา</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Summary Metric Cards */}
@@ -1489,15 +1500,17 @@ function DailyAttendanceContent() {
                       <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         <Clock className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                         ไม่พบข้อมูลบันทึกเวลาสำหรับวันที่เลือก ({formatThaiDate(selectedDate)})
-                        <div className="mt-3">
-                          <button
-                            onClick={() => handleTabChange('import')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition border border-blue-200"
-                          >
-                            <UploadCloud className="w-3.5 h-3.5" />
-                            นำเข้าไฟล์บันทึกเวลาทันที
-                          </button>
-                        </div>
+                        {canViewImport && (
+                          <div className="mt-3">
+                            <button
+                              onClick={() => handleTabChange('import')}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition border border-blue-200"
+                            >
+                              <UploadCloud className="w-3.5 h-3.5" />
+                              นำเข้าไฟล์บันทึกเวลาทันที
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -1579,13 +1592,15 @@ function DailyAttendanceContent() {
                               <ClipboardCheck className="w-3.5 h-3.5" />
                               <span>ขอปรับเวลา</span>
                             </button>
-                            <button
-                              onClick={() => handleOpenEditModal(rec)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer dark:text-slate-300 dark:border-slate-700"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                              <span>แก้ไข</span>
-                            </button>
+                            {canEditTime && (
+                              <button
+                                onClick={() => handleOpenEditModal(rec)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer dark:text-slate-300 dark:border-slate-700"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>แก้ไข</span>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1932,34 +1947,38 @@ function DailyAttendanceContent() {
                     </button>
                   )}
 
-                  <button
-                    onClick={() => {
-                      if (uploadResult.dateFrom && uploadResult.dateTo) {
-                        setAllowedDateRange({
-                          min: uploadResult.dateFrom,
-                          max: uploadResult.dateTo,
-                          batchName: uploadResult.fileName,
-                          batchId: uploadResult.batchId,
-                        });
-                        setSelectedDate(uploadResult.dateFrom);
-                      } else if (uploadResult.dateFrom) {
-                        setSelectedDate(uploadResult.dateFrom);
-                      }
-                      handleTabChange('daily');
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 border border-blue-300 transition-colors cursor-pointer"
-                  >
-                    ดูข้อมูลที่นำเข้าในหน้าตรวจบันทึกเวลา
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+                  {canViewDaily && (
+                    <button
+                      onClick={() => {
+                        if (uploadResult.dateFrom && uploadResult.dateTo) {
+                          setAllowedDateRange({
+                            min: uploadResult.dateFrom,
+                            max: uploadResult.dateTo,
+                            batchName: uploadResult.fileName,
+                            batchId: uploadResult.batchId,
+                          });
+                          setSelectedDate(uploadResult.dateFrom);
+                        } else if (uploadResult.dateFrom) {
+                          setSelectedDate(uploadResult.dateFrom);
+                        }
+                        handleTabChange('daily');
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 border border-blue-300 transition-colors cursor-pointer"
+                    >
+                      ดูข้อมูลที่นำเข้าในหน้าตรวจบันทึกเวลา
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
 
-                  <Link
-                    href="/payroll"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0B2046] hover:bg-[#112d5e] shadow-xs transition-all cursor-pointer"
-                  >
-                    <span>ไปหน้ารอบเงินเดือน (Payroll)</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
+                  {(hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('PAYROLL_HR_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW') || hasPermission('PAYROLL_ADMIN_VIEW') || hasPermission('PAYROLL_CALC_VIEW') || hasPermission('PAYROLL_VIEW')) && (
+                    <Link
+                      href="/payroll"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0B2046] hover:bg-[#112d5e] shadow-xs transition-all cursor-pointer"
+                    >
+                      <span>ไปหน้ารอบเงินเดือน (Payroll)</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
 
                   <button
                     onClick={() => setUploadResult(null)}

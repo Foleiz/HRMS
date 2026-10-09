@@ -94,6 +94,7 @@ public class RoleService : IRoleService
         new("LEAVE_POLICY", "นโยบายและเงื่อนไขการลา", "LEAVE_POLICY", "LEAVE", "การลา", "LEAVE"),
 
         // 12. เงินเดือน (PAYROLL)
+        new("PAYROLL_PERIOD", "รอบเงินเดือน (Payroll Periods)", "PAYROLL_PERIOD", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_HR", "หน้าต่างเงินเดือนฝ่ายบุคคล (HR)", "PAYROLL_HR", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_FINANCE", "หน้าต่างเงินเดือนฝ่ายการเงิน (Finance)", "PAYROLL_FINANCE", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_ADMIN", "หน้าต่างเงินเดือนผู้ดูแลระบบ/ผู้อนุมัติ (Admin & CEO)", "PAYROLL_ADMIN", "PAYROLL", "เงินเดือน", "PAYROLL"),
@@ -623,50 +624,6 @@ public class RoleService : IRoleService
             }
         }
 
-        // หากมีการเปิดสิทธิ์ดูในโมดูลย่อยใดๆ ให้ผูกสิทธิ์ VIEW ของโมดูลแม่ไว้อัตโนมัติพร้อม Data Scope สูงสุด เพื่อความเข้ากันได้ (Backward Compatibility)
-        var parentPrefixList = StandardModules.Select(m => m.ParentPermissionPrefix).Distinct().ToList();
-        foreach (var parentPref in parentPrefixList)
-        {
-            if (parentPref is "SETTINGS" or "DOCS" or "MASTER_DATA" || parentPref.StartsWith("ESS_") || parentPref.StartsWith("APPROVAL") || parentPref == "WORK_CALENDAR" || parentPref == "ANNOUNCEMENTS") continue;
-
-            var childModules = request.Modules
-                .Where(m => {
-                    var match = StandardModules.FirstOrDefault(sm => sm.Code == m.ModuleCode);
-                    return match != null && match.ParentPermissionPrefix == parentPref;
-                })
-                .ToList();
-
-            var hasAnyChildView = childModules.Any(m =>
-                (m.Self?.View == true) || (m.Team?.View == true) || (m.Department?.View == true) || 
-                (m.Division?.View == true) || (m.Organization?.View == true) || m.CanView);
-
-            if (hasAnyChildView)
-            {
-                var parentViewCode = $"{parentPref}_VIEW";
-                AddPerm(parentViewCode);
-
-                if (childModules.Any(m => m.Organization?.View == true))
-                {
-                    AddDataScope(parentViewCode, "ORGANIZATION");
-                }
-                else if (childModules.Any(m => m.Division?.View == true))
-                {
-                    AddDataScope(parentViewCode, "DIVISION");
-                }
-                else if (childModules.Any(m => m.Department?.View == true))
-                {
-                    AddDataScope(parentViewCode, "DEPARTMENT");
-                }
-                else if (childModules.Any(m => m.Team?.View == true))
-                {
-                    AddDataScope(parentViewCode, "TEAM");
-                }
-                else if (childModules.Any(m => m.Self?.View == true))
-                {
-                    AddDataScope(parentViewCode, "SELF");
-                }
-            }
-        }
 
         // Bulk insert new records in a single save
         var newPerms = addedPermIds.Select(pId => new RolePermission { RoleId = role.Id, PermissionId = pId }).ToList();
