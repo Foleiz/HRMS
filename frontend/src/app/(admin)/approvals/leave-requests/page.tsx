@@ -40,6 +40,17 @@ import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import {
+  useLeaveDecisionData,
+  LeaveDecisionInsightsPanel,
+  LeaveRejectReasonChips,
+  CertDecisionInsightsPanel,
+  CertRejectReasonChips,
+  ResignDecisionInsightsPanel,
+  ResignRejectReasonChips,
+  GeneralDecisionInsightsPanel,
+  GeneralRejectReasonChips,
+} from '@/components/approvals/LeaveDecisionInsights';
 
 // ─── ฟังก์ชันช่วย & โครงสร้างข้อมูล ──────────────────────────────
 
@@ -137,6 +148,10 @@ export default function LeaveRequestsApprovalPage() {
   const [selectedForReject, setSelectedForReject] = useState<LeaveRequest | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [isSubmittingReject, setIsSubmittingReject] = useState(false);
+
+  // Leave Decision Data Hooks
+  const approveLeaveDecisionData = useLeaveDecisionData(selectedForApprove, leaveRequests);
+  const rejectLeaveDecisionData = useLeaveDecisionData(selectedForReject, leaveRequests);
 
   // Leave Timeline Modal State
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
@@ -1408,42 +1423,24 @@ export default function LeaveRequestsApprovalPage() {
       {selectedForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำขอลา</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {selectedForApprove.requestNo} • {selectedForApprove.employeeName}
+                  {selectedForApprove.departmentName ? ` (${selectedForApprove.departmentName})` : ''}
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">ประเภทการลา:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedForApprove.leaveTypeName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">ช่วงเวลาลา:</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">
-                  {formatDate(selectedForApprove.startDate ?? selectedForApprove.startDatetime)} -{' '}
-                  {formatDate(selectedForApprove.endDate ?? selectedForApprove.endDatetime)} ({selectedForApprove.leaveDays} วัน)
-                </span>
-              </div>
-              {selectedForApprove.totalSteps && selectedForApprove.totalSteps > 0 && (
-                <div className="flex justify-between pt-1 border-t border-slate-200">
-                  <span className="text-slate-500 dark:text-slate-400">ขั้นตอนการอนุมัติ:</span>
-                  <span className="font-bold text-[#0B2046]">
-                    ขั้นที่ {selectedForApprove.currentStepNo ?? 1} จาก {selectedForApprove.totalSteps} ({selectedForApprove.currentApproverDisplay ?? ''})
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* ข้อมูลประกอบการตัดสินใจ (เอาขั้นตอนการอนุมัติออก และแสดงข้อมูลสิทธิ์/การลาชนกัน/ประวัติ) */}
+            <LeaveDecisionInsightsPanel request={selectedForApprove} data={approveLeaveDecisionData} />
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1453,12 +1450,12 @@ export default function LeaveRequestsApprovalPage() {
                 value={approveComment}
                 onChange={(e) => setApproveComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={3}
+                rows={2}
                 className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedForApprove(null)}
@@ -1489,19 +1486,46 @@ export default function LeaveRequestsApprovalPage() {
       {selectedForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <XCircle className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำขอลา</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {selectedForReject.requestNo} • {selectedForReject.employeeName}
+                  {selectedForReject.departmentName ? ` (${selectedForReject.departmentName})` : ''}
                 </p>
               </div>
+            </div>
+
+            {/* ข้อมูลประกอบการตัดสินใจสำหรับปฏิเสธ (แบบกระชับ) */}
+            <LeaveDecisionInsightsPanel request={selectedForReject} data={rejectLeaveDecisionData} compact />
+
+            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว (Quick Reject Reasons) */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  เลือกเหตุผลแบบรวดเร็ว (คลิกเพื่อเลือกหรือพิมพ์เอง)
+                </label>
+                {rejectReason && (
+                  <button
+                    type="button"
+                    onClick={() => setRejectReason('')}
+                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
+                  >
+                    ล้างข้อความ
+                  </button>
+                )}
+              </div>
+              <LeaveRejectReasonChips
+                warnings={rejectLeaveDecisionData.warnings}
+                value={rejectReason}
+                onChange={setRejectReason}
+              />
             </div>
 
             <div>
@@ -1517,7 +1541,7 @@ export default function LeaveRequestsApprovalPage() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedForReject(null)}
@@ -1544,43 +1568,34 @@ export default function LeaveRequestsApprovalPage() {
         </div>
       )}
 
+
       {/* ─── Modal ยืนยันการอนุมัติคำขอหนังสือรับรอง ─── */}
       {selectedCertForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำขอหนังสือรับรอง</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   CERT-{String(selectedCertForApprove.id).padStart(4, '0')} • {selectedCertForApprove.employeeName}
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">ประเภทหนังสือรับรอง:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedCertForApprove.certificateName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">วัตถุประสงค์:</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{selectedCertForApprove.purpose || '-'}</span>
-              </div>
-              {selectedCertForApprove.totalSteps && selectedCertForApprove.totalSteps > 0 && (
-                <div className="flex justify-between pt-1 border-t border-slate-200">
-                  <span className="text-slate-500 dark:text-slate-400">ขั้นตอนการอนุมัติ:</span>
-                  <span className="font-bold text-[#0B2046]">
-                    ขั้นที่ {selectedCertForApprove.currentStepNo ?? 1} จาก {selectedCertForApprove.totalSteps} ({selectedCertForApprove.currentApproverDisplay ?? 'ฝ่ายบุคคล'})
-                  </span>
-                </div>
-              )}
-            </div>
+            {/* ข้อมูลประกอบการตัดสินใจสำหรับหนังสือรับรอง (เอาขั้นตอนการอนุมัติออก) */}
+            <CertDecisionInsightsPanel
+              request={selectedCertForApprove}
+              onPreview={() => {
+                setSelectedCertForPreview(selectedCertForApprove);
+                setIsCertPreviewOpen(true);
+              }}
+            />
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1590,12 +1605,12 @@ export default function LeaveRequestsApprovalPage() {
                 value={approveCertComment}
                 onChange={(e) => setApproveCertComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={3}
+                rows={2}
                 className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedCertForApprove(null)}
@@ -1626,19 +1641,41 @@ export default function LeaveRequestsApprovalPage() {
       {selectedCertForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <XCircle className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำขอหนังสือรับรอง</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   CERT-{String(selectedCertForReject.id).padStart(4, '0')} • {selectedCertForReject.employeeName}
                 </p>
               </div>
+            </div>
+
+            {/* ข้อมูลสรุปคำขอหนังสือรับรอง */}
+            <CertDecisionInsightsPanel request={selectedCertForReject} compact />
+
+            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  เลือกเหตุผลแบบรวดเร็ว
+                </label>
+                {rejectCertReason && (
+                  <button
+                    type="button"
+                    onClick={() => setRejectCertReason('')}
+                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
+                  >
+                    ล้างข้อความ
+                  </button>
+                )}
+              </div>
+              <CertRejectReasonChips value={rejectCertReason} onChange={setRejectCertReason} />
             </div>
 
             <div>
@@ -1654,7 +1691,7 @@ export default function LeaveRequestsApprovalPage() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedCertForReject(null)}
@@ -1666,8 +1703,8 @@ export default function LeaveRequestsApprovalPage() {
               <button
                 type="button"
                 onClick={submitCertReject}
-                disabled={isSubmittingCertReject}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                disabled={isSubmittingCertReject || !rejectCertReason.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
               >
                 {isSubmittingCertReject ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1712,35 +1749,29 @@ export default function LeaveRequestsApprovalPage() {
       {selectedResignForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำขอลาออก</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {selectedResignForApprove.requestNo} • {selectedResignForApprove.employeeName}
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">วันทำงานสุดท้าย:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{formatDate(selectedResignForApprove.requestedLastWorkingDate)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">บอกล่วงหน้า:</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{selectedResignForApprove.noticePeriodDays} วัน</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">เหตุผลการลาออก:</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{selectedResignForApprove.reasonCategory || selectedResignForApprove.reason}</span>
-              </div>
-            </div>
+            {/* ข้อมูลประกอบการตัดสินใจสำหรับคำขอลาออก */}
+            <ResignDecisionInsightsPanel
+              request={selectedResignForApprove}
+              onPreview={() => {
+                setSelectedResignForPreview(selectedResignForApprove);
+                setIsResignPreviewOpen(true);
+              }}
+            />
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1750,12 +1781,12 @@ export default function LeaveRequestsApprovalPage() {
                 value={approveResignComment}
                 onChange={(e) => setApproveResignComment(e.target.value)}
                 placeholder="ระบุข้อความหรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={3}
+                rows={2}
                 className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedResignForApprove(null)}
@@ -1786,19 +1817,45 @@ export default function LeaveRequestsApprovalPage() {
       {selectedResignForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <XCircle className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำขอลาออก</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {selectedResignForReject.requestNo} • {selectedResignForReject.employeeName}
                 </p>
               </div>
+            </div>
+
+            {/* ข้อมูลสรุปคำขอลาออก */}
+            <ResignDecisionInsightsPanel request={selectedResignForReject} compact />
+
+            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  เลือกเหตุผลแบบรวดเร็ว
+                </label>
+                {rejectResignReason && (
+                  <button
+                    type="button"
+                    onClick={() => setRejectResignReason('')}
+                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
+                  >
+                    ล้างข้อความ
+                  </button>
+                )}
+              </div>
+              <ResignRejectReasonChips
+                isShortNotice={selectedResignForReject.noticePeriodDays < 30}
+                value={rejectResignReason}
+                onChange={setRejectResignReason}
+              />
             </div>
 
             <div>
@@ -1814,7 +1871,7 @@ export default function LeaveRequestsApprovalPage() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedResignForReject(null)}
@@ -1826,8 +1883,8 @@ export default function LeaveRequestsApprovalPage() {
               <button
                 type="button"
                 onClick={submitResignReject}
-                disabled={isSubmittingResignReject}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                disabled={isSubmittingResignReject || !rejectResignReason.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
               >
                 {isSubmittingResignReject ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -1870,36 +1927,27 @@ export default function LeaveRequestsApprovalPage() {
       {selectedGeneralForApprove && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำร้องเอกสารทั่วไป</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {selectedGeneralForApprove.requestNo} • {selectedGeneralForApprove.employeeName}
                 </p>
               </div>
             </div>
 
-            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">ประเภทเอกสาร:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{selectedGeneralForApprove.documentType}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500 dark:text-slate-400">วัตถุประสงค์:</span>
-                <span className="font-medium text-slate-800 dark:text-slate-200">{selectedGeneralForApprove.purpose}</span>
-              </div>
-              {selectedGeneralForApprove.fileName && (
-                <div className="flex justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">ไฟล์แนบ:</span>
-                  <button
-                    type="button"
-                    onClick={async () => {
+            {/* ข้อมูลประกอบการตัดสินใจสำหรับคำร้องเอกสารทั่วไป */}
+            <GeneralDecisionInsightsPanel
+              request={selectedGeneralForApprove}
+              onDownloadAttachment={
+                selectedGeneralForApprove.fileName
+                  ? async () => {
                       try {
                         const blob = await generalDocumentService.downloadAttachment(selectedGeneralForApprove.id);
                         const url = URL.createObjectURL(blob);
@@ -1911,16 +1959,25 @@ export default function LeaveRequestsApprovalPage() {
                       } catch {
                         showToast('ไม่สามารถดาวน์โหลดไฟล์แนบได้', 'error');
                       }
-                    }}
-                    className="font-medium text-blue-600 hover:underline truncate max-w-44 cursor-pointer"
-                  >
-                    {selectedGeneralForApprove.fileName}
-                  </button>
-                </div>
-              )}
+                    }
+                  : undefined
+              }
+            />
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                ความเห็นผู้อนุมัติ (ไม่บังคับ)
+              </label>
+              <textarea
+                value={approveGeneralComment}
+                onChange={(e) => setApproveGeneralComment(e.target.value)}
+                placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
+                rows={2}
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
+              />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedGeneralForApprove(null)}
@@ -1951,19 +2008,41 @@ export default function LeaveRequestsApprovalPage() {
       {selectedGeneralForReject && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
           <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                 <XCircle className="w-5 h-5" />
               </div>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำร้องเอกสารทั่วไป</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {selectedGeneralForReject.requestNo} • {selectedGeneralForReject.employeeName}
                 </p>
               </div>
+            </div>
+
+            {/* ข้อมูลสรุปคำร้องเอกสารทั่วไป */}
+            <GeneralDecisionInsightsPanel request={selectedGeneralForReject} compact />
+
+            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  เลือกเหตุผลแบบรวดเร็ว
+                </label>
+                {rejectGeneralReason && (
+                  <button
+                    type="button"
+                    onClick={() => setRejectGeneralReason('')}
+                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
+                  >
+                    ล้างข้อความ
+                  </button>
+                )}
+              </div>
+              <GeneralRejectReasonChips value={rejectGeneralReason} onChange={setRejectGeneralReason} />
             </div>
 
             <div>
@@ -1979,7 +2058,7 @@ export default function LeaveRequestsApprovalPage() {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button
                 type="button"
                 onClick={() => setSelectedGeneralForReject(null)}
@@ -1991,8 +2070,8 @@ export default function LeaveRequestsApprovalPage() {
               <button
                 type="button"
                 onClick={submitGeneralReject}
-                disabled={isSubmittingGeneralReject}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                disabled={isSubmittingGeneralReject || !rejectGeneralReason.trim()}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
               >
                 {isSubmittingGeneralReject ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
