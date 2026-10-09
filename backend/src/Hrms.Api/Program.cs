@@ -264,6 +264,27 @@ app.UseMiddleware<AuditLoggingMiddleware>();
 
 app.MapControllers();
 
+// ตรวจสอบและสร้างคอลัมน์แนบเอกสารสัญญาจ้างงานอัตโนมัติ (idempotent)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<Hrms.Infrastructure.Persistence.HrmsDbContext>();
+    try
+    {
+        await db.Database.ExecuteSqlRawAsync(@"
+            ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_file_name varchar(255) NULL;
+            ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_file_data bytea NULL;
+            ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_mime_type varchar(100) NULL;
+            ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_file_size bigint NULL;
+            ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_uploaded_at timestamptz NULL;
+        ");
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogWarning(ex, "ไม่สามารถตรวจสอบ schema document ใน employment_contract ได้");
+    }
+}
+
 app.Run();
 
 /// <summary>

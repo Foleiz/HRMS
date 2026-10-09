@@ -21,6 +21,8 @@ import {
   X,
   Loader2,
   Paperclip,
+  Download,
+  Upload,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -32,6 +34,8 @@ import { Employee } from '@/types/employee';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import ContractDetailModal from '@/components/contracts/ContractDetailModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
+import AttachContractModal from '@/components/contracts/AttachContractModal';
+import ContractDocumentPreviewModal from '@/components/contracts/ContractDocumentPreviewModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
@@ -70,6 +74,12 @@ export default function ContractsPage() {
     name: string;
     code: string;
   } | null>(null);
+
+  // Document Attach & Preview Modals
+  const [selectedContractForAttach, setSelectedContractForAttach] = useState<EmploymentContract | null>(null);
+  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
+  const [selectedContractForDocPreview, setSelectedContractForDocPreview] = useState<EmploymentContract | null>(null);
+  const [isDocPreviewModalOpen, setIsDocPreviewModalOpen] = useState(false);
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -276,9 +286,9 @@ export default function ContractsPage() {
           </div>
         </div>
 
-        {/* 6. Contracts Table ตรงตาม Mockup 100% */}
+        {/* 6. Contracts Table ตรงตาม Mockup 100% พร้อมคอลัมน์เอกสารสัญญา */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[750px] text-left border-collapse text-sm whitespace-nowrap">
+          <table className="w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
@@ -286,13 +296,14 @@ export default function ContractsPage() {
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">เริ่มสัญญา</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">สิ้นสุด / ครบทดลองงาน</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
+                <th className="py-3.5 px-6 font-medium whitespace-nowrap">เอกสารสัญญา</th>
                 <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
                       <span>กำลังโหลดข้อมูลสัญญาจ้างงาน...</span>
@@ -301,7 +312,7 @@ export default function ContractsPage() {
                 </tr>
               ) : paginatedContracts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-slate-500">
                     ไม่พบข้อมูลสัญญาจ้างงาน
                   </td>
                 </tr>
@@ -317,13 +328,8 @@ export default function ContractsPage() {
                         >
                           {contract.employeeName}
                         </Link>
-                        <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal">·</span>
+                        <span className="text-slate-400 dark:text-slate-500 font-normal">·</span>
                         <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">{contract.employeeCode}</span>
-                        {contract.hasDocument && (
-                          <span title={`มีเอกสารสัญญาแนบ: ${contract.documentFileName ?? ''}`} className="inline-flex items-center text-blue-600">
-                            <Paperclip className="w-3.5 h-3.5" />
-                          </span>
-                        )}
                       </div>
                     </td>
 
@@ -355,17 +361,49 @@ export default function ContractsPage() {
                           รออนุมัติ
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
                           <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
                           สิ้นสุดแล้ว
                         </span>
                       )}
                     </td>
 
+                    {/* เอกสารสัญญา: แนบไฟล์แล้ว (ดูตัวอย่าง 1-Click) หรือ ยังไม่แนบ (+ แนบเอกสาร) */}
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      {contract.hasDocument ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedContractForDocPreview(contract);
+                            setIsDocPreviewModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer group shadow-2xs"
+                          title={contract.documentFileName ? `คลิกเพื่อดูเอกสาร: ${contract.documentFileName}` : 'ดูเอกสารสัญญา'}
+                        >
+                          <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                          <span className="truncate max-w-[130px]">{contract.documentFileName || 'ดูเอกสารสัญญา'}</span>
+                          <Eye className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedContractForAttach(contract);
+                            setIsAttachModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer"
+                          title={`แนบเอกสารสัญญาจ้างสำหรับ ${contract.employeeName}`}
+                        >
+                          <Paperclip className="w-3.5 h-3.5 text-slate-400" />
+                          <span>+ แนบเอกสาร</span>
+                        </button>
+                      )}
+                    </td>
+
                     {/* 3-Dots Action Menu */}
                     <td className="py-4 px-6 text-right whitespace-nowrap">
                       <ActionDropdown
-                        menuClassName="w-40"
+                        menuClassName="w-44"
                         items={[
                           {
                             label: 'ประวัติรายบุคคล',
@@ -387,6 +425,46 @@ export default function ContractsPage() {
                               setIsDetailModalOpen(true);
                             },
                           },
+                          {
+                            label: contract.hasDocument ? 'เปลี่ยนเอกสารสัญญา' : 'แนบเอกสารสัญญา',
+                            icon: <Paperclip className="w-3.5 h-3.5 text-indigo-600" />,
+                            onClick: () => {
+                              setSelectedContractForAttach(contract);
+                              setIsAttachModalOpen(true);
+                            },
+                          },
+                          ...(contract.hasDocument
+                            ? [
+                                {
+                                  label: 'ดูเอกสารสัญญา',
+                                  icon: <FileText className="w-3.5 h-3.5 text-blue-600" />,
+                                  onClick: () => {
+                                    setSelectedContractForDocPreview(contract);
+                                    setIsDocPreviewModalOpen(true);
+                                  },
+                                },
+                                {
+                                  label: 'ดาวน์โหลดเอกสาร',
+                                  icon: <Download className="w-3.5 h-3.5 text-emerald-600" />,
+                                  onClick: async () => {
+                                    try {
+                                      const res = await contractService.getDocumentBlob(contract.id, false);
+                                      const url = URL.createObjectURL(res.blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      a.download = contract.documentFileName || res.fileName;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      document.body.removeChild(a);
+                                      URL.revokeObjectURL(url);
+                                      toast.success('เริ่มดาวน์โหลดเอกสารสัญญา');
+                                    } catch {
+                                      toast.error('ไม่สามารถดาวน์โหลดเอกสารได้');
+                                    }
+                                  },
+                                },
+                              ]
+                            : []),
                           ...(contract.status === 'ACTIVE'
                             ? [
                                 {
@@ -408,6 +486,7 @@ export default function ContractsPage() {
               )}
             </tbody>
           </table>
+
         </div>
 
         {/* 7. Pagination Footer ตรงตาม Mockup (< 1 2 3 4 >) */}
@@ -497,6 +576,31 @@ export default function ContractsPage() {
         employeeId={selectedTimelineEmployee?.id ?? null}
         employeeName={selectedTimelineEmployee?.name ?? ''}
         employeeCode={selectedTimelineEmployee?.code ?? ''}
+      />
+
+      {/* 9. แนบเอกสารสัญญาจ้างงานรายบุคคล */}
+      <AttachContractModal
+        contract={selectedContractForAttach}
+        isOpen={isAttachModalOpen}
+        onClose={() => {
+          setIsAttachModalOpen(false);
+          setSelectedContractForAttach(null);
+        }}
+        onSuccess={(updated) => {
+          setContracts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+          fetchData();
+        }}
+      />
+
+      {/* 10. ดูตัวอย่างเอกสารสัญญาจ้างงาน */}
+      <ContractDocumentPreviewModal
+        contractId={selectedContractForDocPreview?.id ?? null}
+        fileName={selectedContractForDocPreview?.documentFileName}
+        isOpen={isDocPreviewModalOpen}
+        onClose={() => {
+          setIsDocPreviewModalOpen(false);
+          setSelectedContractForDocPreview(null);
+        }}
       />
     </div>
   );
