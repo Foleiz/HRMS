@@ -1,4 +1,4 @@
-﻿namespace Hrms.Application.Features.Approvals.DTOs;
+namespace Hrms.Application.Features.Approvals.DTOs;
 
 public record WorkflowActionResult
 {
@@ -45,4 +45,28 @@ public record ProcessApprovalActionRequest
 {
     public string Action { get; init; } = "APPROVE"; // APPROVE, REJECT, CANCEL
     public string? Comment { get; init; }
+}
+
+public class ApprovalStepSnapshot
+{
+    public long? StepId { get; set; }
+    public int StepNo { get; set; }
+    public string ApproverType { get; set; } = string.Empty;
+    public long? ApproverRoleId { get; set; }
+    public string? ApproverRoleName { get; set; }
+    public long? ApproverEmployeeId { get; set; }
+    public string? ApproverEmployeeName { get; set; }
+    public string? ApproverScope { get; set; }
+    public string? FallbackAction { get; set; }
+    public string? ApproverTitle { get; set; }
+    public bool IsRequired { get; set; } = true;
+}
+
+public class ApprovalFlowSnapshot
+{
+    public long FlowId { get; set; }
+    public string FlowName { get; set; } = string.Empty;
+    public string FlowCode { get; set; } = string.Empty;
+    public string DocumentType { get; set; } = string.Empty;
+    public List<ApprovalStepSnapshot> Steps { get; set; } = new();
 }

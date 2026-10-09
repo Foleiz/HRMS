@@ -264,7 +264,7 @@ app.UseMiddleware<AuditLoggingMiddleware>();
 
 app.MapControllers();
 
-// ตรวจสอบและสร้างคอลัมน์แนบเอกสารสัญญาจ้างงานอัตโนมัติ (idempotent)
+// ตรวจสอบและสร้างคอลัมน์แนบเอกสารสัญญาจ้างงาน และ flow_snapshot_json ใน approval_instance อัตโนมัติ (idempotent)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<Hrms.Infrastructure.Persistence.HrmsDbContext>();
@@ -276,12 +276,33 @@ using (var scope = app.Services.CreateScope())
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_mime_type varchar(100) NULL;
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_file_size bigint NULL;
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_uploaded_at timestamptz NULL;
+
+            ALTER TABLE hrms.approval_instance ADD COLUMN IF NOT EXISTS flow_snapshot_json text NULL;
         ");
+
+        // Backfill flow_snapshot_json ให้กับ approval_instance ที่ยังไม่มี snapshot
+        var unSnapshottedInstances = await db.ApprovalInstances
+            .Include(i => i.ApprovalFlow)!.ThenInclude(f => f!.Steps)!.ThenInclude(s => s.ApproverRole)
+            .Include(i => i.ApprovalFlow)!.ThenInclude(f => f!.Steps)!.ThenInclude(s => s.ApproverEmployee)
+            .Where(i => i.FlowSnapshotJson == null && i.ApprovalFlow != null)
+            .ToListAsync();
+
+        if (unSnapshottedInstances.Any())
+        {
+            foreach (var inst in unSnapshottedInstances)
+            {
+                if (inst.ApprovalFlow != null && inst.ApprovalFlow.Steps.Any())
+                {
+                    inst.FlowSnapshotJson = Hrms.Application.Features.Approvals.Services.ApprovalWorkflowService.SerializeFlowSnapshot(inst.ApprovalFlow);
+                }
+            }
+            await db.SaveChangesAsync();
+        }
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-        logger.LogWarning(ex, "ไม่สามารถตรวจสอบ schema document ใน employment_contract ได้");
+        logger.LogWarning(ex, "ไม่สามารถตรวจสอบ schema หรือ backfill snapshot ใน approval_instance ได้");
     }
 }
 

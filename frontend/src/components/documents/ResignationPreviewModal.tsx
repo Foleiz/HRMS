@@ -516,7 +516,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   if (!isOpen || !data) return null;
 
   const address = companyAddress || DEFAULT_COMPANY_ADDRESS;
-  const approvalSlots = timelineSlots || simulatedSlots || DEFAULT_SLOTS;
+  const approvalSlots = timelineSlots || (data.id ? DEFAULT_SLOTS : simulatedSlots) || DEFAULT_SLOTS;
 
   return (
     <>

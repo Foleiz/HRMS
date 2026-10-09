@@ -474,6 +474,7 @@ export const useApprovalSlots = (params: {
   const [viewerPosition, setViewerPosition] = useState<string | null>(null);
   const cacheKey = `${employeeId}_${documentType}`;
   const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(() => {
+    if (isExistingDocument) return null;
     return employeeId ? simulatedSlotsCache.get(cacheKey) ?? null : null;
   });
   const showViewerPreview = !!(isOpen && canApproveCurrentStep && user?.employeeId);
@@ -566,6 +567,10 @@ export const useApprovalSlots = (params: {
           status: s.status,
         };
       });
+  }
+
+  if (isExistingDocument) {
+    return DEFAULT_SLOTS;
   }
 
   return simulatedSlots || DEFAULT_SLOTS;

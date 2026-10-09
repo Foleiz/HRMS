@@ -1,4 +1,4 @@
-﻿using Hrms.Domain.Common;
+using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
@@ -18,6 +18,12 @@ public class ApprovalInstance : BaseEntity
     public DateTime? CompletedAt { get; set; }
     /// <summary>เตือนผู้อนุมัติครั้งล่าสุด (รายการค้างอนุมัติ)</summary>
     public DateTime? LastRemindedAt { get; set; }
+
+    /// <summary>
+    /// สแนปช็อตของขั้นตอนสายการอนุมัติ ณ ตอนที่สร้างคำขอ หรือตอนที่อนุมัติ (JSON)
+    /// เพื่อป้องกันไม่ให้การแก้ไขสายการอนุมัติในอนาคตกระทบต่อเอกสารเดิมหรือเอกสารที่อนุมัติแล้ว
+    /// </summary>
+    public string? FlowSnapshotJson { get; set; }
 
     // Navigation Properties
     public virtual ApprovalFlow? ApprovalFlow { get; set; }

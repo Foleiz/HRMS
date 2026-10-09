@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Approvals.DTOs;
 using Hrms.Domain.Entities;
@@ -25,7 +26,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         // 2. ดึง Active Flows ทั้งหมดของประเภทเอกสารนี้
         var candidateFlows = await _context.ApprovalFlows
             .AsNoTracking()
-            .Include(f => f.Steps)
+            .Include(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Where(f => f.DocumentType == documentType && f.Status == "ACTIVE")
             .ToListAsync(cancellationToken);
 
@@ -66,7 +68,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             SourceDocumentId = sourceDocumentId,
             CurrentStepNo = firstStep.StepNo,
             Status = "PENDING",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            FlowSnapshotJson = SerializeFlowSnapshot(selectedFlow)
         };
 
         _context.ApprovalInstances.Add(instance);
@@ -685,7 +688,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
             .FirstOrDefaultAsync(i => i.Id == instanceId, cancellationToken);
 
-        if (instance == null || instance.ApprovalFlow == null)
+        if (instance == null || (instance.ApprovalFlow == null && string.IsNullOrWhiteSpace(instance.FlowSnapshotJson)))
         {
             return null;
         }
@@ -704,7 +707,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .OrderByDescending(i => i.Id)
             .FirstOrDefaultAsync(i => i.DocumentType == documentType && i.SourceDocumentId == sourceDocumentId, cancellationToken);
 
-        if (instance == null || instance.ApprovalFlow == null)
+        if (instance == null || (instance.ApprovalFlow == null && string.IsNullOrWhiteSpace(instance.FlowSnapshotJson)))
         {
             return null;
         }
@@ -974,13 +977,166 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         return allowed;
     }
 
+    public static string FormatApproverTitle(string approverType, string? roleName, string? employeeName, string? scope)
+    {
+        return approverType switch
+        {
+            "ROLE" => (roleName ?? "บทบาทตามระบบ") + scope switch
+            {
+                "DEPARTMENT" => " (แผนกเดียวกับผู้ยื่น)",
+                "DIVISION" => " (ฝ่ายเดียวกับผู้ยื่น)",
+                _ => ""
+            },
+            "EMPLOYEE" => employeeName ?? "พนักงานระบุตัวบุคคล",
+            "MANAGER" => "หัวหน้างานโดยตรงของผู้ยื่น",
+            "DEPARTMENT_HEAD" => "หัวหน้าแผนกของผู้ยื่น",
+            "DIVISION_HEAD" => "หัวหน้าฝ่ายของผู้ยื่น",
+            "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
+            "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+            _ => approverType
+        };
+    }
+
+    public static string SerializeFlowSnapshot(ApprovalFlow flow)
+    {
+        var snapshot = new ApprovalFlowSnapshot
+        {
+            FlowId = flow.Id,
+            FlowName = flow.FlowName,
+            FlowCode = flow.FlowCode,
+            DocumentType = flow.DocumentType,
+            Steps = flow.Steps.OrderBy(s => s.StepNo).Select(s => new ApprovalStepSnapshot
+            {
+                StepId = s.Id,
+                StepNo = s.StepNo,
+                ApproverType = s.ApproverType,
+                ApproverRoleId = s.ApproverRoleId,
+                ApproverRoleName = s.ApproverRole?.RoleName,
+                ApproverEmployeeId = s.ApproverEmployeeId,
+                ApproverEmployeeName = s.ApproverEmployee?.FullName,
+                ApproverScope = s.ApproverScope,
+                FallbackAction = s.FallbackAction,
+                ApproverTitle = FormatApproverTitle(s.ApproverType, s.ApproverRole?.RoleName, s.ApproverEmployee?.FullName, s.ApproverScope),
+                IsRequired = s.IsRequired
+            }).ToList()
+        };
+
+        return JsonSerializer.Serialize(snapshot);
+    }
+
     private static ApprovalTimelineDto BuildTimelineDto(ApprovalInstance instance)
     {
-        var steps = instance.ApprovalFlow.Steps
-            .OrderBy(s => s.StepNo)
-            .ToList();
+        ApprovalFlowSnapshot? snapshot = null;
+        if (!string.IsNullOrWhiteSpace(instance.FlowSnapshotJson))
+        {
+            try
+            {
+                snapshot = JsonSerializer.Deserialize<ApprovalFlowSnapshot>(instance.FlowSnapshotJson);
+            }
+            catch
+            {
+                snapshot = null;
+            }
+        }
 
         var timelineSteps = new List<ApprovalTimelineStepDto>();
+
+        if (snapshot != null && snapshot.Steps.Any())
+        {
+            var orderedSnapshotSteps = snapshot.Steps.OrderBy(s => s.StepNo).ToList();
+            var allActions = instance.Actions.ToList();
+
+            foreach (var step in orderedSnapshotSteps)
+            {
+                // หา action ที่ตรงกับขั้นตอนนี้:
+                // 1. ตรงตาม ApprovalStepId
+                var action = (step.StepId.HasValue && step.StepId.Value > 0)
+                    ? allActions.Where(a => a.ApprovalStepId == step.StepId.Value).OrderByDescending(a => a.ActionAt).FirstOrDefault()
+                    : null;
+
+                // 2. ถ้ายังไม่พบ ให้ fallback จับคู่ตามลำดับขั้นตอนที่มีการอนุมัติ/ดำเนินการ
+                if (action == null)
+                {
+                    var orderedActions = allActions.OrderBy(a => a.ActionAt).ToList();
+                    int actionIdx = step.StepNo - 1;
+                    if (actionIdx >= 0 && actionIdx < orderedActions.Count)
+                    {
+                        action = orderedActions[actionIdx];
+                    }
+                }
+
+                string status;
+                if (action != null)
+                {
+                    status = action.ActionDecision switch
+                    {
+                        "APPROVE" => "COMPLETED",
+                        "REJECT" => "REJECTED",
+                        "CANCEL" => "CANCELLED",
+                        _ => "COMPLETED"
+                    };
+                }
+                else if (instance.Status == "PENDING" && step.StepNo == instance.CurrentStepNo)
+                {
+                    status = "WAITING";
+                }
+                else if (string.Equals(step.FallbackAction, "SKIP", StringComparison.OrdinalIgnoreCase)
+                         && (instance.Status == "APPROVED" || (instance.CurrentStepNo.HasValue && step.StepNo < instance.CurrentStepNo.Value)))
+                {
+                    status = "SKIPPED";
+                }
+                else if (instance.Status == "APPROVED" || (instance.CurrentStepNo.HasValue && step.StepNo < instance.CurrentStepNo.Value))
+                {
+                    status = "COMPLETED";
+                }
+                else
+                {
+                    status = "PENDING_FUTURE";
+                }
+
+                var title = !string.IsNullOrWhiteSpace(step.ApproverTitle)
+                    ? step.ApproverTitle
+                    : FormatApproverTitle(step.ApproverType, step.ApproverRoleName, step.ApproverEmployeeName, step.ApproverScope);
+
+                timelineSteps.Add(new ApprovalTimelineStepDto
+                {
+                    StepNo = step.StepNo,
+                    ApproverTitle = title,
+                    ApproverType = step.ApproverType,
+                    DesignatedApproverName = step.ApproverEmployeeName,
+                    Status = status,
+                    ActionByEmployeeId = action?.ApproverEmployeeId,
+                    ActionByEmployeeName = action?.ApproverEmployee?.FullName,
+                    ActionByPositionName = action?.ApproverEmployee?.Assignments
+                        .Where(x => x.IsCurrent)
+                        .Select(x => x.Position?.PositionName)
+                        .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)),
+                    ActionDecision = action?.ActionDecision,
+                    ActionAt = action?.ActionAt,
+                    Comment = action?.Comment
+                });
+            }
+
+            return new ApprovalTimelineDto
+            {
+                InstanceId = instance.Id,
+                FlowId = instance.ApprovalFlowId,
+                FlowName = !string.IsNullOrWhiteSpace(snapshot.FlowName) ? snapshot.FlowName : (instance.ApprovalFlow?.FlowName ?? ""),
+                FlowCode = !string.IsNullOrWhiteSpace(snapshot.FlowCode) ? snapshot.FlowCode : (instance.ApprovalFlow?.FlowCode ?? ""),
+                DocumentType = instance.DocumentType,
+                SourceDocumentId = instance.SourceDocumentId,
+                CurrentStepNo = instance.CurrentStepNo,
+                TotalSteps = orderedSnapshotSteps.Count,
+                Status = instance.Status,
+                CreatedAt = instance.CreatedAt,
+                CompletedAt = instance.CompletedAt,
+                Steps = timelineSteps
+            };
+        }
+
+        var steps = (instance.ApprovalFlow?.Steps ?? Enumerable.Empty<ApprovalStep>())
+            .OrderBy(s => s.StepNo)
+            .ToList();
 
         foreach (var step in steps)
         {
@@ -1020,22 +1176,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 status = "PENDING_FUTURE";
             }
 
-            var title = step.ApproverType switch
-            {
-                "ROLE" => (step.ApproverRole?.RoleName ?? "บทบาทตามระบบ") + step.ApproverScope switch
-                {
-                    "DEPARTMENT" => " (แผนกเดียวกับผู้ยื่น)",
-                    "DIVISION" => " (ฝ่ายเดียวกับผู้ยื่น)",
-                    _ => ""
-                },
-                "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
-                "MANAGER" => "หัวหน้างานโดยตรงของผู้ยื่น",
-                "DEPARTMENT_HEAD" => "หัวหน้าแผนกของผู้ยื่น",
-                "DIVISION_HEAD" => "หัวหน้าฝ่ายของผู้ยื่น",
-                "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
-                "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
-                _ => step.ApproverType
-            };
+            var title = FormatApproverTitle(step.ApproverType, step.ApproverRole?.RoleName, step.ApproverEmployee?.FullName, step.ApproverScope);
 
             timelineSteps.Add(new ApprovalTimelineStepDto
             {
@@ -1060,8 +1201,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
         {
             InstanceId = instance.Id,
             FlowId = instance.ApprovalFlowId,
-            FlowName = instance.ApprovalFlow.FlowName,
-            FlowCode = instance.ApprovalFlow.FlowCode,
+            FlowName = instance.ApprovalFlow?.FlowName ?? "",
+            FlowCode = instance.ApprovalFlow?.FlowCode ?? "",
             DocumentType = instance.DocumentType,
             SourceDocumentId = instance.SourceDocumentId,
             CurrentStepNo = instance.CurrentStepNo,

@@ -532,7 +532,7 @@ public class CertificateService : ICertificateService
             .OrderByDescending(s => s.EffectiveFrom)
             .FirstOrDefaultAsync(cancellationToken);
 
-        // ผู้มีอำนาจลงนาม (ลายเซ็นที่เปิดใช้งานล่าสุด)
+        // ผู้มีอำนาจลงนาม (ลายเซ็นที่เปิดใช้งานล่าสุด เป็นค่าเริ่มต้น)
         var activeSignature = await _context.EmployeeSignatures.AsNoTracking()
             .Include(s => s.Employee)
             .Where(s => s.IsActive)
@@ -554,6 +554,51 @@ public class CertificateService : ICertificateService
             {
                 var mime = string.IsNullOrWhiteSpace(activeSignature.MimeType) ? "image/png" : activeSignature.MimeType;
                 signatureBase64 = $"data:{mime};base64,{Convert.ToBase64String(activeSignature.SignatureData)}";
+            }
+        }
+
+        // หากเป็นเอกสารคำขอที่อนุมัติแล้ว และมีข้อมูลผู้อนุมัติจาก ApprovalAction ให้ใช้ข้อมูลผู้อนุมัติจริงที่เซ็นอนุมัติ
+        if (requestId > 0)
+        {
+            var certReq = await _context.CertificateRequests.AsNoTracking()
+                .Include(r => r.ApprovalInstance)
+                    .ThenInclude(ai => ai!.Actions)
+                        .ThenInclude(a => a.ApproverEmployee)
+                            .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent))
+                                .ThenInclude(x => x.Position)
+                .FirstOrDefaultAsync(r => r.Id == requestId, cancellationToken);
+
+            if (certReq?.ApprovalInstance != null)
+            {
+                var finalApprove = certReq.ApprovalInstance.Actions
+                    .Where(a => a.ActionDecision == "APPROVE")
+                    .OrderByDescending(a => a.ActionAt)
+                    .FirstOrDefault();
+
+                if (finalApprove?.ApproverEmployee != null)
+                {
+                    signatoryName = finalApprove.ApproverEmployee.FullName;
+                    var pos = finalApprove.ApproverEmployee.Assignments
+                        .Where(x => x.IsCurrent)
+                        .Select(x => x.Position?.PositionName)
+                        .FirstOrDefault(p => !string.IsNullOrWhiteSpace(p));
+                    if (!string.IsNullOrWhiteSpace(pos)) signatoryPosition = pos;
+
+                    var approverSig = await _context.EmployeeSignatures.AsNoTracking()
+                        .Where(s => s.EmployeeId == finalApprove.ApproverEmployeeId && s.IsActive)
+                        .OrderByDescending(s => s.UpdatedAt)
+                        .FirstOrDefaultAsync(cancellationToken)
+                        ?? await _context.EmployeeSignatures.AsNoTracking()
+                            .Where(s => s.EmployeeId == finalApprove.ApproverEmployeeId)
+                            .OrderByDescending(s => s.UpdatedAt)
+                            .FirstOrDefaultAsync(cancellationToken);
+
+                    if (approverSig != null && approverSig.SignatureData.Length > 0)
+                    {
+                        var mime = string.IsNullOrWhiteSpace(approverSig.MimeType) ? "image/png" : approverSig.MimeType;
+                        signatureBase64 = $"data:{mime};base64,{Convert.ToBase64String(approverSig.SignatureData)}";
+                    }
+                }
             }
         }
 

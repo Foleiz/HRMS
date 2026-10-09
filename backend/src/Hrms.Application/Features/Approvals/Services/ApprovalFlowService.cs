@@ -110,7 +110,8 @@ public class ApprovalFlowService : IApprovalFlowService
     public async Task<ApprovalFlowDto> UpdateAsync(long id, UpdateApprovalFlowRequest request, CancellationToken cancellationToken = default)
     {
         var flow = await _context.ApprovalFlows
-            .Include(f => f.Steps)
+            .Include(f => f.Steps).ThenInclude(s => s.ApproverRole)
+            .Include(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
 
         if (flow == null)
@@ -126,6 +127,21 @@ public class ApprovalFlowService : IApprovalFlowService
         flow.DepartmentId = request.DepartmentId;
         flow.LevelId = request.LevelId;
         flow.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper();
+
+        // บันทึก snapshot สายการอนุมัติเดิมเก็บไว้ให้กับทุก ApprovalInstance เดิมที่ยังไม่มี snapshot
+        // เพื่อป้องกันไม่ให้การแก้ไขสายอนุมัตินี้ส่งผลกระทบต่อเอกสารเดิมหรือเอกสารที่อนุมัติไปแล้ว
+        var instancesNeedingSnapshot = await _context.ApprovalInstances
+            .Where(i => i.ApprovalFlowId == id && string.IsNullOrEmpty(i.FlowSnapshotJson))
+            .ToListAsync(cancellationToken);
+
+        if (instancesNeedingSnapshot.Any())
+        {
+            var oldSnapshotJson = ApprovalWorkflowService.SerializeFlowSnapshot(flow);
+            foreach (var inst in instancesNeedingSnapshot)
+            {
+                inst.FlowSnapshotJson = oldSnapshotJson;
+            }
+        }
 
         // อัปเดตขั้นตอนเดิม หรือเพิ่มขั้นตอนใหม่ แทนที่จะลบทั้งชุด (ป้องกัน FK constraint violation กับ approval_action)
         var existingStepsList = flow.Steps.OrderBy(s => s.StepNo).ToList();

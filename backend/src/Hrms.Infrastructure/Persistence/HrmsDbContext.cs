@@ -1575,6 +1575,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
             entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
             entity.Property(e => e.LastRemindedAt).HasColumnName("last_reminded_at");
+            entity.Property(e => e.FlowSnapshotJson).HasColumnName("flow_snapshot_json").HasColumnType("text");
 
             entity.HasOne(e => e.ApprovalFlow)
                 .WithMany()
