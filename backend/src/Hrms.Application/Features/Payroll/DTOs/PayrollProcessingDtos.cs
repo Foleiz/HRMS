@@ -307,6 +307,10 @@ public class PayrollTransferListDto
     public string? PaymentMethod { get; set; }
     public string Status { get; set; } = string.Empty;
     public int TotalEmployees { get; set; }
+    /// <summary>จำนวนพนักงานทั้งหมดในรอบเงินเดือน (รวมผู้ที่ไม่มีรายได้ในงวด)</summary>
+    public int TotalPeriodEmployees { get; set; }
+    /// <summary>จำนวนพนักงานที่มียอดจ่ายจริงในรอบเงินเดือน</summary>
+    public int PayableEmployees { get; set; }
     public int TransferredCount { get; set; }
     public int PendingCount { get; set; }
     public decimal TotalNetSalary { get; set; }

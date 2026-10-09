@@ -976,7 +976,7 @@ public class SalaryService : ISalaryService
         {
             var targetDate = nextOpenPeriod.PaymentDate ?? nextOpenPeriod.EndDate;
             var todayThai = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
-            remainingDays = Math.Max(0, targetDate.DayNumber - todayThai.DayNumber);
+            remainingDays = targetDate.DayNumber - todayThai.DayNumber;
         }
 
         var recentPeriods = periods.Take(5).Select(p =>
@@ -3127,6 +3127,8 @@ public class SalaryService : ISalaryService
             PeriodName = $"{ThaiMonths[period.Month <= 12 ? period.Month : 1]} {period.Year + 543}",
             PaymentMethod = period.PaymentMethod,
             Status = period.Status,
+            TotalPeriodEmployees = period.Payrolls.Count,
+            PayableEmployees = items.Count,
             TotalEmployees = items.Count,
             TransferredCount = transferredCount,
             PendingCount = items.Count - transferredCount,

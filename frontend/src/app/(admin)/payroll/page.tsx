@@ -254,6 +254,14 @@ const formatThaiShortDate = (iso?: string | null) => {
   return `${d} ${abbr[m - 1]} ${y + 543}`;
 };
 
+/** แปลง 'YYYY-MM-DD' เป็นวันที่ไทยแบบตัวเลข เช่น 01/08/2569 */
+const formatThaiDateSlash = (iso?: string | null) => {
+  if (!iso) return '-';
+  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return iso;
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y + 543}`;
+};
+
 const getDefaultPeriodValues = (year: number, month: number) => {
   const safeMonth = Math.min(Math.max(1, month || 1), 12);
   const thaiMonth = THAI_MONTH_NAMES[safeMonth - 1];
@@ -308,8 +316,7 @@ export default function PayrollPage() {
     hasPermission('PAYROLL_CALC_VIEW') ||
     hasPermission('PAYROLL_HR_VIEW') ||
     hasPermission('PAYROLL_FINANCE_VIEW') ||
-    hasPermission('PAYROLL_ADMIN_VIEW') ||
-    hasPermission('APPROVAL_PAYROLL_VIEW');
+    hasPermission('PAYROLL_ADMIN_VIEW');
 
   const canViewOverview =
     isAdmin ||
@@ -333,8 +340,7 @@ export default function PayrollPage() {
     hasPermission('PAYROLL_TAX_VIEW') ||
     hasPermission('PAYROLL_HR_VIEW') ||
     hasPermission('PAYROLL_FINANCE_VIEW') ||
-    hasPermission('PAYROLL_ADMIN_VIEW') ||
-    hasPermission('APPROVAL_PAYROLL_VIEW');
+    hasPermission('PAYROLL_ADMIN_VIEW');
 
   const PAYROLL_HR_PERMS = ['PAYROLL_CALC_CREATE', 'PAYROLL_CALC_EDIT', 'PAYROLL_HR_CREATE', 'PAYROLL_HR_EDIT'];
   const PAYROLL_FINANCE_PERMS = [
@@ -1916,9 +1922,22 @@ export default function PayrollPage() {
                   <Calendar className="w-5 h-5" />
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
-                <span>
-                  {overview?.remainingDays != null && overview.remainingDays >= 0 ? `เหลืออีก ${overview.remainingDays} วัน` : '-'}
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
+                <span className="text-slate-400">สถานะกำหนดการ</span>
+                <span className={`font-semibold ${
+                  overview?.remainingDays != null && overview.remainingDays < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : overview?.remainingDays === 0
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-slate-600 dark:text-slate-300'
+                }`}>
+                  {overview?.remainingDays != null
+                    ? overview.remainingDays < 0
+                      ? `เลยกำหนด ${Math.abs(overview.remainingDays)} วัน`
+                      : overview.remainingDays === 0
+                      ? 'ครบกำหนดวันนี้'
+                      : `เหลืออีก ${overview.remainingDays} วัน`
+                    : '-'}
                 </span>
               </div>
             </div>
@@ -2621,6 +2640,8 @@ export default function PayrollPage() {
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                         {periods.map((p) => {
                           const isCurrent = selectedPeriod?.id === p.id;
+                          const today = new Date();
+                          const isCurrentMonthPeriod = p.year === today.getFullYear() && p.month === (today.getMonth() + 1);
                           return (
                             <React.Fragment key={p.id}>
                               <tr
@@ -2634,7 +2655,7 @@ export default function PayrollPage() {
                                   <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
                                     {p.periodName}
                                   </span>
-                                  {isCurrent && (
+                                  {isCurrentMonthPeriod && (
                                     <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded">
                                       ปัจจุบัน
                                     </span>
@@ -2645,10 +2666,10 @@ export default function PayrollPage() {
                                 </span>
                               </td>
                               <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                                {p.startDate} ถึง {p.endDate}
+                                {formatThaiDateSlash(p.startDate)} - {formatThaiDateSlash(p.endDate)}
                               </td>
                               <td className="py-3.5 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                {p.paymentDate || '-'}
+                                {p.paymentDate ? formatThaiDateSlash(p.paymentDate) : '-'}
                               </td>
                               <td className="py-3.5 px-4 text-center font-semibold whitespace-nowrap">
                                 {p.employeeCount != null ? `${p.employeeCount} คน` : '-'}
@@ -4320,7 +4341,7 @@ export default function PayrollPage() {
                   )}
                 </h2>
                 <p className="text-xs text-slate-400 mt-1">
-                  รอบ: {selectedPeriod?.startDate} ถึง {selectedPeriod?.endDate}
+                  รอบ: {selectedPeriod ? `${formatThaiDateSlash(selectedPeriod.startDate)} ถึง ${formatThaiDateSlash(selectedPeriod.endDate)}` : '-'}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -4349,16 +4370,21 @@ export default function PayrollPage() {
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
               <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700">
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">พนักงานทั้งหมด</div>
-                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0} คน</div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">พนักงานที่มียอดโอน</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{transferList?.payableEmployees ?? transferList?.totalEmployees ?? 0} คน</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">
+                  (จากทั้งหมด {transferList?.totalPeriodEmployees ?? selectedPeriod?.employeeCount ?? 0} คนในรอบ)
+                </div>
               </div>
               <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
                 <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">โอนแล้ว</div>
                 <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0} คน</div>
+                <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">แนบสลิป/บันทึกแล้ว</div>
               </div>
               <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-100 dark:border-amber-800/40">
                 <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">รอโอน</div>
-                <div className="text-lg font-bold text-amber-700 dark:text-amber-300 mt-0.5">{transferList?.pendingCount ?? Math.max(0, (selectedPeriod?.employeeCount ?? 0) - (selectedPeriod?.totalTransferredCount ?? 0))} คน</div>
+                <div className="text-lg font-bold text-amber-700 dark:text-amber-300 mt-0.5">{transferList?.pendingCount ?? Math.max(0, (transferList?.payableEmployees ?? transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0) - (transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0))} คน</div>
+                <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">รอดำเนินการโอน</div>
               </div>
               <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-800/40">
                 <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">รวมยอดทั้งหมด</div>
@@ -4636,42 +4662,41 @@ export default function PayrollPage() {
             </div>
           )}
 
-          {/* ── PHASE 2b: DIRECT_TRANSFER ── */}
-          {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
-              {/* Header */}
-              <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Banknote className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                    รายการโอนเงินรายบุคคล
-                    <span className="ml-2 text-slate-400 font-normal text-xs">
-                      {transferList?.transferredCount ?? 0}/{transferList?.totalEmployees ?? 0} คน โอนแล้ว
-                    </span>
-                  </h3>
-                </div>
-
-                {/* Confirm Button — only when all transferred and CEO */}
-                {isCEO && transferList?.canConfirmPayment && selectedPeriod?.status !== 'PAID' && (
-                  <button
-                    onClick={() => setConfirmPaymentModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer animate-pulse"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>CEO ยืนยันการจ่ายเงิน</span>
-                  </button>
-                )}
-
-                {isCEO && !transferList?.canConfirmPayment && transferList && transferList.totalEmployees > 0 && selectedPeriod?.status !== 'PAID' && (
-                  <button
-                    disabled
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
-                  >
-                    <Lock className="w-4 h-4 text-slate-400" />
-                    <span>ไม่สามารถยืนยันได้ (สลิปยังไม่ครบ {transferList.pendingCount}/{transferList.totalEmployees} คน)</span>
-                  </button>
-                )}
+          {/* ── รายการโอนเงินรายบุคคล (แสดงให้ตรวจสอบได้ทุกสถานะ) ── */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-emerald-600" />
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  รายการโอนเงินรายบุคคล
+                  <span className="ml-2 text-slate-400 font-normal text-xs">
+                    {transferList?.transferredCount ?? 0}/{transferList?.payableEmployees ?? transferList?.totalEmployees ?? 0} คน โอนแล้ว
+                  </span>
+                </h3>
               </div>
+
+              {/* Confirm Button — only when all transferred and CEO and DIRECT_TRANSFER */}
+              {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && isCEO && transferList?.canConfirmPayment && selectedPeriod?.status !== 'PAID' && (
+                <button
+                  onClick={() => setConfirmPaymentModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer animate-pulse"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>CEO ยืนยันการจ่ายเงิน</span>
+                </button>
+              )}
+
+              {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && isCEO && !transferList?.canConfirmPayment && transferList && transferList.totalEmployees > 0 && selectedPeriod?.status !== 'PAID' && (
+                <button
+                  disabled
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
+                >
+                  <Lock className="w-4 h-4 text-slate-400" />
+                  <span>ไม่สามารถยืนยันได้ (สลิปยังไม่ครบ {transferList.pendingCount}/{transferList.totalEmployees} คน)</span>
+                </button>
+              )}
+            </div>
 
               {/* Table */}
               {isLoadingTransferList ? (
@@ -4801,7 +4826,6 @@ export default function PayrollPage() {
                 </div>
               )}
             </div>
-          )}
 
 
 
@@ -5696,6 +5720,8 @@ export default function PayrollPage() {
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                       {periods.map((p) => {
                         const isCurrent = selectedPeriod?.id === p.id;
+                        const today = new Date();
+                        const isCurrentMonthPeriod = p.year === today.getFullYear() && p.month === (today.getMonth() + 1);
                         return (
                           <tr
                             key={p.id}
@@ -5708,7 +5734,7 @@ export default function PayrollPage() {
                                 <span className="font-bold text-slate-900 dark:text-slate-100 text-[13px]">
                                   {p.periodName}
                                 </span>
-                                {isCurrent && (
+                                {isCurrentMonthPeriod && (
                                   <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-1.5 py-0.5 rounded">
                                     ปัจจุบัน
                                   </span>
@@ -5719,10 +5745,10 @@ export default function PayrollPage() {
                               </span>
                             </td>
                             <td className="py-3 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                              {p.startDate} ถึง {p.endDate}
+                              {formatThaiDateSlash(p.startDate)} - {formatThaiDateSlash(p.endDate)}
                             </td>
                             <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                              {p.paymentDate || '-'}
+                              {p.paymentDate ? formatThaiDateSlash(p.paymentDate) : '-'}
                             </td>
                             <td className="py-3 px-4 text-center font-semibold">
                               {p.employeeCount != null ? `${p.employeeCount} คน` : '-'}

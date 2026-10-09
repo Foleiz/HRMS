@@ -85,7 +85,12 @@ export default function ReportsPage() {
   const canViewLateness = hasPermission('REPORT_ATT_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
   const canExportLateness = hasPermission('REPORT_ATT_EXPORT') || hasPermission('REPORT_EXPORT') || hasRole('ADMIN');
 
-  const canViewTax = hasPermission('PAYROLL_VIEW') || hasPermission('PAYROLL_TAX_VIEW') || hasPermission('REPORT_VIEW') || hasRole('ADMIN');
+  const canViewTax =
+    hasPermission('PAYROLL_VIEW') ||
+    hasPermission('PAYROLL_TAX_VIEW') ||
+    hasPermission('PAYROLL_ADMIN_VIEW') ||
+    hasPermission('PAYROLL_FINANCE_VIEW') ||
+    hasRole('ADMIN');
   // ไฟล์ ภ.ง.ด.1 / สปส.1-10 มีข้อมูลเงินได้ทุกคน — ให้ตรงกับสิทธิ์ฝั่ง Backend
   const canExportTax =
     hasPermission('PAYROLL_TAX_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW') || hasPermission('PAYROLL_ADMIN_VIEW') || hasPermission('PAYROLL_EXPORT') || hasRole('ADMIN');
@@ -292,7 +297,7 @@ export default function ReportsPage() {
   };
 
   useEffect(() => {
-    if (activeTab !== 'tax') return;
+    if (activeTab !== 'tax' || !canViewTax) return;
     let cancelled = false;
     const deptId = taxDepartment === 'ALL' ? undefined : Number(taxDepartment);
     const months = monthsUpTo(taxYear);
@@ -311,7 +316,7 @@ export default function ReportsPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, taxYear, taxDepartment]);
+  }, [activeTab, canViewTax, taxYear, taxDepartment]);
 
   useEffect(() => {
     if (activeTab !== 'turnover') return;
@@ -343,12 +348,12 @@ export default function ReportsPage() {
       loadDailyHeadcount();
     } else if (activeTab === 'lateness') {
       loadMonthlyLateness();
-    } else if (activeTab === 'tax') {
+    } else if (activeTab === 'tax' && canViewTax) {
       loadPayrollTax();
     } else if (activeTab === 'turnover') {
       loadTurnover();
     }
-  }, [activeTab, loadDailyHeadcount, loadMonthlyLateness, loadPayrollTax, loadTurnover]);
+  }, [activeTab, canViewTax, loadDailyHeadcount, loadMonthlyLateness, loadPayrollTax, loadTurnover]);
 
   // -------------------------------------------------------------
   // Export Handlers

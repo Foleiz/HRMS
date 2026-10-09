@@ -152,7 +152,7 @@ export const RecentTransactionsTable: React.FC = () => {
               'ขอหนังสือรับรอง';
             items.push({
               id: `cert-${c.id}`,
-              documentCode: c.certificateCode && !c.certificateCode.startsWith('CERT_') ? c.certificateCode : `CR-${String(c.id).padStart(4, '0')}`,
+              documentCode: c.certificateCode && !c.certificateCode.startsWith('CERT_') ? c.certificateCode : `CERT-${String(c.id).padStart(4, '0')}`,
               createdDate: formatThaiDate(rawDate),
               duration: '-',
               documentType: docName,

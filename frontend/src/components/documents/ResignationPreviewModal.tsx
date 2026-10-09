@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -30,6 +30,8 @@ export interface ResignationPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   data: {
+    id?: number | null;
+    requestId?: number | null;
     employeeName: string;
     /** รหัสพนักงานผู้ลาออก ใช้ดึงรูปลายเซ็นจากบัญชี (GET /api/employees/{id}/signature) */
     employeeId?: number | null;
@@ -422,7 +424,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
       : null;
 
   useEffect(() => {
-    if (!isOpen || timelineSlots || !data?.employeeId) {
+    if (!isOpen || timelineSlots || !data?.employeeId || data?.id) {
       setSimulatedSlots(null);
       return;
     }
