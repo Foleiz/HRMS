@@ -53,6 +53,16 @@ export const essAttendanceService = {
   },
 
   /**
+   * [ESS] สั่งคำนวณเวลาและกะการทำงานของตนเองใหม่สำหรับเดือนที่เลือก
+   */
+  async recalculateMyAttendance(year?: number, month?: number): Promise<number> {
+    const res = await apiClient.post<ApiResponse<number>>('/attendance/daily/my/recalculate', null, {
+      params: { year, month },
+    });
+    return res.data.data;
+  },
+
+  /**
    * [ESS] ดึงรายการคำขอปรับปรุงเวลาของตนเอง
    */
   async getMyAdjustments(page = 1, pageSize = 50): Promise<PagedAdjustmentResult> {

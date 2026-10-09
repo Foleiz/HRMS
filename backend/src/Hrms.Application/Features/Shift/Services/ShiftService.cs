@@ -8,6 +8,7 @@ using Hrms.Application.Features.Shift.Dtos;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Hrms.Application.Features.Attendance.Services;
 
 namespace Hrms.Application.Features.Shift.Services;
 
@@ -177,6 +178,25 @@ public class ShiftService : IShiftService
         shift.EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes);
 
         await _context.SaveChangesAsync();
+
+        // Sync all existing attendance records using this shift
+        var affectedRecords = await _context.AttendanceDailies
+            .Where(a => a.ShiftId == id)
+            .ToListAsync();
+
+        if (affectedRecords.Count > 0)
+        {
+            foreach (var rec in affectedRecords)
+            {
+                rec.Shift = shift;
+                AttendanceDailyService.PopulateScheduledTimes(rec, shift, rec.WorkDate);
+                if (rec.ActualIn != null || rec.ActualOut != null)
+                {
+                    AttendanceDailyService.RecalculateAttendance(rec, shift);
+                }
+            }
+            await _context.SaveChangesAsync();
+        }
 
         return MapToDto(shift);
     }
