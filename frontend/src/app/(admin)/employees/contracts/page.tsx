@@ -38,7 +38,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 
 export default function ContractsPage() {
   const router = useRouter();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
 
@@ -129,11 +129,11 @@ export default function ContractsPage() {
   const totalPages = Math.ceil(contracts.length / pageSize) || 1;
   const paginatedContracts = contracts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || hasPermission('EMP_VIEW');
-  const canViewTypes = hasPermission('EMP_TYPE_VIEW') || hasPermission('EMP_VIEW');
-  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW') || hasPermission('EMP_VIEW');
-  const canViewOrg = hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW');
-  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW') || hasPermission('EMP_VIEW');
+  const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
+  const canViewTypes = hasPermission('EMP_TYPE_VIEW');
+  const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
+  const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW');
 
   // Sub-Navigation Tabs matching Mockup
   const subNavTabs = [
@@ -141,7 +141,7 @@ export default function ContractsPage() {
     { title: 'ประเภทพนักงาน', href: '/employees/types', show: canViewTypes },
     { title: 'การย้ายแผนก/การเลื่อนตำแหน่ง', href: '/employees/transfers', show: canViewTransfers },
     { title: 'สัญญาจ้าง', href: '/employees/contracts', active: true, show: canViewContracts },
-    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewProfile },
+    { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewDocs },
   ].filter((t) => t.show);
 
   if (!canViewContracts) {
