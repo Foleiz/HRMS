@@ -23,7 +23,7 @@ export interface EmployeeTypeBenefitAssignment {
 }
 
 export interface CreateEmployeeTypePayload {
-  typeCode: string;
+  typeCode?: string;
   typeName: string;
   wageType: string;
   hasSocialSecurity: boolean;

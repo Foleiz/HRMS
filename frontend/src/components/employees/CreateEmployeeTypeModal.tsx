@@ -306,9 +306,8 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           benefitItemIds: selectedBenefitIds,
           benefitAssignments,
         });
-      } else {
         await onSubmit({
-          typeCode: typeCode.trim().toUpperCase(),
+          typeCode: typeCode.trim() ? typeCode.trim().toUpperCase() : undefined,
           typeName: typeName.trim(),
           wageType,
           hasSocialSecurity: hasSSO,
@@ -372,34 +371,19 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {/* ชื่อประเภทสัญญา & รหัสประเภท */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                ชื่อประเภทสัญญา/การจ้างงาน <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={typeName}
-                onChange={(e) => setTypeName(e.target.value)}
-                placeholder="เช่น พนักงานสัญญาจ้างโครงการ, ผู้รับเหมาบริการภายนอก, พนักงานประจำ"
-                className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                รหัสประเภท (Type Code)
-              </label>
-              <input
-                type="text"
-                disabled={isEdit}
-                value={typeCode}
-                onChange={(e) => setTypeCode(e.target.value.toUpperCase())}
-                placeholder={isEdit ? '' : 'สร้างอัตโนมัติ'}
-                className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-medium text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 disabled:bg-slate-100 dark:disabled:bg-slate-800/80 disabled:cursor-not-allowed"
-              />
-            </div>
+          {/* ชื่อประเภทสัญญา/การจ้างงาน */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              ชื่อประเภทสัญญา/การจ้างงาน <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={typeName}
+              onChange={(e) => setTypeName(e.target.value)}
+              placeholder="เช่น พนักงานสัญญาจ้างโครงการ, ผู้รับเหมาบริการภายนอก, พนักงานประจำ"
+              className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+            />
           </div>
 
           {/* รูปแบบค่าตอบแทน & สถานะ */}
