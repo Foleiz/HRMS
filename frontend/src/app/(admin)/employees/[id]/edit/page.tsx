@@ -1075,7 +1075,6 @@ function EmployeeEditPageContent() {
                           <option key={b.id} value={b.id}>
                             {b.bankName}
                             {b.shortName ? ` (${b.shortName})` : ''}
-                            {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
                           </option>
                         ))}
                       </CustomSelect>
