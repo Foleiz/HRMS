@@ -636,499 +636,473 @@ function EmployeeEditPageContent() {
             {/* TAB 1: ข้อมูลส่วนตัว (Personal Info) - 3 Columns Layout      */}
             {/* ============================================================ */}
             {activeTab === 'personal' && (
-              <div className="space-y-8 animate-in fade-in duration-150 text-xs">
-                {/* --- Section 1: ข้อมูลพนักงานและข้อมูลติดต่อ (3 คอลัมน์) --- */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                  {/* === คอลัมน์ที่ 1 (ข้อมูลรหัส สังกัด และชื่อ) === */}
-                  <div className="space-y-4">
-                    {/* Row 1: รหัสพนักงาน */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="เช่น EMP001"
-                        value={formData.employeeCode}
-                        onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                      />
-                    </div>
-
-                    {/* Row 2: รหัสเครื่องสแกนนิ้ว (Biometric ID) */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>รหัสเครื่องสแกนนิ้ว (Biometric ID)</span>
-                        <FieldInfoTooltip text="รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)" />
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="เช่น 100001"
-                        value={formData.biometricId || ''}
-                        onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                      />
-                    </div>
-
-                    {/* Row 3: หัวหน้างานโดยตรง */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>หัวหน้างานโดยตรง</span>
-                        <FieldInfoTooltip text='ใช้กับขั้นอนุมัติ "หัวหน้างานตรง" ในสายการอนุมัติ' />
-                      </label>
-                      <EmployeeSelect
-                        employees={allEmployees}
-                        value={managerId}
-                        onChange={(empId) => setManagerId(empId)}
-                        emptyLabel="ไม่มีหัวหน้างาน"
-                        placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
-                        excludeEmployeeIds={[employeeId]}
-                        buttonClassName="!rounded-lg !text-xs"
-                      />
-                    </div>
-
-                    {/* Row 4: ประเภทพนักงาน */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>ประเภทพนักงาน</span>
-                        <FieldInfoTooltip
-                          text={canEditEmployeeType
-                            ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
-                            : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
-                        />
-                      </label>
-                      {canEditEmployeeType ? (
-                        <CustomSelect
-                          value={formData.employeeType || ''}
-                          onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
-                          className="w-full cursor-pointer"
-                          buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                        >
-                          {!formData.employeeType && <option value="">เลือกประเภท</option>}
-                          {employeeTypeOptions.map((name) => (
-                            <option key={name} value={name}>
-                              {name}
-                            </option>
-                          ))}
-                        </CustomSelect>
-                      ) : (
-                        <div className="w-full h-11 px-3.5 flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
-                          {formData.employeeType || '-'}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Row 5: คำนำหน้า */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>คำนำหน้า (Prefix) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <CustomSelect
-                        value={formData.prefix}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          let autoGender = formData.gender;
-                          if (!autoGender || autoGender === 'เลือกเพศ') {
-                            if (val === 'นาย') autoGender = 'ชาย';
-                            else if (val === 'นางสาว' || val === 'นาง') autoGender = 'หญิง';
-                          }
-                          setFormData({ ...formData, prefix: val, gender: autoGender });
-                        }}
-                        className="w-full cursor-pointer"
-                        buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                      >
-                        <option value="">เลือกคำนำหน้า</option>
-                        <option value="นาย">นาย</option>
-                        <option value="นางสาว">นางสาว</option>
-                        <option value="นาง">นาง</option>
-                      </CustomSelect>
-                    </div>
-
-                    {/* Row 6: ชื่อ */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>ชื่อ (First Name) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="กรอกชื่อ"
-                        required
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
-                    </div>
-
-                    {/* Row 7: นามสกุล */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>นามสกุล (Last Name) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="กรอกนามสกุล"
-                        required
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 text-xs animate-in fade-in duration-150">
+                {/* --- คอลัมน์ที่ 1 --- */}
+                <div className="space-y-4">
+                  {/* รหัสพนักงาน */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span></span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น EMP001"
+                      value={formData.employeeCode}
+                      onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
                   </div>
 
-                  {/* === คอลัมน์ที่ 2 (ข้อมูลส่วนบุคคล) === */}
-                  <div className="space-y-4">
-                    {/* Row 1: เลขบัตรประชาชน */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span></span>
-                        <FieldInfoTooltip text="ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้" />
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={17}
-                        placeholder="เลขบัตรประชาชน 13 หลัก"
-                        value={formData.citizenId || ''}
-                        onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                      />
-                    </div>
-
-                    {/* Row 2: วันเกิด */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>วันเกิด (Date of Birth) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <ThaiDatePicker
-                        value={formData.birthDate}
-                        onChange={(val) => setFormData({ ...formData, birthDate: val })}
-                        className="w-full h-11"
-                        buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5 border-slate-200 focus:!ring-1 focus:!ring-[#0B2046]"
-                      />
-                    </div>
-
-                    {/* Row 3: เพศ */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>เพศ (Gender) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <CustomSelect
-                        value={formData.gender}
-                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                        className="w-full cursor-pointer"
-                        buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                      >
-                        <option value="">เลือกเพศ</option>
-                        <option value="ชาย">ชาย</option>
-                        <option value="หญิง">หญิง</option>
-                        <option value="ไม่ระบุ">ไม่ระบุ</option>
-                      </CustomSelect>
-                    </div>
-
-                    {/* Row 4: สัญชาติ */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>สัญชาติ (Nationality) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <NationalitySelect
-                        value={formData.nationality}
-                        onChange={(val) => setFormData({ ...formData, nationality: val })}
-                        className="h-11 rounded-lg text-xs"
-                      />
-                    </div>
-
-                    {/* Row 5: ศาสนา */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span></span>
-                      </label>
-                      <CustomSelect
-                        value={formData.religion}
-                        onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
-                        className="w-full cursor-pointer"
-                        buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                      >
-                        <option value="">ไม่ระบุ</option>
-                        {lookups.religions.map((r) => (
-                          <option key={r.id ?? r.name} value={r.name}>
-                            {r.name}
-                          </option>
-                        ))}
-                        {formData.religion && !lookups.religions.some((r) => r.name === formData.religion) && (
-                          <option value={formData.religion}>{formData.religion}</option>
-                        )}
-                      </CustomSelect>
-                    </div>
-
-                    {/* Row 6: สถานภาพสมรส */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <CustomSelect
-                        value={formData.maritalStatus}
-                        onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
-                        className="w-full cursor-pointer"
-                        buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                      >
-                        <option value="">เลือกสถานภาพ</option>
-                        {lookups.maritalStatuses.map((m) => (
-                          <option key={m.id ?? m.name} value={m.name}>
-                            {m.name}
-                          </option>
-                        ))}
-                        {formData.maritalStatus && !lookups.maritalStatuses.some((m) => m.name === formData.maritalStatus) && (
-                          <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
-                        )}
-                      </CustomSelect>
-                    </div>
-
-                    {/* Row 7: สถานภาพทางทหาร */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <CustomSelect
-                        value={formData.militaryStatus}
-                        onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
-                        className="w-full cursor-pointer"
-                        buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                      >
-                        <option value="">เลือกสถานภาพทางทหาร</option>
-                        <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
-                        <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
-                        <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
-                      </CustomSelect>
-                    </div>
+                  {/* รหัสเครื่องสแกนนิ้ว (Biometric ID) */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>รหัสเครื่องสแกนนิ้ว (Biometric ID)</span>
+                      <FieldInfoTooltip text="รหัสพนักงานในเครื่องสแกนนิ้ว/ทาบบัตร (สำหรับเชื่อมต่อเวลากับไฟล์ Excel อัตโนมัติ)" />
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="เช่น 100001"
+                      value={formData.biometricId || ''}
+                      onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
                   </div>
 
-                  {/* === คอลัมน์ที่ 3 (ข้อมูลการติดต่อ) === */}
-                  <div className="space-y-4">
-                    {/* Row 1: อีเมล์ */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>อีเมล์ (E-mail) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="test001@gmail.com"
-                        value={formData.personalEmail}
-                        onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                      />
-                    </div>
+                  {/* หัวหน้างานโดยตรง */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>หัวหน้างานโดยตรง</span>
+                      <FieldInfoTooltip text='ใช้กับขั้นอนุมัติ "หัวหน้างานตรง" ในสายการอนุมัติ' />
+                    </label>
+                    <EmployeeSelect
+                      employees={allEmployees}
+                      value={managerId}
+                      onChange={(empId) => setManagerId(empId)}
+                      emptyLabel="ไม่มีหัวหน้างาน"
+                      placeholder="เลือกหัวหน้างาน หรือพิมพ์ค้นหา..."
+                      excludeEmployeeIds={[employeeId]}
+                    />
+                  </div>
 
-                    {/* Row 2: อีเมลองค์กร */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <input
-                        type="email"
-                        placeholder="name@company.com"
-                        value={formData.organizationEmail}
-                        onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                  {/* ประเภทพนักงาน — แก้ได้เฉพาะผู้มีสิทธิ์แก้ไขข้อมูลพนักงาน */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>ประเภทพนักงาน</span>
+                      <FieldInfoTooltip
+                        text={canEditEmployeeType
+                          ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
+                          : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'}
                       />
-                    </div>
+                    </label>
+                    {canEditEmployeeType ? (
+                      <CustomSelect
+                        value={formData.employeeType || ''}
+                        onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      >
+                        {!formData.employeeType && <option value="">เลือกประเภท</option>}
+                        {employeeTypeOptions.map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </CustomSelect>
+                    ) : (
+                      <div className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                        {formData.employeeType || '-'}
+                      </div>
+                    )}
+                  </div>
 
-                    {/* Row 3: เบอร์โทรศัพท์ส่วนตัว */}
-                    <div>
-                      <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                        <span>เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span></span>
-                      </label>
-                      <input
-                        type="text"
-                        maxLength={12}
-                        placeholder="08X-XXX-XXXX"
-                        value={formData.personalPhone}
-                        onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                        className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                      />
-                    </div>
+                  {/* คำนำหน้า */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>คำนำหน้า (Prefix) <span className="text-rose-500">*</span></span>
+                    </label>
+                    <CustomSelect
+                      value={formData.prefix}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        let autoGender = formData.gender;
+                        if (!autoGender || autoGender === 'เลือกเพศ') {
+                          if (val === 'นาย') autoGender = 'ชาย';
+                          else if (val === 'นางสาว' || val === 'นาง') autoGender = 'หญิง';
+                        }
+                        setFormData({ ...formData, prefix: val, gender: autoGender });
+                      }}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="">เลือกคำนำหน้า</option>
+                      <option value="นาย">นาย</option>
+                      <option value="นางสาว">นางสาว</option>
+                      <option value="นาง">นาง</option>
+                    </CustomSelect>
+                  </div>
+
+                  {/* ชื่อ */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>ชื่อ (First Name) <span className="text-rose-500">*</span></span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="กรอกชื่อ"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
+
+                  {/* นามสกุล */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>นามสกุล (Last Name) <span className="text-rose-500">*</span></span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="กรอกนามสกุล"
+                      required
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
                   </div>
                 </div>
 
-                {/* --- Section 2: ข้อมูลที่อยู่ และ บัญชีธนาคาร (แถวใหม่เต็มความกว้าง 3 คอลัมน์) --- */}
-                <div className="pt-6 border-t border-slate-200 dark:border-slate-700">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-                    {/* === คอลัมน์ที่ 1 (ที่อยู่: ประเภท และ บ้านเลขที่) === */}
-                    <div className="space-y-4">
-                      {/* ประเภทที่อยู่ Radio Buttons */}
-                      <div>
-                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          <span>ประเภทที่อยู่ <span className="text-rose-500">*</span></span>
-                        </label>
-                        <div className="w-full h-11 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg flex items-center justify-between overflow-x-auto">
-                          {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                            <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 text-xs shrink-0">
-                              <input
-                                type="radio"
-                                name="addressType"
-                                value={t}
-                                checked={formData.addressType === t}
-                                onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-                                className="accent-[#0B2046]"
-                              />
-                              <span>{t}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
+                {/* --- คอลัมน์ที่ 2 --- */}
+                <div className="space-y-4">
+                  {/* เลขบัตรประชาชน */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                      <span>เลขบัตรประชาชน (National ID) <span className="text-rose-500">*</span></span>
+                      <FieldInfoTooltip text="ข้อมูลถูกปกปิด (Masked) ตาม PDPA หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้" />
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={17}
+                      placeholder="เลขบัตรประชาชน 13 หลัก"
+                      value={formData.citizenId || ''}
+                      onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
+                  </div>
 
-                      {/* บ้านเลขที่ */}
-                      <div>
-                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          <span>บ้านเลขที่ <span className="text-rose-500">*</span></span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="บ้านเลขที่ 4"
-                          value={formData.addressLine}
-                          onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                          className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                        />
-                      </div>
-                    </div>
+                  {/* วันเกิด */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      วันเกิด (Date of Birth) <span className="text-rose-500">*</span>
+                    </label>
+                    <ThaiDatePicker
+                      value={formData.birthDate}
+                      onChange={(val) => setFormData({ ...formData, birthDate: val })}
+                    />
+                  </div>
 
-                    {/* === คอลัมน์ที่ 2 (ที่อยู่: ตำบล อำเภอ จังหวัด และรหัสไปรษณีย์) === */}
-                    <div className="space-y-4">
-                      {/* ตำบล / แขวง */}
-                      <div>
-                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          <span>ตำบล / แขวง <span className="text-rose-500">*</span></span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="แขวงหัวหมาก"
-                          value={formData.subDistrict}
-                          onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                          className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                        />
-                      </div>
+                  {/* เพศ */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      เพศ (Gender) <span className="text-rose-500">*</span>
+                    </label>
+                    <CustomSelect
+                      value={formData.gender}
+                      onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="">เลือกเพศ</option>
+                      <option value="ชาย">ชาย</option>
+                      <option value="หญิง">หญิง</option>
+                      <option value="ไม่ระบุ">ไม่ระบุ</option>
+                    </CustomSelect>
+                  </div>
 
-                      {/* อำเภอ / เขต */}
-                      <div>
-                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          <span>อำเภอ / เขต <span className="text-rose-500">*</span></span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="บางกะปิ"
-                          value={formData.district}
-                          onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                          className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                        />
-                      </div>
+                  {/* สัญชาติ */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      สัญชาติ (Nationality) <span className="text-rose-500">*</span>
+                    </label>
+                    <NationalitySelect
+                      value={formData.nationality}
+                      onChange={(val) => setFormData({ ...formData, nationality: val })}
+                    />
+                  </div>
 
-                      {/* จังหวัด และ รหัสไปรษณีย์ (แบ่งครึ่งเท่ากัน grid 2 คอลัมน์) */}
-                      <div className="grid grid-cols-2 gap-6 lg:gap-8">
-                        <div>
-                          <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                            <span>จังหวัด <span className="text-rose-500">*</span></span>
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="กรุงเทพมหานคร"
-                            value={formData.province}
-                            onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                            className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
-                          />
-                        </div>
-                        <div>
-                          <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                            <span>รหัสไปรษณีย์ <span className="text-rose-500">*</span></span>
-                          </label>
-                          <input
-                            type="text"
-                            maxLength={5}
-                            placeholder="10240"
-                            value={formData.postalCode}
-                            onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                            className="w-full h-11 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* === คอลัมน์ที่ 3 (ข้อมูลบัญชีธนาคาร) === */}
-                    <div className="space-y-4">
-                      {/* ชื่อธนาคาร */}
-                      <div>
-                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          <span>ชื่อธนาคาร</span>
-                          <FieldInfoTooltip
-                            text="เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)"
-                            align="right"
-                          />
-                        </label>
-                        <CustomSelect
-                          value={formData.bankId ?? ''}
-                          onChange={(e) => {
-                            const id = e.target.value ? Number(e.target.value) : undefined;
-                            const bank = banks.find((b) => b.id === id);
-                            setFormData({ ...formData, bankId: id, bankName: bank?.bankName || '' });
-                          }}
-                          className="w-full cursor-pointer"
-                          buttonClassName="!h-11 !rounded-lg !text-xs !px-3.5"
-                        >
-                          <option value="">เลือกธนาคาร</option>
-                          {banks.map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.bankName}
-                              {b.shortName ? ` (${b.shortName})` : ''}
-                              {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
-                            </option>
-                          ))}
-                        </CustomSelect>
-                      </div>
-
-                      {/* เลขที่บัญชี */}
-                      <div>
-                        <label className="flex items-center font-semibold text-slate-700 dark:text-slate-300 text-xs h-5 leading-5 mb-1.5">
-                          <span>
-                            เลขที่บัญชี
-                            {banks.find((b) => b.id === formData.bankId)?.accountDigits
-                              ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
-                              : ''}
-                          </span>
-                          <FieldInfoTooltip
-                            text="เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม"
-                            align="right"
-                          />
-                        </label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="กรอกเฉพาะตัวเลข"
-                          value={formData.accountNumber || ''}
-                          onFocus={() => {
-                            // เลขที่ซ่อนไว้ (xxxx1234) — คลิกเพื่อกรอกเลขใหม่ทั้งหมด
-                            if ((formData.accountNumber || '').toLowerCase().includes('x')) {
-                              setFormData({ ...formData, accountNumber: '' });
-                            }
-                          }}
-                          onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
-                          className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
-                        />
-                      </div>
-
-                      {/* แบนเนอร์สถานะบัญชีธนาคาร (ถ้ามี) */}
-                      {(pendingBank || rejectedBank) && (
-                        <div className="space-y-2 pt-1">
-                          {pendingBank && (
-                            <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
-                              มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
-                              {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
-                            </div>
-                          )}
-                          {!pendingBank && rejectedBank && (
-                            <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
-                              คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
-                              {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
-                            </div>
-                          )}
-                        </div>
+                  {/* ศาสนา */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      ศาสนา (Religion) <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
+                    </label>
+                    <CustomSelect
+                      value={formData.religion}
+                      onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="">ไม่ระบุ</option>
+                      {lookups.religions.map((r) => (
+                        <option key={r.id ?? r.name} value={r.name}>
+                          {r.name}
+                        </option>
+                      ))}
+                      {formData.religion && !lookups.religions.some((r) => r.name === formData.religion) && (
+                        <option value={formData.religion}>{formData.religion}</option>
                       )}
+                    </CustomSelect>
+                  </div>
+
+                  {/* สถานภาพสมรส */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      สถานภาพสมรส (Marital Status) <span className="text-rose-500">*</span>
+                    </label>
+                    <CustomSelect
+                      value={formData.maritalStatus}
+                      onChange={(e) => setFormData({ ...formData, maritalStatus: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="">เลือกสถานภาพ</option>
+                      {lookups.maritalStatuses.map((m) => (
+                        <option key={m.id ?? m.name} value={m.name}>
+                          {m.name}
+                        </option>
+                      ))}
+                      {formData.maritalStatus && !lookups.maritalStatuses.some((m) => m.name === formData.maritalStatus) && (
+                        <option value={formData.maritalStatus}>{formData.maritalStatus}</option>
+                      )}
+                    </CustomSelect>
+                  </div>
+
+                  {/* สถานภาพทางทหาร */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      สถานภาพทางทหาร (Military Status) <span className="text-rose-500">*</span>
+                    </label>
+                    <CustomSelect
+                      value={formData.militaryStatus}
+                      onChange={(e) => setFormData({ ...formData, militaryStatus: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                    >
+                      <option value="">เลือกสถานภาพทางทหาร</option>
+                      <option value="ผ่านการเกณฑ์ทหาร">ผ่านการเกณฑ์ทหาร</option>
+                      <option value="ได้รับการยกเว้น">ได้รับการยกเว้น</option>
+                      <option value="ยังไม่ได้รับการเกณฑ์">ยังไม่ได้รับการเกณฑ์</option>
+                    </CustomSelect>
+                  </div>
+                </div>
+
+                {/* --- คอลัมน์ที่ 3 --- */}
+                <div className="space-y-4">
+                  {/* อีเมล์ */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      อีเมล์ (E-mail) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="test001@gmail.com"
+                      value={formData.personalEmail}
+                      onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
+
+                  {/* อีเมลองค์กร */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      อีเมลองค์กร (Organization email) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="name@company.com"
+                      value={formData.organizationEmail}
+                      onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    />
+                  </div>
+
+                  {/* เบอร์โทรศัพท์ส่วนตัว */}
+                  <div>
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+                      เบอร์โทรศัพท์ส่วนตัว (Phone number) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={12}
+                      placeholder="08X-XXX-XXXX"
+                      value={formData.personalPhone}
+                      onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                    />
+                  </div>
+
+                  {/* ที่อยู่ (Address) */}
+                  <div className="pt-1 space-y-3">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 block">
+                      ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                    </label>
+
+                    {/* ประเภทที่อยู่ Radio Buttons */}
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">ประเภทที่อยู่</span>
+                      <div className="flex flex-wrap items-center gap-3">
+                        {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
+                          <label key={t} className="flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 text-xs">
+                            <input
+                              type="radio"
+                              name="addressType"
+                              value={t}
+                              checked={formData.addressType === t}
+                              onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
+                              className="accent-[#0B2046]"
+                            />
+                            <span>{t}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* บ้านเลขที่ */}
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                        บ้านเลขที่ <span className="text-rose-500">*</span>
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="บ้านเลขที่ 4"
+                        value={formData.addressLine}
+                        onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      />
+                    </div>
+
+                    {/* ตำบล / แขวง */}
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                        ตำบล / แขวง <span className="text-rose-500">*</span>
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="แขวงหัวหมาก"
+                        value={formData.subDistrict}
+                        onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      />
+                    </div>
+
+                    {/* อำเภอ / เขต */}
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                        อำเภอ / เขต <span className="text-rose-500">*</span>
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="บางกะปิ"
+                        value={formData.district}
+                        onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                        className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      />
+                    </div>
+
+                    {/* จังหวัด และ รหัสไปรษณีย์ */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                          จังหวัด <span className="text-rose-500">*</span>
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="กรุงเทพมหานคร"
+                          value={formData.province}
+                          onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                          รหัสไปรษณีย์ <span className="text-rose-500">*</span>
+                        </span>
+                        <input
+                          type="text"
+                          maxLength={5}
+                          placeholder="10240"
+                          value={formData.postalCode}
+                          onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ข้อมูลบัญชีธนาคาร (Bank Account) */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center text-xs">
+                      <span>บัญชีธนาคาร (Bank Account)</span>
+                      <FieldInfoTooltip
+                        text="เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)"
+                        align="right"
+                      />
+                    </label>
+                    {pendingBank && (
+                      <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                        มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
+                        {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
+                      </div>
+                    )}
+                    {!pendingBank && rejectedBank && (
+                      <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                        คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                        {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                        ชื่อธนาคาร
+                      </span>
+                      <CustomSelect
+                        value={formData.bankId ?? ''}
+                        onChange={(e) => {
+                          const id = e.target.value ? Number(e.target.value) : undefined;
+                          const bank = banks.find((b) => b.id === id);
+                          setFormData({ ...formData, bankId: id, bankName: bank?.bankName || '' });
+                        }}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      >
+                        <option value="">เลือกธนาคาร</option>
+                        {banks.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.bankName}
+                            {b.shortName ? ` (${b.shortName})` : ''}
+                            {b.accountDigits ? ` - ${b.accountDigits} หลัก` : ''}
+                          </option>
+                        ))}
+                      </CustomSelect>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center mb-1">
+                        <span>
+                          เลขที่บัญชี
+                          {banks.find((b) => b.id === formData.bankId)?.accountDigits
+                            ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
+                            : ''}
+                        </span>
+                        <FieldInfoTooltip
+                          text="เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม"
+                          align="right"
+                        />
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="กรอกเฉพาะตัวเลข"
+                        value={formData.accountNumber || ''}
+                        onFocus={() => {
+                          // เลขที่ซ่อนไว้ (xxxx1234) — คลิกเพื่อกรอกเลขใหม่ทั้งหมด
+                          if ((formData.accountNumber || '').toLowerCase().includes('x')) {
+                            setFormData({ ...formData, accountNumber: '' });
+                          }
+                        }}
+                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      />
                     </div>
                   </div>
                 </div>
