@@ -1843,13 +1843,8 @@ public class SalaryService : ISalaryService
             .Where(i => !systemItemIds.Contains(i.Id) && IsAutoCalculatedItem(i))
             .ToList();
 
-        // รายการที่ผูกกับสวัสดิการ: ยอดมาจากสวัสดิการเท่านั้น ไม่คิดซ้ำจากรายการได้-หัก
-        var benefitLinkedItemIds = (await _context.BenefitItems.AsNoTracking()
-                .Where(b => b.PayrollItemId != null)
-                .Select(b => b.PayrollItemId!.Value)
-                .ToListAsync(cancellationToken))
-            .ToHashSet();
-        autoItems.RemoveAll(i => benefitLinkedItemIds.Contains(i.Id));
+        // รายการที่ผูกกับสวัสดิการ: ข้ามเฉพาะพนักงานที่ได้รับสวัสดิการนั้นจริง (ดูในลูปรายคน)
+        // เดิมตัดทิ้งทั้งบริษัท ทำให้เบี้ยขยัน (FORMULA) หายจากทุกคนแม้ถอดสวัสดิการออกจากประเภทพนักงานแล้ว
 
         // ===== คำขอเบิกสวัสดิการที่อนุมัติแล้ว: สรุปจ่ายในรอบนี้ (ตัดรอบที่วันกำหนดจ่าย) =====
         var claimCutoff = period.EffectiveClaimCutoffDate;
@@ -2039,8 +2034,15 @@ public class SalaryService : ISalaryService
             }
 
             // ===== 3. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
+            // ถ้าพนักงานได้รับสวัสดิการ ALLOWANCE ที่ผูกรายการนี้ไว้ ยอดมาจากสวัสดิการ (ข้อ 3.1) ไม่คิดซ้ำ
+            var empBenefitLinkedItemIds = (curAssign?.EmployeeType?.EmployeeTypeBenefits ?? Enumerable.Empty<EmployeeTypeBenefit>())
+                .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null
+                    && etb.BenefitItem.Category == "ALLOWANCE" && etb.BenefitItem.PayrollItemId != null)
+                .Select(etb => etb.BenefitItem!.PayrollItemId!.Value)
+                .ToHashSet();
             foreach (var item in autoItems)
             {
+                if (empBenefitLinkedItemIds.Contains(item.Id)) continue;
                 var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance, periodLeaveDays);
                 if (line != null) lines.Add(line);
             }
