@@ -670,7 +670,7 @@ public partial class LeaveRequestService : ILeaveRequestService
                 {
                     "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
                     "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
-                    "MANAGER" => "หัวหน้างานโดยตรง (Direct Manager)",
+                    "MANAGER" => "หัวหน้าทีมของผู้ยื่น (Team Lead)",
                     "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
                     "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
                     "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",

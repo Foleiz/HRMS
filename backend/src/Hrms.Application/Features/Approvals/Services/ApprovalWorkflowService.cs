@@ -352,9 +352,22 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             }
 
             case "MANAGER":
+            {
+                if (requesterAssignment?.TeamId.HasValue == true)
+                {
+                    var teamLeadId = await _context.Teams.AsNoTracking()
+                        .Where(t => t.Id == requesterAssignment.TeamId.Value)
+                        .Select(t => t.LeadEmployeeId)
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (teamLeadId.HasValue && teamLeadId.Value != requesterAssignment.EmployeeId)
+                    {
+                        return new HashSet<long> { teamLeadId.Value };
+                    }
+                }
                 return requesterAssignment?.ManagerEmployeeId is { } managerId
                     ? new HashSet<long> { managerId }
                     : new HashSet<long>();
+            }
 
             case "DEPARTMENT_HEAD":
             {
@@ -903,6 +916,11 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Select(d => d.Id)
             .ToListAsync(cancellationToken);
 
+        var managedTeamIds = await _context.Teams.AsNoTracking()
+            .Where(t => t.LeadEmployeeId == employeeId)
+            .Select(t => t.Id)
+            .ToListAsync(cancellationToken);
+
         var allowed = new List<long>();
         foreach (var inst in instances)
         {
@@ -936,7 +954,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                     isEligible = true;
                     break;
                 }
-                if (approverType == "MANAGER" && reqAssign != null && reqAssign.ManagerEmployeeId == employeeId)
+                if (approverType == "MANAGER" && reqAssign != null &&
+                    (reqAssign.ManagerEmployeeId == employeeId || (reqAssign.TeamId.HasValue && managedTeamIds.Contains(reqAssign.TeamId.Value))))
                 {
                     isEligible = true;
                     break;
@@ -988,7 +1007,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 _ => ""
             },
             "EMPLOYEE" => employeeName ?? "พนักงานระบุตัวบุคคล",
-            "MANAGER" => "หัวหน้างานโดยตรงของผู้ยื่น",
+            "MANAGER" => "หัวหน้าทีมของผู้ยื่น",
             "DEPARTMENT_HEAD" => "หัวหน้าแผนกของผู้ยื่น",
             "DIVISION_HEAD" => "หัวหน้าฝ่ายของผู้ยื่น",
             "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",

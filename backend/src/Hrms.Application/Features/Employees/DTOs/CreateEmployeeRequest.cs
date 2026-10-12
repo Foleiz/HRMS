@@ -61,7 +61,10 @@ public class CreateEmployeeRequest
     public string? PositionName { get; set; }
     public string? EmployeeType { get; set; }
 
-    /// <summary>หัวหน้างานโดยตรง (Employee Id)</summary>
+    /// <summary>ทีมที่สังกัด (Team Id)</summary>
+    public long? TeamId { get; set; }
+
+    /// <summary>หัวหน้างานโดยตรง (Employee Id) — หากเลือกทีม ระบบจะผูกหัวหน้าทีมให้อัตโนมัติ</summary>
     public long? ManagerEmployeeId { get; set; }
 
     /// <summary>ประวัติการศึกษาทั้งชุด (ถ้าส่งมา จะใช้แทนช่องเดี่ยวด้านล่าง)</summary>

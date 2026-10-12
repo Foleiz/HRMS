@@ -24,4 +24,5 @@ public class Department : BaseEntity
     public virtual Employee? HeadEmployee { get; set; }
     public virtual ICollection<Department> SubDepartments { get; set; } = new List<Department>();
     public virtual ICollection<Position> Positions { get; set; } = new List<Position>();
+    public virtual ICollection<Team> Teams { get; set; } = new List<Team>();
 }

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
@@ -68,7 +68,7 @@ const APPROVER_TYPE_OPTIONS = ['DEPARTMENT_HEAD', 'DIVISION_HEAD', 'MANAGER', 'R
 const APPROVER_TYPE_HINTS: Record<string, string> = {
   DEPARTMENT_HEAD: 'หัวหน้าแผนกของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการแผนกในแผนกเดียวกัน)',
   DIVISION_HEAD: 'หัวหน้าฝ่ายของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการฝ่ายในฝ่ายเดียวกัน)',
-  MANAGER: 'หัวหน้างานโดยตรงที่กำหนดไว้ในข้อมูลพนักงานแต่ละคน',
+  MANAGER: 'หัวหน้าทีมของผู้ยื่นตามโครงสร้างทีมที่สังกัด (Team Lead)',
   EMPLOYEE: 'พนักงานคนเดียวกันเสมอ ไม่ว่าใครเป็นผู้ยื่น',
   HR: 'ผู้มีบทบาทฝ่ายบุคคล (HR / HR_ADMIN / HR_MGR)',
   CEO: 'ผู้มีบทบาทผู้บริหารสูงสุด (CEO / EXECUTIVE)',
@@ -103,7 +103,7 @@ const getDocTypeBadge = (docType: string) => {
 const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: Employee[], roles: RoleSummary[]) => {
   switch (step.approverType) {
     case 'MANAGER':
-      return 'หัวหน้างานตรงของผู้ยื่น';
+      return 'หัวหน้าทีมของผู้ยื่น';
     case 'DEPARTMENT_HEAD':
       return 'หัวหน้าแผนกของผู้ยื่น';
     case 'DIVISION_HEAD':

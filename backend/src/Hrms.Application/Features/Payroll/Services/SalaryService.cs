@@ -63,6 +63,26 @@ public class SalaryService : ISalaryService
                 return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
 
             case "TEAM":
+            {
+                long? myTeamId = _currentUser.TeamId;
+                if (!myTeamId.HasValue && myEmpId.HasValue)
+                {
+                    myTeamId = await _context.EmployeeAssignments
+                        .Where(a => a.EmployeeId == myEmpId.Value && a.IsCurrent)
+                        .Select(a => (long?)a.TeamId)
+                        .FirstOrDefaultAsync(cancellationToken);
+                }
+
+                if (!myTeamId.HasValue)
+                    return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
+
+                return await _context.EmployeeAssignments
+                    .Where(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value)) && a.IsCurrent)
+                    .Select(a => a.EmployeeId)
+                    .Distinct()
+                    .ToListAsync(cancellationToken);
+            }
+
             case "DEPARTMENT":
             {
                 if (!myDeptId.HasValue)

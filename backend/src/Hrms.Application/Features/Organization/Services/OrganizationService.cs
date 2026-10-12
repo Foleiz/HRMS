@@ -420,6 +420,180 @@ public class OrganizationService : IOrganizationService
     }
     #endregion
 
+    #region Teams
+    public async Task<List<TeamDto>> GetAllTeamsAsync(long? departmentId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Teams
+            .AsNoTracking()
+            .Include(t => t.Department)
+                .ThenInclude(d => d.Division)
+            .Include(t => t.LeadEmployee)
+            .AsQueryable();
+
+        if (departmentId.HasValue)
+        {
+            query = query.Where(t => t.DepartmentId == departmentId.Value);
+        }
+
+        var teams = await query
+            .OrderBy(t => t.Department.DepartmentName)
+            .ThenBy(t => t.TeamCode)
+            .ToListAsync(cancellationToken);
+
+        // ดึงจำนวนสมาชิกในแต่ละทีมจาก employee_assignment ที่ is_current = true
+        var teamIds = teams.Select(t => t.Id).ToList();
+        var memberCounts = await _dbContext.EmployeeAssignments
+            .AsNoTracking()
+            .Where(a => a.IsCurrent && a.TeamId.HasValue && teamIds.Contains(a.TeamId.Value))
+            .GroupBy(a => a.TeamId!.Value)
+            .Select(g => new { TeamId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.TeamId, x => x.Count, cancellationToken);
+
+        return teams.Select(t => new TeamDto
+        {
+            Id = t.Id,
+            DepartmentId = t.DepartmentId,
+            DepartmentName = t.Department?.DepartmentName ?? string.Empty,
+            DivisionName = t.Department?.Division?.DivisionName ?? string.Empty,
+            TeamCode = t.TeamCode,
+            TeamName = t.TeamName,
+            LeadEmployeeId = t.LeadEmployeeId,
+            LeadEmployeeName = t.LeadEmployee != null ? t.LeadEmployee.FullName : null,
+            LeadEmployeeCode = t.LeadEmployee?.EmployeeCode,
+            Description = t.Description,
+            MemberCount = memberCounts.GetValueOrDefault(t.Id, 0),
+            Status = t.Status,
+            CreatedAt = t.CreatedAt,
+            UpdatedAt = t.UpdatedAt
+        }).ToList();
+    }
+
+    public async Task<TeamDto> GetTeamByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var t = await _dbContext.Teams
+            .AsNoTracking()
+            .Include(t => t.Department)
+                .ThenInclude(d => d.Division)
+            .Include(t => t.LeadEmployee)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (t == null) throw new NotFoundException("Team", id);
+
+        var memberCount = await _dbContext.EmployeeAssignments
+            .AsNoTracking()
+            .CountAsync(a => a.IsCurrent && a.TeamId == id, cancellationToken);
+
+        return new TeamDto
+        {
+            Id = t.Id,
+            DepartmentId = t.DepartmentId,
+            DepartmentName = t.Department?.DepartmentName ?? string.Empty,
+            DivisionName = t.Department?.Division?.DivisionName ?? string.Empty,
+            TeamCode = t.TeamCode,
+            TeamName = t.TeamName,
+            LeadEmployeeId = t.LeadEmployeeId,
+            LeadEmployeeName = t.LeadEmployee != null ? t.LeadEmployee.FullName : null,
+            LeadEmployeeCode = t.LeadEmployee?.EmployeeCode,
+            Description = t.Description,
+            MemberCount = memberCount,
+            Status = t.Status,
+            CreatedAt = t.CreatedAt,
+            UpdatedAt = t.UpdatedAt
+        };
+    }
+
+    public async Task<TeamDto> CreateTeamAsync(CreateTeamDto request, CancellationToken cancellationToken = default)
+    {
+        if (request.DepartmentId <= 0)
+        {
+            throw new ValidationException("กรุณาเลือกแผนกที่สังกัด");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TeamName))
+        {
+            throw new ValidationException("กรุณากรอกชื่อทีม");
+        }
+
+        var dept = await _dbContext.Departments.FindAsync(new object[] { request.DepartmentId }, cancellationToken);
+        if (dept == null) throw new NotFoundException("Department", request.DepartmentId);
+
+        // รหัสรันอัตโนมัติ (TEAM001, TEAM002, ...) ถ้าไม่ได้ระบุมา
+        string code = string.IsNullOrWhiteSpace(request.TeamCode)
+            ? await CodeGenerator.NextAsync(_dbContext.Teams.Select(t => t.TeamCode), "TEAM", 3, cancellationToken)
+            : request.TeamCode.Trim().ToUpper();
+
+        // ตรวจสอบรหัสทีมซ้ำในแผนกเดียวกัน
+        bool exists = await _dbContext.Teams.AnyAsync(t =>
+            t.DepartmentId == request.DepartmentId && t.TeamCode.ToUpper() == code, cancellationToken);
+        if (exists)
+        {
+            throw new ValidationException($"รหัสทีม '{code}' มีอยู่ในแผนกนี้แล้ว");
+        }
+
+        var team = new Team
+        {
+            DepartmentId = request.DepartmentId,
+            TeamCode = code,
+            TeamName = request.TeamName.Trim(),
+            LeadEmployeeId = request.LeadEmployeeId,
+            Description = request.Description?.Trim(),
+            Status = request.Status,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _dbContext.Teams.Add(team);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetTeamByIdAsync(team.Id, cancellationToken);
+    }
+
+    public async Task<TeamDto> UpdateTeamAsync(long id, UpdateTeamDto request, CancellationToken cancellationToken = default)
+    {
+        var team = await _dbContext.Teams.FindAsync(new object[] { id }, cancellationToken);
+        if (team == null) throw new NotFoundException("Team", id);
+
+        if (request.DepartmentId <= 0)
+        {
+            throw new ValidationException("กรุณาเลือกแผนกที่สังกัด");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.TeamName))
+        {
+            throw new ValidationException("กรุณากรอกชื่อทีม");
+        }
+
+        team.DepartmentId = request.DepartmentId;
+        team.TeamName = request.TeamName.Trim();
+        team.LeadEmployeeId = request.LeadEmployeeId;
+        team.Description = request.Description?.Trim();
+        team.Status = request.Status;
+        team.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return await GetTeamByIdAsync(id, cancellationToken);
+    }
+
+    public async Task DeleteTeamAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var team = await _dbContext.Teams.FindAsync(new object[] { id }, cancellationToken);
+        if (team == null) throw new NotFoundException("Team", id);
+
+        // ตรวจสอบว่ามีพนักงานสังกัดทีมนี้อยู่หรือไม่
+        bool hasMembers = await _dbContext.EmployeeAssignments
+            .AnyAsync(a => a.IsCurrent && a.TeamId == id, cancellationToken);
+
+        if (hasMembers)
+        {
+            throw new BusinessRuleException($"ไม่สามารถลบทีม '{team.TeamName}' ได้ เนื่องจากยังมีพนักงานสังกัดอยู่ในทีมนี้");
+        }
+
+        _dbContext.Teams.Remove(team);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+    #endregion
+
     #region Positions
     public async Task<List<PositionDto>> GetAllPositionsAsync(long? departmentId = null, CancellationToken cancellationToken = default)
     {

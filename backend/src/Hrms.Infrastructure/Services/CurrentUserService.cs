@@ -56,6 +56,15 @@ public class CurrentUserService : ICurrentUserService
         }
     }
 
+    public long? TeamId
+    {
+        get
+        {
+            string? teamId = User?.FindFirstValue("team_id");
+            return long.TryParse(teamId, out long id) && id > 0 ? id : null;
+        }
+    }
+
     public List<string> Roles => (User?.FindAll(ClaimTypes.Role) ?? Enumerable.Empty<Claim>())
         .Concat(User?.FindAll("role") ?? Enumerable.Empty<Claim>())
         .Select(c => c.Value)

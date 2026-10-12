@@ -83,6 +83,40 @@ export interface UpdateDepartmentRequest {
   status: string;
 }
 
+export interface Team {
+  id: number;
+  departmentId: number;
+  departmentName: string;
+  divisionName: string;
+  teamCode: string;
+  teamName: string;
+  leadEmployeeId?: number | null;
+  leadEmployeeName?: string | null;
+  leadEmployeeCode?: string | null;
+  description?: string | null;
+  memberCount: number;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTeamRequest {
+  departmentId: number;
+  teamCode?: string;
+  teamName: string;
+  leadEmployeeId?: number | null;
+  description?: string | null;
+  status: string;
+}
+
+export interface UpdateTeamRequest {
+  departmentId: number;
+  teamName: string;
+  leadEmployeeId?: number | null;
+  description?: string | null;
+  status: string;
+}
+
 export interface Position {
   id: number;
   departmentId: number;

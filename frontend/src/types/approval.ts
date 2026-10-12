@@ -169,7 +169,7 @@ export const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 export const APPROVER_TYPE_LABELS: Record<string, string> = {
   EMPLOYEE: 'ระบุตัวบุคคล',
   ROLE: 'ระบุตามบทบาท',
-  MANAGER: 'หัวหน้างานตรงของผู้ยื่น',
+  MANAGER: 'หัวหน้าทีมของผู้ยื่น',
   DEPARTMENT_HEAD: 'หัวหน้าแผนกของผู้ยื่น',
   DIVISION_HEAD: 'หัวหน้าฝ่ายของผู้ยื่น',
   HR: 'ฝ่ายทรัพยากรบุคคล',

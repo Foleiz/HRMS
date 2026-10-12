@@ -86,6 +86,9 @@ export interface Employee {
   divisionId?: number;
   divisionCode?: string;
   divisionName?: string;
+  teamId?: number | null;
+  teamCode?: string | null;
+  teamName?: string | null;
   employeeTypeId?: number;
   employeeType?: string;
   /** หัวหน้างานโดยตรง */
@@ -214,6 +217,8 @@ export interface CreateEmployeePayload {
   accountNumber?: string;
   positionId?: number;
   positionName?: string;
+  teamId?: number | null;
+  setTeam?: boolean;
   employeeType?: string;
   /** หัวหน้างานโดยตรง (null = ไม่มี) — ตอนแก้ไขต้องส่ง setManager: true ด้วย */
   managerEmployeeId?: number | null;
