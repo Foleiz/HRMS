@@ -2208,7 +2208,7 @@ public class SalaryService : ISalaryService
         if (noSalary > 0)
             warnings.Add($"{noSalary} คนยังไม่มีฐานเงินเดือนที่มีผลในรอบนี้ จึงยังไม่ได้คำนวณ");
         if (noAttendanceNames.Count > 0)
-            warnings.Add($"{noAttendanceNames.Count} คนไม่มีข้อมูลเวลาในรอบนี้ (ไม่ถูกหักสาย/ขาด และไม่ได้เบี้ยขยัน)"
+            warnings.Add($"{noAttendanceNames.Count} คนไม่มีวันมาทำงานในข้อมูลเวลาของรอบนี้ (ตรวจว่านำเข้าไฟล์เวลาครบหรือผูกรหัสเครื่องสแกนแล้ว)"
                 + (noAttendanceNames.Count <= 5 ? $": {string.Join(", ", noAttendanceNames)}" : ""));
         LastCalculationWarnings = warnings;
 
