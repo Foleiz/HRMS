@@ -337,19 +337,21 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   </CustomSelect>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    สถานะการใช้งาน
-                  </label>
-                  <CustomSelect
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
-                  >
-                    <option value="ACTIVE">เปิดใช้งาน</option>
-                    <option value="INACTIVE">ปิดการใช้งาน</option>
-                  </CustomSelect>
-                </div>
+                {editingItem && (
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      สถานะการใช้งาน
+                    </label>
+                    <CustomSelect
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value)}
+                      className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                    >
+                      <option value="ACTIVE">เปิดใช้งาน</option>
+                      <option value="INACTIVE">ปิดการใช้งาน</option>
+                    </CustomSelect>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">

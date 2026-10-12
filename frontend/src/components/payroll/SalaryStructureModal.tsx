@@ -191,25 +191,27 @@ export const SalaryStructureModal: React.FC<Props> = ({
             />
           </div>
 
-          {/* เปิดการใช้งานตำแหน่งนี้ (Toggle Switch) */}
-          <div className="flex items-center justify-between pt-2 pb-1">
-            <span className="text-xs font-medium text-slate-800 dark:text-slate-200">เปิดการใช้งานตำแหน่งนี้</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isActive}
-              onClick={() => setIsActive(!isActive)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                isActive ? 'bg-blue-600' : 'bg-slate-300'
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow-md ring-0 transition duration-200 ease-in-out ${
-                  isActive ? 'translate-x-5' : 'translate-x-0'
+          {/* เปิดการใช้งานตำแหน่งนี้ (Toggle Switch - แสดงเฉพาะตอนแก้ไข) */}
+          {structure && (
+            <div className="flex items-center justify-between pt-2 pb-1">
+              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">เปิดการใช้งานตำแหน่งนี้</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isActive}
+                onClick={() => setIsActive(!isActive)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  isActive ? 'bg-blue-600' : 'bg-slate-300'
                 }`}
-              />
-            </button>
-          </div>
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow-md ring-0 transition duration-200 ease-in-out ${
+                    isActive ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
 
           {/* Action Buttons: ยกเลิก / บันทึก */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">

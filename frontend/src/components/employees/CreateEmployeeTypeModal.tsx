@@ -387,7 +387,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           </div>
 
           {/* รูปแบบค่าตอบแทน & สถานะ */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className={`grid grid-cols-1 ${isEdit ? 'sm:grid-cols-2' : ''} gap-3`}>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 รูปแบบค่าตอบแทน (Wage Type)
@@ -405,19 +405,21 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
               </CustomSelect>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                สถานะการใช้งาน
-              </label>
-              <CustomSelect
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
-              >
-                <option value="ACTIVE">เปิดใช้งาน</option>
-                <option value="INACTIVE">ปิดการใช้งาน</option>
-              </CustomSelect>
-            </div>
+            {isEdit && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  สถานะการใช้งาน
+                </label>
+                <CustomSelect
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                >
+                  <option value="ACTIVE">เปิดใช้งาน</option>
+                  <option value="INACTIVE">ปิดการใช้งาน</option>
+                </CustomSelect>
+              </div>
+            )}
           </div>
 
           {/* 4. สิทธิประโยชน์และสวัสดิการ */}

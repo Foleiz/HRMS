@@ -2695,18 +2695,20 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Status */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะกะการทำงาน</label>
-                <CustomSelect
-                  value={shiftForm.status}
-                  onChange={(e) => setShiftForm({ ...shiftForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                >
-                  <option value="ACTIVE">เปิดใช้งาน</option>
-                  <option value="INACTIVE">ระงับการใช้งานชั่วคราว</option>
-                </CustomSelect>
-              </div>
+              {/* Status (แสดงเฉพาะตอนแก้ไข) */}
+              {shiftModalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะกะการทำงาน</label>
+                  <CustomSelect
+                    value={shiftForm.status}
+                    onChange={(e) => setShiftForm({ ...shiftForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  >
+                    <option value="ACTIVE">เปิดใช้งาน</option>
+                    <option value="INACTIVE">ระงับการใช้งานชั่วคราว</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2 dark:border-slate-700/60">

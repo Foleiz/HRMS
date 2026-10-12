@@ -2200,17 +2200,19 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <CustomSelect
-                  value={divisionForm.status}
-                  onChange={(e) => setDivisionForm({ ...divisionForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ACTIVE">ใช้งานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </CustomSelect>
-              </div>
+              {modalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
+                  <CustomSelect
+                    value={divisionForm.status}
+                    onChange={(e) => setDivisionForm({ ...divisionForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  >
+                    <option value="ACTIVE">ใช้งานอยู่</option>
+                    <option value="INACTIVE">ไม่ได้ใช้งาน</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
@@ -2309,17 +2311,19 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <CustomSelect
-                  value={deptForm.status}
-                  onChange={(e) => setDeptForm({ ...deptForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ACTIVE">ใช้งานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </CustomSelect>
-              </div>
+              {modalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
+                  <CustomSelect
+                    value={deptForm.status}
+                    onChange={(e) => setDeptForm({ ...deptForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  >
+                    <option value="ACTIVE">ใช้งานอยู่</option>
+                    <option value="INACTIVE">ไม่ได้ใช้งาน</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
@@ -2449,17 +2453,19 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
-                <CustomSelect
-                  value={teamForm.status}
-                  onChange={(e) => setTeamForm({ ...teamForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ACTIVE">ใช้งานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </CustomSelect>
-              </div>
+              {modalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
+                  <CustomSelect
+                    value={teamForm.status}
+                    onChange={(e) => setTeamForm({ ...teamForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
+                  >
+                    <option value="ACTIVE">ใช้งานอยู่</option>
+                    <option value="INACTIVE">ไม่ได้ใช้งาน</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
@@ -2552,17 +2558,19 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <CustomSelect
-                  value={posForm.status}
-                  onChange={(e) => setPosForm({ ...posForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ACTIVE">ทำงานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ทำงาน</option>
-                </CustomSelect>
-              </div>
+              {modalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
+                  <CustomSelect
+                    value={posForm.status}
+                    onChange={(e) => setPosForm({ ...posForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  >
+                    <option value="ACTIVE">ทำงานอยู่</option>
+                    <option value="INACTIVE">ไม่ได้ทำงาน</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
@@ -2739,17 +2747,19 @@ export default function OrganizationPage() {
                   </label>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
-                  <CustomSelect
-                    value={benefitForm.status}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
-                  >
-                    <option value="ACTIVE">เปิดใช้งาน</option>
-                    <option value="INACTIVE">ปิดใช้งาน</option>
-                  </CustomSelect>
-                </div>
+                {modalMode === 'edit' && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สถานะ</label>
+                    <CustomSelect
+                      value={benefitForm.status}
+                      onChange={(e) => setBenefitForm({ ...benefitForm, status: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
+                    >
+                      <option value="ACTIVE">เปิดใช้งาน</option>
+                      <option value="INACTIVE">ปิดใช้งาน</option>
+                    </CustomSelect>
+                  </div>
+                )}
               </div>
 
               {/* Modal Footer */}
@@ -2801,17 +2811,19 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
-                <CustomSelect
-                  value={levelForm.status}
-                  onChange={(e) => setLevelForm({ ...levelForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="ACTIVE">ใช้งานอยู่</option>
-                  <option value="INACTIVE">ไม่ได้ใช้งาน</option>
-                </CustomSelect>
-              </div>
+              {modalMode === 'edit' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะ</label>
+                  <CustomSelect
+                    value={levelForm.status}
+                    onChange={(e) => setLevelForm({ ...levelForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  >
+                    <option value="ACTIVE">ใช้งานอยู่</option>
+                    <option value="INACTIVE">ไม่ได้ใช้งาน</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
                 <button
@@ -2946,20 +2958,22 @@ export default function OrganizationPage() {
                 </label>
               </div>
 
-              {/* สถานะ */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะการใช้งาน</label>
-                <CustomSelect
-                  value={bankAccountForm.status}
-                  disabled={bankAccountForm.isPrimaryPayrollAccount}
-                  title={bankAccountForm.isPrimaryPayrollAccount ? 'บัญชีหลักต้องเปิดใช้งานเสมอ' : undefined}
-                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                >
-                  <option value="ACTIVE">เปิดใช้งาน</option>
-                  <option value="INACTIVE">ระงับการใช้งาน</option>
-                </CustomSelect>
-              </div>
+              {/* สถานะ (แสดงเฉพาะตอนแก้ไข) */}
+              {editingBankAccount && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะการใช้งาน</label>
+                  <CustomSelect
+                    value={bankAccountForm.status}
+                    disabled={bankAccountForm.isPrimaryPayrollAccount}
+                    title={bankAccountForm.isPrimaryPayrollAccount ? 'บัญชีหลักต้องเปิดใช้งานเสมอ' : undefined}
+                    onChange={(e) => setBankAccountForm({ ...bankAccountForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  >
+                    <option value="ACTIVE">เปิดใช้งาน</option>
+                    <option value="INACTIVE">ระงับการใช้งาน</option>
+                  </CustomSelect>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/60">

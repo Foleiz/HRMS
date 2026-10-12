@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
@@ -189,13 +189,15 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
               </div>
               <Toggle checked={isPaidLeave} onChange={setIsPaidLeave} />
             </div>
-            <div className="flex items-center justify-between gap-4 pt-3 border-t border-gray-200/60">
-              <div>
-                <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">เปิดใช้งาน</span>
-                <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล</span>
+            {isEditing && (
+              <div className="flex items-center justify-between gap-4 pt-3 border-t border-gray-200/60">
+                <div>
+                  <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">เปิดใช้งาน</span>
+                  <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล</span>
+                </div>
+                <Toggle checked={isActive} onChange={setIsActive} />
               </div>
-              <Toggle checked={isActive} onChange={setIsActive} />
-            </div>
+            )}
           </div>
 
 
