@@ -10,6 +10,7 @@ public class EmployeeBonus : BaseEntity
 {
     public long EmployeeId { get; set; }
     public int Year { get; set; }
+    public int Month { get; set; } = 12;
     public decimal BaseSalary { get; set; }
     public decimal Multiplier { get; set; }
     public decimal BonusAmount { get; set; }
