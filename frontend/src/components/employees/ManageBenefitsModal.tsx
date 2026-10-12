@@ -428,7 +428,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                       className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
                     />
                     <label htmlFor="manageIsStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                      เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
+                      เป็นสิทธิตามกฎหมายแรงงานบังคับ
                     </label>
                   </div>
                   <div className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
@@ -440,7 +440,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                       className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
                     />
                     <label htmlFor="manageIsDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                      แนบเอกสารประกอบหรือใบรับรองแพทย์ (บังคับแนบเอกสารเมื่อขอเบิกสวัสดิการนี้)
+                      แนบเอกสารประกอบหรือใบรับรองแพทย์
                     </label>
                   </div>
                 </div>

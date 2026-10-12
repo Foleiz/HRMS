@@ -2679,7 +2679,7 @@ export default function OrganizationPage() {
                     className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
                   />
                   <label htmlFor="isStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                    เป็นสิทธิตามกฎหมายแรงงานบังคับ (Statutory Benefit)
+                    เป็นสิทธิตามกฎหมายแรงงานบังคับ
                   </label>
                 </div>
 
@@ -2692,7 +2692,7 @@ export default function OrganizationPage() {
                     className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
                   />
                   <label htmlFor="isDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                    แนบเอกสารประกอบหรือใบรับรองแพทย์ (บังคับแนบเอกสารเมื่อขอเบิกสวัสดิการนี้)
+                    แนบเอกสารประกอบหรือใบรับรองแพทย์
                   </label>
                 </div>
 
