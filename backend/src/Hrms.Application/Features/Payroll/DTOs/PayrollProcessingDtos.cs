@@ -111,6 +111,7 @@ public class AddPayrollAdjustmentRequest
 public class AddBonusPayoutRequest
 {
     public int Year { get; set; }
+    public int? Month { get; set; }
 }
 
 public class BonusPayoutResultDto
@@ -213,6 +214,7 @@ public class EmployeeBonusDto
     public string DepartmentName { get; set; } = string.Empty;
     public string? PositionName { get; set; }
     public int Year { get; set; }
+    public int Month { get; set; } = 12;
     public decimal BaseSalary { get; set; }
     public decimal Multiplier { get; set; }
     public decimal BonusAmount { get; set; }
@@ -225,6 +227,7 @@ public class EmployeeBonusDto
 public class CalculateBonusRequest
 {
     public int Year { get; set; }
+    public int Month { get; set; } = 12;
     public decimal DefaultMultiplier { get; set; } = 2.0m;
 }
 
@@ -239,6 +242,7 @@ public class UpdateBonusItemDto
 public class SaveEmployeeBonusesRequest
 {
     public int Year { get; set; }
+    public int Month { get; set; } = 12;
     public string CalculationMode { get; set; } = "MANUAL";
     public List<UpdateBonusItemDto> Items { get; set; } = new();
 }

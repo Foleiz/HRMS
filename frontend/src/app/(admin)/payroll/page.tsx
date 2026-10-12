@@ -596,6 +596,7 @@ export default function PayrollPage() {
   // Tab: Bonus state
   const [bonuses, setBonuses] = useState<EmployeeBonus[]>([]);
   const [bonusYear, setBonusYear] = useState<number>(2026);
+  const [bonusMonth, setBonusMonth] = useState<number>(12);
   const [bonusMultiplierInput, setBonusMultiplierInput] = useState<number>(1.5);
   const [isCalculatingBonus, setIsCalculatingBonus] = useState<boolean>(false);
   const [isSavingBonus, setIsSavingBonus] = useState<boolean>(false);
@@ -699,14 +700,15 @@ export default function PayrollPage() {
   // Dynamic fetch when switching to Bonus tab
   useEffect(() => {
     if (activeTab === 'bonus') {
-      loadBonuses(bonusYear);
+      loadBonuses(bonusYear, bonusMonth);
     }
-  }, [activeTab, bonusYear]);
+  }, [activeTab, bonusYear, bonusMonth]);
 
-  const loadBonuses = async (year?: number) => {
+  const loadBonuses = async (year?: number, month?: number) => {
     try {
       const yr = year || bonusYear || 2026;
-      const bonusData = await salaryService.getEmployeeBonuses(yr);
+      const mo = month || bonusMonth || 12;
+      const bonusData = await salaryService.getEmployeeBonuses(yr, mo);
       setBonuses(bonusData || []);
     } catch (err) {
       console.error('Failed to load bonuses:', err);
@@ -1368,10 +1370,11 @@ export default function PayrollPage() {
       setIsCalculatingBonus(true);
       const res = await salaryService.calculateEmployeeBonuses({
         year: bonusYear,
+        month: bonusMonth,
         defaultMultiplier: bonusMultiplierInput,
       });
       setBonuses(res || []);
-      showToast(`คำนวณและจัดสรรโบนัสประจำปี ${bonusYear + 543} (ตัวคูณ ${bonusMultiplierInput} เท่า) สำเร็จ`);
+      showToast(`คำนวณและจัดสรรโบนัสประจำรอบ ${bonusMonth}/${bonusYear + 543} (ตัวคูณ ${bonusMultiplierInput} เท่า) สำเร็จ`);
     } catch (err: any) {
       console.error('Failed to calculate bonuses:', err);
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณโบนัส');
@@ -1431,6 +1434,7 @@ export default function PayrollPage() {
       setIsSavingBonus(true);
       const payload: SaveEmployeeBonusesPayload = {
         year: bonusYear,
+        month: bonusMonth,
         calculationMode: 'MANUAL',
         items: bonuses.map((b) => ({
           employeeId: b.employeeId,
@@ -1441,7 +1445,7 @@ export default function PayrollPage() {
       };
       const saved = await salaryService.saveEmployeeBonuses(payload);
       setBonuses(saved || []);
-      showToast(`บันทึกการจัดสรรโบนัสปี ${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ)`);
+      showToast(`บันทึกการจัดสรรโบนัสรอบ ${bonusMonth}/${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ)`);
     } catch (err: any) {
       console.error('Failed to save bonuses:', err);
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลโบนัส');
@@ -1481,12 +1485,12 @@ export default function PayrollPage() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Bonus_Report_${bonusYear}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `Bonus_Report_${bonusYear}_${String(bonusMonth).padStart(2, '0')}_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    showToast(`ส่งออกไฟล์ข้อมูลโบนัสปี ${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ)`);
+    showToast(`ส่งออกไฟล์ข้อมูลโบนัสรอบ ${bonusMonth}/${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ)`);
   };
 
   const handleOpenApplyBonusModal = () => {
@@ -1494,8 +1498,8 @@ export default function PayrollPage() {
       showToast('กรุณากดคำนวณและจัดสรรโบนัสก่อนนำเข้าสู่งวดเงินเดือน');
       return;
     }
-    const decPeriod = periods.find((p) => p.year === bonusYear && p.month === 12);
-    setSelectedTargetPeriodId(decPeriod ? decPeriod.id : (selectedPeriod?.id || (periods[0]?.id ?? null)));
+    const matchingPeriod = periods.find((p) => p.year === bonusYear && p.month === bonusMonth);
+    setSelectedTargetPeriodId(matchingPeriod ? matchingPeriod.id : (selectedPeriod?.id || (periods[0]?.id ?? null)));
     setIsApplyBonusModalOpen(true);
   };
 
@@ -1508,6 +1512,7 @@ export default function PayrollPage() {
       setIsApplyingBonus(true);
       await salaryService.saveEmployeeBonuses({
         year: bonusYear,
+        month: bonusMonth,
         calculationMode: 'MANUAL',
         items: bonuses.map((b) => ({
           employeeId: b.employeeId,
@@ -1517,7 +1522,7 @@ export default function PayrollPage() {
         })),
       });
 
-      const res = await salaryService.addBonusPayout(selectedTargetPeriodId, bonusYear);
+      const res = await salaryService.addBonusPayout(selectedTargetPeriodId, bonusYear, bonusMonth);
       const targetPeriod = periods.find((p) => p.id === selectedTargetPeriodId);
       showToast(`บันทึกโบนัสเข้าสู่งวด ${targetPeriod?.periodName || ''} สำเร็จ (${res.addedCount} คน รวม ฿${(res.addedAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`);
       setIsApplyBonusModalOpen(false);
@@ -2975,17 +2980,37 @@ export default function PayrollPage() {
             {/* Top Controls & Calculation Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700">
               <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300">
+                {/* Month Selection */}
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">เดือนที่ออกโบนัส:</span>
+                  <CustomSelect
+                    value={bonusMonth}
+                    onChange={(e) => {
+                      const mo = parseInt(e.target.value) || 12;
+                      setBonusMonth(mo);
+                      loadBonuses(bonusYear, mo);
+                    }}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer min-w-[130px]"
+                  >
+                    {THAI_MONTH_NAMES.map((name, idx) => (
+                      <option key={idx + 1} value={idx + 1}>
+                        {name} ({idx + 1})
+                      </option>
+                    ))}
+                  </CustomSelect>
+                </div>
+
                 {/* Year Selection */}
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-slate-600 dark:text-slate-400">ปีประจำรอบ:</span>
+                  <span className="font-semibold text-slate-600 dark:text-slate-400">ปี:</span>
                   <CustomSelect
                     value={bonusYear}
                     onChange={(e) => {
                       const yr = parseInt(e.target.value) || 2026;
                       setBonusYear(yr);
-                      loadBonuses(yr);
+                      loadBonuses(yr, bonusMonth);
                     }}
-                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer min-w-[130px]"
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer min-w-[110px]"
                   >
                     {[2024, 2025, 2026, 2027].map((yr) => (
                       <option key={yr} value={yr}>
@@ -3037,13 +3062,17 @@ export default function PayrollPage() {
                 <p className="text-2xl font-bold text-amber-950 dark:text-amber-200 mt-1.5 font-mono tracking-tight">
                   ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
-                <span className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 block">คำนวณสำหรับปี {bonusYear + 543}</span>
+                <span className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 block">
+                  คำนวณสำหรับรอบ {THAI_MONTH_NAMES[bonusMonth - 1]} {bonusYear + 543}
+                </span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 shadow-xs">
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">จำนวนพนักงานที่ได้รับโบนัส</span>
                 <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1.5">{bonuses.length} คน</p>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">พนักงานที่มีสัญญาจ้างในปี {bonusYear + 543}</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
+                  พนักงานที่มีสัญญาจ้างในรอบ {THAI_MONTH_NAMES[bonusMonth - 1]} {bonusYear + 543}
+                </span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 shadow-xs">
@@ -5915,8 +5944,8 @@ export default function PayrollPage() {
 
               <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2">
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
-                  <span>ปีโบนัสที่จัดสรร:</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">พ.ศ. {bonusYear + 543}</span>
+                  <span>รอบโบนัสที่จัดสรร:</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">{THAI_MONTH_NAMES[bonusMonth - 1]} พ.ศ. {bonusYear + 543}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
                   <span>จำนวนพนักงานที่จะบันทึก:</span>

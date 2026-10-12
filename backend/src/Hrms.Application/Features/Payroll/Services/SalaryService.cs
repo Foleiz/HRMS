@@ -1549,6 +1549,7 @@ public class SalaryService : ISalaryService
     public async Task<BonusPayoutResultDto> AddApprovedBonusesToPeriodAsync(long periodId, AddBonusPayoutRequest request, CancellationToken cancellationToken = default)
     {
         int year = request.Year > 0 ? request.Year : DateTime.Today.Year;
+        int? month = request.Month > 0 && request.Month <= 12 ? request.Month : null;
 
         var period = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
@@ -1559,13 +1560,21 @@ public class SalaryService : ISalaryService
 
         var bonusItem = (await EnsureSystemPayrollItemsAsync(cancellationToken))["INC_BONUS"];
 
-        var bonuses = await _context.EmployeeBonuses
-            .Where(b => b.Year == year && b.Status == "APPROVED" && b.BonusAmount > 0)
+        var bonusQuery = _context.EmployeeBonuses
+            .Where(b => b.Year == year && b.Status == "APPROVED" && b.BonusAmount > 0);
+        if (month.HasValue)
+        {
+            bonusQuery = bonusQuery.Where(b => b.Month == month.Value);
+        }
+
+        var bonuses = await bonusQuery
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         if (!bonuses.Any())
-            throw new BusinessRuleException($"ไม่พบโบนัสที่อนุมัติแล้วของปี {year + 543}");
+            throw new BusinessRuleException(month.HasValue 
+                ? $"ไม่พบโบนัสที่อนุมัติแล้วของเดือน {month.Value}/{year + 543}" 
+                : $"ไม่พบโบนัสที่อนุมัติแล้วของปี {year + 543}");
 
         // ป้องกันการจ่ายซ้ำ: โบนัสที่อยู่ในรอบเงินเดือนใด ๆ แล้ว จะไม่ถูกเพิ่มอีก
         var existingBonusSources = await _context.PayrollDetails
@@ -1882,6 +1891,28 @@ public class SalaryService : ISalaryService
             stub.PayrollPeriodId = null;
         }
 
+        // ===== โบนัสประจำรอบเดือน/ปี: ดึงโบนัสที่อนุมัติแล้วของรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ =====
+        var bonusItem = systemItems["INC_BONUS"];
+        var periodBonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == period.Year && b.Month == period.Month && b.Status == "APPROVED" && b.BonusAmount > 0)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        // ป้องกันการจ่ายซ้ำ: โบนัสที่จ่ายในรอบเงินเดือนอื่นไปแล้ว จะไม่ดึงมาคิดซ้ำ
+        var otherPeriodBonusIds = await _context.PayrollDetails
+            .Where(d => d.PayrollItemId == bonusItem.Id && d.Payroll != null && d.Payroll.PeriodId != period.Id)
+            .Select(d => d.CalculationSource)
+            .ToListAsync(cancellationToken);
+        var paidOtherBonusIds = otherPeriodBonusIds
+            .Select(s => ReadDetailSource(s).BonusId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToHashSet();
+
+        var eligiblePeriodBonuses = periodBonuses
+            .Where(b => !paidOtherBonusIds.Contains(b.Id))
+            .ToDictionary(b => b.EmployeeId);
+
         var employeeIds = employees.Select(e => e.Id).ToList();
         var attendance = await _context.AttendanceMonthlySummaries
             .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
@@ -2119,11 +2150,42 @@ public class SalaryService : ISalaryService
 
             // ===== 4. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
             var manualDetails = payroll.Details.Where(IsManualDetail).ToList();
+            bool hasBonusInManual = false;
             foreach (var d in manualDetails)
             {
                 var item = d.PayrollItem ?? await _context.PayrollItems.FindAsync(new object[] { d.PayrollItemId }, cancellationToken);
                 if (item == null) continue;
+                if (item.Id == bonusItem.Id) hasBonusInManual = true;
                 lines.Add(new CalcLine(item, d.Amount, d.Quantity, d.Rate, null, IsRegular: false, Existing: d));
+            }
+
+            // ===== 4.1 ดึงโบนัสที่อนุมัติแล้วของรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ (หากยังไม่มีใน manual) =====
+            if (!hasBonusInManual && eligiblePeriodBonuses.TryGetValue(emp.Id, out var autoBonus))
+            {
+                var bonusSubtext = $"โบนัสประจำรอบ {autoBonus.Month}/{autoBonus.Year + 543}" +
+                    (autoBonus.Multiplier > 0 && autoBonus.CalculationMode == "MULTIPLIER"
+                        ? $" ({autoBonus.Multiplier:0.##} เท่าของเงินเดือน)"
+                        : string.Empty);
+
+                var bonusSourceJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    manual = true,
+                    source = "BONUS",
+                    bonusId = autoBonus.Id,
+                    year = autoBonus.Year,
+                    month = autoBonus.Month,
+                    subtext = bonusSubtext
+                });
+
+                lines.Add(new CalcLine(
+                    bonusItem,
+                    autoBonus.BonusAmount,
+                    autoBonus.Multiplier > 0 ? autoBonus.Multiplier : null,
+                    autoBonus.BaseSalary > 0 ? autoBonus.BaseSalary : null,
+                    bonusSubtext,
+                    IsRegular: false,
+                    CalculationSource: bonusSourceJson
+                ));
             }
 
             // ===== 5. ประกันสังคม: คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" (หักรายการหักที่ติ๊กไว้) =====
@@ -2184,7 +2246,7 @@ public class SalaryService : ISalaryService
                     Quantity = line.Quantity,
                     Rate = line.Rate,
                     Amount = line.Amount,
-                    CalculationSource = System.Text.Json.JsonSerializer.Serialize(new { subtext = line.Subtext })
+                    CalculationSource = line.CalculationSource ?? System.Text.Json.JsonSerializer.Serialize(new { subtext = line.Subtext })
                 });
             }
         }
@@ -2225,7 +2287,7 @@ public class SalaryService : ISalaryService
     /// <summary>บรรทัดรายได้/รายหักระหว่างคำนวณ (IsRegular = เงินได้ประจำทุกเดือน ใช้ประมาณการภาษีทั้งปี)</summary>
     private sealed record PayableClaim(long Id, long EmployeeId, long BenefitItemId, decimal Amount, string? RequestNo);
 
-    private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null);
+    private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null, string? CalculationSource = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
     private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS" };
@@ -2890,9 +2952,10 @@ public class SalaryService : ISalaryService
         };
     }
 
-    public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, CancellationToken cancellationToken = default)
+    public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, int? month = null, CancellationToken cancellationToken = default)
     {
         int targetYear = year ?? DateTime.Today.Year;
+        int targetMonth = month ?? 12;
 
         var employees = await _context.Employees
             .Where(e => e.EmploymentStatus == "ACTIVE")
@@ -2903,9 +2966,9 @@ public class SalaryService : ISalaryService
 
         var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
 
-        // ดึงข้อมูลโบนัสที่เคยบันทึกไว้ในฐานข้อมูลสำหรับปีนี้
+        // ดึงข้อมูลโบนัสที่เคยบันทึกไว้ในฐานข้อมูลสำหรับปีและเดือนนี้
         var savedBonuses = await _context.EmployeeBonuses
-            .Where(b => b.Year == targetYear)
+            .Where(b => b.Year == targetYear && b.Month == targetMonth)
             .ToListAsync(cancellationToken);
 
         var result = new List<EmployeeBonusDto>();
@@ -2928,6 +2991,7 @@ public class SalaryService : ISalaryService
                     DepartmentName = deptName,
                     PositionName = posName,
                     Year = targetYear,
+                    Month = targetMonth,
                     BaseSalary = existing.BaseSalary > 0 ? existing.BaseSalary : sal,
                     Multiplier = existing.Multiplier,
                     BonusAmount = existing.BonusAmount,
@@ -2949,6 +3013,7 @@ public class SalaryService : ISalaryService
                     DepartmentName = deptName,
                     PositionName = posName,
                     Year = targetYear,
+                    Month = targetMonth,
                     BaseSalary = sal,
                     Multiplier = defaultMultiplier,
                     BonusAmount = sal > 0 ? sal * defaultMultiplier : 0,
@@ -2966,6 +3031,7 @@ public class SalaryService : ISalaryService
     public async Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default)
     {
         int targetYear = request.Year <= 0 ? DateTime.Today.Year : request.Year;
+        int targetMonth = request.Month <= 0 || request.Month > 12 ? 12 : request.Month;
         decimal multiplier = request.DefaultMultiplier > 0 ? request.DefaultMultiplier : 2.0m;
 
         var employees = await _context.Employees
@@ -2978,7 +3044,7 @@ public class SalaryService : ISalaryService
         var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
 
         var existingBonuses = await _context.EmployeeBonuses
-            .Where(b => b.Year == targetYear)
+            .Where(b => b.Year == targetYear && b.Month == targetMonth)
             .ToListAsync(cancellationToken);
 
         foreach (var emp in employees)
@@ -3003,6 +3069,7 @@ public class SalaryService : ISalaryService
                 {
                     EmployeeId = emp.Id,
                     Year = targetYear,
+                    Month = targetMonth,
                     BaseSalary = sal,
                     Multiplier = multiplier,
                     BonusAmount = bonusAmount,
@@ -3015,17 +3082,18 @@ public class SalaryService : ISalaryService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return await GetEmployeeBonusesAsync(targetYear, cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, targetMonth, cancellationToken);
     }
 
     public async Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default)
     {
         int targetYear = request.Year <= 0 ? DateTime.Today.Year : request.Year;
+        int targetMonth = request.Month <= 0 || request.Month > 12 ? 12 : request.Month;
 
         var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
 
         var existingBonuses = await _context.EmployeeBonuses
-            .Where(b => b.Year == targetYear)
+            .Where(b => b.Year == targetYear && b.Month == targetMonth)
             .ToListAsync(cancellationToken);
 
         foreach (var item in request.Items)
@@ -3051,6 +3119,7 @@ public class SalaryService : ISalaryService
                 {
                     EmployeeId = item.EmployeeId,
                     Year = targetYear,
+                    Month = targetMonth,
                     BaseSalary = sal,
                     Multiplier = multiplier,
                     BonusAmount = bonusAmount,
@@ -3064,7 +3133,7 @@ public class SalaryService : ISalaryService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return await GetEmployeeBonusesAsync(targetYear, cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, targetMonth, cancellationToken);
     }
 
     #endregion

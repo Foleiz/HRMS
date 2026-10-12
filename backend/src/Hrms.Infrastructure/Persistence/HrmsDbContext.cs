@@ -1746,6 +1746,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
             entity.Property(e => e.Year).HasColumnName("year").IsRequired();
+            entity.Property(e => e.Month).HasColumnName("month").HasDefaultValue(12).IsRequired();
             entity.Property(e => e.BaseSalary).HasColumnName("base_salary").HasPrecision(12, 2).IsRequired();
             entity.Property(e => e.Multiplier).HasColumnName("multiplier").HasPrecision(5, 2).IsRequired();
             entity.Property(e => e.BonusAmount).HasColumnName("bonus_amount").HasPrecision(12, 2).IsRequired();
