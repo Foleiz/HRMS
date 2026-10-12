@@ -5253,8 +5253,7 @@ export default function PayrollPage() {
                     <th className="py-3.5 px-4 text-right">ฐานค่าจ้างต่ำสุด</th>
                     <th className="py-3.5 px-4 text-right">เพดานค่าจ้างสูงสุด</th>
                     <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
-                    <th className="py-3.5 px-4 text-center">สถานะ</th>
-                    <th className="py-3.5 px-4 text-center">จัดการ</th>
+                    <th className="py-3.5 px-6 text-right">สถานะ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
@@ -5276,25 +5275,10 @@ export default function PayrollPage() {
                       <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
                         {s.effectiveFrom}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-6 text-right">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                           {s.status}
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {canEditSso ? (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditSsoRate(s)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors cursor-pointer"
-                            title="แก้ไขเกณฑ์นี้"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            <span>แก้ไข</span>
-                          </button>
-                        ) : (
-                          <span className="text-slate-300">-</span>
-                        )}
                       </td>
                     </tr>
                   ))}
