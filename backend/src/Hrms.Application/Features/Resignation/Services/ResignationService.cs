@@ -20,6 +20,9 @@ public class ResignationService : IResignationService
         public string? Detail { get; set; }
         public string? Handover { get; set; }
         public string? Contact { get; set; }
+        public string? RejectReason { get; set; }
+        public long? RejectedByEmployeeId { get; set; }
+        public DateTime? RejectedAt { get; set; }
     }
 
     public ResignationService(
@@ -313,8 +316,27 @@ public class ResignationService : IResignationService
         }
 
         request.Status = "REJECTED";
-        request.ApprovedByEmployeeId = approverId;
-        request.ApprovedAt = DateTime.UtcNow;
+        request.ApprovedByEmployeeId = null;
+        request.ApprovedAt = null;
+
+        // บันทึกเหตุผลการปฏิเสธและผู้ปฏิเสธลงใน reason JSON payload
+        try
+        {
+            var payload = !string.IsNullOrWhiteSpace(request.Reason) && request.Reason.TrimStart().StartsWith("{")
+                ? JsonSerializer.Deserialize<ResignationReasonPayload>(request.Reason, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                : new ResignationReasonPayload { Detail = request.Reason };
+
+            payload ??= new ResignationReasonPayload();
+            payload.RejectReason = reason.Trim();
+            payload.RejectedByEmployeeId = approverId;
+            payload.RejectedAt = DateTime.UtcNow;
+            request.Reason = JsonSerializer.Serialize(payload);
+        }
+        catch
+        {
+            // fallback if JSON serialization fails
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
 
         return (await GetRequestByIdAsync(id, cancellationToken))!;
@@ -394,6 +416,9 @@ public class ResignationService : IResignationService
         string? detail = r.Reason;
         string? handover = null;
         string? contact = null;
+        string? rejectReason = null;
+        long? rejectedByEmpId = null;
+        DateTime? rejectedAt = null;
 
         if (!string.IsNullOrWhiteSpace(r.Reason) && r.Reason.TrimStart().StartsWith("{"))
         {
@@ -409,6 +434,9 @@ public class ResignationService : IResignationService
                     detail = parsed.Detail;
                     handover = parsed.Handover;
                     contact = parsed.Contact;
+                    rejectReason = parsed.RejectReason;
+                    rejectedByEmpId = parsed.RejectedByEmployeeId;
+                    rejectedAt = parsed.RejectedAt;
                 }
             }
             catch
@@ -464,15 +492,21 @@ public class ResignationService : IResignationService
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
 
-        var lastDecisionAction = instance?.Actions
-            .Where(a => a.ActionDecision == "APPROVE" || a.ActionDecision == "REJECT")
-            .OrderByDescending(a => a.ActionAt)
-            .FirstOrDefault();
-
         var rejectAction = instance?.Actions
             .Where(a => a.ActionDecision == "REJECT")
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
+
+        bool isRejected = effectiveStatus == "REJECTED";
+        var finalRejectReason = rejectAction?.Comment ?? rejectReason;
+        var finalRejectedByEmpId = rejectAction?.ApproverEmployeeId ?? rejectedByEmpId;
+        var finalRejectedByName = rejectAction?.ApproverEmployee?.FullName;
+        if (finalRejectedByName == null && finalRejectedByEmpId.HasValue)
+        {
+            var rejectEmp = await _context.Employees.FindAsync(new object[] { finalRejectedByEmpId.Value }, cancellationToken);
+            if (rejectEmp != null) finalRejectedByName = $"{rejectEmp.FirstName} {rejectEmp.LastName}".Trim();
+        }
+        var finalRejectedAt = rejectAction?.ActionAt ?? rejectedAt;
 
         Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto? timeline = null;
         if (instance != null)
@@ -499,15 +533,15 @@ public class ResignationService : IResignationService
             SubmittedAt = r.SubmittedAt,
             CancelledAt = r.CancelledAt,
             CancelReason = r.CancelReason,
-            ApprovedByEmployeeId = r.ApprovedByEmployeeId,
-            ApprovedByName = (effectiveStatus == "REJECTED" ? lastDecisionAction?.ApproverEmployee?.FullName : finalApproveAction?.ApproverEmployee?.FullName)
-                ?? lastDecisionAction?.ApproverEmployee?.FullName
-                ?? (r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null),
-            ApprovedAt = instance?.CompletedAt ?? r.ApprovedAt ?? lastDecisionAction?.ActionAt ?? finalApproveAction?.ActionAt,
+            ApprovedByEmployeeId = isRejected ? null : r.ApprovedByEmployeeId,
+            ApprovedByName = isRejected ? null : (finalApproveAction?.ApproverEmployee?.FullName ?? (r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null)),
+            ApprovedAt = isRejected ? null : (instance?.CompletedAt ?? r.ApprovedAt ?? finalApproveAction?.ActionAt),
+            RejectedByEmployeeId = isRejected ? finalRejectedByEmpId : null,
+            RejectedByName = isRejected ? finalRejectedByName : null,
+            RejectedAt = isRejected ? finalRejectedAt : null,
+            RejectionReason = isRejected ? finalRejectReason : null,
+            RejectReason = isRejected ? finalRejectReason : null,
             ApprovalInstanceId = r.ApprovalInstanceId,
-            RejectReason = effectiveStatus == "REJECTED" ? rejectAction?.Comment : null,
-            RejectedByName = effectiveStatus == "REJECTED" ? rejectAction?.ApproverEmployee?.FullName : null,
-            RejectedAt = effectiveStatus == "REJECTED" ? rejectAction?.ActionAt : null,
             NoticePeriodDays = noticeDays > 0 ? noticeDays : 0,
             CanCancel = effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin),
             CurrentStepNo = currentStepNo,

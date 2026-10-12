@@ -879,7 +879,7 @@ public class OperationalReportService : IOperationalReportService
 
             double avgCount = (startCount + endCount) / 2.0;
             double turnoverRate = avgCount > 0 ? Math.Round(((double)resignedCount / avgCount) * 100.0, 2) : 0.0;
-            double retentionRate = startCount > 0 ? Math.Round(((double)(startCount - resignedCount) / startCount) * 100.0, 2) : 100.0;
+            double retentionRate = Math.Round(100.0 - turnoverRate, 2);
             if (retentionRate < 0) retentionRate = 0;
             if (retentionRate > 100) retentionRate = 100;
 
@@ -908,9 +908,7 @@ public class OperationalReportService : IOperationalReportService
             ? Math.Round(((double)result.TotalResignedCount / totalAvg) * 100.0, 2) 
             : 0.0;
 
-        result.OverallRetentionRate = result.TotalBeginningHeadcount > 0 
-            ? Math.Round(((double)(result.TotalBeginningHeadcount - result.TotalResignedCount) / result.TotalBeginningHeadcount) * 100.0, 2) 
-            : 100.0;
+        result.OverallRetentionRate = Math.Round(100.0 - result.OverallTurnoverRate, 2);
         if (result.OverallRetentionRate < 0) result.OverallRetentionRate = 0;
         if (result.OverallRetentionRate > 100) result.OverallRetentionRate = 100;
 

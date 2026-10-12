@@ -1583,7 +1583,7 @@ export default function ReportsPage() {
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
-                  *สูตร: ลาออก ÷ เฉลี่ยต้น-สิ้นงวด | คงอยู่: (ต้นงวด - ลาออก) ÷ ต้นงวด
+                  *สูตร: ลาออก ÷ เฉลี่ยต้น-สิ้นงวด | คงอยู่: 100% - อัตราลาออก (รวมกันได้ 100%)
                 </p>
               </div>
             </div>

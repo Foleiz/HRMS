@@ -33,6 +33,7 @@ import {
   Megaphone,
   Database,
   Gift,
+  Network,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -99,6 +100,7 @@ const ToggleSwitch: React.FC<{
 /* ─── Constants: ไอคอนตรงตามเมนูใน Sidebar ครบทั้ง 19 เมนู ─── */
 const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   DASHBOARD: LayoutDashboard,
+  ORG_CHART: Network,
   EMPLOYEE: Users,
   BENEFIT_BALANCE: Gift,
   MY_SALARY: Wallet,
@@ -124,6 +126,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 /** ชื่อหมวดหมู่ตรงตามหัวข้อเมนู Sidebar */
 const CATEGORY_NAMES: Record<string, string> = {
   DASHBOARD: 'แดชบอร์ด',
+  ORG_CHART: 'แผนผังองค์กร',
   EMPLOYEE: 'พนักงาน',
   BENEFIT_BALANCE: 'ยอดสวัสดิการพนักงาน',
   MY_SALARY: 'เงินเดือนของฉัน',

@@ -191,7 +191,7 @@ export default function DocumentHistoryPage() {
       detailDate: `วันทำงานสุดท้าย: ${formatShortDate(r.requestedLastWorkingDate)}`,
       documentType: 'คำขอลาออก',
       status: r.status,
-      rejectReason: r.status === 'REJECTED' ? (r.rejectReason || r.cancelReason) : r.cancelReason,
+      rejectReason: r.status === 'REJECTED' ? (r.rejectReason || r.rejectionReason || r.cancelReason) : r.cancelReason,
       source: 'RESIGNATION',
       rawResignation: r,
       canCancel: r.canCancel,

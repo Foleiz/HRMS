@@ -31,8 +31,9 @@ public class OrganizationController : ControllerBase
         return Ok(ApiResponse<OrganizationSummaryDto>.Ok(result));
     }
 
-    /// <summary>แผนผังองค์กร — พนักงานทุกคนที่ล็อกอินดูได้ (ส่งเฉพาะข้อมูลที่เปิดเผยได้)</summary>
+    /// <summary>แผนผังองค์กร — เข้าถึงได้ตามสิทธิ์ ORG_CHART_VIEW, ORG_STRUCT_VIEW, ORG_VIEW, EMP_VIEW</summary>
     [HttpGet("chart")]
+    [RequirePermission("ORG_CHART_VIEW,ORG_STRUCT_VIEW,ORG_VIEW,EMP_VIEW")]
     public async Task<IActionResult> GetOrgChart(CancellationToken cancellationToken)
     {
         var result = await _orgService.GetOrgChartAsync(cancellationToken);

@@ -1139,8 +1139,7 @@ export default function LeaveRequestsApprovalPage() {
                               title={`กำลังรอการพิจารณาจาก ${item.currentApproverDisplay || 'ขั้นตอนก่อนหน้า'}`}
                             >
                               <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              {/* บอกว่ารอใคร แทนข้อความกว้าง ๆ "รอคิวก่อนหน้า" (เช่น เอกสารของตัวเองที่รอผู้อื่นอนุมัติ) */}
-                              {item.currentApproverDisplay ? `รอ ${item.currentApproverDisplay}` : 'รอคิวก่อนหน้า'}
+                              {item.currentApproverDisplay ? `รอ: ${item.currentApproverDisplay}` : 'รอคิวก่อนหน้า'}
                             </span>
                           )}
 

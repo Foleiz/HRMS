@@ -73,11 +73,11 @@ const menuGroups: MenuGroup[] = [
         requiredPermissions: ['ESS_NEWS_VIEW'],
       },
       {
-        // แผนผังองค์กร — พนักงานทุกคนดูได้ (ไม่ต้องมีสิทธิ์)
         title: 'แผนผังองค์กร',
         href: '/org-chart',
         matchPrefix: '/org-chart',
         icon: Network,
+        requiredPermissions: ['ORG_CHART_VIEW', 'ORG_STRUCT_VIEW', 'ORG_VIEW'],
       },
     ],
   },

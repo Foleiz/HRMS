@@ -105,6 +105,11 @@ export const ROUTE_RULES: RouteRule[] = [
     ],
   },
   {
+    matchPrefix: '/org-chart',
+    title: 'แผนผังองค์กร',
+    requiredPermissions: ['ORG_CHART_VIEW', 'ORG_STRUCT_VIEW', 'ORG_VIEW'],
+  },
+  {
     matchPrefix: '/organization',
     title: 'โครงสร้างองค์กร',
     requiredPermissions: ['ORG_STRUCT_VIEW', 'ORG_POS_VIEW', 'ORG_BENEFIT_VIEW', 'ORG_COMP_VIEW'],

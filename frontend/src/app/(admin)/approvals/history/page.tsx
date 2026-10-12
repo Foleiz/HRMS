@@ -278,8 +278,10 @@ export default function ApprovalHistoryPage() {
         subType: r.reasonCategory || r.reason || 'ลาออก',
         details: `วันทำงานวันสุดท้าย: ${effectiveDateStr}${r.handoverNotes ? ` • มอบหมายงาน: ${r.handoverNotes}` : ''}`,
         status: r.status,
-        approvedByName: r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
-        actionAt: r.approvedAt ?? r.cancelledAt ?? r.submittedAt ?? null,
+        approvedByName: r.status === 'REJECTED'
+          ? (r.rejectedByName ?? '-')
+          : (r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-')),
+        actionAt: (r.status === 'REJECTED' ? r.rejectedAt : r.approvedAt) ?? r.cancelledAt ?? r.submittedAt ?? null,
         resignationRaw: r,
       });
     });

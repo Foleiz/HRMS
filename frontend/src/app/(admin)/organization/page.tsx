@@ -89,7 +89,8 @@ export default function OrganizationPage() {
   const canViewPos = hasPermission('ORG_POS_VIEW') || hasPermission('ORG_VIEW') || isSuper;
   const canViewBenefits = hasPermission('ORG_BENEFIT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
   const canViewCompany = hasPermission('ORG_COMP_VIEW') || hasPermission('ORG_VIEW') || isSuper;
-  const canViewAnyOrg = canViewStruct || canViewPos || canViewBenefits || canViewCompany;
+  const canViewOrgChart = hasPermission('ORG_CHART_VIEW') || hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
+  const canViewAnyOrg = canViewStruct || canViewPos || canViewBenefits || canViewCompany || canViewOrgChart;
 
   const canCreateStruct = hasPermission('ORG_STRUCT_CREATE') || isSuper;
   const canEditStruct = hasPermission('ORG_STRUCT_EDIT') || isSuper;
@@ -987,17 +988,19 @@ export default function OrganizationPage() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('orgchart')}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'orgchart'
-                ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            แผนผังองค์กร
-          </button>
+          {canViewOrgChart && (
+            <button
+              type="button"
+              onClick={() => setActiveTab('orgchart')}
+              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
+                activeTab === 'orgchart'
+                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
+              }`}
+            >
+              แผนผังองค์กร
+            </button>
+          )}
         </nav>
       </div>
 
