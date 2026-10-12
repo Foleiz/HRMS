@@ -11,6 +11,8 @@ interface LeaveDateRangePickerProps {
   onChange: (startDate: string, endDate: string) => void;
   /** 'range' (ค่าเริ่มต้น) = เลือกช่วงวันที่ (คลิก 2 ครั้ง) สำหรับลาแบบเต็มวัน, 'single' = เลือกวันเดียวจบ สำหรับลาแบบครึ่งวัน */
   mode?: 'range' | 'single';
+  /** รายการวันที่ที่ถูกบล็อค ไม่สามารถเลือกซ้ำได้ รูปแบบ 'YYYY-MM-DD' (เช่น วันที่มีการลาไปแล้ว) */
+  disabledDates?: string[];
   className?: string;
 }
 
@@ -50,6 +52,11 @@ const formatThaiShort = (s: string): string => {
   return `${day}/${month}/${year}`;
 };
 
+const BLOCKED_STRIPE_STYLE: React.CSSProperties = {
+  backgroundImage:
+    'repeating-linear-gradient(135deg, rgba(148, 163, 184, 0.28) 0px, rgba(148, 163, 184, 0.28) 5px, transparent 5px, transparent 10px)',
+};
+
 /**
  * ตัวเลือกช่วงวันที่แบบปฏิทินเดียว — คลิกครั้งแรกเลือกวันเริ่มต้น คลิกครั้งที่สองเลือกวันสิ้นสุด
  * ใช้แทน input[type=date] คู่เดิม สำหรับกรณีลาแบบ "เต็มวัน" (ช่วงวันที่)
@@ -60,6 +67,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
   endDate,
   onChange,
   mode = 'range',
+  disabledDates,
   className = 'w-[320px] max-w-none',
 }) => {
   const [open, setOpen] = useState(false);
@@ -69,6 +77,21 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
   const [yearGridStart, setYearGridStart] = useState(() => new Date().getFullYear() - 5);
   const [hoverDate, setHoverDate] = useState<Date | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const disabledSet = React.useMemo(() => new Set(disabledDates ?? []), [disabledDates]);
+
+  const hasDisabledInRange = React.useCallback(
+    (a: string, b: string): boolean => {
+      if (disabledSet.size === 0) return false;
+      const minStr = a <= b ? a : b;
+      const maxStr = a <= b ? b : a;
+      for (const d of disabledSet) {
+        if (d >= minStr && d <= maxStr) return true;
+      }
+      return false;
+    },
+    [disabledSet]
+  );
 
   const closeAll = () => {
     setOpen(false);
@@ -118,6 +141,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
 
   const handleDayClick = (day: Date) => {
     const dayStr = toInputDate(day);
+    if (disabledSet.has(dayStr)) return;
     setHoverDate(null);
     if (mode === 'single') {
       // เลือกวันเดียวจบ (ใช้กับลาแบบครึ่งวัน) -> ตั้งค่าและปิดปฏิทินทันที
@@ -128,9 +152,13 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
     if (!startDate || (startDate && endDate)) {
       // ยังไม่ได้เลือกอะไรเลย หรือเลือกครบคู่แล้ว -> เริ่มเลือกใหม่
       onChange(dayStr, '');
+    } else if (hasDisabledInRange(startDate, dayStr)) {
+      // หากมีวันที่ลาไปแล้วคั่นกลางระหว่างช่วงที่เลือก ไม่ยอมให้ลากคร่อม -> เริ่มนับวันที่คลิกเป็นวันเริ่มใหม่ทันที
+      onChange(dayStr, '');
     } else if (dayStr < startDate) {
       // คลิกวันที่ก่อนวันเริ่มต้นเดิม -> สลับให้เป็นวันเริ่มต้นใหม่แทน
       onChange(dayStr, startDate);
+      setOpen(false);
     } else {
       onChange(startDate, dayStr);
       setOpen(false);
@@ -149,9 +177,10 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
   const todayStr = toInputDate(new Date());
   const isMidSelecting = mode === 'range' && !!startDate && !endDate;
   const hoverStr = hoverDate ? toInputDate(hoverDate) : null;
-  // ช่วงตัวอย่างแบบเรียลไทม์ระหว่างวันเริ่มต้นกับตำแหน่งที่เลื่อนเมาส์ไปวาง (ยังไม่ยืนยัน)
-  const previewStart = isMidSelecting && hoverStr ? (hoverStr < startDate ? hoverStr : startDate) : null;
-  const previewEnd = isMidSelecting && hoverStr ? (hoverStr < startDate ? startDate : hoverStr) : null;
+  const canPreviewRange = isMidSelecting && !!hoverStr && !hasDisabledInRange(startDate, hoverStr);
+  // ช่วงตัวอย่างแบบเรียลไทม์ระหว่างวันเริ่มต้นกับตำแหน่งที่เลื่อนเมาส์ไปวาง (ยังไม่ยืนยัน และต้องไม่คร่อมวันที่ถูกบล็อค)
+  const previewStart = canPreviewRange && hoverStr ? (hoverStr < startDate ? hoverStr : startDate) : null;
+  const previewEnd = canPreviewRange && hoverStr ? (hoverStr < startDate ? startDate : hoverStr) : null;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -226,30 +255,47 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
               ))}
             </div>
 
-            <div className="grid grid-cols-7" onMouseLeave={() => setHoverDate(null)}>
+            <div className="grid grid-cols-7 gap-y-1" onMouseLeave={() => setHoverDate(null)}>
               {cells.map((date, idx) => {
                 if (!date) return <div key={idx} className="h-9" />;
                 const dStr = toInputDate(date);
+                const isBooked = disabledSet.has(dStr);
                 const isToday = dStr === todayStr;
-                const isConfirmedStart = dStr === startDate;
-                const isConfirmedEnd = !!endDate && dStr === endDate;
-                const isPreviewHoverDay = isMidSelecting && hoverStr === dStr;
+                const isConfirmedStart = !isBooked && dStr === startDate;
+                const isConfirmedEnd = !isBooked && !!endDate && dStr === endDate;
+                const isPreviewHoverDay = !isBooked && canPreviewRange && hoverStr === dStr;
 
-                const confirmedInBand = !!startDate && !!endDate && dStr >= startDate && dStr <= endDate;
-                const previewInBand = !!previewStart && !!previewEnd && dStr >= previewStart && dStr <= previewEnd;
+                const confirmedInBand = !isBooked && !!startDate && !!endDate && dStr >= startDate && dStr <= endDate;
+                const previewInBand = !isBooked && !!previewStart && !!previewEnd && dStr >= previewStart && dStr <= previewEnd;
                 const inBand = confirmedInBand || previewInBand;
                 const bandStartValue = confirmedInBand ? startDate : previewStart;
                 const bandEndValue = confirmedInBand ? endDate : previewEnd;
                 const isBandEdgeStart = inBand && dStr === bandStartValue;
                 const isBandEdgeEnd = inBand && dStr === bandEndValue;
 
-                let dayBtnClass = 'text-gray-700 dark:text-slate-300 hover:bg-white/70';
+                if (isBooked) {
+                  return (
+                    <div key={idx} className="h-9 flex items-center justify-center">
+                      <button
+                        type="button"
+                        disabled
+                        title="วันที่นี้มีการยื่นลาแล้ว"
+                        style={BLOCKED_STRIPE_STYLE}
+                        className="w-9 h-9 rounded-lg border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center text-sm font-medium text-slate-400 dark:text-slate-500 line-through decoration-slate-400 dark:decoration-slate-500 cursor-not-allowed select-none"
+                      >
+                        {date.getDate()}
+                      </button>
+                    </div>
+                  );
+                }
+
+                let dayBtnClass = 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 cursor-pointer';
                 if (isConfirmedStart || isConfirmedEnd) {
-                  dayBtnClass = 'bg-[#0B2046] text-white font-semibold shadow-sm';
+                  dayBtnClass = 'bg-[#0B2046] text-white font-semibold shadow-sm cursor-pointer';
                 } else if (isPreviewHoverDay) {
-                  dayBtnClass = 'ring-2 ring-[#0B2046] text-[#0B2046] font-semibold bg-white dark:bg-slate-900';
+                  dayBtnClass = 'ring-2 ring-[#0B2046] text-[#0B2046] font-semibold bg-white dark:bg-slate-900 cursor-pointer';
                 } else if (isToday) {
-                  dayBtnClass = 'ring-1 ring-[#0B2046]/60 text-[#0B2046] font-semibold';
+                  dayBtnClass = 'ring-1 ring-[#0B2046]/60 text-[#0B2046] font-semibold cursor-pointer';
                 }
 
                 return (

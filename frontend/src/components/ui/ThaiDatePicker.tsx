@@ -85,6 +85,11 @@ function filterContainerClasses(className: string): string {
   return containerTokens.join(' ');
 }
 
+const BLOCKED_STRIPE_STYLE: React.CSSProperties = {
+  backgroundImage:
+    'repeating-linear-gradient(135deg, rgba(148, 163, 184, 0.28) 0px, rgba(148, 163, 184, 0.28) 5px, transparent 5px, transparent 10px)',
+};
+
 export interface ThaiDatePickerProps {
   /** วันที่ รูปแบบ 'YYYY-MM-DD' หรือ '' */
   value?: string;
@@ -98,6 +103,8 @@ export interface ThaiDatePickerProps {
   maxDate?: string;
   min?: string;
   max?: string;
+  /** รายการวันที่ที่ถูกบล็อค รูปแบบ 'YYYY-MM-DD' */
+  disabledDates?: string[];
   id?: string;
   name?: string;
   required?: boolean;
@@ -121,6 +128,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
   maxDate: propMaxDate,
   min,
   max,
+  disabledDates,
   id,
   name,
   required = false,
@@ -130,6 +138,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
 }) => {
   const minDate = min ?? propMinDate;
   const maxDate = max ?? propMaxDate;
+  const disabledSet = React.useMemo(() => new Set(disabledDates ?? []), [disabledDates]);
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
@@ -255,6 +264,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
 
   const handleDayClick = (day: Date) => {
     const dayStr = toInputDate(day);
+    if (disabledSet.has(dayStr)) return;
     if (minDate && dayStr < minDate) return;
     if (maxDate && dayStr > maxDate) return;
     onChange(dayStr);
@@ -405,9 +415,26 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
               {cells.map((date, idx) => {
                 if (!date) return <div key={idx} className="h-9" />;
                 const dStr = toInputDate(date);
+                const isBooked = disabledSet.has(dStr);
                 const isToday = dStr === todayStr;
-                const isSelected = dStr === value;
-                const isDisabled = (!!minDate && dStr < minDate) || (!!maxDate && dStr > maxDate);
+                const isSelected = !isBooked && dStr === value;
+                const isDisabled = isBooked || (!!minDate && dStr < minDate) || (!!maxDate && dStr > maxDate);
+
+                if (isBooked) {
+                  return (
+                    <div key={idx} className="h-9 flex items-center justify-center">
+                      <button
+                        type="button"
+                        disabled
+                        title="วันที่นี้มีการยื่นลาแล้ว"
+                        style={BLOCKED_STRIPE_STYLE}
+                        className="w-9 h-9 rounded-lg border border-slate-200/90 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-center text-sm font-medium text-slate-400 dark:text-slate-500 line-through decoration-slate-400 dark:decoration-slate-500 cursor-not-allowed select-none"
+                      >
+                        {date.getDate()}
+                      </button>
+                    </div>
+                  );
+                }
 
                 let dayBtnClass = 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700';
                 if (isDisabled) {

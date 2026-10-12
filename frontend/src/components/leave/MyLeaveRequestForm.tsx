@@ -65,10 +65,26 @@ const emptyState = {
   attachment: null as File | null,
 };
 
+// แปลงวันที่จาก ISO string (ทั้ง UTC และเวลาท้องถิ่น) ให้เป็น 'YYYY-MM-DD' ตามเวลาไทย (UTC+7) เหมือน ToThaiDate ของฝั่ง Backend
+const toThaiDateStr = (raw?: string | null): string => {
+  if (!raw) return '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw) && !/[Zz]|[+-]\d{2}:?\d{2}$/.test(raw)) {
+    return raw.slice(0, 10);
+  }
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw.slice(0, 10);
+  const thaiTime = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  const y = thaiTime.getUTCFullYear();
+  const m = String(thaiTime.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(thaiTime.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
 // แปลง LeaveRequest (แบบร่างที่เคยบันทึกไว้) ให้เป็นค่าตั้งต้นของฟอร์ม สำหรับกรณีกลับมาแก้ไขต่อ
 const draftToFormState = (draft: LeaveRequest) => {
-  const startDate = draft.startDatetime ? draft.startDatetime.slice(0, 10) : '';
-  const endDate = draft.endDatetime ? draft.endDatetime.slice(0, 10) : '';
+  const startDate = toThaiDateStr(draft.startDate ?? draft.startDatetime);
+  const endDate = toThaiDateStr(draft.endDate ?? draft.endDatetime) || startDate;
   return {
     leaveTypeId: draft.leaveTypeId ?? ('' as number | ''),
     startDate,
@@ -107,6 +123,34 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   const [showPreview, setShowPreview] = useState(false);
 
   const { leaveTypeId, startDate, endDate, leaveFormat, reason, contactDuringLeave, attachment } = form;
+
+  // รวบรวมวันที่ที่มีการยื่นลาไปแล้ว (สถานะ PENDING หรือ APPROVED และไม่ใช่ใบแบบร่างที่กำลังแก้ไข)
+  // เพื่อบล็อคไม่ให้เลือกวันซ้ำในปฏิทิน
+  const bookedDates = useMemo(() => {
+    const dateSet = new Set<string>();
+    for (const r of requests) {
+      if (r.id === draftId) continue;
+      if (r.status !== 'PENDING' && r.status !== 'APPROVED') continue;
+      const sStr = toThaiDateStr(r.startDate ?? r.startDatetime);
+      const eStr = toThaiDateStr(r.endDate ?? r.endDatetime) || sStr;
+      if (!sStr) continue;
+      const [sy, sm, sd] = sStr.split('-').map(Number);
+      const [ey, em, ed] = (eStr >= sStr ? eStr : sStr).split('-').map(Number);
+      if (!sy || !sm || !sd || !ey || !em || !ed) continue;
+      const cur = new Date(sy, sm - 1, sd);
+      const end = new Date(ey, em - 1, ed);
+      let guard = 0;
+      while (cur <= end && guard < 366) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const d = String(cur.getDate()).padStart(2, '0');
+        dateSet.add(`${y}-${m}-${d}`);
+        cur.setDate(cur.getDate() + 1);
+        guard++;
+      }
+    }
+    return Array.from(dateSet);
+  }, [requests, draftId]);
 
   // สลับรูปแบบการลา: "เต็มวัน" ใช้ตัวเลือกช่วงวันที่ (Date range), "ครึ่งวัน" ใช้เลือกวันเดียว (Date picker)
   const setLeaveFormat = (next: LeaveFormat) => {
@@ -479,6 +523,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 <LeaveDateRangePicker
                   startDate={startDate}
                   endDate={endDate}
+                  disabledDates={bookedDates}
                   onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
                 />
               ) : (
@@ -486,6 +531,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   mode="single"
                   startDate={startDate}
                   endDate={endDate}
+                  disabledDates={bookedDates}
                   onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
                 />
               )}

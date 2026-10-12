@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -78,7 +78,7 @@ function MyLeaveRequestPageContent() {
         user?.employeeId
           ? leaveService.getLeaveBalances({ employeeId: user.employeeId, year: currentYear })
           : Promise.resolve([]),
-        leaveService.getMyLeaveRequests({ pageSize: 100 }),
+        leaveService.getMyLeaveRequests({ pageSize: 500 }),
         user?.employeeId
           ? employeeService.getById(user.employeeId)
           : Promise.resolve(null),
