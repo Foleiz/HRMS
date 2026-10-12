@@ -69,6 +69,15 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
   const [selectedBenefitId, setSelectedBenefitId] = useState<number>(
     preSelectedBenefitId || claimableBenefits[0]?.benefitItemId || 0
   );
+
+  // Sync selectedBenefitId when preSelectedBenefitId prop changes
+  React.useEffect(() => {
+    if (preSelectedBenefitId) {
+      setSelectedBenefitId(preSelectedBenefitId);
+    } else if (claimableBenefits.length > 0 && !selectedBenefitId) {
+      setSelectedBenefitId(claimableBenefits[0].benefitItemId);
+    }
+  }, [preSelectedBenefitId, claimableBenefits]);
   const [amount, setAmount] = useState<string>('');
   const [claimDate, setClaimDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [receiptNumber, setReceiptNumber] = useState('');
@@ -215,21 +224,34 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               ประเภทสวัสดิการ <span className="text-rose-500">*</span>
             </label>
-            <CustomSelect
-              value={selectedBenefitId}
-              onChange={(e) => setSelectedBenefitId(Number(e.target.value))}
-              required
-              className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
-            >
-              <option value="">-- กรุณาเลือกสวัสดิการ --</option>
-              {claimableBenefits.map((b) => (
-                <option key={b.benefitItemId} value={b.benefitItemId}>
-                  {b.benefitName}
-                  {b.isDocumentRequired ? ' [บังคับแนบเอกสาร]' : ''}
-                  {b.quotaAmount > 0 ? ` (คงเหลือ ${b.remainingAmount.toLocaleString()} บ.)` : ''}
-                </option>
-              ))}
-            </CustomSelect>
+            {preSelectedBenefitId && activeBenefit ? (
+              <div className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 flex items-center justify-between font-medium">
+                <span>
+                  {activeBenefit.benefitName}
+                  {activeBenefit.isDocumentRequired ? ' [บังคับแนบเอกสาร]' : ''}
+                  {activeBenefit.quotaAmount > 0 ? ` (คงเหลือ ${activeBenefit.remainingAmount.toLocaleString()} บ.)` : ''}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold border border-blue-200/50 dark:border-blue-700/50">
+                  เลือกตามรายการที่กด
+                </span>
+              </div>
+            ) : (
+              <CustomSelect
+                value={selectedBenefitId}
+                onChange={(e) => setSelectedBenefitId(Number(e.target.value))}
+                required
+                className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+              >
+                <option value="">-- กรุณาเลือกสวัสดิการ --</option>
+                {claimableBenefits.map((b) => (
+                  <option key={b.benefitItemId} value={b.benefitItemId}>
+                    {b.benefitName}
+                    {b.isDocumentRequired ? ' [บังคับแนบเอกสาร]' : ''}
+                    {b.quotaAmount > 0 ? ` (คงเหลือ ${b.remainingAmount.toLocaleString()} บ.)` : ''}
+                  </option>
+                ))}
+              </CustomSelect>
+            )}
           </div>
 
           {/* Alert if Benefit Requires Supporting Document */}

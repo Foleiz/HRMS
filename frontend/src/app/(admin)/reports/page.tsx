@@ -344,16 +344,16 @@ export default function ReportsPage() {
   }, [activeTab, turnoverYear, turnoverDivision, turnoverDepartment]);
 
   useEffect(() => {
-    if (activeTab === 'headcount') {
+    if (activeTab === 'headcount' && canViewHeadcount) {
       loadDailyHeadcount();
-    } else if (activeTab === 'lateness') {
+    } else if (activeTab === 'lateness' && canViewLateness) {
       loadMonthlyLateness();
     } else if (activeTab === 'tax' && canViewTax) {
       loadPayrollTax();
-    } else if (activeTab === 'turnover') {
+    } else if (activeTab === 'turnover' && canViewTurnover) {
       loadTurnover();
     }
-  }, [activeTab, canViewTax, loadDailyHeadcount, loadMonthlyLateness, loadPayrollTax, loadTurnover]);
+  }, [activeTab, canViewHeadcount, canViewLateness, canViewTax, canViewTurnover, loadDailyHeadcount, loadMonthlyLateness, loadPayrollTax, loadTurnover]);
 
   // -------------------------------------------------------------
   // Export Handlers

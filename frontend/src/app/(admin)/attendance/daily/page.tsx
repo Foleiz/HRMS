@@ -458,6 +458,7 @@ function DailyAttendanceContent() {
 
   // Fetch initial batch info on mount to restrict calendar to document date range
   useEffect(() => {
+    if (!canViewDaily) return;
     const fetchLatestBatchRange = async () => {
       try {
         const res = await attendanceImportService.getBatches({ page: 1, pageSize: 10 });
@@ -485,7 +486,7 @@ function DailyAttendanceContent() {
     };
 
     fetchLatestBatchRange();
-  }, []);
+  }, [canViewDaily]);
 
   // Date Navigation
   const adjustDate = (days: number) => {
@@ -879,8 +880,10 @@ function DailyAttendanceContent() {
 
   // Trigger loads on tab change or filter
   useEffect(() => {
-    loadPendingCount();
-  }, [loadPendingCount]);
+    if (canViewDaily) {
+      loadPendingCount();
+    }
+  }, [loadPendingCount, canViewDaily]);
 
   useEffect(() => {
     if (activeTab === 'adjustments') {
