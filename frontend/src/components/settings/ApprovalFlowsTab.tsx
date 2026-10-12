@@ -1089,12 +1089,19 @@ export const ApprovalFlowsTab: React.FC = () => {
                               className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer"
                             >
                               <option value="">-- กรุณาเลือกพนักงาน --</option>
-                              {employees.map((emp) => (
-                                <option key={emp.id} value={emp.id}>
-                                  {emp.firstName} {emp.lastName}{' '}
-                                  {emp.positionName ? `(${emp.positionName})` : ''}
-                                </option>
-                              ))}
+                              {employees
+                                .filter(
+                                  (emp) =>
+                                    !form.departmentId ||
+                                    emp.departmentId === form.departmentId ||
+                                    emp.id === step.approverEmployeeId
+                                )
+                                .map((emp) => (
+                                  <option key={emp.id} value={emp.id}>
+                                    {emp.firstName} {emp.lastName}{' '}
+                                    {emp.positionName ? `(${emp.positionName})` : ''}
+                                  </option>
+                                ))}
                             </CustomSelect>
                           </div>
                         )}
@@ -1195,7 +1202,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                             >
                               <option value="">-- เลือกพนักงานผู้อนุมัติแทน --</option>
                               {employees
-                                .filter((emp) => !(step.approverType === 'EMPLOYEE' && emp.id === step.approverEmployeeId))
+                                .filter(
+                                  (emp) =>
+                                    !(step.approverType === 'EMPLOYEE' && emp.id === step.approverEmployeeId) &&
+                                    (!form.departmentId ||
+                                      emp.departmentId === form.departmentId ||
+                                      emp.id === step.delegateEmployeeId)
+                                )
                                 .map((emp) => (
                                   <option key={emp.id} value={emp.id}>
                                     {emp.firstName} {emp.lastName}{' '}

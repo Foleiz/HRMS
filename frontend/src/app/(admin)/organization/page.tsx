@@ -2180,7 +2180,13 @@ export default function OrganizationPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าฝ่าย</label>
                 <EmployeeSelect
-                  employees={employees}
+                  employees={
+                    modalMode === 'edit' &&
+                    divisionForm.id &&
+                    employees.some((e) => e.divisionId === divisionForm.id)
+                      ? employees.filter((e) => e.divisionId === divisionForm.id)
+                      : employees
+                  }
                   value={divisionForm.headEmployeeId || ''}
                   onChange={(empId) =>
                     setDivisionForm({
@@ -2245,7 +2251,18 @@ export default function OrganizationPage() {
                 <CustomSelect
                   required
                   value={deptForm.divisionId}
-                  onChange={(e) => setDeptForm({ ...deptForm, divisionId: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const nextDivId = Number(e.target.value);
+                    const currentHead = employees.find((emp) => emp.id === deptForm.headEmployeeId);
+                    const shouldKeepHead =
+                      (modalMode === 'edit' && deptForm.id && currentHead?.departmentId === deptForm.id) ||
+                      (currentHead && currentHead.divisionId === nextDivId);
+                    setDeptForm({
+                      ...deptForm,
+                      divisionId: nextDivId,
+                      headEmployeeId: shouldKeepHead ? deptForm.headEmployeeId : undefined,
+                    });
+                  }}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                 >
                   {divisions.map((d) => (
@@ -2270,7 +2287,15 @@ export default function OrganizationPage() {
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าแผนก</label>
                 <EmployeeSelect
-                  employees={employees}
+                  employees={
+                    modalMode === 'edit' &&
+                    deptForm.id &&
+                    employees.some((e) => e.departmentId === deptForm.id)
+                      ? employees.filter((e) => e.departmentId === deptForm.id)
+                      : deptForm.divisionId
+                      ? employees.filter((e) => e.divisionId === deptForm.divisionId)
+                      : employees
+                  }
                   value={deptForm.headEmployeeId || ''}
                   onChange={(empId) =>
                     setDeptForm({
@@ -2335,7 +2360,16 @@ export default function OrganizationPage() {
                 <CustomSelect
                   required
                   value={teamForm.departmentId}
-                  onChange={(e) => setTeamForm({ ...teamForm, departmentId: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const nextDeptId = Number(e.target.value);
+                    const currentLead = employees.find((emp) => emp.id === teamForm.leadEmployeeId);
+                    const shouldKeepLead = currentLead && currentLead.departmentId === nextDeptId;
+                    setTeamForm({
+                      ...teamForm,
+                      departmentId: nextDeptId,
+                      leadEmployeeId: shouldKeepLead ? teamForm.leadEmployeeId : null,
+                    });
+                  }}
                   className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
                 >
                   <option value={0} disabled>เลือกแผนก</option>
@@ -2375,10 +2409,14 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  หัวหน้าทีม (Team Lead)
+                  หัวหน้าทีม
                 </label>
                 <EmployeeSelect
-                  employees={employees}
+                  employees={
+                    teamForm.departmentId
+                      ? employees.filter((e) => e.departmentId === teamForm.departmentId)
+                      : []
+                  }
                   value={teamForm.leadEmployeeId || ''}
                   onChange={(empId) =>
                     setTeamForm({
@@ -2386,7 +2424,12 @@ export default function OrganizationPage() {
                       leadEmployeeId: empId === '' ? null : Number(empId),
                     })
                   }
-                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                  disabled={!teamForm.departmentId}
+                  placeholder={
+                    teamForm.departmentId
+                      ? 'เลือกพนักงาน หรือพิมพ์ค้นหา...'
+                      : 'กรุณาเลือกแผนกก่อน...'
+                  }
                   emptyLabel="ไม่ระบุหัวหน้าทีม"
                   required={false}
                 />

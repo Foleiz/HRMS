@@ -179,7 +179,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
             )}
             {filteredEmployees.length === 0 ? (
               <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                ไม่พบข้อมูลพนักงานที่ตรงกับ "{searchQuery}"
+                {searchQuery ? `ไม่พบข้อมูลพนักงานที่ตรงกับ "${searchQuery}"` : 'ไม่พบข้อมูลพนักงานในสังกัดที่เลือก'}
               </li>
             ) : (
               filteredEmployees.map((emp, idx) => {

@@ -275,8 +275,15 @@ export default function CreateTransferModal({
               <CustomSelect
                 value={toDepartmentId}
                 onChange={(e) => {
-                  setToDepartmentId(e.target.value);
+                  const nextDeptId = e.target.value;
+                  setToDepartmentId(nextDeptId);
                   setToPositionId('');
+                  if (nextDeptId && toManagerId) {
+                    const currentMgr = employees.find((emp) => emp.id === Number(toManagerId));
+                    if (currentMgr && currentMgr.departmentId !== Number(nextDeptId)) {
+                      setToManagerId('');
+                    }
+                  }
                 }}
                 className="w-full"
               >
@@ -337,7 +344,11 @@ export default function CreateTransferModal({
               หัวหน้างานสายตรงใหม่ (ถ้ามี)
             </label>
             <EmployeeSelect
-              employees={employees.filter((emp) => emp.id !== Number(selectedEmployeeId))}
+              employees={employees.filter(
+                (emp) =>
+                  emp.id !== Number(selectedEmployeeId) &&
+                  (!toDepartmentId || emp.departmentId === Number(toDepartmentId))
+              )}
               value={toManagerId ? Number(toManagerId) : ''}
               onChange={(empId) => setToManagerId(empId ? String(empId) : '')}
               placeholder="ไม่ระบุ / คงเดิม (พิมพ์ค้นหา...)"

@@ -451,7 +451,18 @@ function SchedulesContent() {
 
   // Single Assign Modal: Filtered Employees & Selected Employee
   const filteredSingleAssignEmployees = useMemo(() => {
+    const selectedDeptObj =
+      assignmentDeptFilter !== 'ALL'
+        ? departments.find((d) => String(d.id) === assignmentDeptFilter)
+        : undefined;
     return assignableEmployees.filter((emp) => {
+      if (selectedDeptObj) {
+        const matchDept =
+          (emp.departmentId !== undefined && emp.departmentId !== null && emp.departmentId === selectedDeptObj.id) ||
+          emp.departmentName === selectedDeptObj.departmentName;
+        if (!matchDept) return false;
+      }
+
       const matchType =
         singleAssignTypeFilter === 'ALL'
           ? true
@@ -479,7 +490,7 @@ function SchedulesContent() {
         cleanDept.includes(cleanQ)
       );
     });
-  }, [assignableEmployees, singleAssignTypeFilter, singleAssignSearch]);
+  }, [assignableEmployees, assignmentDeptFilter, departments, singleAssignTypeFilter, singleAssignSearch]);
 
   const selectedSingleEmployee = useMemo(() => {
     return assignableEmployees.find((e) => e.id === assignForm.employeeId);
@@ -2208,8 +2219,20 @@ function SchedulesContent() {
                       <button
                         type="button"
                         onClick={() => {
+                          const selectedDeptObj =
+                            assignmentDeptFilter !== 'ALL'
+                              ? departments.find((d) => String(d.id) === assignmentDeptFilter)
+                              : batchSelectedDept
+                              ? departments.find((d) => d.id === batchSelectedDept)
+                              : undefined;
                           const matchingIds = assignableEmployees
                             .filter((e) => {
+                              if (selectedDeptObj) {
+                                const matchDept =
+                                  (e.departmentId !== undefined && e.departmentId !== null && e.departmentId === selectedDeptObj.id) ||
+                                  e.departmentName === selectedDeptObj.departmentName;
+                                if (!matchDept) return false;
+                              }
                               const matchSearch =
                                 e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
                                 e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
@@ -2268,6 +2291,18 @@ function SchedulesContent() {
                   <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 p-1 dark:border-slate-700 dark:divide-slate-700/60">
                     {assignableEmployees
                       .filter((e) => {
+                        const selectedDeptObj =
+                          assignmentDeptFilter !== 'ALL'
+                            ? departments.find((d) => String(d.id) === assignmentDeptFilter)
+                            : batchSelectedDept
+                            ? departments.find((d) => d.id === batchSelectedDept)
+                            : undefined;
+                        if (selectedDeptObj) {
+                          const matchDept =
+                            (e.departmentId !== undefined && e.departmentId !== null && e.departmentId === selectedDeptObj.id) ||
+                            e.departmentName === selectedDeptObj.departmentName;
+                          if (!matchDept) return false;
+                        }
                         const matchSearch =
                           e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
                           e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
