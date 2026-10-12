@@ -20,11 +20,44 @@ public class EmployeeShiftService : IEmployeeShiftService
 {
     private readonly IHrmsDbContext _context;
     private readonly ILogger<EmployeeShiftService> _logger;
+    private readonly IAttendanceDailyService _attendanceDailyService;
 
-    public EmployeeShiftService(IHrmsDbContext context, ILogger<EmployeeShiftService> logger)
+    /// <summary>งวดเงินเดือนที่ล็อกแล้ว — ไม่แก้ข้อมูลเวลาของเดือนนั้นเมื่อเปลี่ยนกะ (ตรงกับกติกายกเลิกชุดนำเข้า)</summary>
+    private static readonly string[] LockedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+
+    public EmployeeShiftService(IHrmsDbContext context, ILogger<EmployeeShiftService> logger, IAttendanceDailyService attendanceDailyService)
     {
         _context = context;
         _logger = logger;
+        _attendanceDailyService = attendanceDailyService;
+    }
+
+    /// <summary>เดือน (ปี*100+เดือน) ที่งวดเงินเดือนล็อกแล้ว ในช่วงของรายการที่จะคำนวณใหม่</summary>
+    private async Task<HashSet<int>> LoadLockedMonthsAsync(List<AttendanceDaily> records, CancellationToken cancellationToken)
+    {
+        var monthKeys = records.Select(r => r.WorkDate.Year * 100 + r.WorkDate.Month).Distinct().ToList();
+        var locked = await _context.PayrollPeriods.AsNoTracking()
+            .Where(p => monthKeys.Contains(p.Year * 100 + p.Month) && LockedPayrollStatuses.Contains(p.Status))
+            .Select(p => p.Year * 100 + p.Month)
+            .ToListAsync(cancellationToken);
+        return locked.ToHashSet();
+    }
+
+    /// <summary>คำนวณสรุปเวลารายเดือนใหม่ (ที่เงินเดือนใช้) หลังเปลี่ยนกะ — เดิมแก้แค่รายวัน ทำให้เงินเดือนยังหักสายตามกะเก่า</summary>
+    private async Task RefreshMonthlySummariesAsync(IEnumerable<AttendanceDaily> changed, CancellationToken cancellationToken)
+    {
+        var months = changed.Select(r => (r.WorkDate.Year, r.WorkDate.Month)).Distinct().OrderBy(m => m.Year).ThenBy(m => m.Month).ToList();
+        foreach (var (year, month) in months)
+        {
+            try
+            {
+                await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(year, month, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "คำนวณสรุปเวลาเดือน {Month}/{Year} ใหม่หลังเปลี่ยนกะไม่สำเร็จ", month, year);
+            }
+        }
     }
 
     private static DateOnly ParseDate(string dateStr, string fieldName)
@@ -286,6 +319,7 @@ public class EmployeeShiftService : IEmployeeShiftService
             TotalRequested = employeeIdsToAssign.Count
         };
 
+        var changedForSummary = new List<AttendanceDaily>();
         foreach (var empId in employeeIdsToAssign)
         {
             var employee = await _context.Employees.FindAsync(empId);
@@ -311,7 +345,7 @@ public class EmployeeShiftService : IEmployeeShiftService
 
                 _context.EmployeeShifts.Add(es);
                 await _context.SaveChangesAsync();
-                await SyncAttendanceRecordsForEmployeeShiftAsync(empId, shift, from, to);
+                await SyncAttendanceRecordsForEmployeeShiftAsync(empId, shift, from, to, changedForSummary);
                 result.SuccessCount++;
             }
             catch (Exception ex)
@@ -321,6 +355,7 @@ public class EmployeeShiftService : IEmployeeShiftService
             }
         }
 
+        await RefreshMonthlySummariesAsync(changedForSummary, CancellationToken.None);
         return result;
     }
 
@@ -571,13 +606,19 @@ public class EmployeeShiftService : IEmployeeShiftService
             .ToListAsync();
     }
 
-    private async Task SyncAttendanceRecordsForEmployeeShiftAsync(long employeeId, Domain.Entities.Shift shift, DateOnly from, DateOnly? to, CancellationToken cancellationToken = default)
+    /// <param name="changedForSummary">ถ้าส่งมา จะเก็บรายการที่เปลี่ยนไว้คำนวณสรุปรายเดือนทีเดียวตอนท้าย (ใช้กับการกำหนดกะหลายคน)</param>
+    private async Task SyncAttendanceRecordsForEmployeeShiftAsync(long employeeId, Domain.Entities.Shift shift, DateOnly from, DateOnly? to,
+        List<AttendanceDaily>? changedForSummary = null, CancellationToken cancellationToken = default)
     {
         var targetEnd = to ?? DateOnly.MaxValue;
         var records = await _context.AttendanceDailies
             .Where(a => a.EmployeeId == employeeId && a.WorkDate >= from && a.WorkDate <= targetEnd)
             .ToListAsync(cancellationToken);
 
+        if (records.Count == 0) return;
+
+        var lockedMonths = await LoadLockedMonthsAsync(records, cancellationToken);
+        records = records.Where(r => !lockedMonths.Contains(r.WorkDate.Year * 100 + r.WorkDate.Month)).ToList();
         if (records.Count == 0) return;
 
         foreach (var rec in records)
@@ -592,6 +633,8 @@ public class EmployeeShiftService : IEmployeeShiftService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (changedForSummary != null) changedForSummary.AddRange(records);
+        else await RefreshMonthlySummariesAsync(records, cancellationToken);
     }
 
     private async Task RevertAttendanceRecordsForDeletedShiftAsync(long employeeId, DateOnly from, DateOnly? to, CancellationToken cancellationToken = default)
@@ -601,6 +644,10 @@ public class EmployeeShiftService : IEmployeeShiftService
             .Where(a => a.EmployeeId == employeeId && a.WorkDate >= from && a.WorkDate <= targetEnd)
             .ToListAsync(cancellationToken);
 
+        if (records.Count == 0) return;
+
+        var lockedMonths = await LoadLockedMonthsAsync(records, cancellationToken);
+        records = records.Where(r => !lockedMonths.Contains(r.WorkDate.Year * 100 + r.WorkDate.Month)).ToList();
         if (records.Count == 0) return;
 
         var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
@@ -636,5 +683,6 @@ public class EmployeeShiftService : IEmployeeShiftService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        await RefreshMonthlySummariesAsync(records, cancellationToken);
     }
 }

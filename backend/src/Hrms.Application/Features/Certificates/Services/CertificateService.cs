@@ -331,12 +331,17 @@ public class CertificateService : ICertificateService
             throw new UnauthorizedAccessException("ไม่พบข้อมูลพนักงานสำหรับผู้ใช้งานปัจจุบัน");
         }
 
+        if (dto == null || dto.CertificateTypeId <= 0)
+        {
+            throw new ValidationException("กรุณาเลือกประเภทหนังสือรับรอง");
+        }
+
         var certType = await _context.CertificateTypes
             .FirstOrDefaultAsync(t => t.Id == dto.CertificateTypeId, cancellationToken);
 
         if (certType == null)
         {
-            throw new KeyNotFoundException($"ไม่พบประเภทหนังสือรับรองรหัส {dto.CertificateTypeId}");
+            throw new NotFoundException($"ไม่พบประเภทหนังสือรับรองรหัส {dto.CertificateTypeId}");
         }
 
         if (string.IsNullOrWhiteSpace(dto.Purpose))
