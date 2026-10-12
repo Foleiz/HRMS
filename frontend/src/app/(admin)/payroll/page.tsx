@@ -289,6 +289,11 @@ const isFuturePeriod = (period?: PayrollPeriod | null) => {
   return periodVal > currentPeriodVal;
 };
 
+/** รายการที่ระบบคำนวณเองตอนประมวลผลเงินเดือน — ลบไม่ได้ */
+const SYSTEM_PAYROLL_ITEM_CODES = ['INC_BASE', 'INC_POSITION', 'INC_OT', 'DED_SSO', 'DED_TAX', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
+/** รายการของระบบที่ไม่ต้องแสดงในหน้ารายการได้-หัก */
+const HIDDEN_SYSTEM_ITEM_CODES = ['INC_BASE'];
+
 export default function PayrollPage() {
   const router = useRouter();
   const { user, hasPermission, hasRole } = useAuth();
@@ -1860,7 +1865,9 @@ export default function PayrollPage() {
   }
 
   // Filtered Payroll Items
-  const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
+  // เงินเดือนพื้นฐานเป็นรายการของระบบ (คำนวณตอนประมวลผลเงินเดือนเสมอ) ไม่แสดงในหน้ารายการได้-หัก
+  const listedPayrollItems = payrollItems.filter((i) => !HIDDEN_SYSTEM_ITEM_CODES.includes(i.itemCode));
+  const filteredPayrollItems = listedPayrollItems.filter((i) => i.itemType === itemsSubTab);
 
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
@@ -2443,16 +2450,15 @@ export default function PayrollPage() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รายการทั้งหมด</span>
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                {payrollItems.filter((i) => i.itemType === itemsSubTab).length} รายการ
+                {filteredPayrollItems.length} รายการ
               </div>
             </div>
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
               <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">เปิดใช้งานอยู่</span>
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                 {
-                  payrollItems.filter(
+                  filteredPayrollItems.filter(
                     (i) =>
-                      i.itemType === itemsSubTab &&
                       (i.status ? i.status.toUpperCase() === 'ACTIVE' : true)
                   ).length
                 }{' '}
@@ -2490,8 +2496,7 @@ export default function PayrollPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {payrollItems
-                    .filter((i) => i.itemType === itemsSubTab)
+                  {filteredPayrollItems
                     .map((item) => {
                       const isItemActive = item.status ? item.status.toUpperCase() === 'ACTIVE' : true;
                       const calcTypeLabel =
@@ -2504,9 +2509,9 @@ export default function PayrollPage() {
                       const getTemplateBadge = (tplCode?: string | null) => {
                         switch (tplCode) {
                           case 'BASE_SALARY':
-                            return { label: 'ฐานเงินเดือนสัญญาจ้าง', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+                            return { label: 'ฐานเงินเดือน', color: 'bg-blue-50 text-blue-700 border-blue-200' };
                           case 'POSITION_ALLOWANCE':
-                            return { label: 'เงินประจำตำแหน่ง', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+                            return { label: 'ค่าตำแหน่งจากโครงสร้างเงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
 
                           case 'PERCENT_SALES':
                             return { label: 'คอมมิชชั่น % ยอดขาย', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
@@ -2637,16 +2642,18 @@ export default function PayrollPage() {
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setItemToDelete(item);
-                                    setDeleteItemConfirmOpen(true);
-                                  }}
-                                  title="ลบ"
-                                  className="p-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                {!SYSTEM_PAYROLL_ITEM_CODES.includes(item.itemCode) && (
+                                  <button
+                                    onClick={() => {
+                                      setItemToDelete(item);
+                                      setDeleteItemConfirmOpen(true);
+                                    }}
+                                    title="ลบ"
+                                    className="p-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <span className="text-slate-400 text-xs">-</span>

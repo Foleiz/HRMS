@@ -84,6 +84,17 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
 /** รายการของระบบ (เงินเดือน / ประกันสังคม / ภาษี): ระบบสร้างและคำนวณเอง แสดงเมื่อเปิดดูรายการนั้นเท่านั้น */
 export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   {
+    code: 'POSITION_ALLOWANCE',
+    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ',
+    category: 'EARNING',
+    defaultValue: 'ค่าตำแหน่งตามโครงสร้างเงินเดือน',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'เกณฑ์อ้างอิงตำแหน่ง',
+    parameterPlaceholder: 'เช่น ตามระดับตำแหน่ง หรือ อัตราคงที่',
+    hint: 'ระบบดึงช่อง "ค่าตำแหน่ง" ในกรอบโครงสร้างเงินเดือนตามตำแหน่ง/ระดับของพนักงาน แล้วจ่ายทุกเดือนให้อัตโนมัติ (คิดตามสัดส่วนวันเมื่อเข้าใหม่/ลาออกระหว่างเดือน) — ตั้งยอดที่เมนูโครงสร้างเงินเดือน หน้านี้ตั้งแค่การคิดภาษี/ประกันสังคม และปิดใช้งานได้',
+  },
+  {
     code: 'BASE_SALARY',
     name: 'เงินเดือนพื้นฐาน',
     category: 'EARNING',
@@ -120,20 +131,9 @@ export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
 
 /**
  * สูตรที่เลิกใช้ (ระบบไม่ได้คำนวณให้): ไม่ให้เลือกในรายการใหม่ แสดงชื่อเมื่อเปิดรายการเดิม
- * - เงินประจำตำแหน่ง / คิดตามสัดส่วน (เงินเดือนคิดสัดส่วนให้อัตโนมัติแล้ว) / หักเงินกู้ / โบนัส (มีเมนูโบนัส) / สูตรกำหนดเอง
+ * - คิดตามสัดส่วน (เงินเดือนคิดสัดส่วนให้อัตโนมัติแล้ว) / หักเงินกู้ / โบนัส (มีเมนูโบนัส) / สูตรกำหนดเอง
  */
 export const LEGACY_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
-  {
-    code: 'POSITION_ALLOWANCE',
-    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ',
-    category: 'EARNING',
-    defaultValue: 'ตามโครงสร้างเงินเดือนตำแหน่ง',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'เกณฑ์อ้างอิงตำแหน่ง',
-    parameterPlaceholder: 'เช่น ตามระดับตำแหน่ง หรือ อัตราคงที่',
-    hint: 'ระบบดึงจากตารางโครงสร้างเงินเดือนตามตำแหน่งและระดับพนักงาน',
-  },
   {
     code: 'PRORATED_DAYS',
     name: 'คิดตามสัดส่วนวันทำงานจริง',

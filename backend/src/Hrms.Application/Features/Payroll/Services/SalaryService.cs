@@ -1843,6 +1843,12 @@ public class SalaryService : ISalaryService
 
         var windows = await LoadEmploymentWindowsAsync(employees, cancellationToken);
 
+        // ค่าตำแหน่งจากกรอบโครงสร้างเงินเดือน (ตำแหน่ง/ระดับ) ที่มีผลในรอบนี้
+        var salaryStructures = await _context.SalaryStructures.AsNoTracking()
+            .Where(st => st.Status == "ACTIVE" && st.EffectiveFrom <= period.EndDate && (st.EffectiveTo == null || st.EffectiveTo >= period.StartDate))
+            .OrderByDescending(st => st.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
         // ใช้เฉพาะเงินเดือนที่มีผลภายในรอบนี้แล้ว (ไม่ดึงรายการที่มีผลในอนาคต)
         var periodEnd = period.EndDate;
         var allSalaries = await _context.EmployeeSalaries
@@ -2049,6 +2055,29 @@ public class SalaryService : ISalaryService
                         : "เงินเดือนประจำ",
                     IsRegular: true)
             };
+
+            // ===== 1.1 เงินประจำตำแหน่ง: ค่าตำแหน่งในกรอบโครงสร้างเงินเดือนของตำแหน่ง/ระดับ (คิดสัดส่วนเหมือนเงินเดือน)
+            // ปิดได้โดยปิดใช้งานรายการ "เงินประจำตำแหน่ง" ในหน้ารายการได้-หัก
+            var positionItem = systemItems["INC_POSITION"];
+            if (positionItem.Status == "ACTIVE" && curAssign != null)
+            {
+                var structure = FindSalaryStructure(salaryStructures, curAssign.PositionId, curAssign.EmployeeLevelId ?? curAssign.Position?.EmployeeLevelId);
+                if (structure != null && structure.PositionAllowance > 0)
+                {
+                    decimal positionAmount = isProrated
+                        ? Math.Round(structure.PositionAllowance * factor, 2, MidpointRounding.AwayFromZero)
+                        : structure.PositionAllowance;
+                    if (positionAmount > 0)
+                    {
+                        lines.Add(new CalcLine(positionItem, positionAmount,
+                            isProrated ? (decimal?)workedDays : null, isProrated ? (decimal?)structure.PositionAllowance : null,
+                            isProrated
+                                ? $"ค่าตำแหน่ง{(curAssign.Position != null ? " " + curAssign.Position.PositionName : string.Empty)} (คิดตามสัดส่วน {workedDays}/{periodDays} วัน จาก {structure.PositionAllowance:N2} บาท)"
+                                : $"ค่าตำแหน่ง{(curAssign.Position != null ? " " + curAssign.Position.PositionName : string.Empty)} ตามโครงสร้างเงินเดือน",
+                            IsRegular: true));
+                    }
+                }
+            }
 
             var empAttendance = attendance.FirstOrDefault(a => a.EmployeeId == emp.Id);
             if (empAttendance == null || (empAttendance.TotalActualWorkDays <= 0 && empAttendance.TotalWorkedMinutes <= 0))
@@ -2303,13 +2332,24 @@ public class SalaryService : ISalaryService
     private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null, string? CalculationSource = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
-    private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS" };
+    private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS", "INC_POSITION" };
 
     /// <summary>Template ที่คำนวณโดยแกนหลักของระบบแล้ว (ไม่นำมาคิดซ้ำจากรายการที่ตั้งค่า)</summary>
-    private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS" };
+    private static readonly string[] CoreFormulaTemplates = { "BASE_SALARY", "SSO_STANDARD", "TAX_STANDARD", "PRORATED_DAYS", "POSITION_ALLOWANCE" };
 
     /// <summary>Template ที่ระบบคำนวณอัตโนมัติได้จากข้อมูลที่มี</summary>
     private static readonly string[] AutoFormulaTemplates = { "DILIGENT_ALLOWANCE", "LATE_ABSENT", "PERCENT_SALARY" };
+
+    /// <summary>หากรอบโครงสร้างเงินเดือน: ตรงทั้งตำแหน่งและระดับก่อน แล้วค่อยตำแหน่งอย่างเดียว (เหมือนตอนตรวจกรอบเงินเดือน)</summary>
+    private static SalaryStructure? FindSalaryStructure(List<SalaryStructure> structures, long positionId, long? levelId)
+    {
+        if (positionId != 0 && levelId.HasValue)
+        {
+            var exact = structures.FirstOrDefault(s => s.PositionId == positionId && s.EmployeeLevelId == levelId.Value);
+            if (exact != null) return exact;
+        }
+        return positionId != 0 ? structures.FirstOrDefault(s => s.PositionId == positionId) : null;
+    }
 
     private static bool IsAutoCalculatedItem(PayrollItem item)
     {
@@ -2458,6 +2498,7 @@ public class SalaryService : ISalaryService
         var definitions = new (string Code, string Name, string Type, string CalcType, string? Template, bool Taxable, bool Sso)[]
         {
             ("INC_BASE", "เงินเดือน", "EARNING", "FORMULA", "BASE_SALARY", true, true),
+            ("INC_POSITION", "เงินประจำตำแหน่ง", "EARNING", "FORMULA", "POSITION_ALLOWANCE", true, false),
             ("INC_OT", "ค่าล่วงเวลา (OT)", "EARNING", "FORMULA", "OVERTIME", true, true),
             ("DED_SSO", "เงินสมทบประกันสังคม", "DEDUCTION", "FORMULA", "SSO_STANDARD", false, false),
             ("DED_TAX", "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", "DEDUCTION", "FORMULA", "TAX_STANDARD", false, false),
