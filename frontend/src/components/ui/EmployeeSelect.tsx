@@ -115,16 +115,9 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
       >
         <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 dark:text-slate-200 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500 dark:text-slate-400'}`}>
           {selectedEmployee ? (
-            <>
-              <span>
-                {selectedEmployee.fullName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
-              </span>
-              {selectedEmployee.employeeCode && (
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">
-                  ({selectedEmployee.employeeCode})
-                </span>
-              )}
-            </>
+            <span>
+              {selectedEmployee.fullName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
+            </span>
           ) : (
             placeholder
           )}
@@ -148,7 +141,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
+                placeholder="พิมพ์ค้นหาชื่อพนักงาน..."
                 className="w-full h-9 pl-9 pr-8 bg-white dark:bg-slate-800 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 dark:text-slate-200 placeholder-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -189,7 +182,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                 ไม่พบข้อมูลพนักงานที่ตรงกับ "{searchQuery}"
               </li>
             ) : (
-              filteredEmployees.map((emp) => {
+              filteredEmployees.map((emp, idx) => {
                 const isSelected = emp.id === value;
                 return (
                   <li
@@ -208,13 +201,8 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
                         <User className="w-3.5 h-3.5" />
                       </div>
                       <span className="truncate">
-                        {emp.fullName || `${emp.firstName} ${emp.lastName}`}
+                        {idx + 1}. {emp.fullName || `${emp.firstName} ${emp.lastName}`}
                       </span>
-                      {emp.employeeCode && (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-normal shrink-0">
-                          ({emp.employeeCode})
-                        </span>
-                      )}
                     </div>
                     {isSelected && (
                       <Check className="w-4 h-4 text-[#0B2046] shrink-0 ml-2" />

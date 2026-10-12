@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Info, Calculator } from 'lucide-react';
@@ -29,7 +29,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   // Earnings
   {
     code: 'BASE_SALARY',
-    name: 'เงินเดือนพื้นฐาน (Base Salary)',
+    name: 'เงินเดือนพื้นฐาน',
     category: 'EARNING',
     defaultValue: 'ตามสัญญาจ้างพนักงาน',
     defaultTaxable: true,
@@ -40,7 +40,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'POSITION_ALLOWANCE',
-    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ (Position Allowance)',
+    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ',
     category: 'EARNING',
     defaultValue: 'ตามโครงสร้างเงินเดือนตำแหน่ง',
     defaultTaxable: true,
@@ -52,7 +52,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
 
   {
     code: 'PERCENT_SALES',
-    name: 'ค่าคอมมิชชั่นตามยอดขาย (Commission %)',
+    name: 'ค่าคอมมิชชั่นตามยอดขาย',
     category: 'EARNING',
     defaultValue: '3% จากยอดขายสุทธิ',
     defaultTaxable: true,
@@ -63,7 +63,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'DILIGENT_ALLOWANCE',
-    name: 'เบี้ยขยัน (Diligent Allowance)',
+    name: 'เบี้ยขยัน',
     category: 'EARNING',
     defaultValue: '1,000 บาท (เงื่อนไข: ขาด=0, สาย<=1 ครั้ง, ลา<=0 วัน)',
     defaultTaxable: true,
@@ -74,7 +74,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'PRORATED_DAYS',
-    name: 'คิดตามสัดส่วนวันทำงานจริง (Prorated Days)',
+    name: 'คิดตามสัดส่วนวันทำงานจริง',
     category: 'EARNING',
     defaultValue: '(เงินเดือน / 30) x จำนวนวันทำงานจริง',
     defaultTaxable: true,
@@ -85,7 +85,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'MANUAL_BONUS',
-    name: 'โบนัสพิเศษ / เงินรางวัลผลงาน (Bonus & Incentive)',
+    name: 'โบนัสพิเศษ / เงินรางวัลผลงาน',
     category: 'EARNING',
     defaultValue: 'ตามการอนุมัติรายบุคคล',
     defaultTaxable: true,
@@ -98,7 +98,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   // Deductions
   {
     code: 'SSO_STANDARD',
-    name: 'เงินสมทบประกันสังคม (Social Security Fund)',
+    name: 'เงินสมทบประกันสังคม',
     category: 'DEDUCTION',
     defaultValue: '5% สูงสุดไม่เกิน 875 บาท/เดือน',
     defaultTaxable: false,
@@ -120,7 +120,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'LATE_ABSENT',
-    name: 'หักมาสาย / ขาดงาน (Late & Absent Deduction)',
+    name: 'หักมาสาย / ขาดงาน',
     category: 'DEDUCTION',
     defaultValue: 'หักตามจริง (ฐานเงินเดือน / 30 / 8 x ชม.สาย)',
     defaultTaxable: false,
@@ -131,18 +131,18 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'PERCENT_SALARY',
-    name: 'กองทุนสำรองเลี้ยงชีพ (PVD) / % เงินเดือน',
+    name: 'กองทุนสำรองเลี้ยงชีพ / % เงินเดือน',
     category: 'BOTH',
     defaultValue: '5% ของฐานเงินเดือน',
     defaultTaxable: false,
     defaultSocialSecurity: false,
     parameterLabel: 'อัตราเปอร์เซ็นต์ (%)',
     parameterPlaceholder: 'เช่น 3%, 5%, หรือ 7%',
-    hint: 'หักเงินสะสมเข้ากองทุนสำรองเลี้ยงชีพ (PVD) หรือรายการหักคำนวณเป็น % จากฐานเงินเดือน',
+    hint: 'หักเงินสะสมเข้ากองทุนสำรองเลี้ยงชีพ หรือรายการหักคำนวณเป็น % จากฐานเงินเดือน',
   },
   {
     code: 'STAFF_LOAN',
-    name: 'หักชำระเงินกู้ยืมพนักงาน (Staff Loan / Advance)',
+    name: 'หักชำระเงินกู้ยืมพนักงาน',
     category: 'DEDUCTION',
     defaultValue: 'หักตามงวดสัญญาเงินกู้ยืม',
     defaultTaxable: false,
@@ -153,7 +153,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
   {
     code: 'CUSTOM_FORMULA',
-    name: 'สูตรหรือเกณฑ์กำหนดเอง (Custom Formula)',
+    name: 'สูตรหรือเกณฑ์กำหนดเอง',
     category: 'BOTH',
     defaultValue: '',
     defaultTaxable: true,

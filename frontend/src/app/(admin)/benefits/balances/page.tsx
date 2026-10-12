@@ -238,7 +238,7 @@ export default function EmployeeBenefitBalancesPage() {
               >
                 {[2025, 2026, 2027].map((y) => (
                   <option key={y} value={y} className="bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200">
-                    {y + 543} ({y})
+                    พ.ศ. {y + 543}
                   </option>
                 ))}
               </CustomSelect>

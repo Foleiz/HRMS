@@ -2478,7 +2478,7 @@ export default function OrganizationPage() {
                   <option value="">-- ไม่ระบุระดับ --</option>
                   {levels.map((lvl) => (
                     <option key={lvl.id} value={lvl.id}>
-                      {lvl.levelCode} - {lvl.levelName}
+                      {lvl.levelName}
                     </option>
                   ))}
                 </CustomSelect>
@@ -2829,7 +2829,7 @@ export default function OrganizationPage() {
                   <option value={0} disabled>-- เลือกธนาคาร --</option>
                   {banks.map((b) => (
                     <option key={b.id} value={b.id}>
-                      [{b.bankCode}] {b.bankName}
+                      {b.bankName}
                     </option>
                   ))}
                 </CustomSelect>

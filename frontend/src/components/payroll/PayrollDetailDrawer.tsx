@@ -282,12 +282,12 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     <option value="">-- เลือกรายการ --</option>
                     <optgroup label="รายได้">
                       {selectableItems.filter((i) => i.itemType === 'EARNING').map((i) => (
-                        <option key={i.id} value={i.id}>{i.itemName} ({i.itemCode})</option>
+                        <option key={i.id} value={i.id}>{i.itemName}</option>
                       ))}
                     </optgroup>
                     <optgroup label="รายการหัก">
                       {selectableItems.filter((i) => i.itemType === 'DEDUCTION').map((i) => (
-                        <option key={i.id} value={i.id}>{i.itemName} ({i.itemCode})</option>
+                        <option key={i.id} value={i.id}>{i.itemName}</option>
                       ))}
                     </optgroup>
                   </CustomSelect>

@@ -68,10 +68,10 @@ const APPROVER_TYPE_OPTIONS = ['DEPARTMENT_HEAD', 'DIVISION_HEAD', 'MANAGER', 'R
 const APPROVER_TYPE_HINTS: Record<string, string> = {
   DEPARTMENT_HEAD: 'หัวหน้าแผนกของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการแผนกในแผนกเดียวกัน)',
   DIVISION_HEAD: 'หัวหน้าฝ่ายของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการฝ่ายในฝ่ายเดียวกัน)',
-  MANAGER: 'หัวหน้าทีมของผู้ยื่นตามโครงสร้างทีมที่สังกัด (Team Lead)',
+  MANAGER: 'หัวหน้าทีมของผู้ยื่นตามโครงสร้างทีมที่สังกัด',
   EMPLOYEE: 'พนักงานคนเดียวกันเสมอ ไม่ว่าใครเป็นผู้ยื่น',
-  HR: 'ผู้มีบทบาทฝ่ายบุคคล (HR / HR_ADMIN / HR_MGR)',
-  CEO: 'ผู้มีบทบาทผู้บริหารสูงสุด (CEO / EXECUTIVE)',
+  HR: 'ผู้มีบทบาทฝ่ายบุคคล',
+  CEO: 'ผู้มีบทบาทผู้บริหารสูงสุด',
 };
 const APPROVER_SCOPE_HINTS: Record<string, string> = {
   ORG: 'ทุกคนที่มีบทบาทนี้ทั้งบริษัทจะเห็นและอนุมัติคำขอของทุกแผนกได้ — เหมาะกับบทบาทส่วนกลาง เช่น HR, การเงิน',
@@ -902,7 +902,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         <option value="">ทุกระดับตำแหน่ง</option>
                         {levels.map((l) => (
                           <option key={l.id} value={l.id}>
-                            {l.levelName} ({l.levelCode})
+                            {l.levelName}
                           </option>
                         ))}
                       </CustomSelect>
@@ -1091,7 +1091,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               <option value="">-- กรุณาเลือกพนักงาน --</option>
                               {employees.map((emp) => (
                                 <option key={emp.id} value={emp.id}>
-                                  {emp.employeeCode} - {emp.firstName} {emp.lastName}{' '}
+                                  {emp.firstName} {emp.lastName}{' '}
                                   {emp.positionName ? `(${emp.positionName})` : ''}
                                 </option>
                               ))}
@@ -1117,7 +1117,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                               <option value="">-- กรุณาเลือกบทบาท --</option>
                               {roles.map((r) => (
                                 <option key={r.id} value={r.id}>
-                                  {r.roleName} ({r.roleCode})
+                                  {r.roleName}
                                 </option>
                               ))}
                             </CustomSelect>
@@ -1198,7 +1198,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                 .filter((emp) => !(step.approverType === 'EMPLOYEE' && emp.id === step.approverEmployeeId))
                                 .map((emp) => (
                                   <option key={emp.id} value={emp.id}>
-                                    {emp.employeeCode} - {emp.firstName} {emp.lastName}{' '}
+                                    {emp.firstName} {emp.lastName}{' '}
                                     {emp.positionName ? `(${emp.positionName})` : ''}
                                   </option>
                                 ))}
@@ -1217,7 +1217,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                                 <option value="">-- เลือกบทบาทผู้อนุมัติแทน --</option>
                                 {roles.map((r) => (
                                   <option key={r.id} value={r.id}>
-                                    {r.roleName} ({r.roleCode})
+                                    {r.roleName}
                                   </option>
                                 ))}
                               </CustomSelect>

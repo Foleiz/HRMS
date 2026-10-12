@@ -542,7 +542,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
                 <option value="ทั้งหมด">ผู้ใช้งานทั้งหมด</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
-                    {u.username} ({u.fullName})
+                    {u.fullName || u.username}
                   </option>
                 ))}
               </CustomSelect>

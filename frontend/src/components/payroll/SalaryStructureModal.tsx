@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
@@ -141,7 +141,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
               <option value="">เลือกระดับพนักงาน</option>
               {levels.map((l) => (
                 <option key={l.id} value={l.id}>
-                  {l.levelCode ? `${l.levelCode} - ` : ''}{l.levelName}
+                  {l.levelName}
                 </option>
               ))}
             </CustomSelect>

@@ -9,6 +9,7 @@ import type { EmployeesByDepartmentReport } from '@/types/reports';
 import { ChartCard, ColumnChart, DonutChart, VIZ, toSegments } from './ReportCharts';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { printReport } from '@/lib/printReport';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
@@ -91,7 +92,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
 
   const allExpanded = !!data && data.departments.length > 0 && data.departments.every((d) => expanded.has(d.departmentId));
   const selectCls =
-    'px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20';
+    'px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 min-w-[160px]';
 
   return (
     <div className="space-y-4">
@@ -99,7 +100,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <Building2 className="w-4 h-4 text-slate-400" />
-          <select
+          <CustomSelect
             value={divisionId}
             onChange={(e) => {
               setDivisionId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value));
@@ -113,8 +114,8 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                 {d.divisionName}
               </option>
             ))}
-          </select>
-          <select
+          </CustomSelect>
+          <CustomSelect
             value={departmentId}
             onChange={(e) => setDepartmentId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
             className={selectCls}
@@ -125,7 +126,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                 {d.departmentName}
               </option>
             ))}
-          </select>
+          </CustomSelect>
           <button
             type="button"
             onClick={load}

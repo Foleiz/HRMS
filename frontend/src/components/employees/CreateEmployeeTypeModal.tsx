@@ -397,11 +397,11 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 onChange={(e) => setWageType(e.target.value)}
                 className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               >
-                <option value="MONTHLY">รายเดือน (Monthly)</option>
-                <option value="DAILY">รายวัน (Daily)</option>
-                <option value="HOURLY">รายชั่วโมง (Hourly)</option>
-                <option value="PIECE_RATE">รายชิ้นงาน (Piece Rate)</option>
-                <option value="STIPEND">เบี้ยเลี้ยงเหมาจ่าย (Stipend)</option>
+                <option value="MONTHLY">รายเดือน</option>
+                <option value="DAILY">รายวัน</option>
+                <option value="HOURLY">รายชั่วโมง</option>
+                <option value="PIECE_RATE">รายชิ้นงาน</option>
+                <option value="STIPEND">เบี้ยเลี้ยงเหมาจ่าย</option>
               </CustomSelect>
             </div>
 
@@ -414,8 +414,8 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 onChange={(e) => setStatus(e.target.value)}
                 className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
               >
-                <option value="ACTIVE">เปิดใช้งาน (Active)</option>
-                <option value="INACTIVE">ปิดการใช้งาน (Inactive)</option>
+                <option value="ACTIVE">เปิดใช้งาน</option>
+                <option value="INACTIVE">ปิดการใช้งาน</option>
               </CustomSelect>
             </div>
           </div>

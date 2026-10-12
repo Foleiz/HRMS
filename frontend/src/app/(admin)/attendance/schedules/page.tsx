@@ -1902,7 +1902,7 @@ function SchedulesContent() {
                               </p>
                             </div>
                           ) : (
-                            filteredSingleAssignEmployees.map((emp) => {
+                            filteredSingleAssignEmployees.map((emp, idx) => {
                               const isSelected = emp.id === assignForm.employeeId;
                               return (
                                 <button
@@ -1920,11 +1920,8 @@ function SchedulesContent() {
                                 >
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
-                                      <span className="shrink-0 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-slate-100 text-slate-700 dark:text-slate-300 rounded border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
-                                        {emp.employeeCode}
-                                      </span>
                                       <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate dark:text-slate-100">
-                                        {emp.fullName}
+                                        {idx + 1}. {emp.fullName}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">
@@ -1976,7 +1973,7 @@ function SchedulesContent() {
                   <option value="0">-- กรุณาเลือกกะการทำงาน --</option>
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.shiftCode} - {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
+                      {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
                       {s.isCrossDay ? ' กะข้ามวัน' : ''})
                     </option>
                   ))}
@@ -2195,7 +2192,7 @@ function SchedulesContent() {
                     <option value="">-- กรุณาเลือกแผนก --</option>
                     {departments.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.departmentName} ({d.departmentCode})
+                        {d.departmentName}
                       </option>
                     ))}
                   </CustomSelect>
@@ -2329,7 +2326,7 @@ function SchedulesContent() {
                 >
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.shiftCode} - {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.)
+                      {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.)
                     </option>
                   ))}
                 </CustomSelect>

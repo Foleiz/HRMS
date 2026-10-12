@@ -253,7 +253,7 @@ export default function CreateContractModal({
               {employeeTypes.length > 0 ? (
                 employeeTypes.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.typeName} ({t.typeCode})
+                    {t.typeName}
                   </option>
                 ))
               ) : (

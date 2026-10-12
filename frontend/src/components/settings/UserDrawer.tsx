@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Plus, Trash2, Eye, EyeOff, ShieldCheck, User } from 'lucide-react';
@@ -391,7 +391,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                         >
                           {roles.map((r) => (
                             <option key={r.id} value={r.id}>
-                              {r.roleCode} — {r.roleName}
+                              {r.roleName}
                             </option>
                           ))}
                         </CustomSelect>

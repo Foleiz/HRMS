@@ -18,7 +18,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
   onChange,
   hasError = false,
   className = '',
-  placeholder = 'พิมพ์เพื่อค้นหาสัญชาติ เช่น ไทย, ญี่ปุ่น, ลาว, english...',
+  placeholder = 'พิมพ์เพื่อค้นหาสัญชาติ เช่น ไทย, ญี่ปุ่น, ลาว...',
   disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,6 +27,9 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
   // รายการสัญชาติจากเมนู ข้อมูลหลัก (ใช้รายการสำรองถ้าโหลดไม่ได้)
   const NATIONALITIES = useMasterLookups().nationalities;
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const cleanNatName = (name?: string) =>
+    (name || '').replace(/\s*\([A-Za-z0-9_.,/&\s-]*[A-Za-z][A-Za-z0-9_.,/&\s-]*\)\s*$/g, '').trim();
 
   // ปิด Dropdown เมื่อคลิกนอกพื้นที่คอมโพเนนต์
   useEffect(() => {
@@ -40,17 +43,20 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // กรองรายการสัญชาติตามคำค้นหา (ค้นหาได้ทั้งภาษาไทยและอังกฤษ)
+  // กรองรายการสัญชาติตามคำค้นหา
   const filteredNationalities = useMemo(() => {
+    const cleanedList = NATIONALITIES.map((n) => ({ ...n, name: cleanNatName(n.name) }));
     if (!searchQuery.trim()) {
-      return NATIONALITIES;
+      return cleanedList;
     }
     const q = searchQuery.toLowerCase().trim();
-    return NATIONALITIES.filter((n) => n.name.toLowerCase().includes(q));
+    return cleanedList.filter((n) => n.name.toLowerCase().includes(q));
   }, [searchQuery, NATIONALITIES]);
 
+  const displayValue = cleanNatName(value);
+
   const handleSelect = (name: string) => {
-    onChange(name);
+    onChange(cleanNatName(name));
     setSearchQuery('');
     setIsOpen(false);
   };
@@ -100,8 +106,8 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
           ref={inputRef}
           type="text"
           disabled={disabled}
-          value={isOpen ? searchQuery : (value || '')}
-          placeholder={isOpen ? (value ? `เลือกอยู่: ${value}` : placeholder) : placeholder}
+          value={isOpen ? searchQuery : displayValue}
+          placeholder={isOpen ? (displayValue ? `เลือกอยู่: ${displayValue}` : placeholder) : placeholder}
           onChange={(e) => {
             setSearchQuery(e.target.value);
             if (!isOpen) setIsOpen(true);
@@ -166,11 +172,11 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
               <div className="py-6 px-4 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Search className="w-5 h-5 mx-auto mb-1.5 opacity-40" />
                 <p className="text-xs">ไม่พบสัญชาติที่ตรงกับ &quot;{searchQuery}&quot;</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ลองพิมพ์ชื่อประเทศ เช่น ไทย, ญี่ปุ่น, อังกฤษ หรือ english</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ลองพิมพ์ชื่อสัญชาติ เช่น ไทย, ญี่ปุ่น, อังกฤษ</p>
               </div>
             ) : (
-              filteredNationalities.map((item) => {
-                const isSelected = item.name === value;
+              filteredNationalities.map((item, idx) => {
+                const isSelected = item.name === displayValue;
                 return (
                   <button
                     key={item.id ?? item.name}
@@ -182,7 +188,7 @@ export const NationalitySelect: React.FC<NationalitySelectProps> = ({
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 dark:text-slate-100'
                     }`}
                   >
-                    <span>{item.name}</span>
+                    <span>{idx + 1}. {item.name}</span>
                     {isSelected && <Check className="w-3.5 h-3.5 text-[#0B2046] shrink-0" />}
                   </button>
                 );

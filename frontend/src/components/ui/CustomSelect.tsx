@@ -26,6 +26,81 @@ export interface CustomSelectProps {
   required?: boolean;
 }
 
+export function cleanOptionLabel(raw: string): string {
+  let text = raw.trim();
+  if (!text) return text;
+
+  const hasThai = /[\u0e00-\u0e7f]/.test(text);
+  if (hasThai) {
+    // 1. ตัดรหัสภาษาอังกฤษนำหน้า เช่น "SH01 - กะเช้า", "L1 - ระดับ...", "ADMIN — ผู้ดูแลระบบ", "[KBANK] ธนาคาร..."
+    text = text.replace(/^\[[A-Za-z0-9_.-]+\]\s*/, '');
+    text = text.replace(/^[A-Za-z][A-Za-z0-9_.-]*\s*[-—]\s*(?=[\u0e00-\u0e7f])/, '');
+
+    // 2. ตัดวงเล็บหรือวงเล็บเหลี่ยมที่มีเฉพาะภาษาอังกฤษ/รหัส (ไม่มีภาษาไทย) เช่น "(INC_HOUSING)", "(Monthly)", "(KBANK)"
+    text = text.replace(/\s*[(\[][A-Za-z0-9_.,/&%+\s:-]*[A-Za-z][A-Za-z0-9_.,/&%+\s:-]*[)\]]/g, '');
+
+    // 3. ตัดคำภาษาอังกฤษ/รหัสที่ต่อท้ายอยู่ในวงเล็บภาษาไทย เช่น "(ทดสอบดึงสด E2E)" -> "(ทดสอบดึงสด)"
+    text = text.replace(/([\u0e00-\u0e7f])\s+[A-Za-z0-9_/-]+(?=\))/g, '$1');
+
+    // 4. เก็บกวาดเครื่องหมายขีดคั่นที่อาจเหลือหลังตัดวงเล็บ เช่น "กะเช้า - 08:00 - 17:00 น."
+    text = text.replace(/\s{2,}/g, ' ').trim();
+  }
+
+  return text;
+}
+
+function isPlaceholderOrDefaultOption(opt: SelectOption, idx: number, cleanedLabel: string): boolean {
+  const valStr = String(opt.value ?? '');
+  if (
+    valStr === '' ||
+    valStr === 'ALL' ||
+    valStr === 'ทั้งหมด' ||
+    opt.disabled === true ||
+    valStr.startsWith('__')
+  ) {
+    return true;
+  }
+  if (/^(--|—|\+)/.test(cleanedLabel)) {
+    return true;
+  }
+  if (
+    idx === 0 &&
+    (valStr === '0' ||
+      /^(เลือก|ทุก|ทั้งหมด|ไม่ระบุ|ไม่มี|กำลังโหลด)/.test(cleanedLabel) ||
+      /ทั้งหมด(\s*\(.*\))?$/.test(cleanedLabel))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isNumericOrYearOption(cleanedLabel: string): boolean {
+  // ตัวเลือกจำนวนรายการต่อหน้า เช่น "10", "20 รายการ / หน้า", "10 คน", "หน้า 1"
+  if (/^\d+(\s*(รายการ|คน)(\s*\/\s*หน้า)?)?$/.test(cleanedLabel)) return true;
+  if (/^หน้า\s*\d+$/.test(cleanedLabel)) return true;
+  // ตัวเลือกปี พ.ศ./ค.ศ. เช่น "2569", "พ.ศ. 2569", "ปี 2569", "ปี พ.ศ. 2569", "โบนัสปี 2569"
+  if (/^(พ\.ศ\.\s*|ปี\s*(พ\.ศ\.\s*)?|โบนัสปี\s*)?\d{4}(\s*\(.*\))?$/.test(cleanedLabel)) return true;
+  return false;
+}
+
+function formatSelectOptions(rawOptions: SelectOption[]): SelectOption[] {
+  let seq = 0;
+  return rawOptions.map((opt, idx) => {
+    const cleaned = cleanOptionLabel(String(opt.label ?? ''));
+    if (!cleaned || isPlaceholderOrDefaultOption(opt, idx, cleaned) || isNumericOrYearOption(cleaned)) {
+      return { ...opt, label: cleaned };
+    }
+
+    seq += 1;
+    // หากมีตัวเลขลำดับนำหน้าอยู่แล้ว เช่น "1. มกราคม" หรือ "1 - มกราคม" ให้ปรับรูปแบบเป็น "1. ..." โดยไม่ใส่ซ้ำ
+    const strippedExistingNum = cleaned.replace(/^\d+\s*[.\-]\s*/, '');
+    return {
+      ...opt,
+      label: `${seq}. ${strippedExistingNum}`,
+    };
+  });
+}
+
 function extractOptions(children: React.ReactNode): SelectOption[] {
   const options: SelectOption[] = [];
   React.Children.forEach(children, (child) => {
@@ -122,8 +197,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
   // Resolve options from prop or children
   const resolvedOptions: SelectOption[] = React.useMemo(() => {
-    if (options && options.length > 0) return options;
-    if (children) return extractOptions(children);
+    if (options && options.length > 0) return formatSelectOptions(options);
+    if (children) return formatSelectOptions(extractOptions(children));
     return [];
   }, [options, children]);
 

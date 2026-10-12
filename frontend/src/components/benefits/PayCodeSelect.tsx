@@ -59,9 +59,9 @@ export const PayCodeSelect: React.FC<PayCodeSelectProps> = ({ value, onChange, i
         }
       >
         <option value="">{isNew ? 'สร้างรายการรายได้ใหม่ให้อัตโนมัติ' : '— คงรายการเดิม —'}</option>
-        {options.map((p) => (
+        {options.map((p, idx) => (
           <option key={p.id} value={p.id}>
-            {p.itemName} ({p.itemCode})
+            {idx + 1}. {p.itemName}
           </option>
         ))}
       </CustomSelect>

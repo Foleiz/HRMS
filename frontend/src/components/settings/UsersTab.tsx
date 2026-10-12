@@ -162,7 +162,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               { value: 'ทั้งหมด', label: 'บทบาททั้งหมด' },
               ...roles.map((r) => ({
                 value: r.roleCode,
-                label: r.roleName ? `${r.roleName} (${r.roleCode})` : formatRoleName(r.roleCode),
+                label: r.roleName || formatRoleName(r.roleCode),
               })),
             ]}
           />

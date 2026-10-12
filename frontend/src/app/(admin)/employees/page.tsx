@@ -763,7 +763,7 @@ export default function EmployeesPage() {
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
-        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย (Thai)',
+        nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
         // ศาสนาเป็นข้อมูลอ่อนไหว (PDPA) → ไม่บังคับ และไม่ใส่ค่าให้เอง
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : undefined,
         religionId: lookupId(lookups.religions, formData.religion),
@@ -1810,7 +1810,7 @@ export default function EmployeesPage() {
                                 : teams;
                               return relevantTeams.map((t) => (
                                 <option key={t.id} value={t.id}>
-                                  {t.teamName} ({t.teamCode})
+                                  {t.teamName}
                                 </option>
                               ));
                             })()}
@@ -2335,7 +2335,6 @@ export default function EmployeesPage() {
                               {banks.map((b) => (
                                 <option key={b.id} value={b.bankName}>
                                   {b.bankName}
-                                  {b.shortName ? ` (${b.shortName})` : ''}
                                 </option>
                               ))}
                             </CustomSelect>

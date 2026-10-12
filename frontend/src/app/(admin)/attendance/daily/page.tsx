@@ -1761,7 +1761,7 @@ function DailyAttendanceContent() {
                         >
                           {[importYear - 1, importYear, importYear + 1, importYear + 2].map((y) => (
                             <option key={y} value={y}>
-                              {y + 543} (ค.ศ. {y})
+                              พ.ศ. {y + 543}
                             </option>
                           ))}
                         </CustomSelect>
@@ -1779,7 +1779,7 @@ function DailyAttendanceContent() {
                         >
                           {THAI_MONTHS.map((mName, idx) => (
                             <option key={idx + 1} value={idx + 1}>
-                              {idx + 1} - {mName}
+                              {idx + 1}. {mName}
                             </option>
                           ))}
                         </CustomSelect>
@@ -2569,7 +2569,7 @@ function DailyAttendanceContent() {
                 >
                   {[2024, 2025, 2026, 2027].map((y) => (
                     <option key={y} value={y}>
-                      {y + 543} ({y})
+                      พ.ศ. {y + 543}
                     </option>
                   ))}
                 </CustomSelect>
@@ -2943,7 +2943,7 @@ function DailyAttendanceContent() {
                   <option value="">ไม่ได้ระบุกะ</option>
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.shiftName} ({s.shiftCode}) - {s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} น.
+                      {s.shiftName} ({s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} น.)
                     </option>
                   ))}
                 </CustomSelect>
@@ -3060,7 +3060,7 @@ function DailyAttendanceContent() {
                   <option value={0}>-- กรุณาเลือกพนักงาน --</option>
                   {records.map((r) => (
                     <option key={r.employeeId} value={r.employeeId}>
-                      {r.employeeCode} - {r.employeeName} ({r.departmentName || 'ไม่ระบุแผนก'})
+                      {r.employeeName} ({r.departmentName || 'ไม่ระบุแผนก'})
                     </option>
                   ))}
                 </CustomSelect>

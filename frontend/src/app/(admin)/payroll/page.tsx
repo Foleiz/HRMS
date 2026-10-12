@@ -2978,21 +2978,21 @@ export default function PayrollPage() {
                 {/* Year Selection */}
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-slate-600 dark:text-slate-400">ปีประจำรอบ:</span>
-                  <select
+                  <CustomSelect
                     value={bonusYear}
                     onChange={(e) => {
                       const yr = parseInt(e.target.value) || 2026;
                       setBonusYear(yr);
                       loadBonuses(yr);
                     }}
-                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer min-w-[130px]"
                   >
                     {[2024, 2025, 2026, 2027].map((yr) => (
                       <option key={yr} value={yr}>
-                        ปี {yr + 543} ({yr})
+                        พ.ศ. {yr + 543}
                       </option>
                     ))}
-                  </select>
+                  </CustomSelect>
                 </div>
 
                 {/* Default Multiplier */}
@@ -3085,10 +3085,10 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Department Dropdown */}
-                <select
+                <CustomSelect
                   value={bonusDeptFilter}
                   onChange={(e) => setBonusDeptFilter(e.target.value)}
-                  className="px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer font-medium"
+                  className="px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer font-medium min-w-[160px]"
                 >
                   <option value="ALL">-- แผนกทั้งหมด --</option>
                   {departments.map((d) => (
@@ -3096,7 +3096,7 @@ export default function PayrollPage() {
                       {d.departmentName}
                     </option>
                   ))}
-                </select>
+                </CustomSelect>
 
                 {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
                   <button
@@ -5459,7 +5459,7 @@ export default function PayrollPage() {
                     >
                       {THAI_MONTH_NAMES.map((name, idx) => (
                         <option key={idx + 1} value={idx + 1}>
-                          {idx + 1} - {name}
+                          {idx + 1}. {name}
                         </option>
                       ))}
                     </CustomSelect>
@@ -5897,7 +5897,7 @@ export default function PayrollPage() {
                   <span>ระบบคำนวณภาษีและเงินได้สุทธิให้อัตโนมัติ</span>
                 </div>
                 <p className="text-[11px] text-blue-700 dark:text-blue-300 leading-relaxed">
-                  ยอดโบนัสของพนักงานแต่ละคนจะถูกบันทึกเป็นรายการได้ <strong>"เงินโบนัส (INC_BONUS)"</strong> ในงวดที่เลือก พร้อมทั้งคำนวณภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และปรับยอดเงินได้สุทธิ (Net Pay) ให้อัตโนมัติทันที
+                  ยอดโบนัสของพนักงานแต่ละคนจะถูกบันทึกเป็นรายการได้ <strong>"เงินโบนัส"</strong> ในงวดที่เลือก พร้อมทั้งคำนวณภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และปรับยอดเงินได้สุทธิให้อัตโนมัติทันที
                 </p>
               </div>
 
@@ -5905,24 +5905,34 @@ export default function PayrollPage() {
                 <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   ใส่งวดเงินเดือนเป้าหมายที่ต้องการนำโบนัสไปรวมจ่าย:
                 </label>
-                <select
+                <CustomSelect
                   value={selectedTargetPeriodId || ''}
                   onChange={(e) => setSelectedTargetPeriodId(parseInt(e.target.value) || null)}
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
                 >
                   <option value="">-- เลือกงวดเงินเดือน --</option>
-                  {periods.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.periodName} ({p.year}) - สถานะ: {p.status}
-                    </option>
-                  ))}
-                </select>
+                  {periods.map((p) => {
+                    const statusLabel =
+                      p.status === 'PAID'
+                        ? 'จ่ายแล้ว'
+                        : p.status === 'LOCKED'
+                        ? 'ปิดงวดแล้ว'
+                        : p.status === 'CALCULATED'
+                        ? 'คำนวณแล้ว'
+                        : 'ร่าง';
+                    return (
+                      <option key={p.id} value={p.id}>
+                        {p.periodName} - สถานะ: {statusLabel}
+                      </option>
+                    );
+                  })}
+                </CustomSelect>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2">
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
                   <span>ปีโบนัสที่จัดสรร:</span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">ปี {bonusYear + 543} ({bonusYear})</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono">พ.ศ. {bonusYear + 543}</span>
                 </div>
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
                   <span>จำนวนพนักงานที่จะบันทึก:</span>
