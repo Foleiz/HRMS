@@ -181,9 +181,10 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async calculatePayrollPeriod(periodId: number): Promise<PayrollRecord[]> {
+  /** คืนผลคำนวณพร้อมข้อความจาก backend (มีคำเตือน เช่น ไม่มีฐานเงินเดือน/ไม่มีข้อมูลเวลา) */
+  async calculatePayrollPeriod(periodId: number): Promise<{ records: PayrollRecord[]; message: string }> {
     const res = await apiClient.post<ApiResponse<PayrollRecord[]>>(`/salary/periods/${periodId}/calculate`);
-    return res.data.data;
+    return { records: res.data.data, message: res.data.message };
   },
 
   async createPayrollPeriod(payload: { year: number; month: number; periodName?: string; startDate: string; endDate: string; paymentDate?: string; claimCutoffDate?: string }): Promise<PayrollPeriod> {

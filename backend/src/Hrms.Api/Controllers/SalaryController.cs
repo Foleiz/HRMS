@@ -430,7 +430,11 @@ public class SalaryController : ControllerBase
     {
         PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
         var result = await _salaryService.CalculatePayrollForPeriodAsync(id, cancellationToken);
-        return Ok(ApiResponse<List<PayrollRecordDto>>.Ok(result, "ประมวลผลคำนวณเงินเดือนสำเร็จ"));
+        var warnings = _salaryService.LastCalculationWarnings;
+        var message = warnings.Count == 0
+            ? "ประมวลผลคำนวณเงินเดือนสำเร็จ"
+            : "คำนวณเสร็จแล้ว แต่มีข้อควรตรวจสอบ: " + string.Join(" • ", warnings);
+        return Ok(ApiResponse<List<PayrollRecordDto>>.Ok(result, message));
     }
 
     /// <summary>

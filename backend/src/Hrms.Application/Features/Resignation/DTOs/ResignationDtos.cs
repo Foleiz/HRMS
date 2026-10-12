@@ -32,6 +32,10 @@ public class ResignationRequestDto
     public string? ApprovedByName { get; set; }
     public DateTime? ApprovedAt { get; set; }
     public long? ApprovalInstanceId { get; set; }
+    /// <summary>กรณีไม่อนุมัติ: เหตุผล ผู้ปฏิเสธ และเวลา (จาก approval action ที่เป็น REJECT)</summary>
+    public string? RejectReason { get; set; }
+    public string? RejectedByName { get; set; }
+    public DateTime? RejectedAt { get; set; }
     public int NoticePeriodDays { get; set; }
     public bool CanCancel { get; set; }
     public int? CurrentStepNo { get; set; }

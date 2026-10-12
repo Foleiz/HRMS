@@ -674,9 +674,9 @@ export default function PayrollPage() {
     }
   };
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, durationMs = 4000) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 4000);
+    setTimeout(() => setToastMessage(null), durationMs);
   };
 
   // Dynamic fetch when switching to Bank Transfer or Tax/SSO tab
@@ -1669,13 +1669,15 @@ export default function PayrollPage() {
 
     try {
       setIsCalculating(true);
-      const updatedPayrolls = await salaryService.calculatePayrollPeriod(selectedPeriod.id);
+      const { records: updatedPayrolls, message: calcMessage } = await salaryService.calculatePayrollPeriod(selectedPeriod.id);
       setPayrolls(updatedPayrolls || []);
       const updatedPeriods = await salaryService.getPayrollPeriods();
       setPeriods(updatedPeriods || []);
       const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
       if (current) setSelectedPeriod(current);
-      showToast('คำนวณเงินเดือนประจำรอบสำเร็จแล้ว');
+      // มีคำเตือนจาก backend → แสดงนานขึ้นให้ HR อ่านทัน
+      const hasWarning = !!calcMessage && calcMessage.includes('ข้อควรตรวจสอบ');
+      showToast(hasWarning ? calcMessage : 'คำนวณเงินเดือนประจำรอบสำเร็จแล้ว', hasWarning ? 12000 : 4000);
     } catch (err: any) {
       console.error('Failed to calculate payroll:', err);
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณเงินเดือน');

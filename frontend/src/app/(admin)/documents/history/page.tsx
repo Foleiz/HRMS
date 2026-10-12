@@ -191,7 +191,7 @@ export default function DocumentHistoryPage() {
       detailDate: `วันทำงานสุดท้าย: ${formatShortDate(r.requestedLastWorkingDate)}`,
       documentType: 'คำขอลาออก',
       status: r.status,
-      rejectReason: r.cancelReason,
+      rejectReason: r.status === 'REJECTED' ? (r.rejectReason || r.cancelReason) : r.cancelReason,
       source: 'RESIGNATION',
       rawResignation: r,
       canCancel: r.canCancel,
@@ -602,6 +602,11 @@ export default function DocumentHistoryPage() {
                             {statusConf.icon}
                             {statusConf.label}
                           </span>
+                          {doc.status === 'REJECTED' && doc.rejectReason && (
+                            <span className="block mt-1 text-[11px] text-rose-500 max-w-[14rem] truncate" title={doc.rejectReason}>
+                              เหตุผล: {doc.rejectReason}
+                            </span>
+                          )}
                         </td>
                         <td className="px-5 py-4 text-right">
                           {(() => {

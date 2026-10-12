@@ -1333,8 +1333,10 @@ public class SalaryService : ISalaryService
 
         var employeeIds = payrolls.Select(p => p.EmployeeId).Distinct().ToList();
 
+        // ใช้เฉพาะเงินเดือนที่มีผลภายในรอบนี้ (ให้ตรงกับตอนคำนวณ) — เดิมดูเงินเดือนล่าสุด ทำให้ขึ้น "ครบแล้ว" แต่คำนวณได้ 0
+        var salaryCutoff = period?.EndDate;
         var allSalaries = await _context.EmployeeSalaries
-            .Where(s => employeeIds.Contains(s.EmployeeId))
+            .Where(s => employeeIds.Contains(s.EmployeeId) && (salaryCutoff == null || s.EffectiveFrom <= salaryCutoff))
             .OrderByDescending(s => s.EffectiveFrom)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
@@ -1389,7 +1391,7 @@ public class SalaryService : ISalaryService
                 .ToList();
 
             string? adjustmentsSummary = !hasSalary
-                ? "⚠️ ยังไม่ระบุฐานเงินเดือน"
+                ? "⚠️ ยังไม่มีฐานเงินเดือนที่มีผลในรอบนี้"
                 : (adjustments.Any() ? string.Join(", ", adjustments) : "-");
 
             decimal ssoAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_SSO").Sum(d => d.Amount);
@@ -1400,7 +1402,7 @@ public class SalaryService : ISalaryService
             if (!hasSalary)
             {
                 inputStatus = "PENDING_SALARY";
-                inputStatusText = "ยังไม่ระบุฐานเงินเดือน";
+                inputStatusText = "ยังไม่มีฐานเงินเดือนที่มีผลในรอบนี้";
             }
             else
             {
@@ -1841,13 +1843,8 @@ public class SalaryService : ISalaryService
             .Where(i => !systemItemIds.Contains(i.Id) && IsAutoCalculatedItem(i))
             .ToList();
 
-        // รายการที่ผูกกับสวัสดิการ: ยอดมาจากสวัสดิการเท่านั้น ไม่คิดซ้ำจากรายการได้-หัก
-        var benefitLinkedItemIds = (await _context.BenefitItems.AsNoTracking()
-                .Where(b => b.PayrollItemId != null)
-                .Select(b => b.PayrollItemId!.Value)
-                .ToListAsync(cancellationToken))
-            .ToHashSet();
-        autoItems.RemoveAll(i => benefitLinkedItemIds.Contains(i.Id));
+        // รายการที่ผูกกับสวัสดิการ: ข้ามเฉพาะพนักงานที่ได้รับสวัสดิการนั้นจริง (ดูในลูปรายคน)
+        // เดิมตัดทิ้งทั้งบริษัท ทำให้เบี้ยขยัน (FORMULA) หายจากทุกคนแม้ถอดสวัสดิการออกจากประเภทพนักงานแล้ว
 
         // ===== คำขอเบิกสวัสดิการที่อนุมัติแล้ว: สรุปจ่ายในรอบนี้ (ตัดรอบที่วันกำหนดจ่าย) =====
         var claimCutoff = period.EffectiveClaimCutoffDate;
@@ -1926,6 +1923,23 @@ public class SalaryService : ISalaryService
             .ToList();
 
         int periodDays = period.EndDate.DayNumber - period.StartDate.DayNumber + 1;
+
+        // วันทำงานตามปฏิทินบริษัท (ไม่นับวันหยุดประจำสัปดาห์/วันหยุดบริษัท) — ใช้แทนวันตามปฏิทินเมื่อไม่มีข้อมูลเวลา
+        var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+        var companyHolidays = (await _context.Holidays.AsNoTracking()
+                .Where(h => h.CompanyId == CompanyWorkSchedule.DefaultCompanyId
+                            && h.HolidayDate >= period.StartDate && h.HolidayDate <= period.EndDate)
+                .Select(h => h.HolidayDate)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+        int CountCompanyWorkingDays(DateOnly from, DateOnly to)
+        {
+            var n = 0;
+            for (var d = from; d <= to; d = d.AddDays(1))
+                if (companySchedule.IsWorkingDay(d) && !companyHolidays.Contains(d)) n++;
+            return n;
+        }
+        var noAttendanceNames = new List<string>();
         var eligibleIds = new HashSet<long>();
 
         foreach (var emp in employees)
@@ -1993,6 +2007,8 @@ public class SalaryService : ISalaryService
             };
 
             var empAttendance = attendance.FirstOrDefault(a => a.EmployeeId == emp.Id);
+            if (empAttendance == null || (empAttendance.TotalActualWorkDays <= 0 && empAttendance.TotalWorkedMinutes <= 0))
+                noAttendanceNames.Add($"{emp.FirstName} {emp.LastName}".Trim());
 
             // ===== 2. หักวันลาไม่รับค่าจ้าง (เฉพาะวันลาที่อนุมัติแล้ว และอยู่ในช่วงที่ทำงานในรอบนี้) =====
             decimal unpaidDays = CalculateUnpaidLeaveDays(unpaidLeaves.Where(l => l.EmployeeId == emp.Id), workStart, workEnd);
@@ -2018,8 +2034,15 @@ public class SalaryService : ISalaryService
             }
 
             // ===== 3. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
+            // ถ้าพนักงานได้รับสวัสดิการ ALLOWANCE ที่ผูกรายการนี้ไว้ ยอดมาจากสวัสดิการ (ข้อ 3.1) ไม่คิดซ้ำ
+            var empBenefitLinkedItemIds = (curAssign?.EmployeeType?.EmployeeTypeBenefits ?? Enumerable.Empty<EmployeeTypeBenefit>())
+                .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null
+                    && etb.BenefitItem.Category == "ALLOWANCE" && etb.BenefitItem.PayrollItemId != null)
+                .Select(etb => etb.BenefitItem!.PayrollItemId!.Value)
+                .ToHashSet();
             foreach (var item in autoItems)
             {
+                if (empBenefitLinkedItemIds.Contains(item.Id)) continue;
                 var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance, periodLeaveDays);
                 if (line != null) lines.Add(line);
             }
@@ -2038,16 +2061,20 @@ public class SalaryService : ISalaryService
                     decimal? rate = null;
                     string subtext;
 
-                    bool isDaily = b.Frequency == "DAILY" || b.BenefitItem.BenefitCode.Contains("MEAL") || b.BenefitItem.BenefitCode.Contains("DAILY");
+                    // คิดรายวันเฉพาะสวัสดิการที่ตั้งความถี่เป็น DAILY (เดิมเดาจากรหัส MEAL ทำให้ค่าอาหารรายเดือน 1,200 ถูกคูณจำนวนวัน)
+                    bool isDaily = b.Frequency == "DAILY";
                     if (isDaily)
                     {
-                        int actualWorkDays = empAttendance != null && empAttendance.TotalActualWorkDays > 0
-                            ? empAttendance.TotalActualWorkDays
-                            : workedDays;
+                        bool hasAttendance = empAttendance != null && empAttendance.TotalActualWorkDays > 0;
+                        int actualWorkDays = hasAttendance
+                            ? empAttendance!.TotalActualWorkDays
+                            : CountCompanyWorkingDays(workStart, workEnd);
                         allowanceAmount = Math.Round(b.CoverageAmount * actualWorkDays, 2, MidpointRounding.AwayFromZero);
                         quantity = actualWorkDays;
                         rate = b.CoverageAmount;
-                        subtext = $"{b.BenefitItem.BenefitName} ({b.CoverageAmount:N2} บาท/วัน x {actualWorkDays} วันทำงานจริง)";
+                        subtext = hasAttendance
+                            ? $"{b.BenefitItem.BenefitName} ({b.CoverageAmount:N2} บาท/วัน x {actualWorkDays} วันทำงานจริง)"
+                            : $"{b.BenefitItem.BenefitName} ({b.CoverageAmount:N2} บาท/วัน x {actualWorkDays} วันทำงานตามปฏิทินบริษัท — ไม่มีข้อมูลเวลา)";
                     }
                     else
                     {
@@ -2175,8 +2202,23 @@ public class SalaryService : ISalaryService
         period.Status = "REVIEW";
         await _context.SaveChangesAsync(cancellationToken);
 
-        return await GetPayrollsByPeriodIdAsync(periodId, cancellationToken);
+        var records = await GetPayrollsByPeriodIdAsync(periodId, cancellationToken);
+
+        // คำเตือนหลังคำนวณ ให้ HR เห็นว่าผลยังไม่ครบ (เดิมขึ้น "สำเร็จ" แม้ทุกคนได้ 0)
+        var warnings = new List<string>();
+        var noSalary = records.Count(r => r.InputStatus == "PENDING_SALARY");
+        if (noSalary > 0)
+            warnings.Add($"{noSalary} คนยังไม่มีฐานเงินเดือนที่มีผลในรอบนี้ จึงยังไม่ได้คำนวณ");
+        if (noAttendanceNames.Count > 0)
+            warnings.Add($"{noAttendanceNames.Count} คนไม่มีวันมาทำงานในข้อมูลเวลาของรอบนี้ (ตรวจว่านำเข้าไฟล์เวลาครบหรือผูกรหัสเครื่องสแกนแล้ว)"
+                + (noAttendanceNames.Count <= 5 ? $": {string.Join(", ", noAttendanceNames)}" : ""));
+        LastCalculationWarnings = warnings;
+
+        return records;
     }
+
+    /// <summary>คำเตือนจากการคำนวณรอบล่าสุดใน request นี้ (service เป็น scoped)</summary>
+    public IReadOnlyList<string> LastCalculationWarnings { get; private set; } = Array.Empty<string>();
 
     #region Payroll Calculation Helpers
 
