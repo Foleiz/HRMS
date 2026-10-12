@@ -3028,6 +3028,62 @@ public class SalaryService : ISalaryService
         return result.OrderBy(r => r.EmployeeCode).ToList();
     }
 
+    public async Task<List<BonusPeriodSummaryDto>> GetBonusPeriodsAsync(CancellationToken cancellationToken = default)
+    {
+        var groupedBonuses = await _context.EmployeeBonuses
+            .AsNoTracking()
+            .GroupBy(b => new { b.Year, b.Month })
+            .Select(g => new
+            {
+                g.Key.Year,
+                g.Key.Month,
+                TotalEmployees = g.Count(),
+                ApprovedCount = g.Count(x => x.Status == "APPROVED"),
+                CalculatedCount = g.Count(x => x.Status != "APPROVED"),
+                TotalBonusAmount = g.Sum(x => x.BonusAmount),
+                AverageMultiplier = g.Average(x => x.Multiplier),
+                CreatedAt = g.Min(x => x.CreatedAt),
+                UpdatedAt = g.Max(x => x.UpdatedAt)
+            })
+            .OrderByDescending(g => g.Year)
+            .ThenByDescending(g => g.Month)
+            .ToListAsync(cancellationToken);
+
+        string[] thaiMonths = { "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม" };
+
+        var summaries = new List<BonusPeriodSummaryDto>();
+
+        foreach (var g in groupedBonuses)
+        {
+            var monthName = (g.Month >= 1 && g.Month <= 12) ? thaiMonths[g.Month - 1] : $"เดือน {g.Month}";
+            var periodName = $"โบนัสรอบ {monthName} {g.Year + 543}";
+            var status = g.ApprovedCount > 0 && g.CalculatedCount == 0 ? "APPROVED"
+                : g.ApprovedCount > 0 ? "PARTIAL_APPROVED"
+                : "CALCULATED";
+            var statusText = status == "APPROVED" ? "อนุมัติแล้ว"
+                : status == "PARTIAL_APPROVED" ? "อนุมัติบางส่วน"
+                : "คำนวณแล้ว";
+
+            summaries.Add(new BonusPeriodSummaryDto
+            {
+                Year = g.Year,
+                Month = g.Month,
+                PeriodName = periodName,
+                TotalEmployees = g.TotalEmployees,
+                ApprovedCount = g.ApprovedCount,
+                CalculatedCount = g.CalculatedCount,
+                TotalBonusAmount = g.TotalBonusAmount,
+                AverageMultiplier = Math.Round((decimal)g.AverageMultiplier, 2),
+                Status = status,
+                StatusText = statusText,
+                CreatedAt = g.CreatedAt,
+                UpdatedAt = g.UpdatedAt
+            });
+        }
+
+        return summaries;
+    }
+
     public async Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default)
     {
         int targetYear = request.Year <= 0 ? DateTime.Today.Year : request.Year;

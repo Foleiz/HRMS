@@ -58,6 +58,7 @@ public interface ISalaryService
     Task<byte[]> GenerateBankTransferFileAsync(long periodId, string bankCode, CancellationToken cancellationToken = default);
     Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, int? month = null, CancellationToken cancellationToken = default);
+    Task<List<BonusPeriodSummaryDto>> GetBonusPeriodsAsync(CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default);
 

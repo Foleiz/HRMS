@@ -22,6 +22,7 @@ import {
   MarkTransferredPayload,
   ConfirmPaymentPayload,
   EmployeeBonus,
+  BonusPeriodSummary,
   SaveEmployeeBonusesPayload,
   AddPayrollAdjustmentPayload,
   BonusPayoutResult,
@@ -239,6 +240,11 @@ export const salaryService = {
     const res = await apiClient.get<ApiResponse<EmployeeBonus[]>>('/salary/bonuses', {
       params: { year, month },
     });
+    return res.data.data;
+  },
+
+  async getBonusPeriods(): Promise<BonusPeriodSummary[]> {
+    const res = await apiClient.get<ApiResponse<BonusPeriodSummary[]>>('/salary/bonuses/periods');
     return res.data.data;
   },
 

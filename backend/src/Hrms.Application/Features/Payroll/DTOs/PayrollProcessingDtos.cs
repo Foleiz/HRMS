@@ -224,6 +224,22 @@ public class EmployeeBonusDto
     public string StatusText { get; set; } = "ร่าง";
 }
 
+public class BonusPeriodSummaryDto
+{
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public string PeriodName { get; set; } = string.Empty;
+    public int TotalEmployees { get; set; }
+    public int ApprovedCount { get; set; }
+    public int CalculatedCount { get; set; }
+    public decimal TotalBonusAmount { get; set; }
+    public decimal AverageMultiplier { get; set; }
+    public string Status { get; set; } = "DRAFT";
+    public string StatusText { get; set; } = "ร่าง";
+    public DateTimeOffset? CreatedAt { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+}
+
 public class CalculateBonusRequest
 {
     public int Year { get; set; }
