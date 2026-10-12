@@ -656,7 +656,9 @@ function DailyAttendanceContent() {
   const handleFileSelected = (file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (ext !== 'xlsx' && ext !== 'xls' && ext !== 'csv') {
-      setImportErrorMessage('ระบบรองรับเฉพาะไฟล์นามสกุล .xlsx, .xls หรือ .csv เท่านั้น');
+      const msg = 'ระบบรองรับเฉพาะไฟล์นามสกุล .xlsx, .xls หรือ .csv เท่านั้น';
+      setImportErrorMessage(msg);
+      toast.error(msg);
       setSelectedFile(null);
       return;
     }
@@ -687,50 +689,36 @@ function DailyAttendanceContent() {
       setUploadProgress(0);
       setImportErrorMessage(null);
 
-      let finalDateFrom: string | undefined = undefined;
-      let finalDateTo: string | undefined = undefined;
-      let finalYear: number | undefined = undefined;
-      let finalMonth: number | undefined = undefined;
-
-      if (importDateMode === 'period') {
-        const lastDay = getDaysInMonth(importYear, importMonth);
-        finalDateFrom = formatIsoDate(importYear, importMonth, 1);
-        finalDateTo = formatIsoDate(importYear, importMonth, lastDay);
-        finalYear = importYear;
-        finalMonth = importMonth;
-      }
-
       const fileExt = selectedFile.name.toLowerCase().endsWith('.csv') ? 'CSV' : 'EXCEL';
       const res = await attendanceImportService.uploadFile(
         selectedFile,
         fileExt,
         undefined,
         false,
-        (percent) => setUploadProgress(percent),
-        finalDateFrom,
-        finalDateTo,
-        finalYear,
-        finalMonth
+        (percent) => setUploadProgress(percent)
       );
 
       if (res.success && res.data) {
-        setUploadResult(res.data);
         setSelectedFile(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
 
-        const periodLabel = finalDateFrom && finalDateTo
-          ? `รอบประจำเดือน ${THAI_MONTHS[importMonth - 1]} ${importYear + 543} (${formatDateThai(finalDateFrom)} ถึง ${formatDateThai(finalDateTo)})`
-          : (res.data.dateFrom && res.data.dateTo
-            ? `รอบวันที่ ${formatDateThai(res.data.dateFrom)} ถึง ${formatDateThai(res.data.dateTo)}`
-            : '');
+        let periodLabel = '';
+        if (res.data.dateFrom && res.data.dateTo) {
+          const [y, m] = res.data.dateFrom.split('-').map(Number);
+          const monthText = m >= 1 && m <= 12 ? `${THAI_MONTHS[m - 1]} ${y + 543}` : '';
+          periodLabel = monthText
+            ? `รอบประจำเดือน ${monthText} (${formatDateThai(res.data.dateFrom)} ถึง ${formatDateThai(res.data.dateTo)})`
+            : `ช่วงวันที่ ${formatDateThai(res.data.dateFrom)} ถึง ${formatDateThai(res.data.dateTo)}`;
+        }
 
         if (res.data.failedRecords > 0) {
-          const errMsg = `แจ้งเตือนข้อผิดพลาด: พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ (นำเข้าสำเร็จ ${res.data.successRecords} รายการ)`;
-          setImportErrorMessage(errMsg);
-          toast.warning(`พบข้อมูล ${res.data.failedRecords} รายการที่รหัสพนักงานไม่ตรงกับในระบบ (สำเร็จ ${res.data.successRecords} รายการ)`);
+          toast.warning(
+            `นำเข้าข้อมูลสำเร็จบางส่วน (สำเร็จ ${res.data.successRecords.toLocaleString()} / พบข้อผิดพลาด ${res.data.failedRecords.toLocaleString()} รายการ)`,
+            periodLabel || 'พบรายการที่รหัสพนักงานไม่ตรงกับข้อมูลในระบบ'
+          );
         } else {
           toast.success(
-            `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords} รายการ)`,
+            `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords.toLocaleString()} รายการ)`,
             periodLabel ? `${periodLabel} • ข้อมูลพร้อมใช้คำนวณเงินเดือนทันที` : 'ข้อมูลบันทึกเวลาพร้อมใช้งานทันที'
           );
         }
@@ -750,7 +738,6 @@ function DailyAttendanceContent() {
         const errorMsg = res.message || 'เกิดข้อผิดพลาด: รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลในระบบ';
         setImportErrorMessage(errorMsg);
         toast.error(errorMsg);
-        if (res.data) setUploadResult(res.data);
         loadBatches();
       }
     } catch (err: any) {
@@ -1701,111 +1688,6 @@ function DailyAttendanceContent() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Period and Date Selection Card */}
-              <div className="bg-slate-50/90 rounded-2xl border border-slate-200/90 p-5 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-700/80">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
-                      <Calendar className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                        กำหนดวัน เดือน ปี และรอบการคำนวณ (Target Attendance Period)
-                      </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        ระบุเพื่อผูกข้อมูลเวลากับรอบเงินเดือน (Payroll) หรือใช้ประมวลผลสถิติประจำเดือนให้อัตโนมัติ
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Mode Selector Tabs */}
-                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 self-start sm:self-auto text-xs shadow-2xs dark:bg-slate-800 dark:border-slate-700">
-                    <button
-                      type="button"
-                      onClick={() => setImportDateMode('period')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                        importDateMode === 'period'
-                          ? 'bg-[#0B2046] text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-50'
-                      }`}
-                    >
-                      ระบุรอบเดือนและปี
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setImportDateMode('auto')}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                        importDateMode === 'auto'
-                          ? 'bg-slate-700 text-white shadow-xs'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      ตรวจจับอัตโนมัติ
-                    </button>
-                  </div>
-                </div>
-
-                {/* Month and Year Selection */}
-                {importDateMode === 'period' ? (
-                  <div className="space-y-3 animate-in fade-in duration-150">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs max-w-xl">
-                      {/* Year */}
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                          ปี (พ.ศ. / ค.ศ.)
-                        </label>
-                        <CustomSelect
-                          value={importYear}
-                          onChange={(e) => setImportYear(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-                        >
-                          {[importYear - 1, importYear, importYear + 1, importYear + 2].map((y) => (
-                            <option key={y} value={y}>
-                              พ.ศ. {y + 543}
-                            </option>
-                          ))}
-                        </CustomSelect>
-                      </div>
-
-                      {/* Month */}
-                      <div>
-                        <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                          เดือน
-                        </label>
-                        <CustomSelect
-                          value={importMonth}
-                          onChange={(e) => setImportMonth(Number(e.target.value))}
-                          className="w-full px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-                        >
-                          {THAI_MONTHS.map((mName, idx) => (
-                            <option key={idx + 1} value={idx + 1}>
-                              {idx + 1}. {mName}
-                            </option>
-                          ))}
-                        </CustomSelect>
-                      </div>
-                    </div>
-
-                    {/* Period preview badge */}
-                    <div className="pt-1">
-                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-900 text-xs font-medium">
-                        <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span>
-                          รอบเงินเดือนเป้าหมาย: <strong className="font-bold">{THAI_MONTHS[importMonth - 1]} {importYear + 543}</strong> (1 {THAI_MONTHS[importMonth - 1]} - {getDaysInMonth(importYear, importMonth)} {THAI_MONTHS[importMonth - 1]} {importYear + 543})
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2 animate-in fade-in duration-150 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
-                    <div className="w-2 h-2 rounded-full bg-slate-400" />
-                    <span>
-                      ระบบจะตรวจจับเดือนและปีจากข้อมูลในไฟล์ Excel หรือ CSV อัตโนมัติ (เช่น คอลัมน์วันที่ หรือ Date From ในหัวเอกสาร)
-                    </span>
-                  </div>
-                )}
-              </div>
-
               {/* Dropzone */}
               <div
                 onDragOver={handleDragOver}
@@ -1887,127 +1769,6 @@ function DailyAttendanceContent() {
               )}
             </div>
           </div>
-
-          {/* Upload Result Card */}
-          {uploadResult && (
-            <div className={`p-6 rounded-2xl border shadow-sm ${
-              uploadResult.status === 'IMPORTED'
-                ? 'bg-emerald-50/50 border-emerald-200'
-                : uploadResult.status === 'PARTIAL'
-                ? 'bg-amber-50/50 border-amber-200'
-                : 'bg-rose-50/50 border-rose-200'
-            }`}>
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-3">
-                    {uploadResult.status === 'IMPORTED' && <CheckCircle2 className="w-6 h-6 text-emerald-600" />}
-                    {uploadResult.status === 'PARTIAL' && <AlertTriangle className="w-6 h-6 text-amber-600" />}
-                    {uploadResult.status === 'FAILED' && <AlertCircle className="w-6 h-6 text-rose-600" />}
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                      {uploadResult.status === 'IMPORTED' && 'นำเข้าข้อมูลเวลาสำเร็จครบถ้วน!'}
-                      {uploadResult.status === 'PARTIAL' && 'นำเข้าข้อมูลสำเร็จบางส่วน (พบข้อผิดพลาดบางรายการ)'}
-                      {uploadResult.status === 'FAILED' && 'การนำเข้าล้มเหลว ไม่พบข้อมูลที่ถูกต้อง'}
-                    </h3>
-                    {getBatchStatusBadge(uploadResult.status)}
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    ไฟล์: <span className="font-semibold text-slate-900 dark:text-slate-100">{uploadResult.fileName}</span> | ชุดที่: #{uploadResult.batchId}
-                    {uploadResult.dateFrom && uploadResult.dateTo && (
-                      <> | ช่วงวันที่: <span className="font-semibold">{uploadResult.dateFrom} ถึง {uploadResult.dateTo}</span></>
-                    )}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {uploadResult.failedRecords > 0 && (
-                    <button
-                      onClick={() => {
-                        const mockBatch: AttendanceImportBatch = {
-                          id: uploadResult.batchId,
-                          fileName: uploadResult.fileName,
-                          fileHash: uploadResult.fileHash,
-                          source: uploadResult.source,
-                          deviceName: null,
-                          unitName: null,
-                          dateFrom: uploadResult.dateFrom,
-                          dateTo: uploadResult.dateTo,
-                          importedByUserId: null,
-                          importedByUserName: null,
-                          importedAt: new Date().toISOString(),
-                          totalRecords: uploadResult.totalRecords,
-                          successRecords: uploadResult.successRecords,
-                          failedRecords: uploadResult.failedRecords,
-                          status: uploadResult.status,
-                        };
-                        handleOpenErrors(mockBatch);
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-100/80 hover:bg-rose-200 border border-rose-300 transition-colors"
-                    >
-                      <AlertCircle className="w-4 h-4" />
-                      ดูข้อผิดพลาด ({uploadResult.failedRecords} รายการ)
-                    </button>
-                  )}
-
-                  {canViewDaily && (
-                    <button
-                      onClick={() => {
-                        if (uploadResult.dateFrom && uploadResult.dateTo) {
-                          setAllowedDateRange({
-                            min: uploadResult.dateFrom,
-                            max: uploadResult.dateTo,
-                            batchName: uploadResult.fileName,
-                            batchId: uploadResult.batchId,
-                          });
-                          setSelectedDate(uploadResult.dateFrom);
-                        } else if (uploadResult.dateFrom) {
-                          setSelectedDate(uploadResult.dateFrom);
-                        }
-                        handleTabChange('daily');
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 border border-blue-300 transition-colors cursor-pointer"
-                    >
-                      ดูข้อมูลที่นำเข้าในหน้าตรวจบันทึกเวลา
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-
-                  {(hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('PAYROLL_HR_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW') || hasPermission('PAYROLL_ADMIN_VIEW') || hasPermission('PAYROLL_CALC_VIEW') || hasPermission('PAYROLL_VIEW')) && (
-                    <Link
-                      href="/payroll"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0B2046] hover:bg-[#112d5e] shadow-xs transition-all cursor-pointer"
-                    >
-                      <span>ไปหน้ารอบเงินเดือน (Payroll)</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </Link>
-                  )}
-
-                  <button
-                    onClick={() => setUploadResult(null)}
-                    className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-white/60 transition-colors dark:text-slate-500 dark:text-slate-400"
-                    title="ปิดกล่องแจ้งเตือนนี้"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Metrics */}
-              <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-200/60">
-                <div className="bg-white/80 p-3 rounded-xl border border-slate-200/80 text-center dark:border-slate-700/80">
-                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">จำนวนแถวทั้งหมด</p>
-                  <p className="text-xl font-black text-slate-900 dark:text-slate-100 mt-0.5 dark:text-slate-100">{uploadResult.totalRecords.toLocaleString()} แถว</p>
-                </div>
-                <div className="bg-white/80 p-3 rounded-xl border border-emerald-200 text-center">
-                  <p className="text-xs font-semibold text-emerald-700">สำเร็จ</p>
-                  <p className="text-xl font-black text-emerald-600 mt-0.5">{uploadResult.successRecords.toLocaleString()} รายการ</p>
-                </div>
-                <div className="bg-white/80 p-3 rounded-xl border border-rose-200 text-center">
-                  <p className="text-xs font-semibold text-rose-700">ข้อผิดพลาด</p>
-                  <p className="text-xl font-black text-rose-600 mt-0.5">{uploadResult.failedRecords.toLocaleString()} รายการ</p>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Batch History Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
