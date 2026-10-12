@@ -12,7 +12,7 @@ namespace Hrms.Application.Features.MasterData.Services;
 public static class BenefitPayCode
 {
     /// <summary>รหัสที่ระบบคำนวณเอง — ผูกกับสวัสดิการไม่ได้</summary>
-    public static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS" };
+    public static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS", "INC_POSITION" };
 
     public const string PaymentUnpaid = "UNPAID";
     public const string PaymentInPayroll = "IN_PAYROLL";
