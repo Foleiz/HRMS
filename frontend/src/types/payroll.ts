@@ -247,6 +247,9 @@ export interface AddPayrollAdjustmentPayload {
   payrollItemId: number;
   amount: number;
   note?: string;
+  /** ค่าคอมมิชชั่น: ยอดขาย และ % (backend คำนวณยอดเงินจากสองค่านี้) */
+  salesAmount?: number;
+  salesPercent?: number;
 }
 
 export interface BonusPayoutResult {

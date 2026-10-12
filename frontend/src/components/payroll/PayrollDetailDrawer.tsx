@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Plus, Trash2, FileDown } from 'lucide-react';
+import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -36,38 +36,10 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const [newAmount, setNewAmount] = useState<string>('');
   const [newNote, setNewNote] = useState<string>('');
   const [saving, setSaving] = useState(false);
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  // ค่าคอมมิชชั่น: กรอกยอดขาย x % แล้วระบบคูณให้
+  const [salesAmount, setSalesAmount] = useState<string>('');
+  const [salesPercent, setSalesPercent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-
-  const handleDownloadPdf = async () => {
-    if (!record) return;
-    try {
-      setIsDownloadingPdf(true);
-      setError(null);
-      const blob = await salaryService.downloadPayslipPdf(record.id);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `payslip_${record.employeeCode}_${record.id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err: any) {
-      console.error('Failed to download payslip PDF:', err);
-      let msg = 'ไม่สามารถดาวน์โหลดสลิปเงินเดือนได้';
-      if (err?.response?.data instanceof Blob) {
-        try {
-          msg = JSON.parse(await err.response.data.text())?.message || msg;
-        } catch {}
-      } else if (err?.response?.data?.message) {
-        msg = err.response.data.message;
-      }
-      setError(msg);
-    } finally {
-      setIsDownloadingPdf(false);
-    }
-  };
 
   const selectableItems = payrollItems.filter(
     (i) =>
@@ -76,9 +48,34 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
       !CORE_TEMPLATES.includes((i.formulaTemplate || '').toUpperCase())
   );
 
+  const selectedItem = selectableItems.find((i) => String(i.id) === newItemId);
+  const isCommission = (selectedItem?.formulaTemplate || '').toUpperCase() === 'PERCENT_SALES';
+  const commissionAmount = isCommission
+    ? Math.round(((Number(salesAmount) || 0) * (Number(salesPercent) || 0)) / 100 * 100) / 100
+    : 0;
+
+  const handleSelectItem = (id: string) => {
+    setNewItemId(id);
+    const item = selectableItems.find((i) => String(i.id) === id);
+    if ((item?.formulaTemplate || '').toUpperCase() === 'PERCENT_SALES') {
+      // % เริ่มต้นจากที่ตั้งไว้ในหน้ารายการได้-หัก (เช่น "3% ของยอดขาย")
+      const m = (item?.formulaValue || '').match(/(\d+(?:\.\d+)?)\s*%/);
+      setSalesPercent(m ? m[1] : '');
+      setSalesAmount('');
+    }
+  };
+
   const handleAdd = async () => {
     if (!record) return;
-    const amount = Number(newAmount);
+    if (isCommission) {
+      const sales = Number(salesAmount);
+      const percent = Number(salesPercent);
+      if (!newItemId || !Number.isFinite(sales) || sales <= 0 || !Number.isFinite(percent) || percent <= 0 || percent > 100) {
+        setError('กรุณาระบุยอดขายมากกว่า 0 และเปอร์เซ็นต์ระหว่าง 0–100');
+        return;
+      }
+    }
+    const amount = isCommission ? commissionAmount : Number(newAmount);
     if (!newItemId || !Number.isFinite(amount) || amount <= 0) {
       setError('กรุณาเลือกรายการและระบุจำนวนเงินมากกว่า 0');
       return;
@@ -90,11 +87,14 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
         payrollItemId: Number(newItemId),
         amount,
         note: newNote.trim() || undefined,
+        ...(isCommission ? { salesAmount: Number(salesAmount), salesPercent: Number(salesPercent) } : {}),
       });
       setDetails(updated);
       setNewItemId('');
       setNewAmount('');
       setNewNote('');
+      setSalesAmount('');
+      setSalesPercent('');
       onChanged?.();
     } catch (err: any) {
       setError(err?.response?.data?.message || 'เพิ่มรายการไม่สำเร็จ');
@@ -253,29 +253,13 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                 </span>
               </div>
 
-              {/* ปุ่มดาวน์โหลด E-Payslip PDF */}
-              <button
-                type="button"
-                onClick={handleDownloadPdf}
-                disabled={isDownloadingPdf || record.status === 'DRAFT'}
-                className="w-full h-10 inline-flex items-center justify-center gap-2 bg-[#0B2046] hover:bg-[#112d5e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title={record.status === 'DRAFT' ? 'รอบเงินเดือนยังไม่ได้ประมวลผล' : 'ดาวน์โหลดสลิปเงินเดือนแบบ PDF'}
-              >
-                {isDownloadingPdf ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileDown className="w-4 h-4" />
-                )}
-                <span>{isDownloadingPdf ? 'กำลังสร้างไฟล์ PDF...' : 'ดาวน์โหลด E-Payslip (PDF)'}</span>
-              </button>
-
               {/* เพิ่มรายการรายได้/รายหักแบบระบุเอง (เฉพาะรอบ DRAFT/REVIEW) */}
               {canEdit && (
                 <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 space-y-3 bg-slate-50/50">
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">เพิ่มรายการรายได้ / รายหัก (ระบุเอง)</h4>
                   <CustomSelect
                     value={newItemId}
-                    onChange={(e) => setNewItemId(e.target.value)}
+                    onChange={(e) => handleSelectItem(e.target.value)}
                     disabled={saving}
                     className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                   >
@@ -291,27 +275,76 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       ))}
                     </optgroup>
                   </CustomSelect>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="จำนวนเงิน (บาท)"
-                      value={newAmount}
-                      onChange={(e) => setNewAmount(e.target.value)}
-                      disabled={saving}
-                      className="w-36 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
-                    />
-                    <input
-                      type="text"
-                      placeholder="หมายเหตุ (แสดงบนสลิป)"
-                      value={newNote}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      disabled={saving}
-                      maxLength={200}
-                      className="flex-1 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
-                    />
-                  </div>
+                  {isCommission ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <label className="flex-1">
+                          <span className="block text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">ยอดขาย (บาท)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="เช่น 100000"
+                            value={salesAmount}
+                            onChange={(e) => setSalesAmount(e.target.value)}
+                            disabled={saving}
+                            className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
+                          />
+                        </label>
+                        <label className="w-24">
+                          <span className="block text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">อัตรา (%)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            placeholder="3"
+                            value={salesPercent}
+                            onChange={(e) => setSalesPercent(e.target.value)}
+                            disabled={saving}
+                            className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
+                          />
+                        </label>
+                      </div>
+                      <div className="flex items-center justify-between text-xs px-3 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900">
+                        <span className="text-emerald-800 dark:text-emerald-300">ค่าคอมมิชชั่น</span>
+                        <span className="font-bold text-emerald-800 dark:text-emerald-300">
+                          ฿{commissionAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="หมายเหตุ (แสดงบนสลิป)"
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                        disabled={saving}
+                        maxLength={200}
+                        className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="จำนวนเงิน (บาท)"
+                        value={newAmount}
+                        onChange={(e) => setNewAmount(e.target.value)}
+                        disabled={saving}
+                        className="w-36 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
+                      />
+                      <input
+                        type="text"
+                        placeholder="หมายเหตุ (แสดงบนสลิป)"
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                        disabled={saving}
+                        maxLength={200}
+                        className="flex-1 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
+                      />
+                    </div>
+                  )}
                   {error && <p className="text-[11px] text-rose-600">{error}</p>}
                   <button
                     onClick={handleAdd}
