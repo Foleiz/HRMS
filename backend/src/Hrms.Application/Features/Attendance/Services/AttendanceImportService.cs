@@ -1250,6 +1250,18 @@ public class AttendanceImportService : IAttendanceImportService
                 continue;
             }
 
+            // ช่วงวันที่ที่ผู้ใช้เลือกตอนนำเข้า: ไม่รับแถวที่อยู่นอกช่วง (กันนำเข้าไฟล์ผิดเดือน เช่น ไฟล์ พ.ย. แต่เลือก ต.ค.
+            // ซึ่งเดิมทำให้ข้อมูลไปลงเดือนอื่น และเดือนที่เลือกถูกสร้างเป็น "ขาดงาน" ทั้งเดือน)
+            if (customDateFrom.HasValue && customDateTo.HasValue && customDateFrom != customDateTo
+                && (workDate < customDateFrom.Value || workDate > customDateTo.Value))
+            {
+                failedRecords++;
+                AddError(batch.Id, rowNumber, rawRowJson,
+                    $"วันที่ {workDate.Day:D2}/{workDate.Month:D2}/{workDate.Year + 543} อยู่นอกช่วงที่เลือก ({customDateFrom.Value.Day:D2}/{customDateFrom.Value.Month:D2}/{customDateFrom.Value.Year + 543} – {customDateTo.Value.Day:D2}/{customDateTo.Value.Month:D2}/{customDateTo.Value.Year + 543}) กรุณาตรวจว่าเลือกเดือนตรงกับไฟล์",
+                    "DATE_OUT_OF_RANGE", empCodeRaw, empName, deptName, null, stateRaw, errorsList, errorDtos);
+                continue;
+            }
+
             // Update Date Range
             if (!minDate.HasValue || workDate < minDate.Value) minDate = workDate;
             if (!maxDate.HasValue || workDate > maxDate.Value) maxDate = workDate;

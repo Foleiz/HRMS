@@ -469,6 +469,11 @@ public class ResignationService : IResignationService
             .OrderByDescending(a => a.ActionAt)
             .FirstOrDefault();
 
+        var rejectAction = instance?.Actions
+            .Where(a => a.ActionDecision == "REJECT")
+            .OrderByDescending(a => a.ActionAt)
+            .FirstOrDefault();
+
         Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto? timeline = null;
         if (instance != null)
         {
@@ -500,6 +505,9 @@ public class ResignationService : IResignationService
                 ?? (r.ApprovedByEmployee != null ? $"{r.ApprovedByEmployee.FirstName} {r.ApprovedByEmployee.LastName}".Trim() : null),
             ApprovedAt = instance?.CompletedAt ?? r.ApprovedAt ?? lastDecisionAction?.ActionAt ?? finalApproveAction?.ActionAt,
             ApprovalInstanceId = r.ApprovalInstanceId,
+            RejectReason = effectiveStatus == "REJECTED" ? rejectAction?.Comment : null,
+            RejectedByName = effectiveStatus == "REJECTED" ? rejectAction?.ApproverEmployee?.FullName : null,
+            RejectedAt = effectiveStatus == "REJECTED" ? rejectAction?.ActionAt : null,
             NoticePeriodDays = noticeDays > 0 ? noticeDays : 0,
             CanCancel = effectiveStatus == "PENDING" && (r.EmployeeId == currentEmpId || isHrOrAdmin),
             CurrentStepNo = currentStepNo,
