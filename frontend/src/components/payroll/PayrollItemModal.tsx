@@ -36,7 +36,7 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     defaultSocialSecurity: true,
     parameterLabel: 'เกณฑ์อ้างอิงฐานเงินเดือน',
     parameterPlaceholder: 'เช่น ตามสัญญาจ้าง หรือ อัตราโครงสร้างเงินเดือน',
-    hint: 'ระบบดึงฐานเงินเดือนประจำของพนักงานแต่ละคนจากข้อมูลสัญญาจ้าง',
+    hint: 'ระบบใช้ฐานเงินเดือนที่มีผลในรอบนั้น (ตั้งที่ปุ่มปรับเงินเดือนของพนักงาน) ส่วนสัญญาจ้างใช้แค่วันเริ่ม/สิ้นสุดงาน เพื่อคิดตามสัดส่วนวันเมื่อเข้าใหม่หรือลาออกระหว่างเดือน',
   },
   {
     code: 'POSITION_ALLOWANCE',
@@ -50,17 +50,6 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     hint: 'ระบบดึงจากตารางโครงสร้างเงินเดือนตามตำแหน่งและระดับพนักงาน',
   },
 
-  {
-    code: 'PERCENT_SALES',
-    name: 'ค่าคอมมิชชั่นตามยอดขาย',
-    category: 'EARNING',
-    defaultValue: '3% จากยอดขายสุทธิ',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'อัตราเปอร์เซ็นต์ / เงื่อนไขยอดขาย',
-    parameterPlaceholder: 'เช่น 3% หรือ 5% จากยอดขายสุทธิ',
-    hint: 'ระบบคำนวณตามเปอร์เซ็นต์ของยอดขายที่พนักงานทำได้ในรอบเดือน',
-  },
   {
     code: 'DILIGENT_ALLOWANCE',
     name: 'เบี้ยขยัน',
@@ -82,17 +71,6 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     parameterLabel: 'สูตรสัดส่วนวัน',
     parameterPlaceholder: 'เช่น (เงินเดือน / วันในเดือน) x วันทำงานจริง',
     hint: 'ระบบคำนวณเฉลี่ยตามวันทำงานจริง สำหรับพนักงานเริ่มงานใหม่หรือลาออกระหว่างรอบ',
-  },
-  {
-    code: 'MANUAL_BONUS',
-    name: 'โบนัสพิเศษ / เงินรางวัลผลงาน',
-    category: 'EARNING',
-    defaultValue: 'ตามการอนุมัติรายบุคคล',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'จำนวนเงินหรือตัวคูณเดือน',
-    parameterPlaceholder: 'เช่น 1.5 เดือน หรือ ระบุเป็นรายคน',
-    hint: 'กำหนดตามผลการประเมินงานหรือนโยบายโบนัสประจำปีของบริษัท',
   },
 
   // Deductions
@@ -150,6 +128,35 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     parameterLabel: 'งวดชำระ / เงื่อนไข',
     parameterPlaceholder: 'เช่น หักงวดละ 2,000 บาท จนครบสัญญา',
     hint: 'ระบบหักตามยอดงวดที่กำหนดไว้ในสัญญาเงินกู้สวัสดิการพนักงานจนกว่าจะครบยอด',
+  },
+];
+
+/**
+ * สูตรที่เลิกใช้แล้ว (ระบบไม่เคยคำนวณให้อัตโนมัติ): ไม่ให้เลือกในรายการใหม่
+ * เก็บไว้เพื่อแสดงชื่อเมื่อเปิดรายการเดิมที่ยังตั้งค่าไว้ — ค่าคอมฯ / โบนัส (มีเมนูโบนัสแยก) / สูตรกำหนดเอง
+ */
+export const LEGACY_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
+  {
+    code: 'PERCENT_SALES',
+    name: 'ค่าคอมมิชชั่นตามยอดขาย',
+    category: 'EARNING',
+    defaultValue: '3% จากยอดขายสุทธิ',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'อัตราเปอร์เซ็นต์ / เงื่อนไขยอดขาย',
+    parameterPlaceholder: 'เช่น 3% หรือ 5% จากยอดขายสุทธิ',
+    hint: 'ระบบคำนวณตามเปอร์เซ็นต์ของยอดขายที่พนักงานทำได้ในรอบเดือน',
+  },
+  {
+    code: 'MANUAL_BONUS',
+    name: 'โบนัสพิเศษ / เงินรางวัลผลงาน',
+    category: 'EARNING',
+    defaultValue: 'ตามการอนุมัติรายบุคคล',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'จำนวนเงินหรือตัวคูณเดือน',
+    parameterPlaceholder: 'เช่น 1.5 เดือน หรือ ระบุเป็นรายคน',
+    hint: 'กำหนดตามผลการประเมินงานหรือนโยบายโบนัสประจำปีของบริษัท',
   },
   {
     code: 'CUSTOM_FORMULA',
@@ -219,17 +226,21 @@ export const PayrollItemModal: React.FC<Props> = ({
   const linkedBenefits = item?.linkedBenefitNames ?? [];
 
   // Filter templates for current item type
-  const availableTemplates = FORMULA_TEMPLATES.filter(
-    (tpl) => tpl.category === itemType || tpl.category === 'BOTH'
-  );
+  const legacyTemplate = LEGACY_FORMULA_TEMPLATES.find((t) => t.code === formulaTemplate);
+  const availableTemplates = [
+    ...FORMULA_TEMPLATES.filter((tpl) => tpl.category === itemType || tpl.category === 'BOTH'),
+    // รายการเดิมที่ยังใช้สูตรที่เลิกใช้: แสดงไว้ให้รู้ว่าตั้งอะไรอยู่ (ระบบไม่คำนวณให้)
+    ...(legacyTemplate ? [{ ...legacyTemplate, name: `${legacyTemplate.name} (เลิกใช้ — ระบบไม่คำนวณ)` }] : []),
+  ];
 
-  const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === formulaTemplate);
+  const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === formulaTemplate) ?? legacyTemplate;
 
   const handleCalculationTypeChange = (newType: 'FIXED' | 'FORMULA' | 'MANUAL') => {
     setCalculationType(newType);
     if (newType === 'FORMULA') {
       if (!formulaTemplate) {
-        const defaultTpl = itemType === 'EARNING' ? 'BASE_SALARY' : 'SSO_STANDARD';
+        // เงินเดือน/ประกันสังคม/ภาษี เป็นรายการของระบบอยู่แล้ว ค่าเริ่มต้นจึงเป็นสูตรที่ใช้สร้างรายการเพิ่มได้จริง
+        const defaultTpl = itemType === 'EARNING' ? 'DILIGENT_ALLOWANCE' : 'LATE_ABSENT';
         setFormulaTemplate(defaultTpl);
         const tplObj = FORMULA_TEMPLATES.find((t) => t.code === defaultTpl);
         if (tplObj) {
@@ -272,7 +283,7 @@ export const PayrollItemModal: React.FC<Props> = ({
         description: description.trim() || null,
         itemType,
         calculationType,
-        formulaTemplate: calculationType === 'FORMULA' ? (formulaTemplate || 'CUSTOM_FORMULA') : null,
+        formulaTemplate: calculationType === 'FORMULA' ? (formulaTemplate || null) : null,
         formulaValue: formulaValue.trim() || null,
         isTaxable,
         isSocialSecurityCalculated,
