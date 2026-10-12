@@ -4,6 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Info, Calculator } from 'lucide-react';
 import { PayrollItem } from '@/types/payroll';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import {
+  FormulaParamsEditor,
+  FormulaParams,
+  PARAM_TEMPLATES,
+  parseFormulaParams,
+  serializeFormulaParams,
+  validateFormulaParams,
+} from './FormulaParamsEditor';
 
 interface Props {
   isOpen: boolean;
@@ -25,8 +33,56 @@ export interface FormulaTemplateOption {
   hint: string;
 }
 
+/** สูตรที่ระบบคำนวณได้จริง และเลือกใช้กับรายการใหม่ได้ */
 export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
-  // Earnings
+  {
+    code: 'DILIGENT_ALLOWANCE',
+    name: 'เบี้ยขยัน',
+    category: 'EARNING',
+    defaultValue: '1,000 บาท (ขาด=0, สาย<=1 ครั้ง, ลา<=0 วัน)',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'จำนวนเงินและเงื่อนไข',
+    parameterPlaceholder: 'เช่น 1,000 บาท (ขาด=0, สาย<=1 ครั้ง, ลา<=0 วัน)',
+    hint: 'จ่ายเมื่อมีข้อมูลลงเวลาของเดือนนั้น ไม่ขาดงาน และมาสาย/ลาไม่เกินจำนวนที่กำหนด',
+  },
+  {
+    code: 'PERCENT_SALES',
+    name: 'ค่าคอมมิชชั่นตามยอดขาย',
+    category: 'EARNING',
+    defaultValue: '3% ของยอดขาย',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'อัตราเปอร์เซ็นต์ / เงื่อนไขยอดขาย',
+    parameterPlaceholder: 'เช่น 3% หรือ 5% จากยอดขายสุทธิ',
+    hint: 'ตั้ง % เริ่มต้นไว้ที่นี่ แล้วกรอกยอดขายรายคนตอนเปิดดูรายละเอียดเงินเดือนของพนักงาน (ระบบคูณให้ และแก้ % รายคนได้)',
+  },
+  {
+    code: 'LATE_ABSENT',
+    name: 'หักมาสาย / ขาดงาน',
+    category: 'DEDUCTION',
+    defaultValue: 'หักตามอัตราค่าจ้าง (สาย: เงินเดือน/30/8 ต่อชม., ขาดงาน: เงินเดือน/30 ต่อวัน)',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'เกณฑ์การหักเงินมาสาย/ขาดงาน',
+    parameterPlaceholder: 'เช่น หักนาทีละ 2 บาท หรือ หักรายชั่วโมงตามฐานเงินเดือน',
+    hint: 'ใช้นาทีมาสายและวันขาดงานจากสรุปเวลารายเดือน (เมนูลงเวลา) ยอดหักรวมไม่เกินเงินเดือน',
+  },
+  {
+    code: 'PERCENT_SALARY',
+    name: 'กองทุนสำรองเลี้ยงชีพ / % เงินเดือน',
+    category: 'BOTH',
+    defaultValue: '5% ของฐานเงินเดือน',
+    defaultTaxable: false,
+    defaultSocialSecurity: false,
+    parameterLabel: 'อัตราเปอร์เซ็นต์ (%)',
+    parameterPlaceholder: 'เช่น 3%, 5%, หรือ 7%',
+    hint: 'คิดเป็น % ของเงินเดือน ถ้าเป็นรายการหักชื่อ "กองทุนสำรองเลี้ยงชีพ" (รหัสมี PVD) ระบบหักเฉพาะประเภทพนักงานที่มีสิทธิ์กองทุน และนำไปลดหย่อนภาษีให้',
+  },
+];
+
+/** รายการของระบบ (เงินเดือน / ประกันสังคม / ภาษี): ระบบสร้างและคำนวณเอง แสดงเมื่อเปิดดูรายการนั้นเท่านั้น */
+export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   {
     code: 'BASE_SALARY',
     name: 'เงินเดือนพื้นฐาน',
@@ -38,42 +94,6 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     parameterPlaceholder: 'เช่น ตามสัญญาจ้าง หรือ อัตราโครงสร้างเงินเดือน',
     hint: 'ระบบใช้ฐานเงินเดือนที่มีผลในรอบนั้น (ตั้งที่ปุ่มปรับเงินเดือนของพนักงาน) ส่วนสัญญาจ้างใช้แค่วันเริ่ม/สิ้นสุดงาน เพื่อคิดตามสัดส่วนวันเมื่อเข้าใหม่หรือลาออกระหว่างเดือน',
   },
-  {
-    code: 'POSITION_ALLOWANCE',
-    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ',
-    category: 'EARNING',
-    defaultValue: 'ตามโครงสร้างเงินเดือนตำแหน่ง',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'เกณฑ์อ้างอิงตำแหน่ง',
-    parameterPlaceholder: 'เช่น ตามระดับตำแหน่ง หรือ อัตราคงที่',
-    hint: 'ระบบดึงจากตารางโครงสร้างเงินเดือนตามตำแหน่งและระดับพนักงาน',
-  },
-
-  {
-    code: 'DILIGENT_ALLOWANCE',
-    name: 'เบี้ยขยัน',
-    category: 'EARNING',
-    defaultValue: '1,000 บาท (เงื่อนไข: ขาด=0, สาย<=1 ครั้ง, ลา<=0 วัน)',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'จำนวนเงินและเงื่อนไข',
-    parameterPlaceholder: 'เช่น 1,000 บาท (ขาด=0, สาย<=1 ครั้ง, ลา<=0 วัน)',
-    hint: 'ต้องมีข้อมูลลงเวลาของเดือนนั้น และไม่ขาดงาน ไม่สายเกินเกณฑ์ (สาย<=N) และวันลาที่อนุมัติไม่เกินเกณฑ์ (ลา<=N, ไม่ระบุ = ลาไม่ได้เลย)',
-  },
-  {
-    code: 'PRORATED_DAYS',
-    name: 'คิดตามสัดส่วนวันทำงานจริง',
-    category: 'EARNING',
-    defaultValue: '(เงินเดือน / 30) x จำนวนวันทำงานจริง',
-    defaultTaxable: true,
-    defaultSocialSecurity: true,
-    parameterLabel: 'สูตรสัดส่วนวัน',
-    parameterPlaceholder: 'เช่น (เงินเดือน / วันในเดือน) x วันทำงานจริง',
-    hint: 'ระบบคำนวณเฉลี่ยตามวันทำงานจริง สำหรับพนักงานเริ่มงานใหม่หรือลาออกระหว่างรอบ',
-  },
-
-  // Deductions
   {
     code: 'SSO_STANDARD',
     name: 'เงินสมทบประกันสังคม',
@@ -96,27 +116,34 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     parameterPlaceholder: 'คำนวณสะสมต่อปีตามประมวลรัษฎากร',
     hint: 'ระบบคำนวณภาษีหัก ณ ที่จ่ายสะสมแบบขั้นบันได 8 ขั้น โดยหักค่าใช้จ่ายและค่าลดหย่อนอัตโนมัติ',
   },
+];
+
+/**
+ * สูตรที่เลิกใช้ (ระบบไม่ได้คำนวณให้): ไม่ให้เลือกในรายการใหม่ แสดงชื่อเมื่อเปิดรายการเดิม
+ * - เงินประจำตำแหน่ง / คิดตามสัดส่วน (เงินเดือนคิดสัดส่วนให้อัตโนมัติแล้ว) / หักเงินกู้ / โบนัส (มีเมนูโบนัส) / สูตรกำหนดเอง
+ */
+export const LEGACY_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   {
-    code: 'LATE_ABSENT',
-    name: 'หักมาสาย / ขาดงาน',
-    category: 'DEDUCTION',
-    defaultValue: 'หักตามจริง (ฐานเงินเดือน / 30 / 8 x ชม.สาย)',
-    defaultTaxable: false,
+    code: 'POSITION_ALLOWANCE',
+    name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ',
+    category: 'EARNING',
+    defaultValue: 'ตามโครงสร้างเงินเดือนตำแหน่ง',
+    defaultTaxable: true,
     defaultSocialSecurity: false,
-    parameterLabel: 'เกณฑ์การหักเงินมาสาย/ขาดงาน',
-    parameterPlaceholder: 'เช่น หักนาทีละ 2 บาท หรือ หักรายชั่วโมงตามฐานเงินเดือน',
-    hint: 'ระบบดึงเวลานาที/ชั่วโมงที่สายจาก Time Tracking มาคำนวณหักตามอัตราค่าจ้างต่อชั่วโมง',
+    parameterLabel: 'เกณฑ์อ้างอิงตำแหน่ง',
+    parameterPlaceholder: 'เช่น ตามระดับตำแหน่ง หรือ อัตราคงที่',
+    hint: 'ระบบดึงจากตารางโครงสร้างเงินเดือนตามตำแหน่งและระดับพนักงาน',
   },
   {
-    code: 'PERCENT_SALARY',
-    name: 'กองทุนสำรองเลี้ยงชีพ / % เงินเดือน',
-    category: 'BOTH',
-    defaultValue: '5% ของฐานเงินเดือน',
-    defaultTaxable: false,
-    defaultSocialSecurity: false,
-    parameterLabel: 'อัตราเปอร์เซ็นต์ (%)',
-    parameterPlaceholder: 'เช่น 3%, 5%, หรือ 7%',
-    hint: 'หักเงินสะสมเข้ากองทุนสำรองเลี้ยงชีพ หรือรายการหักคำนวณเป็น % จากฐานเงินเดือน',
+    code: 'PRORATED_DAYS',
+    name: 'คิดตามสัดส่วนวันทำงานจริง',
+    category: 'EARNING',
+    defaultValue: '(เงินเดือน / 30) x จำนวนวันทำงานจริง',
+    defaultTaxable: true,
+    defaultSocialSecurity: true,
+    parameterLabel: 'สูตรสัดส่วนวัน',
+    parameterPlaceholder: 'เช่น (เงินเดือน / วันในเดือน) x วันทำงานจริง',
+    hint: 'ระบบคำนวณเฉลี่ยตามวันทำงานจริง สำหรับพนักงานเริ่มงานใหม่หรือลาออกระหว่างรอบ',
   },
   {
     code: 'STAFF_LOAN',
@@ -128,24 +155,6 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     parameterLabel: 'งวดชำระ / เงื่อนไข',
     parameterPlaceholder: 'เช่น หักงวดละ 2,000 บาท จนครบสัญญา',
     hint: 'ระบบหักตามยอดงวดที่กำหนดไว้ในสัญญาเงินกู้สวัสดิการพนักงานจนกว่าจะครบยอด',
-  },
-];
-
-/**
- * สูตรที่เลิกใช้แล้ว (ระบบไม่เคยคำนวณให้อัตโนมัติ): ไม่ให้เลือกในรายการใหม่
- * เก็บไว้เพื่อแสดงชื่อเมื่อเปิดรายการเดิมที่ยังตั้งค่าไว้ — ค่าคอมฯ / โบนัส (มีเมนูโบนัสแยก) / สูตรกำหนดเอง
- */
-export const LEGACY_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
-  {
-    code: 'PERCENT_SALES',
-    name: 'ค่าคอมมิชชั่นตามยอดขาย',
-    category: 'EARNING',
-    defaultValue: '3% จากยอดขายสุทธิ',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'อัตราเปอร์เซ็นต์ / เงื่อนไขยอดขาย',
-    parameterPlaceholder: 'เช่น 3% หรือ 5% จากยอดขายสุทธิ',
-    hint: 'ระบบคำนวณตามเปอร์เซ็นต์ของยอดขายที่พนักงานทำได้ในรอบเดือน',
   },
   {
     code: 'MANUAL_BONUS',
@@ -185,6 +194,7 @@ export const PayrollItemModal: React.FC<Props> = ({
   const [calculationType, setCalculationType] = useState<'FIXED' | 'FORMULA' | 'MANUAL'>('FIXED');
   const [formulaTemplate, setFormulaTemplate] = useState<string>('');
   const [formulaValue, setFormulaValue] = useState('');
+  const [params, setParams] = useState<FormulaParams>(() => parseFormulaParams('', ''));
   const [isTaxable, setIsTaxable] = useState(true);
   const [isSocialSecurityCalculated, setIsSocialSecurityCalculated] = useState(true);
   const [isActive, setIsActive] = useState(true);
@@ -203,6 +213,7 @@ export const PayrollItemModal: React.FC<Props> = ({
       setCalculationType(t === 'EARNING' && calcType === 'FIXED' ? 'MANUAL' : calcType);
       setFormulaTemplate(item.formulaTemplate || '');
       setFormulaValue(item.formulaValue || '');
+      setParams(parseFormulaParams((item.formulaTemplate || '').toUpperCase(), item.formulaValue));
       setIsTaxable(item.isTaxable);
       setIsSocialSecurityCalculated(item.isSocialSecurityCalculated);
       setIsActive(item.status ? item.status.toUpperCase() === 'ACTIVE' : true);
@@ -226,14 +237,20 @@ export const PayrollItemModal: React.FC<Props> = ({
   const linkedBenefits = item?.linkedBenefitNames ?? [];
 
   // Filter templates for current item type
-  const legacyTemplate = LEGACY_FORMULA_TEMPLATES.find((t) => t.code === formulaTemplate);
+  const templateCode = (formulaTemplate || '').toUpperCase();
+  const systemTemplate = SYSTEM_FORMULA_TEMPLATES.find((t) => t.code === templateCode);
+  const legacyTemplate = LEGACY_FORMULA_TEMPLATES.find((t) => t.code === templateCode);
+  /** รายการของระบบ: เปลี่ยนสูตรไม่ได้ */
+  const isSystemFormula = !!systemTemplate;
   const availableTemplates = [
+    ...(systemTemplate ? [{ ...systemTemplate, name: `${systemTemplate.name} (รายการของระบบ)` }] : []),
     ...FORMULA_TEMPLATES.filter((tpl) => tpl.category === itemType || tpl.category === 'BOTH'),
     // รายการเดิมที่ยังใช้สูตรที่เลิกใช้: แสดงไว้ให้รู้ว่าตั้งอะไรอยู่ (ระบบไม่คำนวณให้)
     ...(legacyTemplate ? [{ ...legacyTemplate, name: `${legacyTemplate.name} (เลิกใช้ — ระบบไม่คำนวณ)` }] : []),
   ];
 
-  const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === formulaTemplate) ?? legacyTemplate;
+  const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === templateCode) ?? systemTemplate ?? legacyTemplate;
+  const hasParams = PARAM_TEMPLATES.includes(templateCode);
 
   const handleCalculationTypeChange = (newType: 'FIXED' | 'FORMULA' | 'MANUAL') => {
     setCalculationType(newType);
@@ -245,6 +262,7 @@ export const PayrollItemModal: React.FC<Props> = ({
         const tplObj = FORMULA_TEMPLATES.find((t) => t.code === defaultTpl);
         if (tplObj) {
           if (!formulaValue) setFormulaValue(tplObj.defaultValue);
+          setParams(parseFormulaParams(defaultTpl, tplObj.defaultValue));
           setIsTaxable(tplObj.defaultTaxable);
           setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
         }
@@ -257,6 +275,7 @@ export const PayrollItemModal: React.FC<Props> = ({
     const tplObj = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
     if (tplObj) {
       setFormulaValue(tplObj.defaultValue);
+      setParams(parseFormulaParams(newTplCode, tplObj.defaultValue));
       setIsTaxable(tplObj.defaultTaxable);
       setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
     }
@@ -275,6 +294,22 @@ export const PayrollItemModal: React.FC<Props> = ({
       return;
     }
 
+    let finalFormulaValue = formulaValue.trim();
+    if (calculationType === 'FORMULA') {
+      if (!formulaTemplate) {
+        setError('กรุณาเลือกรูปแบบสูตร');
+        return;
+      }
+      if (hasParams) {
+        const paramError = validateFormulaParams(templateCode, params);
+        if (paramError) {
+          setError(paramError);
+          return;
+        }
+        finalFormulaValue = serializeFormulaParams(templateCode, params);
+      }
+    }
+
     try {
       setLoading(true);
       const payload: Partial<PayrollItem> = {
@@ -284,7 +319,7 @@ export const PayrollItemModal: React.FC<Props> = ({
         itemType,
         calculationType,
         formulaTemplate: calculationType === 'FORMULA' ? (formulaTemplate || null) : null,
-        formulaValue: formulaValue.trim() || null,
+        formulaValue: finalFormulaValue || null,
         isTaxable,
         isSocialSecurityCalculated,
         status: isActive ? 'ACTIVE' : 'INACTIVE',
@@ -420,6 +455,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                 <CustomSelect
                   value={formulaTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
+                  disabled={isSystemFormula}
                   className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 dark:text-slate-100 font-semibold"
                 >
                   {availableTemplates.map((tpl) => (
@@ -432,31 +468,24 @@ export const PayrollItemModal: React.FC<Props> = ({
 
               {selectedTemplate && (
                 <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 shadow-2xs">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">เกณฑ์ / สูตรคำนวณ:</span>
-                    <span className="font-bold text-[#0B2046] font-mono bg-blue-50 text-blue-800 px-2.5 py-1 rounded-lg border border-blue-200">
-                      {selectedTemplate.defaultValue}
-                    </span>
-                  </div>
+                  {hasParams ? (
+                    <FormulaParamsEditor template={templateCode} params={params} onChange={setParams} />
+                  ) : (
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">เกณฑ์ / สูตรคำนวณ:</span>
+                      <span className="font-semibold text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 text-right">
+                        {formulaValue || selectedTemplate.defaultValue || '-'}
+                      </span>
+                    </div>
+                  )}
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-start gap-1.5">
                     <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                    <span>{selectedTemplate.hint}</span>
+                    <span>
+                      {isSystemFormula
+                        ? `${selectedTemplate.hint} — รายการของระบบ ระบบคำนวณให้เอง`
+                        : selectedTemplate.hint}
+                    </span>
                   </p>
-                </div>
-              )}
-
-              {formulaTemplate === 'CUSTOM_FORMULA' && (
-                <div className="pt-1">
-                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    ระบุสูตรหรือเกณฑ์กำหนดเอง
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="เช่น (ฐานเงินเดือน x 2%) หรือ ตามสัญญาพิเศษ"
-                    value={formulaValue}
-                    onChange={(e) => setFormulaValue(e.target.value)}
-                    className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-800 dark:text-slate-200"
-                  />
                 </div>
               )}
             </div>

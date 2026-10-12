@@ -105,6 +105,10 @@ public class AddPayrollAdjustmentRequest
     public long PayrollItemId { get; set; }
     public decimal Amount { get; set; }
     public string? Note { get; set; }
+    /// <summary>ค่าคอมมิชชั่น (สูตร PERCENT_SALES): ยอดขาย — ถ้าส่งมาพร้อม SalesPercent ระบบคำนวณ Amount เอง</summary>
+    public decimal? SalesAmount { get; set; }
+    /// <summary>ค่าคอมมิชชั่น: เปอร์เซ็นต์ของยอดขาย</summary>
+    public decimal? SalesPercent { get; set; }
 }
 
 /// <summary>ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้</summary>

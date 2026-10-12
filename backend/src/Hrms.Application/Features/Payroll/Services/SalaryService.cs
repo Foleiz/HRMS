@@ -1484,6 +1484,15 @@ public class SalaryService : ISalaryService
 
     public async Task<List<PayrollDetailItemDto>> AddPayrollAdjustmentAsync(long payrollId, AddPayrollAdjustmentRequest request, CancellationToken cancellationToken = default)
     {
+        // ค่าคอมมิชชั่น: คำนวณยอดจากยอดขาย x % ที่ฝั่งระบบ (ไม่เชื่อยอดที่หน้าเว็บส่งมา)
+        bool isSalesCommission = request.SalesAmount.HasValue && request.SalesPercent.HasValue;
+        if (isSalesCommission)
+        {
+            if (request.SalesAmount <= 0 || request.SalesPercent <= 0 || request.SalesPercent > 100)
+                throw new BusinessRuleException("ยอดขายต้องมากกว่า 0 และเปอร์เซ็นต์ต้องอยู่ระหว่าง 0–100");
+            request.Amount = Math.Round(request.SalesAmount!.Value * request.SalesPercent!.Value / 100m, 2, MidpointRounding.AwayFromZero);
+        }
+
         if (request.Amount <= 0)
             throw new BusinessRuleException("จำนวนเงินต้องมากกว่า 0 (ประเภทรายได้/รายหักกำหนดจากรายการที่เลือก)");
         if (request.Amount > 10_000_000m)
@@ -1509,12 +1518,16 @@ public class SalaryService : ISalaryService
             PayrollId = payroll.Id,
             PayrollItemId = item.Id,
             Amount = Math.Round(request.Amount, 2, MidpointRounding.AwayFromZero),
+            Quantity = isSalesCommission ? request.SalesAmount : null,
+            Rate = isSalesCommission ? request.SalesPercent : null,
             CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
             {
                 manual = true,
                 source = "MANUAL",
                 note = request.Note?.Trim(),
-                subtext = string.IsNullOrWhiteSpace(request.Note) ? "รายการที่ HR ระบุเอง" : request.Note.Trim()
+                subtext = isSalesCommission
+                    ? $"ยอดขาย {request.SalesAmount:N2} บาท x {request.SalesPercent:0.##}%" + (string.IsNullOrWhiteSpace(request.Note) ? string.Empty : $" — {request.Note.Trim()}")
+                    : string.IsNullOrWhiteSpace(request.Note) ? "รายการที่ HR ระบุเอง" : request.Note.Trim()
             })
         });
         await _context.SaveChangesAsync(cancellationToken);
@@ -2323,8 +2336,11 @@ public class SalaryService : ISalaryService
                 case "LATE_ABSENT":
                 {
                     if (attendance == null) return null;
-                    decimal lateHours = attendance.TotalLateMinutes / 60m;
-                    decimal lateAmount = Math.Round(lateHours * hourlyRate, 2, MidpointRounding.AwayFromZero);
+                    // ค่าสูตร "สายนาทีละ X บาท" = หักตามนาที, ไม่ระบุ = หักตามอัตราค่าจ้างรายชั่วโมง
+                    var perMinuteMatch = System.Text.RegularExpressions.Regex.Match(item.FormulaValue ?? string.Empty, @"นาทีละ\s*(\d[\d,]*(?:\.\d+)?)");
+                    decimal lateAmount = perMinuteMatch.Success
+                        ? Math.Round(attendance.TotalLateMinutes * decimal.Parse(perMinuteMatch.Groups[1].Value.Replace(",", string.Empty), System.Globalization.CultureInfo.InvariantCulture), 2, MidpointRounding.AwayFromZero)
+                        : Math.Round(attendance.TotalLateMinutes / 60m * hourlyRate, 2, MidpointRounding.AwayFromZero);
                     decimal absentAmount = Math.Round(attendance.TotalAbsentDays * dailyRate, 2, MidpointRounding.AwayFromZero);
                     amount = Math.Min(baseSalary, lateAmount + absentAmount);
                     subtext = $"สาย {attendance.TotalLateMinutes} นาที ({lateAmount:N2}) + ขาดงาน {attendance.TotalAbsentDays} วัน ({absentAmount:N2})";
