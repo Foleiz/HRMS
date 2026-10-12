@@ -326,6 +326,7 @@ export interface EmployeeBonus {
   departmentName?: string | null;
   positionName?: string | null;
   year?: number;
+  month?: number;
   baseSalary: number;
   performanceScore?: number | null;
   multiplier: number;
@@ -343,8 +344,24 @@ export interface UpdateBonusItemPayload {
   note?: string;
 }
 
+export interface BonusPeriodSummary {
+  year: number;
+  month: number;
+  periodName: string;
+  totalEmployees: number;
+  approvedCount: number;
+  calculatedCount: number;
+  totalBonusAmount: number;
+  averageMultiplier: number;
+  status: string;
+  statusText: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 export interface SaveEmployeeBonusesPayload {
   year: number;
+  month: number;
   calculationMode: 'MULTIPLIER' | 'MANUAL';
   items: UpdateBonusItemPayload[];
 }

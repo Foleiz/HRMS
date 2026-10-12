@@ -562,11 +562,24 @@ public class SalaryController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> GetEmployeeBonuses(
         [FromQuery] int? year,
+        [FromQuery] int? month,
         CancellationToken cancellationToken)
     {
         PayrollAccess.Ensure(PayrollAccess.CanViewBonus(_currentUser), "ดูข้อมูลโบนัส");
-        var result = await _salaryService.GetEmployeeBonusesAsync(year, cancellationToken);
+        var result = await _salaryService.GetEmployeeBonusesAsync(year, month, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "ดึงข้อมูลโบนัสพนักงานสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดึงรายการสรุปรอบโบนัสที่เคยคำนวณทั้งหมดในระบบ
+    /// </summary>
+    [HttpGet("bonuses/periods")]
+    [ProducesResponseType(typeof(ApiResponse<List<BonusPeriodSummaryDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<BonusPeriodSummaryDto>>>> GetBonusPeriods(CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanViewBonus(_currentUser), "ดูข้อมูลโบนัส");
+        var result = await _salaryService.GetBonusPeriodsAsync(cancellationToken);
+        return Ok(ApiResponse<List<BonusPeriodSummaryDto>>.Ok(result, "ดึงรายการรอบโบนัสสำเร็จ"));
     }
 
     /// <summary>

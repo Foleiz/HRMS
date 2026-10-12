@@ -22,6 +22,7 @@ import {
   MarkTransferredPayload,
   ConfirmPaymentPayload,
   EmployeeBonus,
+  BonusPeriodSummary,
   SaveEmployeeBonusesPayload,
   AddPayrollAdjustmentPayload,
   BonusPayoutResult,
@@ -208,9 +209,9 @@ export const salaryService = {
     return res.data.data;
   },
 
-  /** ดึงโบนัสที่อนุมัติแล้วของปีที่เลือกเข้ามาจ่ายพร้อมรอบเงินเดือน */
-  async addBonusPayout(periodId: number, year: number): Promise<BonusPayoutResult> {
-    const res = await apiClient.post<ApiResponse<BonusPayoutResult>>(`/salary/periods/${periodId}/bonus-payout`, { year });
+  /** ดึงโบนัสที่อนุมัติแล้วของรอบที่เลือกเข้ามาจ่ายพร้อมรอบเงินเดือน */
+  async addBonusPayout(periodId: number, year: number, month?: number): Promise<BonusPayoutResult> {
+    const res = await apiClient.post<ApiResponse<BonusPayoutResult>>(`/salary/periods/${periodId}/bonus-payout`, { year, month });
     return res.data.data;
   },
 
@@ -235,14 +236,19 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async getEmployeeBonuses(year?: number): Promise<EmployeeBonus[]> {
+  async getEmployeeBonuses(year?: number, month?: number): Promise<EmployeeBonus[]> {
     const res = await apiClient.get<ApiResponse<EmployeeBonus[]>>('/salary/bonuses', {
-      params: { year },
+      params: { year, month },
     });
     return res.data.data;
   },
 
-  async calculateEmployeeBonuses(payload: { year: number; defaultMultiplier: number }): Promise<EmployeeBonus[]> {
+  async getBonusPeriods(): Promise<BonusPeriodSummary[]> {
+    const res = await apiClient.get<ApiResponse<BonusPeriodSummary[]>>('/salary/bonuses/periods');
+    return res.data.data;
+  },
+
+  async calculateEmployeeBonuses(payload: { year: number; month?: number; defaultMultiplier: number }): Promise<EmployeeBonus[]> {
     const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/calculate', payload);
     return res.data.data;
   },
