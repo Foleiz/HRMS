@@ -60,6 +60,11 @@ export const ROUTE_RULES: RouteRule[] = [
   },
 
   {
+    matchPrefix: '/attendance/import',
+    title: 'นำเข้าเวลาสแกนนิ้ว',
+    requiredPermissions: ['TIME_IMPORT_VIEW'],
+  },
+  {
     matchPrefix: '/attendance/daily',
     title: 'ตรวจบันทึกเวลา',
     requiredPermissions: ['TIME_DAILY_VIEW', 'TIME_IMPORT_VIEW'],
@@ -102,6 +107,7 @@ export const ROUTE_RULES: RouteRule[] = [
       'APPROVAL_EMP_APPROVE',
       'APPROVAL_PAYROLL_VIEW',
       'APPROVAL_PAYROLL_APPROVE',
+      'APPROVALS_VIEW',
     ],
   },
   {
@@ -147,10 +153,11 @@ export const ROUTE_RULES: RouteRule[] = [
 export function isPathAccessible(pathname: string, user: UserProfile | null): { allowed: boolean; rule?: RouteRule } {
   if (!user) return { allowed: false };
 
-  // ยกเว้นเฉพาะหน้าตั้งค่าระบบ ที่อนุญาตให้ ADMIN หรือ SYSTEM_SUPER เข้าถึงได้เสมอ เพื่อป้องกัน lockout
-  if (pathname.startsWith('/settings') && user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))) {
+  // ผู้ดูแลระบบระดับสูงสุด (ADMIN หรือ SYSTEM_SUPER) มีสิทธิ์เข้าถึงทุกหน้าในระบบเสมอ
+  if (user.roles?.some((r) => ['ADMIN', 'SYSTEM_SUPER'].includes(r.toUpperCase()))) {
     return { allowed: true };
   }
+
 
   // หา rule ที่ matchPrefix ตรงกับ pathname ที่ยาวที่สุด (เฉพาะเจาะจงที่สุด)
   const matches = ROUTE_RULES.filter((r) => pathname.startsWith(r.matchPrefix));
