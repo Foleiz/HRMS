@@ -28,15 +28,13 @@ export interface ResignationRequest {
   cancelReason?: string;
   approvedByEmployeeId?: number;
   approvedByName?: string;
+  approvedAt?: string;
   /** กรณีไม่อนุมัติ */
   rejectReason?: string | null;
+  rejectionReason?: string | null;
+  rejectedByEmployeeId?: number;
   rejectedByName?: string | null;
   rejectedAt?: string | null;
-  approvedAt?: string;
-  rejectedByEmployeeId?: number;
-  rejectedByName?: string;
-  rejectedAt?: string;
-  rejectionReason?: string;
   approvalInstanceId?: number;
   noticePeriodDays: number;
   canCancel: boolean;
