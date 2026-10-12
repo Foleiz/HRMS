@@ -662,6 +662,10 @@ public class RoleService : IRoleService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        // เคลียร์แคชรายชื่อผู้ใช้เพื่อให้สิทธิ์ใหม่มีผลทันที
+        UserService.InvalidateUsersCache();
+        Hrms.Application.Common.Utilities.UserAccessVersion.Bump();
+
         // Build result in memory without redundant DB queries
         var activeScopesSet = addedScopes.Select(s => (s.PermCode, s.Scope)).ToHashSet();
         var result = BuildRoleMatrixDto(
