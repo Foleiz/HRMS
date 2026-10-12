@@ -110,7 +110,7 @@ public class AttendanceImportController : ControllerBase
         {
             "IMPORTED" => $"นำเข้าข้อมูลสำเร็จครบถ้วน ({result.SuccessRecords} รายการ)",
             "PARTIAL" => $"นำเข้าข้อมูลสำเร็จบางส่วน (สำเร็จ {result.SuccessRecords} รายการ, ข้อผิดพลาด {result.FailedRecords} รายการ)",
-            "FAILED" => $"การนำเข้าล้มเหลว: รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลพนักงานในระบบ (พบข้อผิดพลาด {result.FailedRecords} รายการ)",
+            "FAILED" => $"การนำเข้าล้มเหลว: {DescribeMainFailure(result)} (พบข้อผิดพลาด {result.FailedRecords} รายการ)",
             _ => "ประมวลผลการนำเข้าเรียบร้อย"
         };
 
@@ -126,6 +126,25 @@ public class AttendanceImportController : ControllerBase
         }
 
         return Ok(ApiResponse<AttendanceImportResultDto>.Ok(result, message));
+    }
+
+    /// <summary>สรุปสาเหตุหลักที่นำเข้าไม่สำเร็จจากรหัสข้อผิดพลาดที่พบมากที่สุด (เดิมบอก "รหัสพนักงานไม่ตรง" ทุกกรณี)</summary>
+    private static string DescribeMainFailure(AttendanceImportResultDto result)
+    {
+        var mainCode = result.Errors
+            .Where(e => !string.IsNullOrEmpty(e.ErrorCode))
+            .GroupBy(e => e.ErrorCode!)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+        return mainCode switch
+        {
+            "DATE_OUT_OF_RANGE" => "วันที่ในไฟล์อยู่นอกช่วงที่เลือก กรุณาตรวจว่าเลือกเดือนตรงกับไฟล์",
+            "EMPLOYEE_NOT_FOUND" => "รหัสพนักงานในไฟล์ไม่ตรงกับข้อมูลพนักงานในระบบ",
+            "INVALID_DATE" or "MISSING_DATE_TIME" or "INVALID_TIME" or "MISSING_TIME" => "รูปแบบวันที่หรือเวลาในไฟล์ไม่ถูกต้อง",
+            _ => result.Errors.FirstOrDefault()?.ErrorMessage ?? "ไม่พบแถวที่นำเข้าได้"
+        };
     }
 
     /// <summary>

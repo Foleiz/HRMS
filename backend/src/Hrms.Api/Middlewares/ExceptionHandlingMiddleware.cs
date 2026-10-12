@@ -36,6 +36,10 @@ public class ExceptionHandlingMiddleware
         }
     }
 
+    /// <summary>ข้อความที่มีอักษรไทย = ข้อความที่ระบบเขียนเอง (ไม่ใช่ข้อความดิบจาก .NET)</summary>
+    private static bool IsAppMessage(string? message) =>
+        !string.IsNullOrEmpty(message) && message.Any(c => c >= '\u0E00' && c <= '\u0E7F');
+
     private static Task HandleExceptionAsync(HttpContext context, Exception exception, IHostEnvironment env)
     {
         context.Response.ContentType = "application/json";
@@ -65,6 +69,19 @@ public class ExceptionHandlingMiddleware
                 statusCode = HttpStatusCode.BadRequest;
                 message = valEx.Errors?.Count == 1 ? valEx.Errors[0] : valEx.Message;
                 errors = valEx.Errors;
+                break;
+
+            // service หลายตัวโยน KeyNotFoundException / UnauthorizedAccessException (ไม่ใช่ NotFoundException/ForbiddenException)
+            // เดิมตกไปเป็น 500 เช่น POST /certificates/requests ที่ไม่ระบุประเภท — ส่งเฉพาะข้อความภาษาไทยที่เราเขียนเอง
+            case KeyNotFoundException keyEx:
+                statusCode = HttpStatusCode.NotFound;
+                message = IsAppMessage(keyEx.Message) ? keyEx.Message : "ไม่พบข้อมูลที่ต้องการ";
+                break;
+
+            // ใช้ 400 ไม่ใช่ 403: หน้าเว็บตีความ 403 ว่า "สิทธิ์ถูกถอน" และเด้งหน้าต่างแจ้งเตือนสิทธิ์
+            case UnauthorizedAccessException authEx:
+                statusCode = HttpStatusCode.BadRequest;
+                message = IsAppMessage(authEx.Message) ? authEx.Message : "ไม่มีสิทธิ์ดำเนินการนี้";
                 break;
 
             case DbUpdateException dbEx when dbEx.InnerException?.Message.Contains("23503") == true || dbEx.Message.Contains("23503"):
