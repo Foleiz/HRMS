@@ -1173,6 +1173,10 @@ public class SalaryService : ISalaryService
         if (entity == null)
             throw new NotFoundException("PayrollItem", id);
 
+        // เงินเดือนพื้นฐาน / เงินประจำตำแหน่ง ระบบใช้ทุกครั้งที่คำนวณเงินเดือน — ปิดใช้งานได้ แต่ลบไม่ได้
+        if (UndeletableItemCodes.Contains(entity.ItemCode))
+            throw new BusinessRuleException($"รายการ '{entity.ItemName}' เป็นรายการหลักของระบบ ลบไม่ได้ (แก้ไขหรือปิดใช้งานได้)");
+
         var linkedBenefit = await _context.BenefitItems.Where(b => b.PayrollItemId == id).Select(b => b.BenefitName).FirstOrDefaultAsync(cancellationToken);
         if (linkedBenefit != null)
             throw new BusinessRuleException($"รายการนี้ใช้จ่ายสวัสดิการ '{linkedBenefit}' อยู่ กรุณาเปลี่ยนรายการในสวัสดิการก่อนลบ");
@@ -2332,6 +2336,9 @@ public class SalaryService : ISalaryService
     private sealed record CalcLine(PayrollItem Item, decimal Amount, decimal? Quantity, decimal? Rate, string? Subtext, bool IsRegular, PayrollDetail? Existing = null, string? CalculationSource = null);
 
     /// <summary>รหัสรายการที่ระบบคำนวณเอง (ห้ามเพิ่มแบบ manual)</summary>
+    /// <summary>รายการที่ลบไม่ได้: เงินเดือนพื้นฐาน, เงินประจำตำแหน่ง</summary>
+    private static readonly string[] UndeletableItemCodes = { "INC_BASE", "INC_POSITION" };
+
     private static readonly string[] SystemItemCodes = { "INC_BASE", "INC_OT", "DED_SSO", "DED_TAX", "DED_UNPAID_LEAVE", "INC_BONUS", "INC_POSITION" };
 
     /// <summary>Template ที่คำนวณโดยแกนหลักของระบบแล้ว (ไม่นำมาคิดซ้ำจากรายการที่ตั้งค่า)</summary>
