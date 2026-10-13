@@ -289,10 +289,8 @@ const isFuturePeriod = (period?: PayrollPeriod | null) => {
   return periodVal > currentPeriodVal;
 };
 
-/** รายการที่ระบบคำนวณเองตอนประมวลผลเงินเดือน — ลบไม่ได้ */
-const SYSTEM_PAYROLL_ITEM_CODES = ['INC_BASE', 'INC_POSITION', 'INC_OT', 'DED_SSO', 'DED_TAX', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
-/** รายการของระบบที่ไม่ต้องแสดงในหน้ารายการได้-หัก */
-const HIDDEN_SYSTEM_ITEM_CODES = ['INC_BASE'];
+/** รายการหลักที่ลบไม่ได้ (แก้ไข/ปิดใช้งานได้ตามปกติ): เงินเดือนพื้นฐาน, เงินประจำตำแหน่ง */
+const UNDELETABLE_ITEM_CODES = ['INC_BASE', 'INC_POSITION'];
 
 export default function PayrollPage() {
   const router = useRouter();
@@ -1315,6 +1313,9 @@ export default function PayrollPage() {
       setDeleteItemConfirmOpen(false);
     } catch (err: any) {
       console.error('Failed to delete item:', err);
+      // เดิมไม่แจ้งอะไรเลยเมื่อลบไม่สำเร็จ ผู้ใช้จึงไม่รู้ว่าทำไมลบไม่ได้
+      showToast(err?.response?.data?.message || 'ลบรายการไม่สำเร็จ', 8000);
+      setDeleteItemConfirmOpen(false);
     } finally {
       setIsDeletingItem(false);
       setItemToDelete(null);
@@ -1865,9 +1866,7 @@ export default function PayrollPage() {
   }
 
   // Filtered Payroll Items
-  // เงินเดือนพื้นฐานเป็นรายการของระบบ (คำนวณตอนประมวลผลเงินเดือนเสมอ) ไม่แสดงในหน้ารายการได้-หัก
-  const listedPayrollItems = payrollItems.filter((i) => !HIDDEN_SYSTEM_ITEM_CODES.includes(i.itemCode));
-  const filteredPayrollItems = listedPayrollItems.filter((i) => i.itemType === itemsSubTab);
+  const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
 
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
@@ -2642,7 +2641,7 @@ export default function PayrollPage() {
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
-                                {!SYSTEM_PAYROLL_ITEM_CODES.includes(item.itemCode) && (
+                                {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && (
                                   <button
                                     onClick={() => {
                                       setItemToDelete(item);
