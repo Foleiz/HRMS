@@ -1045,6 +1045,9 @@ public class SalaryService : ISalaryService
 
     public async Task<List<PayrollItemDto>> GetPayrollItemsAsync(string? itemType, CancellationToken cancellationToken = default)
     {
+        // สร้างรายการหลักของระบบที่หายไป (เช่น เงินประจำตำแหน่งที่เคยถูกลบ) ให้แสดงทันที ไม่ต้องรอกดคำนวณเงินเดือน
+        await EnsureSystemPayrollItemsAsync(cancellationToken);
+
         var query = _context.PayrollItems.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(itemType))
@@ -1176,6 +1179,11 @@ public class SalaryService : ISalaryService
         // เงินเดือนพื้นฐาน / เงินประจำตำแหน่ง ระบบใช้ทุกครั้งที่คำนวณเงินเดือน — ปิดใช้งานได้ แต่ลบไม่ได้
         if (UndeletableItemCodes.Contains(entity.ItemCode))
             throw new BusinessRuleException($"รายการ '{entity.ItemName}' เป็นรายการหลักของระบบ ลบไม่ได้ (แก้ไขหรือปิดใช้งานได้)");
+
+        // รายการที่เคยอยู่ในสลิปเงินเดือนแล้ว ลบไม่ได้ เพื่อเก็บประวัติสลิปไว้ — ให้ปิดใช้งานแทน
+        var usedCount = await _context.PayrollDetails.CountAsync(d => d.PayrollItemId == id, cancellationToken);
+        if (usedCount > 0)
+            throw new BusinessRuleException($"รายการ '{entity.ItemName}' ถูกใช้ในสลิปเงินเดือนแล้ว {usedCount} รายการ จึงลบไม่ได้เพื่อเก็บประวัติ — ให้ปิดใช้งานแทน (รายการที่ปิดใช้งานจะไม่ถูกคำนวณและเลือกเพิ่มไม่ได้)");
 
         var linkedBenefit = await _context.BenefitItems.Where(b => b.PayrollItemId == id).Select(b => b.BenefitName).FirstOrDefaultAsync(cancellationToken);
         if (linkedBenefit != null)

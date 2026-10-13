@@ -1313,6 +1313,9 @@ export default function PayrollPage() {
       setDeleteItemConfirmOpen(false);
     } catch (err: any) {
       console.error('Failed to delete item:', err);
+      // เดิมไม่แจ้งอะไรเลยเมื่อลบไม่สำเร็จ ผู้ใช้จึงไม่รู้ว่าทำไมลบไม่ได้
+      showToast(err?.response?.data?.message || 'ลบรายการไม่สำเร็จ', 8000);
+      setDeleteItemConfirmOpen(false);
     } finally {
       setIsDeletingItem(false);
       setItemToDelete(null);
