@@ -29,6 +29,7 @@ import {
   CreditCard,
   AlertTriangle,
 } from 'lucide-react';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
 import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
@@ -115,6 +116,12 @@ export default function OrganizationPage() {
   const [filterDivisionId, setFilterDivisionId] = useState<string>('ALL');
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
   const [filterBenefitCategory, setFilterBenefitCategory] = useState<string>('ALL');
+  // แบ่งหน้าตาราง (ใช้ร่วมกันทุกแท็บ) — กลับไปหน้า 1 เมื่อเปลี่ยนแท็บ/ค้นหา/กรอง
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, searchQuery, filterDivisionId, filterDeptId, filterBenefitCategory]);
 
   const tabTitles: Record<TabType, string> = {
     divisions: 'จัดการฝ่าย',
@@ -814,6 +821,24 @@ export default function OrganizationPage() {
     }
   };
 
+  const paginate = <T,>(list: T[]): T[] => {
+    const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+    const current = Math.min(page, totalPages);
+    return list.slice((current - 1) * pageSize, current * pageSize);
+  };
+  const renderPagination = (total: number) => (
+    <TablePagination
+      total={total}
+      page={page}
+      pageSize={pageSize}
+      onPageChange={setPage}
+      onPageSizeChange={(size) => {
+        setPageSize(size);
+        setPage(1);
+      }}
+    />
+  );
+
   // Filtered lists
   const filteredBankAccounts = bankAccounts.filter((ba) =>
     ba.bankName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1061,7 +1086,7 @@ export default function OrganizationPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredDivisions.map((div) => (
+                    paginate(filteredDivisions).map((div) => (
                       <tr key={div.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">{div.divisionCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">{div.divisionName}</td>
@@ -1117,6 +1142,7 @@ export default function OrganizationPage() {
                 </tbody>
               </table>
             </div>
+            {filteredDivisions.length > 0 && renderPagination(filteredDivisions.length)}
           </div>
         )}
 
@@ -1188,7 +1214,7 @@ export default function OrganizationPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredDepartments.map((dept) => (
+                    paginate(filteredDepartments).map((dept) => (
                       <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">{dept.departmentCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">{dept.departmentName}</td>
@@ -1245,6 +1271,7 @@ export default function OrganizationPage() {
                 </tbody>
               </table>
             </div>
+            {filteredDepartments.length > 0 && renderPagination(filteredDepartments.length)}
           </div>
         )}
 
@@ -1315,7 +1342,7 @@ export default function OrganizationPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredTeams.map((team) => (
+                    paginate(filteredTeams).map((team) => (
                       <tr key={team.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 px-4 font-mono font-medium text-slate-600 dark:text-slate-300">
                           {team.teamCode}
@@ -1382,6 +1409,7 @@ export default function OrganizationPage() {
                 </tbody>
               </table>
             </div>
+            {filteredTeams.length > 0 && renderPagination(filteredTeams.length)}
           </div>
         )}
 
@@ -1455,7 +1483,7 @@ export default function OrganizationPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredPositions.map((pos) => (
+                    paginate(filteredPositions).map((pos) => (
                       <tr key={pos.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">{pos.positionCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">{pos.positionName}</td>
@@ -1530,6 +1558,7 @@ export default function OrganizationPage() {
                 </tbody>
               </table>
             </div>
+            {filteredPositions.length > 0 && renderPagination(filteredPositions.length)}
           </div>
         )}
 
@@ -1590,7 +1619,7 @@ export default function OrganizationPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredLevels.map((lvl) => (
+                    paginate(filteredLevels).map((lvl) => (
                       <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">{lvl.levelCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">{lvl.levelName}</td>
@@ -1638,6 +1667,7 @@ export default function OrganizationPage() {
                 </tbody>
               </table>
             </div>
+            {filteredLevels.length > 0 && renderPagination(filteredLevels.length)}
           </div>
         )}
 
@@ -1715,7 +1745,7 @@ export default function OrganizationPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredBenefits.map((ben) => {
+                    paginate(filteredBenefits).map((ben) => {
                       const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
                       const CatIcon = catInfo.icon;
                       const freqLabel = ben.defaultFrequency === 'MONTHLY' ? 'ด.' : ben.defaultFrequency === 'YEARLY' ? 'ปี' : ben.defaultFrequency === 'DAILY' ? 'วัน' : 'ครั้ง';
@@ -1823,6 +1853,7 @@ export default function OrganizationPage() {
                 </tbody>
               </table>
             </div>
+            {filteredBenefits.length > 0 && renderPagination(filteredBenefits.length)}
           </div>
         )}
 
@@ -2059,7 +2090,7 @@ export default function OrganizationPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
-                    {filteredBankAccounts.map((acc) => (
+                    {paginate(filteredBankAccounts).map((acc) => (
                       <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2.5">
@@ -2148,6 +2179,7 @@ export default function OrganizationPage() {
                 </table>
               </div>
             )}
+            {filteredBankAccounts.length > 0 && renderPagination(filteredBankAccounts.length)}
           </div>
         )}
       </div>
