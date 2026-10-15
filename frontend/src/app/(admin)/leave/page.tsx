@@ -38,6 +38,22 @@ import { Employee } from '@/types/employee';
 import { LeaveTypeModal, LEAVE_FORM_CATEGORIES, inferFormCategory } from '@/components/leave/LeaveTypeModal';
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
+import { resolveLeaveColor, tintColor } from '@/lib/leaveColors';
+
+/** ป้ายชื่อประเภทการลาตามสีที่ตั้งไว้ในประเภทการลา */
+function LeaveTypeChip({ name, color, size = 'md' }: { name: string; color: string; size?: 'sm' | 'md' }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-2 rounded-full font-semibold text-slate-900 ${
+        size === 'sm' ? 'px-2.5 py-0.5 text-xs' : 'px-3 py-1 text-sm'
+      }`}
+      style={{ backgroundColor: tintColor(color, 0.3), boxShadow: `inset 0 0 0 1px ${tintColor(color, 0.55)}` }}
+    >
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      {name}
+    </span>
+  );
+}
 import { LeaveYearEndModal } from '@/components/leave/LeaveYearEndModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
@@ -93,6 +109,13 @@ export default function LeaveManagementPage() {
 
   // Master Data
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  // สีของแต่ละประเภทการลา (ใช้ทั้งแท็บประเภท/นโยบาย/ยอดคงเหลือ)
+  const leaveColorById = useMemo(() => {
+    const m = new Map<number, string>();
+    leaveTypes.forEach((t) => m.set(t.id, resolveLeaveColor(t.color, t.leaveCode || t.id)));
+    return m;
+  }, [leaveTypes]);
+  const colorOfType = (id: number, code?: string) => leaveColorById.get(id) ?? resolveLeaveColor(null, code || id);
   const [leavePolicies, setLeavePolicies] = useState<LeavePolicy[]>([]);
   const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
   const [employeeLevels, setEmployeeLevels] = useState<{ id: number; levelName: string }[]>([]);
@@ -530,8 +553,9 @@ export default function LeaveManagementPage() {
                   ) : (
                     leaveTypes.map((type) => (
                       <tr key={type.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
-                        <td className="py-4 px-5">
-                          <div className="font-semibold text-gray-800 dark:text-slate-200">{type.leaveName}</div>
+                        <td className="py-4 px-5 relative">
+                          <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: colorOfType(type.id, type.leaveCode) }} />
+                          <LeaveTypeChip name={type.leaveName} color={colorOfType(type.id, type.leaveCode)} />
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600 dark:text-slate-400">
                           {formCategoryDisplay(type)}
@@ -647,7 +671,7 @@ export default function LeaveManagementPage() {
                     leavePolicies.map((policy) => (
                       <tr key={policy.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5">
-                          <span className="font-semibold text-gray-800 dark:text-slate-200">{policy.leaveTypeName}</span>
+                          <LeaveTypeChip name={policy.leaveTypeName} color={colorOfType(policy.leaveTypeId)} />
                         </td>
                         <td className="py-4 px-4 text-gray-600 dark:text-slate-400">
                           <span className="block text-gray-700 dark:text-slate-300">{policy.employeeTypeName || 'ทุกประเภทพนักงาน'}</span>
@@ -892,7 +916,7 @@ export default function LeaveManagementPage() {
                                 {emp.balances.map((b) => (
                                   <tr key={b.id} className="hover:bg-blue-50/30 transition-colors">
                                     <td className="py-3 px-4">
-                                      <span className="font-semibold text-gray-800 dark:text-slate-200">{b.leaveTypeName}</span>
+                                      <LeaveTypeChip size="sm" name={b.leaveTypeName} color={colorOfType(b.leaveTypeId, b.leaveTypeCode)} />
                                     </td>
                                     <td className="py-3 px-3 text-center text-gray-600 dark:text-slate-400">{b.annualQuotaDays} วัน</td>
                                     <td className="py-3 px-3 text-center text-gray-600 dark:text-slate-400">{b.activeCarriedForwardDays} วัน</td>
