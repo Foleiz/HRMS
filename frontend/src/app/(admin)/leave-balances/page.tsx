@@ -7,7 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import { leaveService } from '@/services/leaveService';
 import { MyLeaveSummary, LeaveTypeCard } from '@/types/leave';
 import { Calendar, Download, Loader2 } from 'lucide-react';
-import { resolveLeaveColor, withAlpha } from '@/lib/leaveColors';
+import { resolveLeaveColor, tintColor } from '@/lib/leaveColors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function LeaveBalancesPage() {
@@ -161,13 +161,13 @@ export default function LeaveBalancesPage() {
       {/* LEAVE BALANCE CARDS — one per entitled leave type        */}
       {/* ========================================================= */}
       <section className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">ยอดวันลาประจำปี พ.ศ. {selectedYear}</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">ยอดวันลาประจำปี พ.ศ. {selectedYear}</h2>
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {Array.from({ length: 4 }).map((_, idx) => (
               <div
                 key={idx}
-                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm space-y-4 animate-pulse min-h-[150px]"
+                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-7 shadow-sm space-y-4 animate-pulse min-h-[220px]"
               >
                 <div className="h-5 w-32 bg-slate-200 rounded" />
                 <div className="h-8 w-24 bg-slate-200 rounded mt-4" />
@@ -188,37 +188,34 @@ export default function LeaveBalancesPage() {
               return (
                 <div
                   key={c.leaveTypeId}
-                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 border-t-4 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[150px]"
-                  style={{ borderTopColor: color, backgroundImage: `linear-gradient(180deg, ${withAlpha(color, 0.07)}, transparent 60%)` }}
+                  className="relative overflow-hidden rounded-2xl pt-7 pb-5 px-7 shadow-md shadow-slate-300/50 dark:shadow-black/30 hover:shadow-lg transition-shadow flex flex-col min-h-[220px]"
+                  style={{ backgroundColor: tintColor(color, 0.32) }}
                 >
+                  <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: color }} />
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-lg font-bold leading-snug" style={{ color }}>
-                      {c.name}
-                    </h3>
+                    <h3 className="text-2xl font-bold leading-snug text-slate-900">{c.name}</h3>
                     {!c.isPaidLeave && (
-                      <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                      <span className="shrink-0 mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-slate-600">
                         ไม่ได้รับค่าจ้าง
                       </span>
                     )}
                   </div>
-                  <div className="mt-3 space-y-2">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                        {fmt(c.usedDays)}/{fmt(total)}
-                      </span>
-                      <span className="text-xs font-medium text-slate-400">วัน (ใช้ไป/สิทธิ์)</span>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-                      <span>
-                        คงเหลือ <b className="text-slate-800 dark:text-slate-100">{fmt(c.remainingDays)}</b> วัน
-                      </span>
-                      {c.carriedForwardDays > 0 && <span>ยกมา {fmt(c.carriedForwardDays)} วัน</span>}
-                      {c.adjustedDays !== 0 && <span>ปรับปรุง {c.adjustedDays > 0 ? '+' : ''}{fmt(c.adjustedDays)} วัน</span>}
-                      {c.maxTimes != null && <span>{timesLabel(c)}</span>}
-                    </div>
+                  <div className="mt-4 flex items-baseline gap-2">
+                    <span className="text-5xl font-extrabold text-slate-900 tracking-tight">
+                      {fmt(c.usedDays)}/{fmt(total)}
+                    </span>
+                    <span className="text-sm font-medium text-slate-700">วัน (ใช้ไป/สิทธิ์)</span>
+                  </div>
+                  <div className="mt-5 h-2.5 w-full rounded-full bg-white/60 overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                  </div>
+                  <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
+                    <span>
+                      คงเหลือ <b className="text-slate-900">{fmt(c.remainingDays)}</b> วัน
+                    </span>
+                    {c.carriedForwardDays > 0 && <span>ยกมา {fmt(c.carriedForwardDays)} วัน</span>}
+                    {c.adjustedDays !== 0 && <span>ปรับปรุง {c.adjustedDays > 0 ? '+' : ''}{fmt(c.adjustedDays)} วัน</span>}
+                    {c.maxTimes != null && <span>{timesLabel(c)}</span>}
                   </div>
                 </div>
               );

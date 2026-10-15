@@ -30,3 +30,15 @@ export const withAlpha = (hex: string, alpha: number): string => {
   const a = Math.round(Math.min(1, Math.max(0, alpha)) * 255).toString(16).padStart(2, '0');
   return `#${h}${a}`;
 };
+
+/** ผสมสีกับสีขาว (ratio = สัดส่วนสีจริง 0–1) — ใช้ทำพื้นการ์ดสีพาสเทลแบบทึบ */
+export const tintColor = (hex: string, ratio: number): string => {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  const r = Math.min(1, Math.max(0, ratio));
+  const mix = (i: number) => {
+    const v = parseInt(h.slice(i, i + 2), 16);
+    return Math.round(255 - (255 - v) * r).toString(16).padStart(2, '0');
+  };
+  return `#${mix(0)}${mix(2)}${mix(4)}`;
+};
