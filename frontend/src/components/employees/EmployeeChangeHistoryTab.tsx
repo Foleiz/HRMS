@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   History,
   Loader2,
@@ -23,6 +23,9 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
+import { ThaiDatePicker, toInputDate } from '@/components/ui/ThaiDatePicker';
+import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { ApiResponse } from '@/types/api';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
@@ -116,9 +119,24 @@ const formatTimeOnly = (v: string) => {
     : d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 };
 
+/** วันที่ตามเวลาเครื่อง (yyyy-MM-dd) — เดิมใช้ toISOString ทำให้รายการหลังเที่ยงคืนไทยไปอยู่วันก่อนหน้า */
 const dateKey = (v: string) => {
   const d = new Date(v);
-  return isNaN(d.getTime()) ? v : d.toISOString().slice(0, 10);
+  return isNaN(d.getTime()) ? v : toInputDate(d);
+};
+
+type RangePreset = 'ALL' | '7D' | '30D' | '90D' | 'CUSTOM';
+const RANGE_OPTIONS: { value: RangePreset; label: string }[] = [
+  { value: 'ALL', label: 'ทุกช่วงเวลา' },
+  { value: '7D', label: '7 วันล่าสุด' },
+  { value: '30D', label: '30 วันล่าสุด' },
+  { value: '90D', label: '3 เดือนล่าสุด' },
+  { value: 'CUSTOM', label: 'กำหนดช่วงวันที่เอง' },
+];
+const daysAgo = (n: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return toInputDate(d);
 };
 
 const apiMessage = (err: unknown, fallback: string) =>
@@ -253,6 +271,17 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState('ALL');
+  const [rangePreset, setRangePreset] = useState<RangePreset>('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const topRef = useRef<HTMLDivElement>(null);
+  /* เปลี่ยนหน้าแล้วเลื่อนกลับขึ้นไปหัวรายการ (ปุ่มเปลี่ยนหน้าอยู่ท้ายรายการ) */
+  const goToPage = (p: number) => {
+    setPage(p);
+    topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   useEffect(() => {
     let active = true;
@@ -274,39 +303,114 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
     };
   }, [employeeId]);
 
-  /* Category filter chips */
+  /* ช่วงวันที่ที่เลือก (yyyy-MM-dd ตามเวลาเครื่อง) */
+  const [rangeFrom, rangeTo] = useMemo((): [string, string] => {
+    switch (rangePreset) {
+      case '7D': return [daysAgo(6), ''];
+      case '30D': return [daysAgo(29), ''];
+      case '90D': return [daysAgo(89), ''];
+      case 'CUSTOM': return [dateFrom, dateTo];
+      default: return ['', ''];
+    }
+  }, [rangePreset, dateFrom, dateTo]);
+
+  const inRange = useMemo(
+    () => entries.filter((e) => {
+      const k = dateKey(e.at);
+      return (!rangeFrom || k >= rangeFrom) && (!rangeTo || k <= rangeTo);
+    }),
+    [entries, rangeFrom, rangeTo]
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [category, rangeFrom, rangeTo]);
+
+  /* Category filter chips (นับเฉพาะในช่วงวันที่ที่เลือก) */
   const categories = useMemo(() => {
     const map = new Map<string, { label: string; count: number }>();
-    entries.forEach((e) => {
+    inRange.forEach((e) => {
       const c = map.get(e.categoryKey) ?? { label: e.category, count: 0 };
       c.count += 1;
       map.set(e.categoryKey, c);
     });
     return Array.from(map.entries());
-  }, [entries]);
+  }, [inRange]);
 
   const filtered = category === 'ALL'
-    ? entries
-    : entries.filter((e) => e.categoryKey === category);
+    ? inRange
+    : inRange.filter((e) => e.categoryKey === category);
+
+  /* แบ่งหน้าตามจำนวนรายการ แล้วจัดกลุ่มตามวันในหน้านั้น */
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageEntries = useMemo(
+    () => filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [filtered, currentPage, pageSize]
+  );
 
   /* Group by date */
   const grouped = useMemo(() => {
     const map = new Map<string, HistoryEntry[]>();
-    filtered.forEach((e) => {
+    pageEntries.forEach((e) => {
       const key = dateKey(e.at);
       const arr = map.get(key) ?? [];
       arr.push(e);
       map.set(key, arr);
     });
     return Array.from(map.entries());
-  }, [filtered]);
+  }, [pageEntries]);
 
   return (
-    <div className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4">
-      {/* Title */}
-      <div className="flex items-center gap-2 mb-2">
-        <History className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
-        <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
+    <div ref={topRef} className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4 scroll-mt-24">
+      {/* Title + date range filter */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2">
+          <History className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
+        </div>
+        {!loading && !error && entries.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <CustomSelect
+              value={rangePreset}
+              onChange={(e) => setRangePreset(e.target.value as RangePreset)}
+              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+            >
+              {RANGE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </CustomSelect>
+            {rangePreset === 'CUSTOM' && (
+              <>
+                <ThaiDatePicker
+                  value={dateFrom}
+                  onChange={setDateFrom}
+                  maxDate={dateTo || undefined}
+                  placeholder="ตั้งแต่วันที่"
+                  className="w-36 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5"
+                />
+                <span className="text-slate-400">–</span>
+                <ThaiDatePicker
+                  value={dateTo}
+                  onChange={setDateTo}
+                  minDate={dateFrom || undefined}
+                  placeholder="ถึงวันที่"
+                  className="w-36 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5"
+                />
+                {(dateFrom || dateTo) && (
+                  <button
+                    type="button"
+                    onClick={() => { setDateFrom(''); setDateTo(''); }}
+                    className="text-[11px] text-slate-500 hover:text-rose-600 cursor-pointer"
+                  >
+                    ล้าง
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Category chips with Lucide icons */}
@@ -323,7 +427,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
           >
             <History className="w-3.5 h-3.5" />
             <span>ทั้งหมด</span>
-            <span className="opacity-80 font-normal">({entries.length})</span>
+            <span className="opacity-80 font-normal">({inRange.length})</span>
           </button>
 
           {categories.map(([key, c]) => {
@@ -361,7 +465,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
         </div>
       ) : filtered.length === 0 ? (
         <p className="text-center text-slate-400 py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-sm">
-          ยังไม่มีประวัติการเปลี่ยนแปลง
+          {entries.length === 0 ? 'ยังไม่มีประวัติการเปลี่ยนแปลง' : 'ไม่มีประวัติในช่วงวันที่หรือหมวดที่เลือก'}
         </p>
       ) : (
         <div className="space-y-6">
@@ -382,6 +486,13 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
               </div>
             </div>
           ))}
+          <TablePagination
+            total={filtered.length}
+            page={currentPage}
+            pageSize={pageSize}
+            onPageChange={goToPage}
+            onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
+          />
         </div>
       )}
     </div>
