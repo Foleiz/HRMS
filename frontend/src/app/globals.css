@@ -24,6 +24,19 @@
   color-scheme: light;
 }
 
+/* ===================== ขนาดตัวอักษร (ขยายให้อ่านง่ายขึ้น) =====================
+   ขยายเฉพาะตัวอักษรขนาดเล็ก (text-xs / text-sm) ทั้งระบบ — ระยะห่าง/เลย์เอาต์ไม่เปลี่ยน
+   เอกสาร/กระดาษ (.theme-light) คงขนาดเดิมเพื่อให้หน้าเอกสาร A4 ไม่เพี้ยน */
+@theme {
+  --text-xs: 0.8125rem;   /* เดิม 0.75rem (12px) → 13px */
+  --text-sm: 0.9375rem;   /* เดิม 0.875rem (14px) → 15px */
+}
+
+.theme-light {
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+}
+
 .dark {
   --background: #0F172A;
   --foreground: #F1F5F9;
@@ -210,3 +223,14 @@ html.dark .leave-surface .leave-muted { color: #CBD5E1; }
 html.dark .leave-surface .leave-track { background-color: rgb(255 255 255 / 0.12); }
 html.dark .leave-surface .leave-badge { background-color: rgb(255 255 255 / 0.1); color: #CBD5E1; }
 html.dark .leave-chip { background-color: var(--lc-bg-dark); color: var(--lc-text-dark); box-shadow: inset 0 0 0 1px var(--lc-ring-dark); }
+
+/* ขนาดตัวอักษรแบบระบุ px (text-[11px] ฯลฯ) — ขยายตามสัดส่วนเดียวกัน ยกเว้นเอกสาร (.theme-light) */
+.text-\[8\.5px\]:not(.theme-light, .theme-light *) { font-size: 10px; }
+.text-\[9px\]:not(.theme-light, .theme-light *) { font-size: 10.5px; }
+.text-\[9\.5px\]:not(.theme-light, .theme-light *) { font-size: 11px; }
+.text-\[10px\]:not(.theme-light, .theme-light *) { font-size: 11.5px; }
+.text-\[10\.5px\]:not(.theme-light, .theme-light *) { font-size: 12px; }
+.text-\[11px\]:not(.theme-light, .theme-light *) { font-size: 12.5px; }
+.text-\[12px\]:not(.theme-light, .theme-light *) { font-size: 13px; }
+.text-\[13px\]:not(.theme-light, .theme-light *) { font-size: 14px; }
+.text-\[13\.5px\]:not(.theme-light, .theme-light *) { font-size: 14.5px; }
