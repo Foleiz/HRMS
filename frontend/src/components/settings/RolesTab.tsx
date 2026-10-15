@@ -766,7 +766,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               className="h-9.5 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ เพิ่มบทบาท</span>
+              <span>เพิ่มบทบาท</span>
             </button>
           )}
         </div>

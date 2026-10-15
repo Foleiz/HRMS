@@ -401,7 +401,7 @@ export default function ContractsPage() {
                           title={`แนบเอกสารสัญญาจ้างสำหรับ ${contract.employeeName}`}
                         >
                           <Paperclip className="w-3.5 h-3.5 text-slate-400" />
-                          <span>+ แนบเอกสาร</span>
+                          <span>แนบเอกสาร</span>
                         </button>
                       )}
                     </td>

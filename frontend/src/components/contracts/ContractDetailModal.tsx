@@ -517,7 +517,7 @@ export default function ContractDetailModal({
                     ) : (
                       <>
                         <Upload className="w-3.5 h-3.5" />
-                        <span>+ แนบเอกสารสัญญาจ้าง</span>
+                        <span>แนบเอกสารสัญญาจ้าง</span>
                       </>
                     )}
                   </button>
