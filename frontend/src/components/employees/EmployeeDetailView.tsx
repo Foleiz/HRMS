@@ -80,6 +80,61 @@ const formatPhoneNumber = (val?: string | null): string => {
   return clean;
 };
 
+/** หัวข้อกลุ่มข้อมูลในหน้าข้อมูลส่วนตัว */
+function ProfileSection({
+  id,
+  icon,
+  title,
+  count,
+  children,
+}: {
+  id: string;
+  icon: React.ReactNode;
+  title: string;
+  count?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 rounded-xl border border-slate-200/90 dark:border-slate-700/80 p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-[#0B2046] dark:text-blue-300 flex items-center justify-center">
+          {icon}
+        </span>
+        <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{title}</h3>
+        {count !== undefined && (
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-500 dark:text-slate-300">
+            {count}
+          </span>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** ป้ายชื่อ + ค่า (ป้ายเล็กสีเทา ค่าเด่น) */
+function ProfileField({
+  label,
+  value,
+  sub,
+  mono,
+  breakAll,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sub?: string;
+  mono?: boolean;
+  breakAll?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
+      <p className={`text-sm font-medium text-slate-900 dark:text-slate-100 ${mono ? 'font-mono' : ''} ${breakAll ? 'break-all' : ''}`}>{value}</p>
+      {sub && <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
 export type EmployeeDetailTab =
   | 'personal'
   | 'family'
@@ -152,12 +207,19 @@ export default function EmployeeDetailView({
     if (tabParam === 'documents') return 'documents';
     if (tabParam === 'history') return 'history';
     if (tabParam === 'user' || tabParam === 'account') return 'user';
-    if (tabParam === 'family') return 'family';
-    if (tabParam === 'emergency') return 'emergency';
     if (tabParam === 'background') return 'background';
     if (tabParam === 'tax') return 'tax';
     return 'personal';
   });
+
+  // ลิงก์เดิม ?tab=family / ?tab=emergency → เลื่อนไปหัวข้อในแท็บข้อมูลส่วนตัว
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const target = tabParam === 'family' ? 'sec-family' : tabParam === 'emergency' ? 'sec-emergency' : null;
+    if (!target) return;
+    const t = setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
+    return () => clearTimeout(t);
+  }, [searchParams]);
 
   // ใช้รหัสสิทธิ์เดียวกับ backend (EMP_DOC_CREATE / EMP_DOC_EDIT)
   const canManageDocuments =
@@ -342,8 +404,6 @@ export default function EmployeeDetailView({
 
   const TABS = [
     { id: 'personal', label: 'ข้อมูลส่วนตัว' },
-    { id: 'family', label: 'ข้อมูลครอบครัว' },
-    { id: 'emergency', label: 'ผู้ติดต่อกรณีฉุกเฉิน' },
     { id: 'background', label: 'การศึกษา & ประวัติการทำงาน' },
     { id: 'tax', label: 'ภาษี & ประกันสังคม' },
     { id: 'user', label: 'ข้อมูลผู้ใช้งาน' },
@@ -616,147 +676,111 @@ export default function EmployeeDetailView({
           </div>
 
           {/* ============================================================ */}
-          {/* TAB 1: ข้อมูลส่วนตัว (Personal Info) - 3 Columns Layout      */}
+          {/* TAB 1: ข้อมูลส่วนตัว — รวมข้อมูลส่วนตัว + ครอบครัว + ผู้ติดต่อฉุกเฉิน */}
           {/* ============================================================ */}
           {activeTab === 'personal' && (
-            <div className="pt-6 flex-1 w-full space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 mb-2">
-                <User className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลส่วนตัว (Personal Info)</h3>
+            <div className="pt-5 flex-1 w-full space-y-5 animate-in fade-in duration-150">
+              {/* ทางลัดไปแต่ละหัวข้อ */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'sec-basic', label: 'ข้อมูลพื้นฐาน' },
+                  { id: 'sec-contact', label: 'ติดต่อ & ที่อยู่' },
+                  { id: 'sec-bank', label: 'บัญชีธนาคาร' },
+                  { id: 'sec-family', label: `ครอบครัว (${employee.familyMembers?.length ?? 0})` },
+                  { id: 'sec-emergency', label: `ผู้ติดต่อฉุกเฉิน (${employee.emergencyContacts?.length ?? 0})` },
+                ].map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                  >
+                    {s.label}
+                  </button>
+                ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-y-7 gap-x-8">
-              {/* --- คอลัมน์ที่ 1 --- */}
-              <div className="space-y-5">
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">รหัสพนักงาน (Employee Code)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{employee.employeeCode || '-'}</p>
+              {/* 1) ข้อมูลพื้นฐาน */}
+              <ProfileSection id="sec-basic" icon={<User className="w-4 h-4" />} title="ข้อมูลพื้นฐาน">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-4">
+                  <ProfileField label="ชื่อ-นามสกุล" value={`${employee.prefix ? `${employee.prefix} ` : ''}${employee.firstName || ''} ${employee.lastName || ''}`.trim() || '-'} />
+                  <ProfileField label="รหัสพนักงาน" value={employee.employeeCode || '-'} mono />
+                  <ProfileField label="รหัสเครื่องสแกน" value={employee.biometricId || '-'} mono />
+                  <ProfileField label="เลขบัตรประชาชน" value={formatMaskedCitizenId(employee.citizenIdMasked)} mono />
+                  <ProfileField label="วันเกิด" value={formatThaiDate(employee.birthDate)} />
+                  <ProfileField
+                    label="เพศ"
+                    value={employee.gender || (employee.genderId === 1 || employee.prefix === 'นาย' ? 'ชาย' : (employee.genderId === 2 || employee.prefix === 'นางสาว' || employee.prefix === 'นาง' ? 'หญิง' : '-'))}
+                  />
+                  <ProfileField label="สัญชาติ" value={employee.nationality || '-'} />
+                  <ProfileField label="ศาสนา" value={employee.religion || '-'} />
+                  <ProfileField label="สถานภาพสมรส" value={employee.maritalStatus || '-'} />
+                  <ProfileField label="สถานภาพทางทหาร" value={employee.militaryStatus || '-'} />
+                  <ProfileField
+                    label="วุฒิการศึกษาสูงสุด"
+                    value={
+                      primaryEducation
+                        ? [primaryEducation.educationLevel, primaryEducation.major, primaryEducation.institution].filter(Boolean).join(' · ') || '-'
+                        : '-'
+                    }
+                    sub={
+                      primaryEducation?.graduationYear || primaryEducation?.gpa
+                        ? [primaryEducation?.graduationYear ? `จบปี ${primaryEducation.graduationYear}` : '', primaryEducation?.gpa ? `GPA ${Number(primaryEducation.gpa).toFixed(2)}` : '']
+                            .filter(Boolean)
+                            .join(' · ')
+                        : undefined
+                    }
+                  />
                 </div>
+              </ProfileSection>
 
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">รหัสเครื่องสแกน (Biometric ID)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{employee.biometricId || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">คำนำหน้า (Prefix)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.prefix || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ชื่อ (First Name)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.firstName || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">นามสกุล (Last Name)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.lastName || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เลขบัตรประชาชน (National ID)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{formatMaskedCitizenId(employee.citizenIdMasked)}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เพศ (Gender)</p>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    {employee.gender || (employee.genderId === 1 || employee.prefix === 'นาย' ? 'ชาย' : (employee.genderId === 2 || employee.prefix === 'นางสาว' || employee.prefix === 'นาง' ? 'หญิง' : '-'))}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สัญชาติ (Nationality)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.nationality || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ศาสนา (Religion)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.religion || '-'}</p>
-                </div>
-              </div>
-
-              {/* --- คอลัมน์ที่ 2 --- */}
-              <div className="space-y-5">
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">วันเกิด (Date of Birth)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{formatThaiDate(employee.birthDate)}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สถานภาพสมรส (Marital Status)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.maritalStatus || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สถานภาพทางทหาร (Military Status)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{employee.militaryStatus || '-'}</p>
-                </div>
-
-                {/* ที่อยู่แบบเจาะลึก */}
-                <div className="space-y-3 pt-1">
-                  <p className="text-slate-800 dark:text-slate-200 font-bold">ที่อยู่ (Address)</p>
-
-                  <div className="space-y-3 pl-0.5">
-                    <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ประเภทที่อยู่</p>
-                      <p className="text-slate-600 dark:text-slate-400">{formatAddressType(primaryAddress?.addressType)}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">บ้านเลขที่</p>
-                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.addressLine || '-'}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ตำบล / แขวง</p>
-                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.subDistrict || '-'}</p>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">อำเภอ / เขต</p>
-                      <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.district || '-'}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">จังหวัด</p>
-                        <p className="text-slate-600 dark:text-slate-400">{primaryAddress?.province || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">รหัสไปรษณีย์</p>
-                        <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryAddress?.postalCode || '-'}</p>
-                      </div>
-                    </div>
+              {/* 2) ติดต่อ & ที่อยู่ */}
+              <ProfileSection id="sec-contact" icon={<Mail className="w-4 h-4" />} title="ติดต่อ & ที่อยู่">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-4">
+                  <ProfileField label="เบอร์โทรศัพท์" value={formatPhoneNumber(employee.contact?.personalPhone)} mono />
+                  <ProfileField label="อีเมลส่วนตัว" value={employee.contact?.personalEmail || '-'} breakAll />
+                  <ProfileField label="อีเมลองค์กร" value={employee.contact?.organizationEmail || '-'} breakAll />
+                  <div className="sm:col-span-2 xl:col-span-3">
+                    <ProfileField
+                      label={`ที่อยู่${primaryAddress?.addressType ? ` (${formatAddressType(primaryAddress.addressType)})` : ''}`}
+                      value={
+                        [
+                          primaryAddress?.addressLine,
+                          primaryAddress?.subDistrict && `ต.${primaryAddress.subDistrict}`,
+                          primaryAddress?.district && `อ.${primaryAddress.district}`,
+                          primaryAddress?.province && `จ.${primaryAddress.province}`,
+                          primaryAddress?.postalCode,
+                        ]
+                          .filter(Boolean)
+                          .join(' ') || '-'
+                      }
+                    />
                   </div>
                 </div>
+              </ProfileSection>
 
-                {/* บัญชีธนาคาร (Bank Account) - Merged from Profile */}
-                <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                  <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-bold">
-                    <CreditCard className="w-3.5 h-3.5 text-[#0B2046] dark:text-blue-400" />
-                    <span>บัญชีธนาคาร (Bank Account)</span>
-                  </div>
-
-                  <div className="space-y-2.5 pl-0.5">
+              {/* 3) บัญชีธนาคาร */}
+              <ProfileSection id="sec-bank" icon={<CreditCard className="w-4 h-4" />} title="บัญชีธนาคาร">
+                <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-3">
                     <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ธนาคาร</p>
-                      <p className="text-slate-700 dark:text-slate-300 font-semibold">{primaryBank?.bankName || '-'}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">ธนาคาร</p>
+                      <p className="font-medium text-slate-900 dark:text-slate-100">{primaryBank?.bankName || '-'}</p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">เลขที่บัญชี</p>
-                      <div className="text-slate-700 dark:text-slate-300 font-mono font-semibold">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">เลขที่บัญชี</p>
+                      <div className="font-mono font-medium text-slate-900 dark:text-slate-100">
                         <MaskedDataViewer value={primaryBank?.accountNumber} type="bankAccount" />
                       </div>
                     </div>
                     {primaryBank?.accountName && (
                       <div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">ชื่อบัญชี</p>
-                        <p className="text-slate-700 dark:text-slate-300">{primaryBank.accountName}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">ชื่อบัญชี</p>
+                        <p className="font-medium text-slate-900 dark:text-slate-100">{primaryBank.accountName}</p>
                       </div>
                     )}
                     {pendingBank && (
-                      <div className="p-2.5 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 space-y-1.5">
+                      <div className="sm:col-span-2 xl:col-span-3 p-2.5 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/40 dark:border-amber-900 space-y-1.5">
                         <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">บัญชีใหม่รอยืนยัน</p>
                         <p className="text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                           {pendingBank.bankName} <MaskedDataViewer value={pendingBank.accountNumber} type="bankAccount" />
@@ -817,181 +841,106 @@ export default function EmployeeDetailView({
                       </div>
                     )}
                     {!pendingBank && rejectedBank && (
-                      <p className="text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+                      <p className="sm:col-span-2 xl:col-span-3 text-[11px] text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
                         คำขอเปลี่ยนเป็นบัญชี <MaskedDataViewer value={rejectedBank.accountNumber} type="bankAccount" /> ไม่ได้รับอนุมัติ
                         {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
                       </p>
                     )}
                   </div>
                 </div>
-              </div>
+              </ProfileSection>
 
-              {/* --- คอลัมน์ที่ 3 --- */}
-              <div className="space-y-5">
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">อีเมล์ (E-mail)</p>
-                  <p className="text-slate-600 dark:text-slate-400 break-all">{employee.contact?.personalEmail || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">อีเมล์องค์กร (Organization email)</p>
-                  <p className="text-slate-600 dark:text-slate-400 break-all">{employee.contact?.organizationEmail || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เบอร์โทรศัพท์ส่วนตัว (Phone number)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{formatPhoneNumber(employee.contact?.personalPhone)}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ระดับวุฒิการศึกษา (Education level)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{primaryEducation?.educationLevel || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ชื่อสถาบันการศึกษา (Institution)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{primaryEducation?.institution || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">สาขาวิชา (Major)</p>
-                  <p className="text-slate-600 dark:text-slate-400">{primaryEducation?.major || '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">ปีที่สำเร็จการศึกษา (Graduation year)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryEducation?.graduationYear ? primaryEducation.graduationYear.toString() : '-'}</p>
-                </div>
-
-                <div>
-                  <p className="text-slate-800 dark:text-slate-200 font-bold mb-1">เกรดเฉลี่ยสะสม (GPA)</p>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono">{primaryEducation?.gpa ? Number(primaryEducation.gpa).toFixed(2) : '-'}</p>
-                </div>
-              </div>
-            </div>
-            </div>
-          )}
-
-          {/* ============================================================ */}
-          {/* TAB 2: ข้อมูลครอบครัว (Family Info)                          */}
-          {/* ============================================================ */}
-          {activeTab === 'family' && (
-            <div className="pt-6 flex-1 w-full space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลครอบครัว (Family Members)</h3>
-              </div>
-
-              {!employee.familyMembers || employee.familyMembers.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                  ยังไม่มีข้อมูลสมาชิกครอบครัว
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {employee.familyMembers.map((member, idx) => (
-                    <div
-                      key={member.id || idx}
-                      className="p-4 bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 rounded-xl space-y-2.5"
-                    >
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-700/60">
-                        <span className="font-bold text-[#0B2046] dark:text-blue-400">
-                          ลำดับที่ {idx + 1}: {member.relationshipType}
+              {/* 4) ครอบครัว */}
+              <ProfileSection
+                id="sec-family"
+                icon={<Users className="w-4 h-4" />}
+                title="ข้อมูลครอบครัว"
+                count={employee.familyMembers?.length ?? 0}
+              >
+                {!employee.familyMembers || employee.familyMembers.length === 0 ? (
+                  <p className="text-sm text-slate-400 dark:text-slate-500">ยังไม่มีข้อมูลสมาชิกครอบครัว</p>
+                ) : (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    {employee.familyMembers.map((member, idx) => (
+                      <div key={member.id || idx} className="py-3 first:pt-0 last:pb-0 grid grid-cols-1 sm:grid-cols-[150px_1fr_1fr_1fr] gap-x-6 gap-y-1.5 items-center">
+                        <span className="w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0B2046]/8 text-[#0B2046] dark:bg-blue-500/15 dark:text-blue-300">
+                          {member.relationshipType || 'สมาชิก'}
                         </span>
-                        {member.maritalStatus && (
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">{member.maritalStatus}</span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 text-[11px]">
                         <div>
-                          <p className="text-slate-400 dark:text-slate-500">ชื่อ-นามสกุล</p>
-                          <p className="font-semibold text-slate-800 dark:text-slate-200">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                             {member.prefix ? `${member.prefix} ` : ''}{member.firstName} {member.lastName || ''}
                           </p>
+                          {member.maritalStatus && <p className="text-xs text-slate-500 dark:text-slate-400">{member.maritalStatus}</p>}
                         </div>
-                        <div>
-                          <p className="text-slate-400 dark:text-slate-500">เลขบัตรประชาชน</p>
-                          <p className="font-mono text-slate-800 dark:text-slate-200">{member.citizenIdMasked || '-'}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 dark:text-slate-500">วันเกิด</p>
-                          <p className="text-slate-800 dark:text-slate-200">{formatThaiDate(member.birthDate)}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 dark:text-slate-500">สถานะการศึกษา</p>
-                          <p className="text-slate-800 dark:text-slate-200">{member.educationStatus || '-'}</p>
-                        </div>
+                        <ProfileField label="วันเกิด" value={formatThaiDate(member.birthDate)} />
+                        <ProfileField
+                          label={member.educationStatus ? 'การศึกษา / เลขบัตร' : 'เลขบัตรประชาชน'}
+                          value={[member.educationStatus, member.citizenIdMasked].filter(Boolean).join(' · ') || '-'}
+                        />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+                    ))}
+                  </div>
+                )}
+              </ProfileSection>
 
-          {/* ============================================================ */}
-          {/* TAB 3: กรณีฉุกเฉินติดต่อใคร (Emergency Contact)             */}
-          {/* ============================================================ */}
-          {activeTab === 'emergency' && (
-            <div className="pt-6 flex-1 w-full space-y-4 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 mb-2">
-                <Phone className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
-              </div>
-
-              {!employee.emergencyContacts || employee.emergencyContacts.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                  ยังไม่มีข้อมูลผู้ติดต่อฉุกเฉิน
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {employee.emergencyContacts.map((contact, idx) => (
-                    <div
-                      key={contact.id || idx}
-                      className="p-5 bg-sky-50/50 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/40 rounded-xl space-y-3"
-                    >
-                      <div className="flex items-center justify-between pb-2 border-b border-sky-200/60 dark:border-sky-900/60">
-                        <span className="font-bold text-[#0B2046] dark:text-sky-300">
-                          {contact.relationship ? `ความสัมพันธ์: ${contact.relationship}` : 'ผู้ติดต่อฉุกเฉิน'}
-                        </span>
-                        {contact.isPrimary && (
-                          <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 rounded-md text-[10px] font-bold">
-                            ติดต่อหลัก
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="space-y-2 text-[11px]">
-                        <div>
-                          <p className="text-slate-400 dark:text-slate-500">ชื่อ-นามสกุล</p>
-                          <p className="font-semibold text-slate-800 dark:text-slate-200 text-xs">
-                            {contact.prefix ? `${contact.prefix} ` : ''}{contact.firstName} {contact.lastName}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-slate-400 dark:text-slate-500">เบอร์โทรศัพท์ฉุกเฉิน</p>
-                          <p className="font-mono text-sm font-bold text-[#0B2046] dark:text-sky-400">
-                            {formatPhoneNumber(contact.primaryPhone)}
-                          </p>
-                        </div>
-
-                        {contact.secondaryPhone && (
-                          <div>
-                            <p className="text-slate-400 dark:text-slate-500">เบอร์โทรศัพท์สำรอง</p>
-                            <p className="font-mono text-slate-700 dark:text-slate-300">{formatPhoneNumber(contact.secondaryPhone)}</p>
+              {/* 5) ผู้ติดต่อฉุกเฉิน */}
+              <ProfileSection
+                id="sec-emergency"
+                icon={<Phone className="w-4 h-4" />}
+                title="ผู้ติดต่อกรณีฉุกเฉิน"
+                count={employee.emergencyContacts?.length ?? 0}
+              >
+                {!employee.emergencyContacts || employee.emergencyContacts.length === 0 ? (
+                  <p className="text-sm text-slate-400 dark:text-slate-500">ยังไม่มีข้อมูลผู้ติดต่อฉุกเฉิน</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[...employee.emergencyContacts]
+                      .sort((a, b) => Number(!!b.isPrimary) - Number(!!a.isPrimary))
+                      .map((contact, idx) => (
+                        <div
+                          key={contact.id || idx}
+                          className={`p-4 rounded-xl border ${
+                            contact.isPrimary
+                              ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-800/60 dark:bg-emerald-950/20'
+                              : 'border-slate-200 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/40'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                {contact.prefix ? `${contact.prefix} ` : ''}{contact.firstName} {contact.lastName}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{contact.relationship || 'ผู้ติดต่อฉุกเฉิน'}</p>
+                            </div>
+                            {contact.isPrimary && (
+                              <span className="shrink-0 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                ติดต่อหลัก
+                              </span>
+                            )}
                           </div>
-                        )}
-
-                        <div>
-                          <p className="text-slate-400 dark:text-slate-500">ที่อยู่ผู้ติดต่อ</p>
-                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{contact.address || '-'}</p>
+                          <a
+                            href={contact.primaryPhone ? `tel:${contact.primaryPhone}` : undefined}
+                            className="mt-3 inline-flex items-center gap-2 font-mono text-base font-bold text-[#0B2046] dark:text-sky-300 hover:underline"
+                          >
+                            <Phone className="w-4 h-4" />
+                            {formatPhoneNumber(contact.primaryPhone)}
+                          </a>
+                          {contact.secondaryPhone && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                              สำรอง <span className="font-mono">{formatPhoneNumber(contact.secondaryPhone)}</span>
+                            </p>
+                          )}
+                          {contact.address && (
+                            <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 leading-relaxed flex gap-1.5">
+                              <Home className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                              {contact.address}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      ))}
+                  </div>
+                )}
+              </ProfileSection>
             </div>
           )}
 
