@@ -16,6 +16,8 @@ public class LeaveType : BaseEntity
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
     /// <summary>หมวดในแบบฟอร์มใบลา: SICK (ป่วย), PERSONAL (กิจส่วนตัว), VACATION (พักร้อน), SPECIAL (ลาพิเศษ)</summary>
     public string? FormCategory { get; set; }
+    /// <summary>สีประจำประเภทการลา (#RRGGBB) ใช้แสดงการ์ดยอดวันลา — null = ใช้สีเริ่มต้น</summary>
+    public string? Color { get; set; }
 
     // Navigation Properties
     public virtual ICollection<LeavePolicy> LeavePolicies { get; set; } = new List<LeavePolicy>();

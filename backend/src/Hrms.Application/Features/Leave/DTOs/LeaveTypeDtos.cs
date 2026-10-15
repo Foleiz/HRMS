@@ -10,6 +10,8 @@ public record LeaveTypeDto
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
     public string? FormCategory { get; init; }
+    /// <summary>สีประจำประเภทการลา (#RRGGBB)</summary>
+    public string? Color { get; init; }
     /// <summary>จำนวนใบลาที่ใช้ประเภทนี้ (ทุกสถานะ)</summary>
     public int RequestCount { get; init; }
     /// <summary>ลบถาวรได้หรือไม่ (ยังไม่เคยมีใบลา และไม่มีการปรับยอดวันลาด้วยมือ)</summary>
@@ -28,6 +30,8 @@ public record CreateLeaveTypeRequest
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
     public string? FormCategory { get; init; }
+    /// <summary>สีประจำประเภทการลา (#RRGGBB)</summary>
+    public string? Color { get; init; }
     public decimal? DefaultAnnualQuotaDays { get; init; } = 0;
 }
 
@@ -39,4 +43,6 @@ public record UpdateLeaveTypeRequest
     public string? DocumentDescription { get; init; }
     public string Status { get; init; } = "ACTIVE";
     public string? FormCategory { get; init; }
+    /// <summary>สีประจำประเภทการลา (#RRGGBB)</summary>
+    public string? Color { get; init; }
 }

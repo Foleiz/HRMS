@@ -8,6 +8,8 @@ export interface LeaveType {
   status: 'ACTIVE' | 'INACTIVE' | string;
   /** หมวดในแบบฟอร์มใบลา */
   formCategory?: LeaveFormCategory | null;
+  /** สีประจำประเภทการลา (#RRGGBB) ใช้กับการ์ดยอดวันลา */
+  color?: string | null;
   /** จำนวนใบลาที่ใช้ประเภทนี้ (ทุกสถานะ) */
   requestCount?: number;
   /** ลบถาวรได้หรือไม่ (ยังไม่เคยถูกใช้งาน) */
@@ -32,6 +34,7 @@ export interface CreateLeaveTypePayload {
   status: string;
   defaultAnnualQuotaDays?: number;
   formCategory?: LeaveFormCategory | null;
+  color?: string | null;
 }
 
 export interface UpdateLeaveTypePayload {
@@ -41,6 +44,7 @@ export interface UpdateLeaveTypePayload {
   documentDescription?: string;
   status: string;
   formCategory?: LeaveFormCategory | null;
+  color?: string | null;
 }
 
 export interface LeavePolicy {
@@ -295,8 +299,26 @@ export interface MyLeaveSummary {
   ordinationLeave: LeaveCardItem;
   militaryLeave: LeaveCardItem;
   maternityLeave: LeaveCardItem;
-  totalOvertimeHours: number;
   allBalances: LeaveBalance[];
+  /** การ์ด 1 ใบต่อประเภทการลาที่มีสิทธิ์จริง */
+  leaveCards?: LeaveTypeCard[];
+}
+
+export interface LeaveTypeCard {
+  leaveTypeId: number;
+  code: string;
+  name: string;
+  color?: string | null;
+  isPaidLeave: boolean;
+  quotaDays: number;
+  carriedForwardDays: number;
+  adjustedDays: number;
+  usedDays: number;
+  remainingDays: number;
+  usedTimes?: number | null;
+  maxTimes?: number | null;
+  /** YEAR = ต่อปี, LIFETIME = ตลอดอายุงาน */
+  timesScope?: 'YEAR' | 'LIFETIME' | null;
 }
 
 /** ผลคำนวณจำนวนวันลาจาก server (นับเฉพาะวันทำงานตาม "วันทำงานประจำสัปดาห์" และไม่นับวันหยุดบริษัท) */

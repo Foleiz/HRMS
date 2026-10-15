@@ -1297,6 +1297,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.IsPaidLeave).HasColumnName("is_paid_leave").IsRequired();
             entity.Property(e => e.DocumentDescription).HasColumnName("document_description");
             entity.Property(e => e.FormCategory).HasColumnName("form_category").HasMaxLength(20);
+            entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(20);
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
         });
 

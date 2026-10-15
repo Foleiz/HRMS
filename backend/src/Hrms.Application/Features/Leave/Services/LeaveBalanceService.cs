@@ -218,12 +218,6 @@ public class LeaveBalanceService : ILeaveBalanceService
                         r.StartDatetime.Year == year)
             .ToListAsync(cancellationToken);
 
-        // ดึงจำนวนชั่วโมง OT สะสมจาก AttendanceMonthlySummaries
-        var monthlyOt = await _context.AttendanceMonthlySummaries
-            .AsNoTracking()
-            .Where(a => a.EmployeeId == employeeId && a.Year == year)
-            .SumAsync(a => a.TotalOvertimeHours, cancellationToken);
-
         // ค้นหา balance ของแต่ละประเภท
         var sickBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("SICK", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("ป่วย"));
         var personalBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("PERSONAL", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("กิจ"));
@@ -276,8 +270,59 @@ public class LeaveBalanceService : ILeaveBalanceService
         var matQuota = GetQuota(matBal, "MATERNITY", 98m);
         var matUsed = GetUsed(matBal, "MATERNITY");
 
+        // ===== การ์ดตามประเภทการลาที่มีสิทธิ์จริง (ยอดวันลาที่ระบบสร้างจากนโยบายการลาของแต่ละคน) =====
+        var leaveTypes = await _context.LeaveTypes.AsNoTracking()
+            .ToDictionaryAsync(t => t.Id, cancellationToken);
+        var empTypeId = currentAssignment?.EmployeeTypeId;
+        var empLevelId = currentAssignment?.EmployeeLevelId;
+        var onDate = new DateOnly(year, 12, 31);
+        var lifetimeCounts = await _context.LeaveRequests.AsNoTracking()
+            .Where(r => r.EmployeeId == employeeId && r.Status == "APPROVED")
+            .GroupBy(r => r.LeaveTypeId)
+            .Select(g => new { LeaveTypeId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.LeaveTypeId, x => x.Count, cancellationToken);
+
+        var leaveCards = new List<LeaveTypeCardDto>();
+        foreach (var b in balances.OrderBy(b => b.LeaveTypeId))
+        {
+            if (!leaveTypes.TryGetValue(b.LeaveTypeId, out var lt) || lt.Status != "ACTIVE") continue;
+            // ไม่มีสิทธิ์ในปีนี้และไม่เคยใช้/ไม่มียอดยกมา → ไม่แสดง
+            if (b.AnnualQuotaDays <= 0 && b.UsedDays <= 0 && b.ActiveCarriedForwardDays <= 0 && b.AdjustedDays == 0) continue;
+
+            var policy = LeavePolicyRules.SelectPolicy(policies.Where(p => p.LeaveTypeId == lt.Id), empTypeId, empLevelId, onDate);
+            int? maxTimes = null; int? usedTimes = null; string? scope = null;
+            if (policy?.MaxOccurrencesPerYear is int perYear && perYear > 0)
+            {
+                maxTimes = perYear; scope = "YEAR";
+                usedTimes = approvedRequests.Count(r => r.LeaveTypeId == lt.Id);
+            }
+            else if (policy?.MaxLifetimeOccurrences is int lifetime && lifetime > 0)
+            {
+                maxTimes = lifetime; scope = "LIFETIME";
+                usedTimes = lifetimeCounts.TryGetValue(lt.Id, out var c) ? c : 0;
+            }
+
+            leaveCards.Add(new LeaveTypeCardDto
+            {
+                LeaveTypeId = lt.Id,
+                Code = lt.LeaveCode,
+                Name = lt.LeaveName,
+                Color = lt.Color,
+                IsPaidLeave = lt.IsPaidLeave,
+                QuotaDays = b.AnnualQuotaDays,
+                CarriedForwardDays = b.ActiveCarriedForwardDays,
+                AdjustedDays = b.AdjustedDays,
+                UsedDays = b.UsedDays,
+                RemainingDays = Math.Max(0, b.NetRemainingLeaveDays),
+                UsedTimes = usedTimes,
+                MaxTimes = maxTimes,
+                TimesScope = scope
+            });
+        }
+
         return new MyLeaveSummaryDto
         {
+            LeaveCards = leaveCards,
             EmployeeId = employeeId,
             EmployeeCode = employee?.EmployeeCode ?? string.Empty,
             EmployeeName = employeeName,
@@ -352,7 +397,6 @@ public class LeaveBalanceService : ILeaveBalanceService
                 RemainingDays = Math.Max(0, matQuota - matUsed),
                 Unit = "วัน"
             },
-            TotalOvertimeHours = monthlyOt,
             AllBalances = balances
         };
     }

@@ -72,8 +72,33 @@ public record MyLeaveSummaryDto
     public LeaveCardItemDto OrdinationLeave { get; init; } = new();
     public LeaveCardItemDto MilitaryLeave { get; init; } = new();
     public LeaveCardItemDto MaternityLeave { get; init; } = new();
-    public decimal TotalOvertimeHours { get; init; }
 
     public List<LeaveBalanceDto> AllBalances { get; init; } = new();
+
+    /// <summary>การ์ดยอดวันลา 1 ใบต่อประเภทการลาที่พนักงานมีสิทธิ์จริง (จากยอดวันลาในระบบ ไม่ใช้ค่าตายตัว)</summary>
+    public List<LeaveTypeCardDto> LeaveCards { get; init; } = new();
+}
+
+public record LeaveTypeCardDto
+{
+    public long LeaveTypeId { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    /// <summary>สีที่ตั้งไว้ในประเภทการลา (#RRGGBB) หรือ null</summary>
+    public string? Color { get; init; }
+    public bool IsPaidLeave { get; init; }
+    /// <summary>สิทธิ์ของปีนี้</summary>
+    public decimal QuotaDays { get; init; }
+    /// <summary>ยอดยกมาจากปีก่อนที่ยังใช้ได้</summary>
+    public decimal CarriedForwardDays { get; init; }
+    /// <summary>ปรับยอดด้วยมือ (+/-)</summary>
+    public decimal AdjustedDays { get; init; }
+    public decimal UsedDays { get; init; }
+    public decimal RemainingDays { get; init; }
+    /// <summary>จำนวนครั้งที่ลาไปแล้ว (เฉพาะประเภทที่จำกัดจำนวนครั้ง)</summary>
+    public int? UsedTimes { get; init; }
+    public int? MaxTimes { get; init; }
+    /// <summary>"YEAR" = จำกัดต่อปี, "LIFETIME" = ตลอดอายุงาน</summary>
+    public string? TimesScope { get; init; }
 }
 
