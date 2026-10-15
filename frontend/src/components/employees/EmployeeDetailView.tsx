@@ -276,6 +276,7 @@ export default function EmployeeDetailView({
       setIsUploadingAvatar(true);
       const newAvatarUrl = await employeeService.uploadAvatar(employee.id, file);
       setCustomAvatar(newAvatarUrl);
+      window.dispatchEvent(new CustomEvent('hrms:avatar-updated', { detail: { employeeId: employee.id } }));
       const updated = await employeeService.getById(employee.id);
       onEmployeeUpdate?.(updated);
       toast.success('เปลี่ยนรูปโปรไฟล์เรียบร้อย');

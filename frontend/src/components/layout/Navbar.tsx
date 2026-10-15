@@ -22,6 +22,10 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useSidebar } from '@/context/SidebarContext';
 import { NotificationBell } from './NotificationBell';
 import { formatRoleName } from '@/lib/roleUtils';
+import { getAvatarUrl } from '@/lib/api-client';
+
+/** อีเวนต์แจ้งว่ารูปโปรไฟล์เปลี่ยน (ส่งจากหน้าข้อมูลพนักงานหลังอัปโหลด) */
+export const AVATAR_UPDATED_EVENT = 'hrms:avatar-updated';
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -36,6 +40,27 @@ export const Navbar: React.FC = () => {
 
   // Avoid hydration mismatch
   useEffect(() => setMounted(true), []);
+
+  // รูปโปรไฟล์จริงของผู้ใช้ (โหลดใหม่เมื่อมีการเปลี่ยนรูป) — ถ้าไม่มีรูปจะแสดงอักษรย่อ
+  const [avatarVersion, setAvatarVersion] = useState(() => Date.now());
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  useEffect(() => {
+    const onUpdated = (e: Event) => {
+      const id = (e as CustomEvent<{ employeeId?: number }>).detail?.employeeId;
+      if (!id || id === user?.employeeId) {
+        setAvatarFailed(false);
+        setAvatarVersion(Date.now());
+      }
+    };
+    window.addEventListener(AVATAR_UPDATED_EVENT, onUpdated);
+    return () => window.removeEventListener(AVATAR_UPDATED_EVENT, onUpdated);
+  }, [user?.employeeId]);
+  const navAvatarSrc =
+    user?.employeeId && !avatarFailed ? getAvatarUrl(`/api/employees/${user.employeeId}/avatar?v=${avatarVersion}`) : null;
+  const navInitial = (() => {
+    const name = (user?.fullName || user?.username || '').trim().replace(/^(นางสาว|นาย|นาง|น\.ส\.)\s*/, '');
+    return (name.charAt(0) || '?').toUpperCase();
+  })();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -189,9 +214,20 @@ export const Navbar: React.FC = () => {
               className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700/80 cursor-pointer"
             >
               {/* Avatar Circle */}
-              <div className="w-8 h-8 rounded-full bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs font-bold shrink-0">
-                {user.fullName ? user.fullName.charAt(0) : user.username.charAt(0).toUpperCase()}
-              </div>
+              {navAvatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={navAvatarSrc}
+                  src={navAvatarSrc}
+                  alt={user.fullName || user.username}
+                  onError={() => setAvatarFailed(true)}
+                  className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-slate-300/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xs font-bold shrink-0">
+                  {navInitial}
+                </div>
+              )}
 
               {/* User Name */}
               <span className="text-xs font-medium text-slate-800 dark:text-slate-200 max-w-[140px] truncate hidden sm:inline-block">
