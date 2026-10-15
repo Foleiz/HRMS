@@ -314,7 +314,8 @@ public class AttendanceImportService : IAttendanceImportService
             MaxDate = maxDate,
             CompanySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken),
             Holidays = holidays,
-            ApprovedLeaves = approvedLeaves
+            ApprovedLeaves = approvedLeaves,
+            EmploymentWindows = await LoadEmploymentWindowsAsync(cancellationToken)
         };
         await ProcessRowsAsync(rowCtx, cancellationToken);
         totalRecords = rowCtx.TotalRecords;
@@ -336,6 +337,7 @@ public class AttendanceImportService : IAttendanceImportService
                 for (var curDate = rangeStart.Value; curDate <= effectiveEnd; curDate = curDate.AddDays(1))
                 {
                     var key = (empId, curDate);
+                    if (IsOutsideEmployment(rowCtx.EmploymentWindows, empId, curDate)) continue;
                     if (!dailyDict.ContainsKey(key))
                     {
                         var empShift = ResolveEmployeeShift(employeeShifts, empId, curDate);
@@ -824,7 +826,8 @@ public class AttendanceImportService : IAttendanceImportService
                 DailyDict = new(),
                 BulkPreloaded = false,
                 TotalRecords = rows.Count,
-                CompanySchedule = companySchedule
+                CompanySchedule = companySchedule,
+                EmploymentWindows = await LoadEmploymentWindowsAsync(cancellationToken)
             };
             await ProcessRowsAsync(ctx, cancellationToken);
 
@@ -1011,7 +1014,7 @@ public class AttendanceImportService : IAttendanceImportService
         // (Shichu2/Cdshi/Ztshi) กับแถวป้ายภาษาไทย (ชั่วโมง/นาที.) คนละแถวกัน — ถ้าแถวหัวตาราง
         // หลักที่เลือกไว้ (headerRowIndex) ไม่มีชื่อคอลัมน์สถิติเหล่านี้ ให้ย้อนไปหาแถวรหัส
         // ภาษาอังกฤษในบริเวณหัวไฟล์มาเสริมเฉพาะคอลัมน์ที่ยังไม่ถูกตั้งชื่อ (ไม่กระทบคอลัมน์อื่น)
-        var statColumnAliases = new[] { "shichu2", "cdshi", "ztshi" };
+        var statColumnAliases = new[] { "shichu2", "cdshi", "ztshi", "kugong" };
         bool missingStatColumns = statColumnAliases.Any(alias => !colKeyToHeaderName.Values.Any(v => NormalizeHeader(v) == alias));
         if (missingStatColumns)
         {
@@ -1100,7 +1103,43 @@ public class AttendanceImportService : IAttendanceImportService
         public HashSet<long> ProcessedEmployeeIds { get; init; } = new();
         /// <summary>คำขอลาที่ได้รับอนุมัติแล้ว</summary>
         public List<LeaveRequest> ApprovedLeaves { get; init; } = new();
+        /// <summary>ช่วงที่เป็นพนักงาน (วันเริ่มงาน–วันสุดท้าย) — นอกช่วงนี้ไม่บันทึกเป็นขาดงาน</summary>
+        public Dictionary<long, (DateOnly? Start, DateOnly? End)> EmploymentWindows { get; init; } = new();
     }
+
+    /// <summary>วันเริ่มงาน = วันเริ่มสัญญาแรก (หรือวันที่มีผลของตำแหน่งแรก), วันสุดท้าย = วันลาออก/เลิกจ้าง (เหมือนฝั่งเงินเดือน)</summary>
+    private async Task<Dictionary<long, (DateOnly? Start, DateOnly? End)>> LoadEmploymentWindowsAsync(CancellationToken cancellationToken)
+    {
+        var contractStarts = await _context.EmploymentContracts.AsNoTracking()
+            .Where(c => c.Status != "CANCELLED")
+            .GroupBy(c => c.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, Start = g.Min(c => c.StartDate) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => x.Start, cancellationToken);
+        var assignmentStarts = await _context.EmployeeAssignments.AsNoTracking()
+            .GroupBy(a => a.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, Start = g.Min(a => a.EffectiveFrom) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => x.Start, cancellationToken);
+        var exits = await _context.EmployeeStatusHistories.AsNoTracking()
+            .Where(h => h.Status == "RESIGNED" || h.Status == "TERMINATED")
+            .GroupBy(h => h.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, End = g.Max(h => h.EffectiveFrom) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => x.End, cancellationToken);
+
+        var result = new Dictionary<long, (DateOnly? Start, DateOnly? End)>();
+        foreach (var id in contractStarts.Keys.Union(assignmentStarts.Keys).Union(exits.Keys))
+        {
+            DateOnly? start = contractStarts.TryGetValue(id, out var cs) ? (DateOnly?)cs
+                : assignmentStarts.TryGetValue(id, out var asg) ? (DateOnly?)asg : null;
+            DateOnly? end = exits.TryGetValue(id, out var ex) ? (DateOnly?)ex : null;
+            if (end.HasValue && start.HasValue && start.Value > end.Value) end = null; // กลับเข้าทำงานใหม่
+            result[id] = (start, end);
+        }
+        return result;
+    }
+
+    private static bool IsOutsideEmployment(Dictionary<long, (DateOnly? Start, DateOnly? End)> windows, long employeeId, DateOnly date)
+        => windows.TryGetValue(employeeId, out var w)
+           && ((w.Start.HasValue && date < w.Start.Value) || (w.End.HasValue && date > w.End.Value));
 
     /// <summary>ประมวลผลแถวข้อมูลเวลา → AttendanceDaily (ตรรกะเดียวกับการนำเข้าไฟล์เดิมทุกประการ)</summary>
     private async Task ProcessRowsAsync(RowProcessingContext ctx, CancellationToken cancellationToken)
@@ -1148,6 +1187,7 @@ public class AttendanceImportService : IAttendanceImportService
             var workedHoursRaw = GetDoubleValue(row, "Shichu2", "workedhours", "ชั่วโมงทำงาน", "ชม");        // ชั่วโมงทำงานจริง
             var lateMinutesRaw = GetDoubleValue(row, "Cdshi", "lateminutes", "นาทีมาสาย", "นาที");          // นาทีมาสาย
             var earlyLeaveMinRaw = GetDoubleValue(row, "Ztshi", "earlyleaveminutes", "นาทีออกก่อน");        // นาทีออกก่อนเวลา
+            var absentDaysRaw = GetDoubleValue(row, "Kugong", "absentdays");                                // วันขาดงานที่เครื่องสรุป (1 = ทั้งวัน, 0.5 = ครึ่งวัน)
             var symbolRaw = GetStringValue(row, "Yfh", "สัญลักษณ์", "symbol");                              // สัญลักษณ์ เช่น W, H, DV
 
             // Skip sub-headers / empty separator / summary rows (เช่น แถว "Total" ท้ายไฟล์ Daily Summary
@@ -1287,32 +1327,45 @@ public class AttendanceImportService : IAttendanceImportService
                 bool isPublicHoliday = ctx.Holidays.Contains(workDate);
                 bool isCompanyHolidayOrOff = !isScheduledWorkDay || isPublicHoliday;
 
-                // พยายามดึงเวลาเข้า-ออกจริงจากคอลัมน์ "เข้า-ออก" (Sj1) รูปแบบ "HH:MM-HH:MM"
+                // เวลาเข้า-ออกจริงจากคอลัมน์ "เข้า-ออก" (Sj1) เช่น "09:49-18:08", "13:08L-15:32E", "N-20:03", "N-N"
+                // N = ไม่ได้สแกน, ตัวอักษรต่อท้าย (L = สาย, E = ออกก่อน) ไม่ใช้ — ระบบคำนวณสาย/ออกก่อนเองจากเวลาเทียบกะ
                 DateTime? actualInUtc = null;
                 DateTime? actualOutUtc = null;
                 if (!string.IsNullOrWhiteSpace(stateRaw))
                 {
-                    var timeRangeMatch = Regex.Match(stateRaw, @"(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})");
+                    var timeRangeMatch = Regex.Match(stateRaw, @"(N|\d{1,2}:\d{2})[A-Za-z]*\s*-\s*(N|\d{1,2}:\d{2})[A-Za-z]*");
                     if (timeRangeMatch.Success)
                     {
-                        actualInUtc = ParseTimeToUtc(timeRangeMatch.Groups[1].Value, workDate);
-                        actualOutUtc = ParseTimeToUtc(timeRangeMatch.Groups[2].Value, workDate);
+                        if (timeRangeMatch.Groups[1].Value != "N") actualInUtc = ParseTimeToUtc(timeRangeMatch.Groups[1].Value, workDate);
+                        if (timeRangeMatch.Groups[2].Value != "N") actualOutUtc = ParseTimeToUtc(timeRangeMatch.Groups[2].Value, workDate);
                     }
                 }
 
                 // ตรวจสอบสถานะการมาทำงานจริงจากไฟล์
                 var sym = symbolRaw?.Trim().ToUpperInvariant() ?? "";
                 var stateNorm = stateRaw?.Trim().ToUpperInvariant() ?? "";
-                bool hasWorked = (actualInUtc != null || actualOutUtc != null)
+                // ไม่ได้มาทำงาน: เครื่องสรุปว่าขาดทั้งวัน (Kugong >= 1) หรือไม่ได้สแกนทั้งเข้าและออก ("N-N")
+                // เดิมถือว่า "N-N" เป็นวันมาทำงาน (ชั่วโมงทำงาน 0) ทำให้วันขาดงานไม่ถูกหักเงิน/ยังได้เบี้ยขยัน
+                bool noScanAtAll = Regex.IsMatch(stateNorm, @"^N\s*-\s*N$");
+                bool machineSaysAbsent = absentDaysRaw.HasValue && absentDaysRaw.Value >= 1
+                    && actualInUtc == null && actualOutUtc == null;
+                bool hasWorked = !noScanAtAll && !machineSaysAbsent && (
+                    (actualInUtc != null || actualOutUtc != null)
                     || (workedHoursRaw.HasValue && workedHoursRaw.Value > 0)
-                    || (!string.IsNullOrWhiteSpace(sym) && sym != "W" && sym != "H")
-                    || (!string.IsNullOrWhiteSpace(stateNorm) && stateNorm != "0" && stateNorm != "W" && stateNorm != "H");
+                    || (!string.IsNullOrWhiteSpace(sym) && sym != "W" && sym != "H"));
 
                 // กรณีไม่ได้มาทำงาน
                 if (!hasWorked)
                 {
                     // ถ้าวันนั้นเป็นวันหยุดบริษัท/วันหยุดประจำสัปดาห์ตามตารางจริง และไม่ได้มาทำงาน → ข้ามแถว
                     if (isCompanyHolidayOrOff)
+                    {
+                        totalRecords--;
+                        continue;
+                    }
+
+                    // ก่อนวันเริ่มงาน / หลังวันลาออก ไม่นับเป็นขาดงาน (เงินเดือนคิดตามสัดส่วนวันทำงานอยู่แล้ว)
+                    if (IsOutsideEmployment(ctx.EmploymentWindows, employee.Id, workDate))
                     {
                         totalRecords--;
                         continue;
