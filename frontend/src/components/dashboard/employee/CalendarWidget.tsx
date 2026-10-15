@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Sparkles } from 'lucide-react';
@@ -174,7 +174,7 @@ export const CalendarWidget: React.FC = () => {
             <button
               type="button"
               onClick={goToToday}
-              className="text-[10px] bg-white dark:bg-slate-800/20 hover:bg-white dark:bg-slate-800/30 text-white px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+              className="text-[10px] font-semibold bg-white hover:bg-white/90 text-slate-800 dark:bg-white/20 dark:hover:bg-white/30 dark:text-white px-2 py-0.5 rounded shadow-xs transition-colors cursor-pointer"
               title="กลับไปที่วันนี้"
             >
               วันนี้
@@ -185,7 +185,7 @@ export const CalendarWidget: React.FC = () => {
           <button
             type="button"
             onClick={prevMonth}
-            className="p-1 hover:bg-white dark:bg-slate-800/20 rounded-md transition-colors cursor-pointer"
+            className="p-1 hover:bg-white/20 rounded-md transition-colors cursor-pointer"
             title="เดือนก่อนหน้า"
           >
             <ChevronLeft className="w-3.5 h-3.5 text-white" />
@@ -196,7 +196,7 @@ export const CalendarWidget: React.FC = () => {
           <button
             type="button"
             onClick={nextMonth}
-            className="p-1 hover:bg-white dark:bg-slate-800/20 rounded-md transition-colors cursor-pointer"
+            className="p-1 hover:bg-white/20 rounded-md transition-colors cursor-pointer"
             title="เดือนถัดไป"
           >
             <ChevronRight className="w-3.5 h-3.5 text-white" />
