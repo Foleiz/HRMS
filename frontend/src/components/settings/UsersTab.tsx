@@ -9,7 +9,6 @@ import {
   Edit2,
   Lock,
   Unlock,
-  Trash2,
   FileSearch,
   ChevronLeft,
   ChevronRight,
@@ -37,7 +36,6 @@ interface UsersTabProps {
   onEditUserClick: (user: UserAccount) => void;
   onResetPasswordClick: (user: UserAccount) => void;
   onToggleStatusClick: (user: UserAccount, newStatus: string) => void;
-  onDeleteUserClick: (user: UserAccount) => void;
   onViewAuditLogForUser: (user: UserAccount) => void;
   isLoading: boolean;
   canCreateUser?: boolean;
@@ -59,7 +57,6 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   onEditUserClick,
   onResetPasswordClick,
   onToggleStatusClick,
-  onDeleteUserClick,
   onViewAuditLogForUser,
   isLoading,
   canCreateUser = true,
@@ -336,17 +333,6 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                               className: 'text-blue-600',
                               onClick: () => onViewAuditLogForUser(user),
                             },
-                            ...(canEditUser && user.username.toLowerCase() !== 'admin'
-                              ? [
-                                  { divider: true, label: '' },
-                                  {
-                                    label: 'ลบบัญชีผู้ใช้',
-                                    icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
-                                    danger: true,
-                                    onClick: () => onDeleteUserClick(user),
-                                  },
-                                ]
-                              : []),
                           ]}
                         />
                       </td>

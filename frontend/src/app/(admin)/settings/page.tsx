@@ -372,27 +372,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleDeleteUser = (user: UserAccount) => {
-    setConfirmModalConfig({
-      isOpen: true,
-      title: 'ยืนยันการลบบัญชีผู้ใช้งาน',
-      message: `คุณต้องการลบบัญชีผู้ใช้ "${user.username}" (${user.fullName}) ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`,
-      onConfirm: async () => {
-        try {
-          initialUsersCache = null;
-          initialRolesCache = null;
-          await settingsService.deleteUser(user.id);
-          success('ลบบัญชีผู้ใช้งานสำเร็จ');
-          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
-          loadUsers();
-          loadAssignedEmployeeIds();
-        } catch (err: any) {
-          error(err.message || 'ไม่สามารถลบบัญชีผู้ใช้งานได้');
-        }
-      },
-    });
-  };
-
   const handleViewAuditLogForUser = (user: UserAccount) => {
     setAuditLogFilters({ userId: user.id });
     setActiveTab('audit-log');
@@ -598,7 +577,6 @@ export default function SettingsPage() {
                 setIsResetPasswordModalOpen(true);
               }}
               onToggleStatusClick={handleToggleUserStatus}
-              onDeleteUserClick={handleDeleteUser}
               onViewAuditLogForUser={handleViewAuditLogForUser}
               isLoading={isUsersLoading}
               canCreateUser={canCreateUser}
