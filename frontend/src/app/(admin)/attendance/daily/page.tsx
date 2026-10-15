@@ -1293,7 +1293,7 @@ function DailyAttendanceContent() {
               </div>
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1 dark:text-slate-200">ยังไม่มีข้อมูลบันทึกเวลาในระบบ</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed dark:text-slate-400">
-                ระบบยังไม่มีข้อมูลการนำเข้าไฟล์บันทึกเวลา กรุณาอัปโหลดไฟล์ Excel หรือไฟล์จากเครื่องสแกนเพื่อเริ่มตรวจบันทึกเวลา
+                อัปโหลดไฟล์จากเครื่องสแกนเพื่อเริ่มตรวจเวลา
               </p>
               <button
                 type="button"

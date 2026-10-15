@@ -1582,9 +1582,7 @@ export default function ReportsPage() {
                     (คงอยู่ {turnoverData.overallRetentionRate}%)
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight">
-                  *สูตร: ลาออก ÷ เฉลี่ยต้น-สิ้นงวด | คงอยู่: 100% - อัตราลาออก (รวมกันได้ 100%)
-                </p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight cursor-help w-fit" title="อัตราลาออก = จำนวนลาออก ÷ จำนวนพนักงานเฉลี่ยต้น-สิ้นงวด · อัตราคงอยู่ = 100% − อัตราลาออก">ⓘ วิธีคิด</p>
               </div>
             </div>
           )}

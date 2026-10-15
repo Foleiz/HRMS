@@ -667,7 +667,7 @@ export default function GeneralDocumentPage() {
               ยื่นคำร้องเอกสารทั่วไปสำเร็จ!
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-              คำร้องขอเอกสารของคุณถูกบันทึกและส่งต่อไปยังฝ่ายบุคคลเรียบร้อยแล้ว คุณสามารถติดตามสถานะได้ในเมนูประวัติเอกสาร
+              ติดตามสถานะได้ที่เมนู ประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
               <button

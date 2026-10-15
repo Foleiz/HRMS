@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Lock } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
 import { useAuth } from '@/context/AuthContext';
@@ -138,10 +138,6 @@ export default function HomePage() {
                     บทบาทของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงข้อมูลสถิติหรือโมดูลใดๆ ในระบบ 
                     หากต้องการดูข้อมูลสรุป กรุณาติดต่อผู้ดูแลระบบ (Admin) หรือฝ่ายทรัพยากรบุคคลเพื่อขอเปิดสิทธิ์ในโมดูลที่ต้องการใช้งาน
                   </p>
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-xs font-medium">
-                    <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    <span>จำกัดสิทธิ์การแสดงผลเฉพาะโมดูลที่ได้รับอนุญาต</span>
-                  </div>
                 </div>
               ) : (
                 <>

@@ -180,9 +180,6 @@ export default function TransfersPage() {
             <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
               ประวัติการโยกย้ายทั้งหมด
             </div>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-              บันทึกคำสั่งและประวัติการย้ายงาน
-            </p>
           </div>
           <div className="bg-slate-100/90 dark:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
             {transfers.length}

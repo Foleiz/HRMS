@@ -137,9 +137,6 @@ export default function AttachContractModal({
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                 แนบเอกสารสัญญาจ้างงาน
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                อัปโหลดไฟล์สัญญาจ้างงานเพื่อเก็บในระบบรายบุคคล
-              </p>
             </div>
           </div>
           <button

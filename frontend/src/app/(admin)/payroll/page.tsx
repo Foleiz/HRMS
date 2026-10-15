@@ -2685,9 +2685,6 @@ export default function PayrollPage() {
                       ทั้งหมด {periods.length} รอบ
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    รายการรอบระยะเวลาการคำนวณและจ่ายเงินเดือนทั้งหมดในระบบ ตรวจสอบประวัติรอบเงินเดือนย้อนหลัง และสถานะการดำเนินการ
-                  </p>
                 </div>
               </div>
             </div>
@@ -2835,9 +2832,6 @@ export default function PayrollPage() {
                                               {expandedPayrolls.length} รายการ
                                             </span>
                                           </h4>
-                                          <p className="text-[11px] text-slate-400">
-                                            รายละเอียดรายได้ รายหัก และยอดเงินเดือนสุทธิของพนักงานในรอบนี้
-                                          </p>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -3434,9 +3428,6 @@ export default function PayrollPage() {
                         ทั้งหมด {bonusPeriods.length} รอบ
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      รายการรอบการคำนวณและจัดสรรโบนัสทั้งหมดในระบบ ตรวจสอบประวัติรอบโบนัสย้อนหลัง จำนวนพนักงาน และยอดเงินรวม
-                    </p>
                   </div>
                 </div>
 
@@ -3593,9 +3584,6 @@ export default function PayrollPage() {
                                                     {expandedBonuses.length} รายการ
                                                   </span>
                                                 </h4>
-                                                <p className="text-[11px] text-slate-400">
-                                                  รายละเอียดฐานเงินเดือน ตัวคูณ ยอดโบนัส และสถานะของพนักงานแต่ละคนในรอบนี้
-                                                </p>
                                               </div>
                                             </div>
                                             <div className="flex items-center gap-2">
@@ -4703,7 +4691,6 @@ export default function PayrollPage() {
                     <div className="text-2xl font-bold text-emerald-600 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">ยอดที่ต้องจ่ายจริง</span>
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
@@ -4719,7 +4706,6 @@ export default function PayrollPage() {
                     <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
                       {totalEmployees} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">คน</span>
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">ได้รับการคำนวณครบถ้วน</span>
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
@@ -4731,7 +4717,6 @@ export default function PayrollPage() {
                         ? 'อนุมัติเรียบร้อยแล้ว ✅'
                         : selectedPeriod?.statusText}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">ผ่านการตรวจจากฝ่ายการเงินแล้ว</span>
                   </div>
                 </div>
 
@@ -5886,7 +5871,7 @@ export default function PayrollPage() {
                   />
                   <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span>ระบบจะเปลี่ยนชื่อรอบและวันที่คำนวณให้อัตโนมัติตามเดือนและปีที่เลือก (สามารถพิมพ์แก้ไขชื่อได้ตามต้องการ)</span>
+                    <span>ตั้งชื่อรอบและวันที่ให้อัตโนมัติตามเดือน/ปี แก้ชื่อได้</span>
                   </p>
                 </div>
 
@@ -6139,9 +6124,6 @@ export default function PayrollPage() {
                       ทั้งหมด {periods.length} รอบ
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    รายการรอบระยะเวลาการคำนวณและจ่ายเงินเดือนทั้งหมดในระบบ
-                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
