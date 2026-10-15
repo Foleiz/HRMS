@@ -38,16 +38,16 @@ import { Employee } from '@/types/employee';
 import { LeaveTypeModal, LEAVE_FORM_CATEGORIES, inferFormCategory } from '@/components/leave/LeaveTypeModal';
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
-import { resolveLeaveColor, tintColor } from '@/lib/leaveColors';
+import { resolveLeaveColor, leaveColorVars } from '@/lib/leaveColors';
 
 /** ป้ายชื่อประเภทการลาตามสีที่ตั้งไว้ในประเภทการลา */
 function LeaveTypeChip({ name, color, size = 'md' }: { name: string; color: string; size?: 'sm' | 'md' }) {
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full font-semibold text-slate-900 ${
+      className={`leave-chip inline-flex items-center gap-2 rounded-full font-semibold ${
         size === 'sm' ? 'px-2.5 py-0.5 text-xs' : 'px-3 py-1 text-sm'
       }`}
-      style={{ backgroundColor: tintColor(color, 0.3), boxShadow: `inset 0 0 0 1px ${tintColor(color, 0.55)}` }}
+      style={leaveColorVars(color) as React.CSSProperties}
     >
       <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
       {name}

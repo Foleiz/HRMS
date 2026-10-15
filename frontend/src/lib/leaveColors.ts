@@ -42,3 +42,27 @@ export const tintColor = (hex: string, ratio: number): string => {
   };
   return `#${mix(0)}${mix(2)}${mix(4)}`;
 };
+
+/** ผสมสีกับพื้นโหมดมืด (slate-800) — ใช้ทำพื้นการ์ด/ป้ายในโหมดมืดให้ตัวหนังสือสีอ่อนอ่านง่าย */
+export const shadeColor = (hex: string, ratio: number, base = '#1E293B'): string => {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  const b = base.replace('#', '');
+  const r = Math.min(1, Math.max(0, ratio));
+  const mix = (i: number) => {
+    const v = parseInt(h.slice(i, i + 2), 16);
+    const bv = parseInt(b.slice(i, i + 2), 16);
+    return Math.round(bv + (v - bv) * r).toString(16).padStart(2, '0');
+  };
+  return `#${mix(0)}${mix(2)}${mix(4)}`;
+};
+
+/** ตัวแปร CSS สีประเภทการลา สำหรับใช้กับคลาส bg-[var(--lc-bg)] dark:bg-[var(--lc-bg-dark)] */
+export const leaveColorVars = (color: string, lightRatio = 0.3, darkRatio = 0.28): Record<string, string> => ({
+  '--lc': color,
+  '--lc-bg': tintColor(color, lightRatio),
+  '--lc-bg-dark': shadeColor(color, darkRatio),
+  '--lc-ring': tintColor(color, 0.55),
+  '--lc-ring-dark': shadeColor(color, 0.6),
+  '--lc-text-dark': tintColor(color, 0.45),
+});

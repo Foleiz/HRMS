@@ -190,3 +190,23 @@ html.dark body {
     color: #64748B;
   }
 }
+
+/* ===================== สีประเภทการลา (การ์ดยอดวันลา / ป้ายชื่อในเมนูการลา) =====================
+   ใช้คลาสเฉพาะแทน utility สี เพราะ dark-theme.css แปลงสี utility แบบ !important
+   ตัวแปรสีมาจาก leaveColorVars() ใน src/lib/leaveColors.ts */
+.leave-surface { background-color: var(--lc-bg); color: #0F172A; }
+.leave-surface .leave-muted { color: #334155; }
+.leave-surface .leave-track { background-color: rgb(255 255 255 / 0.6); }
+.leave-surface .leave-badge { background-color: rgb(255 255 255 / 0.7); color: #475569; }
+.leave-chip { background-color: var(--lc-bg); color: #0F172A; box-shadow: inset 0 0 0 1px var(--lc-ring); }
+
+html.dark .leave-surface {
+  background-color: var(--lc-bg-dark);
+  color: #F1F5F9;
+  box-shadow: inset 0 0 0 1px var(--lc-ring-dark), 0 4px 12px rgb(0 0 0 / 0.25);
+}
+html.dark .leave-surface .leave-title { color: var(--lc-text-dark); }
+html.dark .leave-surface .leave-muted { color: #CBD5E1; }
+html.dark .leave-surface .leave-track { background-color: rgb(255 255 255 / 0.12); }
+html.dark .leave-surface .leave-badge { background-color: rgb(255 255 255 / 0.1); color: #CBD5E1; }
+html.dark .leave-chip { background-color: var(--lc-bg-dark); color: var(--lc-text-dark); box-shadow: inset 0 0 0 1px var(--lc-ring-dark); }
