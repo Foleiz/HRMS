@@ -85,6 +85,58 @@ function isNumericOrYearOption(cleanedLabel: string): boolean {
   return false;
 }
 
+// ตัวเลือกเดือนสำหรับตรวจจับและไม่ใส่เลขลำดับนำหน้า เช่น "ตุลาคม" ไม่แสดงเป็น "10. ตุลาคม"
+const THAI_MONTH_NAMES_LIST = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
+
+const THAI_MONTH_SHORT_LIST = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+  'ม.ค', 'ก.พ', 'มี.ค', 'เม.ย', 'พ.ค', 'มิ.ย',
+  'ก.ค', 'ส.ค', 'ก.ย', 'ต.ค', 'พ.ย', 'ธ.ค',
+];
+
+const ENG_MONTH_LIST = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+  'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec',
+];
+
+export function getStrippedMonthLabel(label: string): string | null {
+  const trimmed = label.trim();
+  if (!trimmed) return null;
+
+  // 1. ตัดเลขลำดับนำหน้า เช่น "1.", "1. ", "01.", "1 - ", "1: ", "1 ", "เดือน 1 - ", "เดือน 01: "
+  let s = trimmed.replace(/^(เดือน\s*)?\d{1,2}\s*([.\-:]\s*|\s+)/i, '');
+  // 2. ตัดเลขในวงเล็บต่อท้าย เช่น " (1)", " (10)"
+  s = s.replace(/\s*\(\d{1,2}\)$/, '').trim();
+  // 3. ตัดคำว่า "เดือน" ข้างหน้าออก (ถ้ามี)
+  const core = s.replace(/^เดือน\s*/, '').trim();
+
+  if (THAI_MONTH_NAMES_LIST.includes(core)) {
+    return core;
+  }
+  if (THAI_MONTH_SHORT_LIST.includes(core)) {
+    return core;
+  }
+  const engIdx = ENG_MONTH_LIST.indexOf(core.toLowerCase());
+  if (engIdx !== -1) {
+    return core.charAt(0).toUpperCase() + core.slice(1).toLowerCase();
+  }
+
+  return null;
+}
+
+export function isMonthOption(cleanedLabel: string): boolean {
+  return getStrippedMonthLabel(cleanedLabel) !== null;
+}
+
+export function cleanMonthLabel(cleanedLabel: string): string {
+  return getStrippedMonthLabel(cleanedLabel) ?? cleanedLabel;
+}
+
 function formatSelectOptions(rawOptions: SelectOption[]): SelectOption[] {
   let seq = 0;
   return rawOptions.map((opt, idx) => {
@@ -93,8 +145,13 @@ function formatSelectOptions(rawOptions: SelectOption[]): SelectOption[] {
       return { ...opt, label: cleaned };
     }
 
+    // ตัวเลือกเดือน ให้แสดงเฉพาะชื่อเดือน โดยไม่ใส่เลขลำดับนำหน้า (เช่น "ตุลาคม", ไม่ใช่ "10. ตุลาคม")
+    if (isMonthOption(cleaned)) {
+      return { ...opt, label: cleanMonthLabel(cleaned) };
+    }
+
     seq += 1;
-    // หากมีตัวเลขลำดับนำหน้าอยู่แล้ว เช่น "1. มกราคม" หรือ "1 - มกราคม" ให้ปรับรูปแบบเป็น "1. ..." โดยไม่ใส่ซ้ำ
+    // หากมีตัวเลขลำดับนำหน้าอยู่แล้ว ให้ปรับรูปแบบเป็น "1. ..." โดยไม่ใส่ซ้ำ
     const strippedExistingNum = cleaned.replace(/^\d+\s*[.\-]\s*/, '');
     return {
       ...opt,
@@ -201,7 +258,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   // Resolve options from prop or children
   const resolvedOptions: SelectOption[] = React.useMemo(() => {
     const raw = options && options.length > 0 ? options : children ? extractOptions(children) : [];
-    if (!numbered) return raw.map((opt) => ({ ...opt, label: cleanOptionLabel(String(opt.label ?? '')) }));
+    if (!numbered) {
+      return raw.map((opt) => {
+        const cleaned = cleanOptionLabel(String(opt.label ?? ''));
+        if (isMonthOption(cleaned)) {
+          return { ...opt, label: cleanMonthLabel(cleaned) };
+        }
+        return { ...opt, label: cleaned };
+      });
+    }
     return formatSelectOptions(raw);
   }, [options, children, numbered]);
 

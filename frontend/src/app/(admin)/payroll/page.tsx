@@ -3081,7 +3081,7 @@ export default function PayrollPage() {
                     >
                       {THAI_MONTH_NAMES.map((name, idx) => (
                         <option key={idx + 1} value={idx + 1}>
-                          {name} ({idx + 1})
+                          {name}
                         </option>
                       ))}
                     </CustomSelect>
@@ -5902,7 +5902,7 @@ export default function PayrollPage() {
                     />
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">เดือน (1-12)</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">เดือน</label>
                     <CustomSelect
                       value={newPeriodForm.month}
                       onChange={(e) => handleMonthChange(parseInt(e.target.value))}
@@ -5910,7 +5910,7 @@ export default function PayrollPage() {
                     >
                       {THAI_MONTH_NAMES.map((name, idx) => (
                         <option key={idx + 1} value={idx + 1}>
-                          {idx + 1}. {name}
+                          {name}
                         </option>
                       ))}
                     </CustomSelect>
