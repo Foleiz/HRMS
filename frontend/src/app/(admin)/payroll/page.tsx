@@ -2088,47 +2088,49 @@ export default function PayrollPage() {
         </div>
       )}
 
-      {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) - Matches media_1789453480755.png === */}
+      {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) === */}
       {activeTab === 'structures' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-4">
-          {/* Header matching mockup: Title on left, "+ เพิ่ม" button on right */}
+        <div className="space-y-4">
+          {/* Top Pill Switcher: กรอบโครงสร้าง / ฐานเงินเดือนพนักงาน (Matches Tab 3 Items style) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">โครงสร้างเงินเดือน</h2>
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-                <button
-                  onClick={() => setStructureSubTab('positions')}
-                  className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                    structureSubTab === 'positions'
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  กรอบโครงสร้าง ({structures.length})
-                </button>
-                <button
-                  onClick={() => setStructureSubTab('employees')}
-                  className={`px-3 py-1 rounded-lg font-medium transition-all cursor-pointer ${
-                    structureSubTab === 'employees'
-                      ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  ฐานเงินเดือนพนักงาน ({employees.length})
-                </button>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setStructureSubTab('positions')}
+                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  structureSubTab === 'positions'
+                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                กรอบโครงสร้าง ({structures.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStructureSubTab('employees')}
+                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  structureSubTab === 'employees'
+                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                ฐานเงินเดือนพนักงาน ({employees.length})
+              </button>
             </div>
 
             {structureSubTab === 'positions' && canCreateStructure && (
               <button
+                type="button"
                 onClick={handleOpenCreateStructure}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto"
               >
-                <span>เพิ่ม</span>
                 <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>เพิ่ม</span>
               </button>
             )}
           </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-4">
 
           {/* Sub-view 1: Salary Structure Table matching Image 1 */}
           {structureSubTab === 'positions' && (() => {
@@ -2414,6 +2416,7 @@ export default function PayrollPage() {
               </div>
             );
           })()}
+          </div>
         </div>
       )}
 
