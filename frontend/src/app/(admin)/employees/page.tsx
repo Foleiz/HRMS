@@ -13,6 +13,7 @@ import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { confirmDelete } from '@/lib/sweetalert';
+import { formatGpaInput, clampGpa } from '@/lib/gpaUtils';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -255,6 +256,7 @@ export default function EmployeesPage() {
   };
 
   const [formData, setFormData] = useState<CreateEmployeePayload>(initialFormData);
+  const [gpaInput, setGpaInput] = useState<string>('');
   const employeeTypeOptions = useEmployeeTypeOptions();
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
@@ -673,6 +675,7 @@ export default function EmployeesPage() {
 
   const handleOpenCreateModal = async () => {
     setFormData(initialFormData);
+    setGpaInput('');
     setFormErrors({});
     setHasAttemptedSubmit(false);
     setActiveModalTab('personal');
@@ -700,6 +703,7 @@ export default function EmployeesPage() {
 
   const handleCloseCreateModal = () => {
     setIsCreateModalOpen(false);
+    setGpaInput('');
     setFormErrors({});
     setHasAttemptedSubmit(false);
     setActiveModalTab('personal');
@@ -709,7 +713,17 @@ export default function EmployeesPage() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors = validateCreateForm(formData);
+    // Ensure GPA is parsed and clamped to 0.00 - 4.00
+    let normalizedGpa = formData.gpa;
+    if (gpaInput) {
+      const parsed = parseFloat(gpaInput);
+      if (!isNaN(parsed)) {
+        normalizedGpa = Number(Math.min(Math.max(parsed, 0), 4).toFixed(2));
+      }
+    }
+    const currentFormData = { ...formData, gpa: normalizedGpa };
+
+    const errors = validateCreateForm(currentFormData);
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       setHasAttemptedSubmit(true);
@@ -754,8 +768,8 @@ export default function EmployeesPage() {
       };
 
       const payload: CreateEmployeePayload = {
-        ...formData,
-        employeeCode: formData.employeeCode.trim(),
+        ...currentFormData,
+        employeeCode: currentFormData.employeeCode.trim(),
         biometricId: formData.biometricId?.trim() || undefined,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -2283,19 +2297,39 @@ export default function EmployeesPage() {
                         </div>
 
                         <div>
-                          <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                            เกรดเฉลี่ยสะสม (GPA) <span className="text-rose-500">*</span>
-                          </label>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="font-semibold text-slate-700 dark:text-slate-300">
+                              เกรดเฉลี่ยสะสม (GPA) <span className="text-rose-500">*</span>
+                            </label>
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">
+                              (0.00 - 4.00)
+                            </span>
+                          </div>
                           <input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="4"
+                            type="text"
+                            inputMode="decimal"
+                            maxLength={4}
                             placeholder="3.99"
-                            value={formData.gpa ?? ''}
+                            value={gpaInput}
                             onChange={(e) => {
-                              setFormData({ ...formData, gpa: e.target.value ? Number(e.target.value) : undefined });
+                              const formatted = formatGpaInput(e.target.value);
+                              setGpaInput(formatted);
+                              const parsed = parseFloat(formatted);
+                              setFormData((prev) => ({
+                                ...prev,
+                                gpa: !isNaN(parsed) && formatted !== '0.' && !formatted.endsWith('.') ? parsed : undefined,
+                              }));
                               clearFieldError('gpa');
+                            }}
+                            onBlur={() => {
+                              if (gpaInput) {
+                                const formatted = clampGpa(gpaInput);
+                                setGpaInput(formatted);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  gpa: formatted ? parseFloat(formatted) : undefined,
+                                }));
+                              }
                             }}
                             className={getFieldClass('gpa')}
                           />

@@ -5,6 +5,7 @@ import { Plus, Trash2, GraduationCap, Briefcase } from 'lucide-react';
 import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { formatGpaInput, clampGpa } from '@/lib/gpaUtils';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
@@ -46,6 +47,7 @@ export default function EmployeeBackgroundEditor({
 }: Props) {
   const [activeEduIndex, setActiveEduIndex] = useState<number>(0);
   const [activeWorkIndex, setActiveWorkIndex] = useState<number>(0);
+  const [eduGpaInputs, setEduGpaInputs] = useState<Record<number, string>>({});
 
   const safeEduIndex = Math.min(activeEduIndex, Math.max(0, educations.length - 1));
   const safeWorkIndex = Math.min(activeWorkIndex, Math.max(0, workExperiences.length - 1));
@@ -209,16 +211,37 @@ export default function EmployeeBackgroundEditor({
                   </CustomSelect>
                 </div>
                 <div className="md:col-span-1">
-                  <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                    เกรดเฉลี่ย
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="font-semibold text-slate-700 dark:text-slate-300">
+                      เกรดเฉลี่ย
+                    </label>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                      (0.00-4.00)
+                    </span>
+                  </div>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="4"
-                    value={currentEdu.gpa ?? ''}
-                    onChange={(e) => updateEdu(safeEduIndex, { gpa: e.target.value ? Number(e.target.value) : undefined })}
+                    type="text"
+                    inputMode="decimal"
+                    maxLength={4}
+                    value={eduGpaInputs[safeEduIndex] !== undefined ? eduGpaInputs[safeEduIndex] : (currentEdu.gpa != null ? String(currentEdu.gpa) : '')}
+                    onChange={(e) => {
+                      const formatted = formatGpaInput(e.target.value);
+                      setEduGpaInputs((prev) => ({ ...prev, [safeEduIndex]: formatted }));
+                      const parsed = parseFloat(formatted);
+                      updateEdu(safeEduIndex, {
+                        gpa: !isNaN(parsed) && formatted !== '0.' && !formatted.endsWith('.') ? parsed : undefined,
+                      });
+                    }}
+                    onBlur={() => {
+                      const cur = eduGpaInputs[safeEduIndex] ?? (currentEdu.gpa != null ? String(currentEdu.gpa) : '');
+                      if (cur) {
+                        const formatted = clampGpa(cur);
+                        setEduGpaInputs((prev) => ({ ...prev, [safeEduIndex]: formatted }));
+                        updateEdu(safeEduIndex, {
+                          gpa: formatted ? parseFloat(formatted) : undefined,
+                        });
+                      }
+                    }}
                     placeholder="3.50"
                     className={INPUT}
                   />
