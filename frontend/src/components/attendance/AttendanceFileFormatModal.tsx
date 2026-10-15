@@ -6,9 +6,8 @@ import {
   FileSpreadsheet,
   Download,
   Info,
-  CheckCircle2,
   Clock,
-  HardDrive,
+  CalendarDays,
   FileText,
   AlertTriangle,
   Loader2,
@@ -21,8 +20,179 @@ interface Props {
   onClose: () => void;
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+ * ตัวอย่างอ้างอิงจากไฟล์จริงที่ส่งออกจากเครื่องสแกน Syaco
+ *   - deliy  : รายงานสรุปรายวัน (1 แถว = พนักงาน 1 คน × 1 วัน) ใช้นำเข้าทั้งเดือน
+ *   - record : บันทึกการสแกนทุกครั้ง (1 แถว = สแกน 1 ครั้ง)
+ * ข้อมูลในไฟล์เริ่มที่คอลัมน์ D (A–C ว่าง) มีแถวหัวเรื่อง 2 แถว แล้วตามด้วยหัวคอลัมน์รหัส + หัวคอลัมน์ภาษาไทย
+ * ชื่อพนักงานในตัวอย่างเป็นชื่อสมมติ
+ * ───────────────────────────────────────────────────────────────────────────── */
+
+type Cell = string;
+interface SheetSample {
+  /** ตัวอักษรคอลัมน์ Excel เริ่มที่ D */
+  columns: string[];
+  /** index ของคอลัมน์ที่ระบบนำไปใช้ (ไฮไลต์) */
+  used: number[];
+  titleRows: Cell[][];
+  headerRows: Cell[][];
+  dataRows: Cell[][];
+}
+
+const colLetters = (n: number) => Array.from({ length: n }, (_, i) => String.fromCharCode(68 + i)); // D, E, F, ...
+
+const DELIY: SheetSample = {
+  columns: colLetters(24),
+  used: [0, 3, 5, 9, 10, 12, 14, 21],
+  titleRows: [
+    ['deliy'],
+    ['unit: Syaco    date from: 2026-08-01 to 2026-08-31 23:59'],
+  ],
+  headerRows: [
+    ['user_no', 'user_lname', 'user_depname', 'dkrq', 'dkrq', 'Sj1', 'Yingchu1', 'Yingchu2', 'Shichu1', 'Shichu2', 'Kugong', 'Cdci', 'Cdshi', 'Ztci', 'Ztshi', 'Wqd', 'Wqt', 'Xxr', 'Jjr', 'Qjcs', 'Qjsj', 'Yfh', 'Qjfh', 'Shenhe'],
+    ['รหัส', 'ชื่อ-สกุล', 'แผนก', 'วันที่', 'สัปดาห์', 'เข้า-ออก', 'กะการทำงาน', '', 'วันทำงาน', '', '', 'สาย', '', 'ออกก่อน', '', 'ไม่ลงเวลา', '', 'วันหยุด', '', 'การลา', '', 'สัญลักษณ์', '', 'Lock'],
+    ['', '', '', '', '', '', 'วัน', 'ชั่วโมง', 'วัน', 'ชั่วโมง', 'ขาด', 'ครั้ง', 'นาที.', 'ครั้ง', 'นาที.', 'เข้า', 'ออก', 'สัปดาห์', 'ประจำปี', 'ครั้ง', 'ชั่วโมง', 'กะ', 'ลา', ''],
+  ],
+  dataRows: [
+    ['100001', 'สมชาย', 'Syaco', '2026-08-02', '7', '', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0', '0', '0', 'W', '', '0'],
+    ['100001', 'สมชาย', 'Syaco', '2026-08-03', '1', '09:49-18:08', '1', '8', '1', '8', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', 'DV', '', '0'],
+    ['100001', 'สมชาย', 'Syaco', '2026-08-04', '2', '10:35L-17:30', '1', '8', '1', '8', '0', '1', '35', '0', '0', '0', '0', '0', '0', '0', '0', 'DV', '', '0'],
+    ['100002', 'สมหญิง', 'Syaco', '2026-08-03', '1', 'N-N', '1', '8', '0', '0', '1', '0', '0', '0', '0', '1', '1', '0', '0', '0', '0', 'DV', '', '0'],
+    ['100002', 'สมหญิง', 'Syaco', '2026-08-12', '3', '', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0', '0', 'H', '', '0'],
+  ],
+};
+
+const RECORD: SheetSample = {
+  columns: colLetters(10),
+  used: [0, 3],
+  titleRows: [
+    ['record'],
+    ['unit: Syaco    date from: 2026-08-03 to 2026-08-03 23:59'],
+  ],
+  headerRows: [
+    ['user_no', 'user_lname', 'user_depname', 'sj', 'fx', 'iden', 'healthstatus', 'body_temp', 'dev_serial', 'lx'],
+    ['รหัส', 'ชื่อ-สกุล', 'แผนก-ฝ่าย.', 'วันที่-เวลา', 'สถานะ', 'ลงเวลาด้วย', 'การตรวจอุณหภูมิ', '', 'เครื่อง', 'ประมวลผล'],
+    ['', '', '', '', '', '', 'อุณหภูมิ', 'องศา', '', ''],
+  ],
+  dataRows: [
+    ['100001', 'สมชาย', 'Syaco', '2026-08-03 09:49:12', 'AUTO', 'l', 'AUTO', '', 'Attendance', 'IN'],
+    ['100001', 'สมชาย', 'Syaco', '2026-08-03 12:54:49', 'AUTO', 'l', 'AUTO', '', 'Attendance', 'EARLY'],
+    ['100001', 'สมชาย', 'Syaco', '2026-08-03 13:04:08', 'AUTO', 'l', 'AUTO', '', 'Attendance', 'INVALID'],
+    ['100001', 'สมชาย', 'Syaco', '2026-08-03 18:08:31', 'AUTO', 'l', 'AUTO', '', 'Attendance', 'OUT'],
+  ],
+};
+
+interface ColumnUse {
+  code: string;
+  name: string;
+  use: string;
+}
+
+const DELIY_COLUMNS: ColumnUse[] = [
+  { code: 'user_no', name: 'รหัส', use: 'รหัสในเครื่องสแกน ใช้จับคู่กับ "รหัสเครื่องสแกน (Biometric ID)" ของพนักงาน (หรือรหัสพนักงาน)' },
+  { code: 'dkrq', name: 'วันที่', use: 'วันที่ทำงาน (คอลัมน์ dkrq ตัวแรก)' },
+  { code: 'Sj1', name: 'เข้า-ออก', use: 'เวลาเข้า-ออกจริง เช่น 09:49-18:08 (N = ไม่ได้สแกน, L = มาสาย, E = ออกก่อน, ว่าง = ไม่ใช่วันทำงาน)' },
+  { code: 'Shichu2', name: 'วันทำงาน (ชั่วโมง)', use: 'ชั่วโมงทำงานจริงของวันนั้น' },
+  { code: 'Kugong', name: 'ขาด', use: 'จำนวนวันขาดงานที่เครื่องสรุป (1 = ขาดทั้งวัน, 0.5 = ครึ่งวัน)' },
+  { code: 'Cdshi', name: 'สาย (นาที)', use: 'ใช้เมื่อไม่มีเวลาเข้า — ปกติระบบคำนวณนาทีสายเองจากเวลาเข้าเทียบกะ' },
+  { code: 'Ztshi', name: 'ออกก่อน (นาที)', use: 'ใช้เมื่อไม่มีเวลาออก — ปกติระบบคำนวณเองจากเวลาออกเทียบกะ' },
+  { code: 'Yfh', name: 'สัญลักษณ์ (กะ)', use: 'DV = วันทำงาน, W = วันหยุดประจำสัปดาห์, H = วันหยุดนักขัตฤกษ์' },
+];
+
+const RECORD_COLUMNS: ColumnUse[] = [
+  { code: 'user_no', name: 'รหัส', use: 'รหัสในเครื่องสแกน ใช้จับคู่กับ "รหัสเครื่องสแกน (Biometric ID)" ของพนักงาน' },
+  { code: 'sj', name: 'วันที่-เวลา', use: 'เวลาที่สแกน — ระบบใช้การสแกนแรกของวันเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก' },
+  { code: 'lx', name: 'ประมวลผล', use: 'ผลจากเครื่อง (IN / OUT / EARLY / LATE / INVALID) ใช้ประกอบเท่านั้น ไม่ต้องแก้ไข' },
+];
+
+const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
+  const usedSet = new Set(sample.used);
+  const cellCls = (i: number) =>
+    `px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap ${
+      usedSet.has(i) ? 'bg-sky-50 dark:bg-sky-950/40' : ''
+    }`;
+  const rowNo = 'px-1 text-center text-slate-400 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-normal';
+  return (
+    <div className="border border-slate-300 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
+      <table className="text-[11px] text-left border-collapse font-mono">
+        <thead>
+          <tr className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-center">
+            <th className="w-8 px-1 py-1 border-r border-slate-300 dark:border-slate-700 font-normal" />
+            {sample.columns.map((c, i) => (
+              <th
+                key={c}
+                className={`px-2 py-1 border-r border-slate-200 dark:border-slate-700 font-normal ${usedSet.has(i) ? 'text-sky-700 dark:text-sky-300 font-bold' : ''}`}
+              >
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300">
+          {sample.titleRows.map((row, r) => (
+            <tr key={`t${r}`} className="border-t border-slate-200 dark:border-slate-700">
+              <td className={rowNo}>{r + 1}</td>
+              <td colSpan={sample.columns.length} className="px-2 py-1.5 font-semibold text-slate-800 dark:text-slate-200">
+                {row[0]}
+              </td>
+            </tr>
+          ))}
+          {sample.headerRows.map((row, r) => (
+            <tr key={`h${r}`} className="border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/60">
+              <td className={rowNo}>{sample.titleRows.length + r + 1}</td>
+              {row.map((v, i) => (
+                <td key={i} className={`${cellCls(i)} font-sans`}>{v}</td>
+              ))}
+            </tr>
+          ))}
+          {sample.dataRows.map((row, r) => (
+            <tr key={`d${r}`} className="border-t border-slate-200 dark:border-slate-700">
+              <td className={rowNo}>{sample.titleRows.length + sample.headerRows.length + r + 1}</td>
+              {row.map((v, i) => (
+                <td key={i} className={cellCls(i)}>{v}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+const ColumnTable: React.FC<{ rows: ColumnUse[] }> = ({ rows }) => (
+  <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+    <table className="w-full text-xs text-left">
+      <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+        <tr>
+          <th className="py-2 px-3 font-semibold w-28">คอลัมน์</th>
+          <th className="py-2 px-3 font-semibold w-36">หัวภาษาไทย</th>
+          <th className="py-2 px-3 font-semibold">ระบบนำไปใช้อย่างไร</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        {rows.map((c) => (
+          <tr key={c.code}>
+            <td className="py-2 px-3 font-mono text-sky-700 dark:text-sky-300 font-semibold">{c.code}</td>
+            <td className="py-2 px-3 text-slate-800 dark:text-slate-200">{c.name}</td>
+            <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{c.use}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+const UsedLegend: React.FC<{ note: string }> = ({ note }) => (
+  <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+    <span className="inline-block w-3 h-3 rounded bg-sky-100 border border-sky-200 shrink-0" />
+    {note}
+  </p>
+);
+
+type FormatTab = 'deliy' | 'record' | 'template';
+
 export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const [activeFormatTab, setActiveFormatTab] = useState<'punch' | 'summary'>('punch');
+  const [tab, setTab] = useState<FormatTab>('deliy');
   const [isDownloading, setIsDownloading] = useState(false);
   const toast = useToast();
 
@@ -32,7 +202,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
     try {
       setIsDownloading(true);
       await attendanceImportService.downloadTemplate('xlsx');
-      toast.success('ดาวน์โหลดไฟล์แม่แบบตัวอย่าง (attendance_import_template.xlsx) เรียบร้อยแล้ว');
+      toast.success('ดาวน์โหลดไฟล์แม่แบบ (attendance_import_template.xlsx) เรียบร้อยแล้ว');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       toast.error(error.response?.data?.message || 'ไม่สามารถดาวน์โหลดไฟล์แม่แบบได้');
@@ -41,361 +211,182 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
     }
   };
 
+  const tabs: { key: FormatTab; label: string; sub: string; Icon: React.ElementType; badge?: string }[] = [
+    { key: 'deliy', label: 'ไฟล์สรุปรายวัน (deliy)', sub: '1 แถว = 1 คน × 1 วัน', Icon: CalendarDays, badge: 'แนะนำ' },
+    { key: 'record', label: 'ไฟล์บันทึกการสแกน (record)', sub: '1 แถว = สแกน 1 ครั้ง', Icon: Clock },
+    { key: 'template', label: 'ทำไฟล์เองจาก Excel', sub: 'กรณีไม่มีไฟล์จากเครื่อง', Icon: FileText },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-3 sm:p-6 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4.5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
+        <div className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-800">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center border border-emerald-100 dark:border-emerald-800">
               <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                รูปแบบไฟล์ต้นฉบับสำหรับนำเข้าบันทึกเวลา
-              </h3>
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">รูปแบบไฟล์ที่รองรับ</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                โครงสร้างคอลัมน์และรูปแบบไฟล์ Excel (.xlsx, .xls) หรือ CSV ที่ระบบรองรับ
+                อัปโหลดไฟล์ .xls / .xlsx ที่ส่งออกจากเครื่องสแกน Syaco ได้ทันที ไม่ต้องแก้ไขไฟล์
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#0B2046] hover:bg-[#112d5e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {isDownloading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              <span>ดาวน์โหลดไฟล์แม่แบบ (.xlsx)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              title="ปิดหน้าต่าง"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title="ปิดหน้าต่าง"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs text-slate-700 dark:text-slate-300">
-          {/* Format Selector Tabs */}
-          <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
-            <button
-              type="button"
-              onClick={() => setActiveFormatTab('punch')}
-              className={`flex-1 min-w-[200px] py-2 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeFormatTab === 'punch'
-                  ? 'bg-white dark:bg-slate-900 text-[#0B2046] dark:text-blue-300 shadow-xs border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>รูปแบบที่ 1: ไฟล์สแกนเข้า-ออกรายครั้ง (Punch Log)</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold">
-                แนะนำ
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveFormatTab('summary')}
-              className={`flex-1 min-w-[200px] py-2 px-3 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                activeFormatTab === 'summary'
-                  ? 'bg-white dark:bg-slate-900 text-[#0B2046] dark:text-blue-300 shadow-xs border border-slate-200/80 dark:border-slate-700'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <HardDrive className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              <span>รูปแบบที่ 2: สรุปเวลาจากเครื่องสแกน (Daily Summary / Syaco)</span>
-            </button>
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-slate-700 dark:text-slate-300">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+            {tabs.map(({ key, label, sub, Icon, badge }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`py-2 px-3 rounded-lg text-left transition-all cursor-pointer ${
+                  tab === key
+                    ? 'bg-white dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700'
+                    : 'hover:bg-white/60 dark:hover:bg-slate-900/40'
+                }`}
+              >
+                <span className={`flex items-center gap-1.5 font-bold ${tab === key ? 'text-[#0B2046] dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  {badge && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold">
+                      {badge}
+                    </span>
+                  )}
+                </span>
+                <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 pl-5">{sub}</span>
+              </button>
+            ))}
           </div>
 
-          {/* TAB 1: PUNCH LOG */}
-          {activeFormatTab === 'punch' && (
+          {tab === 'deliy' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="p-4 rounded-xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/50 flex items-start gap-3">
-                <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-blue-950 dark:text-blue-200 space-y-1">
-                  <p className="font-bold">ลักษณะของไฟล์รูปแบบที่ 1 (Punch Log):</p>
-                  <p className="leading-relaxed">
-                    เหมาะสำหรับไฟล์สแกนนิ้ว/สแกนใบหน้าที่ส่งออกจากเครื่องสแกนโดยตรง โดยในแต่ละแถวจะแสดงการบันทึกเวลา 1 ครั้ง (เข้างาน หรือ ออกงาน) ระบบจะทำการจับคู่เวลาเข้างานแรกสุด (First-In) และเวลาออกงานล่าสุด (Last-Out) ของวันให้อัตโนมัติ
-                  </p>
-                </div>
-              </div>
-
-              {/* Table Preview */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-emerald-600" />
-                    ตัวอย่างข้อมูลในไฟล์ Excel (แถวที่ 1 เป็นหัวตาราง):
-                  </span>
-                  <span className="text-[11px] text-slate-500">
-                    * ชื่อหัวคอลัมน์สามารถใช้ภาษาไทยหรืออังกฤษได้
-                  </span>
-                </div>
-
-                <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-[#0B2046] text-white">
-                      <tr>
-                        <th className="py-2.5 px-3 font-semibold">
-                          รหัส <span className="text-rose-400">*</span>
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold">ชื่อ-สกุล</th>
-                        <th className="py-2.5 px-3 font-semibold">แผนก-ฝ่าย.</th>
-                        <th className="py-2.5 px-3 font-semibold">
-                          วันที่-เวลา <span className="text-rose-400">*</span>
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold">
-                          สถานะ <span className="text-rose-400">*</span>
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold">เครื่อง</th>
-                        <th className="py-2.5 px-3 font-semibold">ประมวลผล</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-800 font-mono">
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">EMP001</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">ธนพล สิริโภคินทร์</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">ฝ่ายบริหาร</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-08-03 08:25:00</td>
-                        <td className="py-2.5 px-3 font-sans">
-                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            เข้า
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">Syaco</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-500">สำเร็จ</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 bg-slate-50/30 dark:bg-slate-800/40">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">EMP001</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">ธนพล สิริโภคินทร์</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">ฝ่ายบริหาร</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-08-03 17:35:00</td>
-                        <td className="py-2.5 px-3 font-sans">
-                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            ออก
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">Syaco</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-500">สำเร็จ</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">EMP002</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">พิมพ์ใจ กิตติพาณิชย์</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">ฝ่ายบุคคล</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-08-03 08:45:00</td>
-                        <td className="py-2.5 px-3 font-sans">
-                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            เข้า
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">Syaco</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-500">สำเร็จ</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 bg-slate-50/30 dark:bg-slate-800/40">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">EMP002</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">พิมพ์ใจ กิตติพาณิชย์</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">ฝ่ายบุคคล</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-08-03 17:30:00</td>
-                        <td className="py-2.5 px-3 font-sans">
-                          <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                            ออก
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 font-sans text-slate-600 dark:text-slate-400">Syaco</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-500">สำเร็จ</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Column Definitions Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>คอลัมน์รหัสพนักงาน (จำเป็น)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    หัวคอลัมน์ที่รองรับ: <code className="text-blue-600 dark:text-blue-400 font-mono">รหัส</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">รหัสพนักงาน</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">EmployeeCode</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">EmpCode</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">UserId</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">BadgeNo</code>
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>คอลัมน์วันที่และเวลา (จำเป็น)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    หัวคอลัมน์ที่รองรับ: <code className="text-blue-600 dark:text-blue-400 font-mono">วันที่-เวลา</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">เวลา</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">DateTime</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">Timestamp</code>, หรือแยกคอลัมน์ <code className="text-blue-600 dark:text-blue-400 font-mono">วันที่</code> + <code className="text-blue-600 dark:text-blue-400 font-mono">เวลา</code>
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>คอลัมน์สถานะ (จำเป็น)</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    หัวคอลัมน์ที่รองรับ: <code className="text-blue-600 dark:text-blue-400 font-mono">สถานะ</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">เข้า-ออก</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">PunchState</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">Type</code>, <code className="text-blue-600 dark:text-blue-400 font-mono">InOut</code> (ค่าที่รองรับ: เข้า, ออก, Check-in, Check-out, IN, OUT)
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-800 dark:text-slate-200 mb-1">
-                    <Info className="w-3.5 h-3.5 text-blue-500" />
-                    <span>คอลัมน์เสริมอื่นๆ</span>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    ชื่อพนักงาน, แผนก, เครื่องสแกน (มีหรือไม่ก็ได้ ระบบจะดึงชื่อและแผนกจริงของพนักงานจากฐานข้อมูล HR เสมอ)
-                  </p>
-                </div>
-              </div>
+              <p className="leading-relaxed">
+                รายงาน <strong>deliy</strong> จากเครื่องสแกน สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของแต่ละคนรายวัน
+                เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน ระบบรู้ว่าเป็นไฟล์ชนิดนี้จากคำว่า <code className="font-mono">deliy</code> ในแถวแรก
+              </p>
+              <SheetPreview sample={DELIY} />
+              <UsedLegend note="คอลัมน์ที่ระบบนำไปใช้ — คอลัมน์อื่น (ชื่อ, แผนก, กะ, วันหยุด, การลา ฯลฯ) ระบบใช้ข้อมูลในระบบเอง" />
+              <ColumnTable rows={DELIY_COLUMNS} />
             </div>
           )}
 
-          {/* TAB 2: DAILY SUMMARY */}
-          {activeFormatTab === 'summary' && (
+          {tab === 'record' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="p-4 rounded-xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-900/50 flex items-start gap-3">
-                <Info className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                <div className="text-xs text-purple-950 dark:text-purple-200 space-y-1">
-                  <p className="font-bold">ลักษณะของไฟล์รูปแบบที่ 2 (Daily Summary / เช่น เครื่องสแกน Syaco):</p>
-                  <p className="leading-relaxed">
-                    ไฟล์รายงานสรุปรายวันจากเครื่องสแกน ที่มีเวลาเข้าและเวลาออกอยู่ในแถวเดียวกัน พร้อมการคำนวณชั่วโมงทำงานและนาทีมาสาย ระบบสามารถอ่านหัวไฟล์ต้นฉบับ (เช่น <code className="font-mono bg-purple-100/70 dark:bg-purple-900/40 px-1 py-0.5 rounded">unit: Syaco date from: ... to: ...</code>) และแยกวิเคราะห์เข้าสู่ระบบได้ทันที
-                  </p>
-                </div>
-              </div>
-
-              {/* Table Preview */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-purple-600" />
-                    ตัวอย่างข้อมูลในไฟล์ Daily Summary:
-                  </span>
-                  <span className="text-[11px] text-slate-500 font-mono">
-                    รองรับรหัสคอลัมน์ของเครื่อง Syaco
-                  </span>
-                </div>
-
-                <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-[#1e1b4b] text-white">
-                      <tr>
-                        <th className="py-2.5 px-3 font-semibold">
-                          รหัส (UserId) <span className="text-rose-400">*</span>
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold">ชื่อพนักงาน</th>
-                        <th className="py-2.5 px-3 font-semibold">
-                          วันที่ (dkrq) <span className="text-rose-400">*</span>
-                        </th>
-                        <th className="py-2.5 px-3 font-semibold">เวลาเข้า (TimeIn)</th>
-                        <th className="py-2.5 px-3 font-semibold">เวลาออก (TimeOut)</th>
-                        <th className="py-2.5 px-3 font-semibold">ชม.ทำงาน (Shichu2)</th>
-                        <th className="py-2.5 px-3 font-semibold">นาทีสาย (Cdshi)</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-800 font-mono">
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">100001</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">ธนพล สิริโภคินทร์</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-09-01</td>
-                        <td className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-semibold">08:25</td>
-                        <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-semibold">17:35</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">8.00</td>
-                        <td className="py-2.5 px-3 text-slate-500">0</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 bg-slate-50/30 dark:bg-slate-800/40">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">100001</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">ธนพล สิริโภคินทร์</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-09-02</td>
-                        <td className="py-2.5 px-3 text-amber-600 dark:text-amber-400 font-semibold">08:45</td>
-                        <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-semibold">17:30</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">7.75</td>
-                        <td className="py-2.5 px-3 text-rose-600 font-semibold">15</td>
-                      </tr>
-                      <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50">
-                        <td className="py-2.5 px-3 font-bold text-blue-600 dark:text-blue-400">100002</td>
-                        <td className="py-2.5 px-3 font-sans text-slate-800 dark:text-slate-200">พิมพ์ใจ กิตติพาณิชย์</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">2026-09-01</td>
-                        <td className="py-2.5 px-3 text-emerald-600 dark:text-emerald-400 font-semibold">08:15</td>
-                        <td className="py-2.5 px-3 text-blue-600 dark:text-blue-400 font-semibold">17:30</td>
-                        <td className="py-2.5 px-3 text-slate-800 dark:text-slate-200">8.00</td>
-                        <td className="py-2.5 px-3 text-slate-500">0</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <p className="leading-relaxed">
+                รายงาน <strong>record</strong> แสดงการสแกนทุกครั้ง (หลายแถวต่อคนต่อวัน) ระบบรวมเป็นรายวันให้อัตโนมัติ
+                โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะหรือเวลาทำงานบริษัท
+              </p>
+              <SheetPreview sample={RECORD} />
+              <UsedLegend note='คอลัมน์ที่ระบบนำไปใช้ — คอลัมน์ "สถานะ" เป็น AUTO ทุกแถว ไม่ต้องแก้ไข' />
+              <ColumnTable rows={RECORD_COLUMNS} />
             </div>
           )}
 
-          {/* Guidelines & Important Notes Alert */}
+          {tab === 'template' && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              <p className="leading-relaxed">
+                ถ้าไม่มีไฟล์จากเครื่องสแกน ให้ดาวน์โหลดไฟล์แม่แบบ แล้วกรอก 1 แถวต่อการสแกน 1 ครั้ง (หัวคอลัมน์อยู่แถวแรก)
+              </p>
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    <tr>
+                      <th className="py-2 px-3 font-semibold">หัวคอลัมน์</th>
+                      <th className="py-2 px-3 font-semibold">จำเป็น</th>
+                      <th className="py-2 px-3 font-semibold">ตัวอย่าง / ค่าที่รองรับ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    <tr>
+                      <td className="py-2 px-3 font-semibold">รหัส</td>
+                      <td className="py-2 px-3 text-rose-600">ใช่</td>
+                      <td className="py-2 px-3">รหัสพนักงาน (EMP0001) หรือรหัสเครื่องสแกน (100001)</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-semibold">วันที่-เวลา</td>
+                      <td className="py-2 px-3 text-rose-600">ใช่</td>
+                      <td className="py-2 px-3">
+                        <code className="font-mono">2026-08-03 08:25:00</code> — ใช้รูปแบบ ปี-เดือน-วัน (ค.ศ.) หรือเซลล์วันที่ของ Excel
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-semibold">สถานะ</td>
+                      <td className="py-2 px-3 text-slate-500">ไม่บังคับ</td>
+                      <td className="py-2 px-3">
+                        เข้า / ออก, IN / OUT, C/In / C/Out — ถ้าไม่ใส่ ระบบใช้การสแกนแรกของวันเป็นเวลาเข้า และสุดท้ายเป็นเวลาออก
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-3 font-semibold">ชื่อ-สกุล, แผนก-ฝ่าย., เครื่อง</td>
+                      <td className="py-2 px-3 text-slate-500">ไม่บังคับ</td>
+                      <td className="py-2 px-3">ใส่ไว้ดูได้ ระบบใช้ชื่อและแผนกจากข้อมูลพนักงานในระบบ</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={isDownloading}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#0B2046] hover:bg-[#112d5e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                <span>ดาวน์โหลดไฟล์แม่แบบ (.xlsx)</span>
+              </button>
+            </div>
+          )}
+
+          {/* ข้อควรรู้ก่อนนำเข้า */}
           <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
             <div className="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-300 text-xs">
               <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>ข้อแนะนำสำคัญในการจัดเตรียมไฟล์</span>
+              <span>ข้อควรรู้ก่อนนำเข้า</span>
             </div>
             <ul className="list-disc list-inside space-y-1 text-[11px] text-amber-900/90 dark:text-amber-200/90 pl-1">
               <li>
-                <strong>การจับคู่พนักงาน:</strong> รหัสในคอลัมน์รหัสต้องตรงกับ <strong>รหัสพนักงาน (Employee Code)</strong> เช่น <code className="font-mono">EMP001</code> หรือ <strong>รหัสเครื่องสแกน (Biometric ID)</strong> เช่น <code className="font-mono">100001</code> ที่ผูกไว้ในระบบ HRMS
+                <strong>อัปโหลดไฟล์จากเครื่องตามเดิม</strong> ไม่ต้องลบแถวหัวเรื่อง แถวหัวคอลัมน์ หรือแถว Total ท้ายไฟล์
               </li>
               <li>
-                <strong>รูปแบบวันที่และเวลา:</strong> รองรับรูปแบบ <code className="font-mono">YYYY-MM-DD</code> (เช่น 2026-08-03) หรือ <code className="font-mono">DD/MM/YYYY</code> ทั้งปี ค.ศ. และ พ.ศ.
+                <strong>เลือกเดือน/ช่วงวันที่ให้ตรงกับไฟล์</strong> แถวที่วันที่อยู่นอกช่วงที่เลือกจะไม่ถูกนำเข้า
               </li>
               <li>
-                <strong>ขนาดไฟล์และประเภทที่รองรับ:</strong> ไฟล์ Excel นามสกุล <code className="font-mono">.xlsx</code>, <code className="font-mono">.xls</code> หรือไฟล์ <code className="font-mono">.csv</code> (ขนาดไม่เกิน 20MB)
+                <strong>รหัสต้องตรงกับพนักงาน:</strong> รหัสในไฟล์ (เช่น 100001) ต้องตรงกับ &quot;รหัสเครื่องสแกน&quot; ในข้อมูลพนักงาน
+                แถวที่หาพนักงานไม่เจอจะถูกข้าม — เพิ่มรหัสเครื่องสแกนให้พนักงานภายหลังได้ ระบบจะนำแถวที่ค้างเข้าให้อัตโนมัติ
               </li>
               <li>
-                <strong>ป้องกันไฟล์ซ้ำ:</strong> ระบบตรวจสอบ SHA-256 Hash ของไฟล์ หากไฟล์ซ้ำระบบจะแจ้งเตือนทันทีเพื่อป้องกันข้อมูลทับซ้อน
+                <strong>อัปไฟล์เดิมซ้ำ</strong> ระบบจะเตือนก่อน เพื่อกันข้อมูลซ้ำ
               </li>
             </ul>
           </div>
+
+          <p className="text-[11px] text-slate-400 flex items-start gap-1.5">
+            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            ตัวอย่างอ้างอิงจากไฟล์จริงที่ส่งออกจากเครื่องสแกน (ชื่อพนักงานเป็นชื่อสมมติ)
+          </p>
         </div>
 
         {/* Footer */}
-        <div className="p-4 sm:px-6 sm:py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/80 flex items-center justify-between gap-3 shrink-0">
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">
-            สามารถดาวน์โหลดไฟล์ตัวอย่างไปแก้ไขและทดลองอัปโหลดเข้าสู่ระบบได้ทันที
-          </p>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={isDownloading}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#0B2046] hover:bg-[#112d5e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {isDownloading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5" />
-              )}
-              <span>ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
-            >
-              ปิดหน้าต่าง
-            </button>
-          </div>
+        <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/80 flex justify-end shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+          >
+            ปิดหน้าต่าง
+          </button>
         </div>
       </div>
     </div>
