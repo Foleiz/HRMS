@@ -283,6 +283,19 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                             ถูกระงับ
                           </span>
                         )}
+                        {user.resignationLastWorkingDate && (
+                          <div
+                            className="mt-1 text-[11px] font-medium text-amber-700 dark:text-amber-400"
+                            title={user.status === 'ACTIVE' ? 'ระบบจะระงับบัญชีให้อัตโนมัติหลังวันทำงานวันสุดท้าย' : undefined}
+                          >
+                            ลาออก · วันสุดท้าย{' '}
+                            {new Date(`${user.resignationLastWorkingDate}T00:00:00`).toLocaleDateString('th-TH', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </div>
+                        )}
                       </td>
 
                       {/* 7. เข้าสู่ระบบล่าสุด */}
