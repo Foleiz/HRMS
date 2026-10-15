@@ -7,7 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import { leaveService } from '@/services/leaveService';
 import { MyLeaveSummary, LeaveTypeCard } from '@/types/leave';
 import { Calendar, Download, Loader2 } from 'lucide-react';
-import { resolveLeaveColor, tintColor } from '@/lib/leaveColors';
+import { resolveLeaveColor, leaveColorVars } from '@/lib/leaveColors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function LeaveBalancesPage() {
@@ -188,30 +188,30 @@ export default function LeaveBalancesPage() {
               return (
                 <div
                   key={c.leaveTypeId}
-                  className="relative overflow-hidden rounded-2xl pt-7 pb-5 px-7 shadow-md shadow-slate-300/50 dark:shadow-black/30 hover:shadow-lg transition-shadow flex flex-col min-h-[220px]"
-                  style={{ backgroundColor: tintColor(color, 0.32) }}
+                  className="leave-surface relative overflow-hidden rounded-2xl pt-7 pb-5 px-7 shadow-md hover:shadow-lg transition-shadow flex flex-col min-h-[220px]"
+                  style={leaveColorVars(color, 0.32) as React.CSSProperties}
                 >
                   <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: color }} />
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-2xl font-bold leading-snug text-slate-900">{c.name}</h3>
+                    <h3 className="leave-title text-2xl font-bold leading-snug">{c.name}</h3>
                     {!c.isPaidLeave && (
-                      <span className="shrink-0 mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/70 text-slate-600">
+                      <span className="leave-badge shrink-0 mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full">
                         ไม่ได้รับค่าจ้าง
                       </span>
                     )}
                   </div>
                   <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-5xl font-extrabold text-slate-900 tracking-tight">
+                    <span className="text-5xl font-extrabold tracking-tight">
                       {fmt(c.usedDays)}/{fmt(total)}
                     </span>
-                    <span className="text-sm font-medium text-slate-700">วัน (ใช้ไป/สิทธิ์)</span>
+                    <span className="leave-muted text-sm font-medium">วัน (ใช้ไป/สิทธิ์)</span>
                   </div>
-                  <div className="mt-5 h-2.5 w-full rounded-full bg-white/60 overflow-hidden">
+                  <div className="leave-track mt-5 h-2.5 w-full rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
                   </div>
-                  <div className="mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
+                  <div className="leave-muted mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
                     <span>
-                      คงเหลือ <b className="text-slate-900">{fmt(c.remainingDays)}</b> วัน
+                      คงเหลือ <b className="font-bold">{fmt(c.remainingDays)}</b> วัน
                     </span>
                     {c.carriedForwardDays > 0 && <span>ยกมา {fmt(c.carriedForwardDays)} วัน</span>}
                     {c.adjustedDays !== 0 && <span>ปรับปรุง {c.adjustedDays > 0 ? '+' : ''}{fmt(c.adjustedDays)} วัน</span>}
