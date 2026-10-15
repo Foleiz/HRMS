@@ -368,7 +368,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 <div className="space-y-3">
                   {selectedRoles.length === 0 && (
                     <div className="p-3 bg-amber-50 dark:bg-amber-900/20/70 border border-amber-200/80 rounded-xl text-xs text-amber-700 dark:text-amber-400">
-                      ยังไม่ได้เลือกบทบาท กรุณากดปุ่ม <strong>+ เพิ่มบทบาท</strong> ด้านล่าง
+                      ยังไม่ได้เลือกบทบาท กรุณากดปุ่ม <strong>เพิ่มบทบาท</strong> ด้านล่าง
                     </div>
                   )}
 
@@ -435,7 +435,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                       className="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#0B2046] hover:border-[#0B2046] hover:bg-slate-50/50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
-                      <span>+ เพิ่มบทบาท</span>
+                      <span>เพิ่มบทบาท</span>
                     </button>
                   )}
                 </div>

@@ -280,7 +280,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#0B2046] hover:bg-[#14326d] rounded-xl transition-all shadow-sm shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ เพิ่มสวัสดิการใหม่</span>
+                <span>เพิ่มสวัสดิการใหม่</span>
               </button>
             )}
           </div>

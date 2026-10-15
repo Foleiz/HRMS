@@ -175,7 +175,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
             className="h-10 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ เพิ่มผู้ใช้งาน</span>
+            <span>เพิ่มผู้ใช้งาน</span>
           </button>
         )}
       </div>
