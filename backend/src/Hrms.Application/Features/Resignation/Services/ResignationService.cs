@@ -284,6 +284,7 @@ public class ResignationService : IResignationService
             request.Status = "APPROVED";
             request.ApprovedAt = DateTime.UtcNow;
             request.ApprovedByEmployeeId = approverId;
+            await ResignationOffboarding.ApplyOnApprovalAsync(_context, request, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
 

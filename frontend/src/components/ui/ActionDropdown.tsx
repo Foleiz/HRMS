@@ -14,6 +14,7 @@ export interface ActionDropdownItem {
   disabled?: boolean;
   danger?: boolean;
   className?: string;
+  /** เส้นคั่นอย่างเดียว (ไม่แสดงเป็นเมนู) — ใช้เป็นรายการแยก { divider: true, label: '' } */
   divider?: boolean;
 }
 

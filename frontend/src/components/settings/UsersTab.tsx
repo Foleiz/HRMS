@@ -283,6 +283,19 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                             ถูกระงับ
                           </span>
                         )}
+                        {user.resignationLastWorkingDate && (
+                          <div
+                            className="mt-1 text-[11px] font-medium text-amber-700 dark:text-amber-400"
+                            title={user.status === 'ACTIVE' ? 'ระบบจะระงับบัญชีให้อัตโนมัติหลังวันทำงานวันสุดท้าย' : undefined}
+                          >
+                            ลาออก · วันสุดท้าย{' '}
+                            {new Date(`${user.resignationLastWorkingDate}T00:00:00`).toLocaleDateString('th-TH', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </div>
+                        )}
                       </td>
 
                       {/* 7. เข้าสู่ระบบล่าสุด */}
@@ -308,8 +321,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                                     icon: <KeyRound className="w-3.5 h-3.5 text-amber-500" />,
                                     onClick: () => onResetPasswordClick(user),
                                   },
+                                  { divider: true, label: '' },
                                   {
-                                    divider: true,
                                     label: user.status === 'ACTIVE' ? 'ระงับการใช้งาน' : 'เปิดใช้งานบัญชี',
                                     icon: user.status === 'ACTIVE' ? <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" /> : <Unlock className="w-3.5 h-3.5 text-emerald-500" />,
                                     className: user.status === 'ACTIVE' ? 'text-slate-600 dark:text-slate-400' : 'text-emerald-600',
@@ -325,8 +338,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                             },
                             ...(canEditUser && user.username.toLowerCase() !== 'admin'
                               ? [
+                                  { divider: true, label: '' },
                                   {
-                                    divider: true,
                                     label: 'ลบบัญชีผู้ใช้',
                                     icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
                                     danger: true,

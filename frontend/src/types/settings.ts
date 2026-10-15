@@ -19,6 +19,8 @@ export interface UserAccount {
   positionName?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'LOCKED' | string;
   lastLoginAt?: string | null;
+  /** วันทำงานวันสุดท้ายจากใบลาออกที่อนุมัติแล้ว (YYYY-MM-DD) */
+  resignationLastWorkingDate?: string | null;
   roles: UserRoleItem[];
   createdAt: string;
   updatedAt: string;

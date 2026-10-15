@@ -1267,6 +1267,10 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                     {
                         resign.ApprovedByEmployeeId = lastAction.ApproverEmployeeId;
                     }
+
+                    // กำหนดวันออก (สัญญา/ประวัติสถานะ) — ปิดบัญชีเมื่อพ้นวันทำงานวันสุดท้าย
+                    await Hrms.Application.Features.Resignation.Services.ResignationOffboarding
+                        .ApplyOnApprovalAsync(_context, resign, cancellationToken);
                 }
                 else if (instance.Status == "CANCELLED")
                 {

@@ -108,6 +108,20 @@ public class UserService : IUserService
             .ToListAsync(cancellationToken);
 
         var dtos = items.Select(MapToDto).ToList();
+
+        // ป้าย "ลาออก" — วันทำงานวันสุดท้ายจากใบลาออกที่อนุมัติแล้ว
+        var empIds = dtos.Select(d => d.EmployeeId).Distinct().ToList();
+        var resignDates = await _dbContext.ResignationRequests
+            .AsNoTracking()
+            .Where(r => empIds.Contains(r.EmployeeId) && r.Status == "APPROVED")
+            .GroupBy(r => r.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, LastDay = g.Max(r => r.RequestedLastWorkingDate) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => x.LastDay, cancellationToken);
+        foreach (var d in dtos)
+        {
+            if (resignDates.TryGetValue(d.EmployeeId, out var lastDay)) d.ResignationLastWorkingDate = lastDay;
+        }
+
         var result = new PagedResult<UserAccountDto>(dtos, totalCount, page, pageSize);
         _usersCache[cacheKey] = (DateTime.UtcNow.Add(CacheTtl), result);
 

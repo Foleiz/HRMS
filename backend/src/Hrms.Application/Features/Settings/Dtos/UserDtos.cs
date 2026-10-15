@@ -15,6 +15,8 @@ public class UserAccountDto
     public string? PositionName { get; set; }
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE, LOCKED
     public DateTime? LastLoginAt { get; set; }
+    /// <summary>วันทำงานวันสุดท้าย จากใบลาออกที่อนุมัติแล้ว (null = ไม่ได้ลาออก)</summary>
+    public DateOnly? ResignationLastWorkingDate { get; set; }
     public List<UserRoleItemDto> Roles { get; set; } = new();
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
