@@ -218,12 +218,6 @@ public class LeaveBalanceService : ILeaveBalanceService
                         r.StartDatetime.Year == year)
             .ToListAsync(cancellationToken);
 
-        // ดึงจำนวนชั่วโมง OT สะสมจาก AttendanceMonthlySummaries
-        var monthlyOt = await _context.AttendanceMonthlySummaries
-            .AsNoTracking()
-            .Where(a => a.EmployeeId == employeeId && a.Year == year)
-            .SumAsync(a => a.TotalOvertimeHours, cancellationToken);
-
         // ค้นหา balance ของแต่ละประเภท
         var sickBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("SICK", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("ป่วย"));
         var personalBal = balances.FirstOrDefault(b => b.LeaveTypeCode.Equals("PERSONAL", StringComparison.OrdinalIgnoreCase) || b.LeaveTypeName.Contains("กิจ"));
@@ -403,7 +397,6 @@ public class LeaveBalanceService : ILeaveBalanceService
                 RemainingDays = Math.Max(0, matQuota - matUsed),
                 Unit = "วัน"
             },
-            TotalOvertimeHours = monthlyOt,
             AllBalances = balances
         };
     }

@@ -299,7 +299,6 @@ export interface MyLeaveSummary {
   ordinationLeave: LeaveCardItem;
   militaryLeave: LeaveCardItem;
   maternityLeave: LeaveCardItem;
-  totalOvertimeHours: number;
   allBalances: LeaveBalance[];
   /** การ์ด 1 ใบต่อประเภทการลาที่มีสิทธิ์จริง */
   leaveCards?: LeaveTypeCard[];

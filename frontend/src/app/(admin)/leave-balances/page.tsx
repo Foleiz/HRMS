@@ -93,9 +93,6 @@ export default function LeaveBalancesPage() {
         );
       });
 
-      csvRows.push('');
-      csvRows.push(q('ข้อมูลเวลาทำงาน'));
-      csvRows.push(`${q('เวลาทำ OT ทั้งหมด')},${q(summary.totalOvertimeHours ?? 0)},${q('ชั่วโมง')}`);
 
       // Encode UTF-8 with BOM
       const csvContent = '\uFEFF' + csvRows.join('\r\n');
@@ -228,24 +225,6 @@ export default function LeaveBalancesPage() {
             })}
           </div>
         )}
-      </section>
-
-      {/* ========================================================= */}
-      {/* WORK-TIME INFO (from attendance, not leave)              */}
-      {/* ========================================================= */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">ข้อมูลเวลาทำงาน</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm min-h-[120px] flex flex-col justify-between">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">เวลาทำ OT ทั้งหมด</h3>
-            <div className="mt-3 flex items-baseline gap-1.5">
-              <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                {isLoading ? '-' : fmt(summary?.totalOvertimeHours ?? 0)}
-              </span>
-              <span className="text-xs font-medium text-slate-400">ชั่วโมง</span>
-            </div>
-          </div>
-        </div>
       </section>
     </div>
   );

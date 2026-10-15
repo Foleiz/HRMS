@@ -72,7 +72,6 @@ public record MyLeaveSummaryDto
     public LeaveCardItemDto OrdinationLeave { get; init; } = new();
     public LeaveCardItemDto MilitaryLeave { get; init; } = new();
     public LeaveCardItemDto MaternityLeave { get; init; } = new();
-    public decimal TotalOvertimeHours { get; init; }
 
     public List<LeaveBalanceDto> AllBalances { get; init; } = new();
 
