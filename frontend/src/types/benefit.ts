@@ -85,6 +85,7 @@ export interface EmployeeBenefitOverview {
   employeeId: number;
   employeeCode: string;
   employeeName: string;
+  avatarUrl?: string | null;
   departmentName?: string | null;
   positionTitle?: string | null;
   employeeTypeName?: string | null;
