@@ -212,12 +212,6 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
-          {errorMsg && (
-            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
 
           {/* สวัสดิการที่ต้องการใช้สิทธิ์ */}
           <div>
@@ -462,6 +456,13 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
             <p className="text-[11px] text-slate-500 dark:text-slate-400 bg-blue-50/70 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-xl px-3 py-2">
               คำขอจะส่งเข้าสายการอนุมัติ ยอดที่ยื่นจะถูกกันวงเงินไว้ และนับเป็นยอดใช้สิทธิ์เมื่ออนุมัติครบ
             </p>
+          )}
+
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
           )}
 
           {/* Footer Actions */}
