@@ -5,17 +5,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { leaveService } from '@/services/leaveService';
-import { MyLeaveSummary } from '@/types/leave';
-import {
-  Calendar,
-  Download,
-  Users,
-  Clock,
-  AlertTriangle,
-  Plus,
-  Loader2,
-  FileSpreadsheet,
-} from 'lucide-react';
+import { MyLeaveSummary, LeaveTypeCard } from '@/types/leave';
+import { Calendar, Download, Loader2 } from 'lucide-react';
+import { resolveLeaveColor, withAlpha } from '@/lib/leaveColors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function LeaveBalancesPage() {
@@ -70,61 +62,40 @@ export default function LeaveBalancesPage() {
     }
   }, [selectedYear, isAuthLoading, user?.employeeId]);
 
+  const leaveCards: LeaveTypeCard[] = summary?.leaveCards ?? [];
+  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+  const totalOf = (c: LeaveTypeCard) => c.quotaDays + c.carriedForwardDays + c.adjustedDays;
+  const timesLabel = (c: LeaveTypeCard) =>
+    c.maxTimes != null ? `${c.usedTimes ?? 0}/${c.maxTimes} ครั้ง${c.timesScope === 'LIFETIME' ? ' (ตลอดอายุงาน)' : ' (ต่อปี)'}` : '';
+
   // Handle Export Report (CSV / Excel format with UTF-8 BOM)
   const handleExport = () => {
     if (!summary) return;
     setIsExporting(true);
 
     try {
+      const q = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
       const csvRows: string[] = [];
 
-      // Title & metadata
-      csvRows.push(`"รายงานยอดวันลาคงเหลือประจำปี พ.ศ. ${selectedYear}"`);
-      csvRows.push(`"พนักงาน:","${summary.employeeName} (${summary.employeeCode})"`);
-      csvRows.push(`"ตำแหน่ง:","${summary.positionTitle || '-'}"`);
-      csvRows.push(`"แผนก:","${summary.departmentName || '-'}"`);
-      csvRows.push(`"วันที่ออกรายงาน:","${new Date().toLocaleDateString('th-TH')}"`);
+      csvRows.push(q(`รายงานยอดวันลาคงเหลือประจำปี พ.ศ. ${selectedYear}`));
+      csvRows.push(`${q('พนักงาน:')},${q(`${summary.employeeName} (${summary.employeeCode})`)}`);
+      csvRows.push(`${q('ตำแหน่ง:')},${q(summary.positionTitle || '-')}`);
+      csvRows.push(`${q('แผนก:')},${q(summary.departmentName || '-')}`);
+      csvRows.push(`${q('วันที่ออกรายงาน:')},${q(new Date().toLocaleDateString('th-TH'))}`);
       csvRows.push('');
 
-      // Table Header
-      csvRows.push('"ลำดับ","ประเภทการลา","โควตาทั้งหมด","ใช้ไปแล้ว","คงเหลือ","หน่วย","หมายเหตุ"');
-
-      // 8 Categories
-      const categories = [
-        { no: 1, name: 'ลาป่วย', item: summary.sickLeave },
-        { no: 2, name: 'ลากิจ', item: summary.personalLeave },
-        { no: 3, name: 'ลาพักร้อน', item: summary.annualLeave },
-        { no: 4, name: 'ลาพิเศษ', item: summary.specialLeave },
-        {
-          no: 5,
-          name: 'ลาบวช',
-          item: summary.ordinationLeave,
-          note: `จำนวนครั้ง: ${summary.ordinationLeave.usedTimes ?? 0}/${summary.ordinationLeave.maxTimes ?? 1} ครั้ง`,
-        },
-        {
-          no: 6,
-          name: 'ลาเกณฑ์ทหาร',
-          item: summary.militaryLeave,
-          note: `จำนวนครั้ง: ${summary.militaryLeave.usedTimes ?? 0}/${summary.militaryLeave.maxTimes ?? 1} ครั้ง`,
-        },
-        { no: 7, name: 'ลาคลอด', item: summary.maternityLeave },
-        {
-          no: 8,
-          name: 'เวลาทำ OT ทั้งหมด',
-          item: {
-            quotaDays: summary.totalOvertimeHours,
-            usedDays: summary.totalOvertimeHours,
-            remainingDays: 0,
-            unit: 'ชั่วโมง',
-          },
-        },
-      ];
-
-      categories.forEach((cat) => {
+      csvRows.push(['ลำดับ', 'ประเภทการลา', 'สิทธิ์ประจำปี', 'ยกมา', 'ปรับปรุง', 'ใช้ไปแล้ว', 'คงเหลือ', 'หน่วย', 'หมายเหตุ'].map(q).join(','));
+      leaveCards.forEach((c, i) => {
         csvRows.push(
-          `"${cat.no}","${cat.name}","${cat.item.quotaDays}","${cat.item.usedDays}","${cat.item.remainingDays}","${cat.item.unit}","${cat.note || ''}"`
+          [i + 1, c.name, c.quotaDays, c.carriedForwardDays, c.adjustedDays, c.usedDays, c.remainingDays, 'วัน', timesLabel(c)]
+            .map(q)
+            .join(',')
         );
       });
+
+      csvRows.push('');
+      csvRows.push(q('ข้อมูลเวลาทำงาน'));
+      csvRows.push(`${q('เวลาทำ OT ทั้งหมด')},${q(summary.totalOvertimeHours ?? 0)},${q('ชั่วโมง')}`);
 
       // Encode UTF-8 with BOM
       const csvContent = '\uFEFF' + csvRows.join('\r\n');
@@ -190,199 +161,92 @@ export default function LeaveBalancesPage() {
       </div>
 
       {/* ========================================================= */}
-      {/* 8 SUMMARY CARDS GRID (Matching Mockup 100%)               */}
+      {/* LEAVE BALANCE CARDS — one per entitled leave type        */}
       {/* ========================================================= */}
-      {isLoading ? (
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">ยอดวันลาประจำปี พ.ศ. {selectedYear}</h2>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm space-y-4 animate-pulse min-h-[150px]"
+              >
+                <div className="h-5 w-32 bg-slate-200 rounded" />
+                <div className="h-8 w-24 bg-slate-200 rounded mt-4" />
+                <div className="h-3 w-20 bg-slate-100 rounded" />
+              </div>
+            ))}
+          </div>
+        ) : leaveCards.length === 0 ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+            ยังไม่มีสิทธิ์การลาในปีนี้ — ตรวจสอบนโยบายการลาของประเภท/ระดับพนักงานที่เมนู &quot;การลา&quot;
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {leaveCards.map((c) => {
+              const color = resolveLeaveColor(c.color, c.code || c.leaveTypeId);
+              const total = totalOf(c);
+              const pct = total > 0 ? Math.min(100, (c.usedDays / total) * 100) : 0;
+              return (
+                <div
+                  key={c.leaveTypeId}
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 border-t-4 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[150px]"
+                  style={{ borderTopColor: color, backgroundImage: `linear-gradient(180deg, ${withAlpha(color, 0.07)}, transparent 60%)` }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-lg font-bold leading-snug" style={{ color }}>
+                      {c.name}
+                    </h3>
+                    {!c.isPaidLeave && (
+                      <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                        ไม่ได้รับค่าจ้าง
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+                        {fmt(c.usedDays)}/{fmt(total)}
+                      </span>
+                      <span className="text-xs font-medium text-slate-400">วัน (ใช้ไป/สิทธิ์)</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                      <span>
+                        คงเหลือ <b className="text-slate-800 dark:text-slate-100">{fmt(c.remainingDays)}</b> วัน
+                      </span>
+                      {c.carriedForwardDays > 0 && <span>ยกมา {fmt(c.carriedForwardDays)} วัน</span>}
+                      {c.adjustedDays !== 0 && <span>ปรับปรุง {c.adjustedDays > 0 ? '+' : ''}{fmt(c.adjustedDays)} วัน</span>}
+                      {c.maxTimes != null && <span>{timesLabel(c)}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ========================================================= */}
+      {/* WORK-TIME INFO (from attendance, not leave)              */}
+      {/* ========================================================= */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-bold text-slate-700 dark:text-slate-200">ข้อมูลเวลาทำงาน</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {Array.from({ length: 8 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-5 shadow-sm space-y-4 animate-pulse min-h-[140px]"
-            >
-              <div className="flex items-center justify-between">
-                <div className="h-3 w-28 bg-slate-200 rounded" />
-                <div className="w-8 h-8 rounded-lg bg-slate-100" />
-              </div>
-              <div className="h-8 w-24 bg-slate-200 rounded mt-4" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: ลาป่วยปีนี้ไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลาป่วยปีนี้ไปแล้ว
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm min-h-[120px] flex flex-col justify-between">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">เวลาทำ OT ทั้งหมด</h3>
+            <div className="mt-3 flex items-baseline gap-1.5">
+              <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+                {isLoading ? '-' : fmt(summary?.totalOvertimeHours ?? 0)}
               </span>
-              <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.sickLeave ? `${summary.sickLeave.usedDays}/${summary.sickLeave.quotaDays}` : '0/30'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: ลากิจปีนี้ไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลากิจปีนี้ไปแล้ว
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.personalLeave ? `${summary.personalLeave.usedDays}/${summary.personalLeave.quotaDays}` : '0/3'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: ลาพักร้อนปีนี้ไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลาพักร้อนปีนี้ไปแล้ว
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.annualLeave ? `${summary.annualLeave.usedDays}/${summary.annualLeave.quotaDays}` : '0/6'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: ลาพิเศษปีนี้ไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลาพิเศษปีนี้ไปแล้ว
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <Plus className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.specialLeave ? `${summary.specialLeave.usedDays}/${summary.specialLeave.quotaDays}` : '0/10'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 5: ลาบวชไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลาบวชไปแล้ว
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center shrink-0">
-                <Users className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 space-y-1">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.ordinationLeave ? `${summary.ordinationLeave.usedDays}/${summary.ordinationLeave.quotaDays}` : '0/30'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                  {summary?.ordinationLeave ? `${summary.ordinationLeave.usedTimes ?? 0}/${summary.ordinationLeave.maxTimes ?? 1}` : '0/1'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">ครั้ง</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 6: ลาเกณฑ์ทหารไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลาเกณฑ์ทหารไปแล้ว
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <Clock className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 space-y-1">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.militaryLeave ? `${summary.militaryLeave.usedDays}/${summary.militaryLeave.quotaDays}` : '0/365'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                  {summary?.militaryLeave ? `${summary.militaryLeave.usedTimes ?? 0}/${summary.militaryLeave.maxTimes ?? 1}` : '0/1'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">ครั้ง</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 7: ลาคลอดไปแล้ว */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                ลาคลอดไปแล้ว
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary?.maternityLeave ? `${summary.maternityLeave.usedDays}/${summary.maternityLeave.quotaDays}` : '0/98'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">วัน</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 8: เวลาทำ OT ทั้งหมด */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                เวลาทำ OT ทั้งหมด
-              </span>
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                <Plus className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {summary ? summary.totalOvertimeHours : '0'}
-                </span>
-                <span className="text-xs font-medium text-slate-400">ชั่วโมง</span>
-              </div>
+              <span className="text-xs font-medium text-slate-400">ชั่วโมง</span>
             </div>
           </div>
         </div>
-      )}
+      </section>
     </div>
   );
 }
-

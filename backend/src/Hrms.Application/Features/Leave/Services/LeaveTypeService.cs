@@ -50,6 +50,7 @@ public class LeaveTypeService : ILeaveTypeService
                 DocumentDescription = t.DocumentDescription,
                 Status = t.Status,
                 FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName),
+                Color = t.Color,
                 RequestCount = count,
                 CanDelete = reason == null,
                 DeleteBlockedReason = reason
@@ -84,7 +85,8 @@ public class LeaveTypeService : ILeaveTypeService
             IsPaidLeave = t.IsPaidLeave,
             DocumentDescription = t.DocumentDescription,
             Status = t.Status,
-            FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName)
+            FormCategory = t.FormCategory ?? LeavePolicyRules.InferFormCategory(t.LeaveCode, t.LeaveName),
+            Color = t.Color
         };
     }
 
@@ -127,7 +129,8 @@ public class LeaveTypeService : ILeaveTypeService
             DocumentDescription = string.IsNullOrWhiteSpace(request.DocumentDescription) ? null : request.DocumentDescription.Trim(),
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.ToUpper(),
             FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory)
-                           ?? LeavePolicyRules.InferFormCategory(leaveCode, request.LeaveName)
+                           ?? LeavePolicyRules.InferFormCategory(leaveCode, request.LeaveName),
+            Color = NormalizeColor(request.Color)
         };
 
         _context.LeaveTypes.Add(leaveType);
@@ -148,7 +151,8 @@ public class LeaveTypeService : ILeaveTypeService
             IsPaidLeave = leaveType.IsPaidLeave,
             DocumentDescription = leaveType.DocumentDescription,
             Status = leaveType.Status,
-            FormCategory = leaveType.FormCategory ?? LeavePolicyRules.InferFormCategory(leaveType.LeaveCode, leaveType.LeaveName)
+            FormCategory = leaveType.FormCategory ?? LeavePolicyRules.InferFormCategory(leaveType.LeaveCode, leaveType.LeaveName),
+            Color = leaveType.Color
         };
     }
 
@@ -167,6 +171,7 @@ public class LeaveTypeService : ILeaveTypeService
         leaveType.Status = request.Status.ToUpper();
         if (!string.IsNullOrWhiteSpace(request.FormCategory))
             leaveType.FormCategory = LeavePolicyRules.NormalizeFormCategory(request.FormCategory);
+        leaveType.Color = NormalizeColor(request.Color);
 
         await _context.SaveChangesAsync(cancellationToken);
         if (leaveType.Status == "ACTIVE")
@@ -183,7 +188,8 @@ public class LeaveTypeService : ILeaveTypeService
             IsPaidLeave = leaveType.IsPaidLeave,
             DocumentDescription = leaveType.DocumentDescription,
             Status = leaveType.Status,
-            FormCategory = leaveType.FormCategory ?? LeavePolicyRules.InferFormCategory(leaveType.LeaveCode, leaveType.LeaveName)
+            FormCategory = leaveType.FormCategory ?? LeavePolicyRules.InferFormCategory(leaveType.LeaveCode, leaveType.LeaveName),
+            Color = leaveType.Color
         };
     }
 
@@ -225,5 +231,13 @@ public class LeaveTypeService : ILeaveTypeService
         _context.LeaveTypes.Remove(leaveType);
         await _context.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    /// <summary>รับเฉพาะสีรูปแบบ #RGB / #RRGGBB — ค่าอื่นถือว่าไม่ระบุ (ใช้สีเริ่มต้น)</summary>
+    private static string? NormalizeColor(string? color)
+    {
+        if (string.IsNullOrWhiteSpace(color)) return null;
+        var c = color.Trim();
+        return System.Text.RegularExpressions.Regex.IsMatch(c, "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$") ? c.ToUpperInvariant() : null;
     }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { LEAVE_COLOR_PRESETS, resolveLeaveColor } from '@/lib/leaveColors';
 import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
 
@@ -63,6 +64,8 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
   const [formCategory, setFormCategory] = useState<LeaveFormCategory>('SPECIAL');
   const [isPaidLeave, setIsPaidLeave] = useState(true);
   const [isActive, setIsActive] = useState(true);
+  /** '' = ใช้สีเริ่มต้นของระบบ */
+  const [color, setColor] = useState<string>('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,11 +79,13 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       );
       setIsPaidLeave(leaveTypeToEdit.isPaidLeave);
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
+      setColor(leaveTypeToEdit.color || '');
     } else {
       setLeaveName('');
       setFormCategory('SPECIAL');
       setIsPaidLeave(true);
       setIsActive(true);
+      setColor('');
     }
     setError(null);
   }, [leaveTypeToEdit, isOpen]);
@@ -106,6 +111,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           documentDescription: leaveTypeToEdit.documentDescription || undefined,
           status: isActive ? 'ACTIVE' : 'INACTIVE',
           formCategory,
+          color: color || null,
         });
       } else {
         await onSubmitCreate({
@@ -114,6 +120,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           isPaidLeave,
           status: isActive ? 'ACTIVE' : 'INACTIVE',
           formCategory,
+          color: color || null,
         });
       }
       onSuccess();
@@ -178,6 +185,49 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
               ))}
             </div>
             <p className="mt-1.5 text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ใช้ติ๊กช่องในเอกสารใบลา และเป็นแม่แบบค่าเริ่มต้นตอนตั้งสิทธิ์การลา</p>
+          </div>
+
+          {/* สีการ์ด */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">สีการ์ดยอดวันลา</label>
+            <div className="flex flex-wrap items-center gap-2">
+              {LEAVE_COLOR_PRESETS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  title={c}
+                  className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-transform ${
+                    color.toUpperCase() === c ? 'border-slate-900 dark:border-white scale-110' : 'border-white dark:border-slate-800'
+                  } shadow-xs`}
+                  style={{ backgroundColor: c }}
+                />
+              ))}
+              <label className="relative w-7 h-7 rounded-full border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer overflow-hidden" title="เลือกสีเอง">
+                +
+                <input
+                  type="color"
+                  value={resolveLeaveColor(color, leaveName || 'new')}
+                  onChange={(e) => setColor(e.target.value.toUpperCase())}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => setColor('')}
+                className={`ml-1 px-2.5 py-1 rounded-lg text-xs border cursor-pointer ${
+                  color === '' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'border-slate-200 text-slate-500 dark:border-slate-700'
+                }`}
+              >
+                ค่าเริ่มต้น
+              </button>
+            </div>
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{
+              color: resolveLeaveColor(color, leaveTypeToEdit?.leaveCode ?? (leaveName || 'new')),
+              backgroundColor: `${resolveLeaveColor(color, leaveTypeToEdit?.leaveCode ?? (leaveName || 'new'))}1A`,
+            }}>
+              ตัวอย่าง: {leaveName || 'ชื่อประเภทการลา'}
+            </div>
           </div>
 
           {/* สวิตช์ */}
