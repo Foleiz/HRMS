@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import Link from 'next/link';
 import {
   X,
   AlertCircle,
   Loader2,
   ShieldCheck,
   Sparkles,
-  Gift,
   Search,
   Check,
   Shield,
@@ -17,7 +15,6 @@ import {
   CheckSquare,
   HelpCircle,
   RotateCcw,
-  ExternalLink,
 } from 'lucide-react';
 import {
   EmployeeType,
@@ -248,8 +245,11 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     );
   };
 
-  const handleSelectAllInView = () => {
-    const idsToAdd = filteredBenefits.map((b) => b.id);
+  const handleSelectAll = () => {
+    const listToSelect = (benefitSearch.trim() || selectedCategoryTab !== 'ALL')
+      ? filteredBenefits
+      : availableBenefits;
+    const idsToAdd = listToSelect.map((b) => b.id);
     setSelectedBenefitIds((prev) => Array.from(new Set([...prev, ...idsToAdd])));
   };
 
@@ -424,28 +424,18 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
           {/* 4. สิทธิประโยชน์และสวัสดิการ */}
           <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 space-y-3">
-            {/* Header section with counts and link */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-2.5">
+            {/* Header section with refresh button */}
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-[#0B2046] text-white rounded-lg shadow-2xs">
                   <ShieldCheck className="w-4 h-4 text-cyan-300" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                      สิทธิประโยชน์และสวัสดิการที่ได้รับ
-                    </span>
-                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#0B2046] dark:text-cyan-300 border border-blue-200 dark:border-blue-800">
-                      เลือกแล้ว {selectedBenefitIds.length} จาก {availableBenefits.length} รายการ
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    เลือกสวัสดิการที่จะมอบให้พนักงานในประเภทสัญญานี้ (กำหนดวงเงินและเงื่อนไขที่ จัดการสวัสดิการกลาง)
-                  </p>
-                </div>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                  สิทธิประโยชน์และสวัสดิการที่ได้รับ
+                </span>
               </div>
 
-              <div className="flex items-center gap-2 self-start sm:self-auto">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={loadBenefits}
@@ -456,18 +446,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   <RotateCcw className={`w-3.5 h-3.5 ${loadingBenefits ? 'animate-spin text-blue-600' : ''}`} />
                   <span>รีเฟรชสวัสดิการ</span>
                 </button>
-
-                <Link
-                  href="/organization?tab=benefits"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-[#0B2046] dark:text-cyan-400 hover:underline font-semibold inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
-                  title="เปิดหน้าจัดการสวัสดิการกลางในโครงสร้างองค์กร (แท็บใหม่)"
-                >
-                  <Gift className="w-3.5 h-3.5" />
-                  <span>จัดการสวัสดิการกลาง</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
               </div>
             </div>
 
@@ -542,10 +520,10 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   </button>
                   <button
                     type="button"
-                    onClick={handleSelectAllInView}
+                    onClick={handleSelectAll}
                     className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors cursor-pointer"
                   >
-                    เลือกที่แสดง
+                    เลือกทั้งหมด
                   </button>
                 </div>
               </div>
