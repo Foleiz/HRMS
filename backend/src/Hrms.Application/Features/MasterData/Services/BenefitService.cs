@@ -484,6 +484,9 @@ public class BenefitService : IBenefitService
                 EmployeeId = emp.Id,
                 EmployeeCode = emp.EmployeeCode,
                 EmployeeName = emp.FullName,
+                AvatarUrl = emp.AvatarUpdatedAt.HasValue
+                    ? $"/api/employees/{emp.Id}/avatar?v={emp.AvatarUpdatedAt.Value.Ticks}"
+                    : null,
                 DepartmentName = currentAssignment?.Department?.DepartmentName ?? "-",
                 PositionTitle = currentAssignment?.Position?.PositionName ?? "-",
                 EmployeeTypeName = empType?.TypeName ?? "-",

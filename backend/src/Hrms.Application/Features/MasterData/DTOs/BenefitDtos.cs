@@ -80,6 +80,7 @@ public class EmployeeBenefitOverviewDto
     public long EmployeeId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string? DepartmentName { get; set; }
     public string? PositionTitle { get; set; }
     public string? EmployeeTypeName { get; set; }

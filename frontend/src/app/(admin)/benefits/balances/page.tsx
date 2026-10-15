@@ -30,6 +30,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getAvatarUrl } from '@/lib/api-client';
 
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -309,7 +310,8 @@ export default function EmployeeBenefitBalancesPage() {
           <div className="space-y-3">
             {overviewList.map((emp) => {
               const isExpanded = expandedEmployeeIds.has(emp.employeeId);
-              const initials = emp.employeeName ? emp.employeeName.trim().slice(0, 2) : 'EM';
+              const nameParts = (emp.employeeName || '').trim().replace(/^(นางสาว|นาย|นาง|น\.ส\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '').split(/\s+/).filter(Boolean);
+              const initials = nameParts.length ? nameParts.slice(0, 2).map((n) => n.charAt(0)).join('').toUpperCase() : 'EM';
 
               return (
                 <div
@@ -335,9 +337,18 @@ export default function EmployeeBenefitBalancesPage() {
                       >
                         <ChevronRight className="w-5 h-5" />
                       </button>
-                      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center text-sm shadow-xs shrink-0 border border-blue-100 dark:border-blue-900">
-                        {initials}
-                      </div>
+                      {emp.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={getAvatarUrl(emp.avatarUrl)!}
+                          alt={emp.employeeName}
+                          className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center text-sm shadow-xs shrink-0 border border-blue-100 dark:border-blue-900">
+                          {initials}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-gray-900 dark:text-slate-100 text-sm">{emp.employeeName}</span>
