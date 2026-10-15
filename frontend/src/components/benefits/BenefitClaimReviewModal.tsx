@@ -124,7 +124,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
             {claim.status === 'PENDING' && claim.currentApproverDisplay && (
               <Row
                 label="รอพิจารณาโดย"
-                value={`${claim.currentApproverDisplay}${claim.totalSteps > 0 ? ` (ขั้น ${claim.currentStepNo}/${claim.totalSteps})` : ''}`}
+                value={`${claim.currentApproverDisplay.replace(/\s*\([A-Za-z0-9_.\s/-]+\)$/, '')}${claim.totalSteps > 0 ? ` (ขั้น ${claim.currentStepNo}/${claim.totalSteps})` : ''}`}
               />
             )}
             {claim.rejectReason && <Row label="เหตุผลที่ไม่อนุมัติ" value={claim.rejectReason} />}
