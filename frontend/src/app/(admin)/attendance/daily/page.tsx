@@ -43,6 +43,7 @@ import {
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
+import { AttendanceFileFormatModal } from '@/components/attendance/AttendanceFileFormatModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
@@ -219,6 +220,7 @@ function DailyAttendanceContent() {
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [uploadResult, setUploadResult] = useState<AttendanceImportResult | null>(null);
   const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null);
+  const [isFormatModalOpen, setIsFormatModalOpen] = useState<boolean>(false);
 
   // Batches Table State
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
@@ -1656,7 +1658,7 @@ function DailyAttendanceContent() {
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Upload Card */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
+            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 dark:border-slate-700/60">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
                   <HardDrive className="w-5 h-5 text-blue-600" />
@@ -1666,28 +1668,40 @@ function DailyAttendanceContent() {
                   นำเข้าไฟล์ Excel (.xlsx, .xls) หรือ CSV จากเครื่องสแกนเพื่อคำนวณเวลาเข้า-ออกงานให้อัตโนมัติ
                 </p>
               </div>
-              <button
-                type="button"
-                disabled={!selectedFile || isUploading}
-                onClick={handleUploadSubmit}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
-                  !selectedFile || isUploading
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-[0.98] cursor-pointer'
-                }`}
-              >
-                {isUploading ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>กำลังประมวลผล...</span>
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="w-3.5 h-3.5" />
-                    <span>เริ่มประมวลผลนำเข้าไฟล์</span>
-                  </>
-                )}
-              </button>
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsFormatModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-2xs transition-colors cursor-pointer"
+                  title="ดูโครงสร้างหัวคอลัมน์และดาวน์โหลดไฟล์แม่แบบตัวอย่าง (.xlsx)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>รูปแบบไฟล์ที่รองรับ</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!selectedFile || isUploading}
+                  onClick={handleUploadSubmit}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
+                    !selectedFile || isUploading
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-[0.98] cursor-pointer'
+                  }`}
+                >
+                  {isUploading ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>กำลังประมวลผล...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>เริ่มประมวลผลนำเข้าไฟล์</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-6">
@@ -1747,6 +1761,17 @@ function DailyAttendanceContent() {
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
                         รองรับไฟล์ประเภท .xlsx, .xls หรือ .csv (ขนาดไม่เกิน 20MB)
                       </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsFormatModalOpen(true);
+                        }}
+                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>ดูรูปแบบไฟล์ต้นฉบับ / ดาวน์โหลดไฟล์แม่แบบ</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -3623,6 +3648,12 @@ function DailyAttendanceContent() {
           </div>
         </div>
       )}
+
+      {/* Modal: รูปแบบไฟล์ต้นฉบับสำหรับนำเข้าข้อมูลบันทึกเวลา */}
+      <AttendanceFileFormatModal
+        isOpen={isFormatModalOpen}
+        onClose={() => setIsFormatModalOpen(false)}
+      />
     </div>
   );
 }
