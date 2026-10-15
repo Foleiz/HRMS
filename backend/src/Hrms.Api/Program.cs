@@ -105,6 +105,8 @@ builder.Services.AddScoped<Hrms.Application.Features.EmployeeDocuments.Services.
 builder.Services.AddScoped<Hrms.Application.Features.EmployeeDocuments.Services.IDocumentExpiryNotifier, Hrms.Application.Features.EmployeeDocuments.Services.DocumentExpiryNotifier>();
 builder.Services.AddScoped<Hrms.Application.Features.Contracts.Services.IContractAlertNotifier, Hrms.Application.Features.Contracts.Services.ContractAlertNotifier>();
 // งานเบื้องหลัง: แจ้งเตือนเอกสารใกล้หมดอายุ / ทดลองงาน / สัญญาจ้าง / รายการค้างอนุมัติ
+// ตัวสร้าง PDF ใบลาออก (เก็บเข้าแฟ้มเอกสารพนักงานตอนอนุมัติครบ)
+Hrms.Application.Features.Resignation.Services.ResignationOffboarding.PdfRenderer = new Hrms.Infrastructure.Services.ResignationPdfRenderer();
 builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.ScheduledNotificationWorker>();
 // เข้ารหัสเลขบัญชีธนาคารเดิม (ครั้งเดียว ทำเฉพาะแถวที่ยังไม่ได้ทำ)
 builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.BankAccountProtectionBackfill>();

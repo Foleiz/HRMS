@@ -69,6 +69,11 @@ public class ScheduledNotificationWorker : BackgroundService
                 sp.GetRequiredService<IAttendanceDailyService>().ApplyCompanyScheduleAsync(stoppingToken),
                 stoppingToken);
 
+            await RunJobAsync("เตือนเคลียร์ก่อนพนักงานลาออก", sp =>
+                Hrms.Application.Features.Resignation.Services.ResignationOffboarding.SendClearanceRemindersAsync(
+                    sp.GetRequiredService<Hrms.Application.Common.Interfaces.IHrmsDbContext>(), stoppingToken),
+                stoppingToken);
+
             await RunJobAsync("ปิดบัญชีพนักงานที่ลาออก (พ้นวันทำงานวันสุดท้าย)", sp =>
                 Hrms.Application.Features.Resignation.Services.ResignationOffboarding.ApplyDueAsync(
                     sp.GetRequiredService<Hrms.Application.Common.Interfaces.IHrmsDbContext>(), stoppingToken),
