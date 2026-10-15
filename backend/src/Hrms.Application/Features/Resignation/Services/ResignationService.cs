@@ -469,11 +469,11 @@ public class ResignationService : IResignationService
                 {
                     "ROLE" => step.ApproverRole?.RoleName ?? "บทบาทตามระบบ",
                     "EMPLOYEE" => step.ApproverEmployee?.FullName ?? "พนักงานระบุตัวบุคคล",
-                    "MANAGER" => "หัวหน้าทีมของผู้ยื่น (Team Lead)",
-                    "DEPARTMENT_HEAD" => "ผู้จัดการแผนก (Department Head)",
-                    "DIVISION_HEAD" => "ผู้จัดการฝ่าย (Division Head)",
-                    "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
-                    "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+                    "MANAGER" => "หัวหน้าทีมของผู้ยื่น",
+                    "DEPARTMENT_HEAD" => "ผู้จัดการแผนก",
+                    "DIVISION_HEAD" => "ผู้จัดการฝ่าย",
+                    "HR" => "ฝ่ายทรัพยากรบุคคล",
+                    "CEO" => "ประธานเจ้าหน้าที่บริหาร",
                     _ => step.ApproverType
                 };
             }

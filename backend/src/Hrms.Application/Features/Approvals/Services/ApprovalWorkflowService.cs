@@ -1010,8 +1010,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             "MANAGER" => "หัวหน้าทีมของผู้ยื่น",
             "DEPARTMENT_HEAD" => "หัวหน้าแผนกของผู้ยื่น",
             "DIVISION_HEAD" => "หัวหน้าฝ่ายของผู้ยื่น",
-            "HR" => "ฝ่ายทรัพยากรบุคคล (HR)",
-            "CEO" => "ประธานเจ้าหน้าที่บริหาร (CEO)",
+            "HR" => "ฝ่ายทรัพยากรบุคคล",
+            "CEO" => "ประธานเจ้าหน้าที่บริหาร",
             _ => approverType
         };
     }

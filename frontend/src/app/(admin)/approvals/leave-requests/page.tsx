@@ -105,6 +105,17 @@ export interface UnifiedApprovalItem {
   benefitRaw?: BenefitClaimRequest;
 }
 
+/**
+ * ตัดวงเล็บภาษาอังกฤษต่อท้ายออกจากชื่อผู้อนุมัติ เช่น
+ * "หัวหน้าทีมของผู้ยื่น (Team Lead)" -> "หัวหน้าทีมของผู้ยื่น"
+ * "ผู้จัดการแผนก (Department Head)" -> "ผู้จัดการแผนก"
+ * "ฝ่ายทรัพยากรบุคคล (HR)" -> "ฝ่ายทรัพยากรบุคคล"
+ */
+export function cleanApproverDisplay(text?: string | null): string {
+  if (!text) return '';
+  return text.replace(/\s*\([A-Za-z0-9_.\s/-]+\)$/, '').trim();
+}
+
 // ─── Component ────────────────────────────────────────────────
 
 export default function LeaveRequestsApprovalPage() {
@@ -296,7 +307,7 @@ export default function LeaveRequestsApprovalPage() {
         status: req.status,
         currentStepNo: req.currentStepNo,
         totalSteps: req.totalSteps,
-        currentApproverDisplay: req.currentApproverDisplay,
+        currentApproverDisplay: cleanApproverDisplay(req.currentApproverDisplay),
         isMyTurnToApprove: !!req.isMyTurnToApprove,
         hasAlreadyApproved: !!req.hasAlreadyApproved,
         approvedByName: req.approvedByName,
@@ -330,7 +341,7 @@ export default function LeaveRequestsApprovalPage() {
         status: cert.status,
         currentStepNo: cert.currentStepNo,
         totalSteps: cert.totalSteps,
-        currentApproverDisplay: cert.currentApproverDisplay,
+        currentApproverDisplay: cleanApproverDisplay(cert.currentApproverDisplay),
         isMyTurnToApprove: !!cert.isMyTurnToApprove,
         hasAlreadyApproved: !!cert.hasAlreadyApproved,
         approvedByName: cert.approvedByName,
@@ -361,7 +372,7 @@ export default function LeaveRequestsApprovalPage() {
         status: res.status,
         currentStepNo: res.currentStepNo,
         totalSteps: res.totalSteps,
-        currentApproverDisplay: res.currentApproverDisplay,
+        currentApproverDisplay: cleanApproverDisplay(res.currentApproverDisplay),
         isMyTurnToApprove: !!res.isMyTurnToApprove,
         hasAlreadyApproved: !!res.hasAlreadyApproved,
         approvedByName: res.approvedByName,
@@ -418,7 +429,7 @@ export default function LeaveRequestsApprovalPage() {
         status: bc.status,
         currentStepNo: bc.currentStepNo,
         totalSteps: bc.totalSteps,
-        currentApproverDisplay: bc.currentApproverDisplay,
+        currentApproverDisplay: cleanApproverDisplay(bc.currentApproverDisplay),
         isMyTurnToApprove: !!bc.isMyTurnToApprove,
         hasAlreadyApproved: bc.hasAlreadyApproved ?? bc.status === 'APPROVED',
         approvedByName: bc.approvedByName,

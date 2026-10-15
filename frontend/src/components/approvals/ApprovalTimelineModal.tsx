@@ -64,6 +64,11 @@ const formatDateOnly = (d?: string | null) => {
   }
 };
 
+const cleanApproverTitle = (title?: string | null) => {
+  if (!title) return '';
+  return title.replace(/\s*\([A-Za-z0-9_.\s/-]+\)$/, '').trim();
+};
+
 export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
   isOpen,
   onClose,
@@ -316,7 +321,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                             {/* Step Text */}
                             <div>
                               <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {step.approverTitle}
+                                {cleanApproverTitle(step.approverTitle)}
                               </div>
                               <div className="text-[11px] font-medium mt-0.5">
                                 {isCompleted ? (
@@ -374,7 +379,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                               {step.stepNo}
                             </span>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                              ขั้นตอนที่ {step.stepNo}: {step.approverTitle}
+                              ขั้นตอนที่ {step.stepNo}: {cleanApproverTitle(step.approverTitle)}
                             </span>
                           </div>
 
