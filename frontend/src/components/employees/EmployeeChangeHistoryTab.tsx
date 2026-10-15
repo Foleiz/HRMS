@@ -23,7 +23,8 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
-import { ThaiDatePicker, toInputDate } from '@/components/ui/ThaiDatePicker';
+import { toInputDate } from '@/components/ui/ThaiDatePicker';
+import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ApiResponse } from '@/types/api';
@@ -131,7 +132,6 @@ const RANGE_OPTIONS: { value: RangePreset; label: string }[] = [
   { value: '7D', label: '7 วันล่าสุด' },
   { value: '30D', label: '30 วันล่าสุด' },
   { value: '90D', label: '3 เดือนล่าสุด' },
-  { value: 'CUSTOM', label: 'กำหนดช่วงวันที่เอง' },
 ];
 const daysAgo = (n: number) => {
   const d = new Date();
@@ -309,7 +309,8 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       case '7D': return [daysAgo(6), ''];
       case '30D': return [daysAgo(29), ''];
       case '90D': return [daysAgo(89), ''];
-      case 'CUSTOM': return [dateFrom, dateTo];
+      // ระหว่างเลือก (มีแค่วันเริ่ม) ให้กรองเฉพาะวันนั้นไปก่อน
+      case 'CUSTOM': return [dateFrom, dateTo || dateFrom];
       default: return ['', ''];
     }
   }, [rangePreset, dateFrom, dateTo]);
@@ -371,43 +372,42 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
         </div>
         {!loading && !error && entries.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
             <CustomSelect
-              value={rangePreset}
-              onChange={(e) => setRangePreset(e.target.value as RangePreset)}
+              value={rangePreset === 'CUSTOM' ? '' : rangePreset}
+              onChange={(e) => {
+                // เลือกช่วงสำเร็จรูป = ยกเลิกช่วงวันที่ที่เลือกเอง
+                setRangePreset(e.target.value as RangePreset);
+                setDateFrom('');
+                setDateTo('');
+              }}
+              numbered={false}
+              placeholder="ช่วงที่กำหนดเอง"
               className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
               {RANGE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </CustomSelect>
-            {rangePreset === 'CUSTOM' && (
-              <>
-                <ThaiDatePicker
-                  value={dateFrom}
-                  onChange={setDateFrom}
-                  maxDate={dateTo || undefined}
-                  placeholder="ตั้งแต่วันที่"
-                  className="w-36 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5"
-                />
-                <span className="text-slate-400">–</span>
-                <ThaiDatePicker
-                  value={dateTo}
-                  onChange={setDateTo}
-                  minDate={dateFrom || undefined}
-                  placeholder="ถึงวันที่"
-                  className="w-36 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5"
-                />
-                {(dateFrom || dateTo) && (
-                  <button
-                    type="button"
-                    onClick={() => { setDateFrom(''); setDateTo(''); }}
-                    className="text-[11px] text-slate-500 hover:text-rose-600 cursor-pointer"
-                  >
-                    ล้าง
-                  </button>
-                )}
-              </>
+            {/* เลือกช่วงวันที่เอง (คลิกวันเริ่ม แล้วคลิกวันสิ้นสุด) */}
+            <LeaveDateRangePicker
+              startDate={dateFrom}
+              endDate={dateTo}
+              onChange={(from, to) => {
+                setDateFrom(from);
+                setDateTo(to);
+                setRangePreset(from || to ? 'CUSTOM' : 'ALL');
+              }}
+              align="right"
+              className="w-[230px] max-w-none py-1.5! text-xs! rounded-lg!"
+            />
+            {rangePreset === 'CUSTOM' && (dateFrom || dateTo) && (
+              <button
+                type="button"
+                onClick={() => { setDateFrom(''); setDateTo(''); setRangePreset('ALL'); }}
+                className="text-[11px] text-slate-500 hover:text-rose-600 cursor-pointer"
+              >
+                ล้าง
+              </button>
             )}
           </div>
         )}

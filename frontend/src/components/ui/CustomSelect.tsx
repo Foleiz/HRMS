@@ -15,6 +15,8 @@ export interface CustomSelectProps {
   options?: SelectOption[];
   children?: React.ReactNode;
   placeholder?: string;
+  /** ใส่เลขลำดับ "1. 2. 3." หน้าตัวเลือกอัตโนมัติ (ค่าเริ่มต้น true) — ปิดได้สำหรับตัวเลือกสั้น ๆ เช่น ช่วงเวลา */
+  numbered?: boolean;
   className?: string;
   buttonClassName?: string;
   disabled?: boolean;
@@ -181,6 +183,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   options,
   children,
   placeholder = 'เลือกรายการ',
+  numbered = true,
   className = '',
   buttonClassName = '',
   disabled = false,
@@ -197,10 +200,10 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
   // Resolve options from prop or children
   const resolvedOptions: SelectOption[] = React.useMemo(() => {
-    if (options && options.length > 0) return formatSelectOptions(options);
-    if (children) return formatSelectOptions(extractOptions(children));
-    return [];
-  }, [options, children]);
+    const raw = options && options.length > 0 ? options : children ? extractOptions(children) : [];
+    if (!numbered) return raw.map((opt) => ({ ...opt, label: cleanOptionLabel(String(opt.label ?? '')) }));
+    return formatSelectOptions(raw);
+  }, [options, children, numbered]);
 
   const selectedOption = resolvedOptions.find((opt) => String(opt.value) === String(value));
 
