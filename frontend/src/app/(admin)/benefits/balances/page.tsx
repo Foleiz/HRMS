@@ -24,6 +24,10 @@ import {
   X,
   Building2,
   Trash2,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Ban,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
@@ -570,9 +574,39 @@ export default function EmployeeBenefitBalancesPage() {
                           <span className="text-sm font-black text-rose-600 dark:text-rose-400 block">
                             ฿{claim.amount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                           </span>
-                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                            อนุมัติแล้ว
-                          </span>
+                          {(() => {
+                            const status = claim.status || 'APPROVED';
+                            if (status === 'PENDING') {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                                  <Clock className="w-3 h-3" />
+                                  <span>รออนุมัติ</span>
+                                </span>
+                              );
+                            }
+                            if (status === 'REJECTED') {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                                  <XCircle className="w-3 h-3" />
+                                  <span>ไม่อนุมัติ</span>
+                                </span>
+                              );
+                            }
+                            if (status === 'CANCELLED') {
+                              return (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
+                                  <Ban className="w-3 h-3" />
+                                  <span>ยกเลิกแล้ว</span>
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                <CheckCircle2 className="w-3 h-3" />
+                                <span>อนุมัติแล้ว</span>
+                              </span>
+                            );
+                          })()}
                         </div>
 
                         <button
