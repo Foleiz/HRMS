@@ -14,6 +14,8 @@ interface LeaveDateRangePickerProps {
   /** รายการวันที่ที่ถูกบล็อค ไม่สามารถเลือกซ้ำได้ รูปแบบ 'YYYY-MM-DD' (เช่น วันที่มีการลาไปแล้ว) */
   disabledDates?: string[];
   className?: string;
+  /** ตำแหน่งปฏิทินที่เปิดออกมา: 'left' (ค่าเริ่มต้น) หรือ 'right' (ชิดขวา — ใช้เมื่อปุ่มอยู่ขอบขวาของหน้า) */
+  align?: 'left' | 'right';
 }
 
 const THAI_MONTHS_FULL = [
@@ -69,6 +71,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
   mode = 'range',
   disabledDates,
   className = 'w-[320px] max-w-none',
+  align = 'left',
 }) => {
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState<Date>(() => parseInputDate(startDate) || new Date());
@@ -204,7 +207,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
       </button>
 
       {open && (
-        <div className="absolute z-30 mt-1.5 w-[320px] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/60 shadow-lg p-4">
+        <div className={`absolute z-30 mt-1.5 w-[320px] ${align === 'right' ? 'right-0' : 'left-0'} bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/60 shadow-lg p-4`}>
           {/* ─── Header: ปุ่มเลื่อนเดือน + ตัวเลือกเดือน/ปีแบบ dropdown grid ─── */}
           <div className="flex items-center justify-between mb-3">
             <button
