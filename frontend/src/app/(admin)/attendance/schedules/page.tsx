@@ -1069,7 +1069,7 @@ function SchedulesContent() {
                   </button>
 
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    แสดงภาพรวมการจัดเวร ({rosterData?.employees.length ?? 0} คน)
+                    {rosterData?.employees.length ?? 0} คน
                   </span>
                 </div>
 
@@ -2116,7 +2116,7 @@ function SchedulesContent() {
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">มอบหมายกะแบบกลุ่ม (Batch Assignment)</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">จัดกะให้พนักงานทั้งแผนก หรือเลือกเฉพาะหลายคนพร้อมกันในครั้งเดียว</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">จัดกะทั้งแผนก หรือหลายคนพร้อมกัน</p>
                 </div>
               </div>
               <button
@@ -2832,7 +2832,7 @@ function SchedulesContent() {
                     ตารางจัดเวร: วันที่ {selectedCalendarDay.day} {THAI_MONTHS[selectedCalendarDay.month - 1]} {selectedCalendarDay.year + 543}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    มีพนักงานได้รับมอบหมายกะทั้งหมด {selectedCalendarDay.shifts.length} คน
+                    {selectedCalendarDay.shifts.length} คน
                   </p>
                 </div>
               </div>

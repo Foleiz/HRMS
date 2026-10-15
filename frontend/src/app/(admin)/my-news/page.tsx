@@ -444,9 +444,6 @@ export default function MyNewsCalendarPage() {
                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
                   ไม่มีประกาศหรือกิจกรรมในวันนี้
                 </h3>
-                <p className="text-xs text-slate-400 max-w-sm mb-4">
-                  ไม่มีกำหนดการหรือข่าวสารที่ประกาศไว้ในวันที่เลือก คุณสามารถเลือกดูวันอื่นผ่านปุ่มลูกศร หรือสลับเป็นมุมมองสัปดาห์หรือเดือน
-                </p>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"

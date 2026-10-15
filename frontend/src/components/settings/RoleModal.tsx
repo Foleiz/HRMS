@@ -190,7 +190,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">รหัสบทบาทไม่สามารถเปลี่ยนแปลงได้</p>
             ) : (
               <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                ระบบใส่รหัสอัตโนมัติให้แล้ว (สามารถแก้ไขเองตามต้องการได้ เช่น <span className="font-mono">AUDITOR</span>)
+                สร้างรหัสให้อัตโนมัติ แก้ได้ เช่น <span className="font-mono">AUDITOR</span>)
               </p>
             )}
           </div>

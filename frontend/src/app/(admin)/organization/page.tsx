@@ -1590,9 +1590,6 @@ export default function OrganizationPage() {
               )}
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              ระดับพนักงานสำหรับจัดเกรดและโครงสร้างตำแหน่งในองค์กร
-            </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
@@ -1713,9 +1710,6 @@ export default function OrganizationPage() {
               )}
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              จัดการรายการสิทธิประโยชน์และสวัสดิการกลางขององค์กร สวัสดิการเหล่านี้จะถูกนำไปผูกกับประเภทสัญญาจ้างพนักงาน (Employee Types) ในหน้าจัดการประเภทพนักงาน
-            </p>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
@@ -2021,9 +2015,6 @@ export default function OrganizationPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight dark:text-slate-100">บัญชีธนาคารบริษัท (สำหรับจ่ายเงินเดือน)</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                      จัดการบัญชีธนาคารของบริษัทสำหรับโอนจ่ายเงินเดือนพนักงาน (Payroll Direct Credit) และกำหนดบัญชีหลัก
-                    </p>
                   </div>
                 </div>
               </div>

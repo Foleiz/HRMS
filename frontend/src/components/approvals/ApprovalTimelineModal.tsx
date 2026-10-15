@@ -282,7 +282,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
               {/* 1. Horizontal Stepper Pipeline (ตาม Pattern ของระบบ) */}
               <div>
                 <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5" /> แผนภาพลำดับการอนุมัติ (Sequential Pipeline)
+                  <FileText className="w-3.5 h-3.5" /> ลำดับการอนุมัติ
                 </div>
                 <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-2xs">
                   <div className="flex items-center justify-between flex-wrap gap-3">
@@ -353,7 +353,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
               {/* 2. Step Details & Action History Log */}
               <div>
                 <div className="text-xs font-bold text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" /> รายละเอียดและประวัติการลงความเห็น (Audit Trail)
+                  <Clock className="w-3.5 h-3.5" /> ประวัติการลงความเห็น
                 </div>
                 <div className="space-y-3">
                   {timeline.steps.map((step) => {

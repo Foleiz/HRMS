@@ -161,9 +161,6 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
                   {status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับการใช้'}
                 </span>
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                ปรับปรุงอัตราเงินสมทบฝ่ายลูกจ้าง/นายจ้าง และฐานเพดานค่าจ้างที่ใช้คำนวณหักเงินเดือน
-              </p>
             </div>
           </div>
           <button
@@ -243,7 +240,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
                   %
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">อัตราที่หักออกจากเงินเดือนลูกจ้าง (มาตรฐาน 5%)</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ปกติ 5%</p>
             </div>
 
             {/* Employer Contribution Percent */}
@@ -265,7 +262,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
                   %
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">อัตราที่บริษัทสมทบเพิ่มให้อีกส่วน (มาตรฐาน 5%)</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ปกติ 5%</p>
             </div>
 
             {/* Min Wage Base */}
@@ -284,7 +281,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
                   className="w-full pl-7 pr-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ฐานคิดต่ำสุดตามกฎหมาย (ปกติ 1,650 บาท)</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ปกติ 1,650 บาท</p>
             </div>
 
             {/* Max Wage Base */}
@@ -303,7 +300,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
                   className="w-full pl-7 pr-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
                 />
               </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">เพดานสูงสุดที่ใช้คำนวณ (ปกติ 15,000 หรือ 17,500 บาท)</p>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ปกติ 17,500 บาท (ก่อนปี 2569: 15,000)</p>
             </div>
 
             {/* Effective From */}
@@ -455,7 +452,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               </div>
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              ระบบจะรีเซ็ตอัตราสมทบผู้ประกันตน 5% นายจ้าง 5% โดยเก็บประวัติ 2 ช่วง: ฐานค่าจ้าง 1,650 - 15,000 บาท (สูงสุด 750 บาท) ถึง 31 ธ.ค. 2568 และ 1,650 - 17,500 บาท (สูงสุด 875 บาท) ตั้งแต่ 1 ม.ค. 2569
+              ลูกจ้าง 5% · นายจ้าง 5% · ฐาน 1,650–15,000 บาท ถึง 31 ธ.ค. 2568 และ 1,650–17,500 บาท ตั้งแต่ 1 ม.ค. 2569
             </p>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
               <button

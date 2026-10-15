@@ -419,9 +419,6 @@ export default function AnnouncementsPage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">จัดการประกาศองค์กร</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              ศูนย์รวมการประชาสัมพันธ์ จัดการข่าวสาร นโยบายบริษัท และติดตามสถิติการเปิดอ่าน
-            </p>
           </div>
         </div>
 
@@ -451,7 +448,6 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
               <div className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">{totalCount}</div>
-              <span className="text-xs text-slate-400 mt-1 block">รายการทั้งหมดในระบบ</span>
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
@@ -462,7 +458,6 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
               <div className="mt-2 text-2xl font-bold text-emerald-600">{publishedCount}</div>
-              <span className="text-xs text-slate-400 mt-1 block">แสดงบนพอร์ทัลพนักงาน</span>
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
@@ -473,7 +468,6 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
               <div className="mt-2 text-2xl font-bold text-amber-600">{pinnedCount}</div>
-              <span className="text-xs text-slate-400 mt-1 block">อยู่บนสุดของฟีด</span>
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs">
@@ -484,7 +478,6 @@ export default function AnnouncementsPage() {
                 </div>
               </div>
               <div className="mt-2 text-2xl font-bold text-slate-700 dark:text-slate-300">{draftCount}</div>
-              <span className="text-xs text-slate-400 mt-1 block">ยังไม่เปิดเผยแพร่</span>
             </div>
           </div>
 
@@ -1067,7 +1060,6 @@ export default function AnnouncementsPage() {
                   <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
                     {editingAnnouncement ? 'แก้ไขข่าวสารและประกาศ' : 'สร้างข่าวสารและประกาศใหม่'}
                   </h3>
-                  <p className="text-[11px] text-slate-400">กรอกข้อมูลรายละเอียดและเลือกกลุ่มเป้าหมายผู้รับข่าวสาร</p>
                 </div>
               </div>
               <button

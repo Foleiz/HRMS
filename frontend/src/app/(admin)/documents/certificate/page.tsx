@@ -501,7 +501,7 @@ export default function CertificatePage() {
               ยื่นคำขอหนังสือรับรองสำเร็จ!
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-              คำขอของคุณถูกส่งไปยังฝ่ายทรัพยากรบุคคลเพื่อพิจารณาอนุมัติเรียบร้อยแล้ว คุณสามารถติดตามสถานะหรือพิมพ์เอกสารได้ในเมนูประวัติเอกสาร
+              ติดตามสถานะและพิมพ์เอกสารได้ที่เมนู ประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
               <button

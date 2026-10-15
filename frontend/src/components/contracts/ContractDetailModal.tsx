@@ -238,9 +238,6 @@ export default function ContractDetailModal({
                     #{currentContract.id}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  ข้อมูลสัญญาและการแนบเอกสารสัญญาจ้างงานรายบุคคล
-                </p>
               </div>
             </div>
 
@@ -390,9 +387,6 @@ export default function ContractDetailModal({
                     <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
                       เอกสารสัญญาจ้างแนบ
                     </h5>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                      แนบไฟล์สัญญาจ้างงานเพื่อเก็บเป็นหลักฐานและดาวน์โหลดได้ตลอดเวลา
-                    </p>
                   </div>
                 </div>
 

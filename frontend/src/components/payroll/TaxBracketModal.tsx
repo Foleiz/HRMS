@@ -192,9 +192,6 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                   {localBrackets.length} ขั้นบันได
                 </span>
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                ปรับปรุงเกณฑ์เงินได้สุทธิสะสมต่อปีและอัตราคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
-              </p>
             </div>
           </div>
           <button

@@ -492,7 +492,7 @@ export default function ResignationPage() {
               ยื่นคำขอลาออกสำเร็จ!
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-              คำขอของคุณถูกส่งเข้าสู่สายการอนุมัติเรียบร้อยแล้ว คุณสามารถติดตามสถานะการพิจารณาได้ที่เมนูประวัติเอกสาร
+              ติดตามสถานะได้ที่เมนู ประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
               <button
