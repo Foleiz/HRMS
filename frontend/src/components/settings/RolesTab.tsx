@@ -940,16 +940,25 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   const activeModulesCount = cat.modules.filter((m) => isModuleActive(m)).length;
                   const isCatAllActive = activeModulesCount === cat.modules.length && cat.modules.length > 0;
                   const isCatPartial = activeModulesCount > 0 && activeModulesCount < cat.modules.length;
+                  const isCatOff = activeModulesCount === 0; // ปิดทั้งหมด → พื้นเทา
 
                   return (
                     <div
                       key={cat.code}
-                      className="rounded-2xl border border-slate-200/90 overflow-hidden bg-white dark:bg-slate-800 shadow-2xs transition-all"
+                      className={`rounded-2xl border overflow-hidden transition-all ${
+                        isCatOff
+                          ? 'border-slate-200 bg-slate-100 dark:bg-slate-900/70 dark:border-slate-700'
+                          : 'border-slate-200/90 bg-white dark:bg-slate-800 shadow-2xs'
+                      }`}
                     >
                       {/* Group Header */}
                       <div
                         onClick={() => toggleCategoryExpand(cat.code)}
-                        className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer select-none transition-colors ${ isExpanded ? 'bg-slate-50/90 border-b border-slate-200/80'
+                        className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
+                          isCatOff
+                            ? `bg-slate-100 hover:bg-slate-200/60 dark:bg-slate-900/70 ${isExpanded ? 'border-b border-slate-200/80 dark:border-slate-700' : ''}`
+                            : isExpanded
+                            ? 'bg-slate-50/90 border-b border-slate-200/80'
                             : 'bg-white hover:bg-slate-50/60'
                         }`}
                       >
@@ -964,11 +973,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                             )}
                           </button>
-                          <div className="w-7 h-7 rounded-lg bg-[#0B2046]/5 text-[#0B2046] flex items-center justify-center shrink-0">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isCatOff ? 'bg-slate-200/70 text-slate-400 dark:bg-slate-800' : 'bg-[#0B2046]/5 text-[#0B2046]'}`}>
                             <IconComp className="w-4 h-4" />
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-xs text-slate-800 dark:text-slate-200 tracking-tight">
+                            <span className={`font-bold text-xs tracking-tight ${isCatOff ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
                               {cat.name}
                             </span>
                             {cat.code === 'DASHBOARD' && (
@@ -1031,7 +1040,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             return (
                               <div
                                 key={mod.moduleCode}
-                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${ modActive ? 'bg-white dark:bg-slate-800' : 'bg-slate-50/30'
+                                className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${ modActive ? 'bg-white dark:bg-slate-800' : 'bg-slate-100 dark:bg-slate-900/70'
                                 }`}
                               >
                                 {/* Left: Module Title & Subtitle */}
