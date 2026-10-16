@@ -2581,7 +2581,8 @@ export default function PayrollPage() {
       {/* === TAB 3: รายได้และรายหัก (Earnings & Deductions) - Matches media_1789453524860.png === */}
       {activeTab === 'items' && (
         <div className="space-y-4">
-          {/* Top Pill Switcher: รายการรายได้ / รายการรายหัก */}
+          {/* Top Pill Switcher: รายการรายได้ / รายการรายหัก + ปุ่มเพิ่มรายการ (แถวเดียวกัน) */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setItemsSubTab('EARNING')}
@@ -2607,16 +2608,15 @@ export default function PayrollPage() {
 
           {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
           {canCreateItem && (
-            <div className="flex justify-end">
-              <button
-                onClick={handleOpenCreateItem}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
-              </button>
-            </div>
+            <button
+              onClick={handleOpenCreateItem}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
+            </button>
           )}
+          </div>
 
           {/* Table Container */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
