@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { BenefitClaimRequest } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
-import { X, Gift, Paperclip, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import { X, Gift, Paperclip, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 
 export type BenefitClaimReviewMode = 'approve' | 'reject' | 'view';
 
@@ -130,18 +130,58 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
             {claim.rejectReason && <Row label="เหตุผลที่ไม่อนุมัติ" value={claim.rejectReason} />}
           </div>
 
-          {/* วงเงิน */}
-          <div className={`p-3 rounded-xl border text-xs ${overQuota ? 'bg-rose-50 border-rose-200 text-rose-700' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'}`}>
-            {hasQuota ? (
-              <>
-                วงเงิน {money(claim.quotaAmount)} บ./ปี • อนุมัติไปแล้ว {money(claim.approvedUsedAmount)} บ. • คงเหลือ{' '}
-                <span className="font-bold">{money(remainingBefore ?? 0)} บ.</span>
-                {overQuota && <span className="block mt-1 font-semibold">ยอดขอเบิกเกินวงเงินคงเหลือ</span>}
-              </>
-            ) : (
-              'สวัสดิการนี้ไม่ได้กำหนดวงเงิน (เบิกตามจริง)'
-            )}
-          </div>
+          {/* สรุปวงเงิน 3 ช่อง (วงเงิน / ใช้แล้ว / คงเหลือ) */}
+          {hasQuota ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                {/* 1. วงเงิน */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">วงเงิน</span>
+                  <span className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-200 mt-0.5 truncate" title={`${money(claim.quotaAmount)} บ./ปี`}>
+                    {money(claim.quotaAmount)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">บ./ปี</span>
+                </div>
+
+                {/* 2. ใช้แล้ว / อนุมัติไปแล้ว */}
+                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">ใช้ไปแล้ว</span>
+                  <span className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-200 mt-0.5 truncate" title={`${money(claim.approvedUsedAmount)} บ.`}>
+                    {money(claim.approvedUsedAmount)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">บาท</span>
+                </div>
+
+                {/* 3. คงเหลือ */}
+                <div
+                  className={`p-2.5 rounded-xl border flex flex-col justify-center ${
+                    overQuota
+                      ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400'
+                      : 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-400'
+                  }`}
+                >
+                  <span className={`text-[11px] font-semibold ${overQuota ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    คงเหลือ
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold font-mono mt-0.5 truncate" title={`${money(remainingBefore ?? 0)} บ.`}>
+                    {money(remainingBefore ?? 0)}
+                  </span>
+                  <span className="text-[10px] opacity-80">บาท</span>
+                </div>
+              </div>
+
+              {overQuota && (
+                <div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-lg py-1.5 px-2.5 text-center flex items-center justify-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>ยอดขอเบิกเกินวงเงินคงเหลือ</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 text-xs text-slate-600 dark:text-slate-300 text-center">
+              สวัสดิการนี้ไม่ได้กำหนดวงเงิน (เบิกตามจริง)
+            </div>
+          )}
 
           {claim.fileName ? (
             <button
