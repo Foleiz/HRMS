@@ -65,3 +65,15 @@ export interface CreateMaritalStatusRequest {
 export interface UpdateMaritalStatusRequest {
   maritalStatusName: string;
 }
+
+export interface GenderTypeItem {
+  id: number;
+  genderCode: string;
+  genderName: string;
+}
+
+export interface CertificateTypeItem {
+  id: number;
+  certificateCode: string;
+  certificateName: string;
+}

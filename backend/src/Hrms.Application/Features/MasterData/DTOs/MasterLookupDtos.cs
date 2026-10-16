@@ -86,3 +86,41 @@ public class UpdateMaritalStatusTypeDto
 {
     public string MaritalStatusName { get; set; } = string.Empty;
 }
+
+// --- GenderType DTOs ---
+public class GenderTypeDto
+{
+    public long Id { get; set; }
+    public string GenderCode { get; set; } = string.Empty;
+    public string GenderName { get; set; } = string.Empty;
+}
+
+public class CreateGenderTypeDto
+{
+    public string GenderCode { get; set; } = string.Empty;
+    public string GenderName { get; set; } = string.Empty;
+}
+
+public class UpdateGenderTypeDto
+{
+    public string GenderName { get; set; } = string.Empty;
+}
+
+// --- CertificateType DTOs (จัดการในเมนู ข้อมูลหลัก) ---
+public class CertificateTypeMasterDto
+{
+    public long Id { get; set; }
+    public string CertificateCode { get; set; } = string.Empty;
+    public string CertificateName { get; set; } = string.Empty;
+}
+
+public class CreateCertificateTypeMasterDto
+{
+    public string CertificateCode { get; set; } = string.Empty;
+    public string CertificateName { get; set; } = string.Empty;
+}
+
+public class UpdateCertificateTypeMasterDto
+{
+    public string CertificateName { get; set; } = string.Empty;
+}

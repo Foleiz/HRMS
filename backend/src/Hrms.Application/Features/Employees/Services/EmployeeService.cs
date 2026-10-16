@@ -340,6 +340,7 @@ public class EmployeeService : IEmployeeService
         }
 
         var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
+        (gender, genderId) = await ResolveGenderFromTableAsync(gender, genderId, cancellationToken);
 
         // รหัสอ้างอิงข้อมูลหลัก: ใช้ที่ส่งมา หรือหาจากชื่อในเมนู ข้อมูลหลัก
         var createNationalityId = request.NationalityId
@@ -608,6 +609,7 @@ public class EmployeeService : IEmployeeService
 
         // 2. อัปเดตข้อมูลทั่วไป
         var (gender, genderId) = ResolveGenderAndId(request.Gender, request.GenderId, request.Prefix);
+        (gender, genderId) = await ResolveGenderFromTableAsync(gender, genderId, cancellationToken);
 
         // ตรวจสอบและอัปเดตรหัสพนักงาน (หากมีการแก้ไขและไม่ซ้ำกับพนักงานคนอื่น)
         if (!string.IsNullOrWhiteSpace(request.EmployeeCode))
@@ -1885,6 +1887,31 @@ public class EmployeeService : IEmployeeService
             return $"{digits.Substring(0, 3)}-{digits.Substring(3, 3)}-{digits.Substring(6)}";
         }
         return phone.Trim();
+    }
+
+    /// <summary>
+    /// เพศที่เพิ่มเองในเมนู ข้อมูลหลัก (นอกจาก ชาย/หญิง/ไม่ระบุ) — หา id/ชื่อจากตาราง gender_type
+    /// </summary>
+    private async Task<(string? gender, long? genderId)> ResolveGenderFromTableAsync(string? gender, long? genderId, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(gender) && !genderId.HasValue)
+        {
+            var name = gender.Trim();
+            var id = await _dbContext.GenderTypes.AsNoTracking()
+                .Where(g => g.GenderName == name)
+                .Select(g => (long?)g.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+            return (gender, id);
+        }
+        if (string.IsNullOrWhiteSpace(gender) && genderId.HasValue)
+        {
+            var name = await _dbContext.GenderTypes.AsNoTracking()
+                .Where(g => g.Id == genderId.Value)
+                .Select(g => g.GenderName)
+                .FirstOrDefaultAsync(cancellationToken);
+            return (name, genderId);
+        }
+        return (gender, genderId);
     }
 
     private static (string? gender, long? genderId) ResolveGenderAndId(string? gender, long? genderId, string? prefix)

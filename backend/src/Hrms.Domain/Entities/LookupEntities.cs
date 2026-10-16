@@ -39,3 +39,20 @@ public class MaritalStatusType : BaseEntity
     [MaxLength(100)]
     public string MaritalStatusName { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// ตาราง Master ข้อมูลเพศ (Mapping: hrms.gender_type)
+/// </summary>
+[Table("gender_type", Schema = "hrms")]
+public class GenderType : BaseEntity
+{
+    [Column("gender_code")]
+    [Required]
+    [MaxLength(20)]
+    public string GenderCode { get; set; } = string.Empty;
+
+    [Column("gender_name")]
+    [Required]
+    [MaxLength(50)]
+    public string GenderName { get; set; } = string.Empty;
+}

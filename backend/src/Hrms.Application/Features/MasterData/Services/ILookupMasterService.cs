@@ -24,4 +24,16 @@ public interface ILookupMasterService
     Task<MaritalStatusTypeDto> CreateMaritalStatusAsync(CreateMaritalStatusTypeDto dto, CancellationToken cancellationToken = default);
     Task<MaritalStatusTypeDto> UpdateMaritalStatusAsync(long id, UpdateMaritalStatusTypeDto dto, CancellationToken cancellationToken = default);
     Task DeleteMaritalStatusAsync(long id, CancellationToken cancellationToken = default);
+
+    // GenderTypes
+    Task<List<GenderTypeDto>> GetAllGendersAsync(CancellationToken cancellationToken = default);
+    Task<GenderTypeDto> CreateGenderAsync(CreateGenderTypeDto dto, CancellationToken cancellationToken = default);
+    Task<GenderTypeDto> UpdateGenderAsync(long id, UpdateGenderTypeDto dto, CancellationToken cancellationToken = default);
+    Task DeleteGenderAsync(long id, CancellationToken cancellationToken = default);
+
+    // CertificateTypes
+    Task<List<CertificateTypeMasterDto>> GetAllCertificateTypesAsync(CancellationToken cancellationToken = default);
+    Task<CertificateTypeMasterDto> CreateCertificateTypeAsync(CreateCertificateTypeMasterDto dto, CancellationToken cancellationToken = default);
+    Task<CertificateTypeMasterDto> UpdateCertificateTypeAsync(long id, UpdateCertificateTypeMasterDto dto, CancellationToken cancellationToken = default);
+    Task DeleteCertificateTypeAsync(long id, CancellationToken cancellationToken = default);
 }

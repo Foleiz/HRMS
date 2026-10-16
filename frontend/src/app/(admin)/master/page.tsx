@@ -17,6 +17,8 @@ import {
   X,
   AlertCircle,
   Loader2,
+  Award,
+  UserRound,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -30,13 +32,22 @@ import {
   NationalityItem,
   ReligionItem,
   MaritalStatusItem,
+  GenderTypeItem,
+  CertificateTypeItem,
 } from '@/types/master';
 import { Bank } from '@/types/api';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 
-type MasterTab = 'document-types' | 'nationalities' | 'religions' | 'marital-statuses' | 'banks';
+type MasterTab =
+  | 'document-types'
+  | 'certificate-types'
+  | 'nationalities'
+  | 'religions'
+  | 'marital-statuses'
+  | 'genders'
+  | 'banks';
 
 export default function MasterDataHubPage() {
   const toast = useToast();
@@ -60,6 +71,8 @@ export default function MasterDataHubPage() {
   const [religions, setReligions] = useState<ReligionItem[]>([]);
   const [maritalStatuses, setMaritalStatuses] = useState<MaritalStatusItem[]>([]);
   const [banks, setBanks] = useState<Bank[]>([]);
+  const [genders, setGenders] = useState<GenderTypeItem[]>([]);
+  const [certTypes, setCertTypes] = useState<CertificateTypeItem[]>([]);
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -75,6 +88,8 @@ export default function MasterDataHubPage() {
     status: 'ACTIVE',
   });
   const [simpleNameInput, setSimpleNameInput] = useState('');
+  // ฟอร์ม รหัส + ชื่อ (ใช้กับ เพศ / ประเภทหนังสือรับรอง) — รหัสแก้ไม่ได้หลังสร้าง
+  const [codeNameForm, setCodeNameForm] = useState({ code: '', name: '' });
   const [bankForm, setBankForm] = useState<{
     bankCode: string;
     bankName: string;
@@ -93,9 +108,11 @@ export default function MasterDataHubPage() {
   useEffect(() => {
     const tabNameMap: Record<MasterTab, string> = {
       'document-types': 'ประเภทเอกสารแนบ',
+      'certificate-types': 'ประเภทหนังสือรับรอง',
       nationalities: 'สัญชาติ',
       religions: 'ศาสนา',
       'marital-statuses': 'สถานภาพสมรส',
+      genders: 'เพศ',
       banks: 'ข้อมูลธนาคาร',
     };
     setBreadcrumb({ section: 'ข้อมูลหลัก', page: tabNameMap[activeTab] });
@@ -121,6 +138,10 @@ export default function MasterDataHubPage() {
       } else if (activeTab === 'banks') {
         const data = await bankService.getAll();
         setBanks(data);
+      } else if (activeTab === 'genders') {
+        setGenders(await masterDataService.getGenders());
+      } else if (activeTab === 'certificate-types') {
+        setCertTypes(await masterDataService.getCertificateTypes());
       }
     } catch (err: any) {
       toast.error(err.message || 'ไม่สามารถโหลดข้อมูล Master Data ได้');
@@ -145,13 +166,17 @@ export default function MasterDataHubPage() {
       masterDataService.getReligions(),
       masterDataService.getMaritalStatuses(),
       bankService.getAll(),
-    ]).then(([d, n, r, m, b]) => {
+      masterDataService.getGenders(),
+      masterDataService.getCertificateTypes(),
+    ]).then(([d, n, r, m, b, g, c]) => {
       if (cancelled) return;
       if (d.status === 'fulfilled') setDocTypes(d.value);
       if (n.status === 'fulfilled') setNationalities(n.value);
       if (r.status === 'fulfilled') setReligions(r.value);
       if (m.status === 'fulfilled') setMaritalStatuses(m.value);
       if (b.status === 'fulfilled') setBanks(b.value);
+      if (g.status === 'fulfilled') setGenders(g.value);
+      if (c.status === 'fulfilled') setCertTypes(c.value);
     });
     return () => {
       cancelled = true;
@@ -166,6 +191,8 @@ export default function MasterDataHubPage() {
       setDocForm({ documentCode: '', documentName: '', isExpiryRequired: false, notifyBeforeDays: 30, validityMonths: null, status: 'ACTIVE' });
     } else if (activeTab === 'banks') {
       setBankForm({ bankCode: '', bankName: '', shortName: '', accountDigits: '', status: 'ACTIVE' });
+    } else if (activeTab === 'genders' || activeTab === 'certificate-types') {
+      setCodeNameForm({ code: '', name: '' });
     } else {
       setSimpleNameInput('');
     }
@@ -191,6 +218,10 @@ export default function MasterDataHubPage() {
       setSimpleNameInput(item.religionName);
     } else if (activeTab === 'marital-statuses') {
       setSimpleNameInput(item.maritalStatusName);
+    } else if (activeTab === 'genders') {
+      setCodeNameForm({ code: item.genderCode, name: item.genderName });
+    } else if (activeTab === 'certificate-types') {
+      setCodeNameForm({ code: item.certificateCode, name: item.certificateName });
     } else if (activeTab === 'banks') {
       setBankForm({
         bankCode: item.bankCode,
@@ -246,6 +277,25 @@ export default function MasterDataHubPage() {
           await masterDataService.updateMaritalStatus(currentId, { maritalStatusName: simpleNameInput.trim() });
           toast.success('อัปเดตสถานภาพสมรสสำเร็จ');
         }
+      } else if (activeTab === 'genders') {
+        if (modalMode === 'create') {
+          await masterDataService.createGender({ genderCode: codeNameForm.code.trim(), genderName: codeNameForm.name.trim() });
+          toast.success('เพิ่มเพศสำเร็จ');
+        } else if (currentId) {
+          await masterDataService.updateGender(currentId, { genderName: codeNameForm.name.trim() });
+          toast.success('อัปเดตเพศสำเร็จ');
+        }
+      } else if (activeTab === 'certificate-types') {
+        if (modalMode === 'create') {
+          await masterDataService.createCertificateType({
+            certificateCode: codeNameForm.code.trim(),
+            certificateName: codeNameForm.name.trim(),
+          });
+          toast.success('เพิ่มประเภทหนังสือรับรองสำเร็จ');
+        } else if (currentId) {
+          await masterDataService.updateCertificateType(currentId, { certificateName: codeNameForm.name.trim() });
+          toast.success('อัปเดตประเภทหนังสือรับรองสำเร็จ');
+        }
       } else if (activeTab === 'banks') {
         if (modalMode === 'create') {
           await bankService.create({
@@ -296,6 +346,10 @@ export default function MasterDataHubPage() {
         await masterDataService.deleteMaritalStatus(id);
       } else if (activeTab === 'banks') {
         await bankService.delete(id);
+      } else if (activeTab === 'genders') {
+        await masterDataService.deleteGender(id);
+      } else if (activeTab === 'certificate-types') {
+        await masterDataService.deleteCertificateType(id);
       }
       toast.success('ลบข้อมูลสำเร็จ');
       await loadData();
@@ -312,6 +366,12 @@ export default function MasterDataHubPage() {
   const filteredNationalities = nationalities.filter((n) => !q || n.nationalityName.toLowerCase().includes(q));
   const filteredReligions = religions.filter((r) => !q || r.religionName.toLowerCase().includes(q));
   const filteredMaritalStatuses = maritalStatuses.filter((m) => !q || m.maritalStatusName.toLowerCase().includes(q));
+  const filteredGenders = genders.filter(
+    (g) => !q || g.genderCode.toLowerCase().includes(q) || g.genderName.toLowerCase().includes(q)
+  );
+  const filteredCertTypes = certTypes.filter(
+    (c) => !q || c.certificateCode.toLowerCase().includes(q) || c.certificateName.toLowerCase().includes(q)
+  );
   const filteredBanks = banks.filter(
     (b) => !q || b.bankCode.toLowerCase().includes(q) || b.bankName.toLowerCase().includes(q)
   );
@@ -372,6 +432,18 @@ export default function MasterDataHubPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('certificate-types')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
+            activeTab === 'certificate-types'
+              ? 'bg-[#0B2046] text-white shadow-sm'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
+          }`}
+        >
+          <Award className="w-4 h-4" />
+          ประเภทหนังสือรับรอง
+        </button>
+
+        <button
           onClick={() => setActiveTab('nationalities')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'nationalities'
@@ -405,6 +477,18 @@ export default function MasterDataHubPage() {
         >
           <Users2 className="w-4 h-4" />
           สถานภาพสมรส
+        </button>
+
+        <button
+          onClick={() => setActiveTab('genders')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
+            activeTab === 'genders'
+              ? 'bg-[#0B2046] text-white shadow-sm'
+              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
+          }`}
+        >
+          <UserRound className="w-4 h-4" />
+          เพศ
         </button>
 
         <button
@@ -686,6 +770,128 @@ export default function MasterDataHubPage() {
         </div>
       )}
 
+      {/* Tab: Certificate Types */}
+      {activeTab === 'certificate-types' && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
+                  <th className="py-3 px-4 w-20">ID</th>
+                  <th className="py-3 px-4">รหัสประเภท</th>
+                  <th className="py-3 px-4">ชื่อหนังสือรับรอง</th>
+                  <th className="py-3 px-4 text-right">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                {filteredCertTypes.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                      ไม่พบข้อมูลประเภทหนังสือรับรอง
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCertTypes.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                          {item.certificateCode}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.certificateName}</td>
+                      <td className="py-3.5 px-4 text-right">
+                        {canEditMasterData ? (
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item.id, item.certificateName)}
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Genders */}
+      {activeTab === 'genders' && (
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
+          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
+                  <th className="py-3 px-4 w-20">ID</th>
+                  <th className="py-3 px-4">รหัสเพศ</th>
+                  <th className="py-3 px-4">ชื่อเพศ</th>
+                  <th className="py-3 px-4 text-right">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                {filteredGenders.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                      ไม่พบข้อมูลเพศ
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGenders.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                          {item.genderCode}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.genderName}</td>
+                      <td className="py-3.5 px-4 text-right">
+                        {canEditMasterData ? (
+                          <div className="inline-flex items-center gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                              title="แก้ไข"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item.id, item.genderName)}
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
+                              title="ลบ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Tab 5: Banks Table */}
       {activeTab === 'banks' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
@@ -897,6 +1103,43 @@ export default function MasterDataHubPage() {
                     className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
                   />
                 </div>
+              )}
+
+              {(activeTab === 'genders' || activeTab === 'certificate-types') && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      {activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      disabled={modalMode === 'edit'}
+                      maxLength={activeTab === 'genders' ? 20 : 50}
+                      value={codeNameForm.code}
+                      onChange={(e) => setCodeNameForm({ ...codeNameForm, code: e.target.value.toUpperCase() })}
+                      placeholder={activeTab === 'genders' ? 'เช่น M, F, O' : 'เช่น CERT_WORK, CERT_SALARY'}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 font-mono disabled:bg-slate-100 dark:disabled:bg-slate-900"
+                    />
+                    {activeTab === 'certificate-types' && (
+                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสที่มีคำว่า SALARY จะแสดงเงินเดือนในหนังสือรับรอง · แก้รหัสไม่ได้หลังบันทึก</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      {activeTab === 'genders' ? 'ชื่อเพศ' : 'ชื่อหนังสือรับรอง'} *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={activeTab === 'genders' ? 50 : 255}
+                      value={codeNameForm.name}
+                      onChange={(e) => setCodeNameForm({ ...codeNameForm, name: e.target.value })}
+                      placeholder={activeTab === 'genders' ? 'เช่น ชาย, หญิง, ไม่ระบุ' : 'เช่น หนังสือรับรองการทำงาน'}
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                    />
+                  </div>
+                </>
               )}
 
               {activeTab === 'banks' && (

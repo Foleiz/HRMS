@@ -13,6 +13,7 @@ export interface MasterLookups {
   nationalities: LookupOption[];
   religions: LookupOption[];
   maritalStatuses: LookupOption[];
+  genders: LookupOption[];
 }
 
 /** ค่าสำรองกรณีโหลดข้อมูลหลักไม่ได้ */
@@ -20,6 +21,11 @@ const FALLBACK: MasterLookups = {
   nationalities: NATIONALITIES.map((n) => ({ name: n.name })),
   religions: ['พุทธ', 'คริสต์', 'อิสลาม', 'ฮินดู', 'ซิกข์', 'อื่นๆ'].map((name) => ({ name })),
   maritalStatuses: ['โสด', 'สมรส', 'หย่าร้าง', 'หม้าย'].map((name) => ({ name })),
+  genders: [
+    { id: 1, name: 'ชาย' },
+    { id: 2, name: 'หญิง' },
+    { name: 'อื่นๆ' },
+  ],
 };
 
 let cache: Promise<MasterLookups> | null = null;
@@ -30,10 +36,12 @@ function loadLookups(): Promise<MasterLookups> {
       masterDataService.getNationalities().catch(() => []),
       masterDataService.getReligions().catch(() => []),
       masterDataService.getMaritalStatuses().catch(() => []),
-    ]).then(([nat, rel, mar]) => ({
+      masterDataService.getGenders().catch(() => []),
+    ]).then(([nat, rel, mar, gen]) => ({
       nationalities: nat.length ? nat.map((x) => ({ id: x.id, name: x.nationalityName })) : FALLBACK.nationalities,
       religions: rel.length ? rel.map((x) => ({ id: x.id, name: x.religionName })) : FALLBACK.religions,
       maritalStatuses: mar.length ? mar.map((x) => ({ id: x.id, name: x.maritalStatusName })) : FALLBACK.maritalStatuses,
+      genders: gen.length ? gen.map((x) => ({ id: x.id, name: x.genderName })) : FALLBACK.genders,
     }));
     // โหลดใหม่ได้หลังแก้ข้อมูลหลัก (ไม่ค้างทั้ง session)
     setTimeout(() => {
@@ -44,7 +52,7 @@ function loadLookups(): Promise<MasterLookups> {
 }
 
 /**
- * สัญชาติ / ศาสนา / สถานภาพสมรส จากเมนู "ข้อมูลหลัก" (ใช้ในฟอร์มพนักงานแทนรายการที่เขียนตายตัว)
+ * สัญชาติ / ศาสนา / สถานภาพสมรส / เพศ จากเมนู "ข้อมูลหลัก" (ใช้ในฟอร์มพนักงานแทนรายการที่เขียนตายตัว)
  */
 export function useMasterLookups(): MasterLookups {
   const [lookups, setLookups] = useState<MasterLookups>(FALLBACK);
@@ -64,4 +72,11 @@ export function useMasterLookups(): MasterLookups {
 export function lookupId(options: LookupOption[], name?: string | null): number | undefined {
   if (!name) return undefined;
   return options.find((o) => o.name === name)?.id;
+}
+
+/** ตัวเลือกเพศจากข้อมูลหลัก + ค่าปัจจุบันของพนักงาน (กรณีเป็นค่าเก่าที่ไม่มีในรายการ) */
+export function genderOptions(options: LookupOption[], current?: string | null): string[] {
+  const names = options.map((o) => o.name);
+  if (current && !names.includes(current)) names.push(current);
+  return names;
 }

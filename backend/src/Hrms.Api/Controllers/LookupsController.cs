@@ -156,4 +156,72 @@ public class LookupsController : ControllerBase
         await _service.DeleteMaritalStatusAsync(id, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบสถานภาพสมรสสำเร็จ"));
     }
+
+    // ==========================================
+    // Genders
+    // ==========================================
+    [HttpGet("genders")]
+    public async Task<ActionResult<ApiResponse<List<GenderTypeDto>>>> GetAllGenders(CancellationToken cancellationToken)
+    {
+        var result = await _service.GetAllGendersAsync(cancellationToken);
+        return Ok(ApiResponse<List<GenderTypeDto>>.Ok(result, "ดึงข้อมูลเพศสำเร็จ"));
+    }
+
+    [HttpPost("genders")]
+    [RequirePermission("MASTER_DATA_CREATE")]
+    public async Task<ActionResult<ApiResponse<GenderTypeDto>>> CreateGender([FromBody] CreateGenderTypeDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _service.CreateGenderAsync(dto, cancellationToken);
+        return Ok(ApiResponse<GenderTypeDto>.Ok(result, "เพิ่มเพศสำเร็จ"));
+    }
+
+    [HttpPut("genders/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
+    public async Task<ActionResult<ApiResponse<GenderTypeDto>>> UpdateGender(long id, [FromBody] UpdateGenderTypeDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _service.UpdateGenderAsync(id, dto, cancellationToken);
+        return Ok(ApiResponse<GenderTypeDto>.Ok(result, "อัปเดตเพศสำเร็จ"));
+    }
+
+    [HttpDelete("genders/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteGender(long id, CancellationToken cancellationToken)
+    {
+        await _service.DeleteGenderAsync(id, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(null!, "ลบเพศสำเร็จ"));
+    }
+
+    // ==========================================
+    // Certificate Types (ประเภทหนังสือรับรอง)
+    // ==========================================
+    [HttpGet("certificate-types")]
+    public async Task<ActionResult<ApiResponse<List<CertificateTypeMasterDto>>>> GetAllCertificateTypes(CancellationToken cancellationToken)
+    {
+        var result = await _service.GetAllCertificateTypesAsync(cancellationToken);
+        return Ok(ApiResponse<List<CertificateTypeMasterDto>>.Ok(result, "ดึงข้อมูลประเภทหนังสือรับรองสำเร็จ"));
+    }
+
+    [HttpPost("certificate-types")]
+    [RequirePermission("MASTER_DATA_CREATE")]
+    public async Task<ActionResult<ApiResponse<CertificateTypeMasterDto>>> CreateCertificateType([FromBody] CreateCertificateTypeMasterDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _service.CreateCertificateTypeAsync(dto, cancellationToken);
+        return Ok(ApiResponse<CertificateTypeMasterDto>.Ok(result, "เพิ่มประเภทหนังสือรับรองสำเร็จ"));
+    }
+
+    [HttpPut("certificate-types/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
+    public async Task<ActionResult<ApiResponse<CertificateTypeMasterDto>>> UpdateCertificateType(long id, [FromBody] UpdateCertificateTypeMasterDto dto, CancellationToken cancellationToken)
+    {
+        var result = await _service.UpdateCertificateTypeAsync(id, dto, cancellationToken);
+        return Ok(ApiResponse<CertificateTypeMasterDto>.Ok(result, "อัปเดตประเภทหนังสือรับรองสำเร็จ"));
+    }
+
+    [HttpDelete("certificate-types/{id:long}")]
+    [RequirePermission("MASTER_DATA_EDIT")]
+    public async Task<ActionResult<ApiResponse<object>>> DeleteCertificateType(long id, CancellationToken cancellationToken)
+    {
+        await _service.DeleteCertificateTypeAsync(id, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(null!, "ลบประเภทหนังสือรับรองสำเร็จ"));
+    }
 }

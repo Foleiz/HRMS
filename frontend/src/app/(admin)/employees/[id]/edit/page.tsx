@@ -16,7 +16,7 @@ import {
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
 import { bankService } from '@/services/bankService';
-import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
+import { useMasterLookups, lookupId, genderOptions } from '@/hooks/useMasterLookups';
 import type { Bank } from '@/types/api';
 import type { Team } from '@/types/organization';
 import { Employee, CreateEmployeePayload, FamilyMember, EmployeeEducation, EmployeeWorkExperience, EmployeeBankAccount } from '@/types/employee';
@@ -475,7 +475,7 @@ function EmployeeEditPageContent() {
         birthDate: formData.birthDate?.trim() || undefined,
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
-        genderId: formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined)),
+        genderId: lookupId(lookups.genders, formData.gender) ?? (formData.gender === 'ชาย' ? 1 : (formData.gender === 'หญิง' ? 2 : (formData.gender === 'ไม่ระบุ' ? 3 : undefined))),
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
         // ศาสนาเป็นข้อมูลอ่อนไหว (PDPA) → ไม่บังคับ และไม่ใส่ค่าให้เอง
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : undefined,
@@ -861,9 +861,11 @@ function EmployeeEditPageContent() {
                       buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                     >
                       <option value="">เลือกเพศ</option>
-                      <option value="ชาย">ชาย</option>
-                      <option value="หญิง">หญิง</option>
-                      <option value="อื่นๆ">อื่นๆ</option>
+                      {genderOptions(lookups.genders, formData.gender).map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
                     </CustomSelect>
                   </div>
 

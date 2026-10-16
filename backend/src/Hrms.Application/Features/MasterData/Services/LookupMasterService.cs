@@ -176,4 +176,111 @@ public class LookupMasterService : ILookupMasterService
         _context.MaritalStatusTypes.Remove(item);
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    // --- GenderTypes ---
+    public async Task<List<GenderTypeDto>> GetAllGendersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.GenderTypes
+            .AsNoTracking()
+            .OrderBy(g => g.Id)
+            .Select(g => new GenderTypeDto { Id = g.Id, GenderCode = g.GenderCode, GenderName = g.GenderName })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<GenderTypeDto> CreateGenderAsync(CreateGenderTypeDto dto, CancellationToken cancellationToken = default)
+    {
+        var code = (dto.GenderCode ?? string.Empty).Trim().ToUpperInvariant();
+        var name = (dto.GenderName ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(code)) throw new BusinessRuleException("กรุณาระบุรหัสเพศ");
+        if (string.IsNullOrEmpty(name)) throw new BusinessRuleException("กรุณาระบุชื่อเพศ");
+        if (code.Length > 20) throw new BusinessRuleException("รหัสเพศยาวได้ไม่เกิน 20 ตัวอักษร");
+        if (await _context.GenderTypes.AnyAsync(g => g.GenderCode.ToUpper() == code, cancellationToken))
+            throw new BusinessRuleException($"รหัสเพศ '{code}' มีอยู่ในระบบแล้ว");
+        if (await _context.GenderTypes.AnyAsync(g => g.GenderName.ToLower() == name.ToLower(), cancellationToken))
+            throw new BusinessRuleException($"เพศ '{name}' มีอยู่ในระบบแล้ว");
+
+        var item = new GenderType { GenderCode = code, GenderName = name };
+        _context.GenderTypes.Add(item);
+        await _context.SaveChangesAsync(cancellationToken);
+        return new GenderTypeDto { Id = item.Id, GenderCode = item.GenderCode, GenderName = item.GenderName };
+    }
+
+    public async Task<GenderTypeDto> UpdateGenderAsync(long id, UpdateGenderTypeDto dto, CancellationToken cancellationToken = default)
+    {
+        var item = await _context.GenderTypes.FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+        if (item == null) throw new NotFoundException("เพศ", id);
+        var name = (dto.GenderName ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(name)) throw new BusinessRuleException("กรุณาระบุชื่อเพศ");
+        if (await _context.GenderTypes.AnyAsync(g => g.Id != id && g.GenderName.ToLower() == name.ToLower(), cancellationToken))
+            throw new BusinessRuleException($"เพศ '{name}' มีอยู่ในระบบแล้ว");
+
+        item.GenderName = name;
+        await _context.SaveChangesAsync(cancellationToken);
+        return new GenderTypeDto { Id = item.Id, GenderCode = item.GenderCode, GenderName = item.GenderName };
+    }
+
+    public async Task DeleteGenderAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var item = await _context.GenderTypes.FirstOrDefaultAsync(g => g.Id == id, cancellationToken);
+        if (item == null) throw new NotFoundException("เพศ", id);
+        if (await _context.Employees.AnyAsync(e => e.GenderId == id, cancellationToken))
+            throw new BusinessRuleException($"ลบไม่ได้ — มีพนักงานที่ใช้เพศ '{item.GenderName}' อยู่");
+
+        _context.GenderTypes.Remove(item);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    // --- CertificateTypes ---
+    public async Task<List<CertificateTypeMasterDto>> GetAllCertificateTypesAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.CertificateTypes
+            .AsNoTracking()
+            .OrderBy(c => c.Id)
+            .Select(c => new CertificateTypeMasterDto { Id = c.Id, CertificateCode = c.CertificateCode, CertificateName = c.CertificateName })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<CertificateTypeMasterDto> CreateCertificateTypeAsync(CreateCertificateTypeMasterDto dto, CancellationToken cancellationToken = default)
+    {
+        var code = (dto.CertificateCode ?? string.Empty).Trim().ToUpperInvariant();
+        var name = (dto.CertificateName ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(code)) throw new BusinessRuleException("กรุณาระบุรหัสประเภทหนังสือรับรอง");
+        if (string.IsNullOrEmpty(name)) throw new BusinessRuleException("กรุณาระบุชื่อประเภทหนังสือรับรอง");
+        if (code.Length > 50) throw new BusinessRuleException("รหัสยาวได้ไม่เกิน 50 ตัวอักษร");
+        if (await _context.CertificateTypes.AnyAsync(c => c.CertificateCode.ToUpper() == code, cancellationToken))
+            throw new BusinessRuleException($"รหัส '{code}' มีอยู่ในระบบแล้ว");
+        if (await _context.CertificateTypes.AnyAsync(c => c.CertificateName.ToLower() == name.ToLower(), cancellationToken))
+            throw new BusinessRuleException($"ประเภทหนังสือรับรอง '{name}' มีอยู่ในระบบแล้ว");
+
+        var item = new CertificateType { CertificateCode = code, CertificateName = name };
+        _context.CertificateTypes.Add(item);
+        await _context.SaveChangesAsync(cancellationToken);
+        return new CertificateTypeMasterDto { Id = item.Id, CertificateCode = item.CertificateCode, CertificateName = item.CertificateName };
+    }
+
+    public async Task<CertificateTypeMasterDto> UpdateCertificateTypeAsync(long id, UpdateCertificateTypeMasterDto dto, CancellationToken cancellationToken = default)
+    {
+        var item = await _context.CertificateTypes.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (item == null) throw new NotFoundException("ประเภทหนังสือรับรอง", id);
+        var name = (dto.CertificateName ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(name)) throw new BusinessRuleException("กรุณาระบุชื่อประเภทหนังสือรับรอง");
+        if (await _context.CertificateTypes.AnyAsync(c => c.Id != id && c.CertificateName.ToLower() == name.ToLower(), cancellationToken))
+            throw new BusinessRuleException($"ประเภทหนังสือรับรอง '{name}' มีอยู่ในระบบแล้ว");
+
+        // รหัสแก้ไม่ได้ — ระบบใช้รหัส (เช่น CERT_SALARY) ตัดสินว่าจะแสดงเงินเดือนในเอกสารหรือไม่
+        item.CertificateName = name;
+        await _context.SaveChangesAsync(cancellationToken);
+        return new CertificateTypeMasterDto { Id = item.Id, CertificateCode = item.CertificateCode, CertificateName = item.CertificateName };
+    }
+
+    public async Task DeleteCertificateTypeAsync(long id, CancellationToken cancellationToken = default)
+    {
+        var item = await _context.CertificateTypes.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        if (item == null) throw new NotFoundException("ประเภทหนังสือรับรอง", id);
+        if (await _context.CertificateRequests.AnyAsync(r => r.CertificateTypeId == id, cancellationToken))
+            throw new BusinessRuleException($"ลบไม่ได้ — มีคำขอหนังสือรับรอง '{item.CertificateName}' อยู่ในระบบ");
+
+        _context.CertificateTypes.Remove(item);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
 }

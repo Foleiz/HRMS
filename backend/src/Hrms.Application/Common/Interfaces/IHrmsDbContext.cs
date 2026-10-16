@@ -10,6 +10,7 @@ public interface IHrmsDbContext
     DbSet<Nationality> Nationalities { get; }
     DbSet<Religion> Religions { get; }
     DbSet<MaritalStatusType> MaritalStatusTypes { get; }
+    DbSet<GenderType> GenderTypes { get; }
     DbSet<Employee> Employees { get; }
     DbSet<EmployeeContact> EmployeeContacts { get; }
     DbSet<EmployeeAddress> EmployeeAddresses { get; }

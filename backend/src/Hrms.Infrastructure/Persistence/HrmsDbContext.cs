@@ -21,6 +21,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<Nationality> Nationalities => Set<Nationality>();
     public DbSet<Religion> Religions => Set<Religion>();
     public DbSet<MaritalStatusType> MaritalStatusTypes => Set<MaritalStatusType>();
+    public DbSet<GenderType> GenderTypes => Set<GenderType>();
 
     // Authentication & Core Entities
     public DbSet<Employee> Employees => Set<Employee>();
@@ -199,6 +200,16 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.MaritalStatusName).HasColumnName("marital_status_name").IsRequired().HasMaxLength(100);
+        });
+
+        // Configuration: GenderType
+        modelBuilder.Entity<GenderType>(entity =>
+        {
+            entity.ToTable("gender_type", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.GenderCode).HasColumnName("gender_code").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.GenderName).HasColumnName("gender_name").IsRequired().HasMaxLength(50);
         });
 
         // Configuration: Employee

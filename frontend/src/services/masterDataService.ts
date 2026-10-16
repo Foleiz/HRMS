@@ -13,6 +13,8 @@ import {
   MaritalStatusItem,
   CreateMaritalStatusRequest,
   UpdateMaritalStatusRequest,
+  GenderTypeItem,
+  CertificateTypeItem,
 } from '@/types/master';
 
 export const masterDataService = {
@@ -100,5 +102,45 @@ export const masterDataService = {
 
   async deleteMaritalStatus(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<null>>(`/lookups/marital-statuses/${id}`);
+  },
+
+  // Genders (เพศ)
+  async getGenders(): Promise<GenderTypeItem[]> {
+    const res = await apiClient.get<ApiResponse<GenderTypeItem[]>>('/lookups/genders');
+    return res.data.data;
+  },
+
+  async createGender(data: { genderCode: string; genderName: string }): Promise<GenderTypeItem> {
+    const res = await apiClient.post<ApiResponse<GenderTypeItem>>('/lookups/genders', data);
+    return res.data.data;
+  },
+
+  async updateGender(id: number, data: { genderName: string }): Promise<GenderTypeItem> {
+    const res = await apiClient.put<ApiResponse<GenderTypeItem>>(`/lookups/genders/${id}`, data);
+    return res.data.data;
+  },
+
+  async deleteGender(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<null>>(`/lookups/genders/${id}`);
+  },
+
+  // Certificate Types (ประเภทหนังสือรับรอง)
+  async getCertificateTypes(): Promise<CertificateTypeItem[]> {
+    const res = await apiClient.get<ApiResponse<CertificateTypeItem[]>>('/lookups/certificate-types');
+    return res.data.data;
+  },
+
+  async createCertificateType(data: { certificateCode: string; certificateName: string }): Promise<CertificateTypeItem> {
+    const res = await apiClient.post<ApiResponse<CertificateTypeItem>>('/lookups/certificate-types', data);
+    return res.data.data;
+  },
+
+  async updateCertificateType(id: number, data: { certificateName: string }): Promise<CertificateTypeItem> {
+    const res = await apiClient.put<ApiResponse<CertificateTypeItem>>(`/lookups/certificate-types/${id}`, data);
+    return res.data.data;
+  },
+
+  async deleteCertificateType(id: number): Promise<void> {
+    await apiClient.delete<ApiResponse<null>>(`/lookups/certificate-types/${id}`);
   },
 };

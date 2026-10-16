@@ -14,7 +14,7 @@ import {
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
 import { bankService } from '@/services/bankService';
-import { useMasterLookups, lookupId } from '@/hooks/useMasterLookups';
+import { useMasterLookups, lookupId, genderOptions } from '@/hooks/useMasterLookups';
 import type { Bank } from '@/types/api';
 import type { Team } from '@/types/organization';
 import {
@@ -478,13 +478,14 @@ export default function EditEmployeeModal({
         prefix: formData.prefix && formData.prefix !== 'เลือกคำนำหน้า' ? formData.prefix : undefined,
         gender: formData.gender && formData.gender !== 'เลือกเพศ' ? formData.gender : undefined,
         genderId:
-          formData.gender === 'ชาย'
+          lookupId(lookups.genders, formData.gender) ??
+          (formData.gender === 'ชาย'
             ? 1
             : formData.gender === 'หญิง'
             ? 2
             : formData.gender === 'ไม่ระบุ'
             ? 3
-            : undefined,
+            : undefined),
         nationality: formData.nationality && formData.nationality !== 'เลือกสัญชาติ' ? formData.nationality : 'ไทย',
         religion: formData.religion && formData.religion !== 'เลือกศาสนา' ? formData.religion : undefined,
         religionId: lookupId(lookups.religions, formData.religion),
@@ -833,9 +834,11 @@ export default function EditEmployeeModal({
                         buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
                       >
                         <option value="">เลือกเพศ</option>
-                        <option value="ชาย">ชาย</option>
-                        <option value="หญิง">หญิง</option>
-                        <option value="อื่นๆ">อื่นๆ</option>
+                        {genderOptions(lookups.genders, formData.gender).map((g) => (
+                          <option key={g} value={g}>
+                            {g}
+                          </option>
+                        ))}
                       </CustomSelect>
                     </div>
 
