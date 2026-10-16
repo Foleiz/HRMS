@@ -21,7 +21,6 @@ import {
   AlertTriangle,
   RefreshCw,
   Copy,
-  Hand,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -850,14 +849,6 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
               <div className="w-8 text-center text-[10px] font-mono font-bold text-slate-500 dark:text-slate-400 py-0.5">
                 {Math.round(zoom * 100)}%
               </div>
-            </div>
-
-            {/* Hand / Pan Tool Hint */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-xl shadow-md text-xs text-slate-600 dark:text-slate-300 select-none">
-              <div className="w-5 h-5 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                <Hand className="w-3.5 h-3.5" />
-              </div>
-              <span className="font-medium">คลิกค้างแล้วลากเพื่อเลื่อนดูแผนผัง</span>
             </div>
           </div>
         )}
