@@ -14,6 +14,11 @@ export const shiftService = {
     return res.data.data!;
   },
 
+  async getNextShiftCode(): Promise<string> {
+    const res = await apiClient.get<ApiResponse<string>>('/shifts/next-code');
+    return res.data.data || '';
+  },
+
   async createShift(data: CreateShiftRequest): Promise<Shift> {
     const res = await apiClient.post<ApiResponse<Shift>>('/shifts', data);
     return res.data.data!;

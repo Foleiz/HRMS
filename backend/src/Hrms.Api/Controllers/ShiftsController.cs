@@ -33,6 +33,13 @@ public class ShiftsController : ControllerBase
         return Ok(ApiResponse<List<ShiftDto>>.Ok(result));
     }
 
+    [HttpGet("next-code")]
+    public async Task<IActionResult> GetNextCode()
+    {
+        var code = await _shiftService.GetNextShiftCodeAsync();
+        return Ok(ApiResponse<string>.Ok(code, "สร้างรหัสกะการทำงานอัตโนมัติสำเร็จ"));
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetShift(long id)
     {

@@ -109,13 +109,50 @@ public class ShiftService : IShiftService
         return shift == null ? null : MapToDto(shift);
     }
 
+    public async Task<string> GetNextShiftCodeAsync()
+    {
+        var codes = await _context.Shifts.AsNoTracking()
+            .Select(s => s.ShiftCode)
+            .ToListAsync();
+
+        int max = 0;
+        foreach (var c in codes)
+        {
+            if (string.IsNullOrWhiteSpace(c)) continue;
+            var m = System.Text.RegularExpressions.Regex.Match(c.Trim(), @"^SHF[-_]?(\d+)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (m.Success && int.TryParse(m.Groups[1].Value, out var n) && n > max)
+            {
+                max = n;
+            }
+        }
+
+        int nextNum = max + 1;
+        var generated = $"SHF{nextNum:D3}";
+
+        while (codes.Any(c => string.Equals(c, generated, StringComparison.OrdinalIgnoreCase)))
+        {
+            nextNum++;
+            generated = $"SHF{nextNum:D3}";
+        }
+
+        return generated;
+    }
+
     public async Task<ShiftDto> CreateShiftAsync(CreateShiftRequest request)
     {
-        var code = request.ShiftCode.Trim().ToUpper();
-        var exists = await _context.Shifts.AnyAsync(s => s.ShiftCode == code);
-        if (exists)
+        string code;
+        if (string.IsNullOrWhiteSpace(request.ShiftCode))
         {
-            throw new InvalidOperationException($"รหัสกะการทำงาน '{code}' มีอยู่ในระบบแล้ว");
+            code = await GetNextShiftCodeAsync();
+        }
+        else
+        {
+            code = request.ShiftCode.Trim().ToUpperInvariant();
+            var exists = await _context.Shifts.AnyAsync(s => s.ShiftCode == code);
+            if (exists)
+            {
+                throw new InvalidOperationException($"รหัสกะการทำงาน '{code}' มีอยู่ในระบบแล้ว");
+            }
         }
 
         var name = request.ShiftName.Trim();

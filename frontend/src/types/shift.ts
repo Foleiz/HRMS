@@ -16,7 +16,7 @@ export interface Shift {
 }
 
 export interface CreateShiftRequest {
-  shiftCode: string;
+  shiftCode?: string;
   shiftName: string;
   startTime: string; // HH:mm
   endTime: string;   // HH:mm

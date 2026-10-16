@@ -19,7 +19,7 @@ public class ShiftDto
 
 public class CreateShiftRequest
 {
-    public string ShiftCode { get; set; } = string.Empty;
+    public string? ShiftCode { get; set; }
     public string ShiftName { get; set; } = string.Empty;
     public string StartTime { get; set; } = string.Empty; // HH:mm
     public string EndTime { get; set; } = string.Empty;   // HH:mm

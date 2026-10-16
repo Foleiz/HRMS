@@ -8,6 +8,7 @@ public interface IShiftService
 {
     Task<List<ShiftDto>> GetAllShiftsAsync(string? status = null);
     Task<ShiftDto?> GetShiftByIdAsync(long id);
+    Task<string> GetNextShiftCodeAsync();
     Task<ShiftDto> CreateShiftAsync(CreateShiftRequest request);
     Task<ShiftDto> UpdateShiftAsync(long id, UpdateShiftRequest request);
     Task<bool> DeleteShiftAsync(long id);
