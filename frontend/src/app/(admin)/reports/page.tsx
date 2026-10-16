@@ -663,36 +663,78 @@ export default function ReportsPage() {
           {headcountData && (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {[
-                { label: 'พนักงานทั้งหมด', value: headcountData.totalEmployees, sub: `ต้องมาทำงาน ${headcountData.totalExpected ?? headcountData.totalEmployees} คน` },
-                { label: 'มาปฏิบัติงาน', value: headcountData.totalPresent, color: VIZ.good, tone: 'bg-emerald-50 border-emerald-200 text-emerald-700', sub: `สาย ${headcountData.totalLate} · ออกก่อน ${headcountData.totalEarlyLeave}` },
-                { label: 'มาสาย', value: headcountData.totalLate, color: VIZ.warning, tone: 'bg-amber-50 border-amber-200 text-amber-700', sub: 'นับรวมในมาปฏิบัติงาน' },
-                { label: 'ขาด / ยังไม่ลงเวลา', value: headcountData.totalAbsent, color: VIZ.critical, tone: 'bg-rose-50 border-rose-200 text-rose-700' },
+                {
+                  label: 'พนักงานทั้งหมด',
+                  value: headcountData.totalEmployees,
+                  sub: `ต้องมาทำงาน ${headcountData.totalExpected ?? headcountData.totalEmployees} คน`,
+                  tone: 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200/80 dark:border-blue-800/60',
+                  labelCls: 'text-blue-700 dark:text-blue-300',
+                  valCls: 'text-blue-950 dark:text-blue-100',
+                  subCls: 'text-blue-600/80 dark:text-blue-400/80',
+                  unitCls: 'text-blue-600/70 dark:text-blue-300/70',
+                },
+                {
+                  label: 'มาปฏิบัติงาน',
+                  value: headcountData.totalPresent,
+                  color: VIZ.good,
+                  tone: 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/60',
+                  labelCls: 'text-emerald-700 dark:text-emerald-300',
+                  valCls: 'text-emerald-950 dark:text-emerald-100',
+                  subCls: 'text-emerald-600/80 dark:text-emerald-400/80',
+                  unitCls: 'text-emerald-600/70 dark:text-emerald-300/70',
+                  sub: `สาย ${headcountData.totalLate} · ออกก่อน ${headcountData.totalEarlyLeave}`,
+                },
+                {
+                  label: 'มาสาย',
+                  value: headcountData.totalLate,
+                  color: VIZ.warning,
+                  tone: 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/60',
+                  labelCls: 'text-amber-700 dark:text-amber-300',
+                  valCls: 'text-amber-950 dark:text-amber-100',
+                  subCls: 'text-amber-600/80 dark:text-amber-400/80',
+                  unitCls: 'text-amber-600/70 dark:text-amber-300/70',
+                  sub: 'นับรวมในมาปฏิบัติงาน',
+                },
+                {
+                  label: 'ขาด / ยังไม่ลงเวลา',
+                  value: headcountData.totalAbsent,
+                  color: VIZ.critical,
+                  tone: 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/60',
+                  labelCls: 'text-rose-700 dark:text-rose-300',
+                  valCls: 'text-rose-950 dark:text-rose-100',
+                  subCls: 'text-rose-600/80 dark:text-rose-400/80',
+                  unitCls: 'text-rose-600/70 dark:text-rose-300/70',
+                },
                 {
                   label: 'ลา / วันหยุด',
                   value: (headcountData.totalLeave ?? 0) + (headcountData.totalOff ?? 0),
                   color: VIZ.s1,
-                  tone: 'bg-sky-50 border-sky-200 text-sky-700',
+                  tone: 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/60',
+                  labelCls: 'text-purple-700 dark:text-purple-300',
+                  valCls: 'text-purple-950 dark:text-purple-100',
+                  subCls: 'text-purple-600/80 dark:text-purple-400/80',
+                  unitCls: 'text-purple-600/70 dark:text-purple-300/70',
                   sub: `ลา ${headcountData.totalLeave ?? 0} · หยุด ${headcountData.totalOff ?? 0}`,
                 },
-              ].map((c: { label: string; value: number; color?: string; tone?: string; sub?: string }) => (
+              ].map((c) => (
                 <div
                   key={c.label}
-                  className={`p-4 rounded-2xl border shadow-sm space-y-1 ${c.tone ? c.tone.split(' ').slice(0, 2).join(' ') : 'bg-white border-slate-200'}`}
+                  className={`p-4.5 rounded-2xl border shadow-xs space-y-1.5 ${c.tone}`}
                 >
-                  <span className={`flex items-center gap-1.5 text-xs font-medium ${c.tone ? c.tone.split(' ')[2] : 'text-slate-500'}`}>
-                    {c.color && <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} />}
+                  <span className={`flex items-center gap-1.5 text-xs sm:text-sm font-semibold ${c.labelCls}`}>
+                    {c.color && <span className="inline-block h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: c.color }} />}
                     {c.label}
                   </span>
-                  <div className="text-2xl font-extrabold text-slate-900">
-                    {c.value} <span className="text-xs font-normal text-slate-400">คน</span>
+                  <div className={`text-2xl sm:text-3xl font-extrabold ${c.valCls}`}>
+                    {c.value} <span className={`text-xs sm:text-sm font-normal ${c.unitCls}`}>คน</span>
                   </div>
-                  {c.sub && <div className="text-[11px] text-slate-400">{c.sub}</div>}
+                  {c.sub && <div className={`text-xs font-medium ${c.subCls}`}>{c.sub}</div>}
                 </div>
               ))}
-              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1 col-span-2 sm:col-span-1">
-                <span className="text-xs text-slate-500">อัตราการเข้างาน</span>
-                <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, headcountData.overallAttendanceRate))}%</div>
-                <div className="text-[11px] text-slate-400">คิดจากคนที่ต้องมาทำงาน</div>
+              <div className="bg-indigo-50/70 dark:bg-indigo-950/30 p-4.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs space-y-1.5 col-span-2 sm:col-span-1">
+                <span className="text-xs sm:text-sm font-semibold text-indigo-700 dark:text-indigo-300">อัตราการเข้างาน</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-indigo-950 dark:text-indigo-100">{Math.min(100, Math.max(0, headcountData.overallAttendanceRate))}%</div>
+                <div className="text-xs text-indigo-600/80 dark:text-indigo-400/80 font-medium">คิดจากคนที่ต้องมาทำงาน</div>
               </div>
             </div>
           )}
@@ -887,26 +929,32 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {latenessData && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-slate-500 dark:text-slate-400">พนักงานที่ตรวจสอบ</span>
-                <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{latenessData.totalAuditedEmployees} คน</div>
-              </div>
-
-              <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm space-y-1">
-                <span className="text-xs text-amber-700 font-medium">การมาสายรวม</span>
-                <div className="text-2xl font-extrabold text-amber-600">{latenessData.totalLateOccurrences} ครั้ง</div>
-              </div>
-
-              <div className="bg-orange-50 p-4 rounded-2xl border border-orange-200 shadow-sm space-y-1">
-                <span className="text-xs text-orange-700 font-medium">เวลารวมที่สาย</span>
-                <div className="text-2xl font-extrabold text-orange-600">
-                  {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">นาที</span>
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4.5 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">พนักงานที่ตรวจสอบ</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-blue-950 dark:text-blue-100">
+                  {latenessData.totalAuditedEmployees} <span className="text-xs sm:text-sm font-normal text-blue-600/70 dark:text-blue-300/70">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-[#3F5F8C] dark:text-[#A3B8D8] font-medium">อัตราการเข้างานเฉลี่ย</span>
-                <div className="text-2xl font-extrabold text-[#0B2046]">{Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}%</div>
+              <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4.5 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300">การมาสายรวม</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-amber-950 dark:text-amber-100">
+                  {latenessData.totalLateOccurrences} <span className="text-xs sm:text-sm font-normal text-amber-600/70 dark:text-amber-300/70">ครั้ง</span>
+                </div>
+              </div>
+
+              <div className="bg-orange-50/70 dark:bg-orange-950/30 p-4.5 rounded-2xl border border-orange-200/80 dark:border-orange-800/60 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-orange-700 dark:text-orange-300">เวลารวมที่สาย</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-orange-950 dark:text-orange-100">
+                  {latenessData.totalLateMinutes} <span className="text-xs sm:text-sm font-normal text-orange-600/70 dark:text-orange-300/70">นาที</span>
+                </div>
+              </div>
+
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">อัตราการเข้างานเฉลี่ย</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100">
+                  {Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}%
+                </div>
               </div>
             </div>
           )}
@@ -1164,58 +1212,58 @@ export default function ReportsPage() {
           {/* 4 Summary KPI Cards */}
           {taxData && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4.5 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เงินได้พึงประเมินรวม</span>
-                  <DollarSign className="w-4 h-4 text-[#3F5F8C] dark:text-[#A3B8D8]" />
+                  <span className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">เงินได้พึงประเมินรวม</span>
+                  <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="text-2xl font-extrabold text-[#0B2046]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-blue-950 dark:text-blue-100">
                   {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
+                  <span className="text-xs sm:text-sm font-normal text-blue-600/70 dark:text-blue-300/70 ml-1">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
+                <div className="text-xs text-blue-600/80 dark:text-blue-400/80 font-medium">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-rose-50/70 dark:bg-rose-950/30 p-4.5 rounded-2xl border border-rose-200/80 dark:border-rose-800/60 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#A4545C] dark:text-[#E0A3A9] font-medium">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
-                  <Receipt className="w-4 h-4 text-[#A4545C] dark:text-[#E0A3A9]" />
+                  <span className="text-xs sm:text-sm font-semibold text-rose-700 dark:text-rose-300">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
+                  <Receipt className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 </div>
-                <div className="text-2xl font-extrabold text-[#A4545C] dark:text-[#E0A3A9]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-rose-950 dark:text-rose-100">
                   {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
+                  <span className="text-xs sm:text-sm font-normal text-rose-600/70 dark:text-rose-300/70 ml-1">บาท</span>
                 </div>
-                <div className="text-2xs text-[#A4545C] dark:text-[#E0A3A9] opacity-90">
+                <div className="text-xs text-rose-600/80 dark:text-rose-400/80 font-medium">
                   มีผู้ถูกหักภาษี {taxData.taxableEmployeesCount} จาก {taxData.totalEmployees} คน
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-indigo-50/70 dark:bg-indigo-950/30 p-4.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[#3F5F8C] dark:text-[#A3B8D8] font-medium">นำส่งประกันสังคม (สปส. 1-10)</span>
-                  <ShieldCheck className="w-4 h-4 text-[#3F5F8C] dark:text-[#A3B8D8]" />
+                  <span className="text-xs sm:text-sm font-semibold text-indigo-700 dark:text-indigo-300">นำส่งประกันสังคม (สปส. 1-10)</span>
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <div className="text-2xl font-extrabold text-[#2F4C75] dark:text-[#B4C6E2]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-indigo-950 dark:text-indigo-100">
                   {taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
+                  <span className="text-xs sm:text-sm font-normal text-indigo-600/70 dark:text-indigo-300/70 ml-1">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-500 dark:text-slate-400 flex justify-between dark:text-slate-400">
+                <div className="text-xs text-indigo-600/80 dark:text-indigo-400/80 font-medium flex justify-between">
                   <span>ลูกจ้าง: {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
                   <span>นายจ้าง: {taxData.totalSsoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-emerald-600 font-medium">เงินเดือนสุทธินำจ่าย</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">เงินเดือนสุทธินำจ่าย</span>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-2xl font-extrabold text-emerald-700">
+                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100">
                   {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs font-normal text-slate-400 ml-1 dark:text-slate-500 dark:text-slate-400">บาท</span>
+                  <span className="text-xs sm:text-sm font-normal text-emerald-600/70 dark:text-emerald-300/70 ml-1">บาท</span>
                 </div>
-                <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                  สถานะรอบ: <span className="font-semibold text-slate-700 dark:text-slate-300">{taxData.periodStatus}</span>
+                <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">
+                  สถานะรอบ: <span className="font-bold">{taxData.periodStatus}</span>
                 </div>
               </div>
             </div>
@@ -1542,51 +1590,51 @@ export default function ReportsPage() {
           {/* 5 Summary KPI Cards */}
           {turnoverData && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">พนักงานต้นงวด</span>
-                <div className="text-2xl font-extrabold text-slate-800 dark:text-slate-200">
-                  {turnoverData.totalBeginningHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
+              <div className="bg-slate-100/70 dark:bg-slate-900/50 p-4.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">พนักงานต้นงวด</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100">
+                  {turnoverData.totalBeginningHeadcount} <span className="text-xs sm:text-sm font-normal text-slate-500">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-emerald-600 font-medium">เข้าใหม่</span>
-                  <UserPlus className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">เข้าใหม่</span>
+                  <UserPlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-2xl font-extrabold text-emerald-600">
-                  {turnoverData.totalJoinedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100">
+                  {turnoverData.totalJoinedCount} <span className="text-xs sm:text-sm font-normal text-emerald-600/70 dark:text-emerald-300/70">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
+              <div className="bg-rose-50/70 dark:bg-rose-950/30 p-4.5 rounded-2xl border border-rose-200/80 dark:border-rose-800/60 shadow-xs space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-rose-600 font-medium">ลาออก</span>
-                  <UserMinus className="w-4 h-4 text-rose-600" />
+                  <span className="text-xs sm:text-sm font-semibold text-rose-700 dark:text-rose-300">ลาออก</span>
+                  <UserMinus className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                 </div>
-                <div className="text-2xl font-extrabold text-rose-600">
-                  {turnoverData.totalResignedCount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-blue-600 font-medium">พนักงานสิ้นงวด</span>
-                <div className="text-2xl font-extrabold text-[#0B2046]">
-                  {turnoverData.totalEndingHeadcount} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">คน</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-rose-950 dark:text-rose-100">
+                  {turnoverData.totalResignedCount} <span className="text-xs sm:text-sm font-normal text-rose-600/70 dark:text-rose-300/70">คน</span>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">อัตราลาออก / อัตราคงอยู่</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-extrabold text-amber-600">
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4.5 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">พนักงานสิ้นงวด</span>
+                <div className="text-2xl sm:text-3xl font-extrabold text-blue-950 dark:text-blue-100">
+                  {turnoverData.totalEndingHeadcount} <span className="text-xs sm:text-sm font-normal text-blue-600/70 dark:text-blue-300/70">คน</span>
+                </div>
+              </div>
+
+              <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4.5 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-1.5">
+                <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300">อัตราลาออก / คงอยู่</span>
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-2xl sm:text-3xl font-extrabold text-amber-950 dark:text-amber-100">
                     {turnoverData.overallTurnoverRate}%
                   </span>
-                  <span className="text-xs font-bold text-emerald-600">
+                  <span className="text-xs sm:text-sm font-bold text-emerald-700 dark:text-emerald-400">
                     (คงอยู่ {turnoverData.overallRetentionRate}%)
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight cursor-help w-fit" title="อัตราลาออก = จำนวนลาออก ÷ จำนวนพนักงานเฉลี่ยต้น-สิ้นงวด · อัตราคงอยู่ = 100% − อัตราลาออก">ⓘ วิธีคิด</p>
+                <p className="text-xs text-amber-600/80 dark:text-amber-400/80 leading-tight cursor-help w-fit font-medium" title="อัตราลาออก = จำนวนลาออก ÷ จำนวนพนักงานเฉลี่ยต้น-สิ้นงวด · อัตราคงอยู่ = 100% − อัตราลาออก">ⓘ วิธีคิดอัตราคงอยู่</p>
               </div>
             </div>
           )}

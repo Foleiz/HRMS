@@ -150,41 +150,44 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
         <div ref={printRef} className="space-y-4">
           {/* การ์ดสรุป */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                <Users className="w-3.5 h-3.5" /> พนักงานทั้งหมด
+            <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4.5 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5">
+              <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">
+                <Users className="w-4 h-4" /> พนักงานทั้งหมด
               </span>
-              <div className="text-2xl font-extrabold text-slate-900">
-                {data.totalEmployees} <span className="text-xs font-normal text-slate-400">คน</span>
+              <div className="text-2xl sm:text-3xl font-extrabold text-blue-950 dark:text-blue-100">
+                {data.totalEmployees} <span className="text-xs sm:text-sm font-normal text-blue-600/70 dark:text-blue-300/70">คน</span>
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-xs text-blue-600/80 dark:text-blue-400/80 font-medium">
                 {data.totalDepartments} แผนก
                 {data.totalHeadcountPlan ? ` · อัตรากำลังตามแผน ${data.totalHeadcountPlan} คน` : ''}
               </div>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="text-xs text-slate-500">ชาย / หญิง</span>
-              <div className="text-2xl font-extrabold text-slate-900">
-                {data.maleCount} <span className="text-base font-semibold text-slate-400">/</span> {data.femaleCount}
+
+            <div className="bg-purple-50/70 dark:bg-purple-950/30 p-4.5 rounded-2xl border border-purple-200/80 dark:border-purple-800/60 shadow-xs space-y-1.5">
+              <span className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300">ชาย / หญิง</span>
+              <div className="text-2xl sm:text-3xl font-extrabold text-purple-950 dark:text-purple-100">
+                {data.maleCount} <span className="text-base sm:text-lg font-semibold text-purple-400">/</span> {data.femaleCount}
               </div>
-              <div className="text-[11px] text-slate-400">ไม่ระบุ {data.otherGenderCount} คน</div>
+              <div className="text-xs text-purple-600/80 dark:text-purple-400/80 font-medium">ไม่ระบุ {data.otherGenderCount} คน</div>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                <UserPlus className="w-3.5 h-3.5" /> เข้าใหม่ปีนี้
+
+            <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5">
+              <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                <UserPlus className="w-4 h-4" /> เข้าใหม่ปีนี้
               </span>
-              <div className="text-2xl font-extrabold text-slate-900">
-                {data.newHiresThisYear} <span className="text-xs font-normal text-slate-400">คน</span>
+              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100">
+                {data.newHiresThisYear} <span className="text-xs sm:text-sm font-normal text-emerald-600/70 dark:text-emerald-300/70">คน</span>
               </div>
-              <div className="text-[11px] text-slate-400">นับจากวันเริ่มงานในสัญญาจ้าง</div>
+              <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">นับจากวันเริ่มงานในสัญญาจ้าง</div>
             </div>
-            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-              <span className="text-xs text-slate-500">ตำแหน่งที่ยังว่าง (ตามแผน)</span>
-              <div className="text-2xl font-extrabold text-slate-900">
+
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4.5 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-1.5">
+              <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300">ตำแหน่งที่ยังว่าง (ตามแผน)</span>
+              <div className="text-2xl sm:text-3xl font-extrabold text-amber-950 dark:text-amber-100">
                 {data.totalHeadcountPlan ? Math.max(0, data.totalHeadcountPlan - data.totalEmployees) : '-'}{' '}
-                <span className="text-xs font-normal text-slate-400">{data.totalHeadcountPlan ? 'คน' : ''}</span>
+                <span className="text-xs sm:text-sm font-normal text-amber-600/70 dark:text-amber-300/70">{data.totalHeadcountPlan ? 'คน' : ''}</span>
               </div>
-              <div className="text-[11px] text-slate-400">{data.totalHeadcountPlan ? 'อัตรากำลังตามแผน − พนักงานจริง' : 'ยังไม่ได้กำหนดอัตรากำลังของตำแหน่ง'}</div>
+              <div className="text-xs text-amber-600/80 dark:text-amber-400/80 font-medium">{data.totalHeadcountPlan ? 'อัตรากำลังตามแผน − พนักงานจริง' : 'ยังไม่ได้กำหนดอัตรากำลังของตำแหน่ง'}</div>
             </div>
           </div>
 
