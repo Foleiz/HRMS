@@ -257,6 +257,7 @@ public class UpdateBonusItemDto
     public decimal BonusAmount { get; set; }
     public decimal? Multiplier { get; set; }
     public string? Note { get; set; }
+    public string? Status { get; set; }
 }
 
 public class SaveEmployeeBonusesRequest
@@ -265,6 +266,13 @@ public class SaveEmployeeBonusesRequest
     public int Month { get; set; } = 12;
     public string CalculationMode { get; set; } = "MANUAL";
     public List<UpdateBonusItemDto> Items { get; set; } = new();
+}
+
+public class ApproveBonusPeriodRequest
+{
+    public int Year { get; set; }
+    public int Month { get; set; } = 12;
+    public List<long>? EmployeeIds { get; set; }
 }
 
 // ===== PAYMENT WORKFLOW DTOs =====

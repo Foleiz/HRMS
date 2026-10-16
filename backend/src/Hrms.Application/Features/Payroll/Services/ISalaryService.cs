@@ -57,10 +57,11 @@ public interface ISalaryService
     Task<BankTransferSummaryDto> GetBankTransferSummaryAsync(long periodId, string? bankCode = null, CancellationToken cancellationToken = default);
     Task<byte[]> GenerateBankTransferFileAsync(long periodId, string bankCode, CancellationToken cancellationToken = default);
     Task<TaxSsoSummaryDto> GetTaxSsoSummaryAsync(long periodId, CancellationToken cancellationToken = default);
-    Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, int? month = null, CancellationToken cancellationToken = default);
+    Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, int? month = null, bool onlySaved = false, CancellationToken cancellationToken = default);
     Task<List<BonusPeriodSummaryDto>> GetBonusPeriodsAsync(CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> CalculateEmployeeBonusesAsync(CalculateBonusRequest request, CancellationToken cancellationToken = default);
     Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default);
+    Task<List<EmployeeBonusDto>> ApproveBonusPeriodAsync(int year, int month, List<long>? employeeIds = null, CancellationToken cancellationToken = default);
 
     // ===== PAYMENT WORKFLOW =====
     /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER) — ต้องเป็น APPROVED</summary>

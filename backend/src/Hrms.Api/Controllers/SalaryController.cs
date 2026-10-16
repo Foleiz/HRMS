@@ -563,10 +563,11 @@ public class SalaryController : ControllerBase
     public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> GetEmployeeBonuses(
         [FromQuery] int? year,
         [FromQuery] int? month,
+        [FromQuery] bool? onlySaved,
         CancellationToken cancellationToken)
     {
         PayrollAccess.Ensure(PayrollAccess.CanViewBonus(_currentUser), "ดูข้อมูลโบนัส");
-        var result = await _salaryService.GetEmployeeBonusesAsync(year, month, cancellationToken);
+        var result = await _salaryService.GetEmployeeBonusesAsync(year, month, onlySaved ?? false, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "ดึงข้อมูลโบนัสพนักงานสำเร็จ"));
     }
 
@@ -608,6 +609,20 @@ public class SalaryController : ControllerBase
         PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_BONUS"), "จัดการโบนัส");
         var result = await _salaryService.SaveEmployeeBonusesAsync(request, cancellationToken);
         return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "บันทึกการจัดสรรโบนัสพนักงานสำเร็จ"));
+    }
+
+    /// <summary>
+    /// อนุมัติการจัดสรรโบนัส (ทั้งรอบ หรือรายบุคคล)
+    /// </summary>
+    [HttpPost("bonuses/approve")]
+    [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> ApproveBonusPeriod(
+        [FromBody] ApproveBonusPeriodRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_BONUS"), "จัดการโบนัส");
+        var result = await _salaryService.ApproveBonusPeriodAsync(request.Year, request.Month, request.EmployeeIds, cancellationToken);
+        return Ok(ApiResponse<List<EmployeeBonusDto>>.Ok(result, "อนุมัติข้อมูลโบนัสสำเร็จ"));
     }
 
     #endregion
