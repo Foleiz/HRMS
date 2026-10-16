@@ -368,7 +368,7 @@ export default function MasterDataHubPage() {
           }`}
         >
           <FileText className="w-4 h-4" />
-          ประเภทเอกสารแนบ ({docTypes.length})
+          ประเภทเอกสารแนบ
         </button>
 
         <button
@@ -380,7 +380,7 @@ export default function MasterDataHubPage() {
           }`}
         >
           <Globe className="w-4 h-4" />
-          สัญชาติ ({nationalities.length})
+          สัญชาติ
         </button>
 
         <button
@@ -392,7 +392,7 @@ export default function MasterDataHubPage() {
           }`}
         >
           <Heart className="w-4 h-4" />
-          ศาสนา ({religions.length})
+          ศาสนา
         </button>
 
         <button
@@ -404,7 +404,7 @@ export default function MasterDataHubPage() {
           }`}
         >
           <Users2 className="w-4 h-4" />
-          สถานภาพสมรส ({maritalStatuses.length})
+          สถานภาพสมรส
         </button>
 
         <button
@@ -416,7 +416,7 @@ export default function MasterDataHubPage() {
           }`}
         >
           <Landmark className="w-4 h-4" />
-          ธนาคาร ({banks.length})
+          ธนาคาร
         </button>
       </div>
 

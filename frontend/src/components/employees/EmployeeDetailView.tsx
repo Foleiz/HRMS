@@ -714,8 +714,8 @@ export default function EmployeeDetailView({
                   { id: 'sec-basic', label: 'ข้อมูลพื้นฐาน' },
                   { id: 'sec-contact', label: 'ติดต่อ & ที่อยู่' },
                   { id: 'sec-bank', label: 'บัญชีธนาคาร' },
-                  { id: 'sec-family', label: `ครอบครัว (${employee.familyMembers?.length ?? 0})` },
-                  { id: 'sec-emergency', label: `ผู้ติดต่อฉุกเฉิน (${employee.emergencyContacts?.length ?? 0})` },
+                  { id: 'sec-family', label: `ครอบครัว` },
+                  { id: 'sec-emergency', label: `ผู้ติดต่อฉุกเฉิน` },
                 ].map((s) => (
                   <button
                     key={s.id}

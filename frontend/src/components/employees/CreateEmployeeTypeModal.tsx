@@ -539,7 +539,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  ทั้งหมด ({categoryCounts.ALL})
+                  ทั้งหมด
                 </button>
                 <button
                   type="button"
@@ -550,7 +550,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  สิทธิตามกฎหมาย ({categoryCounts.STATUTORY})
+                  สิทธิตามกฎหมาย
                 </button>
                 <button
                   type="button"
@@ -561,7 +561,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  สุขภาพ & ประกัน ({categoryCounts.HEALTH})
+                  สุขภาพ & ประกัน
                 </button>
                 <button
                   type="button"
@@ -572,7 +572,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  เบี้ยเลี้ยง & ช่วยเหลือ ({categoryCounts.ALLOWANCE})
+                  เบี้ยเลี้ยง & ช่วยเหลือ
                 </button>
                 {categoryCounts.OTHER > 0 && (
                   <button
@@ -584,7 +584,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                         : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                     }`}
                   >
-                    อื่นๆ ({categoryCounts.OTHER})
+                    อื่นๆ
                   </button>
                 )}
               </div>

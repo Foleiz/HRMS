@@ -264,7 +264,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
               >
-                <option value="ALL">ทุกหมวดหมู่ ({benefits.length})</option>
+                <option value="ALL">ทุกหมวดหมู่</option>
                 <option value="STATUTORY">กฎหมายแรงงาน</option>
                 <option value="HEALTH">สุขภาพ & ประกัน</option>
                 <option value="ALLOWANCE">เบี้ยเลี้ยง & ช่วยเหลือ</option>
