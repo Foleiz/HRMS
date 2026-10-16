@@ -26,6 +26,7 @@ public class AuthService : IAuthService
         { "somchai.w", "Somchai@Dept2026" },
         { "worameth.r", "Worameth@Staff26" },
         { "ceo", "Ceo@Executive2026!" },
+        { "job", "Admin@123456" },
         { "accounting", "Account@Pay2026" },
         { "finance", "Finance@Money2026" },
         { "approver", "Approver@Flow2026" },
@@ -64,6 +65,14 @@ public class AuthService : IAuthService
             .Include(u => u.Employee)
             .FirstOrDefaultAsync(u => u.Username.ToLower() == targetUsername, cancellationToken);
 
+        // รองรับชื่อผู้ใช้ ceo ให้ชี้ไปยังบัญชีผู้บริหารสูงสุด (job)
+        if (user == null && targetUsername == "ceo")
+        {
+            user = await _dbContext.UserAccounts
+                .Include(u => u.Employee)
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == "job", cancellationToken);
+        }
+
         if (user == null)
         {
             throw new ValidationException("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง");
@@ -89,7 +98,8 @@ public class AuthService : IAuthService
         if (!passwordValid && (
             request.Password == "123456" || 
             request.Password == "Admin@123456" || 
-            (DefaultAccountPasswords.TryGetValue(user.Username, out var expectedPass) && request.Password == expectedPass)
+            (DefaultAccountPasswords.TryGetValue(user.Username, out var expectedPass) && request.Password == expectedPass) ||
+            (targetUsername == "ceo" && DefaultAccountPasswords.TryGetValue("ceo", out var ceoPass) && request.Password == ceoPass)
         ))
         {
             passwordValid = true;
