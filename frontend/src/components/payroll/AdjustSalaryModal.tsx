@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, ArrowUpRight, ArrowDownRight, User, Building2, Briefcase } from 'lucide-react';
+import { X, Loader2, AlertCircle, User, Building2, Briefcase } from 'lucide-react';
 import { EmployeeSalaryOverview, AdjustEmployeeSalaryPayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
@@ -46,10 +46,6 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
   const newSalaryNum = parseFloat(baseSalary);
   const currentSalaryNum = employee.currentSalary || 0;
-  const diff = !isNaN(newSalaryNum) ? newSalaryNum - currentSalaryNum : 0;
-  const percentChange = currentSalaryNum > 0 && !isNaN(newSalaryNum)
-    ? ((diff / currentSalaryNum) * 100).toFixed(1)
-    : null;
 
   const minSalary = employee.salaryStructureMin != null && employee.salaryStructureMin > 0 ? employee.salaryStructureMin : null;
   const maxSalary = employee.salaryStructureMax != null && employee.salaryStructureMax > 0 ? employee.salaryStructureMax : null;
@@ -209,32 +205,6 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">฿</span>
               </div>
-              {minSalary != null && (
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBaseSalary(String(minSalary));
-                      if (error) setError(null);
-                    }}
-                    className="text-[11px] text-[#0B2046] hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-medium inline-flex items-center gap-1 transition-colors"
-                  >
-                    <span>⚡ ใช้ขั้นต่ำ: ฿{minSalary.toLocaleString()}</span>
-                  </button>
-                  {maxSalary != null && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBaseSalary(String(maxSalary));
-                        if (error) setError(null);
-                      }}
-                      className="text-[11px] text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-medium transition-colors"
-                    >
-                      สูงสุด: ฿{maxSalary.toLocaleString()}
-                    </button>
-                  )}
-                </div>
-              )}
               {isBelowMin && (
                 <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5 animate-in fade-in">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
@@ -249,27 +219,6 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               )}
             </div>
           </div>
-
-          {/* Diff Indicator */}
-          {diff !== 0 && !isNaN(diff) && (
-            <div
-              className={`p-2.5 rounded-xl text-xs flex items-center justify-between ${
-                diff > 0
-                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                  : 'bg-amber-50 text-amber-800 border border-amber-200'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 font-medium">
-                {diff > 0 ? (
-                  <ArrowUpRight className="w-4 h-4 text-emerald-600" />
-                ) : (
-                  <ArrowDownRight className="w-4 h-4 text-amber-600" />
-                )}
-                <span>{diff > 0 ? 'ปรับขึ้น' : 'ปรับลง'}: {Math.abs(diff).toLocaleString()} บาท</span>
-              </div>
-              {percentChange && <span className="font-bold">{diff > 0 ? `+${percentChange}%` : `${percentChange}%`}</span>}
-            </div>
-          )}
 
           {/* Effective Date */}
           <div>
