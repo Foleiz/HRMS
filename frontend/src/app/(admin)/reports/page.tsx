@@ -664,18 +664,22 @@ export default function ReportsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {[
                 { label: 'พนักงานทั้งหมด', value: headcountData.totalEmployees, sub: `ต้องมาทำงาน ${headcountData.totalExpected ?? headcountData.totalEmployees} คน` },
-                { label: 'มาปฏิบัติงาน', value: headcountData.totalPresent, color: VIZ.good, sub: `สาย ${headcountData.totalLate} · ออกก่อน ${headcountData.totalEarlyLeave}` },
-                { label: 'มาสาย', value: headcountData.totalLate, color: VIZ.warning, sub: 'นับรวมในมาปฏิบัติงาน' },
-                { label: 'ขาด / ยังไม่ลงเวลา', value: headcountData.totalAbsent, color: VIZ.critical },
+                { label: 'มาปฏิบัติงาน', value: headcountData.totalPresent, color: VIZ.good, tone: 'bg-emerald-50 border-emerald-200 text-emerald-700', sub: `สาย ${headcountData.totalLate} · ออกก่อน ${headcountData.totalEarlyLeave}` },
+                { label: 'มาสาย', value: headcountData.totalLate, color: VIZ.warning, tone: 'bg-amber-50 border-amber-200 text-amber-700', sub: 'นับรวมในมาปฏิบัติงาน' },
+                { label: 'ขาด / ยังไม่ลงเวลา', value: headcountData.totalAbsent, color: VIZ.critical, tone: 'bg-rose-50 border-rose-200 text-rose-700' },
                 {
                   label: 'ลา / วันหยุด',
                   value: (headcountData.totalLeave ?? 0) + (headcountData.totalOff ?? 0),
                   color: VIZ.s1,
+                  tone: 'bg-sky-50 border-sky-200 text-sky-700',
                   sub: `ลา ${headcountData.totalLeave ?? 0} · หยุด ${headcountData.totalOff ?? 0}`,
                 },
-              ].map((c) => (
-                <div key={c.label} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-                  <span className="flex items-center gap-1.5 text-xs text-slate-500">
+              ].map((c: { label: string; value: number; color?: string; tone?: string; sub?: string }) => (
+                <div
+                  key={c.label}
+                  className={`p-4 rounded-2xl border shadow-sm space-y-1 ${c.tone ? c.tone.split(' ').slice(0, 2).join(' ') : 'bg-white border-slate-200'}`}
+                >
+                  <span className={`flex items-center gap-1.5 text-xs font-medium ${c.tone ? c.tone.split(' ')[2] : 'text-slate-500'}`}>
                     {c.color && <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: c.color }} />}
                     {c.label}
                   </span>
@@ -888,13 +892,13 @@ export default function ReportsPage() {
                 <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{latenessData.totalAuditedEmployees} คน</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-amber-600 font-medium">การมาสายรวม</span>
+              <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 shadow-sm space-y-1">
+                <span className="text-xs text-amber-700 font-medium">การมาสายรวม</span>
                 <div className="text-2xl font-extrabold text-amber-600">{latenessData.totalLateOccurrences} ครั้ง</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1 dark:bg-slate-800 dark:border-slate-700">
-                <span className="text-xs text-orange-600 font-medium">เวลารวมที่สาย</span>
+              <div className="bg-orange-50 p-4 rounded-2xl border border-orange-200 shadow-sm space-y-1">
+                <span className="text-xs text-orange-700 font-medium">เวลารวมที่สาย</span>
                 <div className="text-2xl font-extrabold text-orange-600">
                   {latenessData.totalLateMinutes} <span className="text-xs font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">นาที</span>
                 </div>
