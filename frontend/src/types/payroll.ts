@@ -343,6 +343,7 @@ export interface UpdateBonusItemPayload {
   bonusAmount: number;
   multiplier?: number;
   note?: string;
+  status?: string;
 }
 
 export interface BonusPeriodSummary {

@@ -236,9 +236,9 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async getEmployeeBonuses(year?: number, month?: number): Promise<EmployeeBonus[]> {
+  async getEmployeeBonuses(year?: number, month?: number, onlySaved?: boolean): Promise<EmployeeBonus[]> {
     const res = await apiClient.get<ApiResponse<EmployeeBonus[]>>('/salary/bonuses', {
-      params: { year, month },
+      params: { year, month, onlySaved },
     });
     return res.data.data;
   },
@@ -255,6 +255,11 @@ export const salaryService = {
 
   async saveEmployeeBonuses(payload: SaveEmployeeBonusesPayload): Promise<EmployeeBonus[]> {
     const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/save', payload);
+    return res.data.data;
+  },
+
+  async approveBonusPeriod(payload: { year: number; month: number; employeeIds?: number[] }): Promise<EmployeeBonus[]> {
+    const res = await apiClient.post<ApiResponse<EmployeeBonus[]>>('/salary/bonuses/approve', payload);
     return res.data.data;
   },
 

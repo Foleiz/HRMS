@@ -1586,7 +1586,7 @@ public class SalaryService : ISalaryService
         var bonusItem = (await EnsureSystemPayrollItemsAsync(cancellationToken))["INC_BONUS"];
 
         var bonusQuery = _context.EmployeeBonuses
-            .Where(b => b.Year == year && b.Status == "APPROVED" && b.BonusAmount > 0);
+            .Where(b => b.Year == year && (b.Status == "APPROVED" || b.Status == "CALCULATED") && b.BonusAmount > 0);
         if (month.HasValue)
         {
             bonusQuery = bonusQuery.Where(b => b.Month == month.Value);
@@ -1598,8 +1598,8 @@ public class SalaryService : ISalaryService
 
         if (!bonuses.Any())
             throw new BusinessRuleException(month.HasValue 
-                ? $"ไม่พบโบนัสที่อนุมัติแล้วของเดือน {month.Value}/{year + 543}" 
-                : $"ไม่พบโบนัสที่อนุมัติแล้วของปี {year + 543}");
+                ? $"ไม่พบรายการโบนัสของเดือน {month.Value}/{year + 543}" 
+                : $"ไม่พบรายการโบนัสของปี {year + 543}");
 
         // ป้องกันการจ่ายซ้ำ: โบนัสที่อยู่ในรอบเงินเดือนใด ๆ แล้ว จะไม่ถูกเพิ่มอีก
         var existingBonusSources = await _context.PayrollDetails
@@ -3034,7 +3034,7 @@ public class SalaryService : ISalaryService
         };
     }
 
-    public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, int? month = null, CancellationToken cancellationToken = default)
+    public async Task<List<EmployeeBonusDto>> GetEmployeeBonusesAsync(int? year = null, int? month = null, bool onlySaved = false, CancellationToken cancellationToken = default)
     {
         int targetYear = year ?? DateTime.Today.Year;
         int targetMonth = month ?? 12;
@@ -3054,6 +3054,39 @@ public class SalaryService : ISalaryService
             .ToListAsync(cancellationToken);
 
         var result = new List<EmployeeBonusDto>();
+
+        if (onlySaved)
+        {
+            // แสดงเฉพาะพนักงานที่มีบันทึกโบนัสในฐานข้อมูลจริงเท่านั้น
+            foreach (var existing in savedBonuses)
+            {
+                var emp = employees.FirstOrDefault(e => e.Id == existing.EmployeeId);
+                var deptName = emp?.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
+                var posName = emp?.Assignments.FirstOrDefault()?.Position?.PositionName ?? "-";
+                var sal = salaries.FirstOrDefault(s => s.EmployeeId == existing.EmployeeId)?.BaseSalary ?? 0m;
+
+                result.Add(new EmployeeBonusDto
+                {
+                    Id = existing.Id,
+                    EmployeeId = existing.EmployeeId,
+                    EmployeeCode = emp?.EmployeeCode ?? $"EMP{existing.EmployeeId:D5}",
+                    EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}" : $"พนักงาน #{existing.EmployeeId}",
+                    DepartmentName = deptName,
+                    PositionName = posName,
+                    Year = targetYear,
+                    Month = targetMonth,
+                    BaseSalary = existing.BaseSalary > 0 ? existing.BaseSalary : sal,
+                    Multiplier = existing.Multiplier,
+                    BonusAmount = existing.BonusAmount,
+                    CalculationMode = existing.CalculationMode,
+                    Note = existing.Note,
+                    Status = existing.Status,
+                    StatusText = existing.Status == "APPROVED" ? "อนุมัติแล้ว" : "คำนวณแล้ว"
+                });
+            }
+
+            return result.OrderBy(r => r.EmployeeCode).ToList();
+        }
 
         foreach (var emp in employees)
         {
@@ -3085,6 +3118,9 @@ public class SalaryService : ISalaryService
             }
             else
             {
+                // ถ้ายังไม่เคยบันทึก ให้แสดงเฉพาะพนักงานที่มีฐานเงินเดือน > 0 เพื่อคำนวณ
+                if (sal <= 0) continue;
+
                 decimal defaultMultiplier = 2.0m;
                 result.Add(new EmployeeBonusDto
                 {
@@ -3194,11 +3230,17 @@ public class SalaryService : ISalaryService
             var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
             if (existing != null)
             {
+                // หากได้รับการอนุมัติแล้ว ให้คงสถานะเดิมไว้ ไม่คำนวณทับโดยไม่ได้รับอนุญาต
+                if (existing.Status == "APPROVED")
+                {
+                    continue;
+                }
+
                 existing.BaseSalary = sal;
                 existing.Multiplier = multiplier;
                 existing.BonusAmount = bonusAmount;
                 existing.CalculationMode = "MULTIPLIER";
-                existing.Status = "APPROVED";
+                existing.Status = "CALCULATED";
                 existing.UpdatedAt = DateTime.UtcNow;
             }
             else
@@ -3212,7 +3254,7 @@ public class SalaryService : ISalaryService
                     Multiplier = multiplier,
                     BonusAmount = bonusAmount,
                     CalculationMode = "MULTIPLIER",
-                    Status = "APPROVED",
+                    Status = "CALCULATED",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -3220,7 +3262,7 @@ public class SalaryService : ISalaryService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return await GetEmployeeBonusesAsync(targetYear, targetMonth, cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, targetMonth, onlySaved: false, cancellationToken);
     }
 
     public async Task<List<EmployeeBonusDto>> SaveEmployeeBonusesAsync(SaveEmployeeBonusesRequest request, CancellationToken cancellationToken = default)
@@ -3243,12 +3285,18 @@ public class SalaryService : ISalaryService
             var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == item.EmployeeId);
             if (existing != null)
             {
-                existing.BaseSalary = sal;
+                // หากอนุมัติแล้ว และไม่ได้ระบุสถานะมาขอแก้ไข ให้ล็อกไว้
+                if (existing.Status == "APPROVED" && string.IsNullOrEmpty(item.Status))
+                {
+                    continue;
+                }
+
+                existing.BaseSalary = sal > 0 ? sal : existing.BaseSalary;
                 existing.Multiplier = multiplier;
                 existing.BonusAmount = bonusAmount;
                 existing.CalculationMode = request.CalculationMode ?? "MANUAL";
                 existing.Note = item.Note;
-                existing.Status = "APPROVED";
+                existing.Status = !string.IsNullOrWhiteSpace(item.Status) ? item.Status : (existing.Status ?? "CALCULATED");
                 existing.UpdatedAt = DateTime.UtcNow;
             }
             else
@@ -3263,7 +3311,7 @@ public class SalaryService : ISalaryService
                     BonusAmount = bonusAmount,
                     CalculationMode = request.CalculationMode ?? "MANUAL",
                     Note = item.Note,
-                    Status = "APPROVED",
+                    Status = !string.IsNullOrWhiteSpace(item.Status) ? item.Status : "CALCULATED",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -3271,7 +3319,31 @@ public class SalaryService : ISalaryService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
-        return await GetEmployeeBonusesAsync(targetYear, targetMonth, cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, targetMonth, onlySaved: false, cancellationToken);
+    }
+
+    public async Task<List<EmployeeBonusDto>> ApproveBonusPeriodAsync(int year, int month, List<long>? employeeIds = null, CancellationToken cancellationToken = default)
+    {
+        int targetYear = year <= 0 ? DateTime.Today.Year : year;
+        int targetMonth = month <= 0 || month > 12 ? 12 : month;
+
+        var bonuses = await _context.EmployeeBonuses
+            .Where(b => b.Year == targetYear && b.Month == targetMonth)
+            .ToListAsync(cancellationToken);
+
+        if (employeeIds != null && employeeIds.Any())
+        {
+            bonuses = bonuses.Where(b => employeeIds.Contains(b.EmployeeId)).ToList();
+        }
+
+        foreach (var b in bonuses)
+        {
+            b.Status = "APPROVED";
+            b.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetEmployeeBonusesAsync(targetYear, targetMonth, onlySaved: true, cancellationToken);
     }
 
     #endregion
