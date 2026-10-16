@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Clock, ChevronDown } from 'lucide-react';
@@ -10,6 +10,7 @@ interface ThaiTimePickerProps {
   required?: boolean;
   disabled?: boolean;
   align?: 'left' | 'right' | 'auto';
+  showQuickMinutes?: boolean;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -241,6 +242,7 @@ export default function ThaiTimePicker({
   required,
   disabled,
   align = 'auto',
+  showQuickMinutes = true,
 }: ThaiTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -489,30 +491,32 @@ export default function ThaiTimePicker({
           </div>
 
           {/* Quick Minute Selection Presets with Live Time Badge */}
-          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400">ปุ่มลัดนาที:</span>
-              <span className="text-[10px] font-mono font-bold text-[#0B2046] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
-                {selectedHour}:{selectedMinute} น.
-              </span>
+          {showQuickMinutes && (
+            <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400">ปุ่มลัดนาที:</span>
+                <span className="text-[10px] font-mono font-bold text-[#0B2046] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                  {selectedHour}:{selectedMinute} น.
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {QUICK_MINUTES.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => handleMinuteSelect(m)}
+                    className={`py-1 rounded-lg text-xs font-mono font-bold transition-all duration-150 ${
+                      selectedMinute === m
+                        ? 'bg-[#0B2046] text-white shadow-xs scale-105'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                    } dark:bg-slate-700 dark:text-slate-300`}
+                  >
+                    :{m} น.
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {QUICK_MINUTES.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => handleMinuteSelect(m)}
-                  className={`py-1 rounded-lg text-xs font-mono font-bold transition-all duration-150 ${
-                    selectedMinute === m
-                      ? 'bg-[#0B2046] text-white shadow-xs scale-105'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
-                  } dark:bg-slate-700 dark:text-slate-300`}
-                >
-                  :{m} น.
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
         </div>
       )}
     </div>

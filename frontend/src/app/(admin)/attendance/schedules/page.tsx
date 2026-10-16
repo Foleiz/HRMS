@@ -2647,6 +2647,7 @@ function SchedulesContent() {
                       value={shiftForm.startTime}
                       onChange={(val) => handleShiftTimeChange('startTime', val)}
                       align="left"
+                      showQuickMinutes={false}
                     />
                   </div>
                   <div>
@@ -2655,6 +2656,7 @@ function SchedulesContent() {
                       value={shiftForm.endTime}
                       onChange={(val) => handleShiftTimeChange('endTime', val)}
                       align="right"
+                      showQuickMinutes={false}
                     />
                   </div>
                 </div>
