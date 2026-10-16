@@ -104,10 +104,10 @@ export const SalaryStructureModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         {/* Header - Centered title matching mockup */}
-        <div className="relative px-6 pt-6 pb-4 text-center">
+        <div className="relative px-6 pt-6 pb-4 text-center shrink-0">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
             {structure ? 'แก้ไขโครงสร้างเงินเดือน' : 'เพิ่มโครงสร้างเงินเดือน'}
           </h3>
@@ -121,7 +121,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
+        <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs dark:bg-red-900/20 dark:text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />

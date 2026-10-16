@@ -105,67 +105,69 @@ export const AdjustSalaryModal: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 shrink-0">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">ปรับฐานเงินเดือนพนักงาน</h3>
+            <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">ปรับฐานเงินเดือนพนักงาน</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">บันทึกอัตราเงินเดือนใหม่พร้อมวันที่มีผล</p>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            type="button"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Employee Summary Card */}
-        <div className="mx-6 mt-5 p-4 bg-slate-50/80 border border-slate-200/70 rounded-2xl space-y-2.5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] flex items-center justify-center font-bold text-sm">
-              {employee.employeeCode.slice(-3)}
-            </div>
-            <div>
-              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">{employee.employeeName}</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{employee.employeeCode}</p>
-            </div>
-          </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Scrollable Body */}
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
+            {/* Employee Summary Card */}
+            <div className="p-4 bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl space-y-2.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-300 flex items-center justify-center font-bold text-sm">
+                  {employee.employeeCode.slice(-3)}
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">{employee.employeeName}</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">{employee.employeeCode}</p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60">
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-              <span className="truncate">{employee.departmentName || 'ไม่ระบุแผนก'}</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-              <Briefcase className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-              <span className="truncate">{employee.positionName || 'ไม่ระบุตำแหน่ง'}</span>
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                  <span className="truncate">{employee.departmentName || 'ไม่ระบุแผนก'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                  <span className="truncate">{employee.positionName || 'ไม่ระบุตำแหน่ง'}</span>
+                </div>
+              </div>
 
-          {/* Reference Structure Banner */}
-          {(employee.salaryStructureMin != null || employee.salaryStructureMax != null) && (
-            <div
-              className={`text-[11px] px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
-                isOutOfRange
-                  ? 'bg-rose-50/90 border-rose-200 text-rose-700'
-                  : 'text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-              }`}
-            >
-              <span className="flex items-center gap-1 font-medium">
-                {isOutOfRange && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
-                กรอบเงินเดือนตามตำแหน่ง:
-              </span>
-              <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
-                ฿{employee.salaryStructureMin?.toLocaleString()} - ฿{employee.salaryStructureMax?.toLocaleString()}
-              </span>
+              {/* Reference Structure Banner */}
+              {(employee.salaryStructureMin != null || employee.salaryStructureMax != null) && (
+                <div
+                  className={`text-[11px] px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
+                    isOutOfRange
+                      ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                      : 'text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <span className="flex items-center gap-1 font-medium">
+                    {isOutOfRange && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
+                    กรอบเงินเดือนตามตำแหน่ง:
+                  </span>
+                  <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 dark:text-rose-300 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
+                    ฿{employee.salaryStructureMin?.toLocaleString()} - ฿{employee.salaryStructureMax?.toLocaleString()}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-sm dark:bg-red-900/20 dark:text-red-400">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -299,12 +301,14 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             />
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+          </div>
+
+          {/* Actions (Sticky footer) */}
+          <div className="flex items-center justify-end gap-3 px-6 py-3.5 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-700/60 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
             >
               ยกเลิก
             </button>
@@ -312,7 +316,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               type="submit"
               disabled={loading || isOutOfRange}
               title={isOutOfRange ? 'เงินเดือนไม่อยู่ในช่วงกรอบเงินเดือนตามตำแหน่ง' : undefined}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? (
                 <>
