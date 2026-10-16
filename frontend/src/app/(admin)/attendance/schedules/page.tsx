@@ -1768,7 +1768,7 @@ function SchedulesContent() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">
-                {assignModalMode === 'create' ? 'มอบหมายกะให้พนักงาน' : 'แก้ไขการมอบหมายกะ'}
+                {assignModalMode === 'create' ? 'มอบหมายกะเดี่ยว' : 'แก้ไขการมอบหมายกะ'}
               </h3>
               <button
                 onClick={() => setAssignModalOpen(false)}
