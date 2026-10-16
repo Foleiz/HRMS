@@ -56,11 +56,20 @@ public class ShiftService : IShiftService
             IsCrossDay = s.IsCrossDay,
             BreakMinutes = s.BreakMinutes,
             Status = s.Status,
+            Color = s.Color,
             LateGraceMinutes = s.LateGraceMinutes,
             EarlyLeaveGraceMinutes = s.EarlyLeaveGraceMinutes,
             WorkHours = workHours,
             NetWorkHours = netWorkHours
         };
+    }
+
+    /// <summary>รับเฉพาะ #RGB / #RRGGBB — อื่น ๆ = null (ใช้สีเริ่มต้น)</summary>
+    private static string? NormalizeColor(string? color)
+    {
+        if (string.IsNullOrWhiteSpace(color)) return null;
+        var c = color.Trim();
+        return System.Text.RegularExpressions.Regex.IsMatch(c, "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$") ? c.ToUpperInvariant() : null;
     }
 
     private static TimeOnly ParseTime(string timeStr, string fieldName)
@@ -134,6 +143,7 @@ public class ShiftService : IShiftService
             IsCrossDay = isCrossDay,
             BreakMinutes = Math.Max(0, request.BreakMinutes),
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim(),
+            Color = NormalizeColor(request.Color),
             LateGraceMinutes = Math.Max(0, request.LateGraceMinutes),
             EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes)
         };
@@ -174,6 +184,7 @@ public class ShiftService : IShiftService
         shift.IsCrossDay = isCrossDay;
         shift.BreakMinutes = Math.Max(0, request.BreakMinutes);
         shift.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim();
+        shift.Color = NormalizeColor(request.Color);
         shift.LateGraceMinutes = Math.Max(0, request.LateGraceMinutes);
         shift.EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes);
 

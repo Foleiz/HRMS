@@ -713,6 +713,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
             entity.Property(e => e.ShiftCode).HasColumnName("shift_code").IsRequired().HasMaxLength(50);
             entity.Property(e => e.ShiftName).HasColumnName("shift_name").IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(20);
             entity.Property(e => e.StartTime).HasColumnName("start_time").IsRequired();
             entity.Property(e => e.EndTime).HasColumnName("end_time").IsRequired();
             entity.Property(e => e.IsCrossDay).HasColumnName("is_cross_day").IsRequired();

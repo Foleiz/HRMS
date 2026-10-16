@@ -10,6 +10,7 @@ public class ShiftDto
     public bool IsCrossDay { get; set; }
     public int BreakMinutes { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public string? Color { get; set; }
     public int LateGraceMinutes { get; set; }
     public int EarlyLeaveGraceMinutes { get; set; }
     public double WorkHours { get; set; }
@@ -25,6 +26,7 @@ public class CreateShiftRequest
     public bool? IsCrossDay { get; set; }
     public int BreakMinutes { get; set; } = 0;
     public string Status { get; set; } = "ACTIVE";
+    public string? Color { get; set; }
     public int LateGraceMinutes { get; set; } = 0;
     public int EarlyLeaveGraceMinutes { get; set; } = 0;
 }
@@ -37,6 +39,7 @@ public class UpdateShiftRequest
     public bool? IsCrossDay { get; set; }
     public int BreakMinutes { get; set; } = 0;
     public string Status { get; set; } = "ACTIVE";
+    public string? Color { get; set; }
     public int LateGraceMinutes { get; set; } = 0;
     public int EarlyLeaveGraceMinutes { get; set; } = 0;
 }

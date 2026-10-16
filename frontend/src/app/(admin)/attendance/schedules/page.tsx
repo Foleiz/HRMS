@@ -49,6 +49,7 @@ import {
   EmployeeTypeLookup,
 } from '@/types/schedule';
 import { Shift, CreateShiftRequest } from '@/types/shift';
+import { LEAVE_COLOR_PRESETS, buildColorMap, leaveColorVars, shortPersonName } from '@/lib/leaveColors';
 import { Department } from '@/types/organization';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
@@ -221,6 +222,9 @@ function SchedulesContent() {
 
   // Core Data
   const [shifts, setShifts] = useState<Shift[]>([]);
+  // สีของแต่ละกะ (ตั้งได้ที่แท็บกะการทำงาน — ไม่ตั้งจะได้สีไม่ซ้ำกันอัตโนมัติ)
+  const shiftColorMap = useMemo(() => buildColorMap(shifts), [shifts]);
+  const colorOfShift = (shiftId?: number | null) => (shiftId ? shiftColorMap.get(shiftId) : undefined) ?? '#475569';
   const [assignments, setAssignments] = useState<EmployeeShift[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [assignableEmployees, setAssignableEmployees] = useState<AssignableEmployee[]>([]);
@@ -304,6 +308,7 @@ function SchedulesContent() {
     status: 'ACTIVE',
     lateGraceMinutes: 10,
     earlyLeaveGraceMinutes: 5,
+    color: '',
   });
 
   // Employee details modal for shift
@@ -756,6 +761,7 @@ function SchedulesContent() {
       status: 'ACTIVE',
       lateGraceMinutes: 10,
       earlyLeaveGraceMinutes: 5,
+      color: '',
     });
     setShiftModalOpen(true);
   };
@@ -774,6 +780,7 @@ function SchedulesContent() {
       status: shift.status,
       lateGraceMinutes: shift.lateGraceMinutes,
       earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+      color: shift.color ?? '',
     });
     setShiftModalOpen(true);
   };
@@ -791,6 +798,7 @@ function SchedulesContent() {
       status: 'ACTIVE',
       lateGraceMinutes: shift.lateGraceMinutes,
       earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+      color: '',
     });
     setShiftModalOpen(true);
   };
@@ -838,7 +846,7 @@ function SchedulesContent() {
     try {
       setSubmitting(true);
       if (shiftModalMode === 'create') {
-        await shiftService.createShift(shiftForm);
+        await shiftService.createShift({ ...shiftForm, color: shiftForm.color || null });
         toast.success('สร้างกะการทำงานใหม่เรียบร้อยแล้ว');
       } else if (shiftForm.id) {
         await shiftService.updateShift(shiftForm.id, {
@@ -850,6 +858,7 @@ function SchedulesContent() {
           status: shiftForm.status,
           lateGraceMinutes: shiftForm.lateGraceMinutes,
           earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
+          color: shiftForm.color || null,
         });
         toast.success('แก้ไขข้อมูลกะการทำงานเรียบร้อยแล้ว');
       }
@@ -1076,16 +1085,16 @@ function SchedulesContent() {
                 {/* Shift Badges Legend */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs font-medium text-slate-500 dark:text-slate-400">ประเภทกะ:</span>
-                  {shifts.map((s) => {
-                    const period = getShiftPeriodInfo(s);
-                    const PeriodIcon = period.icon;
+                  {shifts.filter((s) => s.status === 'ACTIVE').map((s) => {
+                    const color = colorOfShift(s.id);
                     return (
                       <span
                         key={s.id}
-                        className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${period.badgeClass}`}
+                        className="leave-chip inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+                        style={leaveColorVars(color) as React.CSSProperties}
                         title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
                       >
-                        <PeriodIcon className="w-3 h-3" />
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                         <span>{s.shiftName}</span>
                       </span>
                     );
@@ -1201,19 +1210,17 @@ function SchedulesContent() {
                               {/* Scheduled Shift Pills */}
                               <div className="space-y-1 flex-1">
                                 {dayShifts.slice(0, 3).map((item, idx) => {
-                                  const period = getShiftPeriodInfo(item.shift);
-                                  const PeriodIcon = period.icon;
+                                  const color = colorOfShift(item.shift.shiftId);
                                   return (
                                     <div
                                       key={`${item.employeeId}-${idx}`}
-                                      className={`flex items-center justify-between text-[11px] px-1.5 py-0.5 rounded font-medium border truncate ${period.badgeClass}`}
+                                      className="leave-chip flex items-center gap-1.5 text-[11px] px-1.5 py-0.5 rounded min-w-0"
+                                      style={leaveColorVars(color) as React.CSSProperties}
                                       title={`${item.employeeName} (${item.employeeCode}) - ${item.shift.shiftName} (${item.shift.startTime.substring(0, 5)}-${item.shift.endTime.substring(0, 5)})`}
                                     >
-                                      <div className="flex items-center gap-1 min-w-0 truncate">
-                                        <PeriodIcon className="w-2.5 h-2.5 shrink-0" />
-                                        <span className="font-bold shrink-0">{item.shift.shiftName}:</span>
-                                        <span className="truncate text-slate-700">{item.employeeName.split(' ')[0]}</span>
-                                      </div>
+                                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                      <span className="font-semibold truncate">{shortPersonName(item.employeeName)}</span>
+                                      <span className="ml-auto shrink-0 opacity-70 text-[10px] truncate max-w-[45%]">{item.shift.shiftName}</span>
                                     </div>
                                   );
                                 })}
@@ -1296,7 +1303,8 @@ function SchedulesContent() {
                               const PeriodIcon = period.icon;
                               return (
                                 <span
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${period.badgeClass}`}
+                                  className="leave-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                                  style={leaveColorVars(colorOfShift(a.shiftId)) as React.CSSProperties}
                                 >
                                   <PeriodIcon className="w-3.5 h-3.5" />
                                   <span>{a.shiftName}</span>
@@ -2565,6 +2573,55 @@ function SchedulesContent() {
                 </div>
               </div>
 
+              {/* สีของกะ (ใช้ในปฏิทินจัดกะ) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">สีในปฏิทินจัดกะ</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {LEAVE_COLOR_PRESETS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setShiftForm({ ...shiftForm, color: c })}
+                      title={c}
+                      className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-transform shadow-xs ${
+                        (shiftForm.color || '').toUpperCase() === c ? 'border-slate-900 dark:border-white scale-110' : 'border-white dark:border-slate-800'
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                  <label className="relative w-7 h-7 rounded-full border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer overflow-hidden" title="เลือกสีเอง">
+                    +
+                    <input
+                      type="color"
+                      value={shiftForm.color || (shiftForm.id ? colorOfShift(shiftForm.id) : '#2563EB')}
+                      onChange={(e) => setShiftForm({ ...shiftForm, color: e.target.value.toUpperCase() })}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShiftForm({ ...shiftForm, color: '' })}
+                    className={`ml-1 px-2.5 py-1 rounded-lg text-xs border cursor-pointer ${
+                      !shiftForm.color ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'border-slate-200 text-slate-500 dark:border-slate-700'
+                    }`}
+                  >
+                    อัตโนมัติ
+                  </button>
+                </div>
+                {(() => {
+                  const preview = shiftForm.color || (shiftForm.id ? colorOfShift(shiftForm.id) : '#475569');
+                  return (
+                    <div
+                      className="leave-chip mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                      style={leaveColorVars(preview) as React.CSSProperties}
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: preview }} />
+                      ตัวอย่าง: {shiftForm.shiftName || 'ชื่อกะ'}
+                    </div>
+                  );
+                })()}
+              </div>
+
               {/* Working Hours with ThaiTimePicker */}
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-3 dark:bg-slate-950 dark:border-slate-700/60">
                 <div className="flex items-center justify-between">
@@ -2897,7 +2954,8 @@ function SchedulesContent() {
                           const PeriodIcon = period.icon;
                           return (
                             <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border ${period.badgeClass}`}
+                              className="leave-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                              style={leaveColorVars(colorOfShift(item.shift.shiftId)) as React.CSSProperties}
                             >
                               <PeriodIcon className="w-3 h-3" />
                               <span>{item.shift.shiftName}</span>

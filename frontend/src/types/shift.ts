@@ -7,6 +7,8 @@ export interface Shift {
   isCrossDay: boolean;
   breakMinutes: number;
   status: 'ACTIVE' | 'INACTIVE';
+  /** สีในปฏิทินจัดกะ (#RRGGBB) — null = สีเริ่มต้น */
+  color?: string | null;
   lateGraceMinutes: number;
   earlyLeaveGraceMinutes: number;
   workHours: number;
@@ -21,6 +23,7 @@ export interface CreateShiftRequest {
   isCrossDay?: boolean;
   breakMinutes: number;
   status: string;
+  color?: string | null;
   lateGraceMinutes: number;
   earlyLeaveGraceMinutes: number;
 }
@@ -32,6 +35,7 @@ export interface UpdateShiftRequest {
   isCrossDay?: boolean;
   breakMinutes: number;
   status: string;
+  color?: string | null;
   lateGraceMinutes: number;
   earlyLeaveGraceMinutes: number;
 }

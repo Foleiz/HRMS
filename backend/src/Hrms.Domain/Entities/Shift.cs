@@ -12,6 +12,8 @@ public class Shift
     public bool IsCrossDay { get; set; } = false;
     public int BreakMinutes { get; set; } = 0;
     public string Status { get; set; } = "ACTIVE"; // 'ACTIVE', 'INACTIVE'
+    /// <summary>สีที่ใช้แสดงในปฏิทินจัดกะ (#RRGGBB) — null = ใช้สีเริ่มต้น</summary>
+    public string? Color { get; set; }
     public int LateGraceMinutes { get; set; } = 0;
     public int EarlyLeaveGraceMinutes { get; set; } = 0;
 }

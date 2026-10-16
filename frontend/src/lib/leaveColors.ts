@@ -66,3 +66,40 @@ export const leaveColorVars = (color: string, lightRatio = 0.3, darkRatio = 0.28
   '--lc-ring-dark': shadeColor(color, 0.6),
   '--lc-text-dark': tintColor(color, 0.45),
 });
+
+/** ตัดคำนำหน้า แล้วย่อชื่อ เช่น "นาย สมชาย ใจดี" → "สมชาย ใ." (ใช้ในพื้นที่แคบ เช่น ปฏิทิน) */
+export const shortPersonName = (fullName: string): string => {
+  const parts = (fullName || '')
+    .trim()
+    .replace(/^(นางสาว|นาย|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '')
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return fullName;
+  return parts.length > 1 ? `${parts[0]} ${parts[1].charAt(0)}.` : parts[0];
+};
+
+/** สีของแต่ละกะ: ใช้สีที่ตั้งไว้ ถ้าไม่ได้ตั้งจะแจกสีที่ยังไม่ถูกใช้ไล่ตามลำดับรหัสกะ (กะต่างกันได้สีต่างกัน) */
+export const buildColorMap = (items: { id: number; color?: string | null }[]): Map<number, string> => {
+  const valid = (c?: string | null) => !!c && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c);
+  const map = new Map<number, string>();
+  const used = new Set<string>();
+  items.forEach((it) => {
+    if (valid(it.color)) {
+      map.set(it.id, it.color!.toUpperCase());
+      used.add(it.color!.toUpperCase());
+    }
+  });
+  let i = 0;
+  [...items]
+    .sort((a, b) => a.id - b.id)
+    .forEach((it) => {
+      if (map.has(it.id)) return;
+      const free = LEAVE_COLOR_PRESETS.filter((c) => !used.has(c));
+      const pool = free.length ? free : LEAVE_COLOR_PRESETS;
+      const c = pool[i % pool.length];
+      i++;
+      used.add(c);
+      map.set(it.id, c);
+    });
+  return map;
+};
