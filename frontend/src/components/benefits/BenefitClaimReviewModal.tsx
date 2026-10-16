@@ -135,21 +135,21 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
             <div className="space-y-2">
               <div className="grid grid-cols-3 gap-2 text-center">
                 {/* 1. วงเงิน */}
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-center">
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">วงเงิน</span>
-                  <span className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-200 mt-0.5 truncate" title={`${money(claim.quotaAmount)} บ./ปี`}>
+                <div className="p-2.5 rounded-xl bg-sky-50/70 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/60 flex flex-col justify-center">
+                  <span className="text-[11px] font-semibold text-sky-600 dark:text-sky-400">วงเงิน</span>
+                  <span className="text-xs sm:text-sm font-bold font-mono text-sky-700 dark:text-sky-300 mt-0.5 truncate" title={`${money(claim.quotaAmount)} บ./ปี`}>
                     {money(claim.quotaAmount)}
                   </span>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">บ./ปี</span>
+                  <span className="text-[10px] text-sky-600/70 dark:text-sky-400/70">บ./ปี</span>
                 </div>
 
                 {/* 2. ใช้แล้ว / อนุมัติไปแล้ว */}
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/80 flex flex-col justify-center">
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">ใช้ไปแล้ว</span>
-                  <span className="text-xs sm:text-sm font-bold font-mono text-slate-800 dark:text-slate-200 mt-0.5 truncate" title={`${money(claim.approvedUsedAmount)} บ.`}>
+                <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 flex flex-col justify-center">
+                  <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">ใช้ไปแล้ว</span>
+                  <span className="text-xs sm:text-sm font-bold font-mono text-amber-700 dark:text-amber-300 mt-0.5 truncate" title={`${money(claim.approvedUsedAmount)} บ.`}>
                     {money(claim.approvedUsedAmount)}
                   </span>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500">บาท</span>
+                  <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">บาท</span>
                 </div>
 
                 {/* 3. คงเหลือ */}
