@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, Lock, Search, X } from 'lucide-react';
@@ -131,21 +131,21 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
               )}
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-950 p-3">
-                  <div className="text-xs text-gray-500 dark:text-slate-400">รายการยอดที่มีคงเหลือ</div>
-                  <div className="text-lg font-bold text-gray-800 dark:text-slate-200">{data.balanceCount}</div>
+                <div className="rounded-xl border border-purple-100 dark:border-purple-900/40 bg-purple-50 dark:bg-purple-950/40 p-3">
+                  <div className="text-xs text-purple-700 dark:text-purple-300 font-medium">รายการยอดที่มีคงเหลือ</div>
+                  <div className="text-lg font-bold text-purple-700 dark:text-purple-300">{data.balanceCount}</div>
                 </div>
-                <div className="rounded-xl border border-gray-100 dark:border-slate-700/60 bg-gray-50 dark:bg-slate-950 p-3">
-                  <div className="text-xs text-gray-500 dark:text-slate-400">คงเหลือรวม (วัน)</div>
-                  <div className="text-lg font-bold text-gray-800 dark:text-slate-200">{fmt(data.totalRemainingDays)}</div>
+                <div className="rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-950/40 p-3">
+                  <div className="text-xs text-blue-700 dark:text-blue-300 font-medium">คงเหลือรวม (วัน)</div>
+                  <div className="text-lg font-bold text-blue-700 dark:text-blue-300">{fmt(data.totalRemainingDays)}</div>
                 </div>
-                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
-                  <div className="text-xs text-emerald-700">ยกไปปีหน้า (วัน)</div>
-                  <div className="text-lg font-bold text-emerald-700">{fmt(data.totalCarriedDays)}</div>
+                <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-950/40 p-3">
+                  <div className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">ยกไปปีหน้า (วัน)</div>
+                  <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{fmt(data.totalCarriedDays)}</div>
                 </div>
-                <div className="rounded-xl border border-rose-100 bg-rose-50 p-3">
-                  <div className="text-xs text-rose-700">ถูกตัดทิ้ง (วัน)</div>
-                  <div className="text-lg font-bold text-rose-700">{fmt(data.totalForfeitedDays)}</div>
+                <div className="rounded-xl border border-rose-100 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-950/40 p-3">
+                  <div className="text-xs text-rose-700 dark:text-rose-300 font-medium">ถูกตัดทิ้ง (วัน)</div>
+                  <div className="text-lg font-bold text-rose-700 dark:text-rose-300">{fmt(data.totalForfeitedDays)}</div>
                 </div>
               </div>
 
