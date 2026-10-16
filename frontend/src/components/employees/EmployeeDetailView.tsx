@@ -38,6 +38,7 @@ import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employe
 import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 import { formatRoleName } from '@/lib/roleUtils';
+import EditEmployeeModal, { EditModalTab } from '@/components/employees/EditEmployeeModal';
 
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -383,12 +384,27 @@ export default function EmployeeDetailView({
     }
   };
 
-  const handleEditClick = () => {
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editModalTab, setEditModalTab] = useState<EditModalTab>('personal');
+
+  const handleEditClick = (tabOverride?: EditModalTab) => {
     if (onEditClick) {
       onEditClick();
-    } else {
-      router.push(`/employees/${employee.id}/edit`);
+      return;
     }
+    let targetTab: EditModalTab = 'personal';
+    if (tabOverride) {
+      targetTab = tabOverride;
+    } else if (activeTab === 'background') {
+      targetTab = 'background';
+    } else if (activeTab === 'tax') {
+      targetTab = 'tax';
+    } else {
+      targetTab = 'personal';
+    }
+
+    setEditModalTab(targetTab);
+    setIsEditModalOpen(true);
   };
 
   const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
@@ -678,7 +694,7 @@ export default function EmployeeDetailView({
             {canEditEmployee && (
               <button
                 type="button"
-                onClick={handleEditClick}
+                onClick={() => handleEditClick()}
                 className="w-8 h-8 rounded-lg bg-[#0B2046] hover:bg-[#153468] text-white flex items-center justify-center transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
                 title="แก้ไขข้อมูล"
               >
@@ -1284,6 +1300,23 @@ export default function EmployeeDetailView({
             </form>
           </div>
         </div>
+      )}
+
+      {/* Edit Employee Modal */}
+      {isEditModalOpen && (
+        <EditEmployeeModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          employeeId={employee.id}
+          employee={employee}
+          initialTab={editModalTab}
+          isProfilePage={isProfilePage}
+          onSuccess={(updated) => {
+            if (onEmployeeUpdate) {
+              onEmployeeUpdate(updated);
+            }
+          }}
+        />
       )}
     </div>
   );

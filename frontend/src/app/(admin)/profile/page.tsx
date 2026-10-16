@@ -80,7 +80,6 @@ export default function ProfilePage() {
       employee={employee}
       onEmployeeUpdate={setEmployee}
       isProfilePage={true}
-      onEditClick={() => router.push(`/employees/${employee.id}/edit?from=profile`)}
       editButtonLabel="แก้ไขข้อมูล"
     />
   );
