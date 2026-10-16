@@ -1183,50 +1183,45 @@ function SchedulesContent() {
 
                 {/* Calendar Shift Filter Dropdown */}
                 <div ref={calendarShiftDropdownRef} className="relative">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 shrink-0">
-                      ประเภทกะ:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCalendarShiftDropdownOpen((prev) => !prev)}
-                      className={`inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium bg-white dark:bg-slate-800 transition min-w-[170px] sm:min-w-[200px] shadow-xs cursor-pointer ${
-                        calendarShiftDropdownOpen
-                          ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20'
-                          : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      {calendarShiftFilter === 'ALL' ? (
-                        <span className="text-slate-700 dark:text-slate-200 font-semibold truncate">
-                          ทุกประเภทกะ (ทั้งหมด)
-                        </span>
-                      ) : (
-                        (() => {
-                          const s = shifts.find((shift) => shift.id === calendarShiftFilter);
-                          const color = s ? colorOfShift(s.id) : '#475569';
-                          return (
-                            <span className="flex items-center gap-1.5 truncate">
-                              <span
-                                className="w-2 h-2 rounded-full shrink-0"
-                                style={{ backgroundColor: color }}
-                              />
-                              <span
-                                className="leave-chip px-2 py-0.5 rounded-full text-xs font-semibold truncate"
-                                style={leaveColorVars(color) as React.CSSProperties}
-                              >
-                                {s?.shiftName || 'กะที่เลือก'}
-                              </span>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarShiftDropdownOpen((prev) => !prev)}
+                    className={`inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium bg-white dark:bg-slate-800 transition min-w-[170px] sm:min-w-[200px] shadow-xs cursor-pointer ${
+                      calendarShiftDropdownOpen
+                        ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    {calendarShiftFilter === 'ALL' ? (
+                      <span className="text-slate-700 dark:text-slate-200 font-semibold truncate">
+                        ทุกประเภท
+                      </span>
+                    ) : (
+                      (() => {
+                        const s = shifts.find((shift) => shift.id === calendarShiftFilter);
+                        const color = s ? colorOfShift(s.id) : '#475569';
+                        return (
+                          <span className="flex items-center gap-1.5 truncate">
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: color }}
+                            />
+                            <span
+                              className="leave-chip px-2 py-0.5 rounded-full text-xs font-semibold truncate"
+                              style={leaveColorVars(color) as React.CSSProperties}
+                            >
+                              {s?.shiftName || 'กะที่เลือก'}
                             </span>
-                          );
-                        })()
-                      )}
-                      <ChevronDown
-                        className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
-                          calendarShiftDropdownOpen ? 'rotate-180 text-[#0B2046]' : ''
-                        }`}
-                      />
-                    </button>
-                  </div>
+                          </span>
+                        );
+                      })()
+                    )}
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                        calendarShiftDropdownOpen ? 'rotate-180 text-[#0B2046]' : ''
+                      }`}
+                    />
+                  </button>
 
                   {calendarShiftDropdownOpen && (
                     <div className="absolute right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden py-1 min-w-[230px] animate-in fade-in-50 zoom-in-95 duration-100">
@@ -1242,7 +1237,7 @@ function SchedulesContent() {
                             : 'hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-300 font-medium'
                         }`}
                       >
-                        <span>ทุกประเภทกะ (ทั้งหมด)</span>
+                        <span>ทุกประเภท</span>
                         {calendarShiftFilter === 'ALL' && (
                           <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                         )}
