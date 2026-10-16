@@ -505,6 +505,49 @@ function SchedulesContent() {
     return assignableEmployees.find((e) => e.id === assignForm.employeeId);
   }, [assignableEmployees, assignForm.employeeId]);
 
+  // Batch Assign Modal: Filtered Employees
+  const filteredBatchEmployees = useMemo(() => {
+    const selectedDeptObj =
+      assignmentDeptFilter !== 'ALL'
+        ? departments.find((d) => String(d.id) === assignmentDeptFilter)
+        : batchSelectedDept
+        ? departments.find((d) => d.id === batchSelectedDept)
+        : undefined;
+
+    const q = empFilterKeyword.trim().toLowerCase();
+    const cleanQ = q.replace(/\s+/g, '');
+
+    return assignableEmployees.filter((e) => {
+      if (selectedDeptObj) {
+        const matchDept =
+          (e.departmentId !== undefined && e.departmentId !== null && e.departmentId === selectedDeptObj.id) ||
+          e.departmentName === selectedDeptObj.departmentName;
+        if (!matchDept) return false;
+      }
+
+      const matchType =
+        batchAssignTypeFilter === 'ALL' || (e.employeeTypeId ?? 1) === Number(batchAssignTypeFilter);
+      if (!matchType) return false;
+
+      if (!q) return true;
+      const code = (e.employeeCode || '').toLowerCase();
+      const name = (e.fullName || '').toLowerCase();
+      const dept = (e.departmentName || '').toLowerCase();
+      const cleanName = name.replace(/\s+/g, '');
+      const cleanCode = code.replace(/\s+/g, '');
+      const cleanDept = dept.replace(/\s+/g, '');
+
+      return (
+        code.includes(q) ||
+        name.includes(q) ||
+        dept.includes(q) ||
+        cleanCode.includes(cleanQ) ||
+        cleanName.includes(cleanQ) ||
+        cleanDept.includes(cleanQ)
+      );
+    });
+  }, [assignableEmployees, assignmentDeptFilter, batchSelectedDept, departments, empFilterKeyword, batchAssignTypeFilter]);
+
   // -------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------
@@ -2267,29 +2310,7 @@ function SchedulesContent() {
                       <button
                         type="button"
                         onClick={() => {
-                          const selectedDeptObj =
-                            assignmentDeptFilter !== 'ALL'
-                              ? departments.find((d) => String(d.id) === assignmentDeptFilter)
-                              : batchSelectedDept
-                              ? departments.find((d) => d.id === batchSelectedDept)
-                              : undefined;
-                          const matchingIds = assignableEmployees
-                            .filter((e) => {
-                              if (selectedDeptObj) {
-                                const matchDept =
-                                  (e.departmentId !== undefined && e.departmentId !== null && e.departmentId === selectedDeptObj.id) ||
-                                  e.departmentName === selectedDeptObj.departmentName;
-                                if (!matchDept) return false;
-                              }
-                              const matchSearch =
-                                e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-                                e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-                                (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()));
-                              const matchType =
-                                batchAssignTypeFilter === 'ALL' || (e.employeeTypeId ?? 1) === Number(batchAssignTypeFilter);
-                              return matchSearch && matchType;
-                            })
-                            .map((e) => e.id);
+                          const matchingIds = filteredBatchEmployees.map((e) => e.id);
                           setBatchSelectedEmpIds(Array.from(new Set([...batchSelectedEmpIds, ...matchingIds])));
                         }}
                         className="text-blue-600 hover:underline font-medium"
@@ -2337,29 +2358,18 @@ function SchedulesContent() {
                   </div>
 
                   <div className="border border-slate-200 rounded-lg max-h-48 overflow-y-auto divide-y divide-slate-100 p-1 dark:border-slate-700 dark:divide-slate-700/60">
-                    {assignableEmployees
-                      .filter((e) => {
-                        const selectedDeptObj =
-                          assignmentDeptFilter !== 'ALL'
-                            ? departments.find((d) => String(d.id) === assignmentDeptFilter)
-                            : batchSelectedDept
-                            ? departments.find((d) => d.id === batchSelectedDept)
-                            : undefined;
-                        if (selectedDeptObj) {
-                          const matchDept =
-                            (e.departmentId !== undefined && e.departmentId !== null && e.departmentId === selectedDeptObj.id) ||
-                            e.departmentName === selectedDeptObj.departmentName;
-                          if (!matchDept) return false;
-                        }
-                        const matchSearch =
-                          e.fullName.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-                          e.employeeCode.toLowerCase().includes(empFilterKeyword.toLowerCase()) ||
-                          (e.departmentName && e.departmentName.toLowerCase().includes(empFilterKeyword.toLowerCase()));
-                        const matchType =
-                          batchAssignTypeFilter === 'ALL' || (e.employeeTypeId ?? 1) === Number(batchAssignTypeFilter);
-                        return matchSearch && matchType;
-                      })
-                      .map((emp) => {
+                    {filteredBatchEmployees.length === 0 ? (
+                      <div className="py-6 px-4 text-center">
+                        <Users className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto mb-1.5" />
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                          ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไข
+                        </p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                          ลองเปลี่ยนคำค้นหา หรือเลือก &quot;ทุกประเภทการจ้างงาน&quot;
+                        </p>
+                      </div>
+                    ) : (
+                      filteredBatchEmployees.map((emp) => {
                         const checked = batchSelectedEmpIds.includes(emp.id);
                         return (
                           <label
@@ -2392,7 +2402,8 @@ function SchedulesContent() {
                             </div>
                           </label>
                         );
-                      })}
+                      })
+                    )}
                   </div>
                 </div>
               )}
