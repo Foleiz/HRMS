@@ -18,6 +18,7 @@ import {
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 import { certificateService } from '@/services/certificateService';
 import { CertificateRequest } from '@/types/certificates';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
@@ -37,6 +38,16 @@ import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineMo
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 
 // ─── Helpers ─────────────────────────────────────────────────
+
+type HistorySortField = 'requestNo' | 'docTypeName' | 'employeeName' | 'status' | 'approvedByName' | 'actionAt';
+
+const HISTORY_STATUS_ORDER: Record<string, number> = { APPROVED: 0, ISSUED: 0, REJECTED: 1, CANCELLED: 2 };
+
+const toTs = (v?: string | null) => {
+  if (!v) return 0;
+  const ts = new Date(v).getTime();
+  return Number.isNaN(ts) ? 0 : ts;
+};
 
 const formatDate = (d?: string | null) => {
   if (!d) return '-';
@@ -117,6 +128,9 @@ export default function ApprovalHistoryPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [yearFilter, setYearFilter] = useState('ALL');
+  const { sortField, sortDirection, handleSort } = useTableSort<HistorySortField>();
 
   // Timeline Modal State (Leave)
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
@@ -335,10 +349,36 @@ export default function ApprovalHistoryPage() {
     });
   }, [leaveHistory, certHistory, resignHistory, generalHistory, benefitHistory]);
 
+  // ตัวเลือก แผนก / ปี พ.ศ. จากข้อมูลจริงในประวัติ
+  const departmentOptions = useMemo(() => {
+    const names = Array.from(new Set(unifiedHistory.map((i) => i.departmentName).filter((d) => d && d !== '-'))) as string[];
+    names.sort((a, b) => a.localeCompare(b, 'th'));
+    return [{ value: 'ALL', label: 'ทุกแผนก' }, ...names.map((n) => ({ value: n, label: n }))];
+  }, [unifiedHistory]);
+
+  const yearOptions = useMemo(() => {
+    const years = new Set<number>();
+    unifiedHistory.forEach((i) => {
+      const ts = toTs(i.actionAt);
+      if (ts) years.add(new Date(ts).getFullYear() + 543);
+    });
+    return [
+      { value: 'ALL', label: 'ทุกปี' },
+      ...Array.from(years)
+        .sort((a, b) => b - a)
+        .map((y) => ({ value: String(y), label: `ปี ${y}` })),
+    ];
+  }, [unifiedHistory]);
+
   const filteredHistory = useMemo(() => {
-    return unifiedHistory.filter((item) => {
+    const list = unifiedHistory.filter((item) => {
       if (docTypeFilter !== 'ALL' && item.docType !== docTypeFilter) {
         return false;
+      }
+      if (departmentFilter !== 'ALL' && item.departmentName !== departmentFilter) return false;
+      if (yearFilter !== 'ALL') {
+        const ts = toTs(item.actionAt);
+        if (!ts || String(new Date(ts).getFullYear() + 543) !== yearFilter) return false;
       }
       if (!searchTerm.trim()) return true;
       const q = searchTerm.toLowerCase();
@@ -353,7 +393,18 @@ export default function ApprovalHistoryPage() {
         item.departmentName?.toLowerCase().includes(q)
       );
     });
-  }, [unifiedHistory, docTypeFilter, searchTerm]);
+    if (!sortField) return list; // ค่าเริ่มต้น: ดำเนินการล่าสุดอยู่บนสุด (เรียงไว้แล้วใน unifiedHistory)
+    return [...list].sort((a, b) => {
+      switch (sortField) {
+        case 'actionAt':
+          return compareSortValues(toTs(a.actionAt) || null, toTs(b.actionAt) || null, sortDirection);
+        case 'status':
+          return compareSortValues(HISTORY_STATUS_ORDER[a.status] ?? 9, HISTORY_STATUS_ORDER[b.status] ?? 9, sortDirection);
+        default:
+          return compareSortValues(a[sortField] as string | null | undefined, b[sortField] as string | null | undefined, sortDirection);
+      }
+    });
+  }, [unifiedHistory, docTypeFilter, departmentFilter, yearFilter, searchTerm, sortField, sortDirection]);
 
   const handleOpenLeavePreview = (req: LeaveRequest) => {
     const reqStart = req.startDate ?? req.startDatetime ?? '';
@@ -462,6 +513,23 @@ export default function ApprovalHistoryPage() {
                 { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
               ]}
             />
+
+            {/* Department filter */}
+            <CustomSelect
+              value={departmentFilter}
+              onChange={(val) => setDepartmentFilter(String(val))}
+              className="min-w-[160px]"
+              options={departmentOptions}
+            />
+
+            {/* Year filter (ปีที่ดำเนินการ) */}
+            <CustomSelect
+              value={yearFilter}
+              onChange={(val) => setYearFilter(String(val))}
+              className="min-w-[120px]"
+              numbered={false}
+              options={yearOptions}
+            />
           </div>
 
           <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
@@ -489,13 +557,13 @@ export default function ApprovalHistoryPage() {
             <table className="table-standard w-full min-w-[850px] text-xs whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
-                  <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">เลขที่เอกสาร</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">ประเภทเอกสาร</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">พนักงาน</th>
+                  <SortableTh label="เลขที่เอกสาร" field="requestNo" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
+                  <SortableTh label="ประเภทเอกสาร" field="docTypeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
+                  <SortableTh label="พนักงาน" field="employeeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">รายละเอียดคำขอ</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">สถานะ</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">ผู้ดำเนินการ</th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">วันที่ดำเนินการ</th>
+                  <SortableTh label="สถานะ" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
+                  <SortableTh label="ผู้ดำเนินการ" field="approvedByName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
+                  <SortableTh label="วันที่ดำเนินการ" field="actionAt" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">ดำเนินการ</th>
                 </tr>
               </thead>

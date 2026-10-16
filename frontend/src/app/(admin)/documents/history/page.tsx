@@ -41,6 +41,7 @@ import { CertificatePreviewModal } from '@/components/documents/CertificatePrevi
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -69,6 +70,8 @@ interface MyDocumentRow {
   detailDate: string;
   documentType: string;
   status: string;
+  /** เวลาที่มีความเคลื่อนไหวล่าสุด (ยื่น/อนุมัติ/ไม่อนุมัติ/ยกเลิก/แก้ไข) — ใช้เรียงรายการล่าสุดไว้บนสุด */
+  lastActivityAt?: string | null;
   rejectReason?: string | null;
   documents?: { id: number; fileName?: string | null }[];
   /** ลิงก์ไปหน้าฟอร์มต้นทางเพื่อแก้ไขต่อ — มีเฉพาะเอกสารที่ยังเป็นแบบร่าง (DRAFT) */
@@ -82,6 +85,51 @@ interface MyDocumentRow {
 }
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
+
+type DocSortField = 'code' | 'submittedDate' | 'documentType' | 'status';
+
+const SOURCE_FILTER_OPTIONS = [
+  { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
+  { value: 'LEAVE', label: 'เอกสารการลา' },
+  { value: 'RESIGNATION', label: 'คำขอลาออก' },
+  { value: 'CERTIFICATE', label: 'หนังสือรับรอง' },
+  { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'ALL', label: 'ทุกสถานะ' },
+  { value: 'DRAFT', label: 'แบบร่าง' },
+  { value: 'PENDING', label: 'รออนุมัติ' },
+  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+  { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
+];
+
+const STATUS_SORT_ORDER: Record<string, number> = { DRAFT: 0, PENDING: 1, APPROVED: 2, ISSUED: 2, REJECTED: 3, CANCELLED: 4 };
+
+/** เวลาล่าสุดจากหลายฟิลด์ (ค่าที่ไม่ใช่วันที่จะถูกข้าม) */
+const latestOf = (...values: (string | null | undefined)[]): string | null => {
+  let best: string | null = null;
+  let bestTs = -Infinity;
+  for (const v of values) {
+    if (!v) continue;
+    const ts = new Date(v).getTime();
+    if (!Number.isNaN(ts) && ts > bestTs) {
+      bestTs = ts;
+      best = v;
+    }
+  }
+  return best;
+};
+
+const toTs = (v?: string | null) => {
+  if (!v) return 0;
+  const ts = new Date(v).getTime();
+  return Number.isNaN(ts) ? 0 : ts;
+};
+
+/** สถานะที่ใช้กรอง (หนังสือรับรองที่ออกแล้ว = อนุมัติแล้ว) */
+const normalizeStatus = (s: string) => (s === 'ISSUED' ? 'APPROVED' : s);
 
 export default function DocumentHistoryPage() {
   const { user } = useAuth();
@@ -182,6 +230,7 @@ export default function DocumentHistoryPage() {
       source: 'LEAVE',
       rawLeave: r,
       canCancel: r.status === 'PENDING',
+      lastActivityAt: latestOf(r.updatedAt, r.approvedAt, r.cancelledAt, r.submittedAt, r.createdAt),
     }));
 
     const resignRows: MyDocumentRow[] = resignationRequests.map((r) => ({
@@ -195,6 +244,7 @@ export default function DocumentHistoryPage() {
       source: 'RESIGNATION',
       rawResignation: r,
       canCancel: r.canCancel,
+      lastActivityAt: latestOf(r.approvedAt, r.rejectedAt, r.cancelledAt, r.submittedAt),
     }));
 
     const certNameMap: Record<string, string> = {
@@ -218,6 +268,7 @@ export default function DocumentHistoryPage() {
         source: 'CERTIFICATE',
         rawCertificate: r,
         canCancel: r.canCancel,
+        lastActivityAt: latestOf(r.issuedAt, r.approvedAt, r.requestedAt),
       };
     });
 
@@ -232,10 +283,12 @@ export default function DocumentHistoryPage() {
       source: 'GENERAL',
       rawGeneral: r,
       canCancel: r.canCancel,
+      lastActivityAt: latestOf(r.approvedAt, r.submittedAt),
     }));
 
     const all = [...leaveRows, ...resignRows, ...certRows, ...genRows];
-    return all.sort((a, b) => (b.submittedDate || '').localeCompare(a.submittedDate || ''));
+    // ค่าเริ่มต้น: รายการที่มีความเคลื่อนไหวล่าสุดอยู่บนสุดเสมอ (เทียบเป็นเวลาจริง ไม่ใช่ข้อความ)
+    return all.sort((a, b) => toTs(b.lastActivityAt ?? b.submittedDate) - toTs(a.lastActivityAt ?? a.submittedDate));
   }, [leaveRequests, resignationRequests, certificateRequests, generalRequests]);
 
   const stats = useMemo(() => {
@@ -245,8 +298,62 @@ export default function DocumentHistoryPage() {
     return { approved, pending, rejected, total: documents.length };
   }, [documents]);
 
-  const totalPages = Math.max(1, Math.ceil(documents.length / pageSize));
-  const pagedDocuments = documents.slice((page - 1) * pageSize, page * pageSize);
+  // ─── ตัวกรอง (dropdown) + เรียงตามหัวคอลัมน์ ───
+  const [sourceFilter, setSourceFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [yearFilter, setYearFilter] = useState('ALL');
+  const { sortField, sortDirection, handleSort } = useTableSort<DocSortField>();
+
+  // ปี พ.ศ. ที่มีเอกสาร (จากวันที่ยื่น) — ใหม่สุดก่อน
+  const yearOptions = useMemo(() => {
+    const years = new Set<number>();
+    documents.forEach((d) => {
+      const ts = toTs(d.submittedDate ?? d.lastActivityAt);
+      if (ts) years.add(new Date(ts).getFullYear() + 543);
+    });
+    return [
+      { value: 'ALL', label: 'ทุกปี' },
+      ...Array.from(years)
+        .sort((a, b) => b - a)
+        .map((y) => ({ value: String(y), label: `ปี ${y}` })),
+    ];
+  }, [documents]);
+
+  const visibleDocuments = useMemo(() => {
+    const list = documents.filter((d) => {
+      if (sourceFilter !== 'ALL' && d.source !== sourceFilter) return false;
+      if (statusFilter !== 'ALL' && normalizeStatus(d.status) !== statusFilter) return false;
+      if (yearFilter !== 'ALL') {
+        const ts = toTs(d.submittedDate ?? d.lastActivityAt);
+        if (!ts || String(new Date(ts).getFullYear() + 543) !== yearFilter) return false;
+      }
+      return true;
+    });
+    if (!sortField) return list;
+    return [...list].sort((a, b) => {
+      switch (sortField) {
+        case 'code':
+          return compareSortValues(a.code, b.code, sortDirection);
+        case 'submittedDate':
+          return compareSortValues(toTs(a.submittedDate) || null, toTs(b.submittedDate) || null, sortDirection);
+        case 'documentType':
+          return compareSortValues(a.documentType, b.documentType, sortDirection);
+        case 'status':
+          return compareSortValues(STATUS_SORT_ORDER[a.status] ?? 9, STATUS_SORT_ORDER[b.status] ?? 9, sortDirection);
+        default:
+          return 0;
+      }
+    });
+  }, [documents, sourceFilter, statusFilter, yearFilter, sortField, sortDirection]);
+
+  const hasActiveFilter = sourceFilter !== 'ALL' || statusFilter !== 'ALL' || yearFilter !== 'ALL';
+
+  useEffect(() => {
+    setPage(1);
+  }, [sourceFilter, statusFilter, yearFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleDocuments.length / pageSize));
+  const pagedDocuments = visibleDocuments.slice((page - 1) * pageSize, page * pageSize);
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
@@ -477,7 +584,7 @@ export default function DocumentHistoryPage() {
 
   const handleExport = () => {
     const header = ['รหัสเอกสาร', 'วันที่ยื่นเอกสาร', 'วันที่ลา / รายละเอียด', 'ประเภทเอกสาร', 'สถานะเอกสาร'];
-    const rows = documents.map((d) => [
+    const rows = visibleDocuments.map((d) => [
       d.code,
       formatShortDate(d.submittedDate),
       d.detailDate,
@@ -526,8 +633,43 @@ export default function DocumentHistoryPage() {
         ))}
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-2">
+      {/* Toolbar: ตัวกรอง (ซ้าย) + ส่งออก/รีเฟรช (ขวา) */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <CustomSelect
+            value={sourceFilter}
+            onChange={(val) => setSourceFilter(String(val))}
+            className="min-w-[170px]"
+            options={SOURCE_FILTER_OPTIONS}
+          />
+          <CustomSelect
+            value={statusFilter}
+            onChange={(val) => setStatusFilter(String(val))}
+            className="min-w-[140px]"
+            options={STATUS_FILTER_OPTIONS}
+          />
+          <CustomSelect
+            value={yearFilter}
+            onChange={(val) => setYearFilter(String(val))}
+            className="min-w-[120px]"
+            numbered={false}
+            options={yearOptions}
+          />
+          {hasActiveFilter && (
+            <button
+              type="button"
+              onClick={() => {
+                setSourceFilter('ALL');
+                setStatusFilter('ALL');
+                setYearFilter('ALL');
+              }}
+              className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline-offset-2 hover:underline cursor-pointer"
+            >
+              ล้างตัวกรอง
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
         <button
           onClick={handleExport}
           className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-xs font-medium transition-all"
@@ -540,6 +682,7 @@ export default function DocumentHistoryPage() {
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> รีเฟรช
         </button>
+        </div>
       </div>
 
       {/* Toast */}
@@ -564,6 +707,11 @@ export default function DocumentHistoryPage() {
             <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-400 text-sm">คุณยังไม่เคยยื่นเอกสาร</p>
           </div>
+        ) : visibleDocuments.length === 0 ? (
+          <div className="py-20 text-center">
+            <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm">ไม่พบเอกสารตามตัวกรองที่เลือก</p>
+          </div>
         ) : (
           <>
             {/* Desktop View: Full Table */}
@@ -571,11 +719,11 @@ export default function DocumentHistoryPage() {
               <table className="table-standard w-full min-w-[750px] text-xs whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
-                    <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">รหัสเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ยื่นเอกสาร</th>
+                    <SortableTh label="รหัสเอกสาร" field="code" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                    <SortableTh label="วันที่ยื่นเอกสาร" field="submittedDate" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">ประเภทเอกสาร</th>
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">สถานะเอกสาร</th>
+                    <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                    <SortableTh label="สถานะเอกสาร" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
                     <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>
                   </tr>
                 </thead>
@@ -825,7 +973,7 @@ export default function DocumentHistoryPage() {
                     <option key={n} value={n}>{n}</option>
                   ))}
                 </CustomSelect>
-                เอกสาร (ทั้งหมด {documents.length} รายการ)
+                เอกสาร (ทั้งหมด {visibleDocuments.length} รายการ)
               </div>
               <div className="flex items-center gap-1.5">
                 <button
