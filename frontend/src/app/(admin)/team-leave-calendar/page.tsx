@@ -228,7 +228,7 @@ export default function TeamLeaveCalendarPage() {
             <CustomSelect
               value={divisionId}
               onChange={(val) => {
-                setDivisionId(val === '' ? '' : Number(val));
+                setDivisionId(String(val) === '' ? '' : Number(val));
                 setDepartmentId('');
               }}
               placeholder="ทุกฝ่าย"
@@ -242,7 +242,7 @@ export default function TeamLeaveCalendarPage() {
           {(scope === 'ORG' || scope === 'DIVISION') && (
             <CustomSelect
               value={departmentId}
-              onChange={(val) => setDepartmentId(val === '' ? '' : Number(val))}
+              onChange={(val) => setDepartmentId(String(val) === '' ? '' : Number(val))}
               placeholder="ทุกแผนก"
               className="min-w-[140px]"
               options={[

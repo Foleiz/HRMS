@@ -499,7 +499,7 @@ export default function AnnouncementsPage() {
               {/* Status */}
               <CustomSelect
                 value={statusFilter}
-                onChange={(val) => setStatusFilter(val)}
+                onChange={(val) => setStatusFilter(String(val))}
                 placeholder="สถานะทั้งหมด"
                 className="min-w-[140px]"
                 options={[
@@ -513,7 +513,7 @@ export default function AnnouncementsPage() {
               {/* Category */}
               <CustomSelect
                 value={categoryFilter}
-                onChange={(val) => setCategoryFilter(val)}
+                onChange={(val) => setCategoryFilter(String(val))}
                 placeholder="หมวดหมู่ทั้งหมด"
                 className="min-w-[160px]"
                 options={[
@@ -529,7 +529,7 @@ export default function AnnouncementsPage() {
               {/* Priority */}
               <CustomSelect
                 value={priorityFilter}
-                onChange={(val) => setPriorityFilter(val)}
+                onChange={(val) => setPriorityFilter(String(val))}
                 placeholder="ความสำคัญทั้งหมด"
                 className="min-w-[150px]"
                 options={[

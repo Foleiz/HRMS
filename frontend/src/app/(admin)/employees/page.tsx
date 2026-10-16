@@ -983,7 +983,7 @@ export default function EmployeesPage() {
             <div className="shrink-0">
               <CustomSelect
                 value={selectedDepartment}
-                onChange={(val) => setSelectedDepartment(val)}
+                onChange={(val) => setSelectedDepartment(String(val))}
                 placeholder="ทุกแผนก"
                 className="min-w-[140px]"
                 options={[

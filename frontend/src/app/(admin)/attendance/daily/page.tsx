@@ -1329,7 +1329,7 @@ function DailyAttendanceContent() {
               <CustomSelect
                 value={selectedDepartment}
                 onChange={(val) => {
-                  setSelectedDepartment(val === 'ALL' ? 'ALL' : Number(val));
+                  setSelectedDepartment(String(val) === 'ALL' ? 'ALL' : Number(val));
                   setCurrentPage(1);
                 }}
                 placeholder="ทุกแผนก / สังกัด"
@@ -1832,7 +1832,7 @@ function DailyAttendanceContent() {
                 <CustomSelect
                   value={filterSource}
                   onChange={(val) => {
-                    setFilterSource(val);
+                    setFilterSource(String(val));
                     setBatchPage(1);
                   }}
                   className="min-w-[170px]"
@@ -1848,7 +1848,7 @@ function DailyAttendanceContent() {
                 <CustomSelect
                   value={filterBatchStatus}
                   onChange={(val) => {
-                    setFilterBatchStatus(val);
+                    setFilterBatchStatus(String(val));
                     setBatchPage(1);
                   }}
                   className="min-w-[150px]"
@@ -2077,7 +2077,7 @@ function DailyAttendanceContent() {
               <CustomSelect
                 value={filterAdjustmentStatus}
                 onChange={(val) => {
-                  setFilterAdjustmentStatus(val);
+                  setFilterAdjustmentStatus(String(val));
                   setAdjustmentsPage(1);
                 }}
                 className="min-w-[170px]"
@@ -2368,7 +2368,7 @@ function DailyAttendanceContent() {
               <CustomSelect
                 value={monthlyDepartment}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setMonthlyDepartment(parsed);
                 }}
                 placeholder="ทุกแผนก"

@@ -137,8 +137,8 @@ function HolidayYearCalendar({
             .sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
 
           return (
-            <div key={m} className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
-              <div className="px-3 py-2 bg-[#0B2046] text-white text-xs font-semibold flex items-center justify-between">
+            <div key={m} className="rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col">
+              <div className="px-3 py-2 rounded-t-xl bg-[#0B2046] text-white text-xs font-semibold flex items-center justify-between">
                 <span>
                   {monthName} {year + 543}
                 </span>
@@ -164,15 +164,36 @@ function HolidayYearCalendar({
                     if (hs) {
                       const st = holidayStyle(hs[0].holidayType);
                       return (
-                        <button
-                          key={idx}
-                          type="button"
-                          title={hs.map((h) => `${h.holidayName} (${h.holidayTypeThai})`).join('\n')}
-                          onClick={() => onSelectHoliday?.(hs[0])}
-                          className={`${base} font-bold ${st.cell} ${onSelectHoliday ? 'cursor-pointer hover:ring-2 hover:ring-[#0B2046]/30' : 'cursor-default'} ${isToday ? 'ring-2 ring-[#0B2046] dark:ring-blue-400' : ''}`}
-                        >
-                          {day}
-                        </button>
+                        <div key={idx} className="relative group/hol">
+                          <button
+                            type="button"
+                            aria-label={hs.map((h) => h.holidayName).join(', ')}
+                            onClick={() => onSelectHoliday?.(hs[0])}
+                            className={`${base} w-full font-bold ${st.cell} transition-transform duration-150 group-hover/hol:scale-110 group-hover/hol:shadow-md group-hover/hol:ring-2 group-hover/hol:ring-white dark:group-hover/hol:ring-slate-900 group-hover/hol:z-10 relative ${
+                              onSelectHoliday ? 'cursor-pointer' : 'cursor-default'
+                            } ${isToday ? 'ring-2 ring-[#0B2046] dark:ring-blue-400' : ''}`}
+                          >
+                            {day}
+                          </button>
+                          {/* ป้ายรายละเอียดเมื่อชี้เมาส์ */}
+                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 w-max max-w-[220px] opacity-0 translate-y-1 group-hover/hol:opacity-100 group-hover/hol:translate-y-0 transition-all duration-150">
+                            <div className="rounded-lg bg-slate-900 text-white px-2.5 py-1.5 shadow-lg space-y-1 text-left">
+                              {hs.map((h) => (
+                                <div key={h.id} className="text-[11px] leading-snug">
+                                  <div className="flex items-center gap-1.5 font-semibold">
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${holidayStyle(h.holidayType).dot}`} />
+                                    <span className="whitespace-normal">{h.holidayName}</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-300 pl-3">
+                                    {h.holidayTypeThai} · {formatThaiDate(h.holidayDate.substring(0, 10))}
+                                  </div>
+                                </div>
+                              ))}
+                              {onSelectHoliday && <div className="text-[10px] text-slate-400 pl-3">คลิกเพื่อแก้ไข</div>}
+                            </div>
+                            <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1" />
+                          </div>
+                        </div>
                       );
                     }
                     return (
@@ -196,7 +217,11 @@ function HolidayYearCalendar({
               {monthHolidays.length > 0 && (
                 <ul className="border-t border-slate-100 dark:border-slate-700/60 px-3 py-2 space-y-1 text-[11px] mt-auto">
                   {monthHolidays.map((h) => (
-                    <li key={h.id} className="flex items-center gap-2 min-w-0">
+                    <li
+                      key={h.id}
+                      onClick={() => onSelectHoliday?.(h)}
+                      className={`flex items-center gap-2 min-w-0 -mx-1.5 px-1.5 py-0.5 rounded-md transition-colors hover:bg-slate-100 dark:hover:bg-slate-700/60 ${onSelectHoliday ? 'cursor-pointer' : ''}`}
+                    >
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${holidayStyle(h.holidayType).dot}`} />
                       <span className="font-mono text-slate-500 dark:text-slate-400 shrink-0">{Number(h.holidayDate.substring(8, 10))}</span>
                       <span className="truncate text-slate-700 dark:text-slate-300">{h.holidayName}</span>
@@ -619,7 +644,7 @@ export default function WorkCalendarPage() {
                 {/* Type Filter */}
                 <CustomSelect
                   value={filterType}
-                  onChange={(val) => setFilterType(val)}
+                  onChange={(val) => setFilterType(String(val))}
                   placeholder="ทุกประเภทวันหยุด"
                   className="min-w-[170px]"
                   options={[

@@ -305,7 +305,7 @@ export default function EmployeeTypesPage() {
             {/* Status Filter */}
             <CustomSelect
               value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
+              onChange={(val) => setStatusFilter(String(val))}
               placeholder="สถานะทั้งหมด"
               size="sm"
               className="min-w-[140px]"

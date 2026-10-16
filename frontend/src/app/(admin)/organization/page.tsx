@@ -1164,7 +1164,7 @@ export default function OrganizationPage() {
 
                 <CustomSelect
                   value={filterDivisionId}
-                  onChange={(val) => setFilterDivisionId(val)}
+                  onChange={(val) => setFilterDivisionId(String(val))}
                   placeholder="ทุกฝ่าย"
                   options={[
                     { value: 'ALL', label: 'ทุกฝ่าย' },
@@ -1293,7 +1293,7 @@ export default function OrganizationPage() {
 
                 <CustomSelect
                   value={filterDeptId}
-                  onChange={(val) => setFilterDeptId(val)}
+                  onChange={(val) => setFilterDeptId(String(val))}
                   placeholder="ทุกแผนก"
                   className="min-w-[150px]"
                   options={[
@@ -1431,7 +1431,7 @@ export default function OrganizationPage() {
 
                 <CustomSelect
                   value={filterDeptId}
-                  onChange={(val) => setFilterDeptId(val)}
+                  onChange={(val) => setFilterDeptId(String(val))}
                   placeholder="ทุกแผนก"
                   className="min-w-[150px]"
                   options={[
@@ -1686,7 +1686,7 @@ export default function OrganizationPage() {
 
                 <CustomSelect
                   value={filterBenefitCategory}
-                  onChange={(val) => setFilterBenefitCategory(val)}
+                  onChange={(val) => setFilterBenefitCategory(String(val))}
                   placeholder="ทุกหมวดหมู่สวัสดิการ"
                   className="min-w-[170px]"
                   options={[

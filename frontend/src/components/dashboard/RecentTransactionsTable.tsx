@@ -333,7 +333,7 @@ export const RecentTransactionsTable: React.FC = () => {
           <CustomSelect
             value={dateRange}
             onChange={(val) => {
-              setDateRange(val);
+              setDateRange(String(val));
               setCurrentPage(1);
             }}
             placeholder="ช่วงวันที่"
@@ -349,7 +349,7 @@ export const RecentTransactionsTable: React.FC = () => {
           <CustomSelect
             value={selectedType}
             onChange={(val) => {
-              setSelectedType(val);
+              setSelectedType(String(val));
               setCurrentPage(1);
             }}
             placeholder="ประเภท ทั้งหมด"
@@ -367,7 +367,7 @@ export const RecentTransactionsTable: React.FC = () => {
           <CustomSelect
             value={selectedStatus}
             onChange={(val) => {
-              setSelectedStatus(val);
+              setSelectedStatus(String(val));
               setCurrentPage(1);
             }}
             placeholder="สถานะ ทั้งหมด"

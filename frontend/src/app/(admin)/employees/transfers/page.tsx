@@ -252,7 +252,7 @@ export default function TransfersPage() {
             <CustomSelect
               value={selectedType}
               onChange={(val) => {
-                setSelectedType(val);
+                setSelectedType(String(val));
                 setCurrentPage(1);
               }}
               placeholder="ประเภททั้งหมด"
