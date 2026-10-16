@@ -273,6 +273,8 @@ function SchedulesContent() {
   const [singleAssignSearch, setSingleAssignSearch] = useState('');
   const singleAssignDropdownRef = useRef<HTMLDivElement>(null);
   const singleAssignSearchInputRef = useRef<HTMLInputElement>(null);
+  const [singleAssignShiftDropdownOpen, setSingleAssignShiftDropdownOpen] = useState(false);
+  const singleAssignShiftDropdownRef = useRef<HTMLDivElement>(null);
 
   // Batch Assign Modal
   const [batchModalOpen, setBatchModalOpen] = useState(false);
@@ -607,7 +609,7 @@ function SchedulesContent() {
     setShiftForm(updated);
   };
 
-  // Handle click outside to close single assign dropdown
+  // Handle click outside to close single assign dropdowns
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -616,15 +618,21 @@ function SchedulesContent() {
       ) {
         setSingleAssignDropdownOpen(false);
       }
+      if (
+        singleAssignShiftDropdownRef.current &&
+        !singleAssignShiftDropdownRef.current.contains(event.target as Node)
+      ) {
+        setSingleAssignShiftDropdownOpen(false);
+      }
     };
 
-    if (singleAssignDropdownOpen) {
+    if (singleAssignDropdownOpen || singleAssignShiftDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [singleAssignDropdownOpen]);
+  }, [singleAssignDropdownOpen, singleAssignShiftDropdownOpen]);
 
   // Focus search input when dropdown opens
   useEffect(() => {
@@ -641,6 +649,7 @@ function SchedulesContent() {
   const openSingleAssignCreate = (empId?: number, dateStr?: string) => {
     setAssignModalMode('create');
     setSingleAssignDropdownOpen(false);
+    setSingleAssignShiftDropdownOpen(false);
     setSingleAssignSearch('');
     setAssignForm({
       employeeId: empId || 0,
@@ -655,6 +664,7 @@ function SchedulesContent() {
   const openSingleAssignEdit = (assignment: EmployeeShift) => {
     setAssignModalMode('edit');
     setSingleAssignDropdownOpen(false);
+    setSingleAssignShiftDropdownOpen(false);
     setSingleAssignSearch('');
     setAssignForm({
       id: assignment.id,
@@ -671,6 +681,10 @@ function SchedulesContent() {
     e.preventDefault();
     if (assignModalMode === 'create' && (!assignForm.employeeId || Number(assignForm.employeeId) === 0)) {
       toast.warning('กรุณาเลือกพนักงานที่ต้องการมอบหมายกะ');
+      return;
+    }
+    if (!assignForm.shiftId || Number(assignForm.shiftId) === 0) {
+      toast.warning('กรุณาเลือกกะการทำงาน');
       return;
     }
     try {
@@ -1753,14 +1767,9 @@ function SchedulesContent() {
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg relative dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">
-                  {assignModalMode === 'create' ? 'มอบหมายกะให้พนักงาน' : 'แก้ไขการมอบหมายกะ'}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                  กำหนดกะเฉพาะบุคคล (ป้องกันการกำหนดช่วงเวลาซ้อนทับอัตโนมัติ)
-                </p>
-              </div>
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">
+                {assignModalMode === 'create' ? 'มอบหมายกะให้พนักงาน' : 'แก้ไขการมอบหมายกะ'}
+              </h3>
               <button
                 onClick={() => setAssignModalOpen(false)}
                 className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 rounded-lg transition dark:text-slate-500 dark:text-slate-400"
@@ -1967,23 +1976,92 @@ function SchedulesContent() {
 
               {/* Shift Selection */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                  กะการทำงานเป้าหมาย <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  เลือกกะการทำงาน <span className="text-rose-500">*</span>
                 </label>
-                <CustomSelect
-                  value={assignForm.shiftId}
-                  onChange={(e) => setAssignForm({ ...assignForm, shiftId: Number(e.target.value) })}
-                  className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                  required
-                >
-                  <option value="0">-- กรุณาเลือกกะการทำงาน --</option>
-                  {shifts.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.shiftName} ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
-                      {s.isCrossDay ? ' กะข้ามวัน' : ''})
-                    </option>
-                  ))}
-                </CustomSelect>
+                {(() => {
+                  const selectedShift = shifts.find((s) => s.id === assignForm.shiftId);
+                  const selectedColor = selectedShift ? colorOfShift(selectedShift.id) : undefined;
+                  return (
+                    <div ref={singleAssignShiftDropdownRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setSingleAssignShiftDropdownOpen((prev) => !prev)}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left bg-slate-50 hover:bg-slate-100/70 border rounded-lg transition-all dark:bg-slate-950 ${
+                          singleAssignShiftDropdownOpen
+                            ? 'border-[#0B2046] ring-2 ring-[#0B2046]/20 bg-white dark:bg-slate-800'
+                            : 'border-slate-200 text-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        {selectedShift ? (
+                          <div className="flex items-center gap-2 min-w-0 pr-2">
+                            <span
+                              className="leave-chip px-2.5 py-0.5 rounded-full text-xs font-semibold shrink-0"
+                              style={leaveColorVars(selectedColor!) as React.CSSProperties}
+                            >
+                              {selectedShift.shiftName}
+                            </span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">
+                              ({selectedShift.startTime.substring(0, 5)} - {selectedShift.endTime.substring(0, 5)} น.
+                              {selectedShift.isCrossDay ? ' · กะข้ามวัน' : ''})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-400 dark:text-slate-500">
+                            -- กรุณาเลือกกะการทำงาน --
+                          </span>
+                        )}
+                        <ChevronDown
+                          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                            singleAssignShiftDropdownOpen ? 'rotate-180 text-[#0B2046]' : ''
+                          }`}
+                        />
+                      </button>
+
+                      {singleAssignShiftDropdownOpen && (
+                        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden py-1 animate-in fade-in-50 zoom-in-95 duration-100">
+                          <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
+                            {shifts.map((s) => {
+                              const isSelected = s.id === assignForm.shiftId;
+                              const sColor = colorOfShift(s.id);
+                              return (
+                                <button
+                                  key={s.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setAssignForm({ ...assignForm, shiftId: s.id });
+                                    setSingleAssignShiftDropdownOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-2.5 text-left flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-blue-50/70 dark:bg-blue-900/30 font-semibold'
+                                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/60 font-medium'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <span
+                                      className="leave-chip px-2.5 py-0.5 rounded-full text-xs font-semibold shrink-0"
+                                      style={leaveColorVars(sColor) as React.CSSProperties}
+                                    >
+                                      {s.shiftName}
+                                    </span>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400 font-mono truncate">
+                                      ({s.startTime.substring(0, 5)} - {s.endTime.substring(0, 5)} น.
+                                      {s.isCrossDay ? ' · กะข้ามวัน' : ''})
+                                    </span>
+                                  </div>
+                                  {isSelected && (
+                                    <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 ml-2" />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Date Ranges */}
@@ -2015,35 +2093,9 @@ function SchedulesContent() {
 
               {/* Day of Week Selector */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
-                  </label>
-                  {/* Quick Preset Buttons */}
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    <button
-                      type="button"
-                      onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5] })}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 dark:text-slate-400 transition dark:bg-slate-700 dark:text-slate-300"
-                    >
-                      จ.-ศ.
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5, 6] })}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 dark:text-slate-400 transition dark:bg-slate-700 dark:text-slate-300"
-                    >
-                      จ.-ส.
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAssignForm({ ...assignForm, workDays: [1, 2, 3, 4, 5, 6, 0] })}
-                      className="px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 dark:text-slate-400 transition dark:bg-slate-700 dark:text-slate-300"
-                    >
-                      ทุกวัน
-                    </button>
-                  </div>
-                </div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
+                </label>
 
                 <div className="grid grid-cols-7 gap-1.5">
                   {WEEK_DAYS.map((day) => {
