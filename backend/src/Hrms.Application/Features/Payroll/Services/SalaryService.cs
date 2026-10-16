@@ -1922,10 +1922,10 @@ public class SalaryService : ISalaryService
             stub.PayrollPeriodId = null;
         }
 
-        // ===== โบนัสประจำรอบเดือน/ปี: ดึงโบนัสที่อนุมัติแล้วของรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ =====
+        // ===== โบนัสประจำรอบเดือน/ปี: ดึงโบนัสที่จัดสรรไว้ของรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ =====
         var bonusItem = systemItems["INC_BONUS"];
         var periodBonuses = await _context.EmployeeBonuses
-            .Where(b => b.Year == period.Year && b.Month == period.Month && b.Status == "APPROVED" && b.BonusAmount > 0)
+            .Where(b => b.Year == period.Year && b.Month == period.Month && (b.Status == "APPROVED" || b.Status == "CALCULATED") && b.BonusAmount > 0)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -2209,11 +2209,21 @@ public class SalaryService : ISalaryService
             {
                 var item = d.PayrollItem ?? await _context.PayrollItems.FindAsync(new object[] { d.PayrollItemId }, cancellationToken);
                 if (item == null) continue;
-                if (item.Id == bonusItem.Id) hasBonusInManual = true;
+                if (item.Id == bonusItem.Id)
+                {
+                    var source = ReadDetailSource(d.CalculationSource);
+                    // หากรายการโบนัสนี้มาจากการดึงโบนัสอัตโนมัติ (source == "BONUS" หรือมี bonusId)
+                    // ให้ข้ามของเดิม เพื่ออัปเดตยอดโบนัสล่าสุดจาก eligiblePeriodBonuses ด้านล่างเสมอ
+                    if (source.Source == "BONUS" || source.BonusId.HasValue)
+                    {
+                        continue;
+                    }
+                    hasBonusInManual = true;
+                }
                 lines.Add(new CalcLine(item, d.Amount, d.Quantity, d.Rate, null, IsRegular: false, Existing: d));
             }
 
-            // ===== 4.1 ดึงโบนัสที่อนุมัติแล้วของรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ (หากยังไม่มีใน manual) =====
+            // ===== 4.1 ดึงโบนัสประจำรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ (หากยังไม่มีใน manual) =====
             if (!hasBonusInManual && eligiblePeriodBonuses.TryGetValue(emp.Id, out var autoBonus))
             {
                 var bonusSubtext = $"โบนัสประจำรอบ {autoBonus.Month}/{autoBonus.Year + 543}" +
@@ -3188,7 +3198,7 @@ public class SalaryService : ISalaryService
                 existing.Multiplier = multiplier;
                 existing.BonusAmount = bonusAmount;
                 existing.CalculationMode = "MULTIPLIER";
-                existing.Status = "CALCULATED";
+                existing.Status = "APPROVED";
                 existing.UpdatedAt = DateTime.UtcNow;
             }
             else
@@ -3202,7 +3212,7 @@ public class SalaryService : ISalaryService
                     Multiplier = multiplier,
                     BonusAmount = bonusAmount,
                     CalculationMode = "MULTIPLIER",
-                    Status = "CALCULATED",
+                    Status = "APPROVED",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
