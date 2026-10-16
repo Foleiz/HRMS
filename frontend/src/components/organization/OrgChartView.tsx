@@ -120,13 +120,18 @@ interface NodeCardProps {
 function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0, expanded, onToggle, onOpen, meta }: NodeCardProps) {
   const canToggle = !!onToggle && childCount > 0;
   const ring = highlight ? 'ring-2 ring-blue-400 border-blue-300' : '';
+  // ตำแหน่งว่าง: ใช้โทนเทาทั้งการ์ด ไม่ให้เด่นกว่าการ์ดที่มีคน
+  const vacant = !person;
+  const accent = vacant ? '#CBD5E1' : color;
 
   return (
     <div
       draggable={false}
       onDragStart={(e) => e.preventDefault()}
-      className={`relative w-56 shrink-0 rounded-xl border bg-white shadow-sm transition-shadow hover:shadow-md select-none ${
-        person ? 'border-slate-200' : 'border-dashed border-slate-300 bg-slate-50'
+      className={`relative w-56 shrink-0 rounded-xl border transition-shadow select-none ${
+        vacant
+          ? 'border-dashed border-slate-300 bg-slate-100 dark:bg-slate-800/60 dark:border-slate-600'
+          : 'border-slate-200 bg-white shadow-sm hover:shadow-md'
       } ${ring}`}
     >
       <div className="p-3">
@@ -134,7 +139,7 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
           {person ? (
             <Avatar person={person} />
           ) : (
-            <div className="w-9 h-9 rounded-full border border-dashed border-slate-300 bg-white flex items-center justify-center text-slate-400 shrink-0">
+            <div className="w-9 h-9 rounded-full border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
               <UserX className="w-4 h-4" />
             </div>
           )}
@@ -143,12 +148,16 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
               {person ? person.fullName : 'ตำแหน่งว่าง'}
             </div>
             <div className="text-[10px] text-slate-500 truncate mt-0.5">{person?.positionName || roleFallback}</div>
-            {unit && <div className="text-[10px] font-medium truncate" style={{ color }}>{unit}</div>}
+            {unit && (
+              <div className={`text-[10px] font-medium truncate ${vacant ? 'text-slate-400' : ''}`} style={vacant ? undefined : { color }}>
+                {unit}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="border-t border-slate-100 flex items-center justify-between px-2 py-1 min-h-[32px]">
+      <div className={`border-t flex items-center justify-between px-2 py-1 min-h-[32px] ${vacant ? 'border-slate-200 dark:border-slate-700' : 'border-slate-100'}`}>
         <div className="flex items-center gap-0.5">
           {person?.workEmail && (
             <a
@@ -184,14 +193,14 @@ function NodeCard({ person, roleFallback, unit, color, highlight, childCount = 0
         )}
       </div>
 
-      <div className="h-[3px] rounded-b-xl" style={{ background: color }} />
+      <div className="h-[3px] rounded-b-xl" style={{ background: accent }} />
 
       {canToggle && (
         <button
           type="button"
           onClick={onToggle}
           aria-label={expanded ? 'ยุบ' : 'ขยาย'}
-          style={{ background: color }}
+          style={{ background: accent }}
           className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-white shadow z-10 flex items-center justify-center print:hidden"
         >
           {expanded ? <ChevronUp className="w-2.5 h-2.5 text-white" /> : <ChevronDown className="w-2.5 h-2.5 text-white" />}
