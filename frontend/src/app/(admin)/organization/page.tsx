@@ -28,6 +28,8 @@ import {
   Landmark,
   CreditCard,
   AlertTriangle,
+  Phone,
+  MapPin,
 } from 'lucide-react';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
@@ -79,6 +81,18 @@ const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon:
   FINANCIAL: { label: 'การเงิน & กองทุน', color: 'bg-purple-50 text-purple-700 border-purple-200', icon: Coins },
   OTHER: { label: 'ทั่วไป / อื่นๆ', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200', icon: HelpCircle },
 };
+
+/** หัวข้อกล่องในแท็บข้อมูลบริษัท */
+function CompanySectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
+  return (
+    <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">
+      <span className="w-7 h-7 rounded-lg bg-[#0B2046]/5 text-[#0B2046] dark:bg-blue-500/10 dark:text-blue-300 flex items-center justify-center">
+        <Icon className="w-4 h-4" />
+      </span>
+      {title}
+    </h4>
+  );
+}
 
 export default function OrganizationPage() {
   const { setBreadcrumb } = useBreadcrumb();
@@ -1852,156 +1866,193 @@ export default function OrganizationPage() {
         )}
 
         {/* TAB 6: COMPANY PROFILE */}
-        {activeTab === 'company' && (
-          <form onSubmit={handleSaveCompany} className="max-w-2xl space-y-5">
-            {/* Logo Upload Section */}
-            <div className="flex items-center gap-5 p-4 rounded-xl bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 bg-white flex items-center justify-center overflow-hidden shrink-0 dark:border-slate-600 dark:bg-slate-900">
-                {companyForm.logoData ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={companyForm.logoData.startsWith('data:') ? companyForm.logoData : `data:image/png;base64,${companyForm.logoData}`}
-                    alt="Company Logo"
-                    className="w-full h-full object-contain p-1"
-                  />
-                ) : (
-                  <Building className="w-8 h-8 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                )}
-              </div>
-              <div className="space-y-1.5 flex-1">
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200">ตราสัญลักษณ์ / โลโก้บริษัท (Logo)</label>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">รองรับไฟล์ PNG, JPG หรือ SVG ขนาดไม่เกิน 2MB</p>
-                <div className="flex items-center gap-2 pt-1">
-                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 cursor-pointer shadow-sm transition-colors dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-800/40 dark:text-slate-300">
-                    <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                    อัปโหลดโลโก้
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                  </label>
-                  {companyForm.logoData && (
-                    <button
-                      type="button"
-                      onClick={() => setCompanyForm({ ...companyForm, logoData: null })}
-                      className="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                    >
-                      นำรูปออก
-                    </button>
+        {activeTab === 'company' && (() => {
+          const inputCls =
+            'w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500';
+          const labelCls = 'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1';
+          const ceo = employees.find((e) => e.id === companyForm.ceoEmployeeId);
+          const activeEmployees = employees.filter((e) => !e.employmentStatus || e.employmentStatus === 'ACTIVE').length;
+          return (
+            <form onSubmit={handleSaveCompany} className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start">
+              {/* ซ้าย: การ์ดสรุปบริษัท */}
+              <div className="lg:sticky lg:top-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
+                <div className="w-28 h-28 mx-auto rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                  {companyForm.logoData ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={companyForm.logoData.startsWith('data:') ? companyForm.logoData : `data:image/png;base64,${companyForm.logoData}`}
+                      alt="Company Logo"
+                      className="w-full h-full object-contain p-1.5"
+                    />
+                  ) : (
+                    <Building className="w-10 h-10 text-slate-400" />
                   )}
                 </div>
-              </div>
-            </div>
+                {canEditCompany && (
+                  <div className="flex items-center justify-center gap-2 mt-3">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer shadow-sm transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-slate-500" />
+                      อัปโหลดโลโก้
+                      <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                    </label>
+                    {companyForm.logoData && (
+                      <button
+                        type="button"
+                        onClick={() => setCompanyForm({ ...companyForm, logoData: null })}
+                        className="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors cursor-pointer"
+                      >
+                        นำรูปออก
+                      </button>
+                    )}
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-400 mt-1.5">PNG / JPG / SVG ไม่เกิน 2MB</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รหัสบริษัท (Company Code)</label>
-                <input
-                  type="text"
-                  disabled
-                  value={company?.companyCode || ''}
-                  className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-500 dark:text-slate-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700 dark:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อบริษัท (Company Name) *</label>
-                <input
-                  type="text"
-                  required
-                  value={companyForm.companyName}
-                  onChange={(e) => setCompanyForm({ ...companyForm, companyName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                  ประธานเจ้าหน้าที่บริหาร / ผู้บริหารสูงสุด (CEO)
-                </label>
-                <EmployeeSelect
-                  employees={employees}
-                  value={companyForm.ceoEmployeeId || ''}
-                  onChange={(empId) =>
-                    setCompanyForm({
-                      ...companyForm,
-                      ceoEmployeeId: empId === '' ? null : Number(empId),
-                    })
-                  }
-                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
-                  emptyLabel="ไม่ระบุ CEO / ผู้บริหารสูงสุด"
-                  required={false}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะบริษัท</label>
-                <CustomSelect
-                  value={companyForm.status}
-                  onChange={(e) => setCompanyForm({ ...companyForm, status: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-slate-100 break-words">
+                  {companyForm.companyName || company?.companyName || '-'}
+                </h3>
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">{company?.companyCode || '-'}</p>
+                <span
+                  className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                    companyForm.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                  }`}
                 >
-                  <option value="ACTIVE">เปิดใช้งาน</option>
-                  <option value="INACTIVE">ปิดใช้งาน</option>
-                </CustomSelect>
-              </div>
-            </div>
+                  <span className={`w-1.5 h-1.5 rounded-full ${companyForm.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                  {companyForm.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">เบอร์โทรศัพท์ (Phone)</label>
-                <input
-                  type="text"
-                  value={companyForm.phone}
-                  onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
+                <div className="grid grid-cols-3 gap-2 mt-4">
+                  {[
+                    { label: 'ฝ่าย', value: divisions.length },
+                    { label: 'แผนก', value: departments.length },
+                    { label: 'พนักงาน', value: activeEmployees },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-xl bg-slate-50 dark:bg-slate-900/60 py-2.5">
+                      <div className="text-lg font-bold text-[#0B2046] dark:text-blue-300">{s.value}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/60 text-left text-xs space-y-1.5">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500 dark:text-slate-400">ผู้บริหารสูงสุด</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-right truncate">{ceo?.fullName || '-'}</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500 dark:text-slate-400">สร้างระบบเมื่อ</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatThaiDate(company?.createdAt)}</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-slate-500 dark:text-slate-400">แก้ไขล่าสุด</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatThaiDate(company?.updatedAt)}</span>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">อีเมลติดต่อ (Email)</label>
-                <input
-                  type="email"
-                  value={companyForm.email}
-                  onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-            </div>
+              {/* ขวา: ฟอร์ม */}
+              <div className="space-y-4 min-w-0">
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+                  <CompanySectionTitle icon={Building2} title="ข้อมูลทั่วไป" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>รหัสบริษัท (Company Code)</label>
+                      <input
+                        type="text"
+                        disabled
+                        value={company?.companyCode || ''}
+                        className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:border-slate-700 dark:text-slate-400"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>ชื่อบริษัท (Company Name) *</label>
+                      <input
+                        type="text"
+                        required
+                        value={companyForm.companyName}
+                        onChange={(e) => setCompanyForm({ ...companyForm, companyName: e.target.value })}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>ประธานเจ้าหน้าที่บริหาร / ผู้บริหารสูงสุด (CEO)</label>
+                      <EmployeeSelect
+                        employees={employees}
+                        value={companyForm.ceoEmployeeId || ''}
+                        onChange={(empId) =>
+                          setCompanyForm({
+                            ...companyForm,
+                            ceoEmployeeId: empId === '' ? null : Number(empId),
+                          })
+                        }
+                        placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                        emptyLabel="ไม่ระบุ CEO / ผู้บริหารสูงสุด"
+                        required={false}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>สถานะบริษัท</label>
+                      <CustomSelect
+                        value={companyForm.status}
+                        onChange={(e) => setCompanyForm({ ...companyForm, status: e.target.value })}
+                        numbered={false}
+                        className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
+                      >
+                        <option value="ACTIVE">เปิดใช้งาน</option>
+                        <option value="INACTIVE">ปิดใช้งาน</option>
+                      </CustomSelect>
+                    </div>
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ที่อยู่สำนักงานใหญ่ (Address)</label>
-              <textarea
-                rows={3}
-                value={companyForm.address}
-                onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-              />
-            </div>
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+                  <CompanySectionTitle icon={Phone} title="ช่องทางติดต่อ" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelCls}>เบอร์โทรศัพท์ (Phone)</label>
+                      <input
+                        type="text"
+                        value={companyForm.phone}
+                        onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>อีเมลติดต่อ (Email)</label>
+                      <input
+                        type="email"
+                        value={companyForm.email}
+                        onChange={(e) => setCompanyForm({ ...companyForm, email: e.target.value })}
+                        className={inputCls}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            {/* Timestamps Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">วันที่สร้างระบบ: </span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{formatThaiDate(company?.createdAt)}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 dark:text-slate-400">แก้ไขล่าสุดเมื่อ: </span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">{formatThaiDate(company?.updatedAt)}</span>
-              </div>
-            </div>
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+                  <CompanySectionTitle icon={MapPin} title="ที่อยู่สำนักงานใหญ่" />
+                  <textarea
+                    rows={3}
+                    value={companyForm.address}
+                    onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                    className={inputCls}
+                  />
+                </div>
 
-            {canEditCompany && (
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer"
-                >
-                  บันทึกข้อมูลบริษัท
-                </button>
+                {canEditCompany && (
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer"
+                    >
+                      บันทึกข้อมูลบริษัท
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </form>
-        )}
+            </form>
+          );
+        })()}
 
         {/* TAB: COMPANY BANK ACCOUNTS (Payroll) */}
         {activeTab === 'bank-accounts' && (
