@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
-  Pencil,
   Loader2,
   Users,
   Phone,
@@ -550,23 +549,18 @@ export default function EditEmployeeModal({
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-[#0B2046] text-white shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/10 rounded-xl">
-              <Pencil className="w-5 h-5 text-amber-400" />
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold">แก้ไขข้อมูลพนักงาน</h2>
+              {employeeInfo?.code && (
+                <span className="text-xs px-2 py-0.5 rounded-md bg-white/20 font-mono font-bold">
+                  {employeeInfo.code}
+                </span>
+              )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold">แก้ไขข้อมูลพนักงาน</h2>
-                {employeeInfo?.code && (
-                  <span className="text-xs px-2 py-0.5 rounded-md bg-white/20 font-mono font-bold">
-                    {employeeInfo.code}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-300">
-                {employeeInfo?.name ? employeeInfo.name : 'แก้ไขข้อมูลและบันทึกการเปลี่ยนแปลงได้ทันที'}
-              </p>
-            </div>
+            <p className="text-xs text-slate-300">
+              {employeeInfo?.name ? employeeInfo.name : 'แก้ไขข้อมูลและบันทึกการเปลี่ยนแปลงได้ทันที'}
+            </p>
           </div>
           <button
             type="button"
