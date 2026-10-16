@@ -942,13 +942,13 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                 {/* 4. Form Steps Builder */}
                 <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/60">
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
                       <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         ลำดับขั้นตอนการอนุมัติ ({form.steps.length}/{MAX_APPROVAL_STEPS} ขั้นตอน)
                       </h3>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">
-                        ระบบจะส่งคำขอตามลำดับ 1 → 2 → 3 → 4 เมื่อขั้นตอนก่อนหน้าอนุมัติผ่าน (กำหนดได้สูงสุด {MAX_APPROVAL_STEPS} ขั้นตอน)
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
+                        ระบบจะส่งคำขอตามลำดับ 1 → 2 → 3 → 4 เมื่อขั้นตอนก่อนหน้าอนุมัติผ่าน
                       </p>
                     </div>
                     <button
@@ -956,7 +956,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       onClick={addStep}
                       disabled={form.steps.length >= MAX_APPROVAL_STEPS}
                       title={form.steps.length >= MAX_APPROVAL_STEPS ? `กำหนดได้สูงสุด ${MAX_APPROVAL_STEPS} ขั้นตอน` : 'เพิ่มขั้นตอน'}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap shrink-0"
                     >
                       <Plus className="w-3.5 h-3.5" /> เพิ่มขั้นตอน
                     </button>
