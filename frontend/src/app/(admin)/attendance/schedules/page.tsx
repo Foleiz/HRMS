@@ -1625,17 +1625,24 @@ function SchedulesContent() {
                   <div>
                     {/* Card Header: Shift Name & Day/Night Badge */}
                     <div className="flex items-center justify-between gap-2 mb-3">
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base group-hover:text-[#0B2046] transition truncate dark:text-slate-100">
-                        {shift.shiftName}
-                      </h3>
                       {(() => {
                         const shiftColor = colorOfShift(shift.id);
+                        return (
+                          <h3 className="min-w-0">
+                            <span
+                              className="leave-chip inline-flex items-center px-3 py-1 rounded-full text-sm font-bold truncate"
+                              style={leaveColorVars(shiftColor) as React.CSSProperties}
+                              title={shift.shiftName}
+                            >
+                              <span className="truncate">{shift.shiftName}</span>
+                            </span>
+                          </h3>
+                        );
+                      })()}
+                      {(() => {
                         const period = getShiftPeriodInfo(shift);
                         return (
-                          <span
-                            className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold shrink-0"
-                            style={leaveColorVars(shiftColor) as React.CSSProperties}
-                          >
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 shrink-0">
                             <span>{period.label}</span>
                           </span>
                         );
@@ -1759,16 +1766,19 @@ function SchedulesContent() {
                     {filteredShifts.map((s, index) => (
                       <tr key={s.id} className="hover:bg-slate-50/60 transition dark:hover:bg-slate-800/40">
                         <td className="p-3.5 font-mono font-bold text-slate-800 dark:text-slate-200">{s.shiftCode}</td>
-                        <td className="p-3.5 font-semibold text-slate-900 dark:text-slate-100">{s.shiftName}</td>
+                        <td className="p-3.5">
+                          <span
+                            className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                            style={leaveColorVars(colorOfShift(s.id)) as React.CSSProperties}
+                          >
+                            <span>{s.shiftName}</span>
+                          </span>
+                        </td>
                         <td className="p-3.5">
                           {(() => {
-                            const shiftColor = colorOfShift(s.id);
                             const period = getShiftPeriodInfo(s);
                             return (
-                              <span
-                                className="leave-chip inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                style={leaveColorVars(shiftColor) as React.CSSProperties}
-                              >
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600">
                                 <span>{period.label}</span>
                               </span>
                             );
