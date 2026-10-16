@@ -2605,28 +2605,6 @@ export default function PayrollPage() {
             </button>
           </div>
 
-          {/* 2 Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รายการทั้งหมด</span>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                {filteredPayrollItems.length} รายการ
-              </div>
-            </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-5 shadow-xs">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">เปิดใช้งานอยู่</span>
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                {
-                  filteredPayrollItems.filter(
-                    (i) =>
-                      (i.status ? i.status.toUpperCase() === 'ACTIVE' : true)
-                  ).length
-                }{' '}
-                รายการ
-              </div>
-            </div>
-          </div>
-
           {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
           {canCreateItem && (
             <div className="flex justify-end">
