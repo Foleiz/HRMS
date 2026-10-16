@@ -25,6 +25,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 export default function EssAttendancePage() {
@@ -833,22 +834,20 @@ export default function EssAttendancePage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาเข้างานที่ขอปรับ</label>
-                  <input
-                    type="time"
+                  <ThaiTimePicker
                     required
                     value={formData.adjustedClockIn}
-                    onChange={(e) => setFormData({ ...formData, adjustedClockIn: e.target.value })}
-                    className="w-full text-sm font-mono border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(val) => setFormData({ ...formData, adjustedClockIn: val })}
+                    align="left"
                   />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาออกงานที่ขอปรับ</label>
-                  <input
-                    type="time"
+                  <ThaiTimePicker
                     required
                     value={formData.adjustedClockOut}
-                    onChange={(e) => setFormData({ ...formData, adjustedClockOut: e.target.value })}
-                    className="w-full text-sm font-mono border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(val) => setFormData({ ...formData, adjustedClockOut: val })}
+                    align="right"
                   />
                 </div>
               </div>

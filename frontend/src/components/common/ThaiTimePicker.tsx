@@ -242,7 +242,7 @@ export default function ThaiTimePicker({
   required,
   disabled,
   align = 'auto',
-  showQuickMinutes = true,
+  showQuickMinutes = false, // ค่าเริ่มต้น: วงล้อ ชม./น. อย่างเดียว (รูปแบบมาตรฐานของระบบ)
 }: ThaiTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
