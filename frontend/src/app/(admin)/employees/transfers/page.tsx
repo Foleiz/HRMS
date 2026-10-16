@@ -226,12 +226,8 @@ export default function TransfersPage() {
       {/* 4. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
         {/* Table Header Controls */}
-        <div className="border-b border-slate-200 dark:border-slate-700 px-6 pt-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex space-x-8 text-sm font-medium">
-            <button className="pb-3 border-b-2 border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold cursor-default">
-              ประวัติการโยกย้ายตำแหน่ง (รายบุคคล)
-            </button>
-          </div>
+        <div className="px-6 pt-5 flex flex-wrap items-center justify-between gap-4">
+          <h3 className="pb-3 text-sm font-bold text-slate-800 dark:text-slate-200">ประวัติการโยกย้ายตำแหน่ง (รายบุคคล)</h3>
 
           {/* Search & Filter Controls */}
           <div className="flex flex-wrap items-center gap-3 pb-3">
