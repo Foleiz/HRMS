@@ -236,7 +236,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-sm whitespace-nowrap">
+              <table className="table-standard w-full min-w-[900px] text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">แผนก</th>

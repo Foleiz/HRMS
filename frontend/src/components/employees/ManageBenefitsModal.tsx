@@ -480,7 +480,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 ไม่พบข้อมูลสวัสดิการที่ตรงกับเงื่อนไข
               </div>
             ) : (
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="table-standard w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold">
                     <th className="py-3 px-4">รหัส</th>

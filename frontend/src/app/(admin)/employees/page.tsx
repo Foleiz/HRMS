@@ -1015,7 +1015,7 @@ export default function EmployeesPage() {
       {/* 4. Figma 1:1 Data Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto min-h-[380px]">
-          <table className="w-full min-w-[1100px] text-left border-collapse text-[12px] whitespace-nowrap">
+          <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-[12px] whitespace-nowrap">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
               <tr className="bg-[#0B2046] text-white font-medium text-xs whitespace-nowrap">

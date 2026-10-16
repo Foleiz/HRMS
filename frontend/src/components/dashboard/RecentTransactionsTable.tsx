@@ -385,7 +385,7 @@ export const RecentTransactionsTable: React.FC = () => {
 
       {/* Table Content */}
       <div className="overflow-x-auto flex-1 min-h-0">
-        <table className="w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+        <table className="table-standard w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
           <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0 whitespace-nowrap">
             <tr>
               <th className="py-3 px-5 whitespace-nowrap">รหัสเอกสาร</th>

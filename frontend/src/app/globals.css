@@ -234,3 +234,31 @@ html.dark .leave-chip { background-color: var(--lc-bg-dark); color: var(--lc-tex
 .text-\[12px\]:not(.theme-light, .theme-light *) { font-size: 13px; }
 .text-\[13px\]:not(.theme-light, .theme-light *) { font-size: 14px; }
 .text-\[13\.5px\]:not(.theme-light, .theme-light *) { font-size: 14.5px; }
+
+/* ===================== ตารางมาตรฐานของระบบ (แบบหน้าจัดการฝ่าย) =====================
+   ใช้: <table className="table-standard ..."> — หัวตารางพื้นกรมท่า ตัวหนังสือขาว
+   ใช้ !important + คลาสซ้ำ เพื่อชนะสีหัวตารางเดิมของแต่ละหน้าและ dark-theme.css */
+.table-standard.table-standard > thead,
+.table-standard.table-standard > thead > tr,
+.table-standard.table-standard > thead > tr > th {
+  background-color: #0B2046 !important;
+  color: #FFFFFF !important;
+  border-color: rgb(255 255 255 / 0.08) !important;
+}
+.table-standard.table-standard > thead > tr > th {
+  font-weight: 600 !important;
+  white-space: nowrap;
+}
+.table-standard.table-standard > thead > tr > th * {
+  color: inherit !important;
+}
+.table-standard.table-standard > thead > tr:not(:first-child) > th {
+  background-color: #14306A !important; /* หัวตารางแถวที่ 2 (หัวคอลัมน์ย่อย) */
+}
+
+html.dark .table-standard.table-standard > thead,
+html.dark .table-standard.table-standard > thead > tr,
+html.dark .table-standard.table-standard > thead > tr > th {
+  background-color: #1A3A75 !important;
+  color: #F1F5F9 !important;
+}

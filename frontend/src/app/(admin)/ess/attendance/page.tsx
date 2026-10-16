@@ -536,7 +536,7 @@ export default function EssAttendancePage() {
               <>
                 {/* Desktop View: Full Table */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full min-w-[750px] text-left text-sm whitespace-nowrap">
+                  <table className="table-standard w-full min-w-[750px] text-left text-sm whitespace-nowrap">
                     <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
                       <tr className="whitespace-nowrap">
                         <th className="py-3 px-4 whitespace-nowrap">วันที่</th>
@@ -684,7 +684,7 @@ export default function EssAttendancePage() {
               <>
                 {/* Desktop View: Full Table */}
                 <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full min-w-[700px] text-left text-sm whitespace-nowrap">
+                  <table className="table-standard w-full min-w-[700px] text-left text-sm whitespace-nowrap">
                     <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
                       <tr className="whitespace-nowrap">
                         <th className="py-3 px-4 whitespace-nowrap">วันที่ขอปรับ</th>

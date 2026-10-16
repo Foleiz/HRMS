@@ -270,7 +270,7 @@ export default function TransfersPage() {
 
         {/* 5. TABLE: เอาไว้ดูว่ามีใครย้ายตำแหน่งไหนไปไหนวันที่เท่าไหร่ */}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
+          <table className="table-standard w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
             <thead>
               <tr className="border-b border-slate-100 dark:border-slate-700 text-slate-400 text-xs font-normal whitespace-nowrap bg-slate-50/50 dark:bg-slate-800/50">
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">วันที่มีผล</th>
