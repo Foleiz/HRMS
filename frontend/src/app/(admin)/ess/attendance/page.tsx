@@ -23,7 +23,6 @@ import {
   X,
   Send,
   Loader2,
-  CalendarDays,
 } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -397,10 +396,43 @@ export default function EssAttendancePage() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* การ์ดสรุปประจำเดือน (บนสุด) */}
+      {activeTab === 'history' && monthlySummary && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+            <span className="text-xs text-slate-500 dark:text-slate-400">วันทำงานทั้งหมด</span>
+            <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{monthlySummary.totalWorkDays} วัน</div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+            <span className="text-xs text-emerald-600 font-medium">เข้างานตรงเวลา</span>
+            <div className="text-2xl font-bold text-emerald-600">{monthlySummary.presentCount} วัน</div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+            <span className="text-xs text-amber-600 font-medium">มาสาย</span>
+            <div className="text-2xl font-bold text-amber-600">
+              {monthlySummary.lateCount} ครั้ง{' '}
+              <span className="text-xs font-normal text-slate-400">({monthlySummary.totalLateMinutes} นาที)</span>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+            <span className="text-xs text-rose-600 font-medium">ขาดงาน / ออกก่อน</span>
+            <div className="text-2xl font-bold text-rose-600">
+              {monthlySummary.absentCount} วัน{' '}
+              <span className="text-xs font-normal text-slate-400">
+                (ออกก่อน {monthlySummary.earlyLeaveCount} ครั้ง)
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 rounded-t-2xl">
         <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
           {/* Tab 1: ตรวจบันทึกเวลาของฉัน */}
           <button
@@ -438,89 +470,51 @@ export default function EssAttendancePage() {
       ───────────────────────────────────────────────────────────── */}
       {activeTab === 'history' && (
         <div className="space-y-6">
-          {/* Month / Year Filter & Monthly Summary Cards */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="w-5 h-5 text-[#0052CC]" />
-              <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">เลือกเดือนที่ต้องการดู:</span>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <CustomSelect
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {thaiMonths.map((m, idx) => (
-                  <option key={idx + 1} value={idx + 1}>
-                    {m}
-                  </option>
-                ))}
-              </CustomSelect>
-
-              <CustomSelect
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {[2024, 2025, 2026, 2027].map((y) => (
-                  <option key={y} value={y}>
-                    พ.ศ. {y + 543}
-                  </option>
-                ))}
-              </CustomSelect>
-
-              {/* Recalculate Button (รูปแบบเดียวกับหน้าตรวจบันทึกเวลา) */}
-              <button
-                type="button"
-                onClick={handleRecalculate}
-                disabled={isRecalculating || isLoadingHistory}
-                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg transition disabled:opacity-50 cursor-pointer"
-                title="ประมวลผลคำนวณเวลาใหม่สำหรับเดือนนี้"
-              >
-                <RotateCcw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin text-[#0B2046] dark:text-blue-400' : ''}`} />
-              </button>
-            </div>
-          </div>
-
-          {/* 4 Stat Cards */}
-          {monthlySummary && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                <span className="text-xs text-slate-500 dark:text-slate-400">วันทำงานทั้งหมด</span>
-                <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{monthlySummary.totalWorkDays} วัน</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                <span className="text-xs text-emerald-600 font-medium">เข้างานตรงเวลา</span>
-                <div className="text-2xl font-bold text-emerald-600">{monthlySummary.presentCount} วัน</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                <span className="text-xs text-amber-600 font-medium">มาสาย</span>
-                <div className="text-2xl font-bold text-amber-600">
-                  {monthlySummary.lateCount} ครั้ง{' '}
-                  <span className="text-xs font-normal text-slate-400">({monthlySummary.totalLateMinutes} นาที)</span>
-                </div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-                <span className="text-xs text-rose-600 font-medium">ขาดงาน / ออกก่อน</span>
-                <div className="text-2xl font-bold text-rose-600">
-                  {monthlySummary.absentCount} วัน{' '}
-                  <span className="text-xs font-normal text-slate-400">
-                    (ออกก่อน {monthlySummary.earlyLeaveCount} ครั้ง)
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* History Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ตารางบันทึกเวลาประจำวัน</h3>
-              <span className="text-xs text-slate-400">{historyList.length} รายการ</span>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-baseline gap-2">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ตารางบันทึกเวลาประจำวัน</h3>
+                <span className="text-xs text-slate-400">{historyList.length} รายการ</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CustomSelect
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {thaiMonths.map((m, idx) => (
+                    <option key={idx + 1} value={idx + 1}>
+                      {m}
+                    </option>
+                  ))}
+                </CustomSelect>
+
+                <CustomSelect
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {[2024, 2025, 2026, 2027].map((y) => (
+                    <option key={y} value={y}>
+                      พ.ศ. {y + 543}
+                    </option>
+                  ))}
+                </CustomSelect>
+
+                {/* Recalculate Button (รูปแบบเดียวกับหน้าตรวจบันทึกเวลา) */}
+                <button
+                  type="button"
+                  onClick={handleRecalculate}
+                  disabled={isRecalculating || isLoadingHistory}
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg transition disabled:opacity-50 cursor-pointer"
+                  title="ประมวลผลคำนวณเวลาใหม่สำหรับเดือนนี้"
+                >
+                  <RotateCcw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin text-[#0B2046] dark:text-blue-400' : ''}`} />
+                </button>
+              </div>
             </div>
 
             {isLoadingHistory ? (
@@ -535,18 +529,18 @@ export default function EssAttendancePage() {
             ) : (
               <>
                 {/* Desktop View: Full Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="table-standard w-full min-w-[750px] text-left text-sm whitespace-nowrap">
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                  <table className="table-standard w-full min-w-[750px] text-left text-xs border-collapse whitespace-nowrap">
                     <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
                       <tr className="whitespace-nowrap">
-                        <th className="py-3 px-4 whitespace-nowrap">วันที่</th>
-                        <th className="py-3 px-4 whitespace-nowrap">กะการทำงาน</th>
-                        <th className="py-3 px-4 whitespace-nowrap">เวลาเข้าจริง</th>
-                        <th className="py-3 px-4 whitespace-nowrap">เวลาออกจริง</th>
-                        <th className="py-3 px-4 whitespace-nowrap">มาสาย</th>
-                        <th className="py-3 px-4 whitespace-nowrap">ออกก่อน</th>
-                        <th className="py-3 px-4 whitespace-nowrap">สถานะ</th>
-                        <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">วันที่</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">กะการทำงาน</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาเข้าจริง</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาออกจริง</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">มาสาย</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">ออกก่อน</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -600,7 +594,7 @@ export default function EssAttendancePage() {
                 </div>
 
                 {/* Mobile View: Stacked Cards */}
-                <div className="md:hidden divide-y divide-slate-100">
+                <div className="md:hidden divide-y divide-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 dark:divide-slate-700/60">
                   {historyList.map((rec) => (
                     <div key={rec.id || rec.workDate} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
@@ -665,8 +659,8 @@ export default function EssAttendancePage() {
           5. TAB CONTENT: Adjustment Requests
       ───────────────────────────────────────────────────────────── */}
       {activeTab === 'adjustments' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
+          <div className="flex items-baseline gap-2">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
             <span className="text-xs text-slate-400">{adjustmentsList.length} รายการ</span>
           </div>
@@ -683,17 +677,17 @@ export default function EssAttendancePage() {
           ) : (
               <>
                 {/* Desktop View: Full Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="table-standard w-full min-w-[700px] text-left text-sm whitespace-nowrap">
+                <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                  <table className="table-standard w-full min-w-[700px] text-left text-xs border-collapse whitespace-nowrap">
                     <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
                       <tr className="whitespace-nowrap">
-                        <th className="py-3 px-4 whitespace-nowrap">วันที่ขอปรับ</th>
-                        <th className="py-3 px-4 whitespace-nowrap">เวลาเดิม</th>
-                        <th className="py-3 px-4 whitespace-nowrap">เวลาที่ขอปรับ</th>
-                        <th className="py-3 px-4 whitespace-nowrap">เหตุผล</th>
-                        <th className="py-3 px-4 whitespace-nowrap">สถานะคำขอ</th>
-                        <th className="py-3 px-4 whitespace-nowrap">วันที่ยื่นคำขอ</th>
-                        <th className="py-3 px-4 text-center whitespace-nowrap">จัดการ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">วันที่ขอปรับ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาเดิม</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาที่ขอปรับ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">เหตุผล</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">สถานะคำขอ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">วันที่ยื่นคำขอ</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap">จัดการ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -737,7 +731,7 @@ export default function EssAttendancePage() {
                 </div>
 
                 {/* Mobile View: Stacked Cards */}
-                <div className="md:hidden divide-y divide-slate-100">
+                <div className="md:hidden divide-y divide-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 dark:divide-slate-700/60">
                   {adjustmentsList.map((adj) => (
                     <div key={adj.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
