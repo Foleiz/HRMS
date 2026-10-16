@@ -2315,7 +2315,7 @@ function SchedulesContent() {
                         }}
                         className="text-blue-600 hover:underline font-medium"
                       >
-                        เลือกทั้งหมดตามตัวกรอง
+                        เลือกทั้งหมด
                       </button>
                       <span>|</span>
                       <button
