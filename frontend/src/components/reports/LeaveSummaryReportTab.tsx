@@ -130,18 +130,56 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           {/* KPI */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'วันลารวม (อนุมัติแล้ว)', value: fmt(data.totalDays), icon: CalendarDays, color: 'text-blue-600 bg-blue-50' },
-              { label: 'จำนวนใบลา', value: fmt(data.totalRequests), icon: FileSpreadsheet, color: 'text-violet-600 bg-violet-50' },
-              { label: 'พนักงานที่ลา', value: fmt(data.employeesOnLeave), icon: Users, color: 'text-emerald-600 bg-emerald-50' },
-              { label: 'รออนุมัติ', value: fmt(data.pendingRequests), icon: Loader2, color: 'text-amber-600 bg-amber-50' },
+              {
+                label: 'วันลารวม (อนุมัติแล้ว)',
+                value: fmt(data.totalDays),
+                unit: 'วัน',
+                icon: CalendarDays,
+                cardCls: 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200/80 dark:border-blue-800/60',
+                iconCls: 'text-blue-700 bg-white dark:bg-blue-900/50 shadow-xs',
+                labelCls: 'text-blue-700 dark:text-blue-300',
+                valCls: 'text-blue-950 dark:text-blue-100',
+              },
+              {
+                label: 'จำนวนใบลา',
+                value: fmt(data.totalRequests),
+                unit: 'ใบ',
+                icon: FileSpreadsheet,
+                cardCls: 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/60',
+                iconCls: 'text-purple-700 bg-white dark:bg-purple-900/50 shadow-xs',
+                labelCls: 'text-purple-700 dark:text-purple-300',
+                valCls: 'text-purple-950 dark:text-purple-100',
+              },
+              {
+                label: 'พนักงานที่ลา',
+                value: fmt(data.employeesOnLeave),
+                unit: 'คน',
+                icon: Users,
+                cardCls: 'bg-teal-50/70 dark:bg-teal-950/30 border-teal-200/80 dark:border-teal-800/60',
+                iconCls: 'text-teal-700 bg-white dark:bg-teal-900/50 shadow-xs',
+                labelCls: 'text-teal-700 dark:text-teal-300',
+                valCls: 'text-teal-950 dark:text-teal-100',
+              },
+              {
+                label: 'รออนุมัติ',
+                value: fmt(data.pendingRequests),
+                unit: 'ใบ',
+                icon: Loader2,
+                cardCls: 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/60',
+                iconCls: 'text-amber-700 bg-white dark:bg-amber-900/50 shadow-xs',
+                labelCls: 'text-amber-700 dark:text-amber-300',
+                valCls: 'text-amber-950 dark:text-amber-100',
+              },
             ].map((k) => (
-              <div key={k.label} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${k.color}`}>
+              <div key={k.label} className={`${k.cardCls} rounded-2xl border shadow-xs p-4.5 flex items-center gap-3.5`}>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${k.iconCls}`}>
                   <k.icon className="w-5 h-5" />
                 </div>
-                <div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{k.label}</div>
-                  <div className="text-xl font-bold text-slate-800 dark:text-slate-200">{k.value}</div>
+                <div className="min-w-0">
+                  <div className={`text-xs sm:text-sm font-semibold truncate ${k.labelCls}`}>{k.label}</div>
+                  <div className={`text-2xl sm:text-3xl font-extrabold ${k.valCls}`}>
+                    {k.value} <span className="text-xs sm:text-sm font-normal opacity-70">{k.unit}</span>
+                  </div>
                 </div>
               </div>
             ))}
