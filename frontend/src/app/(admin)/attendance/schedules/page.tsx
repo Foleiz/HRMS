@@ -1292,25 +1292,12 @@ function SchedulesContent() {
                             {a.departmentName || '-'}
                           </td>
                           <td className="p-3.5">
-                            {(() => {
-                              const period = getShiftPeriodInfo({
-                                shiftName: a.shiftName,
-                                shiftCode: a.shiftCode,
-                                startTime: a.startTime,
-                                endTime: a.endTime,
-                                isCrossDay: a.isCrossDay,
-                              });
-                              const PeriodIcon = period.icon;
-                              return (
-                                <span
-                                  className="leave-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                                  style={leaveColorVars(colorOfShift(a.shiftId)) as React.CSSProperties}
-                                >
-                                  <PeriodIcon className="w-3.5 h-3.5" />
-                                  <span>{a.shiftName}</span>
-                                </span>
-                              );
-                            })()}
+                            <span
+                              className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                              style={leaveColorVars(colorOfShift(a.shiftId)) as React.CSSProperties}
+                            >
+                              <span>{a.shiftName}</span>
+                            </span>
                           </td>
                           <td className="p-3.5">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700">
@@ -1533,13 +1520,13 @@ function SchedulesContent() {
                         {shift.shiftName}
                       </h3>
                       {(() => {
+                        const shiftColor = colorOfShift(shift.id);
                         const period = getShiftPeriodInfo(shift);
-                        const PeriodIcon = period.icon;
                         return (
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 border ${period.badgeClass}`}
+                            className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold shrink-0"
+                            style={leaveColorVars(shiftColor) as React.CSSProperties}
                           >
-                            <PeriodIcon className="w-3.5 h-3.5" />
                             <span>{period.label}</span>
                           </span>
                         );
@@ -1666,13 +1653,13 @@ function SchedulesContent() {
                         <td className="p-3.5 font-semibold text-slate-900 dark:text-slate-100">{s.shiftName}</td>
                         <td className="p-3.5">
                           {(() => {
+                            const shiftColor = colorOfShift(s.id);
                             const period = getShiftPeriodInfo(s);
-                            const PeriodIcon = period.icon;
                             return (
                               <span
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${period.badgeClass}`}
+                                className="leave-chip inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                style={leaveColorVars(shiftColor) as React.CSSProperties}
                               >
-                                <PeriodIcon className="w-3 h-3" />
                                 <span>{period.label}</span>
                               </span>
                             );
@@ -2558,9 +2545,9 @@ function SchedulesContent() {
                 />
               </div>
 
-              {/* สีของกะ (ใช้ในปฏิทินจัดกะ) */}
+              {/* สีประจำกะการทำงาน */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">สีในปฏิทินจัดกะ</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">สีประจำกะการทำงาน</label>
                 <div className="flex flex-wrap items-center gap-2">
                   {LEAVE_COLOR_PRESETS.map((c) => (
                     <button
@@ -2597,11 +2584,10 @@ function SchedulesContent() {
                   const preview = shiftForm.color || (shiftForm.id ? colorOfShift(shiftForm.id) : '#475569');
                   return (
                     <div
-                      className="leave-chip mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                      className="leave-chip mt-2 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                       style={leaveColorVars(preview) as React.CSSProperties}
                     >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: preview }} />
-                      ตัวอย่าง: {shiftForm.shiftName || 'ชื่อกะ'}
+                      <span>ตัวอย่าง: {shiftForm.shiftName || 'ชื่อกะ'}</span>
                     </div>
                   );
                 })()}
@@ -2936,19 +2922,12 @@ function SchedulesContent() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {(() => {
-                          const period = getShiftPeriodInfo(item.shift);
-                          const PeriodIcon = period.icon;
-                          return (
-                            <span
-                              className="leave-chip inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
-                              style={leaveColorVars(colorOfShift(item.shift.shiftId)) as React.CSSProperties}
-                            >
-                              <PeriodIcon className="w-3 h-3" />
-                              <span>{item.shift.shiftName}</span>
-                            </span>
-                          );
-                        })()}
+                        <span
+                          className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                          style={leaveColorVars(colorOfShift(item.shift.shiftId)) as React.CSSProperties}
+                        >
+                          <span>{item.shift.shiftName}</span>
+                        </span>
                         <span className="font-mono text-xs text-slate-600 dark:text-slate-400">
                           {item.shift.startTime.substring(0, 5)} - {item.shift.endTime.substring(0, 5)} น.
                           {item.shift.isCrossDay && (
