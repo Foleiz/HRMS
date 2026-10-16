@@ -17,6 +17,7 @@ import {
   Moon,
   Check,
   Sparkles,
+  List,
 } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -76,6 +77,141 @@ function formatThaiShortDate(dateStr: string): string {
   return `${day}/${month}/${year + 543}`;
 }
 
+/** สีตามประเภทวันหยุด (ใช้ทั้งป้ายในตารางและปฏิทิน) */
+const HOLIDAY_TYPE_STYLE: Record<string, { cell: string; dot: string; label: string }> = {
+  PUBLIC: { cell: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200', dot: 'bg-indigo-500', label: 'วันหยุดตามประเพณี' },
+  COMPANY_SPECIAL: { cell: 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200', dot: 'bg-amber-500', label: 'วันหยุดพิเศษบริษัท' },
+  SUBSTITUTE: { cell: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200', dot: 'bg-emerald-500', label: 'วันหยุดชดเชย' },
+};
+const holidayStyle = (type: string) => HOLIDAY_TYPE_STYLE[type] ?? HOLIDAY_TYPE_STYLE.SUBSTITUTE;
+
+/** ปฏิทินวันหยุดทั้งปี (12 เดือน) — กดวันหยุดเพื่อแก้ไข กดวันว่างเพื่อเพิ่มวันหยุด */
+function HolidayYearCalendar({
+  year,
+  holidays,
+  workingDays,
+  onSelectHoliday,
+  onSelectDate,
+}: {
+  year: number;
+  holidays: Holiday[];
+  workingDays: Set<number>;
+  onSelectHoliday?: (h: Holiday) => void;
+  onSelectDate?: (date: string) => void;
+}) {
+  const byDate = new Map<string, Holiday[]>();
+  holidays.forEach((h) => {
+    const key = h.holidayDate.substring(0, 10);
+    byDate.set(key, [...(byDate.get(key) ?? []), h]);
+  });
+  const todayKey = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+
+  return (
+    <div className="space-y-4">
+      {/* คำอธิบายสี */}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+        {Object.entries(HOLIDAY_TYPE_STYLE).map(([k, v]) => (
+          <span key={k} className="inline-flex items-center gap-1.5">
+            <span className={`w-2.5 h-2.5 rounded-full ${v.dot}`} />
+            {v.label}
+          </span>
+        ))}
+        <span className="inline-flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-slate-600" />
+          วันหยุดประจำสัปดาห์
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+        {thaiMonths.map((monthName, m) => {
+          const first = new Date(year, m, 1);
+          const daysInMonth = new Date(year, m + 1, 0).getDate();
+          const lead = first.getDay();
+          const cells: (number | null)[] = [...Array(lead).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
+          while (cells.length % 7 !== 0) cells.push(null);
+          const monthHolidays = holidays
+            .filter((h) => Number(h.holidayDate.substring(5, 7)) === m + 1)
+            .sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
+
+          return (
+            <div key={m} className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+              <div className="px-3 py-2 bg-[#0B2046] text-white text-xs font-semibold flex items-center justify-between">
+                <span>
+                  {monthName} {year + 543}
+                </span>
+                {monthHolidays.length > 0 && <span className="text-[11px] opacity-80">{monthHolidays.length} วัน</span>}
+              </div>
+              <div className="p-2">
+                <div className="grid grid-cols-7 text-center text-[10px] font-semibold text-slate-400 mb-1">
+                  {thaiDayNamesShort.map((d, i) => (
+                    <div key={d} className={i === 0 || i === 6 ? 'text-rose-400' : ''}>
+                      {d}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-0.5">
+                  {cells.map((day, idx) => {
+                    if (day === null) return <div key={idx} className="h-7" />;
+                    const key = `${year}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const hs = byDate.get(key);
+                    const dow = new Date(year, m, day).getDay();
+                    const weeklyOff = !workingDays.has(dow);
+                    const isToday = key === todayKey;
+                    const base = 'h-7 rounded-md text-[11px] flex items-center justify-center transition-colors';
+                    if (hs) {
+                      const st = holidayStyle(hs[0].holidayType);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          title={hs.map((h) => `${h.holidayName} (${h.holidayTypeThai})`).join('\n')}
+                          onClick={() => onSelectHoliday?.(hs[0])}
+                          className={`${base} font-bold ${st.cell} ${onSelectHoliday ? 'cursor-pointer hover:ring-2 hover:ring-[#0B2046]/30' : 'cursor-default'} ${isToday ? 'ring-2 ring-[#0B2046] dark:ring-blue-400' : ''}`}
+                        >
+                          {day}
+                        </button>
+                      );
+                    }
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        title={onSelectDate ? 'เพิ่มวันหยุดในวันนี้' : undefined}
+                        onClick={() => onSelectDate?.(key)}
+                        className={`${base} ${
+                          weeklyOff ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500' : 'text-slate-700 dark:text-slate-300'
+                        } ${onSelectDate ? 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700' : 'cursor-default'} ${
+                          isToday ? 'ring-2 ring-[#0B2046] dark:ring-blue-400 font-bold' : ''
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {monthHolidays.length > 0 && (
+                <ul className="border-t border-slate-100 dark:border-slate-700/60 px-3 py-2 space-y-1 text-[11px] mt-auto">
+                  {monthHolidays.map((h) => (
+                    <li key={h.id} className="flex items-center gap-2 min-w-0">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${holidayStyle(h.holidayType).dot}`} />
+                      <span className="font-mono text-slate-500 dark:text-slate-400 shrink-0">{Number(h.holidayDate.substring(8, 10))}</span>
+                      <span className="truncate text-slate-700 dark:text-slate-300">{h.holidayName}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function WorkCalendarPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
@@ -94,6 +230,7 @@ export default function WorkCalendarPage() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
+  const [holidayView, setHolidayView] = useState<'list' | 'calendar'>('list');
 
   // Data states
   const [workWeek, setWorkWeek] = useState<WorkWeekDay[]>([]);
@@ -186,10 +323,10 @@ export default function WorkCalendarPage() {
   };
 
   // Holiday Modal Handlers
-  const handleOpenCreateModal = () => {
+  const handleOpenCreateModal = (date?: string) => {
     const today = new Date().toISOString().split('T')[0];
     setHolidayForm({
-      holidayDate: today,
+      holidayDate: date || today,
       holidayName: '',
       holidayType: 'PUBLIC',
     });
@@ -494,19 +631,62 @@ export default function WorkCalendarPage() {
                 />
               </div>
 
+              <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+              {/* สลับมุมมอง รายการ / ปฏิทิน */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800">
+                {([
+                  { key: 'list', label: 'รายการ', icon: List },
+                  { key: 'calendar', label: 'ปฏิทิน', icon: Calendar },
+                ] as const).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setHolidayView(key)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap cursor-pointer ${
+                      holidayView === key
+                        ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-blue-300 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+
               {/* Add Holiday Button */}
               {canCreateCalendar && (
                 <button
-                  onClick={handleOpenCreateModal}
+                  onClick={() => handleOpenCreateModal()}
                   className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto shrink-0 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   เพิ่มวันหยุดประจำปี
                 </button>
               )}
+              </div>
             </div>
 
+            {/* มุมมองปฏิทิน */}
+            {holidayView === 'calendar' && (
+              loading ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                  กำลังโหลดข้อมูลวันหยุดประจำปี...
+                </div>
+              ) : (
+                <HolidayYearCalendar
+                  year={selectedYear}
+                  holidays={filteredHolidays}
+                  workingDays={new Set(workWeek.filter((d) => d.isWorkingDay).map((d) => d.dayOfWeek))}
+                  onSelectHoliday={canEditCalendar ? handleOpenEditModal : undefined}
+                  onSelectDate={canCreateCalendar ? (d) => handleOpenCreateModal(d) : undefined}
+                />
+              )
+            )}
+
             {/* Holidays Table */}
+            {holidayView === 'list' && (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[600px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-[#0B2046] text-white font-semibold">
@@ -592,6 +772,7 @@ export default function WorkCalendarPage() {
                 </tbody>
               </table>
             </div>
+            )}
           </div>
         )}
       </div>
