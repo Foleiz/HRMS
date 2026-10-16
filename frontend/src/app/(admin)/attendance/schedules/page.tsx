@@ -2482,14 +2482,9 @@ function SchedulesContent() {
           <div className="min-h-full flex items-center justify-center py-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg dark:bg-slate-800 dark:border-slate-700">
               <div className="p-5 border-b border-slate-100 flex items-center justify-between rounded-t-2xl dark:border-slate-700/60">
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">
-                    {shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                    กำหนดช่วงเวลาเข้า-ออก และเงื่อนไขการผ่อนปรนเวลา
-                  </p>
-                </div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">
+                  {shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
+                </h3>
                 <button
                   onClick={() => setShiftModalOpen(false)}
                   className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 rounded-lg transition dark:text-slate-500 dark:text-slate-400"
@@ -2570,15 +2565,7 @@ function SchedulesContent() {
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
                   </label>
-                  <button
-                    type="button"
-                    onClick={() => setShiftForm({ ...shiftForm, color: '' })}
-                    className={`ml-1 px-2.5 py-1 rounded-lg text-xs border cursor-pointer ${
-                      !shiftForm.color ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'border-slate-200 text-slate-500 dark:border-slate-700'
-                    }`}
-                  >
-                    อัตโนมัติ
-                  </button>
+
                 </div>
                 {(() => {
                   const preview = shiftForm.color || (shiftForm.id ? colorOfShift(shiftForm.id) : '#475569');
@@ -2676,22 +2663,6 @@ function SchedulesContent() {
                     onChange={(e) => setShiftForm({ ...shiftForm, lateGraceMinutes: Number(e.target.value) })}
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
-                  <div className="flex gap-1 mt-1.5">
-                    {[0, 5, 10, 15].map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setShiftForm({ ...shiftForm, lateGraceMinutes: m })}
-                        className={`text-[10px] px-2 py-0.5 rounded border ${
-                          shiftForm.lateGraceMinutes === m
-                            ? 'bg-[#0B2046] text-white border-[#0B2046]'
-                            : 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {m}น.
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 <div>
@@ -2706,22 +2677,6 @@ function SchedulesContent() {
                     onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
                     className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
-                  <div className="flex gap-1 mt-1.5">
-                    {[0, 5, 10, 15].map((m) => (
-                      <button
-                        key={m}
-                        type="button"
-                        onClick={() => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: m })}
-                        className={`text-[10px] px-2 py-0.5 rounded border ${
-                          shiftForm.earlyLeaveGraceMinutes === m
-                            ? 'bg-[#0B2046] text-white border-[#0B2046]'
-                            : 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-200'
-                        }`}
-                      >
-                        {m}น.
-                      </button>
-                    ))}
-                  </div>
                 </div>
               </div>
 
