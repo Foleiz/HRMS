@@ -373,7 +373,8 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
         {!loading && !error && entries.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <CustomSelect
-              value={rangePreset === 'CUSTOM' ? '' : rangePreset}
+              // เลือกช่วงวันที่เอง → ปุ่มนี้ยังแสดง "ทุกช่วงเวลา" (กดเลือกอีกครั้งเพื่อล้างวันที่)
+              value={rangePreset === 'CUSTOM' ? 'ALL' : rangePreset}
               onChange={(e) => {
                 // เลือกช่วงสำเร็จรูป = ยกเลิกช่วงวันที่ที่เลือกเอง
                 setRangePreset(e.target.value as RangePreset);
@@ -381,7 +382,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
                 setDateTo('');
               }}
               numbered={false}
-              placeholder="ช่วงที่กำหนดเอง"
+              placeholder="ทุกช่วงเวลา"
               className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
             >
               {RANGE_OPTIONS.map((o) => (
