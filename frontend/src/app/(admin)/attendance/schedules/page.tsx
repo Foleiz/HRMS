@@ -1053,7 +1053,7 @@ function SchedulesContent() {
               <div className="w-48">
                 <CustomSelect
                   value={assignmentDeptFilter}
-                  onChange={(val) => setAssignmentDeptFilter(val)}
+                  onChange={(val) => setAssignmentDeptFilter(String(val))}
                   placeholder="ทุกแผนก / สังกัด"
                   className="w-full"
                   options={[
@@ -1609,7 +1609,7 @@ function SchedulesContent() {
               <div className="w-48">
                 <CustomSelect
                   value={shiftFilterType}
-                  onChange={(val) => setShiftFilterType(val)}
+                  onChange={(val) => setShiftFilterType(String(val))}
                   placeholder="ประเภทกะทั้งหมด"
                   className="w-full"
                   options={[
@@ -1625,7 +1625,7 @@ function SchedulesContent() {
               <div className="w-40">
                 <CustomSelect
                   value={shiftFilterStatus}
-                  onChange={(val) => setShiftFilterStatus(val)}
+                  onChange={(val) => setShiftFilterStatus(String(val))}
                   placeholder="สถานะทั้งหมด"
                   className="w-full"
                   options={[

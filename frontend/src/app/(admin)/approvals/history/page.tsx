@@ -438,7 +438,7 @@ export default function ApprovalHistoryPage() {
             {/* Document Type filter (ตัวกรองประเภทเอกสาร) */}
             <CustomSelect
               value={docTypeFilter}
-              onChange={(val) => setDocTypeFilter(val as any)}
+              onChange={(val) => setDocTypeFilter(String(val) as any)}
               className="min-w-[170px]"
               options={[
                 { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
@@ -453,7 +453,7 @@ export default function ApprovalHistoryPage() {
             {/* Status filter */}
             <CustomSelect
               value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
+              onChange={(val) => setStatusFilter(String(val))}
               className="min-w-[190px]"
               options={[
                 { value: '', label: 'ทุกสถานะ (ที่ดำเนินการแล้ว)' },

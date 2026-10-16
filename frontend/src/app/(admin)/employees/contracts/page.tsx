@@ -265,7 +265,7 @@ export default function ContractsPage() {
 
             <CustomSelect
               value={selectedContractType}
-              onChange={(val) => setSelectedContractType(val)}
+              onChange={(val) => setSelectedContractType(String(val))}
               placeholder="ประเภทสัญญาทั้งหมด"
               className="min-w-[170px]"
               options={[
@@ -279,7 +279,7 @@ export default function ContractsPage() {
 
             <CustomSelect
               value={selectedStatus}
-              onChange={(val) => setSelectedStatus(val)}
+              onChange={(val) => setSelectedStatus(String(val))}
               placeholder="สถานะทั้งหมด"
               className="min-w-[150px]"
               options={[

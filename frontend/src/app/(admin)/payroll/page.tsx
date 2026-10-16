@@ -2299,7 +2299,7 @@ export default function PayrollPage() {
 
                     <CustomSelect
                       value={selectedDeptId}
-                      onChange={(val) => setSelectedDeptId(val)}
+                      onChange={(val) => setSelectedDeptId(String(val))}
                       placeholder="ทุกแผนก"
                       className="min-w-[150px]"
                       options={[

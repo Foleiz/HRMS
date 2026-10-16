@@ -888,7 +888,7 @@ export default function LeaveRequestsApprovalPage() {
             {/* Document Type filter (ตัวกรองประเภทเอกสาร) */}
             <CustomSelect
               value={docTypeFilter}
-              onChange={(val) => setDocTypeFilter(val as any)}
+              onChange={(val) => setDocTypeFilter(String(val) as any)}
               className="min-w-[170px]"
               options={[
                 { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
@@ -903,7 +903,7 @@ export default function LeaveRequestsApprovalPage() {
             {/* Status filter (ปุ่มกรองสถานะ) */}
             <CustomSelect
               value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
+              onChange={(val) => setStatusFilter(String(val))}
               className="min-w-[150px]"
               options={[
                 { value: '', label: 'ทุกสถานะ' },

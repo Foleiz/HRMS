@@ -615,7 +615,7 @@ export default function ReportsPage() {
               <CustomSelect
                 value={selectedDivision}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setSelectedDivision(parsed);
                   setSelectedDepartment('ALL');
                 }}
@@ -631,7 +631,7 @@ export default function ReportsPage() {
               <CustomSelect
                 value={selectedDepartment}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setSelectedDepartment(parsed);
                 }}
                 placeholder="แผนกทั้งหมด"
@@ -842,7 +842,7 @@ export default function ReportsPage() {
               <CustomSelect
                 value={latenessDepartment}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setLatenessDepartment(parsed);
                 }}
                 placeholder="แผนกทั้งหมด"
@@ -1097,7 +1097,7 @@ export default function ReportsPage() {
               <CustomSelect
                 value={taxDepartment}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setTaxDepartment(parsed);
                 }}
                 placeholder="แผนกทั้งหมด"
@@ -1491,7 +1491,7 @@ export default function ReportsPage() {
               <CustomSelect
                 value={turnoverDivision}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setTurnoverDivision(parsed);
                   setTurnoverDepartment('ALL');
                 }}
@@ -1507,7 +1507,7 @@ export default function ReportsPage() {
               <CustomSelect
                 value={turnoverDepartment}
                 onChange={(val) => {
-                  const parsed = val === 'ALL' ? 'ALL' : Number(val);
+                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
                   setTurnoverDepartment(parsed);
                 }}
                 placeholder="แผนกทั้งหมด"
