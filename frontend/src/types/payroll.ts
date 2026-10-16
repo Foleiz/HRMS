@@ -175,6 +175,7 @@ export interface PayrollPeriod {
   status: 'DRAFT' | 'REVIEW' | 'APPROVED' | 'PROCESSING' | 'PAID' | 'CLOSED' | string;
   statusText: string;
   employeeCount: number;
+  totalEmployees?: number;
   totalNetSalary: number;
   // Payment Workflow
   paymentMethod?: 'BANK_BATCH' | 'DIRECT_TRANSFER' | null;

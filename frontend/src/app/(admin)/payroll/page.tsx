@@ -1779,7 +1779,7 @@ export default function PayrollPage() {
       const totalNet = selectedPeriod.totalNetSalary != null && selectedPeriod.totalNetSalary > 0
         ? `฿${Number(selectedPeriod.totalNetSalary).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
         : '';
-      const totalEmp = selectedPeriod.totalEmployees ? `${selectedPeriod.totalEmployees} คน` : '';
+      const totalEmp = (selectedPeriod.totalEmployees ?? selectedPeriod.employeeCount) ? `${selectedPeriod.totalEmployees ?? selectedPeriod.employeeCount} คน` : '';
 
       const confirmed = await confirmAction({
         title: 'ยืนยันการอนุมัติรอบเงินเดือน?',
@@ -1897,6 +1897,8 @@ export default function PayrollPage() {
       const updatedPeriods = await salaryService.getPayrollPeriods();
       setPeriods(updatedPeriods || []);
       const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
+      if (current) setSelectedPeriod(current);
+      const hasWarning = !!calcMessage && calcMessage.includes('ข้อควรตรวจสอบ');
       const bonusCount = (updatedPayrolls || []).filter((p: any) =>
         p.details?.some((d: any) => (d.payrollItemCode === 'INC_BONUS' || d.calculationSource?.includes('BONUS')) && d.amount > 0)
       ).length;
