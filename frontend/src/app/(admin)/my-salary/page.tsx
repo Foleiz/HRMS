@@ -486,7 +486,7 @@ export default function MySalaryPage() {
             </div>
 
             {/* Desktop View: Slips History Table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">
               <table className="table-standard w-full min-w-[700px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-500 font-semibold bg-slate-50/50 whitespace-nowrap">

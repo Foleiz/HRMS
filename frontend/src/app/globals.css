@@ -262,3 +262,11 @@ html.dark .table-standard.table-standard > thead > tr > th {
   background-color: #1A3A75 !important;
   color: #F1F5F9 !important;
 }
+
+/* ขนาด/ระยะหัวตารางมาตรฐาน (เท่ากันทุกตาราง ตามหน้าจัดการฝ่าย) */
+.table-standard.table-standard > thead > tr > th {
+  font-size: var(--text-xs) !important;
+  line-height: var(--text-xs--line-height) !important;
+  padding-top: 0.875rem !important;
+  padding-bottom: 0.875rem !important;
+}

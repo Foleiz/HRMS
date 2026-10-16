@@ -235,8 +235,8 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                 {allExpanded ? 'ซ่อนรายชื่อทั้งหมด' : 'แสดงรายชื่อทั้งหมด'}
               </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="table-standard w-full min-w-[900px] text-left text-sm whitespace-nowrap">
+            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <table className="table-standard w-full min-w-[900px] text-left text-xs whitespace-nowrap">
                 <thead className="bg-slate-50 text-xs font-semibold text-slate-500 border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">แผนก</th>

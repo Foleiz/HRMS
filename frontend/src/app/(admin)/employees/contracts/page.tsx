@@ -293,8 +293,8 @@ export default function ContractsPage() {
         </div>
 
         {/* 6. Contracts Table ตรงตาม Mockup 100% พร้อมคอลัมน์เอกสารสัญญา */}
-        <div className="overflow-x-auto">
-          <table className="table-standard w-full min-w-[850px] text-left border-collapse text-sm whitespace-nowrap">
+        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+          <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>

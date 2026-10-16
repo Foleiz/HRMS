@@ -545,8 +545,8 @@ export default function AnnouncementsPage() {
 
           {/* Announcements Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="table-standard w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
+            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>

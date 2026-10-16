@@ -525,7 +525,7 @@ export default function LeaveManagementPage() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
-              <table className="table-standard w-full min-w-[650px] text-left border-collapse whitespace-nowrap">
+              <table className="table-standard text-xs w-full min-w-[650px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
@@ -639,7 +639,7 @@ export default function LeaveManagementPage() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-100 rounded-xl">
-              <table className="table-standard w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
+              <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
                     <th className="py-3.5 px-5">ประเภทการลา</th>

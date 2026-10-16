@@ -567,8 +567,8 @@ export default function DocumentHistoryPage() {
         ) : (
           <>
             {/* Desktop View: Full Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="table-standard w-full min-w-[750px] text-sm whitespace-nowrap">
+            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">
+              <table className="table-standard w-full min-w-[750px] text-xs whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
                     <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">รหัสเอกสาร</th>

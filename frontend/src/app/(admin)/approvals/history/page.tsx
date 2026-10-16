@@ -485,8 +485,8 @@ export default function ApprovalHistoryPage() {
             <p className="text-gray-400 text-sm">ไม่พบประวัติเอกสารสำหรับเงื่อนไขที่เลือก</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="table-standard w-full min-w-[850px] text-sm whitespace-nowrap">
+          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table className="table-standard w-full min-w-[850px] text-xs whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">เลขที่เอกสาร</th>
