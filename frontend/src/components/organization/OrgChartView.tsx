@@ -21,6 +21,10 @@ import {
   AlertTriangle,
   RefreshCw,
   Copy,
+  CalendarDays,
+  Briefcase,
+  UserCheck,
+  ChevronRight,
 } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -44,6 +48,23 @@ const deptKey = (id: number) => `dept-${id}`;
 interface OpenPerson {
   person: OrgChartPerson;
   unit?: string;
+}
+
+const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+/** วันเริ่มงาน + อายุงาน เช่น "1 ม.ค. 2566 (3 ปี 9 เดือน)" */
+function formatStartDate(value?: string | null): string | null {
+  if (!value) return null;
+  const [y, m, d] = value.slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return null;
+  const now = new Date();
+  let months = (now.getFullYear() - y) * 12 + (now.getMonth() + 1 - m);
+  if (now.getDate() < d) months -= 1;
+  months = Math.max(0, months);
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  const tenure = years > 0 ? `${years} ปี${rest > 0 ? ` ${rest} เดือน` : ''}` : rest > 0 ? `${rest} เดือน` : 'น้อยกว่า 1 เดือน';
+  return `${d} ${THAI_MONTHS[m - 1]} ${y + 543} (${tenure})`;
 }
 
 // ---------------------------------------------------------------------------
@@ -454,6 +475,27 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
   const [search, setSearch] = useState('');
   const [zoom, setZoom] = useState(1);
   const [opened, setOpened] = useState<OpenPerson | null>(null);
+
+  // ค้นหาคนจาก id (ใช้กดที่ชื่อหัวหน้างานในหน้าต่างข้อมูลพนักงาน)
+  const peopleById = useMemo(() => {
+    const map = new Map<number, OrgChartPerson>();
+    if (!chart) return map;
+    const add = (p?: OrgChartPerson | null) => {
+      if (p && !map.has(p.id)) map.set(p.id, p);
+    };
+    const walk = (d: OrgChartDepartment) => {
+      add(d.head);
+      d.members.forEach(add);
+      d.subDepartments.forEach(walk);
+    };
+    add(chart.ceo);
+    chart.divisions.forEach((dv) => {
+      add(dv.head);
+      dv.departments.forEach(walk);
+    });
+    chart.unassigned.forEach(add);
+    return map;
+  }, [chart]);
   const printAreaRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -878,6 +920,71 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
               {opened.unit && <p className="text-[11px] text-blue-100/80 mt-0.5">{opened.unit}</p>}
             </div>
             <div className="p-5 space-y-3 text-xs">
+              {opened.person.onLeaveToday && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 text-amber-700 dark:text-amber-300 font-medium">
+                  <CalendarDays className="w-3.5 h-3.5 shrink-0" />
+                  ลาวันนี้ — อาจติดต่อได้ช้ากว่าปกติ
+                </div>
+              )}
+              {(() => {
+                const path = [opened.person.divisionName, opened.person.departmentName, opened.person.teamName].filter(Boolean);
+                return path.length > 0 ? (
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-slate-500 shrink-0">สังกัด</span>
+                    <span className="flex flex-wrap items-center justify-end gap-0.5 text-right font-semibold text-slate-800 dark:text-slate-200">
+                      {path.map((name, i) => (
+                        <React.Fragment key={i}>
+                          {i > 0 && <ChevronRight className="w-3 h-3 text-slate-400" />}
+                          <span>{name}</span>
+                        </React.Fragment>
+                      ))}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 shrink-0">หัวหน้างาน</span>
+                {opened.person.reportsToId && opened.person.reportsToName ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const boss = peopleById.get(opened.person.reportsToId!);
+                      if (boss) setOpened({ person: boss, unit: boss.departmentName || boss.divisionName || undefined });
+                    }}
+                    className="text-right group cursor-pointer"
+                    title="ดูข้อมูลหัวหน้างาน"
+                  >
+                    <span className="block font-semibold text-blue-700 dark:text-blue-400 group-hover:underline">{opened.person.reportsToName}</span>
+                    {opened.person.reportsToPositionName && (
+                      <span className="block text-[11px] text-slate-400">{opened.person.reportsToPositionName}</span>
+                    )}
+                  </button>
+                ) : (
+                  <span className="text-slate-400">-</span>
+                )}
+              </div>
+              {(opened.person.directReportCount ?? 0) > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 flex items-center gap-1">
+                    <UserCheck className="w-3.5 h-3.5" /> ลูกทีมที่ดูแล
+                  </span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{opened.person.directReportCount} คน</span>
+                </div>
+              )}
+              {opened.person.employeeTypeName && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5" /> ประเภทพนักงาน
+                  </span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{opened.person.employeeTypeName}</span>
+                </div>
+              )}
+              {formatStartDate(opened.person.startDate) && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-500 shrink-0">วันเริ่มงาน</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">{formatStartDate(opened.person.startDate)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">รหัสพนักงาน</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-200">{opened.person.employeeCode}</span>

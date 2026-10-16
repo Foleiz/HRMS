@@ -232,6 +232,22 @@ public class OrgChartPersonDto
     public string? PositionName { get; set; }
     public string? AvatarUrl { get; set; }
     public string? WorkEmail { get; set; }
+
+    // ข้อมูลเพิ่มเติมในหน้าต่าง "ข้อมูลพนักงาน" (ข้อมูลที่ใช้ติดต่องาน — ไม่มีข้อมูลส่วนตัว)
+    public string? DivisionName { get; set; }
+    public string? DepartmentName { get; set; }
+    public string? TeamName { get; set; }
+    public string? EmployeeTypeName { get; set; }
+    /// <summary>วันเริ่มงาน (สัญญาจ้างฉบับแรก)</summary>
+    public DateOnly? StartDate { get; set; }
+    /// <summary>หัวหน้างานที่รายงานตรง (ตามโครงสร้าง: หัวหน้าทีม → หัวหน้าแผนก → หัวหน้าฝ่าย → ผู้บริหารสูงสุด)</summary>
+    public long? ReportsToId { get; set; }
+    public string? ReportsToName { get; set; }
+    public string? ReportsToPositionName { get; set; }
+    /// <summary>จำนวนคนที่รายงานตรงต่อคนนี้</summary>
+    public int DirectReportCount { get; set; }
+    /// <summary>มีใบลาที่อนุมัติแล้วครอบคลุมวันนี้ (ไม่บอกประเภทการลา)</summary>
+    public bool OnLeaveToday { get; set; }
 }
 
 public class OrgChartDepartmentDto

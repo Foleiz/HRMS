@@ -921,11 +921,42 @@ public class OrganizationService : IOrganizationService
                     {
                         a.DivisionId,
                         a.DepartmentId,
-                        PositionName = a.Position != null ? a.Position.PositionName : null
+                        a.TeamId,
+                        PositionName = a.Position != null ? a.Position.PositionName : null,
+                        TeamName = a.Team != null ? a.Team.TeamName : null,
+                        EmployeeTypeName = a.EmployeeType != null ? a.EmployeeType.TypeName : null
                     })
                     .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
+
+        var empIds = rows.Select(r => r.Id).ToList();
+
+        // วันเริ่มงาน = วันเริ่มสัญญาจ้างฉบับแรก (ไม่นับสัญญาที่ยกเลิก)
+        var startDates = await _dbContext.EmploymentContracts.AsNoTracking()
+            .Where(c => empIds.Contains(c.EmployeeId) && c.Status != "CANCELLED")
+            .GroupBy(c => c.EmployeeId)
+            .Select(g => new { EmployeeId = g.Key, StartDate = g.Min(c => c.StartDate) })
+            .ToDictionaryAsync(x => x.EmployeeId, x => x.StartDate, cancellationToken);
+
+        // ลาวันนี้ (เวลาไทย) — เฉพาะใบลาที่อนุมัติแล้ว
+        var thaiToday = DateTime.UtcNow.AddHours(7).Date;
+        var dayStartUtc = DateTime.SpecifyKind(thaiToday.AddHours(-7), DateTimeKind.Utc);
+        var dayEndUtc = dayStartUtc.AddDays(1);
+        var onLeaveToday = (await _dbContext.LeaveRequests.AsNoTracking()
+                .Where(r => r.Status == "APPROVED" && empIds.Contains(r.EmployeeId)
+                            && r.StartDatetime < dayEndUtc && r.EndDatetime >= dayStartUtc)
+                .Select(r => r.EmployeeId)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        var teamLeads = await _dbContext.Teams.AsNoTracking()
+            .Where(t => t.Status == "ACTIVE" && t.LeadEmployeeId != null)
+            .ToDictionaryAsync(t => t.Id, t => t.LeadEmployeeId!.Value, cancellationToken);
+
+        var divisionNames = divisions.ToDictionary(d => d.Id, d => d.DivisionName);
+        var departmentById = departments.ToDictionary(d => d.Id);
 
         var people = rows.ToDictionary(r => r.Id, r => new OrgChartPersonDto
         {
@@ -934,7 +965,13 @@ public class OrganizationService : IOrganizationService
             FullName = $"{r.Prefix} {r.FirstName} {r.LastName}".Trim(),
             PositionName = r.Assignment?.PositionName,
             AvatarUrl = r.AvatarUpdatedAt.HasValue ? $"/api/employees/{r.Id}/avatar?v={r.AvatarUpdatedAt.Value.Ticks}" : null,
-            WorkEmail = string.IsNullOrWhiteSpace(r.WorkEmail) ? null : r.WorkEmail
+            WorkEmail = string.IsNullOrWhiteSpace(r.WorkEmail) ? null : r.WorkEmail,
+            DivisionName = r.Assignment != null && divisionNames.TryGetValue(r.Assignment.DivisionId, out var dn) ? dn : null,
+            DepartmentName = r.Assignment != null && departmentById.TryGetValue(r.Assignment.DepartmentId, out var dep) ? dep.DepartmentName : null,
+            TeamName = r.Assignment?.TeamName,
+            EmployeeTypeName = r.Assignment?.EmployeeTypeName,
+            StartDate = startDates.TryGetValue(r.Id, out var sd) ? sd : null,
+            OnLeaveToday = onLeaveToday.Contains(r.Id)
         });
 
         // หัวหน้าที่ลาออก/ไม่ active → ถือว่าตำแหน่งว่าง
@@ -977,6 +1014,67 @@ public class OrganizationService : IOrganizationService
                     .Select(BuildDepartment)
                     .ToList()
             };
+        }
+
+        // ─── หัวหน้างานที่รายงานตรง ───
+        long? ceoId = Person(company?.CeoEmployeeId)?.Id;
+        var divisionHeadIds = divisions.Where(d => Person(d.HeadEmployeeId) != null).Select(d => d.HeadEmployeeId!.Value).ToHashSet();
+        long? DivisionHead(long divisionId) =>
+            divisions.FirstOrDefault(d => d.Id == divisionId) is { } dv && Person(dv.HeadEmployeeId) != null ? dv.HeadEmployeeId : null;
+
+        // ไล่ขึ้นจากแผนก: หัวหน้าแผนกนี้ → แผนกแม่ → หัวหน้าฝ่าย → ผู้บริหารสูงสุด (ข้ามตัวเองและตำแหน่งว่าง)
+        long? UpFromDepartment(long? departmentId, long self, bool includeThisHead)
+        {
+            var guard = new HashSet<long>();
+            long? divisionId = null;
+            var current = departmentId.HasValue && departmentById.TryGetValue(departmentId.Value, out var d0) ? d0 : null;
+            var first = true;
+            while (current != null && guard.Add(current.Id))
+            {
+                divisionId ??= current.DivisionId;
+                if ((includeThisHead || !first) && Person(current.HeadEmployeeId) != null && current.HeadEmployeeId != self)
+                    return current.HeadEmployeeId;
+                first = false;
+                current = current.ParentDepartmentId.HasValue && departmentById.TryGetValue(current.ParentDepartmentId.Value, out var parent) ? parent : null;
+            }
+            if (divisionId.HasValue)
+            {
+                var dh = DivisionHead(divisionId.Value);
+                if (dh.HasValue && dh != self) return dh;
+            }
+            return ceoId.HasValue && ceoId != self ? ceoId : null;
+        }
+
+        var headedDepartment = departments.Where(d => Person(d.HeadEmployeeId) != null)
+            .GroupBy(d => d.HeadEmployeeId!.Value)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        foreach (var r in rows)
+        {
+            long? boss;
+            if (ceoId == r.Id)
+                boss = null;
+            else if (divisionHeadIds.Contains(r.Id))
+                boss = ceoId;
+            else if (headedDepartment.TryGetValue(r.Id, out var hd))
+                boss = UpFromDepartment(hd.Id, r.Id, includeThisHead: false);
+            else if (r.Assignment != null)
+            {
+                boss = r.Assignment.TeamId.HasValue && teamLeads.TryGetValue(r.Assignment.TeamId.Value, out var lead)
+                       && lead != r.Id && Person(lead) != null
+                    ? lead
+                    : UpFromDepartment(r.Assignment.DepartmentId, r.Id, includeThisHead: true);
+            }
+            else
+                boss = ceoId.HasValue && ceoId != r.Id ? ceoId : null;
+
+            var bossPerson = Person(boss);
+            if (bossPerson == null) continue;
+            var me = people[r.Id];
+            me.ReportsToId = bossPerson.Id;
+            me.ReportsToName = bossPerson.FullName;
+            me.ReportsToPositionName = bossPerson.PositionName;
+            bossPerson.DirectReportCount++;
         }
 
         var result = new OrgChartDto

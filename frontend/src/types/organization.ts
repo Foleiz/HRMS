@@ -227,6 +227,17 @@ export interface OrgChartPerson {
   positionName?: string | null;
   avatarUrl?: string | null;
   workEmail?: string | null;
+  divisionName?: string | null;
+  departmentName?: string | null;
+  teamName?: string | null;
+  employeeTypeName?: string | null;
+  /** วันเริ่มงาน (yyyy-MM-dd) */
+  startDate?: string | null;
+  reportsToId?: number | null;
+  reportsToName?: string | null;
+  reportsToPositionName?: string | null;
+  directReportCount?: number;
+  onLeaveToday?: boolean;
 }
 
 export interface OrgChartDepartment {
