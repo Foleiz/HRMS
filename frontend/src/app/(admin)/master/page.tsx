@@ -436,7 +436,7 @@ export default function MasterDataHubPage() {
       {activeTab === 'document-types' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-left text-xs border-collapse whitespace-nowrap">
+            <table className="table-standard w-full min-w-[700px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-16">ID</th>
@@ -525,7 +525,7 @@ export default function MasterDataHubPage() {
       {activeTab === 'nationalities' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
+            <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
@@ -580,7 +580,7 @@ export default function MasterDataHubPage() {
       {activeTab === 'religions' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
+            <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
@@ -635,7 +635,7 @@ export default function MasterDataHubPage() {
       {activeTab === 'marital-statuses' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
+            <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>
@@ -690,7 +690,7 @@ export default function MasterDataHubPage() {
       {activeTab === 'banks' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
+            <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
                   <th className="py-3 px-4 w-20">ID</th>

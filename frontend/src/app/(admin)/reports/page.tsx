@@ -726,7 +726,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1050px] text-left text-sm whitespace-nowrap">
+                <table className="table-standard w-full min-w-[1050px] text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">ชื่อแผนก</th>
@@ -966,7 +966,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[850px] text-left text-sm whitespace-nowrap">
+                <table className="table-standard w-full min-w-[850px] text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">พนักงาน</th>
@@ -1309,7 +1309,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[1050px] text-left text-sm whitespace-nowrap">
+                <table className="table-standard w-full min-w-[1050px] text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4 text-center w-12">ลำดับ</th>
@@ -1658,7 +1658,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[950px] text-left text-sm whitespace-nowrap">
+                <table className="table-standard w-full min-w-[950px] text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4">ฝ่าย</th>
@@ -1734,7 +1734,7 @@ export default function ReportsPage() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[800px] text-left text-sm whitespace-nowrap">
+                <table className="table-standard w-full min-w-[800px] text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4">วันที่</th>

@@ -267,7 +267,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 rounded-xl">
-          <table className="w-full min-w-[760px] whitespace-nowrap">
+          <table className="table-standard w-full min-w-[760px] whitespace-nowrap">
             <thead className="bg-slate-50 text-slate-500 text-[11px]">
               <tr className="whitespace-nowrap">
                 <th className="text-left font-semibold px-4 py-2.5">ประเภทเอกสาร</th>

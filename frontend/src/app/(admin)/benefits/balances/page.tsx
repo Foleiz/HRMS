@@ -402,7 +402,7 @@ export default function EmployeeBenefitBalancesPage() {
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-1 bg-slate-50/70 dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-700/60 animate-in fade-in duration-150">
                       <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs">
-                        <table className="w-full text-left border-collapse text-xs">
+                        <table className="table-standard w-full text-left border-collapse text-xs">
                           <thead>
                             <tr className="bg-gray-50 dark:bg-slate-800/90 border-b border-gray-100 dark:border-slate-700 font-semibold text-gray-500 dark:text-slate-400">
                               <th className="py-2.5 px-4">สิทธิประโยชน์ / สวัสดิการ</th>

@@ -952,7 +952,7 @@ export default function LeaveRequestsApprovalPage() {
           <>
             {/* Desktop View: Full Approvals Table */}
             <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full min-w-[850px] text-sm whitespace-nowrap">
+              <table className="table-standard w-full min-w-[850px] text-sm whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <th className="text-left px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
