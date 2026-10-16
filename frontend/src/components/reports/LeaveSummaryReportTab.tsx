@@ -188,8 +188,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             {matrix.depts.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="table-standard w-full min-w-[600px] text-sm whitespace-nowrap">
+              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                <table className="table-standard w-full min-w-[600px] text-xs whitespace-nowrap">
                   <thead>
                     <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
                       <th className="text-left py-2 px-3">แผนก</th>
@@ -232,8 +232,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             {data.topEmployees.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="table-standard w-full min-w-[500px] text-sm whitespace-nowrap">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                <table className="table-standard w-full min-w-[500px] text-xs whitespace-nowrap">
                   <thead>
                     <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
                       <th className="text-left py-2 px-3 w-10">#</th>

@@ -319,7 +319,7 @@ export default function EmployeeTypesPage() {
         </div>
 
         {/* Data Table */}
-        <div className="overflow-x-auto min-h-[300px]">
+        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[300px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
               <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mb-2" />
