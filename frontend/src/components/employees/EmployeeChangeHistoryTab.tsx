@@ -400,15 +400,6 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
               align="right"
               className="w-[230px] max-w-none py-1.5! text-xs! rounded-lg!"
             />
-            {rangePreset === 'CUSTOM' && (dateFrom || dateTo) && (
-              <button
-                type="button"
-                onClick={() => { setDateFrom(''); setDateTo(''); setRangePreset('ALL'); }}
-                className="text-[11px] text-slate-500 hover:text-rose-600 cursor-pointer"
-              >
-                ล้าง
-              </button>
-            )}
           </div>
         )}
       </div>
