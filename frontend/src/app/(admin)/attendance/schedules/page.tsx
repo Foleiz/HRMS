@@ -243,6 +243,7 @@ function SchedulesContent() {
   const [assignmentViewMode, setAssignmentViewMode] = useState<'calendar' | 'list'>('list');
   const [assignmentSearch, setAssignmentSearch] = useState('');
   const [assignmentDeptFilter, setAssignmentDeptFilter] = useState<string>('ALL');
+  const [calendarShiftFilter, setCalendarShiftFilter] = useState<number | 'ALL'>('ALL');
 
   // Selected Day Details Modal (for Real Calendar view)
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<{
@@ -547,6 +548,15 @@ function SchedulesContent() {
       );
     });
   }, [assignableEmployees, assignmentDeptFilter, batchSelectedDept, departments, empFilterKeyword, batchAssignTypeFilter]);
+
+  // Calendar: Filtered Employee Count for Selected Shift
+  const calendarFilteredEmployeeCount = useMemo(() => {
+    if (!rosterData?.employees) return 0;
+    if (calendarShiftFilter === 'ALL') return rosterData.employees.length;
+    return rosterData.employees.filter((emp) =>
+      Object.values(emp.days || {}).some((shift) => shift && shift.shiftId === calendarShiftFilter)
+    ).length;
+  }, [rosterData, calendarShiftFilter]);
 
   // -------------------------------------------------------------
   // Helpers
@@ -1143,26 +1153,54 @@ function SchedulesContent() {
                     วันนี้
                   </button>
 
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    {rosterData?.employees.length ?? 0} คน
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    {calendarFilteredEmployeeCount} คน
+                    {calendarShiftFilter !== 'ALL' && (
+                      <span className="ml-1 text-[11px] text-slate-400">
+                        (จาก {rosterData?.employees.length ?? 0} คน)
+                      </span>
+                    )}
                   </span>
                 </div>
 
-                {/* Shift Badges Legend */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">ประเภทกะ:</span>
+                {/* Shift Filter Buttons */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 mr-0.5">ประเภทกะ:</span>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarShiftFilter('ALL')}
+                    className={`inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-all cursor-pointer ${
+                      calendarShiftFilter === 'ALL'
+                        ? 'bg-[#0B2046] text-white shadow-xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    ทั้งหมด
+                  </button>
                   {shifts.filter((s) => s.status === 'ACTIVE').map((s) => {
                     const color = colorOfShift(s.id);
+                    const isSelected = calendarShiftFilter === s.id;
+                    const isAnySelected = calendarShiftFilter !== 'ALL';
                     return (
-                      <span
+                      <button
                         key={s.id}
-                        className="leave-chip inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full"
+                        type="button"
+                        onClick={() =>
+                          setCalendarShiftFilter((prev) => (prev === s.id ? 'ALL' : s.id))
+                        }
+                        className={`leave-chip inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-0.5 rounded-full transition-all cursor-pointer ${
+                          isSelected
+                            ? 'ring-2 ring-[#0B2046] dark:ring-white ring-offset-1 shadow-sm font-bold scale-105'
+                            : isAnySelected
+                            ? 'opacity-35 hover:opacity-85 grayscale-30'
+                            : 'hover:scale-102 hover:shadow-xs'
+                        }`}
                         style={leaveColorVars(color) as React.CSSProperties}
-                        title={`${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)})`}
+                        title={`คลิกเพื่อกรองเฉพาะ: ${s.shiftName} (${s.startTime.substring(0, 5)}-${s.endTime.substring(0, 5)} น.)`}
                       >
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                         <span>{s.shiftName}</span>
-                      </span>
+                      </button>
                     );
                   })}
                 </div>
@@ -1208,7 +1246,7 @@ function SchedulesContent() {
                             );
                           }
 
-                          const dayShifts = (rosterData?.employees || []).flatMap((emp) => {
+                          const allDayShifts = (rosterData?.employees || []).flatMap((emp) => {
                             const shift = emp.days?.[cell.dayNumber];
                             if (!shift) return [];
                             return [{
@@ -1219,6 +1257,11 @@ function SchedulesContent() {
                               shift: shift,
                             }];
                           });
+
+                          const dayShifts =
+                            calendarShiftFilter === 'ALL'
+                              ? allDayShifts
+                              : allDayShifts.filter((item) => item.shift.shiftId === calendarShiftFilter);
 
                           const dateStr = `${rosterYear}-${String(rosterMonth).padStart(2, '0')}-${String(cell.dayNumber).padStart(2, '0')}`;
 
@@ -2928,6 +2971,11 @@ function SchedulesContent() {
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {selectedCalendarDay.shifts.length} คน
+                    {calendarShiftFilter !== 'ALL' && (
+                      <span className="ml-1.5 text-blue-600 dark:text-blue-400 font-medium">
+                        (กรองเฉพาะ: {shifts.find((s) => s.id === calendarShiftFilter)?.shiftName})
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
