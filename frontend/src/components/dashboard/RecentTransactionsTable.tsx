@@ -337,6 +337,7 @@ export const RecentTransactionsTable: React.FC = () => {
               setCurrentPage(1);
             }}
             placeholder="ช่วงวันที่"
+            numbered={false}
             options={[
               { value: '', label: 'ช่วงวันที่ทั้งหมด' },
               { value: 'THIS_MONTH', label: 'เดือนนี้' },

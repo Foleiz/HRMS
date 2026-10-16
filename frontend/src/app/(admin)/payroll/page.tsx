@@ -6623,6 +6623,7 @@ export default function PayrollPage() {
                 <CustomSelect
                   value={selectedTargetPeriodId || ''}
                   onChange={(e) => setSelectedTargetPeriodId(parseInt(e.target.value) || null)}
+                  numbered={false}
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
                 >
                   <option value="">-- เลือกงวดเงินเดือน --</option>
