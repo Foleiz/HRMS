@@ -602,8 +602,8 @@ export default function ReportsPage() {
           <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Date Picker */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">วันที่:</span>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0">วันที่:</span>
                 <ThaiDatePicker
                   value={selectedDate}
                   onChange={setSelectedDate}
@@ -853,8 +853,8 @@ export default function ReportsPage() {
           <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Month Selector */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เดือน:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">เดือน:</span>
                 <CustomSelect
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -869,8 +869,8 @@ export default function ReportsPage() {
               </div>
 
               {/* Year Selector */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">ปี:</span>
                 <CustomSelect
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -1112,9 +1112,9 @@ export default function ReportsPage() {
           <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">ปี:</span>
                 <CustomSelect
                   value={taxYear}
                   onChange={(e) => setTaxYear(Number(e.target.value))}
@@ -1129,9 +1129,9 @@ export default function ReportsPage() {
               </div>
 
               {/* Month Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">งวดเดือน:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
+                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">งวดเดือน:</span>
                 <CustomSelect
                   value={taxMonth}
                   onChange={(e) => setTaxMonth(Number(e.target.value))}
@@ -1506,9 +1506,9 @@ export default function ReportsPage() {
           <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               {/* Year Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">ปี:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">ปี:</span>
                 <CustomSelect
                   value={turnoverYear}
                   onChange={(e) => setTurnoverYear(Number(e.target.value))}
@@ -1523,9 +1523,9 @@ export default function ReportsPage() {
               </div>
 
               {/* Month Select */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium dark:text-slate-400">เดือน:</span>
+              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
+                <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">เดือน:</span>
                 <CustomSelect
                   value={turnoverMonth}
                   onChange={(e) => setTurnoverMonth(Number(e.target.value))}
