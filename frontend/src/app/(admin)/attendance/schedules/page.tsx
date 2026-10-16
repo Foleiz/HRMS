@@ -1709,8 +1709,8 @@ function SchedulesContent() {
                   className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/90 shadow-sm hover:shadow-md transition p-5 flex flex-col justify-between group dark:bg-slate-800"
                 >
                   <div>
-                    {/* Card Header: Shift Name */}
-                    <div className="mb-3">
+                    {/* Card Header: Shift Name & Cross-Day Badge */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
                       {(() => {
                         const shiftColor = colorOfShift(shift.id);
                         return (
@@ -1725,6 +1725,12 @@ function SchedulesContent() {
                           </h3>
                         );
                       })()}
+                      {shift.isCrossDay && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60 shrink-0">
+                          <Moon className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                          <span>ข้ามวัน</span>
+                        </span>
+                      )}
                     </div>
 
                     {/* Time Window Display */}
@@ -1733,9 +1739,6 @@ function SchedulesContent() {
                         <span className="text-slate-500 dark:text-slate-400">เวลาทำงาน:</span>
                         <span className="font-bold font-mono text-slate-800 dark:text-slate-200 text-sm dark:text-slate-200">
                           {shift.startTime.substring(0, 5)} - {shift.endTime.substring(0, 5)} น.
-                          {shift.isCrossDay && (
-                            <span className="ml-1.5 text-[11px] font-medium text-purple-600">(ข้ามวัน)</span>
-                          )}
                         </span>
                       </div>
                       <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
