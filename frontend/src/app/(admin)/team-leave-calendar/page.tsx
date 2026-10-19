@@ -15,6 +15,10 @@ const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ];
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+];
 const WEEK_DAYS = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
 
 /** สีตามประเภทการลา (วนตามลำดับประเภทที่พบ) */
@@ -55,7 +59,7 @@ function startOfWeek(d: Date): Date {
 }
 function thaiDate(s: string): string {
   const [y, m, d] = s.split('-').map(Number);
-  return `${d} ${THAI_MONTHS[m - 1].slice(0, 3)}. ${y + 543}`;
+  return `${d} ${THAI_MONTHS_SHORT[m - 1]} ${y + 543}`;
 }
 
 export default function TeamLeaveCalendarPage() {

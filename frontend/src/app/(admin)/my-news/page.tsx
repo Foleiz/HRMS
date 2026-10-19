@@ -88,6 +88,12 @@ const THAI_MONTHS = [
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ];
 
+const THAI_MONTHS_SHORT = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
+  'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
+  'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+];
+
 const WEEKDAYS = [
   { key: 0, label: 'อาทิตย์', color: 'text-rose-500' },
   { key: 1, label: 'จันทร์', color: 'text-slate-700 dark:text-slate-300' },
@@ -203,7 +209,12 @@ export default function MyNewsCalendarPage() {
       const startOfWeek = new Date(curr.setDate(diff));
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
-      return `${startOfWeek.getDate()} ${THAI_MONTHS[startOfWeek.getMonth()].slice(0, 3)} - ${endOfWeek.getDate()} ${THAI_MONTHS[endOfWeek.getMonth()].slice(0, 3)} ${thaiYear}`;
+      const startYear = startOfWeek.getFullYear() + 543;
+      const endYear = endOfWeek.getFullYear() + 543;
+      if (startYear !== endYear) {
+        return `${startOfWeek.getDate()} ${THAI_MONTHS_SHORT[startOfWeek.getMonth()]} ${startYear} - ${endOfWeek.getDate()} ${THAI_MONTHS_SHORT[endOfWeek.getMonth()]} ${endYear}`;
+      }
+      return `${startOfWeek.getDate()} ${THAI_MONTHS_SHORT[startOfWeek.getMonth()]} - ${endOfWeek.getDate()} ${THAI_MONTHS_SHORT[endOfWeek.getMonth()]} ${endYear}`;
     }
     return `${THAI_MONTHS[currentDate.getMonth()]} ${thaiYear}`;
   }, [currentDate, viewMode]);
@@ -650,7 +661,7 @@ export default function MyNewsCalendarPage() {
                       {dayItem.dayNumber}
                     </span>
                     <span className="text-[10px] text-slate-400">
-                      {dayItem.date.toLocaleDateString('th-TH', { month: 'short' })}
+                      {THAI_MONTHS_SHORT[dayItem.date.getMonth()]}
                     </span>
                   </div>
 
