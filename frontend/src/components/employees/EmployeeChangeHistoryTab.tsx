@@ -160,7 +160,7 @@ function ChangeRow({ c, action }: { c: FieldChange; action: string }) {
       {/* Value(s) */}
       <div className="flex items-center gap-1.5 flex-wrap min-w-0">
         {isDelete && (
-          <span className="text-rose-600 line-through decoration-rose-300 font-medium flex items-center gap-1">
+          <span className="text-rose-600 font-medium flex items-center gap-1">
             <Minus className="w-3 h-3 text-rose-500 inline shrink-0" />
             <span>{c.oldValue ?? <Empty />}</span>
           </span>
