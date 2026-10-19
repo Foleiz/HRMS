@@ -288,10 +288,9 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
                         ? new EmployeeFieldChange { Field = Label(first.Table, key), NewValue = v }
                         : new EmployeeFieldChange { Field = Label(first.Table, key), OldValue = v });
                 }
-                var text = Summary(first.Table, values);
                 entry.Summary = first.Action == "INSERT"
-                    ? (first.Table == "employee_assignment" ? $"เพิ่มตำแหน่งงาน: {AssignmentText(values)}" : $"เพิ่ม{catLabel}: {text}")
-                    : $"ลบ{catLabel}: {text}";
+                    ? (first.Table == "employee_assignment" ? "เพิ่มตำแหน่งงาน" : $"เพิ่ม{catLabel}")
+                    : (first.Table == "employee_assignment" ? "ลบตำแหน่งงาน" : $"ลบ{catLabel}");
             }
             else
             {
@@ -305,10 +304,7 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
                 entry.Action = removedOnly.Count > 0 && addedOnly.Count > 0 ? "REPLACE" : addedOnly.Count > 0 ? "INSERT" : "DELETE";
                 foreach (var a in addedOnly) entry.Changes.Add(new EmployeeFieldChange { Field = "เพิ่ม", NewValue = a });
                 foreach (var r in removedOnly) entry.Changes.Add(new EmployeeFieldChange { Field = "ลบ", OldValue = r });
-                var parts = new List<string>();
-                if (addedOnly.Count > 0) parts.Add($"เพิ่ม {addedOnly.Count} รายการ");
-                if (removedOnly.Count > 0) parts.Add($"ลบ {removedOnly.Count} รายการ");
-                entry.Summary = $"ปรับ{catLabel}: {string.Join(", ", parts)}";
+                entry.Summary = $"ปรับ{catLabel}";
             }
 
             if (entry.Changes.Count > 0) result.Add(entry);
@@ -341,9 +337,7 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
             if (c.NewValue == null) return $"ลบค่า{c.Field}";
             return $"เปลี่ยน{c.Field}";
         }
-        var names = changes.Take(4).Select(c => c.Field).ToList();
-        var more = changes.Count > 4 ? $" และอีก {changes.Count - 4} ช่อง" : string.Empty;
-        return $"แก้ไข{category} {changes.Count} ช่อง: {string.Join(", ", names)}{more}";
+        return $"แก้ไข{category}";
     }
 
     private void BuildMove(EmployeeChangeHistoryEntry entry, Dictionary<string, JsonElement> endedOld, Dictionary<string, JsonElement> endedNew, Dictionary<string, JsonElement> created)

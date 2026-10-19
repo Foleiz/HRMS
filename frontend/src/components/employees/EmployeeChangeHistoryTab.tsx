@@ -196,14 +196,20 @@ const cleanSummary = (summary?: string, fallback = '') => {
   if (fromIdx > 0 && toIdx > fromIdx) {
     return summary.substring(0, fromIdx);
   }
-  // ตัด ": <value>" เช่น "กรอกเลขประจำตัวประชาชน: 1-xxxx" -> "กรอกเลขประจำตัวประชาชน"
-  const colonIdx = summary.indexOf(': ');
-  if (colonIdx > 0 && summary.startsWith('กรอก')) {
-    return summary.substring(0, colonIdx);
+  // ตัดส่วนหลัง colon ออกทั้งหมด เช่น:
+  // "เพิ่มประวัติการทำงาน: test · ful aasd · 2 ต.ค. 2569" -> "เพิ่มประวัติการทำงาน"
+  // "ลบประวัติการทำงาน: ..." -> "ลบประวัติการทำงาน"
+  // "กรอกเลขประจำตัวประชาชน: 1-xxxx" -> "กรอกเลขประจำตัวประชาชน"
+  // "แก้ไขข้อมูลส่วนตัว 2 ช่อง: ..." -> "แก้ไขข้อมูลส่วนตัว"
+  const colonIdx = summary.indexOf(':');
+  if (colonIdx > 0) {
+    let base = summary.substring(0, colonIdx).trim();
+    base = base.replace(/\s+\d+\s+ช่อง$/, '');
+    return base;
   }
   // ตัด " (เดิม ...)" เช่น "ลบค่าเลขประกันสังคม (เดิม 1-xxxx)" -> "ลบค่าเลขประกันสังคม"
   const delIdx = summary.indexOf(' (เดิม ');
-  if (delIdx > 0 && summary.startsWith('ลบค่า')) {
+  if (delIdx > 0) {
     return summary.substring(0, delIdx);
   }
   if (summary.startsWith('ตั้งหัวหน้างานโดยตรงเป็น ')) {
