@@ -24,7 +24,6 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  CheckCheck,
   Building,
   Tag
 } from 'lucide-react';
@@ -779,42 +778,65 @@ export default function AnnouncementsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
-                  <Megaphone className="w-4 h-4" />
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-cyan-400 flex items-center justify-center shrink-0">
+                  <Megaphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 block leading-tight">ข่าวสารองค์กร</span>
-                  <span className="text-[11px] text-slate-400">รายละเอียดประกาศ</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-100 block leading-tight">ข่าวสารและประกาศ</span>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">รายละเอียดประกาศ</span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setReadingItem(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Modal Body Content */}
-            <div className="p-6 overflow-y-auto overflow-x-hidden space-y-4 flex-1 min-w-0">
+            <div className="p-6 overflow-y-auto overflow-x-hidden space-y-3.5 flex-1 min-w-0">
+              {/* Badges: Priority + Category */}
+              {(readingItem.priority === 'URGENT' || readingItem.category) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {readingItem.priority === 'URGENT' && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-300 border border-rose-100 dark:border-rose-900/50">
+                      ด่วน
+                    </span>
+                  )}
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-100 dark:border-sky-900/50">
+                    {CATEGORY_MAP[readingItem.category]?.label || 'ข่าวทั่วไป'}
+                  </span>
+                </div>
+              )}
+
               {/* Title */}
-              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word]">
-                {readingItem.title}
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-snug break-words [overflow-wrap:anywhere] [word-break:break-word] flex items-center gap-2">
+                {readingItem.isPinned && (
+                  <span className="text-lg shrink-0 select-none" title="ปักหมุด">📌</span>
+                )}
+                <span>{readingItem.title}</span>
               </h2>
 
               {/* Metadata */}
-              <div className="flex items-center gap-4 text-xs text-slate-400 pb-3 border-b border-slate-100">
-                <span className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 dark:text-slate-500 pb-3 border-b border-slate-100 dark:border-slate-700/60">
+                <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>เผยแพร่เมื่อ: {formatDateTime(readingItem.publishedAt || readingItem.createdAt)}</span>
+                  <span>
+                    {new Date(readingItem.publishedAt || readingItem.createdAt).toLocaleDateString('th-TH', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </span>
                 </span>
                 {readingItem.createdByEmployeeName && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5">
                     <Users className="w-3.5 h-3.5 text-slate-400" />
-                    <span>โดย: {readingItem.createdByEmployeeName}</span>
+                    <span>ผู้ประกาศ: {readingItem.createdByEmployeeName}</span>
                   </span>
                 )}
                 {readingItem.expireAt && (
@@ -825,22 +847,18 @@ export default function AnnouncementsPage() {
                 )}
               </div>
 
-              {/* Content Body */}
-              <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] pt-2">
+              {/* Content Body (scrollable section) */}
+              <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] [word-break:break-word] max-h-[350px] overflow-y-auto pr-2">
                 {readingItem.content}
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                <CheckCheck className="w-4 h-4" />
-                <span>บันทึกการเปิดอ่านเรียบร้อยแล้ว</span>
-              </span>
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end">
               <button
                 type="button"
                 onClick={() => setReadingItem(null)}
-                className="px-5 py-2 rounded-xl bg-[#0B2046] text-white font-semibold text-xs hover:bg-[#0B2046]/90 transition-all cursor-pointer"
+                className="px-6 py-2 rounded-xl bg-[#0B2046] dark:bg-blue-600 hover:bg-[#153468] dark:hover:bg-blue-500 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
               >
                 ปิดหน้าต่าง
               </button>
