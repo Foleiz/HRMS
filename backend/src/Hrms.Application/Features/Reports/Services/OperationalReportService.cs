@@ -637,14 +637,7 @@ public class OperationalReportService : IOperationalReportService
             string maskedCitizenId = p.Employee?.CitizenIdMasked ?? string.Empty;
             if (string.IsNullOrEmpty(maskedCitizenId) && !string.IsNullOrEmpty(citizenId))
             {
-                if (citizenId.Length >= 13)
-                {
-                    maskedCitizenId = $"{citizenId[0]}-{citizenId.Substring(1, 4)}-xxxxx-{citizenId.Substring(10, 2)}-{citizenId[12]}";
-                }
-                else
-                {
-                    maskedCitizenId = citizenId.Length > 4 ? new string('x', citizenId.Length - 4) + citizenId[^4..] : citizenId;
-                }
+                maskedCitizenId = _crypto.MaskCitizenId(citizenId);
             }
             if (string.IsNullOrEmpty(maskedCitizenId))
             {

@@ -12,7 +12,7 @@ interface MaskedDataViewerProps {
 
 /**
  * Format masked string according to PDPA standards:
- * - citizenId: 1-2345-xxxxx-xx-9
+ * - citizenId: x-xxxx-xxxx9-01-2 (เปิดเผยแค่ 4 ตัวท้าย)
  * - bankAccount: xxx-x-x1234-x or xxx-xxxx123-x
  */
 export const formatMaskedValue = (val?: string | null, type: 'citizenId' | 'bankAccount' = 'citizenId'): string => {
@@ -22,7 +22,7 @@ export const formatMaskedValue = (val?: string | null, type: 'citizenId' | 'bank
 
   if (type === 'citizenId') {
     if (digits.length === 13) {
-      return `${digits[0]}-${digits.substring(1, 5)}-xxxxx-xx-${digits[12]}`;
+      return `x-xxxx-xxxx${digits[9]}-${digits.substring(10, 12)}-${digits[12]}`;
     }
     return clean;
   }

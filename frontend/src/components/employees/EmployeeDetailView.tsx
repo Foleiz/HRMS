@@ -60,7 +60,7 @@ const formatMaskedCitizenId = (val?: string): string => {
   const clean = val.trim();
   const digits = clean.replace(/\D/g, '');
   if (digits.length === 13 && !clean.includes('x') && !clean.includes('*')) {
-    return `${digits[0]}-${digits.substring(1, 5)}-xxxxx-xx-${digits[12]}`;
+    return `x-xxxx-xxxx${digits[9]}-${digits.substring(10, 12)}-${digits[12]}`;
   }
   return clean;
 };

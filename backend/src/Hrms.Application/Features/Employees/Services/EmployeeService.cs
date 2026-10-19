@@ -361,7 +361,6 @@ public class EmployeeService : IEmployeeService
             FirstName = request.FirstName.Trim(),
             LastName = request.LastName.Trim(),
             CitizenId = request.CitizenId?.Trim(),
-            CitizenIdEncrypted = encryptedCitizenId,
             CitizenIdMasked = maskedCitizenId,
             BirthDate = request.BirthDate,
             Gender = gender,
@@ -482,7 +481,6 @@ public class EmployeeService : IEmployeeService
             foreach (var fm in request.FamilyMembers)
             {
                 if (string.IsNullOrWhiteSpace(fm.FirstName)) continue;
-                byte[]? fmEncrypted = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.Encrypt(fm.CitizenId.Trim()) : null;
                 string? fmMasked = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.MaskCitizenId(fm.CitizenId.Trim()) : null;
 
                 employee.FamilyMembers.Add(new FamilyMember
@@ -491,8 +489,7 @@ public class EmployeeService : IEmployeeService
                     Prefix = fm.Prefix,
                     FirstName = !string.IsNullOrWhiteSpace(fm.Prefix) ? $"{fm.Prefix.Trim()} {fm.FirstName.Trim()}" : fm.FirstName.Trim(),
                     LastName = fm.LastName?.Trim(),
-                    CitizenId = fm.CitizenId?.Trim(),
-                    CitizenIdEncrypted = fmEncrypted,
+                    CitizenId = fm.CitizenId?.Trim(), // เข้ารหัสอัตโนมัติตอนบันทึก (EF converter)
                     CitizenIdMasked = fmMasked,
                     BirthDate = fm.BirthDate
                 });
@@ -696,14 +693,14 @@ public class EmployeeService : IEmployeeService
             var rawDigits = System.Text.RegularExpressions.Regex.Replace(request.CitizenId, @"\D", "");
             if (rawDigits.Length == 13 && !request.CitizenId.Contains('*') && !request.CitizenId.Contains('x') && !request.CitizenId.Contains('X'))
             {
-                employee.CitizenId = rawDigits;
-                employee.CitizenIdEncrypted = _cryptoService.Encrypt(rawDigits);
+                employee.CitizenId = rawDigits; // เข้ารหัสอัตโนมัติตอนบันทึก (EF converter)
+                employee.CitizenIdEncrypted = null; // เลิกเก็บซ้ำ — citizen_id เข้ารหัสอยู่แล้ว
                 employee.CitizenIdMasked = _cryptoService.MaskCitizenId(rawDigits);
 
                 // ซิงค์เลขประกันสังคมให้ตรงกับ Citizen ID เสมอ (เลขประกันสังคมใช้เลขเดียวกับบัตรประชาชน)
                 if (employee.SocialSecurity != null && string.IsNullOrWhiteSpace(request.SocialSecurityNo))
                 {
-                    employee.SocialSecurity.SocialSecurityNoEncrypted = employee.CitizenIdEncrypted;
+                    employee.SocialSecurity.SocialSecurityNoEncrypted = _cryptoService.Encrypt(rawDigits);
                     employee.SocialSecurity.SocialSecurityNoMasked = employee.CitizenIdMasked;
                 }
             }
@@ -742,8 +739,11 @@ public class EmployeeService : IEmployeeService
             else if (employee.SocialSecurity.SocialSecurityNoEncrypted == null || employee.SocialSecurity.SocialSecurityNoEncrypted.Length == 0)
             {
                 // ถ้ายังไม่มีเลขประกันสังคม ให้ใช้เลขเดียวกับ Citizen ID
-                employee.SocialSecurity.SocialSecurityNoEncrypted = employee.CitizenIdEncrypted;
-                employee.SocialSecurity.SocialSecurityNoMasked = employee.CitizenIdMasked;
+                if (!string.IsNullOrWhiteSpace(employee.CitizenId))
+                {
+                    employee.SocialSecurity.SocialSecurityNoEncrypted = _cryptoService.Encrypt(employee.CitizenId);
+                    employee.SocialSecurity.SocialSecurityNoMasked = employee.CitizenIdMasked;
+                }
             }
             if (request.HospitalName != null)
             {
@@ -849,11 +849,23 @@ public class EmployeeService : IEmployeeService
         // 8. ข้อมูลครอบครัว (Family Members)
         if (request.FamilyMembers != null)
         {
+            // ฟอร์มแก้ไขส่งเลขบัตรแบบปิดบัง (x-xxxx-...) กลับมา — ใช้เลขเดิมของคนเดิมแทน ไม่ให้ค่าที่ปิดบังทับเลขจริง
+            var previousCitizen = employee.FamilyMembers
+                .Where(m => !string.IsNullOrWhiteSpace(m.CitizenId))
+                .GroupBy(m => $"{m.RelationshipType}|{m.FirstName}|{m.LastName}")
+                .ToDictionary(g => g.Key, g => g.First().CitizenId);
             employee.FamilyMembers.Clear();
             foreach (var fm in request.FamilyMembers)
             {
                 if (string.IsNullOrWhiteSpace(fm.FirstName)) continue;
-                byte[]? fmEncrypted = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.Encrypt(fm.CitizenId.Trim()) : null;
+                var fmRawCitizen = fm.CitizenId?.Trim();
+                if (!string.IsNullOrEmpty(fmRawCitizen) && (fmRawCitizen.Contains('x') || fmRawCitizen.Contains('X') || fmRawCitizen.Contains('*')))
+                {
+                    var fmFullName = !string.IsNullOrWhiteSpace(fm.Prefix) ? $"{fm.Prefix.Trim()} {fm.FirstName.Trim()}" : fm.FirstName.Trim();
+                    var key = $"{fm.RelationshipType ?? "บิดา"}|{fmFullName}|{fm.LastName?.Trim()}";
+                    fmRawCitizen = previousCitizen.TryGetValue(key, out var prevCitizen) ? prevCitizen : null;
+                }
+                fm.CitizenId = fmRawCitizen;
                 string? fmMasked = !string.IsNullOrWhiteSpace(fm.CitizenId) ? _cryptoService.MaskCitizenId(fm.CitizenId.Trim()) : null;
 
                 employee.FamilyMembers.Add(new FamilyMember
@@ -862,8 +874,7 @@ public class EmployeeService : IEmployeeService
                     Prefix = fm.Prefix,
                     FirstName = !string.IsNullOrWhiteSpace(fm.Prefix) ? $"{fm.Prefix.Trim()} {fm.FirstName.Trim()}" : fm.FirstName.Trim(),
                     LastName = fm.LastName?.Trim(),
-                    CitizenId = fm.CitizenId?.Trim(),
-                    CitizenIdEncrypted = fmEncrypted,
+                    CitizenId = fm.CitizenId?.Trim(), // เข้ารหัสอัตโนมัติตอนบันทึก (EF converter)
                     CitizenIdMasked = fmMasked,
                     BirthDate = fm.BirthDate
                 });

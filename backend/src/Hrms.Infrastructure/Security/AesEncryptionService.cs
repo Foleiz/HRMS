@@ -68,7 +68,7 @@ public class AesEncryptionService : IAesEncryptionService
     }
 
     /// <summary>
-    /// ซ่อนเลขบัตรประชาชน (เช่น 1100201234567 -> 1-1002-xxxxx-xx-7)
+    /// ซ่อนเลขบัตรประชาชน เหลือ 4 ตัวท้าย (เช่น 1100201234567 -> x-xxxx-xxxx4-56-7)
     /// </summary>
     public string MaskCitizenId(string citizenId)
     {
@@ -79,13 +79,13 @@ public class AesEncryptionService : IAesEncryptionService
         string digits = Regex.Replace(citizenId, @"\D", "");
         if (digits.Length != 13)
         {
-            // หากไม่ใช่ 13 หลัก ให้ซ่อนตรงกลาง
-            if (digits.Length <= 4) return digits;
-            return string.Concat(digits.AsSpan(0, 2), new string('*', digits.Length - 4), digits.AsSpan(digits.Length - 2));
+            // หากไม่ใช่ 13 หลัก ให้เหลือ 4 ตัวท้าย
+            if (digits.Length <= 4) return new string('x', digits.Length);
+            return string.Concat(new string('x', digits.Length - 4), digits.AsSpan(digits.Length - 4));
         }
 
-        // รูปแบบ 1-2345-xxxxx-xx-9
-        return $"{digits[0]}-{digits.Substring(1, 4)}-xxxxx-xx-{digits[12]}";
+        // รูปแบบ x-xxxx-xxxx9-01-2 (เปิดเผยเฉพาะ 4 ตัวท้าย)
+        return $"x-xxxx-xxxx{digits[9]}-{digits.Substring(10, 2)}-{digits[12]}";
     }
 
     public const string ProtectedPrefix = "enc:v1:";
