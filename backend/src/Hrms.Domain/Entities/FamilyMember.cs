@@ -15,7 +15,6 @@ public class FamilyMember : BaseEntity
     public string FirstName { get; set; } = string.Empty;
     public string? LastName { get; set; }
     public string? CitizenId { get; set; }
-    public byte[]? CitizenIdEncrypted { get; set; }
     public string? CitizenIdMasked { get; set; }
     public DateOnly? BirthDate { get; set; }
     public string? MaritalStatus { get; set; }

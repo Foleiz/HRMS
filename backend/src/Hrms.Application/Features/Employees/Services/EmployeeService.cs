@@ -694,7 +694,6 @@ public class EmployeeService : IEmployeeService
             if (rawDigits.Length == 13 && !request.CitizenId.Contains('*') && !request.CitizenId.Contains('x') && !request.CitizenId.Contains('X'))
             {
                 employee.CitizenId = rawDigits; // เข้ารหัสอัตโนมัติตอนบันทึก (EF converter)
-                employee.CitizenIdEncrypted = null; // เลิกเก็บซ้ำ — citizen_id เข้ารหัสอยู่แล้ว
                 employee.CitizenIdMasked = _cryptoService.MaskCitizenId(rawDigits);
 
                 // ซิงค์เลขประกันสังคมให้ตรงกับ Citizen ID เสมอ (เลขประกันสังคมใช้เลขเดียวกับบัตรประชาชน)

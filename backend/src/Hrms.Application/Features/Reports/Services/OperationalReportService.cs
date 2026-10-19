@@ -32,11 +32,7 @@ public class OperationalReportService : IOperationalReportService
     private string FullCitizenId(Hrms.Domain.Entities.Employee? e)
     {
         if (e == null) return string.Empty;
-        var raw = e.CitizenId;
-        if (string.IsNullOrWhiteSpace(raw) && e.CitizenIdEncrypted is { Length: > 0 })
-        {
-            try { raw = _crypto.Decrypt(e.CitizenIdEncrypted); } catch { raw = null; }
-        }
+        var raw = e.CitizenId; // ถอดรหัสอัตโนมัติ (EF converter)
         return new string((raw ?? string.Empty).Where(char.IsDigit).ToArray());
     }
 

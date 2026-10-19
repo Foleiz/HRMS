@@ -18,7 +18,6 @@ public class Employee : BaseEntity
 
     // ข้อมูล PDPA ที่มีความอ่อนไหวสูง (Sensitive Data)
     public string? CitizenId { get; set; }
-    public byte[]? CitizenIdEncrypted { get; set; }
     public string? CitizenIdMasked { get; set; }
 
     public DateOnly? BirthDate { get; set; }

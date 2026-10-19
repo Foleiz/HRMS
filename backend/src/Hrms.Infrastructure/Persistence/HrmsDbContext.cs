@@ -227,7 +227,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             // เลขบัตรประชาชนเข้ารหัส AES (PDPA) — ข้อมูลเก่าที่ยังเป็นตัวเลขล้วนอ่านได้ และจะถูกเข้ารหัสตอนเปิดระบบ
             entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(255)
                 .HasConversion(v => SensitiveFieldCipher.Protect(v!), v => SensitiveFieldCipher.Unprotect(v));
-            entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
             entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
             entity.Property(e => e.BirthDate).HasColumnName("birth_date");
             entity.Property(e => e.Gender).HasColumnName("gender").HasMaxLength(30);
@@ -393,7 +392,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             // เลขบัตรประชาชนเข้ารหัส AES (PDPA) — ข้อมูลเก่าที่ยังเป็นตัวเลขล้วนอ่านได้ และจะถูกเข้ารหัสตอนเปิดระบบ
             entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(255)
                 .HasConversion(v => SensitiveFieldCipher.Protect(v!), v => SensitiveFieldCipher.Unprotect(v));
-            entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
             entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
             entity.Property(e => e.BirthDate).HasColumnName("birth_date");
             entity.Property(e => e.MaritalStatus).HasColumnName("marital_status").HasMaxLength(30);
