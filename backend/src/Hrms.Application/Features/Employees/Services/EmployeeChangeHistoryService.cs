@@ -332,14 +332,14 @@ public class EmployeeChangeHistoryService : IEmployeeChangeHistoryService
                 return $"สิ้นสุดตำแหน่ง {AssignmentText(merged, includeDate: false)}" + (endText != null ? $" เมื่อ {endText}" : string.Empty);
             }
             if (changes.Count == 1 && changes[0].Field == Label(table, "ManagerEmployeeId"))
-                return changes[0].NewValue != null ? $"ตั้งหัวหน้างานโดยตรงเป็น {changes[0].NewValue}" : "ยกเลิกหัวหน้างานโดยตรง";
+                return changes[0].NewValue != null ? "เปลี่ยนหัวหน้างานโดยตรง" : "ยกเลิกหัวหน้างานโดยตรง";
         }
         if (changes.Count == 1)
         {
             var c = changes[0];
-            if (c.OldValue == null) return $"กรอก{c.Field}: {c.NewValue}";
-            if (c.NewValue == null) return $"ลบค่า{c.Field} (เดิม {c.OldValue})";
-            return $"เปลี่ยน{c.Field} จาก {c.OldValue} เป็น {c.NewValue}";
+            if (c.OldValue == null) return $"กรอก{c.Field}";
+            if (c.NewValue == null) return $"ลบค่า{c.Field}";
+            return $"เปลี่ยน{c.Field}";
         }
         var names = changes.Take(4).Select(c => c.Field).ToList();
         var more = changes.Count > 4 ? $" และอีก {changes.Count - 4} ช่อง" : string.Empty;

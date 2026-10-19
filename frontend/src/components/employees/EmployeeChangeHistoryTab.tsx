@@ -187,6 +187,31 @@ function ChangeRow({ c, action }: { c: FieldChange; action: string }) {
   );
 }
 
+/* ─── Clean summary helper (แสดงแค่ชื่อการเปลี่ยน ไม่ต้องบอกจากอะไรเป็นอะไร) ─── */
+const cleanSummary = (summary?: string, fallback = '') => {
+  if (!summary) return fallback;
+  // ตัดส่วน " จาก ... เป็น ..." ออก เช่น "เปลี่ยนเลขประกันสังคม จาก ... เป็น ..." -> "เปลี่ยนเลขประกันสังคม"
+  const fromIdx = summary.indexOf(' จาก ');
+  const toIdx = summary.indexOf(' เป็น ', fromIdx + 6);
+  if (fromIdx > 0 && toIdx > fromIdx) {
+    return summary.substring(0, fromIdx);
+  }
+  // ตัด ": <value>" เช่น "กรอกเลขประจำตัวประชาชน: 1-xxxx" -> "กรอกเลขประจำตัวประชาชน"
+  const colonIdx = summary.indexOf(': ');
+  if (colonIdx > 0 && summary.startsWith('กรอก')) {
+    return summary.substring(0, colonIdx);
+  }
+  // ตัด " (เดิม ...)" เช่น "ลบค่าเลขประกันสังคม (เดิม 1-xxxx)" -> "ลบค่าเลขประกันสังคม"
+  const delIdx = summary.indexOf(' (เดิม ');
+  if (delIdx > 0 && summary.startsWith('ลบค่า')) {
+    return summary.substring(0, delIdx);
+  }
+  if (summary.startsWith('ตั้งหัวหน้างานโดยตรงเป็น ')) {
+    return 'เปลี่ยนหัวหน้างานโดยตรง';
+  }
+  return summary;
+};
+
 /* ─── Entry card ─────────────────────────────────────────────────── */
 const SHOW_LIMIT = 3;
 
@@ -198,6 +223,7 @@ function EntryCard({ e }: { e: HistoryEntry }) {
 
   const shown = expanded ? e.changes : e.changes.slice(0, SHOW_LIMIT);
   const hidden = e.changes.length - SHOW_LIMIT;
+  const title = cleanSummary(e.summary, cfg.label);
 
   return (
     <div className="flex items-start gap-3">
@@ -214,7 +240,7 @@ function EntryCard({ e }: { e: HistoryEntry }) {
         <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="font-bold text-slate-900 text-sm leading-snug">
-              {e.summary || cfg.label}
+              {title}
             </p>
             <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-slate-500">
               <span className="flex items-center gap-1 text-slate-500">
