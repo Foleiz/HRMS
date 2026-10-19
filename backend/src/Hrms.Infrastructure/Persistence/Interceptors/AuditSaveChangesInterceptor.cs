@@ -30,6 +30,8 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         "Secret",
         "SocialSecurityNoEncrypted",
         "social_security_no_encrypted",
+        "CitizenIdEncrypted",
+        "citizen_id_encrypted",
         "SignatureData",
         "signature_data"
     };
@@ -348,6 +350,12 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         if (value is string s && propName.Equals("AccountNumber", StringComparison.OrdinalIgnoreCase))
         {
             var digits = new string(s.Where(char.IsDigit).ToArray());
+            return digits.Length > 4 ? new string('x', digits.Length - 4) + digits[^4..] : "xxxx";
+        }
+        // เลขบัตรประชาชน: เก็บใน audit แบบปิดบัง เหลือ 4 ตัวท้าย (PDPA)
+        if (value is string cid && propName.Equals("CitizenId", StringComparison.OrdinalIgnoreCase))
+        {
+            var digits = new string(cid.Where(char.IsDigit).ToArray());
             return digits.Length > 4 ? new string('x', digits.Length - 4) + digits[^4..] : "xxxx";
         }
         if (propName.Equals("AccountHash", StringComparison.OrdinalIgnoreCase))

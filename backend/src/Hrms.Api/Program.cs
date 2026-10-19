@@ -110,6 +110,7 @@ Hrms.Application.Features.Resignation.Services.ResignationOffboarding.PdfRendere
 builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.ScheduledNotificationWorker>();
 // เข้ารหัสเลขบัญชีธนาคารเดิม (ครั้งเดียว ทำเฉพาะแถวที่ยังไม่ได้ทำ)
 builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.BankAccountProtectionBackfill>();
+builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.CitizenIdProtectionBackfill>();
 builder.Services.AddScoped<IResignationService, ResignationService>();
 
 

@@ -224,7 +224,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Prefix).HasColumnName("prefix").HasMaxLength(50);
             entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
             entity.Property(e => e.LastName).HasColumnName("last_name").IsRequired().HasMaxLength(150);
-            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(30);
+            // เลขบัตรประชาชนเข้ารหัส AES (PDPA) — ข้อมูลเก่าที่ยังเป็นตัวเลขล้วนอ่านได้ และจะถูกเข้ารหัสตอนเปิดระบบ
+            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(255)
+                .HasConversion(v => SensitiveFieldCipher.Protect(v!), v => SensitiveFieldCipher.Unprotect(v));
             entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
             entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
             entity.Property(e => e.BirthDate).HasColumnName("birth_date");
@@ -388,7 +390,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Ignore(e => e.Prefix);
             entity.Property(e => e.FirstName).HasColumnName("first_name").IsRequired().HasMaxLength(150);
             entity.Property(e => e.LastName).HasColumnName("last_name").HasMaxLength(150);
-            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(30);
+            // เลขบัตรประชาชนเข้ารหัส AES (PDPA) — ข้อมูลเก่าที่ยังเป็นตัวเลขล้วนอ่านได้ และจะถูกเข้ารหัสตอนเปิดระบบ
+            entity.Property(e => e.CitizenId).HasColumnName("citizen_id").HasMaxLength(255)
+                .HasConversion(v => SensitiveFieldCipher.Protect(v!), v => SensitiveFieldCipher.Unprotect(v));
             entity.Property(e => e.CitizenIdEncrypted).HasColumnName("citizen_id_encrypted");
             entity.Property(e => e.CitizenIdMasked).HasColumnName("citizen_id_masked").HasMaxLength(20);
             entity.Property(e => e.BirthDate).HasColumnName("birth_date");
