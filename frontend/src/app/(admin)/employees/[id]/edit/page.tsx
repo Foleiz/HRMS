@@ -1113,7 +1113,16 @@ function EmployeeEditPageContent() {
                         onChange={(e) => {
                           const id = e.target.value ? Number(e.target.value) : undefined;
                           const bank = banks.find((b) => b.id === id);
-                          setFormData({ ...formData, bankId: id, bankName: bank?.bankName || '' });
+                          const maxDigits = bank?.accountDigits ?? 10;
+                          const currentAcc = formData.accountNumber || '';
+                          const isMasked = currentAcc.toLowerCase().includes('x') || currentAcc.includes('*');
+                          const updatedAcc = isMasked ? currentAcc : currentAcc.replace(/\D/g, '').slice(0, maxDigits);
+                          setFormData({
+                            ...formData,
+                            bankId: id,
+                            bankName: bank?.bankName || '',
+                            accountNumber: updatedAcc,
+                          });
                         }}
                         className="w-full cursor-pointer"
                         buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
@@ -1132,7 +1141,7 @@ function EmployeeEditPageContent() {
                           เลขที่บัญชี
                           {banks.find((b) => b.id === formData.bankId)?.accountDigits
                             ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
-                            : ''}
+                            : ' (10 หลัก)'}
                         </span>
                         <FieldInfoTooltip
                           text="เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม"
@@ -1142,7 +1151,12 @@ function EmployeeEditPageContent() {
                       <input
                         type="text"
                         inputMode="numeric"
-                        placeholder="กรอกเฉพาะตัวเลข"
+                        maxLength={banks.find((b) => b.id === formData.bankId)?.accountDigits ?? 10}
+                        placeholder={
+                          banks.find((b) => b.id === formData.bankId)?.accountDigits
+                            ? `ระบุตัวเลข ${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก`
+                            : 'กรอกเฉพาะตัวเลข 10 หลัก'
+                        }
                         value={formData.accountNumber || ''}
                         onFocus={() => {
                           // เลขที่ซ่อนไว้ (xxxx1234) — คลิกเพื่อกรอกเลขใหม่ทั้งหมด
@@ -1150,7 +1164,13 @@ function EmployeeEditPageContent() {
                             setFormData({ ...formData, accountNumber: '' });
                           }
                         }}
-                        onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
+                        onChange={(e) => {
+                          const maxDigits = banks.find((b) => b.id === formData.bankId)?.accountDigits ?? 10;
+                          setFormData({
+                            ...formData,
+                            accountNumber: e.target.value.replace(/\D/g, '').slice(0, maxDigits),
+                          });
+                        }}
                         className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
                       />
                     </div>

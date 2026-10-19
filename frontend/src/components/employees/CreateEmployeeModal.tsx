@@ -285,8 +285,8 @@ export default function CreateEmployeeModal({
     fetchNextCode();
   }, [isOpen]);
 
-  const getRequiredBankDigits = (bankName?: string): number | null =>
-    banks.find((b) => b.bankName === bankName)?.accountDigits ?? null;
+  const getRequiredBankDigits = (bankName?: string): number =>
+    banks.find((b) => b.bankName === bankName)?.accountDigits ?? 10;
 
   const clearFieldError = (key: string) => {
     if (formErrors[key]) {
@@ -414,10 +414,8 @@ export default function CreateEmployeeModal({
     const cleanAccountDigits = (data.accountNumber || '').replace(/\D/g, '');
     if (!data.accountNumber?.trim()) {
       errors.accountNumber = 'กรุณากรอกเลขที่บัญชี';
-    } else if (reqBankDigits != null && cleanAccountDigits.length !== reqBankDigits) {
+    } else if (cleanAccountDigits.length !== reqBankDigits) {
       errors.accountNumber = `เลขที่บัญชีต้องมี ${reqBankDigits} หลัก (ปัจจุบัน ${cleanAccountDigits.length} หลัก)`;
-    } else if (reqBankDigits == null && (cleanAccountDigits.length < 6 || cleanAccountDigits.length > 20)) {
-      errors.accountNumber = 'เลขที่บัญชีต้องมี 6–20 หลัก';
     }
 
     // สมาชิกครอบครัว
@@ -1317,7 +1315,7 @@ export default function CreateEmployeeModal({
                         value={formData.bankName}
                         onChange={(e) => {
                           const newBank = e.target.value;
-                          const maxDigits = getRequiredBankDigits(newBank) ?? 20;
+                          const maxDigits = getRequiredBankDigits(newBank);
                           const currentDigits = formData.accountNumber ? formData.accountNumber.replace(/\D/g, '') : '';
                           const newAcc = currentDigits.slice(0, maxDigits);
                           setFormData({
@@ -1347,30 +1345,24 @@ export default function CreateEmployeeModal({
                         <span className="text-slate-500 dark:text-slate-400 text-[11px]">
                           เลขที่บัญชี <span className="text-rose-500">*</span>
                         </span>
-                        {getRequiredBankDigits(formData.bankName) != null && (
-                          <span
-                            className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-colors ${
-                              formData.accountNumber?.length === (getRequiredBankDigits(formData.bankName) ?? -1)
-                                ? 'bg-emerald-50 text-emerald-600 font-medium'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                            }`}
-                          >
-                            {formData.accountNumber?.length || 0} / {getRequiredBankDigits(formData.bankName)} หลัก
-                          </span>
-                        )}
+                        <span
+                          className={`text-[11px] font-mono px-1.5 py-0.5 rounded transition-colors ${
+                            formData.accountNumber?.length === getRequiredBankDigits(formData.bankName)
+                              ? 'bg-emerald-50 text-emerald-600 font-medium'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {formData.accountNumber?.length || 0} / {getRequiredBankDigits(formData.bankName)} หลัก
+                        </span>
                       </div>
                       <input
                         type="text"
                         inputMode="numeric"
-                        maxLength={getRequiredBankDigits(formData.bankName) ?? 20}
-                        placeholder={
-                          getRequiredBankDigits(formData.bankName) != null
-                            ? `ระบุตัวเลข ${getRequiredBankDigits(formData.bankName)} หลัก`
-                            : 'ระบุเลขที่บัญชี (ตัวเลข)'
-                        }
+                        maxLength={getRequiredBankDigits(formData.bankName)}
+                        placeholder={`ระบุตัวเลข ${getRequiredBankDigits(formData.bankName)} หลัก`}
                         value={formData.accountNumber}
                         onChange={(e) => {
-                          const maxDigits = getRequiredBankDigits(formData.bankName) ?? 20;
+                          const maxDigits = getRequiredBankDigits(formData.bankName);
                           const val = e.target.value.replace(/\D/g, '').slice(0, maxDigits);
                           setFormData({ ...formData, accountNumber: val });
                           clearFieldError('accountNumber');
