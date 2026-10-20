@@ -12,7 +12,8 @@ export type CodeType =
   | 'leave-type'
   | 'shift'
   | 'certificate-type'
-  | 'gender';
+  | 'gender'
+  | 'role';
 
 export const codeService = {
   /** รหัสถัดไปที่ระบบแนะนำ (ผู้ใช้แก้ได้) */

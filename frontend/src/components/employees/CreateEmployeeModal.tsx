@@ -743,7 +743,7 @@ export default function CreateEmployeeModal({
                   <div>
                     <CodeInput
                       type="employee"
-                      label="รหัสพนักงาน (Employee Code)"
+                      label="รหัสพนักงาน"
                       required
                       mode="create"
                       value={formData.employeeCode}

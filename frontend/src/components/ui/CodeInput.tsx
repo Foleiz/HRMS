@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader2, Lock, Sparkles } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { codeService, CodeType } from '@/services/codeService';
 
 interface CodeInputProps {
@@ -24,6 +24,8 @@ interface CodeInputProps {
   prefix?: string;
   digits?: number;
   existingCodes?: (string | null | undefined)[];
+  /** false = ใช้แค่รหัสที่คำนวณในหน้า ไม่เรียก API (เช่น บทบาท) */
+  remote?: boolean;
 }
 
 /** รหัสถัดไปจากรายการที่มีอยู่ (รูปแบบเดียวกับ CodeGenerator ฝั่ง backend) */
@@ -43,7 +45,7 @@ const DEFAULT_INPUT =
 
 /**
  * ช่องรหัสแบบ "ระบบแนะนำ แก้ได้"
- * - ตอนเพิ่ม: ดึงรหัสถัดไปมาใส่ให้ พิมพ์แก้ได้ กดปุ่ม ✨ เพื่อขอรหัสแนะนำใหม่
+ * - ตอนเพิ่ม: ใส่รหัสถัดไปให้ทันที พิมพ์แก้ได้
  * - ตอนแก้ไข: ล็อก (รหัสเปลี่ยนไม่ได้หลังบันทึก)
  */
 export function CodeInput({
@@ -62,6 +64,7 @@ export function CodeInput({
   prefix,
   digits = 3,
   existingCodes,
+  remote = true,
 }: CodeInputProps) {
   const [loading, setLoading] = useState(false);
   const isEdit = mode === 'edit';
@@ -73,6 +76,7 @@ export function CodeInput({
   const suggest = async (force: boolean) => {
     const local = localSuggestion();
     if (local && (force || !touchedRef.current)) onChange(local);
+    if (!remote) return;
     setLoading(!local);
     try {
       const next = await codeService.getNext(type);
@@ -96,26 +100,9 @@ export function CodeInput({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <label className={labelClassName}>
-          {label} {required && <span className="text-rose-500">*</span>}
-        </label>
-        {!isEdit && (
-          <button
-            type="button"
-            onClick={() => {
-              touchedRef.current = false;
-              suggest(true);
-            }}
-            disabled={loading}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer disabled:opacity-50"
-            title="ขอรหัสที่ระบบแนะนำ"
-          >
-            {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-            รหัสแนะนำ
-          </button>
-        )}
-      </div>
+      <label className={`${labelClassName} mb-1`}>
+        {label} {required && <span className="text-rose-500">*</span>}
+      </label>
       <div className="relative">
         <input
           type="text"
@@ -136,7 +123,7 @@ export function CodeInput({
         <p className="text-[11px] text-rose-500 mt-1">{error}</p>
       ) : (
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-          {isEdit ? 'รหัสเปลี่ยนไม่ได้หลังบันทึก' : 'ระบบแนะนำรหัสให้ พิมพ์แก้เป็นรหัสของคุณเองได้'}
+          {isEdit ? 'รหัสเปลี่ยนไม่ได้หลังบันทึก' : 'สร้างรหัสให้เองอัตโนมัติและสามารถแก้ไขได้'}
         </p>
       )}
     </div>
