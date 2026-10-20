@@ -717,8 +717,8 @@ export default function PayrollPage() {
   const [expandedBonusSearchQuery, setExpandedBonusSearchQuery] = useState<string>('');
   const [bonusYear, setBonusYear] = useState<number>(2026);
   const [bonusMonth, setBonusMonth] = useState<number>(12);
-  const [bonusMultiplierInput, setBonusMultiplierInput] = useState<number>(1.5);
-  const [isCalculatingBonus, setIsCalculatingBonus] = useState<boolean>(false);
+  // โหมดกรอกโบนัส: กำหนดตัวคูณ (ยอด = ฐานเงินเดือน × ตัวคูณ) หรือ กำหนดยอดโบนัสเอง
+  const [bonusInputMode, setBonusInputMode] = useState<'MULTIPLIER' | 'AMOUNT'>('MULTIPLIER');
   const [isSavingBonus, setIsSavingBonus] = useState<boolean>(false);
   const [bonusSearchTerm, setBonusSearchTerm] = useState<string>('');
   const [bonusDeptFilter, setBonusDeptFilter] = useState<string>('ALL');
@@ -1552,25 +1552,6 @@ export default function PayrollPage() {
   }, [searchQuery, selectedDeptId]);
 
   // Tab: Bonus Handlers
-  const handleCalculateBonusesSubmit = async () => {
-    try {
-      setIsCalculatingBonus(true);
-      const res = await salaryService.calculateEmployeeBonuses({
-        year: bonusYear,
-        month: bonusMonth,
-        defaultMultiplier: bonusMultiplierInput,
-      });
-      setBonuses(res || []);
-      await loadBonusPeriods();
-      showToast(`คำนวณและจัดสรรโบนัสประจำรอบ ${bonusMonth}/${bonusYear + 543} (ตัวคูณ ${bonusMultiplierInput} เท่า) สำเร็จ`);
-    } catch (err: any) {
-      console.error('Failed to calculate bonuses:', err);
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณโบนัส');
-    } finally {
-      setIsCalculatingBonus(false);
-    }
-  };
-
   const handleBonusMultiplierChange = (employeeId: number, newMultiplier: number) => {
     setBonuses((prev) =>
       prev.map((b) => {
@@ -1620,21 +1601,28 @@ export default function PayrollPage() {
     }
     try {
       setIsSavingBonus(true);
+      const isMultiplierMode = bonusInputMode === 'MULTIPLIER';
       const payload: SaveEmployeeBonusesPayload = {
         year: bonusYear,
         month: bonusMonth,
-        calculationMode: 'MANUAL',
-        items: bonuses.map((b) => ({
-          employeeId: b.employeeId,
-          bonusAmount: b.bonusAmount,
-          multiplier: b.multiplier,
-          note: b.note || undefined,
-        })),
+        calculationMode: isMultiplierMode ? 'MULTIPLIER' : 'MANUAL',
+        items: bonuses.map((b) => {
+          const base = b.baseSalary || 0;
+          const multiplier = b.multiplier || 0;
+          // โหมดตัวคูณ: คำนวณยอดใหม่จากฐานเงินเดือน × ตัวคูณ / โหมดยอดเอง: ตัวคูณ = ยอด ÷ ฐาน
+          const bonusAmount = isMultiplierMode ? Math.round(base * multiplier * 100) / 100 : (b.bonusAmount || 0);
+          return {
+            employeeId: b.employeeId,
+            bonusAmount,
+            multiplier: isMultiplierMode ? multiplier : (base > 0 ? Math.round((bonusAmount / base) * 100) / 100 : 0),
+            note: b.note || undefined,
+          };
+        }),
       };
       const saved = await salaryService.saveEmployeeBonuses(payload);
       setBonuses(saved || []);
       await loadBonusPeriods();
-      showToast(`บันทึกการจัดสรรโบนัสรอบ ${bonusMonth}/${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ - ระบบจะดึงไปคำนวณในรอบเงินเดือนให้อัตโนมัติ)`);
+      showToast(`คำนวณและบันทึกโบนัสรอบ ${bonusMonth}/${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ - ระบบจะดึงไปคำนวณในรอบเงินเดือนให้อัตโนมัติ)`);
     } catch (err: any) {
       console.error('Failed to save bonuses:', err);
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลโบนัส');
@@ -3349,28 +3337,26 @@ export default function PayrollPage() {
                     ]}
                   />
 
-                  {/* Base Multiplier & Calculate Button */}
-                  {canCalculateBonus && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 h-9 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-                      <span className="font-semibold text-slate-500 dark:text-slate-400">คูณ:</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={bonusMultiplierInput}
-                        onChange={(e) => setBonusMultiplierInput(parseFloat(e.target.value) || 0)}
-                        className="w-12 text-center font-mono font-bold text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleCalculateBonusesSubmit}
-                        disabled={isCalculatingBonus}
-                        className="h-7 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                        title="คำนวณและจัดสรรโบนัส"
-                      >
-                        {isCalculatingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                        <span>คำนวณ</span>
-                      </button>
+                  {/* โหมดกรอกโบนัส: กำหนดตัวคูณ / กำหนดยอดโบนัส */}
+                  {canEditBonus && (
+                    <div className="inline-flex items-center h-9 p-0.5 bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+                      {([
+                        { key: 'MULTIPLIER', label: 'กำหนดตัวคูณ' },
+                        { key: 'AMOUNT', label: 'กำหนดยอดโบนัส' },
+                      ] as const).map((m) => (
+                        <button
+                          key={m.key}
+                          type="button"
+                          onClick={() => setBonusInputMode(m.key)}
+                          className={`h-full px-3 rounded-lg font-semibold transition-all cursor-pointer ${
+                            bonusInputMode === m.key
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
                     </div>
                   )}
 
@@ -3396,10 +3382,11 @@ export default function PayrollPage() {
                       type="button"
                       onClick={handleSaveBonuses}
                       disabled={bonuses.length === 0 || isSavingBonus}
+                      title="คำนวณยอดโบนัสตามโหมดที่เลือก และบันทึก"
                       className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
                     >
-                      {isSavingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                      <span>บันทึก</span>
+                      {isSavingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calculator className="w-3.5 h-3.5" />}
+                      <span>คำนวณ</span>
                     </button>
                   )}
 
@@ -3480,7 +3467,7 @@ export default function PayrollPage() {
                                 </p>
                                 <p className="text-xs text-slate-400 mt-1">
                                   {bonuses.length === 0 && canCalculateBonus
-                                    ? 'กดปุ่ม "คำนวณและจัดสรรโบนัส" เพื่อประมวลผลโบนัสตามฐานเงินเดือน'
+                                    ? 'ต้องมีพนักงานที่มีฐานเงินเดือนก่อน ระบบจึงจะคำนวณโบนัสได้'
                                     : ''}
                                 </p>
                               </td>
@@ -3498,7 +3485,14 @@ export default function PayrollPage() {
                                   <div className="font-medium text-slate-800 dark:text-slate-200">{b.departmentName || '-'}</div>
                                   <div className="text-[11px] text-slate-400">{b.positionName || '-'}</div>
                                 </td>
-                                <td className="py-3 px-3.5 text-right font-mono text-slate-800 dark:text-slate-200 font-medium whitespace-nowrap">
+                                <td
+                                  className={`py-3 px-3.5 text-right font-mono font-medium whitespace-nowrap transition-colors ${
+                                    bonusInputMode === 'AMOUNT'
+                                      ? 'bg-slate-100/80 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500'
+                                      : 'text-slate-800 dark:text-slate-200'
+                                  }`}
+                                  title={bonusInputMode === 'AMOUNT' ? 'โหมดกำหนดยอดโบนัส: ไม่ใช้ฐานเงินเดือนในการคำนวณ' : undefined}
+                                >
                                   ฿{(b.baseSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </td>
                                 {/* Multiplier */}
@@ -3512,7 +3506,8 @@ export default function PayrollPage() {
                                         max="100"
                                         value={b.multiplier}
                                         onChange={(e) => handleBonusMultiplierChange(b.employeeId, parseFloat(e.target.value))}
-                                        className="w-16 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-center font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
+                                        disabled={bonusInputMode !== 'MULTIPLIER'}
+                                        className="w-16 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-center font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed dark:disabled:bg-slate-900/60 dark:disabled:text-slate-500"
                                       />
                                       <span className="text-[11px] text-slate-400 font-semibold">x</span>
                                     </div>
@@ -3531,7 +3526,8 @@ export default function PayrollPage() {
                                         min="0"
                                         value={b.bonusAmount}
                                         onChange={(e) => handleBonusAmountChange(b.employeeId, parseFloat(e.target.value))}
-                                        className="w-28 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs"
+                                        disabled={bonusInputMode !== 'AMOUNT'}
+                                        className="w-28 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed dark:disabled:bg-slate-900/60 dark:disabled:text-slate-500"
                                       />
                                     </div>
                                   ) : (
