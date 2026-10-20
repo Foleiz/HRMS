@@ -990,7 +990,7 @@ export default function MasterDataHubPage() {
                 <>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                      ชื่อประเภทเอกสาร *
+                      ชื่อประเภทเอกสาร <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -1032,7 +1032,7 @@ export default function MasterDataHubPage() {
                       <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ</p>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">แจ้งเตือนล่วงหน้า (วัน) *</label>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">แจ้งเตือนล่วงหน้า (วัน) <span className="text-rose-500">*</span></label>
                       <input
                         type="number"
                         min={1}
@@ -1066,7 +1066,7 @@ export default function MasterDataHubPage() {
 
               {activeTab === 'nationalities' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสัญชาติ *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสัญชาติ <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     required
@@ -1080,7 +1080,7 @@ export default function MasterDataHubPage() {
 
               {activeTab === 'religions' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อศาสนา *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อศาสนา <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     required
@@ -1094,7 +1094,7 @@ export default function MasterDataHubPage() {
 
               {activeTab === 'marital-statuses' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     required
@@ -1129,7 +1129,7 @@ export default function MasterDataHubPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {activeTab === 'genders' ? 'ชื่อเพศ' : 'ชื่อหนังสือรับรอง'} *
+                      {activeTab === 'genders' ? 'ชื่อเพศ' : 'ชื่อหนังสือรับรอง'} <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -1147,7 +1147,7 @@ export default function MasterDataHubPage() {
               {activeTab === 'banks' && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รหัสธนาคาร *</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รหัสธนาคาร <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       required
@@ -1160,7 +1160,7 @@ export default function MasterDataHubPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อธนาคาร *</label>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อธนาคาร <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       required

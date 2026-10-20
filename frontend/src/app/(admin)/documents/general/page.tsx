@@ -394,7 +394,7 @@ export default function GeneralDocumentPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* ชื่อพนักงาน * (กรอกอัตโนมัติตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อพนักงาน *</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อพนักงาน <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   readOnly
@@ -418,7 +418,7 @@ export default function GeneralDocumentPage() {
 
               {/* ประเภทเอกสาร (เช่น สำเนาบัตรประชาชน ตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ประเภทเอกสาร *</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ประเภทเอกสาร <span className="text-rose-500">*</span></label>
                 {!isCustomType ? (
                   <CustomSelect
                     value={documentType}
@@ -465,7 +465,7 @@ export default function GeneralDocumentPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-medium text-gray-500 dark:text-slate-400">
-                    วันหมดอายุ{expiryRequired ? ' *' : ' (ถ้ามี)'}
+                    วันหมดอายุ{expiryRequired ? <> <span className="text-rose-500">*</span></> : ' (ถ้ามี)'}
                   </label>
                   {effectiveExpiry && (
                     <button
@@ -567,7 +567,7 @@ export default function GeneralDocumentPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                    เอกสารนี้ใช้สำหรับ *
+                    เอกสารนี้ใช้สำหรับ <span className="text-rose-500">*</span>
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
                     {purpose.length}/{REASON_MAX_LENGTH}

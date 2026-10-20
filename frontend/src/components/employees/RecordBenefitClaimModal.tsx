@@ -381,7 +381,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                 <Paperclip className="w-3.5 h-3.5 text-slate-400" />
                 เอกสารประกอบ / ใบรับรองแพทย์
                 {activeBenefit?.isDocumentRequired && (
-                  <span className="text-rose-500 font-bold">* (บังคับแนบ)</span>
+                  <span className="text-rose-500">*</span>
                 )}
               </span>
               {activeBenefit?.isDocumentRequired && (

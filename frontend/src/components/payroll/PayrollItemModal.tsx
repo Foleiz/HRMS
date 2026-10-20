@@ -368,7 +368,7 @@ export const PayrollItemModal: React.FC<Props> = ({
           {/* Item Code (only when creating) */}
           {!item && (
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_BONUS)</label>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_BONUS) <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 required
@@ -382,7 +382,7 @@ export const PayrollItemModal: React.FC<Props> = ({
 
           {/* Item Name */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ชื่อรายการ</label>
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ชื่อรายการ <span className="text-rose-500">*</span></label>
             <input
               type="text"
               required

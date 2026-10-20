@@ -469,7 +469,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6 flex-1 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอลา *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอลา <span className="text-rose-500">*</span></label>
               <CustomSelect
                 value={leaveTypeId}
                 onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
@@ -518,7 +518,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               ถ้าใช้ grid แบ่งครึ่งจะทำให้ล้นทับตัวเลือก "รูปแบบการลา" เมื่อพื้นที่ไม่พอ — flex-wrap จะดันตัวเลือกไปขึ้นบรรทัดใหม่แทนการซ้อนทับ */}
           <div className="flex flex-wrap items-start gap-3">
             <div className="shrink-0">
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ลา *</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ลา <span className="text-rose-500">*</span></label>
               {leaveFormat === 'FULL_DAY' ? (
                 <LeaveDateRangePicker
                   startDate={startDate}

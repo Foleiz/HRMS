@@ -182,7 +182,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                เงินเดือนใหม่ <span className="text-red-500">*</span>
+                เงินเดือนใหม่ <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <input
@@ -223,7 +223,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
           {/* Effective Date */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              วันที่มีผลบังคับใช้ <span className="text-red-500">*</span>
+              วันที่มีผลบังคับใช้ <span className="text-rose-500">*</span>
             </label>
             <ThaiDatePicker
               value={effectiveFrom}

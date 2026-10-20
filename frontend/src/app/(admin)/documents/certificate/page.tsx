@@ -324,7 +324,7 @@ export default function CertificatePage() {
 
             <div className={`${CARD} flex-1 space-y-5`}>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอรับรอง *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอรับรอง <span className="text-rose-500">*</span></label>
                 <CustomSelect
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
@@ -342,7 +342,7 @@ export default function CertificatePage() {
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">วัตถุประสงค์ในการขอเอกสาร *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">วัตถุประสงค์ในการขอเอกสาร <span className="text-rose-500">*</span></label>
                   <span className="text-2xs text-gray-400 font-mono">
                     {purpose.length}/{REASON_MAX_LENGTH}
                   </span>
@@ -365,7 +365,7 @@ export default function CertificatePage() {
           <div className={`${CARD} h-full flex flex-col gap-5`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ออก *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ออก <span className="text-rose-500">*</span></label>
                 <LeaveDateRangePicker
                   mode="single"
                   className="w-full"

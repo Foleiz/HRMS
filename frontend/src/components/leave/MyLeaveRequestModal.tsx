@@ -205,9 +205,11 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
               ไฟล์แนบ (เช่น ใบรับรองแพทย์)
               {isDocumentRecommended && (
-                <span className="ml-2 text-xs text-amber-600 font-normal">
-                  * นโยบายประเภทนี้กำหนดให้ต้องแนบเอกสารประกอบ
-                </span>
+                <>
+                  {' '}
+                  <span className="text-rose-500">*</span>
+                  <span className="ml-2 text-xs text-amber-600 font-normal">นโยบายประเภทนี้กำหนดให้ต้องแนบเอกสารประกอบ</span>
+                </>
               )}
             </label>
             <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-slate-600 text-sm text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">

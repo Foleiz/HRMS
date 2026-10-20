@@ -137,7 +137,15 @@ const Section: React.FC<{ no: number; title: string; children: React.ReactNode }
 
 const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
   <div>
-    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">{label}</label>
+    <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+      {label.endsWith(' *') ? (
+        <>
+          {label.slice(0, -2)} <span className="text-rose-500">*</span>
+        </>
+      ) : (
+        label
+      )}
+    </label>
     {children}
     {hint && <p className="mt-1 text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">{hint}</p>}
   </div>

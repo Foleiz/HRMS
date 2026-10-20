@@ -1955,7 +1955,7 @@ export default function OrganizationPage() {
                       />
                     </div>
                     <div>
-                      <label className={labelCls}>ชื่อบริษัท (Company Name) *</label>
+                      <label className={labelCls}>ชื่อบริษัท (Company Name) <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
                         required
@@ -2242,7 +2242,7 @@ export default function OrganizationPage() {
               />
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อฝ่าย / สายงาน *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อฝ่าย / สายงาน <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -2324,7 +2324,7 @@ export default function OrganizationPage() {
 
             <form onSubmit={handleSaveDept} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย <span className="text-rose-500">*</span></label>
                 <CustomSelect
                   required
                   value={deptForm.divisionId}
@@ -2362,7 +2362,7 @@ export default function OrganizationPage() {
               />
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อแผนก *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อแผนก <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -2446,7 +2446,7 @@ export default function OrganizationPage() {
 
             <form onSubmit={handleSaveTeam} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก <span className="text-rose-500">*</span></label>
                 <CustomSelect
                   required
                   value={teamForm.departmentId}
@@ -2483,7 +2483,7 @@ export default function OrganizationPage() {
               />
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อทีม *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อทีม <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -2585,7 +2585,7 @@ export default function OrganizationPage() {
 
             <form onSubmit={handleSavePos} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก <span className="text-rose-500">*</span></label>
                 <CustomSelect
                   required
                   value={posForm.departmentId}
@@ -2628,7 +2628,7 @@ export default function OrganizationPage() {
               />
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อตำแหน่งงาน *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อตำแหน่งงาน <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -2710,7 +2710,7 @@ export default function OrganizationPage() {
               <div className="p-6 space-y-4 overflow-y-auto flex-1">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ชื่อสวัสดิการ / สิทธิประโยชน์ *
+                    ชื่อสวัสดิการ / สิทธิประโยชน์ <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -2723,7 +2723,7 @@ export default function OrganizationPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ *</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ <span className="text-rose-500">*</span></label>
                   <CustomSelect
                     value={benefitForm.category}
                     onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
@@ -2756,7 +2756,7 @@ export default function OrganizationPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      รูปแบบการให้สิทธิ์ / เบิกจ่าย *
+                      รูปแบบการให้สิทธิ์ / เบิกจ่าย <span className="text-rose-500">*</span>
                     </label>
                     <CustomSelect
                       value={benefitForm.payoutType || 'REIMBURSEMENT'}
@@ -2904,7 +2904,7 @@ export default function OrganizationPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                  ชื่อระดับพนักงาน *
+                  ชื่อระดับพนักงาน <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -2974,7 +2974,7 @@ export default function OrganizationPage() {
             <form onSubmit={handleSaveBankAccount} className="space-y-4 pt-4">
               {/* ธนาคาร */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ธนาคารพาณิชย์ *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ธนาคารพาณิชย์ <span className="text-rose-500">*</span></label>
                 <CustomSelect
                   required
                   value={bankAccountForm.bankId}
@@ -2992,7 +2992,7 @@ export default function OrganizationPage() {
 
               {/* เลขที่บัญชี */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">เลขที่บัญชีธนาคาร *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">เลขที่บัญชีธนาคาร <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required

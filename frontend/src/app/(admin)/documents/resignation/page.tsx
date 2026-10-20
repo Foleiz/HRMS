@@ -295,7 +295,7 @@ export default function ResignationPage() {
               <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลทั่วไป</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ *</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ <span className="text-rose-500">*</span></label>
                   <LeaveDateRangePicker
                     mode="single"
                     className="w-full"
@@ -334,7 +334,7 @@ export default function ResignationPage() {
                   </CustomSelect>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล *</label>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล <span className="text-rose-500">*</span></label>
                   <input
                     type="text"
                     readOnly
@@ -374,7 +374,7 @@ export default function ResignationPage() {
               {/* วันที่มีผลลาออก (วันทำงานวันสุดท้าย) */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                  วันที่มีผลลาออก ( วันทำงานวันสุดท้าย ) *
+                  วันที่มีผลลาออก ( วันทำงานวันสุดท้าย ) <span className="text-rose-500">*</span>
                 </label>
                 <LeaveDateRangePicker
                   mode="single"
@@ -425,7 +425,7 @@ export default function ResignationPage() {
               <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                    เหตุผลการลาออก *
+                    เหตุผลการลาออก <span className="text-rose-500">*</span>
                   </label>
                   <span className="text-2xs text-gray-400 font-mono">
                     {reasonDetail.length}/{REASON_MAX_LENGTH}

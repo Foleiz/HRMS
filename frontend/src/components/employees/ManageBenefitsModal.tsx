@@ -308,7 +308,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ชื่อสวัสดิการ (Benefit Name) *
+                    ชื่อสวัสดิการ (Benefit Name) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -355,7 +355,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    รูปแบบการให้สิทธิ์ / เบิกจ่าย *
+                    รูปแบบการให้สิทธิ์ / เบิกจ่าย <span className="text-rose-500">*</span>
                   </label>
                   <CustomSelect
                     value={payoutType}

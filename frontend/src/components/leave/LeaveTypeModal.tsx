@@ -171,7 +171,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
           {/* ชื่อประเภทการลา */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ชื่อประเภทการลา *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ชื่อประเภทการลา <span className="text-rose-500">*</span></label>
             <input
               type="text"
               placeholder="เช่น ลาพักร้อน"

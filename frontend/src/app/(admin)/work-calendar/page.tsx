@@ -819,7 +819,7 @@ export default function WorkCalendarPage() {
 
             <form onSubmit={handleSaveHoliday} className="space-y-4 pt-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">วันที่วันหยุด *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">วันที่วันหยุด <span className="text-rose-500">*</span></label>
                 <ThaiDatePicker
                   value={holidayForm.holidayDate}
                   onChange={(val) => setHolidayForm({ ...holidayForm, holidayDate: val })}
@@ -829,7 +829,7 @@ export default function WorkCalendarPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อวันหยุด *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อวันหยุด <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -841,7 +841,7 @@ export default function WorkCalendarPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ประเภทวันหยุด *</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ประเภทวันหยุด <span className="text-rose-500">*</span></label>
                 <CustomSelect
                   value={holidayForm.holidayType}
                   onChange={(e) => setHolidayForm({ ...holidayForm, holidayType: e.target.value })}

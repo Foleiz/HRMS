@@ -5923,7 +5923,7 @@ export default function PayrollPage() {
                 {/* Slip Upload Zone */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    สลิปการโอนเงิน <span className="text-red-500">*</span>
+                    สลิปการโอนเงิน <span className="text-rose-500">*</span>
                   </label>
                   <div
                     onDragOver={e => { e.preventDefault(); setSlipDragOver(true); }}
@@ -6399,7 +6399,7 @@ export default function PayrollPage() {
               <div className="p-6 overflow-y-auto space-y-4 text-xs flex-1">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block font-semibold text-slate-700 dark:text-slate-300">ชื่อรอบเงินเดือน</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300">ชื่อรอบเงินเดือน <span className="text-rose-500">*</span></label>
                     {isPeriodNameCustom && (
                       <button
                         type="button"
@@ -6447,7 +6447,7 @@ export default function PayrollPage() {
                     </CustomSelect>
                   </div>
                   <div>
-                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ปี (พ.ศ.)</label>
+                    <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">ปี (พ.ศ.) <span className="text-rose-500">*</span></label>
                     <input
                       type="number"
                       required

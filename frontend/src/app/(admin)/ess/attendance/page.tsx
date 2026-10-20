@@ -833,7 +833,7 @@ export default function EssAttendancePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาเข้างานที่ขอปรับ</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาเข้างานที่ขอปรับ <span className="text-rose-500">*</span></label>
                   <ThaiTimePicker
                     required
                     value={formData.adjustedClockIn}
@@ -842,7 +842,7 @@ export default function EssAttendancePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาออกงานที่ขอปรับ</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาออกงานที่ขอปรับ <span className="text-rose-500">*</span></label>
                   <ThaiTimePicker
                     required
                     value={formData.adjustedClockOut}
