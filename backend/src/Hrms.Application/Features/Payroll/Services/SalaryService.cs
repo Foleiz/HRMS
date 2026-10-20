@@ -2688,11 +2688,13 @@ public class SalaryService : ISalaryService
     }
 
     /// <summary>เงินเดือนล่าสุดของพนักงานแต่ละคนที่มีผลภายในปีที่กำหนด (ใช้คำนวณโบนัส)</summary>
-    private async Task<List<EmployeeSalary>> LoadLatestSalariesForYearAsync(int year, CancellationToken cancellationToken)
+    /// <summary>เงินเดือนที่มีผล ณ วันสิ้นเดือนของรอบโบนัส (ไม่ดึงเงินเดือนที่ขึ้นทีหลังเดือนนั้น)</summary>
+    private async Task<List<EmployeeSalary>> LoadLatestSalariesForYearAsync(int year, int month, CancellationToken cancellationToken)
     {
-        var yearEnd = new DateOnly(year, 12, 31);
+        var safeMonth = month is >= 1 and <= 12 ? month : 12;
+        var asOf = new DateOnly(year, safeMonth, DateTime.DaysInMonth(year, safeMonth));
         var salaries = await _context.EmployeeSalaries
-            .Where(s => s.EffectiveFrom <= yearEnd)
+            .Where(s => s.EffectiveFrom <= asOf)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -3118,7 +3120,7 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
+        var salaries = await LoadLatestSalariesForYearAsync(targetYear, targetMonth, cancellationToken);
 
         // ดึงข้อมูลโบนัสที่เคยบันทึกไว้ในฐานข้อมูลสำหรับปีและเดือนนี้
         var savedBonuses = await _context.EmployeeBonuses
@@ -3137,6 +3139,7 @@ public class SalaryService : ISalaryService
                 var deptName = emp?.Assignments.FirstOrDefault()?.Department?.DepartmentName ?? "ฝ่ายบริหารทั่วไป";
                 var posName = emp?.Assignments.FirstOrDefault()?.Position?.PositionName ?? "-";
                 var sal = salaries.FirstOrDefault(s => s.EmployeeId == existing.EmployeeId)?.BaseSalary ?? 0m;
+                var isLocked = BonusDisplayStatus(existing.Id, payoutMap) == "PAID";
 
                 result.Add(new EmployeeBonusDto
                 {
@@ -3148,7 +3151,8 @@ public class SalaryService : ISalaryService
                     PositionName = posName,
                     Year = targetYear,
                     Month = targetMonth,
-                    BaseSalary = existing.BaseSalary > 0 ? existing.BaseSalary : sal,
+                    // ล็อกแล้ว = ใช้ฐานที่บันทึกไว้ตอนจ่าย / ยังไม่ล็อก = เงินเดือนที่มีผล ณ สิ้นเดือนรอบโบนัส
+                    BaseSalary = isLocked ? existing.BaseSalary : sal,
                     Multiplier = existing.Multiplier,
                     BonusAmount = existing.BonusAmount,
                     CalculationMode = existing.CalculationMode,
@@ -3172,6 +3176,9 @@ public class SalaryService : ISalaryService
             var existing = savedBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
             if (existing != null)
             {
+                var isLocked = BonusDisplayStatus(existing.Id, payoutMap) == "PAID";
+                // ไม่มีเงินเดือน ณ รอบนี้ และยังไม่ล็อก → ไม่แสดง (ห้ามใช้ฐานเงินเดือนเก่า/สมมติ)
+                if (!isLocked && sal <= 0) continue;
                 result.Add(new EmployeeBonusDto
                 {
                     Id = existing.Id,
@@ -3182,7 +3189,7 @@ public class SalaryService : ISalaryService
                     PositionName = posName,
                     Year = targetYear,
                     Month = targetMonth,
-                    BaseSalary = existing.BaseSalary > 0 ? existing.BaseSalary : sal,
+                    BaseSalary = isLocked ? existing.BaseSalary : sal,
                     Multiplier = existing.Multiplier,
                     BonusAmount = existing.BonusAmount,
                     CalculationMode = existing.CalculationMode,
@@ -3299,7 +3306,7 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
+        var salaries = await LoadLatestSalariesForYearAsync(targetYear, targetMonth, cancellationToken);
 
         var existingBonuses = await _context.EmployeeBonuses
             .Where(b => b.Year == targetYear && b.Month == targetMonth)
@@ -3356,7 +3363,7 @@ public class SalaryService : ISalaryService
         int targetYear = request.Year <= 0 ? DateTime.Today.Year : request.Year;
         int targetMonth = request.Month <= 0 || request.Month > 12 ? 12 : request.Month;
 
-        var salaries = await LoadLatestSalariesForYearAsync(targetYear, cancellationToken);
+        var salaries = await LoadLatestSalariesForYearAsync(targetYear, targetMonth, cancellationToken);
 
         var existingBonuses = await _context.EmployeeBonuses
             .Where(b => b.Year == targetYear && b.Month == targetMonth)
@@ -3366,8 +3373,23 @@ public class SalaryService : ISalaryService
         foreach (var item in request.Items)
         {
             var sal = salaries.FirstOrDefault(s => s.EmployeeId == item.EmployeeId)?.BaseSalary ?? 0m;
-            decimal bonusAmount = Math.Max(0, item.BonusAmount);
-            decimal multiplier = item.Multiplier ?? (sal > 0 ? Math.Round(bonusAmount / sal, 2) : 0);
+            // ไม่มีเงินเดือน ณ สิ้นเดือนรอบโบนัส → ไม่บันทึกโบนัส (ห้ามใช้ฐานเงินเดือนเก่า/สมมติ)
+            if (sal <= 0) continue;
+
+            bool isMultiplierMode = string.Equals(request.CalculationMode, "MULTIPLIER", StringComparison.OrdinalIgnoreCase);
+            decimal multiplier;
+            decimal bonusAmount;
+            if (isMultiplierMode)
+            {
+                // โหมดตัวคูณ: หลังบ้านคำนวณยอดเอง = ฐานเงินเดือน × ตัวคูณ (ยอดกับฐานตรงกันเสมอ)
+                multiplier = Math.Max(0, item.Multiplier ?? 0);
+                bonusAmount = Math.Round(sal * multiplier, 2);
+            }
+            else
+            {
+                bonusAmount = Math.Max(0, item.BonusAmount);
+                multiplier = Math.Round(bonusAmount / sal, 2);
+            }
 
             var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == item.EmployeeId);
             if (existing != null)
@@ -3378,7 +3400,7 @@ public class SalaryService : ISalaryService
                     continue;
                 }
 
-                existing.BaseSalary = sal > 0 ? sal : existing.BaseSalary;
+                existing.BaseSalary = sal;
                 existing.Multiplier = multiplier;
                 existing.BonusAmount = bonusAmount;
                 existing.CalculationMode = request.CalculationMode ?? "MANUAL";

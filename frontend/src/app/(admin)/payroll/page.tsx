@@ -725,6 +725,16 @@ export default function PayrollPage() {
   const [dirtyBonusIds, setDirtyBonusIds] = useState<Set<number>>(new Set());
   const markBonusDirty = (employeeId: number) =>
     setDirtyBonusIds((prev) => (prev.has(employeeId) ? prev : new Set(prev).add(employeeId)));
+  // ยอดโบนัสที่จะได้จริงตามโหมด: โหมดตัวคูณ = ฐานเงินเดือนปัจจุบัน × ตัวคูณ (ยกเว้นแถวที่ล็อกแล้ว)
+  const bonusDisplayAmount = (b: EmployeeBonus) =>
+    bonusInputMode === 'MULTIPLIER' && b.status !== 'PAID'
+      ? Math.round((b.baseSalary || 0) * (b.multiplier || 0) * 100) / 100
+      : b.bonusAmount || 0;
+  // แถวที่ยอดบนจอไม่ตรงกับที่บันทึกไว้ (แก้ไขแล้ว หรือฐานเงินเดือนเปลี่ยน) → ต้องกด "คำนวณ" ใหม่
+  const isBonusRowDirty = (b: EmployeeBonus) =>
+    dirtyBonusIds.has(b.employeeId) ||
+    ((b.status === 'SAVED' || b.status === 'IN_PAYROLL' || b.status === 'APPROVED') &&
+      Math.abs(bonusDisplayAmount(b) - (b.bonusAmount || 0)) > 0.005);
   const [isSavingBonus, setIsSavingBonus] = useState<boolean>(false);
   const [bonusSearchTerm, setBonusSearchTerm] = useState<string>('');
   const [bonusDeptFilter, setBonusDeptFilter] = useState<string>('ALL');
@@ -3572,13 +3582,13 @@ export default function PayrollPage() {
                                     </div>
                                   ) : (
                                     <span className="font-mono font-bold text-amber-900 dark:text-amber-400">
-                                      ฿{(b.bonusAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                      ฿{bonusDisplayAmount(b).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </span>
                                   )}
                                 </td>
                                 {/* Status */}
                                 <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                                  {renderBonusStatusBadge(b, dirtyBonusIds.has(b.employeeId))}
+                                  {renderBonusStatusBadge(b, isBonusRowDirty(b))}
                                 </td>
                                 {/* Note */}
                                 <td className="py-2 px-3 whitespace-nowrap">
@@ -3605,7 +3615,7 @@ export default function PayrollPage() {
                                 รวม {filteredBonuses.length} คน
                               </td>
                               <td className="py-3 px-3 text-right whitespace-nowrap font-mono font-bold text-amber-900 dark:text-amber-400">
-                                ฿{filteredBonuses.reduce((sum, x) => sum + (x.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ฿{filteredBonuses.reduce((sum, x) => sum + bonusDisplayAmount(x), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td colSpan={2} />
                             </tr>
@@ -6736,7 +6746,7 @@ export default function PayrollPage() {
                 <div className="flex justify-between items-center text-slate-600 dark:text-slate-400">
                   <span>ยอดเงินโบนัสรวมที่จะนำส่ง:</span>
                   <span className="font-bold text-amber-900 dark:text-amber-400 font-mono text-sm">
-                    ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ฿{bonuses.reduce((sum, b) => sum + bonusDisplayAmount(b), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
