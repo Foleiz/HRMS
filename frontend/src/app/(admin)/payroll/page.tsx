@@ -6591,14 +6591,7 @@ export default function PayrollPage() {
                 <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center font-bold">
                   <Calendar className="w-5 h-5" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">รอบเงินเดือนทั้งหมด</h3>
-                    <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
-                      ทั้งหมด {periods.length} รอบ
-                    </span>
-                  </div>
-                </div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">รอบเงินเดือนทั้งหมด</h3>
               </div>
               <div className="flex items-center gap-2">
                 {canAccessHrView && (
