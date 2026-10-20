@@ -44,6 +44,7 @@ import {
   Save,
   Coins,
   Sparkles,
+  SlidersHorizontal,
   AlertTriangle,
   X,
   ArrowDownToLine,
@@ -719,6 +720,7 @@ export default function PayrollPage() {
   const [bonusMonth, setBonusMonth] = useState<number>(12);
   // โหมดกรอกโบนัส: กำหนดตัวคูณ (ยอด = ฐานเงินเดือน × ตัวคูณ) หรือ กำหนดยอดโบนัสเอง
   const [bonusInputMode, setBonusInputMode] = useState<'MULTIPLIER' | 'AMOUNT'>('MULTIPLIER');
+  const [showBonusFilters, setShowBonusFilters] = useState<boolean>(false);
   const [isSavingBonus, setIsSavingBonus] = useState<boolean>(false);
   const [bonusSearchTerm, setBonusSearchTerm] = useState<string>('');
   const [bonusDeptFilter, setBonusDeptFilter] = useState<string>('ALL');
@@ -3257,126 +3259,27 @@ export default function PayrollPage() {
           {/* Sub Tab 1: คำนวณและจัดสรรโบนัส */}
           {bonusSubTab === 'CALCULATE' && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
-              {bonusPills}
+              {/* แถวบน: เมนูย่อย (ซ้าย) + ปุ่มดำเนินการ (ขวา) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 min-h-9">
+                {bonusPills}
 
-              {/* Compact Toolbar: Month, Year, Search, Dept, Multiplier & Actions */}
-              <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 min-h-9">
-                {/* Left: Controls & Filters */}
-                <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                  {/* Month Selection */}
-                  <div className="relative inline-block">
-                    <CustomSelect
-                      value={bonusMonth}
-                      onChange={(e) => {
-                        const mo = parseInt(e.target.value) || 12;
-                        setBonusMonth(mo);
-                        loadBonuses(bonusYear, mo);
-                      }}
-                      numbered={false}
-                      size="sm"
-                      className="min-w-[130px]"
-                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
-                    >
-                      {THAI_MONTH_NAMES.map((name, idx) => (
-                        <option key={idx + 1} value={idx + 1}>
-                          {name}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBonusFilters((v) => !v)}
+                    className={`relative h-9 inline-flex items-center gap-1.5 px-3.5 border rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                      showBonusFilters
+                        ? 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span>ตัวกรองขั้นสูง</span>
+                    {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
+                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white dark:ring-slate-800" />
+                    )}
+                  </button>
 
-                  {/* Year Selection */}
-                  <div className="relative inline-block">
-                    <CustomSelect
-                      value={bonusYear}
-                      onChange={(e) => {
-                        const yr = parseInt(e.target.value) || 2026;
-                        setBonusYear(yr);
-                        loadBonuses(yr, bonusMonth);
-                      }}
-                      numbered={false}
-                      size="sm"
-                      className="w-28"
-                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
-                    >
-                      {[2024, 2025, 2026, 2027].map((yr) => (
-                        <option key={yr} value={yr}>
-                          ปี {yr + 543}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
-
-                  {/* Search Input */}
-                  <div className="relative min-w-[200px] max-w-xs flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหาชื่อ, รหัสพนักงาน..."
-                      value={bonusSearchTerm}
-                      onChange={(e) => {
-                        setBonusSearchTerm(e.target.value);
-                        setBonusCurrentPage(1);
-                      }}
-                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-
-                  {/* Department Dropdown */}
-                  <CustomSelect
-                    value={bonusDeptFilter}
-                    onChange={(e) => {
-                      setBonusDeptFilter(e.target.value);
-                      setBonusCurrentPage(1);
-                    }}
-                    placeholder="ทุกแผนก"
-                    className="min-w-[140px]"
-                    options={[
-                      { value: 'ALL', label: 'ทุกแผนก' },
-                      ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
-                    ]}
-                  />
-
-                  {/* โหมดกรอกโบนัส: กำหนดตัวคูณ / กำหนดยอดโบนัส */}
-                  {canEditBonus && (
-                    <div className="inline-flex items-center h-9 p-0.5 bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
-                      {([
-                        { key: 'MULTIPLIER', label: 'กำหนดตัวคูณ' },
-                        { key: 'AMOUNT', label: 'กำหนดยอดโบนัส' },
-                      ] as const).map((m) => (
-                        <button
-                          key={m.key}
-                          type="button"
-                          onClick={() => setBonusInputMode(m.key)}
-                          className={`h-full px-3 rounded-lg font-semibold transition-all cursor-pointer ${
-                            bonusInputMode === m.key
-                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
-                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          {m.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBonusSearchTerm('');
-                        setBonusDeptFilter('ALL');
-                        setBonusCurrentPage(1);
-                      }}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-1 cursor-pointer"
-                    >
-                      ล้างตัวกรอง
-                    </button>
-                  )}
-                </div>
-
-                {/* Right: Actions */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {canEditBonus && (
                     <button
                       type="button"
@@ -3415,6 +3318,122 @@ export default function PayrollPage() {
                   )}
                 </div>
               </div>
+
+              {/* ตัวกรองขั้นสูง: เดือน, ปี, ค้นหา, แผนก, โหมดกรอกโบนัส */}
+              {showBonusFilters && (
+                <div className="flex flex-wrap items-center gap-2.5 p-3 bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700 rounded-2xl animate-in fade-in duration-150">
+                  {/* Month Selection */}
+                  <div className="relative inline-block">
+                    <CustomSelect
+                      value={bonusMonth}
+                      onChange={(e) => {
+                        const mo = parseInt(e.target.value) || 12;
+                        setBonusMonth(mo);
+                        loadBonuses(bonusYear, mo);
+                      }}
+                      numbered={false}
+                      size="sm"
+                      className="min-w-[130px]"
+                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
+                    >
+                      {THAI_MONTH_NAMES.map((name, idx) => (
+                        <option key={idx + 1} value={idx + 1}>
+                          {name}
+                        </option>
+                      ))}
+                    </CustomSelect>
+                  </div>
+
+                  {/* Year Selection */}
+                  <div className="relative inline-block">
+                    <CustomSelect
+                      value={bonusYear}
+                      onChange={(e) => {
+                        const yr = parseInt(e.target.value) || 2026;
+                        setBonusYear(yr);
+                        loadBonuses(yr, bonusMonth);
+                      }}
+                      numbered={false}
+                      size="sm"
+                      className="w-28"
+                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
+                    >
+                      {[2024, 2025, 2026, 2027].map((yr) => (
+                        <option key={yr} value={yr}>
+                          ปี {yr + 543}
+                        </option>
+                      ))}
+                    </CustomSelect>
+                  </div>
+
+                  {/* Search Input */}
+                  <div className="relative min-w-[200px] max-w-xs flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหาชื่อ, รหัสพนักงาน..."
+                      value={bonusSearchTerm}
+                      onChange={(e) => {
+                        setBonusSearchTerm(e.target.value);
+                        setBonusCurrentPage(1);
+                      }}
+                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+
+                  {/* Department Dropdown */}
+                  <CustomSelect
+                    value={bonusDeptFilter}
+                    onChange={(e) => {
+                      setBonusDeptFilter(e.target.value);
+                      setBonusCurrentPage(1);
+                    }}
+                    placeholder="ทุกแผนก"
+                    className="min-w-[140px]"
+                    options={[
+                      { value: 'ALL', label: 'ทุกแผนก' },
+                      ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
+                    ]}
+                  />
+
+                  {/* โหมดกรอกโบนัส: กำหนดตัวคูณ / กำหนดยอดโบนัส */}
+                  {canEditBonus && (
+                    <div className="inline-flex items-center h-9 p-0.5 bg-slate-200/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+                      {([
+                        { key: 'MULTIPLIER', label: 'กำหนดตัวคูณ' },
+                        { key: 'AMOUNT', label: 'กำหนดยอดโบนัส' },
+                      ] as const).map((m) => (
+                        <button
+                          key={m.key}
+                          type="button"
+                          onClick={() => setBonusInputMode(m.key)}
+                          className={`h-full px-3 rounded-lg font-semibold transition-all cursor-pointer ${
+                            bonusInputMode === m.key
+                              ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-xs'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBonusSearchTerm('');
+                        setBonusDeptFilter('ALL');
+                        setBonusCurrentPage(1);
+                      }}
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-1 cursor-pointer"
+                    >
+                      ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Interactive Bonus Table & Pagination */}
               {(() => {
