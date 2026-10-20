@@ -483,6 +483,8 @@ export default function PayrollPage() {
   const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
   const [selectedYearFilter, setSelectedYearFilter] = useState<number>(() => new Date().getFullYear());
   const [periodsTabYearFilter, setPeriodsTabYearFilter] = useState<string>('ALL');
+  const [periodsTabPage, setPeriodsTabPage] = useState<number>(1);
+  const [periodsTabPageSize, setPeriodsTabPageSize] = useState<number>(10);
 
   useEffect(() => {
     if (selectedPeriod?.year) {
@@ -2553,10 +2555,6 @@ export default function PayrollPage() {
                       ]}
                     />
                   </div>
-
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    แสดง <span className="font-bold text-slate-800 dark:text-slate-200">{employees.length}</span> คน
-                  </div>
                 </div>
 
                 {/* Table */}
@@ -2897,20 +2895,25 @@ export default function PayrollPage() {
           ? periods
           : periods.filter((p) => p.year === Number(periodsTabYearFilter));
 
+        const totalPeriodsCount = filteredPeriodsTabRows.length;
+        const totalPeriodsPages = Math.max(1, Math.ceil(totalPeriodsCount / periodsTabPageSize));
+        const safePeriodsPage = Math.min(Math.max(1, periodsTabPage), totalPeriodsPages);
+        const startPeriodsIdx = (safePeriodsPage - 1) * periodsTabPageSize;
+        const paginatedPeriodsTabRows = filteredPeriodsTabRows.slice(startPeriodsIdx, startPeriodsIdx + periodsTabPageSize);
+
         return (
           <div className="space-y-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
               {/* Toolbar — ตำแหน่ง/ความสูงเดียวกับแท็บอื่น */}
-              <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 min-h-9">
-                <div className="text-xs text-slate-500 dark:text-slate-400">
-                  ทั้งหมด <span className="font-bold text-slate-800 dark:text-slate-200">{filteredPeriodsTabRows.length}</span> รอบ
-                </div>
-
+              <div className="flex flex-wrap items-center justify-end gap-3 px-4 pt-4 min-h-9">
                 <div className="flex flex-wrap items-center gap-2.5">
                   <div className="w-36">
                     <CustomSelect
                       value={periodsTabYearFilter}
-                      onChange={(e) => setPeriodsTabYearFilter(String(e.target.value))}
+                      onChange={(e) => {
+                        setPeriodsTabYearFilter(String(e.target.value));
+                        setPeriodsTabPage(1);
+                      }}
                       numbered={false}
                       className="w-full"
                       title="กรองตามปี"
@@ -2972,7 +2975,7 @@ export default function PayrollPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
-                          {filteredPeriodsTabRows.map((p) => {
+                          {paginatedPeriodsTabRows.map((p) => {
                           const isCurrent = selectedPeriod?.id === p.id;
                           const today = new Date();
                           const isCurrentMonthPeriod = p.year === today.getFullYear() && p.month === (today.getMonth() + 1);
@@ -3212,6 +3215,22 @@ export default function PayrollPage() {
                 </div>
               )}
             </div>
+
+            {/* Pagination */}
+            {filteredPeriodsTabRows.length > 0 && (
+              <TablePagination
+                currentPage={safePeriodsPage}
+                pageSize={periodsTabPageSize}
+                totalCount={totalPeriodsCount}
+                onPageChange={setPeriodsTabPage}
+                onPageSizeChange={(newSize) => {
+                  setPeriodsTabPageSize(newSize);
+                  setPeriodsTabPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 200]}
+                unitText="รอบ"
+              />
+            )}
           </div>
         </div>
       );
