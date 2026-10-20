@@ -3273,84 +3273,12 @@ export default function PayrollPage() {
           {/* Sub Tab 1: คำนวณและจัดสรรโบนัส */}
           {bonusSubTab === 'CALCULATE' && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
-              {/* Header & Main Actions */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
-                <div>
-                  <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                    <Gift className="w-5 h-5 text-amber-500" />
-                    <span>การจัดสรรโบนัสและเงินรางวัลประจำปี (Annual Bonus Management)</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    คำนวณและจัดสรรโบนัสประจำปีตามฐานเงินเดือนและตัวคูณ สามารถปรับแก้รายคน บันทึกข้อมูล นำส่งเข้างวดเงินเดือน หรือส่งออกไฟล์รายงานได้
-                  </p>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {canEditBonus && (
-                    <button
-                      type="button"
-                      onClick={handleSaveBonuses}
-                      disabled={bonuses.length === 0 || isSavingBonus}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      {isSavingBonus ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                      <span>{isSavingBonus ? 'กำลังบันทึก...' : '💾 บันทึกข้อมูลโบนัส'}</span>
-                    </button>
-                  )}
-
-                  {canApproveBonus && bonuses.length > 0 && bonuses.some((b) => b.status !== 'APPROVED') && (
-                    <button
-                      type="button"
-                      onClick={handleApproveBonusesInCalculateTab}
-                      disabled={bonuses.length === 0 || isSavingBonus}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      {isSavingBonus ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4 text-emerald-100" />}
-                      <span>✅ อนุมัติข้อมูลโบนัสรอบนี้</span>
-                    </button>
-                  )}
-
-                  {canApproveBonus && (
-                    <button
-                      type="button"
-                      onClick={handleOpenApplyBonusModal}
-                      disabled={bonuses.length === 0}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      <ArrowDownToLine className="w-4 h-4 text-blue-200" />
-                      <span>📥 บันทึกเข้าสู่งวดเงินเดือน</span>
-                    </button>
-                  )}
-
-                  {canExportBonus && (
-                    <button
-                      type="button"
-                      onClick={handleExportBonusBankFile}
-                      disabled={bonuses.length === 0}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      <Download className="w-4 h-4 text-emerald-100" />
-                      <span>📊 ส่งออกไฟล์ข้อมูลโบนัส</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Auto-sync Notification Banner */}
-              <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/70 flex items-center gap-3 text-xs text-blue-900 dark:text-blue-200">
-                <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                <span>
-                  <strong>การรวมคำนวณอัตโนมัติ:</strong> เมื่อจัดสรรหรือบันทึกข้อมูลโบนัสแล้ว ยอดโบนัสของรอบ <strong>{THAI_MONTH_NAMES[bonusMonth - 1]} พ.ศ. {bonusYear + 543}</strong> จะถูกนำไปรวมคำนวณในรอบเงินเดือนของเดือนดังกล่าวโดยอัตโนมัติเมื่อกดคำนวณเงินเดือน โดยไม่ต้องกดดึงด้วยตนเอง
-                </span>
-              </div>
-
-              {/* Top Controls & Calculation Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700">
-                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-700 dark:text-slate-300">
+              {/* Compact Toolbar: Month, Year, Search, Dept, Multiplier & Actions */}
+              <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 min-h-9">
+                {/* Left: Controls & Filters */}
+                <div className="flex flex-wrap items-center gap-2.5 flex-1">
                   {/* Month Selection */}
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">เดือนที่ออกโบนัส:</span>
+                  <div className="relative inline-block">
                     <CustomSelect
                       value={bonusMonth}
                       onChange={(e) => {
@@ -3358,7 +3286,10 @@ export default function PayrollPage() {
                         setBonusMonth(mo);
                         loadBonuses(bonusYear, mo);
                       }}
-                      className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer min-w-[130px]"
+                      numbered={false}
+                      size="sm"
+                      className="min-w-[130px]"
+                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
                     >
                       {THAI_MONTH_NAMES.map((name, idx) => (
                         <option key={idx + 1} value={idx + 1}>
@@ -3369,8 +3300,7 @@ export default function PayrollPage() {
                   </div>
 
                   {/* Year Selection */}
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-600 dark:text-slate-400">ปี:</span>
+                  <div className="relative inline-block">
                     <CustomSelect
                       value={bonusYear}
                       onChange={(e) => {
@@ -3378,102 +3308,25 @@ export default function PayrollPage() {
                         setBonusYear(yr);
                         loadBonuses(yr, bonusMonth);
                       }}
-                      className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer min-w-[110px]"
+                      numbered={false}
+                      size="sm"
+                      className="w-28"
+                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
                     >
                       {[2024, 2025, 2026, 2027].map((yr) => (
                         <option key={yr} value={yr}>
-                          พ.ศ. {yr + 543}
+                          ปี {yr + 543}
                         </option>
                       ))}
                     </CustomSelect>
                   </div>
 
-                  {/* Default Multiplier */}
-                  {canCalculateBonus && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-slate-600 dark:text-slate-400">ตัวคูณโบนัสฐาน:</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        value={bonusMultiplierInput}
-                        onChange={(e) => setBonusMultiplierInput(parseFloat(e.target.value) || 0)}
-                        className="w-20 px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-center font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
-                      />
-                      <span>เท่า</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Calculate Button */}
-                {canCalculateBonus && (
-                  <button
-                    type="button"
-                    onClick={handleCalculateBonusesSubmit}
-                    disabled={isCalculatingBonus}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                  >
-                    {isCalculatingBonus ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-4 h-4" />
-                    )}
-                    <span>คำนวณและจัดสรรโบนัส</span>
-                  </button>
-                )}
-              </div>
-
-              {/* KPI Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="p-4 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-950/30 shadow-xs">
-                  <span className="text-xs text-amber-800 dark:text-amber-300 font-semibold">ยอดรวมโบนัสที่จัดสรรทั้งหมด</span>
-                  <p className="text-2xl font-bold text-amber-950 dark:text-amber-200 mt-1.5 font-mono tracking-tight">
-                    ฿{bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                  <span className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5 block">
-                    คำนวณสำหรับรอบ {THAI_MONTH_NAMES[bonusMonth - 1]} {bonusYear + 543}
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 shadow-xs">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">จำนวนพนักงานที่ได้รับโบนัส</span>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1.5">{bonuses.length} คน</p>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">
-                    พนักงานที่มีสัญญาจ้างในรอบ {THAI_MONTH_NAMES[bonusMonth - 1]} {bonusYear + 543}
-                  </span>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70 shadow-xs">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold">โบนัสเฉลี่ยต่อคน</span>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1.5 font-mono">
-                    ฿{(bonuses.length > 0
-                      ? bonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0) / bonuses.length
-                      : 0
-                    ).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 block">เฉลี่ยของพนักงานทุกคน</span>
-                </div>
-
-                <div className="p-4 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/60 dark:bg-blue-950/30 shadow-xs">
-                  <span className="text-xs text-blue-800 dark:text-blue-300 font-semibold">สถานะการบันทึก</span>
-                  <p className="text-2xl font-bold text-blue-950 dark:text-blue-200 mt-1.5">
-                    {bonuses.filter((b) => b.status === 'APPROVED').length}{' '}
-                    <span className="text-sm font-normal text-blue-700 dark:text-blue-300">/ {bonuses.length} คน</span>
-                  </p>
-                  <span className="text-[11px] text-blue-700 dark:text-blue-400 mt-0.5 block">
-                    บันทึกอนุมัติแล้ว {bonuses.filter((b) => b.status === 'APPROVED').length} คน
-                  </span>
-                </div>
-              </div>
-
-              {/* Filter Toolbar */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
-                <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
-                  <div className="relative flex-1 sm:max-w-xs">
+                  {/* Search Input */}
+                  <div className="relative min-w-[200px] max-w-xs flex-1">
                     <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="ค้นหาชื่อ, รหัสพนักงาน, หรือตำแหน่ง..."
+                      placeholder="ค้นหาชื่อ, รหัสพนักงาน..."
                       value={bonusSearchTerm}
                       onChange={(e) => {
                         setBonusSearchTerm(e.target.value);
@@ -3483,6 +3336,7 @@ export default function PayrollPage() {
                     />
                   </div>
 
+                  {/* Department Dropdown */}
                   <CustomSelect
                     value={bonusDeptFilter}
                     onChange={(e) => {
@@ -3490,12 +3344,37 @@ export default function PayrollPage() {
                       setBonusCurrentPage(1);
                     }}
                     placeholder="ทุกแผนก"
-                    className="min-w-[150px]"
+                    className="min-w-[140px]"
                     options={[
                       { value: 'ALL', label: 'ทุกแผนก' },
                       ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
                     ]}
                   />
+
+                  {/* Base Multiplier & Calculate Button */}
+                  {canCalculateBonus && (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 h-9 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+                      <span className="font-semibold text-slate-500 dark:text-slate-400">คูณ:</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={bonusMultiplierInput}
+                        onChange={(e) => setBonusMultiplierInput(parseFloat(e.target.value) || 0)}
+                        className="w-12 text-center font-mono font-bold text-slate-900 dark:text-slate-100 bg-transparent focus:outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCalculateBonusesSubmit}
+                        disabled={isCalculatingBonus}
+                        className="h-7 px-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                        title="คำนวณและจัดสรรโบนัส"
+                      >
+                        {isCalculatingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                        <span>คำนวณ</span>
+                      </button>
+                    </div>
+                  )}
 
                   {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
                     <button
@@ -3505,9 +3384,60 @@ export default function PayrollPage() {
                         setBonusDeptFilter('ALL');
                         setBonusCurrentPage(1);
                       }}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-1 cursor-pointer"
                     >
                       ล้างตัวกรอง
+                    </button>
+                  )}
+                </div>
+
+                {/* Right: Actions */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {canEditBonus && (
+                    <button
+                      type="button"
+                      onClick={handleSaveBonuses}
+                      disabled={bonuses.length === 0 || isSavingBonus}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isSavingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                      <span>บันทึก</span>
+                    </button>
+                  )}
+
+                  {canApproveBonus && bonuses.length > 0 && bonuses.some((b) => b.status !== 'APPROVED') && (
+                    <button
+                      type="button"
+                      onClick={handleApproveBonusesInCalculateTab}
+                      disabled={bonuses.length === 0 || isSavingBonus}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      {isSavingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                      <span>อนุมัติ</span>
+                    </button>
+                  )}
+
+                  {canApproveBonus && (
+                    <button
+                      type="button"
+                      onClick={handleOpenApplyBonusModal}
+                      disabled={bonuses.length === 0}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <ArrowDownToLine className="w-3.5 h-3.5 text-blue-200" />
+                      <span>บันทึกเข้างวด</span>
+                    </button>
+                  )}
+
+                  {canExportBonus && (
+                    <button
+                      type="button"
+                      onClick={handleExportBonusBankFile}
+                      disabled={bonuses.length === 0}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <Download className="w-3.5 h-3.5 text-slate-500" />
+                      <span>ส่งออก</span>
                     </button>
                   )}
                 </div>
@@ -4695,105 +4625,7 @@ export default function PayrollPage() {
                   )}
                 </div>
 
-                {/* 4-Step Workflow Stepper (Status Indicator Only - Non-clickable) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 pt-4 mt-4 border-t border-slate-100 dark:border-slate-700/60">
-                  {[
-                    { step: 1, roleName: 'ฝ่ายบุคคล (HR)', title: '1. HR เตรียมข้อมูล & คำนวณ', desc: 'ตรวจวันลาและรายการ แล้วกดคำนวณ' },
-                    { step: 2, roleName: 'ฝ่ายการเงิน (Finance)', title: '2. การเงินตรวจทาน & ขออนุมัติ', desc: 'ตรวจยอด Gross/Net ส่งขออนุมัติ' },
-                    { step: 3, roleName: 'ผู้บริหาร (CEO)', title: '3. CEO อนุมัติรอบเงินเดือน', desc: 'ผู้บริหารตรวจสอบและอนุมัติ' },
-                    { step: 4, roleName: 'ฝ่ายการเงิน / ผู้โอนเงิน', title: '4. โอนเงิน & ปิดรอบ', desc: 'ส่งไฟล์ธนาคาร โอนเงิน และแนบสลิป' },
-                  ].map((s) => {
-                    const isDone = currentStep > s.step;
-                    const isPeriodCurrent = currentStep === s.step;
-
-                    return (
-                      <div
-                        key={s.step}
-                        className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all select-none ${
-                          isPeriodCurrent
-                            ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700/60 shadow-2xs ring-1 ring-amber-300/60 dark:ring-amber-700/50'
-                            : isDone
-                            ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/40'
-                            : 'bg-slate-50/50 dark:bg-slate-900/40 border-slate-200/60 dark:border-slate-800 opacity-80'
-                        }`}
-                      >
-                        {/* Card Header: Step & Title & Status Pill */}
-                        <div>
-                          <div className="flex items-start justify-between gap-1.5">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                                  isDone
-                                    ? 'bg-emerald-500 text-white'
-                                    : isPeriodCurrent
-                                    ? 'bg-amber-500 text-white shadow-xs animate-pulse ring-2 ring-amber-300 dark:ring-amber-700'
-                                    : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
-                                }`}
-                              >
-                                {isDone ? '✓' : s.step}
-                              </span>
-                              <span className={`text-xs font-bold truncate ${
-                                isPeriodCurrent
-                                  ? 'text-amber-950 dark:text-amber-200'
-                                  : isDone
-                                  ? 'text-emerald-800 dark:text-emerald-300'
-                                  : 'text-slate-600 dark:text-slate-400'
-                              }`}>
-                                {s.title}
-                              </span>
-                            </div>
-
-                            {/* Badge ด้านขวาบน */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              {isPeriodCurrent && (
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs flex items-center gap-1 animate-pulse">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                                  ถึงคิวฝ่ายนี้
-                                </span>
-                              )}
-                              {isDone && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40">
-                                  ✓ เสร็จแล้ว
-                                </span>
-                              )}
-                              {!isDone && !isPeriodCurrent && (
-                                <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                                  ยังไม่ถึงคิว
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* บรรทัดบอกชัดเจน: หน้าที่ของใคร */}
-                          <div className="mt-2 pl-7 flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">หน้าที่ของ:</span>
-                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${
-                              isPeriodCurrent
-                                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/70 dark:text-amber-200 dark:border-amber-700'
-                                : isDone
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800/40'
-                                : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                            }`}>
-                              {s.roleName}
-                            </span>
-                          </div>
-
-                          {/* รายละเอียดขั้นตอน */}
-                          <p className={`text-[10px] mt-1 pl-7 ${
-                            isPeriodCurrent
-                              ? 'text-amber-800 dark:text-amber-300'
-                              : isDone
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-slate-400 dark:text-slate-500'
-                          }`}>
-                            {s.desc}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
-              </div>
             )}
 
             {/* Warning Banner: พนักงานที่ยังไม่มีฐานเงินเดือน */}
@@ -6173,75 +6005,7 @@ export default function PayrollPage() {
       {/* === TAB 7: ภาษี & ประกันสังคม (Tax & SSO Tab) === */}
       {activeTab === 'tax-sso' && (
         <div className="space-y-4">
-          {/* Card 1: สรุปรายงาน & ส่งออก CSV */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
-            {/* Header Actions for CSV Reports */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
-              <div>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                  สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || '-'}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleExportTaxSsoCsv('PND1')}
-                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleExportTaxSsoCsv('SSO')}
-                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>ส่งออก สปส. 1-10 (CSV)</span>
-                </button>
-              </div>
-            </div>
-
-          {/* Tax & SSO Summary KPI Cards */}
-          {taxSsoSummary && (
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">รายได้รวมพนักงานทั้งหมด</span>
-                <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1 font-mono">
-                  ฿{(taxSsoSummary.totalGrossIncome ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
-                <span className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
-                <p className="text-lg font-bold text-blue-900 dark:text-blue-300 mt-1 font-mono">
-                  ฿{(taxSsoSummary.totalWithholdingTax ?? taxSsoSummary.totalPnd1Tax ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
-                <span className="text-[11px] text-purple-700 dark:text-purple-400 font-semibold">ประกันสังคม (ฝ่ายลูกจ้าง 5%)</span>
-                <p className="text-lg font-bold text-purple-900 dark:text-purple-300 mt-1 font-mono">
-                  ฿{(taxSsoSummary.totalSsoEmployee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-
-              <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
-                <span className="text-[11px] text-purple-700 dark:text-purple-400 font-semibold font-mono">รวมนำส่งประกันสังคม (ลูกจ้าง + นายจ้าง)</span>
-                <p className="text-lg font-bold text-purple-900 dark:text-purple-300 mt-1 font-mono">
-                  ฿{(taxSsoSummary.totalSsoCombined ?? ((taxSsoSummary.totalSsoEmployee ?? 0) + (taxSsoSummary.totalSsoEmployer ?? 0))).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Card 2: Section 1: Tax Brackets */}
+          {/* Card 2: Section 1: Tax Brackets */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
             <div>
@@ -6254,22 +6018,30 @@ export default function PayrollPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {canEditTax ? (
-                <button
+              <button
                   type="button"
-                  onClick={() => setIsTaxModalOpen(true)}
-                  className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
+                  onClick={() => handleExportTaxSsoCsv('PND1')}
+                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                 >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>แก้ไขอัตราภาษี</span>
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
                 </button>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                  <Lock className="w-3.5 h-3.5" />
-                  สิทธิ์ดูอย่างเดียว
-                </span>
-              )}
-            </div>
+
+                {canEditTax ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsTaxModalOpen(true)}
+                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>แก้ไขอัตราภาษี</span>
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                    <Lock className="w-3.5 h-3.5" />
+                    สิทธิ์ดูอย่างเดียว
+                  </span>
+                )}</div>
           </div>
 
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
@@ -6327,25 +6099,33 @@ export default function PayrollPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              {canEditSso ? (
-                <button
+              <button
                   type="button"
-                  onClick={() => {
-                    setSelectedSsoRate(ssoRates.find(s => s.status === 'ACTIVE') || ssoRates[0] || null);
-                    setIsSsoModalOpen(true);
-                  }}
-                  className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-purple-200 dark:border-purple-800 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/70 transition-all shadow-2xs cursor-pointer"
+                  onClick={() => handleExportTaxSsoCsv('SSO')}
+                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl text-xs font-semibold transition-all cursor-pointer"
                 >
-                  <Edit2 className="w-3.5 h-3.5" />
-                  <span>แก้ไขอัตราประกันสังคม</span>
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>ส่งออก สปส. 1-10 (CSV)</span>
                 </button>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                  <Lock className="w-3.5 h-3.5" />
-                  สิทธิ์ดูอย่างเดียว
-                </span>
-              )}
-            </div>
+
+                {canEditSso ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSsoRate(ssoRates.find(s => s.status === 'ACTIVE') || ssoRates[0] || null);
+                      setIsSsoModalOpen(true);
+                    }}
+                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-purple-200 dark:border-purple-800 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/70 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>แก้ไขอัตราประกันสังคม</span>
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                    <Lock className="w-3.5 h-3.5" />
+                    สิทธิ์ดูอย่างเดียว
+                  </span>
+                )}</div>
           </div>
 
           <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
