@@ -2376,7 +2376,7 @@ export default function PayrollPage() {
       {activeTab === 'structures' && (
         <div className="space-y-4">
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
 
           {/* Sub-view 1: Salary Structure Table matching Image 1 */}
           {structureSubTab === 'positions' && (() => {
@@ -2529,7 +2529,7 @@ export default function PayrollPage() {
             return (
               <div className="space-y-4">
                 {/* Filter Toolbar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                   <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex-1 sm:max-w-xs">
                       <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -2538,7 +2538,7 @@ export default function PayrollPage() {
                         placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                        className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                       />
                     </div>
 
@@ -2560,7 +2560,7 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                   <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
@@ -2664,11 +2664,11 @@ export default function PayrollPage() {
           {/* Table Container */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
             {/* แถบเลือกรายได้/รายหัก + ปุ่มเพิ่ม — อยู่ใน panel เดียวกับตาราง (แบบเดียวกับฐานเงินเดือน) */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 min-h-9">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setItemsSubTab('EARNING')}
-                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   itemsSubTab === 'EARNING'
                     ? 'bg-[#0B2046] text-white shadow-xs'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -2678,7 +2678,7 @@ export default function PayrollPage() {
               </button>
               <button
                 onClick={() => setItemsSubTab('DEDUCTION')}
-                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   itemsSubTab === 'DEDUCTION'
                     ? 'bg-[#0B2046] text-white shadow-xs'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -2692,7 +2692,7 @@ export default function PayrollPage() {
             {canCreateItem && (
               <button
                 onClick={handleOpenCreateItem}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+                className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
@@ -2900,20 +2900,10 @@ export default function PayrollPage() {
         return (
           <div className="space-y-4">
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
-              {/* Header */}
-              <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/80">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center font-bold">
-                    <Calendar className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-base text-slate-900 dark:text-slate-100">รอบเงินเดือนทั้งหมด</h2>
-                      <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
-                        ทั้งหมด {filteredPeriodsTabRows.length} รอบ
-                      </span>
-                    </div>
-                  </div>
+              {/* Toolbar — ตำแหน่ง/ความสูงเดียวกับแท็บอื่น */}
+              <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 min-h-9">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  ทั้งหมด <span className="font-bold text-slate-800 dark:text-slate-200">{filteredPeriodsTabRows.length}</span> รอบ
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5">
@@ -2922,7 +2912,6 @@ export default function PayrollPage() {
                       value={periodsTabYearFilter}
                       onChange={(e) => setPeriodsTabYearFilter(String(e.target.value))}
                       numbered={false}
-                      size="sm"
                       className="w-full"
                       title="กรองตามปี"
                     >
@@ -2936,7 +2925,7 @@ export default function PayrollPage() {
                     <button
                       type="button"
                       onClick={handleOpenCreatePeriodModal}
-                      className="h-8 inline-flex items-center gap-1.5 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                      className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>สร้างรอบเงินเดือน</span>
@@ -2946,7 +2935,7 @@ export default function PayrollPage() {
               </div>
 
               {/* Table Content */}
-              <div className="p-6">
+              <div className="p-4">
                 {filteredPeriodsTabRows.length === 0 ? (
                   <div className="py-16 text-center">
                     <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-400 mx-auto flex items-center justify-center mb-3">
@@ -2968,7 +2957,7 @@ export default function PayrollPage() {
                     )}
                   </div>
                 ) : (
-                  <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                     <div className="overflow-x-auto">
                       <table className="table-standard w-full text-left border-collapse text-xs">
                         <thead>
