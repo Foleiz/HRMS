@@ -3239,14 +3239,14 @@ export default function PayrollPage() {
     })()}
 
       {/* === TAB: โบนัส (Annual Bonus Management) === */}
-      {activeTab === 'bonus' && (
-        <div className="space-y-4">
-          {/* Sub Navigation Pills (เหมือนหน้ารายการเงินเดือน) */}
-          <div className="flex items-center gap-2">
+      {activeTab === 'bonus' && (() => {
+        // ปุ่มเมนูย่อย — วางไว้ใน panel แถวบนสุด (แบบเดียวกับรายได้และรายหัก)
+        const bonusPills = (
+<div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setBonusSubTab('CALCULATE')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 bonusSubTab === 'CALCULATE'
                   ? 'bg-[#0B2046] text-white shadow-xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -3260,7 +3260,7 @@ export default function PayrollPage() {
                 setBonusSubTab('HISTORY');
                 loadBonusPeriods();
               }}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 bonusSubTab === 'HISTORY'
                   ? 'bg-[#0B2046] text-white shadow-xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
@@ -3269,10 +3269,14 @@ export default function PayrollPage() {
               รายการโบนัสที่ผ่านมา
             </button>
           </div>
-
+        );
+        return (
+        <div className="space-y-4">
           {/* Sub Tab 1: คำนวณและจัดสรรโบนัส */}
           {bonusSubTab === 'CALCULATE' && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
+              {bonusPills}
+
               {/* Compact Toolbar: Month, Year, Search, Dept, Multiplier & Actions */}
               <div className="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 min-h-9">
                 {/* Left: Controls & Filters */}
@@ -3467,8 +3471,8 @@ export default function PayrollPage() {
                 );
 
                 return (
-                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-slate-800">
-                    <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                       <table className="table-standard text-xs w-full text-left border-collapse">
                         <thead>
                           <tr className="bg-slate-50/90 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -3610,7 +3614,9 @@ export default function PayrollPage() {
           {bonusSubTab === 'HISTORY' && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
               {/* Toolbar — แบบเดียวกับฐานเงินเดือน */}
-              <div className="px-4 pt-4 flex flex-wrap items-center justify-end gap-3 min-h-9">
+              <div className="px-4 pt-4 flex flex-wrap items-center justify-between gap-3 min-h-9">
+                {bonusPills}
+
                 <button
                   type="button"
                   onClick={loadBonusPeriods}
@@ -4031,7 +4037,8 @@ export default function PayrollPage() {
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* === TAB 4: ประมวลเงินเดือน (Payroll Processing) === */}
       {activeTab === 'process' && (() => {
