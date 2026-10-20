@@ -2759,6 +2759,8 @@ function SchedulesContent() {
               {/* รหัสกะ — ระบบแนะนำ แก้ได้ */}
               <CodeInput
                 type="shift"
+                prefix="SHF"
+                existingCodes={shifts.map((x) => x.shiftCode)}
                 label="รหัสกะ"
                 mode={shiftModalMode}
                 value={shiftForm.shiftCode || ''}

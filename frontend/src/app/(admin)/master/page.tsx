@@ -1111,6 +1111,9 @@ export default function MasterDataHubPage() {
                   <div>
                     <CodeInput
                       type={activeTab === 'genders' ? 'gender' : 'certificate-type'}
+                      prefix={activeTab === 'genders' ? 'G' : 'CERT_'}
+                      digits={activeTab === 'genders' ? 2 : 3}
+                      existingCodes={activeTab === 'genders' ? genders.map((x) => x.genderCode) : certTypes.map((x) => x.certificateCode)}
                       label={activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'}
                       required
                       mode={modalMode}

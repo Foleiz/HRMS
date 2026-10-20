@@ -996,6 +996,7 @@ export default function LeaveManagementPage() {
         leaveTypeToEdit={typeToEdit}
         onSubmitCreate={handleSubmitCreateType}
         onSubmitUpdate={handleSubmitUpdateType}
+        existingCodes={leaveTypes.map((t) => t.leaveCode)}
       />
 
       <LeavePolicyModal

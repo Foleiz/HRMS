@@ -2232,6 +2232,9 @@ export default function OrganizationPage() {
             <form onSubmit={handleSaveDivision} className="space-y-4 pt-4">
               <CodeInput
                 type="division"
+                prefix="DIV"
+                digits={3}
+                existingCodes={divisions.map((x) => x.divisionCode)}
                 label="รหัสฝ่าย"
                 mode={modalMode}
                 value={divisionForm.divisionCode || ''}
@@ -2349,6 +2352,9 @@ export default function OrganizationPage() {
 
               <CodeInput
                 type="department"
+                prefix="DEP"
+                digits={3}
+                existingCodes={departments.map((x) => x.departmentCode)}
                 label="รหัสแผนก"
                 mode={modalMode}
                 value={deptForm.departmentCode || ''}
@@ -2467,6 +2473,9 @@ export default function OrganizationPage() {
 
               <CodeInput
                 type="team"
+                prefix="TEAM"
+                digits={3}
+                existingCodes={teams.map((x) => x.teamCode)}
                 label="รหัสทีม"
                 mode={modalMode}
                 value={teamForm.teamCode || ''}
@@ -2609,6 +2618,9 @@ export default function OrganizationPage() {
 
               <CodeInput
                 type="position"
+                prefix="POS"
+                digits={3}
+                existingCodes={positions.map((x) => x.positionCode)}
                 label="รหัสตำแหน่ง"
                 mode={modalMode}
                 value={posForm.positionCode || ''}
@@ -2881,6 +2893,9 @@ export default function OrganizationPage() {
             <form onSubmit={handleSaveLevel} className="space-y-4 pt-4">
               <CodeInput
                 type="level"
+                prefix="LVL"
+                digits={2}
+                existingCodes={levels.map((x) => x.levelCode)}
                 label="รหัสระดับ"
                 mode={modalMode}
                 value={levelForm.levelCode || ''}

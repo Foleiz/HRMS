@@ -32,6 +32,8 @@ interface CreateEmployeeTypeModalProps {
   onSubmit: (data: CreateEmployeeTypePayload | UpdateEmployeeTypePayload) => Promise<void>;
   initialData?: EmployeeType | null;
   onOpenManageBenefits?: () => void;
+  /** รหัสที่มีอยู่แล้ว — ใช้แสดงรหัสแนะนำทันที */
+  existingCodes?: string[];
 }
 
 type CategoryFilter = 'ALL' | 'STATUTORY' | 'HEALTH' | 'ALLOWANCE' | 'OTHER';
@@ -96,6 +98,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   onClose,
   onSubmit,
   initialData,
+  existingCodes,
 }) => {
   const [typeCode, setTypeCode] = useState('');
   const [typeName, setTypeName] = useState('');
@@ -375,6 +378,8 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           {/* รหัสประเภทพนักงาน — ระบบแนะนำ แก้ได้ */}
           <CodeInput
             type="employee-type"
+            prefix="ET"
+            existingCodes={existingCodes}
             label="รหัสประเภทพนักงาน"
             mode={isEdit ? 'edit' : 'create'}
             value={typeCode}

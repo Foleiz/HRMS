@@ -13,6 +13,8 @@ interface LeaveTypeModalProps {
   leaveTypeToEdit?: LeaveType | null;
   onSubmitCreate: (data: CreateLeaveTypePayload) => Promise<void>;
   onSubmitUpdate: (id: number, data: UpdateLeaveTypePayload) => Promise<void>;
+  /** รหัสที่มีอยู่แล้ว — ใช้แสดงรหัสแนะนำทันที */
+  existingCodes?: string[];
 }
 
 /** หมวดในแบบฟอร์มใบลา (ใช้ติ๊กในเอกสารใบลา และเป็นแม่แบบตอนตั้งสิทธิ์การลา) */
@@ -58,6 +60,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
   leaveTypeToEdit,
   onSubmitCreate,
   onSubmitUpdate,
+  existingCodes,
 }) => {
   const isEditing = !!leaveTypeToEdit;
 
@@ -156,6 +159,8 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           {/* รหัสประเภทการลา — ระบบแนะนำ แก้ได้ */}
           <CodeInput
             type="leave-type"
+            prefix="LV"
+            existingCodes={existingCodes}
             label="รหัสประเภทการลา"
             mode={isEditing ? 'edit' : 'create'}
             value={isEditing ? leaveTypeToEdit?.leaveCode ?? '' : leaveCode}

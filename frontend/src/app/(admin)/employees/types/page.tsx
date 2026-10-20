@@ -561,6 +561,7 @@ export default function EmployeeTypesPage() {
         }}
         onSubmit={handleCreateOrUpdate}
         initialData={selectedTypeForEdit}
+        existingCodes={types.map((t) => t.typeCode)}
       />
     </div>
   );
