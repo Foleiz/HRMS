@@ -3609,17 +3609,8 @@ export default function PayrollPage() {
           {/* Sub Tab 2: รายการโบนัสที่ผ่านมา (Historical Bonus Periods) */}
           {bonusSubTab === 'HISTORY' && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
-              {/* Header */}
-              <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/80">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 dark:bg-amber-950/40 flex items-center justify-center font-bold">
-                    <Gift className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-base text-slate-900 dark:text-slate-100">รายการรอบโบนัสทั้งหมด</h2>
-                  </div>
-                </div>
-
+              {/* Toolbar — แบบเดียวกับฐานเงินเดือน */}
+              <div className="px-4 pt-4 flex flex-wrap items-center justify-end gap-3 min-h-9">
                 <button
                   type="button"
                   onClick={loadBonusPeriods}
@@ -3668,7 +3659,7 @@ export default function PayrollPage() {
                   );
 
                   return (
-                    <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
+                    <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
                       <div className="overflow-x-auto">
                         <table className="table-standard w-full text-left border-collapse text-xs">
                           <thead>
@@ -4735,7 +4726,7 @@ export default function PayrollPage() {
                 {/* Table: HR Data Input Verification */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
                   {/* Filter Toolbar */}
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                  <div className="px-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                     <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
                       <div className="relative flex-1 sm:max-w-xs">
                         <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -4935,7 +4926,7 @@ export default function PayrollPage() {
                 {/* Table: Finance Disbursement & Banking */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
                   {/* Filter Toolbar */}
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                  <div className="px-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                     <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
                       <div className="relative flex-1 sm:max-w-xs">
                         <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -5135,7 +5126,7 @@ export default function PayrollPage() {
                 {/* Table: Approver Overview */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
                   {/* Filter Toolbar */}
-                  <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                  <div className="px-4 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
                     <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
                       <div className="relative flex-1 sm:max-w-xs">
                         <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
@@ -5640,7 +5631,7 @@ export default function PayrollPage() {
                 {/* ── รายการโอนเงินรายบุคคล (แสดงให้ตรวจสอบได้ทุกสถานะ) ── */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
                   {/* Header */}
-                  <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-3">
+                  <div className="px-4 pt-4 flex flex-wrap items-center justify-between gap-3 min-h-9">
                     <div className="flex items-center gap-2">
                       <Banknote className="w-5 h-5 text-emerald-600" />
                       <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -5680,7 +5671,7 @@ export default function PayrollPage() {
                       <span className="ml-2 text-slate-400 text-sm">กำลังโหลดรายการ...</span>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                       <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                         <thead>
                           <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
