@@ -583,6 +583,8 @@ export default function PayrollPage() {
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [processPage, setProcessPage] = useState<number>(1);
   const [processPageSize, setProcessPageSize] = useState<number>(10);
+  const [processSearchQuery, setProcessSearchQuery] = useState<string>('');
+  const [processDeptFilter, setProcessDeptFilter] = useState<string>('ALL');
   const [expandedPeriodId, setExpandedPeriodId] = useState<number | null>(null);
   const [expandedPayrolls, setExpandedPayrolls] = useState<PayrollRecord[]>([]);
   const [isExpandedLoading, setIsExpandedLoading] = useState<boolean>(false);
@@ -3270,7 +3272,7 @@ export default function PayrollPage() {
 
           {/* Sub Tab 1: คำนวณและจัดสรรโบนัส */}
           {bonusSubTab === 'CALCULATE' && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
               {/* Header & Main Actions */}
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700">
                 <div>
@@ -3464,12 +3466,11 @@ export default function PayrollPage() {
                 </div>
               </div>
 
-              {/* Search & Department Filter Bar */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-                <div className="flex flex-wrap items-center gap-2.5 flex-1">
-                  {/* Search */}
-                  <div className="relative min-w-[220px] max-w-sm flex-1">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              {/* Filter Toolbar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:max-w-xs">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                     <input
                       type="text"
                       placeholder="ค้นหาชื่อ, รหัสพนักงาน, หรือตำแหน่ง..."
@@ -3478,26 +3479,23 @@ export default function PayrollPage() {
                         setBonusSearchTerm(e.target.value);
                         setBonusCurrentPage(1);
                       }}
-                      className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                     />
                   </div>
 
-                  {/* Department Dropdown */}
                   <CustomSelect
                     value={bonusDeptFilter}
                     onChange={(e) => {
                       setBonusDeptFilter(e.target.value);
                       setBonusCurrentPage(1);
                     }}
-                    className="px-3 py-2 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:bg-white dark:focus:bg-slate-800 transition-all cursor-pointer font-medium min-w-[160px]"
-                  >
-                    <option value="ALL">-- แผนกทั้งหมด --</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.departmentName}>
-                        {d.departmentName}
-                      </option>
-                    ))}
-                  </CustomSelect>
+                    placeholder="ทุกแผนก"
+                    className="min-w-[150px]"
+                    options={[
+                      { value: 'ALL', label: 'ทุกแผนก' },
+                      ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
+                    ]}
+                  />
 
                   {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
                     <button
@@ -3512,26 +3510,6 @@ export default function PayrollPage() {
                       ล้างตัวกรอง
                     </button>
                   )}
-                </div>
-
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {bonuses.length > 0 && (() => {
-                    const filteredCount = bonuses.filter((b) => {
-                      const matchesSearch =
-                        !bonusSearchTerm ||
-                        b.employeeName.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
-                        b.employeeCode.toLowerCase().includes(bonusSearchTerm.toLowerCase()) ||
-                        (b.departmentName && b.departmentName.toLowerCase().includes(bonusSearchTerm.toLowerCase())) ||
-                        (b.positionName && b.positionName.toLowerCase().includes(bonusSearchTerm.toLowerCase()));
-                      const matchesDept = bonusDeptFilter === 'ALL' || b.departmentName === bonusDeptFilter;
-                      return matchesSearch && matchesDept;
-                    }).length;
-                    return (
-                      <span>
-                        แสดง <span className="font-bold text-slate-800 dark:text-slate-200">{filteredCount}</span> จาก {bonuses.length} คน
-                      </span>
-                    );
-                  })()}
                 </div>
               </div>
 
@@ -3688,7 +3666,7 @@ export default function PayrollPage() {
                         totalCount={totalBonusItems}
                         onPageChange={setBonusCurrentPage}
                         onPageSizeChange={setBonusPageSize}
-                        pageSizeOptions={[10, 20, 50, 100]}
+                        pageSizeOptions={[10, 20, 50, 100, 200]}
                         unitText="คน"
                       />
                     )}
@@ -3702,18 +3680,13 @@ export default function PayrollPage() {
           {bonusSubTab === 'HISTORY' && (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
               {/* Header */}
-              <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/80">
+              <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 dark:bg-slate-800/80">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 dark:bg-amber-950/40 flex items-center justify-center font-bold">
                     <Gift className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-base text-slate-900 dark:text-slate-100">รายการรอบโบนัสทั้งหมด</h2>
-                      <span className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-600">
-                        ทั้งหมด {bonusPeriods.length} รอบ
-                      </span>
-                    </div>
+                    <h2 className="font-bold text-base text-slate-900 dark:text-slate-100">รายการรอบโบนัสทั้งหมด</h2>
                   </div>
                 </div>
 
@@ -3721,7 +3694,7 @@ export default function PayrollPage() {
                   type="button"
                   onClick={loadBonusPeriods}
                   disabled={isLoadingBonusPeriods}
-                  className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5 self-start sm:self-auto"
+                  className="h-9 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs transition-all cursor-pointer inline-flex items-center gap-1.5 self-start sm:self-auto"
                 >
                   {isLoadingBonusPeriods ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
                   <span>รีเฟรชข้อมูล</span>
@@ -3729,7 +3702,7 @@ export default function PayrollPage() {
               </div>
 
               {/* Table Content */}
-              <div className="p-6">
+              <div className="p-4 space-y-4">
                 {isLoadingBonusPeriods ? (
                   <div className="py-16 text-center text-slate-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046] dark:text-blue-400" />
@@ -4126,7 +4099,7 @@ export default function PayrollPage() {
                           totalCount={totalPeriodsCount}
                           onPageChange={setBonusPeriodsCurrentPage}
                           onPageSizeChange={setBonusPeriodsPageSize}
-                          pageSizeOptions={[5, 10, 20]}
+                          pageSizeOptions={[10, 20, 50, 100, 200]}
                           unitText="รอบ"
                         />
                       )}
@@ -4169,11 +4142,20 @@ export default function PayrollPage() {
           .filter((p) => p.year === activeYear)
           .sort((a, b) => a.month - b.month);
 
-        const totalProcessCount = payrolls.length;
+        const filteredPayrolls = payrolls.filter((p) => {
+          const matchesSearch = !processSearchQuery ||
+            p.employeeName?.toLowerCase().includes(processSearchQuery.toLowerCase()) ||
+            p.employeeCode?.toLowerCase().includes(processSearchQuery.toLowerCase()) ||
+            (p.departmentName && p.departmentName.toLowerCase().includes(processSearchQuery.toLowerCase()));
+          const matchesDept = processDeptFilter === 'ALL' || p.departmentName === processDeptFilter;
+          return matchesSearch && matchesDept;
+        });
+
+        const totalProcessCount = filteredPayrolls.length;
         const totalProcessPages = Math.max(1, Math.ceil(totalProcessCount / processPageSize));
         const safeProcessPage = Math.min(Math.max(1, processPage), totalProcessPages);
         const startProcessIdx = (safeProcessPage - 1) * processPageSize;
-        const paginatedPayrolls = payrolls.slice(startProcessIdx, startProcessIdx + processPageSize);
+        const paginatedPayrolls = filteredPayrolls.slice(startProcessIdx, startProcessIdx + processPageSize);
 
         const getWorkflowStep = (status?: string) => {
           if (!status || status === 'DRAFT' || status === 'REVIEW') return 1;
@@ -4919,13 +4901,57 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Table: HR Data Input Verification */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">รายการพนักงานและข้อมูลนำเข้า</h3>
-                    <span className="text-xs text-slate-400 dark:text-slate-400">คอลัมน์เน้นข้อมูลที่ HR ต้องตรวจสอบก่อนคำนวณ</span>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
+                  {/* Filter Toolbar */}
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                    <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:max-w-xs">
+                        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                          value={processSearchQuery}
+                          onChange={(e) => {
+                            setProcessSearchQuery(e.target.value);
+                            setProcessPage(1);
+                          }}
+                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+
+                      <CustomSelect
+                        value={processDeptFilter}
+                        onChange={(e) => {
+                          setProcessDeptFilter(String(e.target.value));
+                          setProcessPage(1);
+                        }}
+                        placeholder="ทุกแผนก"
+                        className="min-w-[150px]"
+                        options={[
+                          { value: 'ALL', label: 'ทุกแผนก' },
+                          ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
+                        ]}
+                      />
+
+                      {(processSearchQuery || processDeptFilter !== 'ALL') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProcessSearchQuery('');
+                            setProcessDeptFilter('ALL');
+                            setProcessPage(1);
+                          }}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
+                        >
+                          ล้างตัวกรอง
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                    <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
+
+                  <div className="p-4">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                      <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                           <th className="py-3.5 px-5">พนักงาน</th>
@@ -4993,8 +5019,9 @@ export default function PayrollPage() {
                       </tbody>
                     </table>
                   </div>
+                </div>
 
-                  {/* Pagination */}
+                {/* Pagination */}
                   <TablePagination
                     currentPage={safeProcessPage}
                     pageSize={processPageSize}
@@ -5074,13 +5101,57 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Table: Finance Disbursement & Banking */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">รายการจ่ายเงินเดือน</h3>
-                    <span className="text-xs text-slate-400 dark:text-slate-400">คอลัมน์เน้นตัวเลขและสถานะที่ใช้จ่ายจริง/นำส่งบัญชี</span>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
+                  {/* Filter Toolbar */}
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                    <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:max-w-xs">
+                        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                          value={processSearchQuery}
+                          onChange={(e) => {
+                            setProcessSearchQuery(e.target.value);
+                            setProcessPage(1);
+                          }}
+                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+
+                      <CustomSelect
+                        value={processDeptFilter}
+                        onChange={(e) => {
+                          setProcessDeptFilter(String(e.target.value));
+                          setProcessPage(1);
+                        }}
+                        placeholder="ทุกแผนก"
+                        className="min-w-[150px]"
+                        options={[
+                          { value: 'ALL', label: 'ทุกแผนก' },
+                          ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
+                        ]}
+                      />
+
+                      {(processSearchQuery || processDeptFilter !== 'ALL') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProcessSearchQuery('');
+                            setProcessDeptFilter('ALL');
+                            setProcessPage(1);
+                          }}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
+                        >
+                          ล้างตัวกรอง
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                    <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
+
+                  <div className="p-4">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                      <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                           <th className="py-3.5 px-5">พนักงาน</th>
@@ -5154,8 +5225,9 @@ export default function PayrollPage() {
                       </tbody>
                     </table>
                   </div>
+                </div>
 
-                  {/* Pagination */}
+                {/* Pagination */}
                   <TablePagination
                     currentPage={safeProcessPage}
                     pageSize={processPageSize}
@@ -5229,13 +5301,57 @@ export default function PayrollPage() {
 
 
                 {/* Table: Approver Overview */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-2xs overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">สรุปภาพรวมรายบุคคล</h3>
-                    <span className="text-xs text-slate-400 dark:text-slate-400">สำหรับผู้บริหารตรวจสอบ</span>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
+                  {/* Filter Toolbar */}
+                  <div className="p-4 border-b border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                    <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:max-w-xs">
+                        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                          value={processSearchQuery}
+                          onChange={(e) => {
+                            setProcessSearchQuery(e.target.value);
+                            setProcessPage(1);
+                          }}
+                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+
+                      <CustomSelect
+                        value={processDeptFilter}
+                        onChange={(e) => {
+                          setProcessDeptFilter(String(e.target.value));
+                          setProcessPage(1);
+                        }}
+                        placeholder="ทุกแผนก"
+                        className="min-w-[150px]"
+                        options={[
+                          { value: 'ALL', label: 'ทุกแผนก' },
+                          ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
+                        ]}
+                      />
+
+                      {(processSearchQuery || processDeptFilter !== 'ALL') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProcessSearchQuery('');
+                            setProcessDeptFilter('ALL');
+                            setProcessPage(1);
+                          }}
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-2 py-1 cursor-pointer"
+                        >
+                          ล้างตัวกรอง
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                    <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
+
+                  <div className="p-4">
+                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                      <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                           <th className="py-3.5 px-5">รหัสพนักงาน</th>
@@ -5276,8 +5392,9 @@ export default function PayrollPage() {
                       </tbody>
                     </table>
                   </div>
+                </div>
 
-                  {/* Pagination */}
+                {/* Pagination */}
                   <TablePagination
                     currentPage={safeProcessPage}
                     pageSize={processPageSize}
@@ -6055,221 +6172,229 @@ export default function PayrollPage() {
 
       {/* === TAB 7: ภาษี & ประกันสังคม (Tax & SSO Tab) === */}
       {activeTab === 'tax-sso' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm p-6 space-y-8">
-          {/* Header Actions for CSV Reports */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || '-'}
-              </p>
-            </div>
+        <div className="space-y-4">
+          {/* Card 1: สรุปรายงาน & ส่งออก CSV */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
+            {/* Header Actions for CSV Reports */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
+              <div>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  สรุปรายงาน ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) และ ประกันสังคม (สปส. 1-10)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  รอบเงินเดือน: {taxSsoSummary?.periodName || selectedPeriod?.periodName || '-'}
+                </p>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleExportTaxSsoCsv('PND1')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExportTaxSsoCsv('PND1')}
+                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
+                </button>
 
-              <button
-                onClick={() => handleExportTaxSsoCsv('SSO')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>ส่งออก สปส. 1-10 (CSV)</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportTaxSsoCsv('SSO')}
+                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>ส่งออก สปส. 1-10 (CSV)</span>
+                </button>
+              </div>
             </div>
-          </div>
 
           {/* Tax & SSO Summary KPI Cards */}
           {taxSsoSummary && (
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50">
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">รายได้รวมพนักงานทั้งหมด</span>
                 <p className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-1 font-mono">
                   ฿{(taxSsoSummary.totalGrossIncome ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/40">
-                <span className="text-[11px] text-blue-700 font-semibold">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
-                <p className="text-lg font-bold text-blue-900 mt-1 font-mono">
+              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900 bg-blue-50/40 dark:bg-blue-950/20">
+                <span className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
+                <p className="text-lg font-bold text-blue-900 dark:text-blue-300 mt-1 font-mono">
                   ฿{(taxSsoSummary.totalWithholdingTax ?? taxSsoSummary.totalPnd1Tax ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
-                <span className="text-[11px] text-purple-700 font-semibold">ประกันสังคม (ฝ่ายลูกจ้าง 5%)</span>
-                <p className="text-lg font-bold text-purple-900 mt-1 font-mono">
+              <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
+                <span className="text-[11px] text-purple-700 dark:text-purple-400 font-semibold">ประกันสังคม (ฝ่ายลูกจ้าง 5%)</span>
+                <p className="text-lg font-bold text-purple-900 dark:text-purple-300 mt-1 font-mono">
                   ฿{(taxSsoSummary.totalSsoEmployee ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl border border-purple-200 bg-purple-50/40">
-                <span className="text-[11px] text-purple-700 font-semibold font-mono">รวมนำส่งประกันสังคม (ลูกจ้าง + นายจ้าง)</span>
-                <p className="text-lg font-bold text-purple-900 mt-1 font-mono">
+              <div className="p-4 rounded-xl border border-purple-200 dark:border-purple-900 bg-purple-50/40 dark:bg-purple-950/20">
+                <span className="text-[11px] text-purple-700 dark:text-purple-400 font-semibold font-mono">รวมนำส่งประกันสังคม (ลูกจ้าง + นายจ้าง)</span>
+                <p className="text-lg font-bold text-purple-900 dark:text-purple-300 mt-1 font-mono">
                   ฿{(taxSsoSummary.totalSsoCombined ?? ((taxSsoSummary.totalSsoEmployee ?? 0) + (taxSsoSummary.totalSsoEmployer ?? 0))).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </div>
           )}
-          {/* Section 1: Tax Brackets */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <Scale className="w-5 h-5 text-blue-700" />
-                  <span>ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)</span>
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  อัตราภาษีเงินได้สุทธิสะสมต่อปีตามประมวลรัษฎากรสำหรับคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {canEditTax ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsTaxModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-blue-200 text-xs font-bold text-blue-700 bg-blue-50/70 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>แก้ไขอัตราภาษี</span>
-                  </button>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200">
-                    <Lock className="w-3 h-3" />
-                    สิทธิ์ดูอย่างเดียว
-                  </span>
-                )}
-              </div>
-            </div>
+        </div>
 
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
-                    <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
-                    <th className="py-3.5 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
-                    <th className="py-3.5 px-4 text-right">ถึงเงินได้สุทธิ</th>
-                    <th className="py-3.5 px-4 text-center">อัตราภาษี (%)</th>
-                    <th className="py-3.5 px-4 text-right">ภาษีสะสมขั้นก่อนหน้า</th>
-                    <th className="py-3.5 px-4 text-center">สถานะ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {taxBrackets.map((t) => (
-                    <tr key={t.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{t.bracketName}</td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                        ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                        {t.incomeTo != null
-                          ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                          : 'ขึ้นไป (ไม่จำกัด)'}
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-blue-700">
-                        {(t.taxRate * 100).toFixed(0)}%
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">
-                        ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                          {t.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Card 2: Section 1: Tax Brackets */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Scale className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                <span>ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                อัตราภาษีเงินได้สุทธิสะสมต่อปีตามประมวลรัษฎากรสำหรับคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {canEditTax ? (
+                <button
+                  type="button"
+                  onClick={() => setIsTaxModalOpen(true)}
+                  className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>แก้ไขอัตราภาษี</span>
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                  <Lock className="w-3.5 h-3.5" />
+                  สิทธิ์ดูอย่างเดียว
+                </span>
+              )}
             </div>
           </div>
 
-          {/* Section 2: Social Security Rates */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-purple-700" />
-                  <span>เกณฑ์และอัตราเงินสมทบกองทุนประกันสังคม (Social Security Fund)</span>
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  อัตราเงินสมทบฝ่ายลูกจ้างและนายจ้าง พร้อมฐานเพดานค่าจ้างขั้นต่ำและสูงสุดตามกฎหมาย
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {canEditSso ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSsoRate(ssoRates.find(s => s.status === 'ACTIVE') || ssoRates[0] || null);
-                      setIsSsoModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-purple-200 text-xs font-bold text-purple-700 bg-purple-50/70 hover:bg-purple-100/70 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>แก้ไขอัตราประกันสังคม</span>
-                  </button>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200">
-                    <Lock className="w-3 h-3" />
-                    สิทธิ์ดูอย่างเดียว
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div className="overflow-x-auto border border-slate-100 rounded-xl">
-              <table className="table-standard text-xs w-full min-w-[800px] text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
-                    <th className="py-3.5 px-4">ชื่อเกณฑ์</th>
-                    <th className="py-3.5 px-4 text-center">สมทบฝ่ายผู้ประกันตน (%)</th>
-                    <th className="py-3.5 px-4 text-center">สมทบฝ่ายนายจ้าง (%)</th>
-                    <th className="py-3.5 px-4 text-right">ฐานค่าจ้างต่ำสุด</th>
-                    <th className="py-3.5 px-4 text-right">เพดานค่าจ้างสูงสุด</th>
-                    <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
-                    <th className="py-3.5 px-6 text-right">สถานะ</th>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
+                  <th className="py-3.5 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
+                  <th className="py-3.5 px-4 text-right">ถึงเงินได้สุทธิ</th>
+                  <th className="py-3.5 px-4 text-center">อัตราภาษี (%)</th>
+                  <th className="py-3.5 px-4 text-right">ภาษีสะสมขั้นก่อนหน้า</th>
+                  <th className="py-3.5 px-4 text-center">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                {taxBrackets.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{t.bracketName}</td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
+                      ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
+                      {t.incomeTo != null
+                        ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                        : 'ขึ้นไป (ไม่จำกัด)'}
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-blue-700 dark:text-blue-400">
+                      {(t.taxRate * 100).toFixed(0)}%
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">
+                      ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400">
+                        {t.status}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {ssoRates.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{s.rateName}</td>
-                      <td className="py-3 px-4 text-center font-bold text-purple-700">
-                        {(s.employeeContributionPercent * 100).toFixed(1)}%
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-purple-700">
-                        {(s.employerContributionPercent * 100).toFixed(1)}%
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                        ฿{s.minWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono text-xs text-slate-900 dark:text-slate-100 font-semibold">
-                        ฿{s.maxWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
-                        {s.effectiveFrom}
-                      </td>
-                      <td className="py-3 px-6 text-right">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
-                          {s.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
 
-      {/* Modals */}
+        {/* Card 3: Section 2: Social Security Rates */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-purple-700 dark:text-purple-400" />
+                <span>เกณฑ์และอัตราเงินสมทบกองทุนประกันสังคม (Social Security Fund)</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                อัตราเงินสมทบฝ่ายลูกจ้างและนายจ้าง พร้อมฐานเพดานค่าจ้างขั้นต่ำและสูงสุดตามกฎหมาย
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {canEditSso ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSsoRate(ssoRates.find(s => s.status === 'ACTIVE') || ssoRates[0] || null);
+                    setIsSsoModalOpen(true);
+                  }}
+                  className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-purple-200 dark:border-purple-800 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/70 transition-all shadow-2xs cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>แก้ไขอัตราประกันสังคม</span>
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                  <Lock className="w-3.5 h-3.5" />
+                  สิทธิ์ดูอย่างเดียว
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table className="table-standard text-xs w-full min-w-[800px] text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <th className="py-3.5 px-4">ชื่อเกณฑ์</th>
+                  <th className="py-3.5 px-4 text-center">สมทบฝ่ายผู้ประกันตน (%)</th>
+                  <th className="py-3.5 px-4 text-center">สมทบฝ่ายนายจ้าง (%)</th>
+                  <th className="py-3.5 px-4 text-right">ฐานค่าจ้างต่ำสุด</th>
+                  <th className="py-3.5 px-4 text-right">เพดานค่าจ้างสูงสุด</th>
+                  <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
+                  <th className="py-3.5 px-6 text-right">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                {ssoRates.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{s.rateName}</td>
+                    <td className="py-3 px-4 text-center font-bold text-purple-700 dark:text-purple-400">
+                      {(s.employeeContributionPercent * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-purple-700 dark:text-purple-400">
+                      {(s.employerContributionPercent * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
+                      ฿{s.minWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-900 dark:text-slate-100 font-semibold">
+                      ฿{s.maxWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
+                      {s.effectiveFrom}
+                    </td>
+                    <td className="py-3 px-6 text-right">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400">
+                        {s.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Modals */}
       <SalaryStructureModal
         isOpen={isStructureModalOpen}
         onClose={() => setIsStructureModalOpen(false)}
