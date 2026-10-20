@@ -721,6 +721,10 @@ export default function PayrollPage() {
   // โหมดกรอกโบนัส: กำหนดตัวคูณ (ยอด = ฐานเงินเดือน × ตัวคูณ) หรือ กำหนดยอดโบนัสเอง
   const [bonusInputMode, setBonusInputMode] = useState<'MULTIPLIER' | 'AMOUNT'>('MULTIPLIER');
   const [showBonusFilters, setShowBonusFilters] = useState<boolean>(false);
+  // แถวโบนัสที่แก้ไขแล้วแต่ยังไม่ได้กด "คำนวณ" (บันทึก)
+  const [dirtyBonusIds, setDirtyBonusIds] = useState<Set<number>>(new Set());
+  const markBonusDirty = (employeeId: number) =>
+    setDirtyBonusIds((prev) => (prev.has(employeeId) ? prev : new Set(prev).add(employeeId)));
   const [isSavingBonus, setIsSavingBonus] = useState<boolean>(false);
   const [bonusSearchTerm, setBonusSearchTerm] = useState<string>('');
   const [bonusDeptFilter, setBonusDeptFilter] = useState<string>('ALL');
@@ -862,6 +866,7 @@ export default function PayrollPage() {
       const mo = month || bonusMonth || 12;
       const bonusData = await salaryService.getEmployeeBonuses(yr, mo);
       setBonuses(bonusData || []);
+      setDirtyBonusIds(new Set());
     } catch (err) {
       console.error('Failed to load bonuses:', err);
     }
@@ -1555,6 +1560,7 @@ export default function PayrollPage() {
 
   // Tab: Bonus Handlers
   const handleBonusMultiplierChange = (employeeId: number, newMultiplier: number) => {
+    markBonusDirty(employeeId);
     setBonuses((prev) =>
       prev.map((b) => {
         if (b.employeeId === employeeId) {
@@ -1573,6 +1579,7 @@ export default function PayrollPage() {
   };
 
   const handleBonusAmountChange = (employeeId: number, newAmount: number) => {
+    markBonusDirty(employeeId);
     setBonuses((prev) =>
       prev.map((b) => {
         if (b.employeeId === employeeId) {
@@ -1591,9 +1598,32 @@ export default function PayrollPage() {
   };
 
   const handleBonusNoteChange = (employeeId: number, note: string) => {
+    markBonusDirty(employeeId);
     setBonuses((prev) =>
       prev.map((b) => (b.employeeId === employeeId ? { ...b, note } : b))
     );
+  };
+
+  // payload สำหรับบันทึกโบนัส — คำนวณยอดตามโหมดที่เลือก (ใช้ทั้งปุ่ม "คำนวณ" และ "บันทึกเข้างวด")
+  const buildBonusSavePayload = (): SaveEmployeeBonusesPayload => {
+    const isMultiplierMode = bonusInputMode === 'MULTIPLIER';
+    return {
+      year: bonusYear,
+      month: bonusMonth,
+      calculationMode: isMultiplierMode ? 'MULTIPLIER' : 'MANUAL',
+      items: bonuses.map((b) => {
+        const base = b.baseSalary || 0;
+        const multiplier = b.multiplier || 0;
+        // โหมดตัวคูณ: คำนวณยอดใหม่จากฐานเงินเดือน × ตัวคูณ / โหมดยอดเอง: ตัวคูณ = ยอด ÷ ฐาน
+        const bonusAmount = isMultiplierMode ? Math.round(base * multiplier * 100) / 100 : (b.bonusAmount || 0);
+        return {
+          employeeId: b.employeeId,
+          bonusAmount,
+          multiplier: isMultiplierMode ? multiplier : (base > 0 ? Math.round((bonusAmount / base) * 100) / 100 : 0),
+          note: b.note || undefined,
+        };
+      }),
+    };
   };
 
   const handleSaveBonuses = async () => {
@@ -1603,26 +1633,10 @@ export default function PayrollPage() {
     }
     try {
       setIsSavingBonus(true);
-      const isMultiplierMode = bonusInputMode === 'MULTIPLIER';
-      const payload: SaveEmployeeBonusesPayload = {
-        year: bonusYear,
-        month: bonusMonth,
-        calculationMode: isMultiplierMode ? 'MULTIPLIER' : 'MANUAL',
-        items: bonuses.map((b) => {
-          const base = b.baseSalary || 0;
-          const multiplier = b.multiplier || 0;
-          // โหมดตัวคูณ: คำนวณยอดใหม่จากฐานเงินเดือน × ตัวคูณ / โหมดยอดเอง: ตัวคูณ = ยอด ÷ ฐาน
-          const bonusAmount = isMultiplierMode ? Math.round(base * multiplier * 100) / 100 : (b.bonusAmount || 0);
-          return {
-            employeeId: b.employeeId,
-            bonusAmount,
-            multiplier: isMultiplierMode ? multiplier : (base > 0 ? Math.round((bonusAmount / base) * 100) / 100 : 0),
-            note: b.note || undefined,
-          };
-        }),
-      };
+      const payload = buildBonusSavePayload();
       const saved = await salaryService.saveEmployeeBonuses(payload);
       setBonuses(saved || []);
+      setDirtyBonusIds(new Set());
       await loadBonusPeriods();
       showToast(`คำนวณและบันทึกโบนัสรอบ ${bonusMonth}/${bonusYear + 543} สำเร็จ (${bonuses.length} รายการ - ระบบจะดึงไปคำนวณในรอบเงินเดือนให้อัตโนมัติ)`);
     } catch (err: any) {
@@ -1751,8 +1765,10 @@ export default function PayrollPage() {
       showToast('กรุณากดคำนวณและจัดสรรโบนัสก่อนนำเข้าสู่งวดเงินเดือน');
       return;
     }
-    const matchingPeriod = periods.find((p) => p.year === bonusYear && p.month === bonusMonth);
-    setSelectedTargetPeriodId(matchingPeriod ? matchingPeriod.id : (selectedPeriod?.id || (periods[0]?.id ?? null)));
+    const editable = periods.filter((p) => p.status === 'DRAFT' || p.status === 'REVIEW');
+    const matchingPeriod = editable.find((p) => p.year === bonusYear && p.month === bonusMonth);
+    const current = editable.find((p) => p.id === selectedPeriod?.id);
+    setSelectedTargetPeriodId(matchingPeriod?.id ?? current?.id ?? editable[0]?.id ?? null);
     setIsApplyBonusModalOpen(true);
   };
 
@@ -1763,22 +1779,15 @@ export default function PayrollPage() {
     }
     try {
       setIsApplyingBonus(true);
-      await salaryService.saveEmployeeBonuses({
-        year: bonusYear,
-        month: bonusMonth,
-        calculationMode: 'MANUAL',
-        items: bonuses.map((b) => ({
-          employeeId: b.employeeId,
-          bonusAmount: b.bonusAmount,
-          multiplier: b.multiplier,
-          note: b.note || undefined,
-        })),
-      });
+      await salaryService.saveEmployeeBonuses(buildBonusSavePayload());
 
       const res = await salaryService.addBonusPayout(selectedTargetPeriodId, bonusYear, bonusMonth);
       const targetPeriod = periods.find((p) => p.id === selectedTargetPeriodId);
       showToast(`บันทึกโบนัสเข้าสู่งวด ${targetPeriod?.periodName || ''} สำเร็จ (${res.addedCount} คน รวม ฿${(res.addedAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`);
       setIsApplyBonusModalOpen(false);
+      // โหลดใหม่ให้สถานะในตารางเปลี่ยนเป็น "อยู่ในงวด" ทันที
+      await loadBonuses(bonusYear, bonusMonth);
+      await loadBonusPeriods();
 
       if (selectedPeriod?.id === selectedTargetPeriodId) {
         const pRows = await salaryService.getPayrollsByPeriod(selectedTargetPeriodId);
@@ -2133,10 +2142,17 @@ export default function PayrollPage() {
   }, [visibleNavTabs, activeTab]);
 
   // สถานะโบนัส (ไม่มีขั้นอนุมัติโบนัสแยก — อนุมัติรวมที่รอบเงินเดือน)
-  const renderBonusStatusBadge = (b: EmployeeBonus) => {
+  const renderBonusStatusBadge = (b: EmployeeBonus, isDirty = false) => {
     const periodLabel = b.payoutPeriodMonth && b.payoutPeriodYear
       ? ` ${THAI_MONTH_NAMES[b.payoutPeriodMonth - 1] || b.payoutPeriodMonth} ${b.payoutPeriodYear + 543}`
       : '';
+    if (isDirty && b.status !== 'PAID') {
+      return (
+        <span title="แก้ไขแล้ว กด &quot;คำนวณ&quot; เพื่อบันทึก" className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
+          ยังไม่บันทึก
+        </span>
+      );
+    }
     if (b.status === 'PAID') {
       return (
         <span title="งวดเงินเดือนเลยขั้นแก้ไขแล้ว แก้ยอดไม่ได้" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
@@ -3388,7 +3404,13 @@ export default function PayrollPage() {
                       className="w-28"
                       buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300 h-9"
                     >
-                      {[2024, 2025, 2026, 2027].map((yr) => (
+                      {Array.from(
+                        new Set([
+                          ...Array.from({ length: 4 }, (_, i) => new Date().getFullYear() - 2 + i),
+                          bonusYear,
+                          ...bonusPeriods.map((bp) => bp.year),
+                        ])
+                      ).sort((a, b) => a - b).map((yr) => (
                         <option key={yr} value={yr}>
                           ปี {yr + 543}
                         </option>
@@ -3536,7 +3558,7 @@ export default function PayrollPage() {
                                 </td>
                                 {/* Bonus Amount */}
                                 <td className="py-2 px-3 text-right whitespace-nowrap">
-                                  {canEditBonus && b.status !== 'PAID' ? (
+                                  {canEditBonus && b.status !== 'PAID' && bonusInputMode === 'AMOUNT' ? (
                                     <div className="inline-flex items-center justify-end gap-1">
                                       <span className="text-slate-400 text-xs">฿</span>
                                       <input
@@ -3545,7 +3567,6 @@ export default function PayrollPage() {
                                         min="0"
                                         value={b.bonusAmount}
                                         onChange={(e) => handleBonusAmountChange(b.employeeId, parseFloat(e.target.value))}
-                                        disabled={bonusInputMode !== 'AMOUNT'}
                                         className="w-28 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed dark:disabled:bg-slate-900/60 dark:disabled:text-slate-500"
                                       />
                                     </div>
@@ -3557,7 +3578,7 @@ export default function PayrollPage() {
                                 </td>
                                 {/* Status */}
                                 <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                                  {renderBonusStatusBadge(b)}
+                                  {renderBonusStatusBadge(b, dirtyBonusIds.has(b.employeeId))}
                                 </td>
                                 {/* Note */}
                                 <td className="py-2 px-3 whitespace-nowrap">
@@ -3577,6 +3598,19 @@ export default function PayrollPage() {
                             ))
                           )}
                         </tbody>
+                        {filteredBonuses.length > 0 && (
+                          <tfoot>
+                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 text-xs">
+                              <td colSpan={5} className="py-3 px-3.5 font-semibold text-slate-600 dark:text-slate-300">
+                                รวม {filteredBonuses.length} คน
+                              </td>
+                              <td className="py-3 px-3 text-right whitespace-nowrap font-mono font-bold text-amber-900 dark:text-amber-400">
+                                ฿{filteredBonuses.reduce((sum, x) => sum + (x.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td colSpan={2} />
+                            </tr>
+                          </tfoot>
+                        )}
                       </table>
                     </div>
 
@@ -6675,15 +6709,8 @@ export default function PayrollPage() {
                   className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
                 >
                   <option value="">-- เลือกงวดเงินเดือน --</option>
-                  {periods.map((p) => {
-                    const statusLabel =
-                      p.status === 'PAID'
-                        ? 'จ่ายแล้ว'
-                        : p.status === 'LOCKED'
-                        ? 'ปิดงวดแล้ว'
-                        : p.status === 'CALCULATED'
-                        ? 'คำนวณแล้ว'
-                        : 'ร่าง';
+                  {periods.filter((p) => p.status === 'DRAFT' || p.status === 'REVIEW').map((p) => {
+                    const statusLabel = p.status === 'REVIEW' ? 'คำนวณแล้ว (รอตรวจสอบ)' : 'ร่าง';
                     return (
                       <option key={p.id} value={p.id}>
                         {p.periodName} - สถานะ: {statusLabel}
@@ -6691,6 +6718,10 @@ export default function PayrollPage() {
                     );
                   })}
                 </CustomSelect>
+                <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  แสดงเฉพาะงวดที่ยังแก้ไขได้ (ร่าง / รอตรวจสอบ) — ถ้าโบนัสเดือนเดียวกับงวด ระบบจะดึงเข้างวดให้เองตอนกดคำนวณเงินเดือน
+                  ปุ่มนี้ใช้เมื่อต้องการจ่ายโบนัสในงวดของเดือนอื่น หรือให้คำนวณงวดใหม่ทันที
+                </p>
               </div>
 
               <div className="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2">
