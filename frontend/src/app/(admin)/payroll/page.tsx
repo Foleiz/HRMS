@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ChevronLeft,
@@ -2366,15 +2365,6 @@ export default function PayrollPage() {
       {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) === */}
       {activeTab === 'structures' && (
         <div className="space-y-4">
-          {/* กรอบเงินเดือน + ค่าตำแหน่ง ตั้งที่เมนูระดับพนักงาน */}
-          {canViewStructures && (
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-              <span>กรอบเงินเดือนและค่าตำแหน่งของแต่ละระดับ ตั้งค่าได้ที่</span>
-              <Link href="/organization?tab=levels" className="font-semibold text-[#0B2046] dark:text-blue-400 hover:underline">
-                โครงสร้างองค์กร › ระดับพนักงาน
-              </Link>
-            </div>
-          )}
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-4">
 
