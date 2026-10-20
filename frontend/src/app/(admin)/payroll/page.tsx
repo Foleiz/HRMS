@@ -2661,45 +2661,45 @@ export default function PayrollPage() {
       {/* === TAB 3: รายได้และรายหัก (Earnings & Deductions) - Matches media_1789453524860.png === */}
       {activeTab === 'items' && (
         <div className="space-y-4">
-          {/* Top Pill Switcher: รายการรายได้ / รายการรายหัก + ปุ่มเพิ่มรายการ (แถวเดียวกัน) */}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setItemsSubTab('EARNING')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                itemsSubTab === 'EARNING'
-                  ? 'bg-[#0B2046] text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-              }`}
-            >
-              รายการรายได้
-            </button>
-            <button
-              onClick={() => setItemsSubTab('DEDUCTION')}
-              className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                itemsSubTab === 'DEDUCTION'
-                  ? 'bg-[#0B2046] text-white shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-              }`}
-            >
-              รายการรายหัก
-            </button>
-          </div>
-
-          {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
-          {canCreateItem && (
-            <button
-              onClick={handleOpenCreateItem}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
-            </button>
-          )}
-          </div>
-
           {/* Table Container */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
+            {/* แถบเลือกรายได้/รายหัก + ปุ่มเพิ่ม — อยู่ใน panel เดียวกับตาราง (แบบเดียวกับฐานเงินเดือน) */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setItemsSubTab('EARNING')}
+                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  itemsSubTab === 'EARNING'
+                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                รายการรายได้
+              </button>
+              <button
+                onClick={() => setItemsSubTab('DEDUCTION')}
+                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                  itemsSubTab === 'DEDUCTION'
+                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                รายการรายหัก
+              </button>
+            </div>
+
+            {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
+            {canCreateItem && (
+              <button
+                onClick={handleOpenCreateItem}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
+              </button>
+            )}
+            </div>
+
             <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
               <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
                 <thead>
