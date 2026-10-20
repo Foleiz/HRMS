@@ -3322,6 +3322,36 @@ export default function PayrollPage() {
               {/* ตัวกรองขั้นสูง: เดือน, ปี, ค้นหา, แผนก, โหมดกรอกโบนัส */}
               {showBonusFilters && (
                 <div className="flex flex-wrap items-center gap-2.5 p-3 bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700 rounded-2xl animate-in fade-in duration-150">
+                  {/* Search Input */}
+                  <div className="relative min-w-[200px] max-w-xs flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหาชื่อ, รหัสพนักงาน..."
+                      value={bonusSearchTerm}
+                      onChange={(e) => {
+                        setBonusSearchTerm(e.target.value);
+                        setBonusCurrentPage(1);
+                      }}
+                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+
+                  {/* Department Dropdown */}
+                  <CustomSelect
+                    value={bonusDeptFilter}
+                    onChange={(e) => {
+                      setBonusDeptFilter(e.target.value);
+                      setBonusCurrentPage(1);
+                    }}
+                    placeholder="ทุกแผนก"
+                    className="min-w-[140px]"
+                    options={[
+                      { value: 'ALL', label: 'ทุกแผนก' },
+                      ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
+                    ]}
+                  />
+
                   {/* Month Selection */}
                   <div className="relative inline-block">
                     <CustomSelect
@@ -3366,39 +3396,23 @@ export default function PayrollPage() {
                     </CustomSelect>
                   </div>
 
-                  {/* Search Input */}
-                  <div className="relative min-w-[200px] max-w-xs flex-1">
-                    <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหาชื่อ, รหัสพนักงาน..."
-                      value={bonusSearchTerm}
-                      onChange={(e) => {
-                        setBonusSearchTerm(e.target.value);
+                  {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBonusSearchTerm('');
+                        setBonusDeptFilter('ALL');
                         setBonusCurrentPage(1);
                       }}
-                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-
-                  {/* Department Dropdown */}
-                  <CustomSelect
-                    value={bonusDeptFilter}
-                    onChange={(e) => {
-                      setBonusDeptFilter(e.target.value);
-                      setBonusCurrentPage(1);
-                    }}
-                    placeholder="ทุกแผนก"
-                    className="min-w-[140px]"
-                    options={[
-                      { value: 'ALL', label: 'ทุกแผนก' },
-                      ...departments.map((d) => ({ value: d.departmentName, label: d.departmentName })),
-                    ]}
-                  />
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-1 cursor-pointer"
+                    >
+                      ล้างตัวกรอง
+                    </button>
+                  )}
 
                   {/* โหมดกรอกโบนัส: กำหนดตัวคูณ / กำหนดยอดโบนัส */}
                   {canEditBonus && (
-                    <div className="inline-flex items-center h-9 p-0.5 bg-slate-200/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
+                    <div className="ml-auto inline-flex items-center h-9 p-0.5 bg-slate-200/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs">
                       {([
                         { key: 'MULTIPLIER', label: 'กำหนดตัวคูณ' },
                         { key: 'AMOUNT', label: 'กำหนดยอดโบนัส' },
@@ -3417,20 +3431,6 @@ export default function PayrollPage() {
                         </button>
                       ))}
                     </div>
-                  )}
-
-                  {(bonusSearchTerm || bonusDeptFilter !== 'ALL') && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBonusSearchTerm('');
-                        setBonusDeptFilter('ALL');
-                        setBonusCurrentPage(1);
-                      }}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline px-1 cursor-pointer"
-                    >
-                      ล้างตัวกรอง
-                    </button>
                   )}
                 </div>
               )}
