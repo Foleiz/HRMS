@@ -336,6 +336,9 @@ export interface EmployeeBonus {
   note?: string | null;
   status?: string;
   statusText?: string;
+  /** ปี/เดือนของงวดเงินเดือนที่โบนัสนี้ถูกใส่ไว้ */
+  payoutPeriodYear?: number | null;
+  payoutPeriodMonth?: number | null;
 }
 
 export interface UpdateBonusItemPayload {

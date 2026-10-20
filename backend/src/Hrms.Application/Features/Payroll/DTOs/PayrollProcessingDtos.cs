@@ -226,6 +226,9 @@ public class EmployeeBonusDto
     public string? Note { get; set; }
     public string Status { get; set; } = "DRAFT";
     public string StatusText { get; set; } = "ร่าง";
+    /// <summary>ปี/เดือนของรอบเงินเดือนที่โบนัสนี้ถูกใส่ไว้ (null = ยังไม่เข้างวด)</summary>
+    public int? PayoutPeriodYear { get; set; }
+    public int? PayoutPeriodMonth { get; set; }
 }
 
 public class BonusPeriodSummaryDto

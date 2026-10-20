@@ -728,7 +728,6 @@ export default function PayrollPage() {
   const [selectedTargetPeriodId, setSelectedTargetPeriodId] = useState<number | null>(null);
   const [isApplyingBonus, setIsApplyingBonus] = useState<boolean>(false);
   const [isSavingExpandedBonus, setIsSavingExpandedBonus] = useState<boolean>(false);
-  const [isApprovingBonusPeriod, setIsApprovingBonusPeriod] = useState<boolean>(false);
 
   useEffect(() => {
     if (canViewPayroll) {
@@ -1644,26 +1643,6 @@ export default function PayrollPage() {
     }
   };
 
-  const handleApproveBonusesInCalculateTab = async () => {
-    if (bonuses.length === 0) return;
-    try {
-      setIsSavingBonus(true);
-      await salaryService.approveBonusPeriod({
-        year: bonusYear,
-        month: bonusMonth,
-      });
-      await loadBonusPeriods();
-      const updated = await salaryService.getEmployeeBonuses(bonusYear, bonusMonth);
-      setBonuses(updated || []);
-      showToast(`อนุมัติข้อมูลโบนัสรอบ ${THAI_MONTH_NAMES[bonusMonth - 1]} ${bonusYear + 543} เรียบร้อยแล้ว`);
-    } catch (err: any) {
-      console.error('Failed to approve bonuses:', err);
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติโบนัส');
-    } finally {
-      setIsSavingBonus(false);
-    }
-  };
-
   const handleExpandedBonusMultiplierChange = (employeeId: number, newMultiplier: number) => {
     setExpandedBonuses((prev) =>
       prev.map((b) => {
@@ -1719,7 +1698,6 @@ export default function PayrollPage() {
           bonusAmount: b.bonusAmount,
           multiplier: b.multiplier,
           note: b.note || undefined,
-          status: b.status,
         })),
       };
       await salaryService.saveEmployeeBonuses(payload);
@@ -1736,25 +1714,6 @@ export default function PayrollPage() {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกโบนัส');
     } finally {
       setIsSavingExpandedBonus(false);
-    }
-  };
-
-  const handleApproveBonusPeriodSubmit = async (year: number, month: number, employeeIds?: number[]) => {
-    try {
-      setIsApprovingBonusPeriod(true);
-      await salaryService.approveBonusPeriod({ year, month, employeeIds });
-      await loadBonusPeriods();
-      const refreshed = await salaryService.getEmployeeBonuses(year, month, true);
-      setExpandedBonuses(refreshed || []);
-      if (bonusYear === year && bonusMonth === month) {
-        loadBonuses(year, month);
-      }
-      showToast(`อนุมัติโบนัสรอบ ${THAI_MONTH_NAMES[month - 1] || month} ${year + 543} สำเร็จ`);
-    } catch (err: any) {
-      console.error('Failed to approve bonus period:', err);
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติโบนัส');
-    } finally {
-      setIsApprovingBonusPeriod(false);
     }
   };
 
@@ -2182,6 +2141,41 @@ export default function PayrollPage() {
       setActiveTab(visibleNavTabs[0].id);
     }
   }, [visibleNavTabs, activeTab]);
+
+  // สถานะโบนัส (ไม่มีขั้นอนุมัติโบนัสแยก — อนุมัติรวมที่รอบเงินเดือน)
+  const renderBonusStatusBadge = (b: EmployeeBonus) => {
+    const periodLabel = b.payoutPeriodMonth && b.payoutPeriodYear
+      ? ` ${THAI_MONTH_NAMES[b.payoutPeriodMonth - 1] || b.payoutPeriodMonth} ${b.payoutPeriodYear + 543}`
+      : '';
+    if (b.status === 'PAID') {
+      return (
+        <span title="งวดเงินเดือนเลยขั้นแก้ไขแล้ว แก้ยอดไม่ได้" className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+          <Lock className="w-3 h-3" />
+          <span>ล็อกแล้ว{periodLabel && ` (งวด${periodLabel})`}</span>
+        </span>
+      );
+    }
+    if (b.status === 'IN_PAYROLL') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+          <span>อยู่ในงวด{periodLabel}</span>
+        </span>
+      );
+    }
+    if (b.status === 'SAVED' || b.status === 'APPROVED') {
+      return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+          บันทึกแล้ว
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
+        ยังไม่บันทึก
+      </span>
+    );
+  };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -3409,18 +3403,6 @@ export default function PayrollPage() {
                     </button>
                   )}
 
-                  {canApproveBonus && bonuses.length > 0 && bonuses.some((b) => b.status !== 'APPROVED') && (
-                    <button
-                      type="button"
-                      onClick={handleApproveBonusesInCalculateTab}
-                      disabled={bonuses.length === 0 || isSavingBonus}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      {isSavingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                      <span>อนุมัติ</span>
-                    </button>
-                  )}
-
                   {canApproveBonus && (
                     <button
                       type="button"
@@ -3521,7 +3503,7 @@ export default function PayrollPage() {
                                 </td>
                                 {/* Multiplier */}
                                 <td className="py-2 px-3 text-center whitespace-nowrap">
-                                  {canEditBonus && b.status !== 'APPROVED' ? (
+                                  {canEditBonus && b.status !== 'PAID' ? (
                                     <div className="inline-flex items-center justify-center gap-1">
                                       <input
                                         type="number"
@@ -3540,7 +3522,7 @@ export default function PayrollPage() {
                                 </td>
                                 {/* Bonus Amount */}
                                 <td className="py-2 px-3 text-right whitespace-nowrap">
-                                  {canEditBonus && b.status !== 'APPROVED' ? (
+                                  {canEditBonus && b.status !== 'PAID' ? (
                                     <div className="inline-flex items-center justify-end gap-1">
                                       <span className="text-slate-400 text-xs">฿</span>
                                       <input
@@ -3560,20 +3542,11 @@ export default function PayrollPage() {
                                 </td>
                                 {/* Status */}
                                 <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                                  {b.status === 'APPROVED' ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                      <span>อนุมัติแล้ว</span>
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                                      คำนวณแล้ว
-                                    </span>
-                                  )}
+                                  {renderBonusStatusBadge(b)}
                                 </td>
                                 {/* Note */}
                                 <td className="py-2 px-3 whitespace-nowrap">
-                                  {canEditBonus && b.status !== 'APPROVED' ? (
+                                  {canEditBonus && b.status !== 'PAID' ? (
                                     <input
                                       type="text"
                                       placeholder="หมายเหตุ..."
@@ -3673,7 +3646,7 @@ export default function PayrollPage() {
                               <th className="py-3 px-4">รอบโบนัส</th>
                               <th className="py-3 px-4 text-center">ตัวคูณเฉลี่ย</th>
                               <th className="py-3 px-4 text-center">จำนวนพนักงาน</th>
-                              <th className="py-3 px-4 text-center">อนุมัติแล้ว</th>
+                              <th className="py-3 px-4 text-center">เข้างวดแล้ว</th>
                               <th className="py-3 px-4 text-right">ยอดรวมโบนัส</th>
                               <th className="py-3 px-4 text-center">สถานะ</th>
                               <th className="py-3 px-4 text-center">การจัดการ</th>
@@ -3725,9 +3698,9 @@ export default function PayrollPage() {
                                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                       <span
                                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                                          bp.status === 'APPROVED'
+                                          bp.status === 'IN_PAYROLL'
                                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                                            : bp.status === 'PARTIAL_APPROVED'
+                                            : bp.status === 'PARTIAL_IN_PAYROLL'
                                             ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
                                             : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
                                         }`}
@@ -3763,8 +3736,8 @@ export default function PayrollPage() {
                                             const currentExpandedAvgMult = expandedBonuses.length > 0
                                               ? Math.round((expandedBonuses.reduce((sum, b) => sum + (b.multiplier || 0), 0) / expandedBonuses.length) * 100) / 100
                                               : 0;
-                                            const hasUnapprovedInExpanded = expandedBonuses.some((b) => b.status !== 'APPROVED');
-                                            const approvedCountInExpanded = expandedBonuses.filter((b) => b.status === 'APPROVED').length;
+                                            const hasEditableInExpanded = expandedBonuses.some((b) => b.status !== 'PAID');
+                                            const inPayrollCountInExpanded = expandedBonuses.filter((b) => b.status === 'IN_PAYROLL' || b.status === 'PAID').length;
 
                                             return (
                                               <>
@@ -3791,7 +3764,7 @@ export default function PayrollPage() {
                                                         ตัวคูณเฉลี่ย: {currentExpandedAvgMult}x
                                                       </span>
                                                       <span className="px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
-                                                        อนุมัติแล้ว: {approvedCountInExpanded} / {expandedBonuses.length} คน
+                                                        เข้างวดแล้ว: {inPayrollCountInExpanded} / {expandedBonuses.length} คน
                                                       </span>
                                                     </div>
                                                   </div>
@@ -3809,7 +3782,7 @@ export default function PayrollPage() {
                                                       />
                                                     </div>
 
-                                                    {canEditBonus && hasUnapprovedInExpanded && (
+                                                    {canEditBonus && hasEditableInExpanded && (
                                                       <button
                                                         type="button"
                                                         onClick={() => handleSaveExpandedBonuses(bp.year, bp.month)}
@@ -3819,19 +3792,6 @@ export default function PayrollPage() {
                                                       >
                                                         {isSavingExpandedBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                                                         <span>{isSavingExpandedBonus ? 'กำลังบันทึก...' : '💾 บันทึกการแก้ไข'}</span>
-                                                      </button>
-                                                    )}
-
-                                                    {canApproveBonus && hasUnapprovedInExpanded && (
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => handleApproveBonusPeriodSubmit(bp.year, bp.month)}
-                                                        disabled={isApprovingBonusPeriod}
-                                                        className="h-8 inline-flex items-center gap-1 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                                        title="อนุมัติการจัดสรรโบนัสรอบนี้ทั้งหมด"
-                                                      >
-                                                        {isApprovingBonusPeriod ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                                                        <span>✅ อนุมัติรอบนี้</span>
                                                       </button>
                                                     )}
 
@@ -3874,9 +3834,6 @@ export default function PayrollPage() {
                                                           <th className="py-2.5 px-4 text-right font-bold">ยอดโบนัส (บาท)</th>
                                                           <th className="py-2.5 px-4 text-center">สถานะ</th>
                                                           <th className="py-2.5 px-4">หมายเหตุ</th>
-                                                          {canApproveBonus && hasUnapprovedInExpanded && (
-                                                            <th className="py-2.5 px-4 text-center">การจัดการ</th>
-                                                          )}
                                                         </tr>
                                                       </thead>
                                                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-200">
@@ -3892,7 +3849,7 @@ export default function PayrollPage() {
                                                             );
                                                           })
                                                           .map((b) => {
-                                                            const isRowEditable = canEditBonus && b.status !== 'APPROVED';
+                                                            const isRowEditable = canEditBonus && b.status !== 'PAID';
 
                                                             return (
                                                               <tr key={b.employeeId} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
@@ -3948,16 +3905,7 @@ export default function PayrollPage() {
                                                                 </td>
                                                                 {/* Status */}
                                                                 <td className="py-2.5 px-4 text-center whitespace-nowrap">
-                                                                  {b.status === 'APPROVED' ? (
-                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                                                                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                                                      <span>อนุมัติแล้ว</span>
-                                                                    </span>
-                                                                  ) : (
-                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                                                                      คำนวณแล้ว
-                                                                    </span>
-                                                                  )}
+                                                                  {renderBonusStatusBadge(b)}
                                                                 </td>
                                                                 {/* Note */}
                                                                 <td className="py-2 px-3 whitespace-nowrap">
@@ -3975,28 +3923,6 @@ export default function PayrollPage() {
                                                                     </span>
                                                                   )}
                                                                 </td>
-                                                                {/* Action: Approve individual */}
-                                                                {canApproveBonus && hasUnapprovedInExpanded && (
-                                                                  <td className="py-2.5 px-4 text-center whitespace-nowrap">
-                                                                    {b.status !== 'APPROVED' ? (
-                                                                      <button
-                                                                        type="button"
-                                                                        onClick={() => handleApproveBonusPeriodSubmit(bp.year, bp.month, [b.employeeId])}
-                                                                        disabled={isApprovingBonusPeriod}
-                                                                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 dark:text-emerald-300 rounded text-[11px] font-semibold border border-emerald-200 dark:border-emerald-800 inline-flex items-center gap-1 transition-colors cursor-pointer"
-                                                                        title="อนุมัติเฉพาะพนักงานคนนี้"
-                                                                      >
-                                                                        <Check className="w-3 h-3" />
-                                                                        <span>อนุมัติ</span>
-                                                                      </button>
-                                                                    ) : (
-                                                                      <span className="text-emerald-600 dark:text-emerald-400 text-[11px] inline-flex items-center gap-1 font-medium">
-                                                                        <Lock className="w-3 h-3" />
-                                                                        <span>ล็อกแล้ว</span>
-                                                                      </span>
-                                                                    )}
-                                                                  </td>
-                                                                )}
                                                               </tr>
                                                             );
                                                           })}

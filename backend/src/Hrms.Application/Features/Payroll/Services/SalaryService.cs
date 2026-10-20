@@ -1586,7 +1586,7 @@ public class SalaryService : ISalaryService
         var bonusItem = (await EnsureSystemPayrollItemsAsync(cancellationToken))["INC_BONUS"];
 
         var bonusQuery = _context.EmployeeBonuses
-            .Where(b => b.Year == year && (b.Status == "APPROVED" || b.Status == "CALCULATED") && b.BonusAmount > 0);
+            .Where(b => b.Year == year && b.BonusAmount > 0);
         if (month.HasValue)
         {
             bonusQuery = bonusQuery.Where(b => b.Month == month.Value);
@@ -1603,11 +1603,19 @@ public class SalaryService : ISalaryService
 
         // ป้องกันการจ่ายซ้ำ: โบนัสที่อยู่ในรอบเงินเดือนใด ๆ แล้ว จะไม่ถูกเพิ่มอีก
         var existingBonusSources = await _context.PayrollDetails
-            .Where(d => d.PayrollItemId == bonusItem.Id)
-            .Select(d => d.CalculationSource)
+            .Where(d => d.PayrollItemId == bonusItem.Id && d.Payroll != null)
+            .Select(d => new { d.CalculationSource, d.Payroll!.PeriodId })
             .ToListAsync(cancellationToken);
         var paidBonusIds = existingBonusSources
-            .Select(s => ReadDetailSource(s).BonusId)
+            .Where(x => x.PeriodId != periodId)
+            .Select(x => ReadDetailSource(x.CalculationSource).BonusId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToHashSet();
+        // อยู่ในรอบนี้แล้ว: ไม่เพิ่มซ้ำ แต่การคำนวณใหม่ด้านล่างจะอัปเดตยอดให้เป็นล่าสุด
+        var inThisPeriodBonusIds = existingBonusSources
+            .Where(x => x.PeriodId == periodId)
+            .Select(x => ReadDetailSource(x.CalculationSource).BonusId)
             .Where(id => id.HasValue)
             .Select(id => id!.Value)
             .ToHashSet();
@@ -1626,6 +1634,12 @@ public class SalaryService : ISalaryService
             if (paidBonusIds.Contains(bonus.Id))
             {
                 result.AlreadyPaidCount++;
+                continue;
+            }
+            if (inThisPeriodBonusIds.Contains(bonus.Id))
+            {
+                result.AddedCount++;
+                result.AddedAmount += bonus.BonusAmount;
                 continue;
             }
 
@@ -1671,6 +1685,40 @@ public class SalaryService : ISalaryService
         result.Payrolls = await CalculatePayrollForPeriodAsync(periodId, cancellationToken);
         return result;
     }
+
+    private sealed record BonusPayoutInfo(long PeriodId, int Year, int Month, string Status);
+
+    /// <summary>bonusId → รอบเงินเดือนที่โบนัสนั้นถูกใส่ไว้ (อ่านจาก calculation_source ของรายการโบนัส)</summary>
+    private async Task<Dictionary<long, BonusPayoutInfo>> LoadBonusPayoutMapAsync(CancellationToken cancellationToken)
+    {
+        var rows = await _context.PayrollDetails.AsNoTracking()
+            .Where(d => d.PayrollItem != null && d.PayrollItem.ItemCode == "INC_BONUS" && d.Payroll != null && d.Payroll.Period != null)
+            .Select(d => new { d.CalculationSource, d.Payroll!.PeriodId, d.Payroll.Period!.Year, d.Payroll.Period.Month, d.Payroll.Period.Status })
+            .ToListAsync(cancellationToken);
+        var map = new Dictionary<long, BonusPayoutInfo>();
+        foreach (var r in rows)
+        {
+            var id = ReadDetailSource(r.CalculationSource).BonusId;
+            if (id.HasValue) map[id.Value] = new BonusPayoutInfo(r.PeriodId, r.Year, r.Month, r.Status);
+        }
+        return map;
+    }
+
+    private static bool IsBonusPeriodEditable(string? status) => status == "DRAFT" || status == "REVIEW";
+
+    /// <summary>SAVED = บันทึกแล้ว, IN_PAYROLL = อยู่ในงวดที่ยังแก้ได้, PAID = งวดเลยขั้นแก้ไขแล้ว (ล็อก)</summary>
+    private static string BonusDisplayStatus(long bonusId, Dictionary<long, BonusPayoutInfo> payoutMap) =>
+        payoutMap.TryGetValue(bonusId, out var p)
+            ? (IsBonusPeriodEditable(p.Status) ? "IN_PAYROLL" : "PAID")
+            : "SAVED";
+
+    private static string BonusDisplayStatusText(string status) => status switch
+    {
+        "IN_PAYROLL" => "อยู่ในงวดเงินเดือน",
+        "PAID" => "ล็อกแล้ว (งวดดำเนินการต่อแล้ว)",
+        "UNSAVED" => "ยังไม่บันทึก",
+        _ => "บันทึกแล้ว"
+    };
 
     private static void EnsurePeriodEditable(PayrollPeriod? period)
     {
@@ -1944,6 +1992,21 @@ public class SalaryService : ISalaryService
             .Where(b => !paidOtherBonusIds.Contains(b.Id))
             .ToDictionary(b => b.EmployeeId);
 
+        // โบนัสที่ผูกกับรายการในรอบนี้อยู่แล้ว (รวมโบนัสต่างเดือนที่กด "บันทึกเข้างวด" มา) — ใช้อัปเดตยอดล่าสุด
+        var linkedBonusIds = period.Payrolls
+            .SelectMany(p => p.Details)
+            .Where(d => d.PayrollItemId == bonusItem.Id)
+            .Select(d => ReadDetailSource(d.CalculationSource).BonusId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+        var linkedBonuses = linkedBonusIds.Count == 0
+            ? new Dictionary<long, EmployeeBonus>()
+            : await _context.EmployeeBonuses.AsNoTracking()
+                .Where(b => linkedBonusIds.Contains(b.Id))
+                .ToDictionaryAsync(b => b.Id, cancellationToken);
+
         var employeeIds = employees.Select(e => e.Id).ToList();
         var attendance = await _context.AttendanceMonthlySummaries
             .Where(a => a.Year == period.Year && a.Month == period.Month && employeeIds.Contains(a.EmployeeId))
@@ -2212,11 +2275,20 @@ public class SalaryService : ISalaryService
                 if (item.Id == bonusItem.Id)
                 {
                     var source = ReadDetailSource(d.CalculationSource);
-                    // หากรายการโบนัสนี้มาจากการดึงโบนัสอัตโนมัติ (source == "BONUS" หรือมี bonusId)
-                    // ให้ข้ามของเดิม เพื่ออัปเดตยอดโบนัสล่าสุดจาก eligiblePeriodBonuses ด้านล่างเสมอ
+                    // โบนัสที่ดึงมาจากหน้าโบนัส (source == "BONUS"): อัปเดตยอดตามข้อมูลโบนัสล่าสุด
+                    // ถ้าโบนัสถูกลบ/ยอดเป็น 0 หรือมีซ้ำ ให้ลบรายการนี้ออก (กันรายการซ้ำสะสมทุกครั้งที่คำนวณใหม่)
                     if (source.Source == "BONUS" || source.BonusId.HasValue)
                     {
-                        continue;
+                        var linked = source.BonusId.HasValue && linkedBonuses.TryGetValue(source.BonusId.Value, out var lb) ? lb : null;
+                        if (linked == null || linked.BonusAmount <= 0 || hasBonusInManual)
+                        {
+                            _context.PayrollDetails.Remove(d);
+                            payroll.Details.Remove(d);
+                            continue;
+                        }
+                        d.Amount = linked.BonusAmount;
+                        d.Quantity = linked.Multiplier > 0 ? linked.Multiplier : null;
+                        d.Rate = linked.BaseSalary > 0 ? linked.BaseSalary : null;
                     }
                     hasBonusInManual = true;
                 }
@@ -3053,6 +3125,7 @@ public class SalaryService : ISalaryService
             .Where(b => b.Year == targetYear && b.Month == targetMonth)
             .ToListAsync(cancellationToken);
 
+        var payoutMap = await LoadBonusPayoutMapAsync(cancellationToken);
         var result = new List<EmployeeBonusDto>();
 
         if (onlySaved)
@@ -3080,8 +3153,10 @@ public class SalaryService : ISalaryService
                     BonusAmount = existing.BonusAmount,
                     CalculationMode = existing.CalculationMode,
                     Note = existing.Note,
-                    Status = existing.Status,
-                    StatusText = existing.Status == "APPROVED" ? "อนุมัติแล้ว" : "คำนวณแล้ว"
+                    Status = BonusDisplayStatus(existing.Id, payoutMap),
+                    StatusText = BonusDisplayStatusText(BonusDisplayStatus(existing.Id, payoutMap)),
+                    PayoutPeriodYear = payoutMap.TryGetValue(existing.Id, out var pInfo) ? pInfo.Year : null,
+                    PayoutPeriodMonth = payoutMap.TryGetValue(existing.Id, out var pInfo2) ? pInfo2.Month : null
                 });
             }
 
@@ -3112,8 +3187,10 @@ public class SalaryService : ISalaryService
                     BonusAmount = existing.BonusAmount,
                     CalculationMode = existing.CalculationMode,
                     Note = existing.Note,
-                    Status = existing.Status,
-                    StatusText = existing.Status == "APPROVED" ? "อนุมัติแล้ว" : "คำนวณแล้ว"
+                    Status = BonusDisplayStatus(existing.Id, payoutMap),
+                    StatusText = BonusDisplayStatusText(BonusDisplayStatus(existing.Id, payoutMap)),
+                    PayoutPeriodYear = payoutMap.TryGetValue(existing.Id, out var pInfo) ? pInfo.Year : null,
+                    PayoutPeriodMonth = payoutMap.TryGetValue(existing.Id, out var pInfo2) ? pInfo2.Month : null
                 });
             }
             else
@@ -3137,8 +3214,8 @@ public class SalaryService : ISalaryService
                     BonusAmount = sal > 0 ? sal * defaultMultiplier : 0,
                     CalculationMode = "MULTIPLIER",
                     Note = null,
-                    Status = "CALCULATED",
-                    StatusText = "คำนวณแล้ว"
+                    Status = "UNSAVED",
+                    StatusText = "ยังไม่บันทึก"
                 });
             }
         }
@@ -3167,6 +3244,11 @@ public class SalaryService : ISalaryService
             .ThenByDescending(g => g.Month)
             .ToListAsync(cancellationToken);
 
+        var payoutMapForSummary = await LoadBonusPayoutMapAsync(cancellationToken);
+        var bonusKeys = await _context.EmployeeBonuses.AsNoTracking()
+            .Select(b => new { b.Id, b.Year, b.Month })
+            .ToListAsync(cancellationToken);
+
         string[] thaiMonths = { "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม" };
 
         var summaries = new List<BonusPeriodSummaryDto>();
@@ -3175,12 +3257,14 @@ public class SalaryService : ISalaryService
         {
             var monthName = (g.Month >= 1 && g.Month <= 12) ? thaiMonths[g.Month - 1] : $"เดือน {g.Month}";
             var periodName = $"โบนัสรอบ {monthName} {g.Year + 543}";
-            var status = g.ApprovedCount > 0 && g.CalculatedCount == 0 ? "APPROVED"
-                : g.ApprovedCount > 0 ? "PARTIAL_APPROVED"
-                : "CALCULATED";
-            var statusText = status == "APPROVED" ? "อนุมัติแล้ว"
-                : status == "PARTIAL_APPROVED" ? "อนุมัติบางส่วน"
-                : "คำนวณแล้ว";
+            // สถานะรอบโบนัส = เข้ารอบเงินเดือนแล้วกี่คน (ไม่มีขั้นอนุมัติโบนัสแยกแล้ว — อนุมัติที่รอบเงินเดือน)
+            var inPayrollCount = bonusKeys.Count(k => k.Year == g.Year && k.Month == g.Month && payoutMapForSummary.ContainsKey(k.Id));
+            var status = inPayrollCount > 0 && inPayrollCount >= g.TotalEmployees ? "IN_PAYROLL"
+                : inPayrollCount > 0 ? "PARTIAL_IN_PAYROLL"
+                : "SAVED";
+            var statusText = status == "IN_PAYROLL" ? "เข้างวดแล้ว"
+                : status == "PARTIAL_IN_PAYROLL" ? "เข้างวดบางส่วน"
+                : "บันทึกแล้ว";
 
             summaries.Add(new BonusPeriodSummaryDto
             {
@@ -3188,8 +3272,8 @@ public class SalaryService : ISalaryService
                 Month = g.Month,
                 PeriodName = periodName,
                 TotalEmployees = g.TotalEmployees,
-                ApprovedCount = g.ApprovedCount,
-                CalculatedCount = g.CalculatedCount,
+                ApprovedCount = inPayrollCount,
+                CalculatedCount = g.TotalEmployees - inPayrollCount,
                 TotalBonusAmount = g.TotalBonusAmount,
                 AverageMultiplier = Math.Round((decimal)g.AverageMultiplier, 2),
                 Status = status,
@@ -3221,6 +3305,8 @@ public class SalaryService : ISalaryService
             .Where(b => b.Year == targetYear && b.Month == targetMonth)
             .ToListAsync(cancellationToken);
 
+        var payoutMap = await LoadBonusPayoutMapAsync(cancellationToken);
+
         foreach (var emp in employees)
         {
             var sal = salaries.FirstOrDefault(s => s.EmployeeId == emp.Id)?.BaseSalary ?? 0m;
@@ -3230,8 +3316,8 @@ public class SalaryService : ISalaryService
             var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == emp.Id);
             if (existing != null)
             {
-                // หากได้รับการอนุมัติแล้ว ให้คงสถานะเดิมไว้ ไม่คำนวณทับโดยไม่ได้รับอนุญาต
-                if (existing.Status == "APPROVED")
+                // โบนัสที่อยู่ในงวดเงินเดือนที่เลยขั้นแก้ไขแล้ว ไม่คำนวณทับ
+                if (payoutMap.TryGetValue(existing.Id, out var po) && !IsBonusPeriodEditable(po.Status))
                 {
                     continue;
                 }
@@ -3275,6 +3361,7 @@ public class SalaryService : ISalaryService
         var existingBonuses = await _context.EmployeeBonuses
             .Where(b => b.Year == targetYear && b.Month == targetMonth)
             .ToListAsync(cancellationToken);
+        var payoutMap = await LoadBonusPayoutMapAsync(cancellationToken);
 
         foreach (var item in request.Items)
         {
@@ -3285,8 +3372,8 @@ public class SalaryService : ISalaryService
             var existing = existingBonuses.FirstOrDefault(b => b.EmployeeId == item.EmployeeId);
             if (existing != null)
             {
-                // หากอนุมัติแล้ว และไม่ได้ระบุสถานะมาขอแก้ไข ให้ล็อกไว้
-                if (existing.Status == "APPROVED" && string.IsNullOrEmpty(item.Status))
+                // ล็อกเฉพาะโบนัสที่อยู่ในรอบเงินเดือนที่เลยขั้นแก้ไขแล้ว (ส่งการเงิน/อนุมัติ/จ่ายแล้ว)
+                if (payoutMap.TryGetValue(existing.Id, out var po) && !IsBonusPeriodEditable(po.Status))
                 {
                     continue;
                 }
@@ -3296,7 +3383,7 @@ public class SalaryService : ISalaryService
                 existing.BonusAmount = bonusAmount;
                 existing.CalculationMode = request.CalculationMode ?? "MANUAL";
                 existing.Note = item.Note;
-                existing.Status = !string.IsNullOrWhiteSpace(item.Status) ? item.Status : (existing.Status ?? "CALCULATED");
+                existing.Status = string.IsNullOrWhiteSpace(existing.Status) ? "CALCULATED" : existing.Status;
                 existing.UpdatedAt = DateTime.UtcNow;
             }
             else
@@ -3311,7 +3398,7 @@ public class SalaryService : ISalaryService
                     BonusAmount = bonusAmount,
                     CalculationMode = request.CalculationMode ?? "MANUAL",
                     Note = item.Note,
-                    Status = !string.IsNullOrWhiteSpace(item.Status) ? item.Status : "CALCULATED",
+                    Status = "CALCULATED",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
