@@ -36,6 +36,7 @@ import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
 import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { CodeInput } from '@/components/ui/CodeInput';
 import { employeeService } from '@/services/employeeService';
 import { bankService } from '@/services/bankService';
 import { companyBankAccountService } from '@/services/companyBankAccountService';
@@ -2229,6 +2230,14 @@ export default function OrganizationPage() {
             </div>
 
             <form onSubmit={handleSaveDivision} className="space-y-4 pt-4">
+              <CodeInput
+                type="division"
+                label="รหัสฝ่าย"
+                mode={modalMode}
+                value={divisionForm.divisionCode || ''}
+                onChange={(v) => setDivisionForm((f) => ({ ...f, divisionCode: v }))}
+              />
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อฝ่าย / สายงาน *</label>
                 <input
@@ -2337,6 +2346,14 @@ export default function OrganizationPage() {
                   ))}
                 </CustomSelect>
               </div>
+
+              <CodeInput
+                type="department"
+                label="รหัสแผนก"
+                mode={modalMode}
+                value={deptForm.departmentCode || ''}
+                onChange={(v) => setDeptForm((f) => ({ ...f, departmentCode: v }))}
+              />
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อแผนก *</label>
@@ -2448,19 +2465,13 @@ export default function OrganizationPage() {
                 </CustomSelect>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  รหัสทีม {modalMode === 'create' && <span className="text-slate-400 font-normal">(เว้นว่างเพื่อให้ระบบสร้างอัตโนมัติ)</span>}
-                </label>
-                <input
-                  type="text"
-                  placeholder={modalMode === 'create' ? 'ระบบสร้างให้อัตโนมัติ (TEAM...)' : ''}
-                  disabled={modalMode === 'edit'}
-                  value={teamForm.teamCode || ''}
-                  onChange={(e) => setTeamForm({ ...teamForm, teamCode: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 disabled:opacity-60"
-                />
-              </div>
+              <CodeInput
+                type="team"
+                label="รหัสทีม"
+                mode={modalMode}
+                value={teamForm.teamCode || ''}
+                onChange={(v) => setTeamForm((f) => ({ ...f, teamCode: v }))}
+              />
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อทีม *</label>
@@ -2595,6 +2606,14 @@ export default function OrganizationPage() {
                   ))}
                 </CustomSelect>
               </div>
+
+              <CodeInput
+                type="position"
+                label="รหัสตำแหน่ง"
+                mode={modalMode}
+                value={posForm.positionCode || ''}
+                onChange={(v) => setPosForm((f) => ({ ...f, positionCode: v }))}
+              />
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อตำแหน่งงาน *</label>
@@ -2860,6 +2879,14 @@ export default function OrganizationPage() {
             </div>
 
             <form onSubmit={handleSaveLevel} className="space-y-4 pt-4">
+              <CodeInput
+                type="level"
+                label="รหัสระดับ"
+                mode={modalMode}
+                value={levelForm.levelCode || ''}
+                onChange={(v) => setLevelForm((f) => ({ ...f, levelCode: v }))}
+              />
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
                   ชื่อระดับพนักงาน *

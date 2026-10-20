@@ -307,15 +307,17 @@ public class EmployeeService : IEmployeeService
             .AnyAsync(e => e.EmployeeCode == request.EmployeeCode.Trim(), cancellationToken);
         if (codeExists)
         {
-            // Auto-resolve race condition by generating true next code
+            // รหัสแนะนำรูปแบบ EMPxxxx ชนกับคนที่บันทึกพร้อมกัน → ใช้รหัสถัดไปให้อัตโนมัติ
+            // รหัสที่ผู้ใช้ตั้งเอง → แจ้งว่าซ้ำ (ไม่เปลี่ยนรหัสให้เงียบๆ)
+            bool isSuggestedPattern = System.Text.RegularExpressions.Regex.IsMatch(request.EmployeeCode.Trim(), @"^EMP\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             string autoCode = await GetNextEmployeeCodeAsync(cancellationToken);
-            if (autoCode != request.EmployeeCode.Trim())
+            if (isSuggestedPattern && autoCode != request.EmployeeCode.Trim())
             {
                 request.EmployeeCode = autoCode;
             }
             else
             {
-                throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว");
+                throw new ValidationException($"รหัสพนักงาน '{request.EmployeeCode}' มีอยู่ในระบบแล้ว กรุณาใช้รหัสอื่น");
             }
         }
 

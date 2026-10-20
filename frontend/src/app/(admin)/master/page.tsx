@@ -39,6 +39,7 @@ import { Bank } from '@/types/api';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { CodeInput } from '@/components/ui/CodeInput';
 
 type MasterTab =
   | 'document-types'
@@ -1108,21 +1109,19 @@ export default function MasterDataHubPage() {
               {(activeTab === 'genders' || activeTab === 'certificate-types') && (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'} *
-                    </label>
-                    <input
-                      type="text"
+                    <CodeInput
+                      type={activeTab === 'genders' ? 'gender' : 'certificate-type'}
+                      label={activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'}
                       required
-                      disabled={modalMode === 'edit'}
+                      mode={modalMode}
                       maxLength={activeTab === 'genders' ? 20 : 50}
                       value={codeNameForm.code}
-                      onChange={(e) => setCodeNameForm({ ...codeNameForm, code: e.target.value.toUpperCase() })}
-                      placeholder={activeTab === 'genders' ? 'เช่น M, F, O' : 'เช่น CERT_WORK, CERT_SALARY'}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 font-mono disabled:bg-slate-100 dark:disabled:bg-slate-900"
+                      onChange={(v) => setCodeNameForm((f) => ({ ...f, code: v }))}
+                      labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                      inputClassName="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 disabled:bg-slate-100 dark:disabled:bg-slate-900"
                     />
                     {activeTab === 'certificate-types' && (
-                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสที่มีคำว่า SALARY จะแสดงเงินเดือนในหนังสือรับรอง · แก้รหัสไม่ได้หลังบันทึก</p>
+                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสที่มีคำว่า SALARY จะแสดงเงินเดือนในหนังสือรับรอง</p>
                     )}
                   </div>
                   <div>

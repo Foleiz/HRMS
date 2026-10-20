@@ -24,6 +24,7 @@ import {
 import { BenefitItem } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { CodeInput } from '@/components/ui/CodeInput';
 
 interface CreateEmployeeTypeModalProps {
   isOpen: boolean;
@@ -371,6 +372,18 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+          {/* รหัสประเภทพนักงาน — ระบบแนะนำ แก้ได้ */}
+          <CodeInput
+            type="employee-type"
+            label="รหัสประเภทพนักงาน"
+            mode={isEdit ? 'edit' : 'create'}
+            value={typeCode}
+            onChange={setTypeCode}
+            resetKey={isOpen}
+            labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+            inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+
           {/* ชื่อประเภทสัญญา/การจ้างงาน */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">

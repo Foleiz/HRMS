@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { LEAVE_COLOR_PRESETS, resolveLeaveColor } from '@/lib/leaveColors';
 import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
+import { CodeInput } from '@/components/ui/CodeInput';
 
 interface LeaveTypeModalProps {
   isOpen: boolean;
@@ -60,6 +61,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 }) => {
   const isEditing = !!leaveTypeToEdit;
 
+  const [leaveCode, setLeaveCode] = useState('');
   const [leaveName, setLeaveName] = useState('');
   const [formCategory, setFormCategory] = useState<LeaveFormCategory>('SPECIAL');
   const [isPaidLeave, setIsPaidLeave] = useState(true);
@@ -81,6 +83,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
       setIsActive(leaveTypeToEdit.status === 'ACTIVE');
       setColor(leaveTypeToEdit.color || '');
     } else {
+      setLeaveCode('');
       setLeaveName('');
       setFormCategory('SPECIAL');
       setIsPaidLeave(true);
@@ -115,6 +118,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
         });
       } else {
         await onSubmitCreate({
+          leaveCode: leaveCode.trim() ? leaveCode.trim().toUpperCase() : undefined,
           leaveName: leaveName.trim(),
           quotaUnit: 'DAY',
           isPaidLeave,
@@ -149,7 +153,18 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>}
 
-          {/* ชื่อประเภทการลา (รหัสระบบสร้างให้อัตโนมัติ ไม่ต้องแสดงตอนเพิ่ม) */}
+          {/* รหัสประเภทการลา — ระบบแนะนำ แก้ได้ */}
+          <CodeInput
+            type="leave-type"
+            label="รหัสประเภทการลา"
+            mode={isEditing ? 'edit' : 'create'}
+            value={isEditing ? leaveTypeToEdit?.leaveCode ?? '' : leaveCode}
+            onChange={setLeaveCode}
+            labelClassName="block text-sm font-medium text-gray-700 dark:text-slate-300"
+            inputClassName="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono uppercase disabled:opacity-60 disabled:cursor-not-allowed"
+          />
+
+          {/* ชื่อประเภทการลา */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ชื่อประเภทการลา *</label>
             <input

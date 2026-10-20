@@ -31,6 +31,7 @@ import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { CodeInput } from '@/components/ui/CodeInput';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -738,21 +739,20 @@ export default function CreateEmployeeModal({
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-xs animate-in fade-in duration-150">
                 {/* --- Column 1 --- */}
                 <div className="space-y-4">
-                  {/* รหัสพนักงาน */}
+                  {/* รหัสพนักงาน — ระบบแนะนำ แก้ได้ */}
                   <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
-                      <span>
-                        รหัสพนักงาน (Employee Code) <span className="text-rose-500">*</span>
-                      </span>
-                      <span className="ml-2 text-[10px] font-normal text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-full px-2 py-0.5">
-                        สร้างให้อัตโนมัติ
-                      </span>
-                    </label>
-                    <input
-                      type="text"
-                      readOnly
+                    <CodeInput
+                      type="employee"
+                      label="รหัสพนักงาน (Employee Code)"
+                      required
+                      mode="create"
                       value={formData.employeeCode}
-                      className="w-full h-10 px-3.5 bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-300 font-mono font-semibold cursor-not-allowed select-none"
+                      onChange={(v) => {
+                        setFormData((prev) => ({ ...prev, employeeCode: v }));
+                        clearFieldError('employeeCode');
+                      }}
+                      labelClassName="font-semibold text-slate-700 dark:text-slate-300 text-xs"
+                      inputClassName="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-mono font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                     />
                     {renderFieldError('employeeCode')}
                   </div>
