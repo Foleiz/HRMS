@@ -750,7 +750,8 @@ public class SalaryService : ISalaryService
                 EmployeeName = emp.FullName,
                 DepartmentName = activeAssignment?.Department?.DepartmentName,
                 PositionName = activeAssignment?.Position?.PositionName,
-                LevelName = activeAssignment?.EmployeeLevel?.LevelName,
+                // ระดับพนักงาน: จาก assignment ก่อน ถ้าไม่มีใช้ระดับที่ผูกกับตำแหน่ง
+                LevelName = activeAssignment?.EmployeeLevel?.LevelName ?? activeAssignment?.Position?.EmployeeLevel?.LevelName,
                 CurrentSalary = currentSalary?.BaseSalary,
                 CurrentEffectiveFrom = currentSalary?.EffectiveFrom,
                 SalaryStructureMin = matchingStructure?.MinSalary,

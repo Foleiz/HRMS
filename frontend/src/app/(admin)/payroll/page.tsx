@@ -2571,14 +2571,15 @@ export default function PayrollPage() {
 
                 {/* Table */}
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                  <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
+                  <table className="table-standard text-xs w-full min-w-[880px] text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
                         <th className="py-3.5 px-4">รหัส / ชื่อพนักงาน</th>
                         <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
+                        <th className="py-3.5 px-4">ระดับพนักงาน</th>
+                        <th className="py-3.5 px-4">กรอบเงินเดือนอ้างอิง</th>
                         <th className="py-3.5 px-4 text-right">ฐานเงินเดือนปัจจุบัน</th>
                         <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
-                        <th className="py-3.5 px-4">กรอบเงินเดือนอ้างอิง</th>
                         <th className="py-3.5 px-4 text-center">จัดการ</th>
                       </tr>
                     </thead>
@@ -2599,6 +2600,24 @@ export default function PayrollPage() {
                                 {emp.positionName || 'ไม่ระบุตำแหน่ง'}
                               </div>
                             </td>
+                            <td className="py-3.5 px-4">
+                              {emp.levelName ? (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300">
+                                  {emp.levelName}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400">-</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
+                                <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                  ฿{emp.salaryStructureMin.toLocaleString()} - ฿{emp.salaryStructureMax.toLocaleString()}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-slate-400 dark:text-slate-400">-</span>
+                              )}
+                            </td>
                             <td className="py-3.5 px-4 text-right">
                               {hasSalary ? (
                                 <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs">
@@ -2612,15 +2631,6 @@ export default function PayrollPage() {
                             </td>
                             <td className="py-3.5 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
                               {emp.currentEffectiveFrom || '-'}
-                            </td>
-                            <td className="py-3.5 px-4">
-                              {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
-                                <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                                  ฿{emp.salaryStructureMin.toLocaleString()} - ฿{emp.salaryStructureMax.toLocaleString()}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400 dark:text-slate-400">-</span>
-                              )}
                             </td>
                             <td className="py-3.5 px-4 text-center">
                               <div className="inline-flex items-center gap-2">
