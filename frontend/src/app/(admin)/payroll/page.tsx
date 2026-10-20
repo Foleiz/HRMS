@@ -465,7 +465,8 @@ export default function PayrollPage() {
   const [loading, setLoading] = useState<boolean>(true);
 
   // Sub-tab in Structure view: 'positions' vs 'employees'
-  const [structureSubTab, setStructureSubTab] = useState<'positions' | 'employees'>('positions');
+  // กรอบโครงสร้างเงินเดือนย้ายไปอยู่ที่ โครงสร้างองค์กร › ระดับพนักงาน แล้ว — แท็บนี้เหลือฐานเงินเดือนพนักงาน
+  const [structureSubTab, setStructureSubTab] = useState<'positions' | 'employees'>('employees');
   const [structurePage, setStructurePage] = useState<number>(1);
   const [structurePageSize, setStructurePageSize] = useState<number>(10);
   const [employeeSalaryPage, setEmployeeSalaryPage] = useState<number>(1);
@@ -2365,44 +2366,15 @@ export default function PayrollPage() {
       {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) === */}
       {activeTab === 'structures' && (
         <div className="space-y-4">
-          {/* Top Pill Switcher: กรอบโครงสร้าง / ฐานเงินเดือนพนักงาน (Matches Tab 3 Items style) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setStructureSubTab('positions')}
-                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                  structureSubTab === 'positions'
-                    ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
-              >
-                กรอบโครงสร้าง
-              </button>
-              <button
-                type="button"
-                onClick={() => setStructureSubTab('employees')}
-                className={`px-5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                  structureSubTab === 'employees'
-                    ? 'bg-[#0B2046] text-white shadow-xs'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
-              >
-                ฐานเงินเดือนพนักงาน
-              </button>
+          {/* กรอบเงินเดือน + ค่าตำแหน่ง ตั้งที่เมนูระดับพนักงาน */}
+          {canViewStructures && (
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span>กรอบเงินเดือนและค่าตำแหน่งของแต่ละระดับ ตั้งค่าได้ที่</span>
+              <Link href="/organization?tab=levels" className="font-semibold text-[#0B2046] dark:text-blue-400 hover:underline">
+                โครงสร้างองค์กร › ระดับพนักงาน
+              </Link>
             </div>
-
-            {structureSubTab === 'positions' && canCreateStructure && (
-              <button
-                type="button"
-                onClick={handleOpenCreateStructure}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer self-start sm:self-auto"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>เพิ่ม</span>
-              </button>
-            )}
-          </div>
+          )}
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-6 space-y-4">
 

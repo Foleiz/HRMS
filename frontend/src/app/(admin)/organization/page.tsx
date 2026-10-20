@@ -38,6 +38,8 @@ import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { employeeService } from '@/services/employeeService';
+import { salaryService } from '@/services/salaryService';
+import type { SalaryStructure } from '@/types/payroll';
 import { bankService } from '@/services/bankService';
 import { companyBankAccountService } from '@/services/companyBankAccountService';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -110,6 +112,10 @@ export default function OrganizationPage() {
   const canEditStruct = hasPermission('ORG_STRUCT_EDIT') || isSuper;
   const canCreatePos = hasPermission('ORG_POS_CREATE') || isSuper;
   const canEditPos = hasPermission('ORG_POS_EDIT') || isSuper;
+  // กรอบเงินเดือนในแท็บระดับพนักงาน — เห็น/แก้เฉพาะคนที่มีสิทธิ์โครงสร้างเงินเดือน
+  const canViewSalaryBand =
+    hasPermission('PAYROLL_STRUCTURE_VIEW') || hasPermission('PAYROLL_STRUCTURE_CREATE') || hasPermission('PAYROLL_STRUCTURE_EDIT') || isSuper;
+  const canEditSalaryBand = hasPermission('PAYROLL_STRUCTURE_CREATE') || hasPermission('PAYROLL_STRUCTURE_EDIT') || isSuper;
   const canCreateBenefit = hasPermission('ORG_BENEFIT_CREATE') || isSuper;
   const canEditBenefit = hasPermission('ORG_BENEFIT_EDIT') || isSuper;
   const canCreateCompany = hasPermission('ORG_COMP_CREATE') || isSuper;
@@ -217,6 +223,7 @@ export default function OrganizationPage() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [levels, setLevels] = useState<EmployeeLevel[]>([]);
+  const [salaryStructures, setSalaryStructures] = useState<SalaryStructure[]>([]);
   const [company, setCompany] = useState<Company | null>(null);
   const [benefits, setBenefits] = useState<BenefitItem[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -279,6 +286,8 @@ export default function OrganizationPage() {
     levelRank: undefined,
     status: 'ACTIVE',
   });
+  // กรอบเงินเดือนของระดับ (เก็บในตาราง salary_structure — 1 ระดับ = 1 กรอบปัจจุบัน)
+  const [bandForm, setBandForm] = useState({ minSalary: '', maxSalary: '', positionAllowance: '' });
 
   const [companyForm, setCompanyForm] = useState<UpdateCompanyRequest>({
     companyName: '',
@@ -331,6 +340,12 @@ export default function OrganizationPage() {
       setTeams(teamList || []);
       setPositions(pos || []);
       setLevels(lvls || []);
+      if (canViewSalaryBand) {
+        salaryService
+          .getStructures()
+          .then((list) => setSalaryStructures(list || []))
+          .catch(() => setSalaryStructures([]));
+      }
       setCompany(comp || null);
       setBenefits(ben || []);
       setEmployees(emps || []);
@@ -638,8 +653,26 @@ export default function OrganizationPage() {
     }
   };
 
+  // กรอบเงินเดือนปัจจุบันของระดับ: ที่ใช้งานอยู่และวันที่มีผลล่าสุด (ไม่มีที่ใช้งาน → ล่าสุด)
+  const structureForLevel = (levelId?: number): SalaryStructure | undefined => {
+    if (!levelId) return undefined;
+    const list = salaryStructures
+      .filter((x) => x.employeeLevelId === levelId)
+      .sort((a, b) => (b.effectiveFrom || '').localeCompare(a.effectiveFrom || ''));
+    return list.find((x) => (x.status || 'ACTIVE') === 'ACTIVE') ?? list[0];
+  };
+
+  const formatBaht = (n?: number | null) =>
+    `฿${(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   // Employee Level Handlers
   const handleOpenLevelModal = (lvl?: EmployeeLevel) => {
+    const band = lvl ? structureForLevel(lvl.id) : undefined;
+    setBandForm({
+      minSalary: band ? String(band.minSalary) : '',
+      maxSalary: band ? String(band.maxSalary) : '',
+      positionAllowance: band ? String(band.positionAllowance ?? 0) : '',
+    });
     if (lvl) {
       setModalMode('edit');
       setLevelForm({
@@ -663,23 +696,75 @@ export default function OrganizationPage() {
 
   const handleSaveLevel = async (e: React.FormEvent) => {
     e.preventDefault();
+    // ตรวจกรอบเงินเดือนก่อนบันทึก
+    const bandFilled = canEditSalaryBand && (bandForm.minSalary !== '' || bandForm.maxSalary !== '' || bandForm.positionAllowance !== '');
+    const minSalary = Number(bandForm.minSalary || 0);
+    const maxSalary = Number(bandForm.maxSalary || 0);
+    const positionAllowance = Number(bandForm.positionAllowance || 0);
+    if (bandFilled) {
+      if (bandForm.minSalary === '' || bandForm.maxSalary === '') {
+        toast.error('กรุณากรอกเงินเดือนขั้นต่ำและขั้นสูงให้ครบ');
+        return;
+      }
+      if (minSalary < 0 || maxSalary < minSalary) {
+        toast.error('เงินเดือนขั้นสูงต้องมากกว่าหรือเท่ากับขั้นต่ำ');
+        return;
+      }
+      if (positionAllowance < 0) {
+        toast.error('ค่าตำแหน่งต้องไม่ติดลบ');
+        return;
+      }
+    }
     try {
+      let levelId = levelForm.id;
       if (modalMode === 'create') {
-        await organizationService.createLevel({
+        const created = await organizationService.createLevel({
           levelCode: levelForm.levelCode.trim().toUpperCase(),
           levelName: levelForm.levelName.trim(),
           levelRank: levelForm.levelRank,
           status: levelForm.status,
         });
-        showSuccess('เพิ่มระดับพนักงานสำเร็จ');
+        levelId = created?.id;
       } else if (levelForm.id) {
         await organizationService.updateLevel(levelForm.id, {
           levelName: levelForm.levelName.trim(),
           levelRank: levelForm.levelRank,
           status: levelForm.status,
         });
-        showSuccess('แก้ไขระดับพนักงานสำเร็จ');
       }
+
+      // กรอบเงินเดือน: สร้างหรือแก้กรอบปัจจุบันของระดับนี้ — สถานะตามสถานะของระดับ
+      const existingBand = structureForLevel(levelId);
+      if (canEditSalaryBand && levelId && (bandFilled || existingBand)) {
+        if (existingBand) {
+          const newMin = bandFilled ? minSalary : existingBand.minSalary;
+          const newMax = bandFilled ? maxSalary : existingBand.maxSalary;
+          const def = existingBand.defaultSalary;
+          await salaryService.updateStructure(existingBand.id, {
+            positionId: existingBand.positionId ?? null,
+            employeeLevelId: levelId,
+            minSalary: newMin,
+            maxSalary: newMax,
+            defaultSalary: def == null ? null : Math.min(Math.max(def, newMin), newMax),
+            effectiveFrom: existingBand.effectiveFrom,
+            effectiveTo: existingBand.effectiveTo ?? null,
+            approvalLimit: existingBand.approvalLimit ?? null,
+            positionAllowance: bandFilled ? positionAllowance : existingBand.positionAllowance ?? 0,
+            status: levelForm.status,
+          });
+        } else {
+          await salaryService.createStructure({
+            employeeLevelId: levelId,
+            minSalary,
+            maxSalary,
+            defaultSalary: minSalary,
+            effectiveFrom: new Date().toISOString().slice(0, 10),
+            positionAllowance,
+            status: levelForm.status,
+          });
+        }
+      }
+      showSuccess(modalMode === 'create' ? 'เพิ่มระดับพนักงานสำเร็จ' : 'แก้ไขระดับพนักงานสำเร็จ');
       setModalOpen(false);
       loadData();
     } catch (err: unknown) {
@@ -1601,6 +1686,13 @@ export default function OrganizationPage() {
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อระดับพนักงาน</th>
+                    {canViewSalaryBand && (
+                      <>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-right">เงินเดือนขั้นต่ำ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-right">เงินเดือนขั้นสูง</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-right">ค่าตำแหน่ง</th>
+                      </>
+                    )}
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
                   </tr>
@@ -1608,14 +1700,14 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={4} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={canViewSalaryBand ? 7 : 4} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
                         กำลังโหลดข้อมูลระดับพนักงาน...
                       </td>
                     </tr>
                   ) : filteredLevels.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={canViewSalaryBand ? 7 : 4} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         ไม่พบข้อมูลระดับพนักงาน
                       </td>
                     </tr>
@@ -1624,6 +1716,26 @@ export default function OrganizationPage() {
                       <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">{lvl.levelCode}</td>
                         <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">{lvl.levelName}</td>
+                        {canViewSalaryBand &&
+                          (() => {
+                            const band = structureForLevel(lvl.id);
+                            if (!band) {
+                              return (
+                                <td colSpan={3} className="py-3 px-4 text-right whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                    ยังไม่ตั้งกรอบเงินเดือน
+                                  </span>
+                                </td>
+                              );
+                            }
+                            return (
+                              <>
+                                <td className="py-3 px-4 text-right font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatBaht(band.minSalary)}</td>
+                                <td className="py-3 px-4 text-right font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatBaht(band.maxSalary)}</td>
+                                <td className="py-3 px-4 text-right font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">{formatBaht(band.positionAllowance)}</td>
+                              </>
+                            );
+                          })()}
                         <td className="py-3 px-4 whitespace-nowrap">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
@@ -2927,6 +3039,46 @@ export default function OrganizationPage() {
                     <option value="ACTIVE">ใช้งานอยู่</option>
                     <option value="INACTIVE">ไม่ได้ใช้งาน</option>
                   </CustomSelect>
+                </div>
+              )}
+
+              {canEditSalaryBand && (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">กรอบเงินเดือน</p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">ใช้ตรวจฐานเงินเดือนพนักงานในระดับนี้ และจ่ายค่าตำแหน่งทุกเดือน</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      ['minSalary', 'เงินเดือนขั้นต่ำ'],
+                      ['maxSalary', 'เงินเดือนขั้นสูง'],
+                    ] as const).map(([key, label]) => (
+                      <div key={key}>
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{label}</label>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={bandForm[key]}
+                          onChange={(e) => setBandForm((f) => ({ ...f, [key]: e.target.value }))}
+                          placeholder="0.00"
+                          className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ค่าตำแหน่ง (ต่อเดือน)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={bandForm.positionAllowance}
+                      onChange={(e) => setBandForm((f) => ({ ...f, positionAllowance: e.target.value }))}
+                      placeholder="0.00"
+                      className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    />
+                  </div>
                 </div>
               )}
 
