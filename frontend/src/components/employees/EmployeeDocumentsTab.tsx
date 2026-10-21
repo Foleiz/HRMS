@@ -168,6 +168,13 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
     setRemarks('');
   };
 
+  const sourceLabel = (doc: EmployeeDocument) =>
+    doc.sourceRequestNo
+      ? `คำขอ ${doc.sourceRequestNo}`
+      : doc.uploadedByEmployeeId != null && doc.uploadedByEmployeeId === doc.employeeId
+      ? 'พนักงานอัปโหลดเอง'
+      : 'ฝ่ายบุคคลอัปโหลด';
+
   const toggleRow = (id: number) => {
     resetUploadForm();
     setExpandedTypeId((cur) => (cur === id ? null : id));
@@ -278,15 +285,16 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
-          <table className="table-standard text-xs w-full min-w-[640px]">
+          <table className="table-standard text-xs w-full min-w-[900px]">
             <thead className="bg-slate-50 text-slate-500 text-[11px]">
               <tr className="whitespace-nowrap">
-                <th className="w-12 px-3 py-2.5" />
-                <th className="w-16 text-left font-semibold px-2 py-2.5">ลำดับ</th>
+                <th className="w-20 text-left font-semibold px-3 py-2.5">ลำดับ</th>
                 <th className="text-left font-semibold px-4 py-2.5">เอกสาร</th>
-                <th className="text-left font-semibold px-4 py-2.5">ไฟล์ล่าสุด</th>
-                <th className="text-left font-semibold px-4 py-2.5">สถานะ</th>
-                <th className="w-12 px-3 py-2.5" />
+                <th className="text-left font-semibold px-4 py-2.5">ไฟล์</th>
+                <th className="text-left font-semibold px-4 py-2.5">วันที่อัปโหลด</th>
+                <th className="text-left font-semibold px-4 py-2.5">วันหมดอายุ</th>
+                <th className="text-left font-semibold px-4 py-2.5">ที่มา</th>
+                <th className="text-right font-semibold px-4 py-2.5">จัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -300,46 +308,95 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                       onClick={() => toggleRow(row.id)}
                       className={`cursor-pointer transition-colors ${isOpen ? 'bg-slate-50 dark:bg-slate-800/60' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
                     >
-                      <td className="px-3 py-3 text-center">
-                        <CheckCircle2
-                          className={`w-5 h-5 inline-block ${latest ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}
-                        />
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                          <CheckCircle2 className={`w-5 h-5 ${latest ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`} />
+                          {idx + 1}
+                        </span>
                       </td>
-                      <td className="px-2 py-3 text-slate-600 dark:text-slate-400">{idx + 1}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
-                        {row.name}
-                        {row.type?.isExpiryRequired && <span className="ml-1.5 text-[10px] font-normal text-slate-400">(มีวันหมดอายุ)</span>}
-                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{row.name}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                         {latest ? (
-                          <span className="break-all">
-                            {latest.fileName || '-'}
-                            {row.docs.length > 1 && <span className="ml-1 text-[10px] text-slate-400">(+{row.docs.length - 1} ไฟล์)</span>}
-                          </span>
+                          <>
+                            <p className="break-all max-w-[200px]">{latest.fileName || '-'}</p>
+                            <p className="text-[10px] text-slate-400">
+                              {formatSize(latest.fileSize)}
+                              {row.docs.length > 1 && ` · มีไฟล์ก่อนหน้า ${row.docs.length - 1} ไฟล์`}
+                            </p>
+                          </>
                         ) : (
                           <span className="text-slate-400">ยังไม่ได้อัปโหลด</span>
                         )}
                       </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">{latest ? formatDate(latest.uploadedAt) : '-'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {badge && (
-                          <span className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
-                            {badge.label}
-                            {latest?.expiryStatus === 'EXPIRING_SOON' && latest.daysToExpiry != null ? ` (อีก ${latest.daysToExpiry} วัน)` : ''}
-                          </span>
+                        {latest ? (
+                          <>
+                            <p className="text-slate-600 dark:text-slate-400">{formatDate(latest.expiryDate)}</p>
+                            {badge && (
+                              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
+                                {badge.label}
+                                {latest.expiryStatus === 'EXPIRING_SOON' && latest.daysToExpiry != null ? ` (อีก ${latest.daysToExpiry} วัน)` : ''}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-center">
-                        <ChevronDown className={`w-4 h-4 inline-block text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      <td className="px-4 py-3">
+                        {latest ? (
+                          <>
+                            <p className="text-slate-700 dark:text-slate-300">{sourceLabel(latest)}</p>
+                            {latest.uploadedByName && <p className="text-[10px] text-slate-400">{latest.uploadedByName}</p>}
+                          </>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          {latest?.hasFile && (
+                            <button
+                              type="button"
+                              title="ดาวน์โหลด"
+                              onClick={() => handleDownload(latest)}
+                              disabled={downloadingId === latest.id}
+                              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                            >
+                              {downloadingId === latest.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                            </button>
+                          )}
+                          {latest && (canManage || isOwnUpload(latest)) && (
+                            <button
+                              type="button"
+                              title="ลบ"
+                              onClick={() => setDeleteTarget(latest)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            title={isOpen ? 'ปิด' : canUpload ? 'อัปโหลดเอกสาร' : 'ดูไฟล์'}
+                            onClick={() => toggleRow(row.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                          >
+                            <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
 
                     {isOpen && (
                       <tr className="bg-white dark:bg-slate-900/40">
-                        <td colSpan={6} className="px-4 pb-4 pt-2 space-y-3">
-                          {/* ไฟล์ที่อัปโหลดแล้วในหัวข้อนี้ */}
-                          {row.docs.length > 0 && (
+                        <td colSpan={7} className="px-4 pb-4 pt-2 space-y-3">
+                          {/* ไฟล์ก่อนหน้าในหัวข้อนี้ (ไฟล์ล่าสุดแสดงในแถวแล้ว) */}
+                          {row.docs.length > 1 && (
                             <div className="space-y-1.5">
-                              {row.docs.map((doc) => {
+                              <p className="text-[11px] font-semibold text-slate-500">ไฟล์ก่อนหน้า</p>
+                              {row.docs.slice(1).map((doc) => {
                                 const b = EXPIRY_BADGE[doc.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY;
                                 return (
                                   <div key={doc.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
@@ -350,11 +407,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                       </p>
                                       <p className="text-[10px] text-slate-400">
                                         ออก {formatDate(doc.issuedDate)} · หมดอายุ {formatDate(doc.expiryDate)} ·{' '}
-                                        {doc.sourceRequestNo
-                                          ? `คำขอ ${doc.sourceRequestNo}`
-                                          : doc.uploadedByEmployeeId != null && doc.uploadedByEmployeeId === doc.employeeId
-                                          ? 'พนักงานอัปโหลดเอง'
-                                          : 'ฝ่ายบุคคลอัปโหลด'}{' '}
+                                        {sourceLabel(doc)}{' '}
                                         {formatDate(doc.uploadedAt)}
                                         {doc.uploadedByName ? ` · ${doc.uploadedByName}` : ''}
                                       </p>
@@ -474,8 +527,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                             </div>
                           )}
 
-                          {!canUpload && row.docs.length === 0 && (
-                            <p className="py-4 text-center text-slate-400">ยังไม่มีไฟล์ในหัวข้อนี้</p>
+                          {!canUpload && row.docs.length <= 1 && (
+                            <p className="py-4 text-center text-slate-400">{row.docs.length === 0 ? 'ยังไม่มีไฟล์ในหัวข้อนี้' : 'ไม่มีไฟล์ก่อนหน้า'}</p>
                           )}
                         </td>
                       </tr>
