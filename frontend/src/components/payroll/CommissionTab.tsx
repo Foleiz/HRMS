@@ -115,6 +115,9 @@ export default function CommissionTab() {
   // Monthly Periods Summary Rows State (เหมือนประวัติแต่เป็นงวดเดือน)
   const [monthlyPeriods, setMonthlyPeriods] = useState<CommissionMonthlyPeriod[]>([]);
   const [isLoadingPeriods, setIsLoadingPeriods] = useState<boolean>(false);
+  const [periodsSearch, setPeriodsSearch] = useState<string>('');
+  const [periodsPage, setPeriodsPage] = useState<number>(1);
+  const [periodsPageSize, setPeriodsPageSize] = useState<number>(10);
   const [selectedPeriodForDetails, setSelectedPeriodForDetails] = useState<CommissionMonthlyPeriod | null>(null);
   const [periodSummaryForDetails, setPeriodSummaryForDetails] = useState<CommissionPeriodSummary | null>(null);
   const [periodAllEntriesForDetails, setPeriodAllEntriesForDetails] = useState<CommissionBatchEntry[]>([]);
@@ -246,6 +249,10 @@ export default function CommissionTab() {
   useEffect(() => {
     setSummaryPage(1);
   }, [searchTerm]);
+
+  useEffect(() => {
+    setPeriodsPage(1);
+  }, [periodsSearch]);
 
   // Handle Opening Add Work for Specific Employee
   const handleOpenAddWorkForEmployee = (
@@ -634,6 +641,31 @@ export default function CommissionTab() {
   const pagedBatchRecords = filteredBatchRecords.slice(
     (safeBatchRecordsPage - 1) * batchRecordsPageSize,
     safeBatchRecordsPage * batchRecordsPageSize
+  );
+
+  // Filter & Pagination for Monthly Periods Overview (Section 5)
+  const filteredMonthlyPeriods = monthlyPeriods.filter((p) => {
+    if (!periodsSearch.trim()) return true;
+    const q = periodsSearch.toLowerCase().trim();
+    const matchLabel = p.monthLabel.toLowerCase().includes(q);
+    const matchMonthNum = p.month.toString() === q || p.month.toString().padStart(2, '0') === q;
+    const matchYear = p.year.toString().includes(q) || (p.year + 543).toString().includes(q);
+    const matchDateRange = p.dateRange.toLowerCase().includes(q);
+    const statusLabel =
+      p.status === 'CONFIRMED'
+        ? 'ยืนยันแล้ว confirmed'
+        : p.status === 'PAID'
+        ? 'จ่ายเงินแล้ว paid'
+        : 'ฉบับร่าง draft สะสมยอดเพิ่มได้';
+    const matchStatus = statusLabel.toLowerCase().includes(q);
+    return matchLabel || matchMonthNum || matchYear || matchDateRange || matchStatus;
+  });
+
+  const totalPeriodsPages = Math.max(1, Math.ceil(filteredMonthlyPeriods.length / periodsPageSize));
+  const safePeriodsPage = Math.min(Math.max(1, periodsPage), totalPeriodsPages);
+  const pagedMonthlyPeriods = filteredMonthlyPeriods.slice(
+    (safePeriodsPage - 1) * periodsPageSize,
+    safePeriodsPage * periodsPageSize
   );
 
   // Filter & Pagination for Monthly Period Details Modal
@@ -1063,7 +1095,7 @@ export default function CommissionTab() {
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 สรุปค่าคอมมิชชั่นประจำงวดเดือน (Monthly Periods Overview)
                 <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
-                  {monthlyPeriods.length} งวด
+                  {filteredMonthlyPeriods.length} {filteredMonthlyPeriods.length !== monthlyPeriods.length ? `จาก ${monthlyPeriods.length} ` : ''}งวด
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1072,15 +1104,38 @@ export default function CommissionTab() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => loadMonthlyPeriods(selectedYear)}
-            disabled={isLoadingPeriods}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer self-start sm:self-auto"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPeriods ? 'animate-spin' : ''}`} />
-            <span>รีเฟรชงวด</span>
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {/* Search Input */}
+            <div className="relative w-56 sm:w-64">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="ค้นหางวดเดือน, วันที่, สถานะ..."
+                value={periodsSearch}
+                onChange={(e) => setPeriodsSearch(e.target.value)}
+                className="w-full pl-9 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition shadow-2xs"
+              />
+              {periodsSearch && (
+                <button
+                  type="button"
+                  onClick={() => setPeriodsSearch('')}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => loadMonthlyPeriods(selectedYear)}
+              disabled={isLoadingPeriods}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPeriods ? 'animate-spin' : ''}`} />
+              <span>รีเฟรชงวด</span>
+            </button>
+          </div>
         </div>
 
         {/* Table inside inner container with rounded corners */}
@@ -1108,20 +1163,22 @@ export default function CommissionTab() {
                       <p className="mt-2 text-xs">กำลังโหลดข้อมูลงวดค่าคอมมิชชั่น...</p>
                     </td>
                   </tr>
-                ) : monthlyPeriods.length === 0 ? (
+                ) : filteredMonthlyPeriods.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
                       <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
                       <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
-                        ยังไม่มีข้อมูลค่าคอมมิชชั่นในปีนี้
+                        {periodsSearch ? 'ไม่พบงวดเดือนที่ตรงกับคำค้นหา' : 'ยังไม่มีข้อมูลค่าคอมมิชชั่นในปีนี้'}
                       </p>
                       <p className="mt-1 text-xs text-slate-400">
-                        สามารถนำเข้าไฟล์ Excel/CSV ในกล่องอัปโหลดด้านบนเพื่อเริ่มบันทึกข้อมูล
+                        {periodsSearch
+                          ? 'ลองเปลี่ยนคำค้นหา หรือกดล้างการค้นหา'
+                          : 'สามารถนำเข้าไฟล์ Excel/CSV ในกล่องอัปโหลดด้านบนเพื่อเริ่มบันทึกข้อมูล'}
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  monthlyPeriods.map((p) => (
+                  pagedMonthlyPeriods.map((p) => (
                     <tr
                       key={`${p.year}-${p.month}`}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
@@ -1194,6 +1251,19 @@ export default function CommissionTab() {
             </table>
           </div>
         </div>
+
+        {/* Monthly Periods Pagination */}
+        <TablePagination
+          total={filteredMonthlyPeriods.length}
+          page={safePeriodsPage}
+          pageSize={periodsPageSize}
+          onPageChange={(p) => setPeriodsPage(p)}
+          onPageSizeChange={(newSize) => {
+            setPeriodsPageSize(newSize);
+            setPeriodsPage(1);
+          }}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
       </div>
 
       {/* 6. Batch Import History Section */}
