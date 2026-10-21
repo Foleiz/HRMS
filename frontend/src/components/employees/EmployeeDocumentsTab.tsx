@@ -293,7 +293,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
               {rows.map((row, idx) => {
                 const latest = row.docs[0];
                 const isOpen = expandedTypeId === row.id;
-                const badge = latest ? EXPIRY_BADGE[latest.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY : null;
                 return (
                   <React.Fragment key={row.id}>
                     <tr
@@ -324,18 +323,20 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                           <span className="text-slate-400">ยังไม่ได้อัปโหลด</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-slate-600 dark:text-slate-400">{latest ? formatDate(latest.uploadedAt) : '-'}</td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {latest ? (
-                          <>
-                            <p className="text-slate-600 dark:text-slate-400">{formatDate(latest.expiryDate)}</p>
-                            {badge && (
-                              <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
-                                {badge.label}
-                                {latest.expiryStatus === 'EXPIRING_SOON' && latest.daysToExpiry != null ? ` (อีก ${latest.daysToExpiry} วัน)` : ''}
-                              </span>
-                            )}
-                          </>
+                          <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                            {formatDate(latest.uploadedAt)}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {latest?.expiryDate ? (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
+                            {formatDate(latest.expiryDate)}
+                          </span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
