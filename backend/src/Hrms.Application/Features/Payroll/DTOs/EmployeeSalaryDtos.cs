@@ -35,6 +35,9 @@ public class EmployeeSalaryOverviewDto
     public string? LevelName { get; set; }
     public decimal? CurrentSalary { get; set; }
     public DateOnly? CurrentEffectiveFrom { get; set; }
+    /// <summary>การปรับเงินเดือนที่ตั้งล่วงหน้าไว้ (มีผลหลังวันนี้)</summary>
+    public decimal? PendingSalary { get; set; }
+    public DateOnly? PendingEffectiveFrom { get; set; }
     public decimal? SalaryStructureMin { get; set; }
     public decimal? SalaryStructureMax { get; set; }
     public int SalaryRecordCount { get; set; }

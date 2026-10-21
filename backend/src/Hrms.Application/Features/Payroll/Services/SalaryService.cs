@@ -700,7 +700,12 @@ public class SalaryService : ISalaryService
         {
             var activeAssignment = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
             var empSalaries = allSalaries.Where(s => s.EmployeeId == emp.Id).ToList();
-            var currentSalary = empSalaries.FirstOrDefault(s => s.EffectiveTo == null) ?? empSalaries.FirstOrDefault();
+            // เงินเดือนปัจจุบัน = รายการที่มีผล ณ วันนี้ (ไม่เอารายการที่ตั้งล่วงหน้าไว้มาแสดงเป็นปัจจุบัน)
+            var todayTh = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+            var currentSalary = empSalaries.FirstOrDefault(s => s.EffectiveFrom <= todayTh)
+                ?? empSalaries.LastOrDefault();
+            // การปรับที่ตั้งล่วงหน้าไว้ (มีผลหลังวันนี้) — รายการล่าสุด
+            var pendingSalary = empSalaries.FirstOrDefault(s => s.EffectiveFrom > todayTh && s != currentSalary);
 
             // Find matching salary structure
             SalaryStructure? matchingStructure = null;
@@ -754,6 +759,8 @@ public class SalaryService : ISalaryService
                 LevelName = activeAssignment?.EmployeeLevel?.LevelName ?? activeAssignment?.Position?.EmployeeLevel?.LevelName,
                 CurrentSalary = currentSalary?.BaseSalary,
                 CurrentEffectiveFrom = currentSalary?.EffectiveFrom,
+                PendingSalary = pendingSalary?.BaseSalary,
+                PendingEffectiveFrom = pendingSalary?.EffectiveFrom,
                 SalaryStructureMin = matchingStructure?.MinSalary,
                 SalaryStructureMax = matchingStructure?.MaxSalary,
                 SalaryRecordCount = empSalaries.Count

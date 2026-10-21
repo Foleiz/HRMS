@@ -1,9 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, User, Building2, Briefcase } from 'lucide-react';
+import { X, Loader2, AlertCircle, Building2, Briefcase, CalendarClock } from 'lucide-react';
 import { EmployeeSalaryOverview, AdjustEmployeeSalaryPayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+
+/** yyyy-MM-dd ตามเวลาเครื่อง (ไม่ใช้ toISOString เพราะเขตเวลาไทยทำให้วันถอยไป 1 วัน) */
+const toLocalIso = (d: Date) => {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+const formatThaiDate = (iso?: string | null) => {
+  if (!iso) return '-';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+/** ตัวอักษรย่อจากชื่อ (ตัดคำนำหน้า) */
+const initialsOf = (name: string) => {
+  const parts = name.replace(/^(นาย|นางสาว|นาง|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '').trim().split(/\s+/);
+  return parts.slice(0, 2).map((p) => p.charAt(0)).join('').toUpperCase() || '?';
+};
 
 interface Props {
   isOpen: boolean;
@@ -37,7 +55,14 @@ export const AdjustSalaryModal: React.FC<Props> = ({
       // Default to 1st of next month or today
       const today = new Date();
       const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-      setEffectiveFrom(nextMonth.toISOString().split('T')[0]);
+      // ถ้ามีการปรับล่วงหน้าไว้แล้ว วันเริ่มต้นต้องหลังวันนั้น → เริ่มต้นที่วันที่ 1 ของเดือนถัดจากรายการล่วงหน้า
+      const latestFrom = employee.pendingEffectiveFrom || employee.currentEffectiveFrom;
+      let def = nextMonth;
+      if (latestFrom) {
+        const [ly, lm] = latestFrom.split('-').map(Number);
+        if (latestFrom >= toLocalIso(def)) def = new Date(ly, lm, 1); // วันที่ 1 ของเดือนถัดไปจากรายการล่าสุด
+      }
+      setEffectiveFrom(toLocalIso(def));
     }
     setError(null);
   }, [employee, isOpen]);
@@ -53,6 +78,11 @@ export const AdjustSalaryModal: React.FC<Props> = ({
   const isBelowMin = !isNaN(newSalaryNum) && minSalary != null && newSalaryNum < minSalary;
   const isAboveMax = !isNaN(newSalaryNum) && maxSalary != null && newSalaryNum > maxSalary;
   const isOutOfRange = isBelowMin || isAboveMax;
+
+  const diff = !isNaN(newSalaryNum) && currentSalaryNum > 0 ? newSalaryNum - currentSalaryNum : null;
+  const diffPct = diff != null && currentSalaryNum > 0 ? (diff / currentSalaryNum) * 100 : null;
+  // วันที่มีผลต้องหลังรายการล่าสุด (รวมรายการที่ตั้งล่วงหน้า)
+  const latestEffectiveFrom = employee.pendingEffectiveFrom || employee.currentEffectiveFrom || null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,8 +108,8 @@ export const AdjustSalaryModal: React.FC<Props> = ({
       return;
     }
 
-    if (employee.currentEffectiveFrom && effectiveFrom <= employee.currentEffectiveFrom) {
-      setError(`วันที่มีผล (${effectiveFrom}) ต้องมากกว่าวันที่มีผลของเงินเดือนปัจจุบัน (${employee.currentEffectiveFrom})`);
+    if (latestEffectiveFrom && effectiveFrom <= latestEffectiveFrom) {
+      setError(`วันที่มีผลต้องหลังวันที่ ${formatThaiDate(latestEffectiveFrom)} ซึ่งเป็นวันที่มีผลของเงินเดือนล่าสุด`);
       return;
     }
 
@@ -126,7 +156,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             <div className="p-4 bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl space-y-2.5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-300 flex items-center justify-center font-bold text-sm">
-                  {employee.employeeCode.slice(-3)}
+                  {initialsOf(employee.employeeName)}
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm">{employee.employeeName}</h4>
@@ -156,7 +186,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                 >
                   <span className="flex items-center gap-1 font-medium">
                     {isOutOfRange && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
-                    กรอบเงินเดือนตามตำแหน่ง:
+                    {employee.levelName ? `กรอบเงินเดือนตามระดับ (${employee.levelName}):` : 'กรอบเงินเดือนอ้างอิง:'}
                   </span>
                   <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 dark:text-rose-300 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
                     ฿{employee.salaryStructureMin?.toLocaleString()} - ฿{employee.salaryStructureMax?.toLocaleString()}
@@ -171,6 +201,17 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             </div>
           )}
 
+          {/* การปรับที่ตั้งล่วงหน้าไว้แล้ว */}
+          {employee.pendingSalary != null && employee.pendingEffectiveFrom && (
+            <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-xs">
+              <CalendarClock className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>
+                มีการปรับเงินเดือนตั้งล่วงหน้าไว้แล้ว เป็น <b>฿{employee.pendingSalary.toLocaleString()}</b> มีผล{' '}
+                <b>{formatThaiDate(employee.pendingEffectiveFrom)}</b> — การปรับครั้งใหม่ต้องมีผลหลังวันนั้น
+              </span>
+            </div>
+          )}
+
           {/* Current vs New Salary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -178,6 +219,9 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               <div className="px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300">
                 {currentSalaryNum > 0 ? `฿${currentSalaryNum.toLocaleString()}` : 'ยังไม่มีข้อมูล'}
               </div>
+              {employee.currentEffectiveFrom && (
+                <p className="text-[11px] text-slate-400 mt-1">มีผลตั้งแต่ {formatThaiDate(employee.currentEffectiveFrom)}</p>
+              )}
             </div>
 
             <div>
@@ -186,15 +230,14 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               </label>
               <div className="relative">
                 <input
-                  type="number"
-                  min={minSalary ?? 0}
-                  max={maxSalary ?? undefined}
-                  step="500"
+                  type="text"
+                  inputMode="decimal"
                   required
-                  placeholder="เช่น 35000"
-                  value={baseSalary}
+                  placeholder="เช่น 35,000"
+                  value={baseSalary ? Number(baseSalary.split('.')[0] || 0).toLocaleString('en-US') + (baseSalary.includes('.') ? '.' + baseSalary.split('.')[1] : '') : ''}
                   onChange={(e) => {
-                    setBaseSalary(e.target.value);
+                    const raw = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+                    setBaseSalary(raw);
                     if (error) setError(null);
                   }}
                   className={`w-full text-sm pl-3.5 pr-8 py-2.5 rounded-xl focus:outline-none transition-all font-semibold ${
@@ -215,6 +258,12 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                 <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 mt-1.5 animate-in fade-in">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   สูงกว่าเงินเดือนสูงสุด (สูงสุด ฿{maxSalary?.toLocaleString()})
+                </p>
+              )}
+              {!isOutOfRange && diff != null && diff !== 0 && (
+                <p className={`text-[11px] font-semibold mt-1.5 ${diff > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {diff > 0 ? '+' : '-'}฿{Math.abs(diff).toLocaleString()} ({diff > 0 ? '+' : '-'}
+                  {Math.abs(diffPct ?? 0).toFixed(1)}%) จากเงินเดือนปัจจุบัน
                 </p>
               )}
             </div>

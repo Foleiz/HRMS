@@ -97,6 +97,9 @@ export interface EmployeeSalaryOverview {
   levelName?: string | null;
   currentSalary?: number | null;
   currentEffectiveFrom?: string | null;
+  /** การปรับเงินเดือนที่ตั้งล่วงหน้าไว้ (มีผลหลังวันนี้) */
+  pendingSalary?: number | null;
+  pendingEffectiveFrom?: string | null;
   salaryStructureMin?: number | null;
   salaryStructureMax?: number | null;
   salaryRecordCount: number;
