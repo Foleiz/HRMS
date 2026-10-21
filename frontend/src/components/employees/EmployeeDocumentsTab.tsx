@@ -322,9 +322,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                         {doc.fileName || '-'} <span className="font-normal text-[11px] text-slate-400">{formatSize(doc.fileSize)}</span>
                       </p>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {doc.issuedDate && <>ออก {formatDate(doc.issuedDate)} · </>}
-                        {doc.expiryDate ? <>หมดอายุ {formatDate(doc.expiryDate)} · </> : <>ไม่มีวันหมดอายุ · </>}
-                        อัปโหลดโดย {sourceLabel(doc) === 'พนักงานอัปโหลดเอง' ? 'พนักงานเอง' : doc.uploadedByName || sourceLabel(doc)} {formatDate(doc.uploadedAt)}
+                        อัปโหลดโดย {doc.uploadedByName || sourceLabel(doc)} {formatDate(doc.uploadedAt)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
