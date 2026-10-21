@@ -982,10 +982,8 @@ export default function CommissionTab() {
                         <th className="py-2 px-3 text-center">ช่วงวันที่</th>
                         <th className="py-2 px-3 text-right">ยอดขาย (บาท)</th>
                         <th className="py-2 px-3 text-center">อัตรา %</th>
-                        <th className="py-2 px-3 text-right">คอมมิชชั่น</th>
-                        <th className="py-2 px-3 text-right">เงินพิเศษ</th>
                         <th className="py-2 px-3 text-right font-bold text-emerald-700 dark:text-emerald-400">
-                          รวมสุทธิ
+                          คอมมิชชั่น (บาท)
                         </th>
                         <th className="py-2 px-3 text-center">ผลกระทบ</th>
                         <th className="py-2 px-3 text-center">สถานะ</th>
@@ -1021,14 +1019,6 @@ export default function CommissionTab() {
                           </td>
                           <td className="py-2 px-3 text-center font-mono">
                             {row.commissionRate}%
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono">
-                            ฿{row.commissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono text-slate-500">
-                            {row.specialAmount > 0
-                              ? `฿${row.specialAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                              : '-'}
                           </td>
                           <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
                             ฿{row.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
