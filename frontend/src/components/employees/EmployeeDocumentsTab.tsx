@@ -56,12 +56,6 @@ const todayIso = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-/** วันหมดอายุอัตโนมัติ = วันนี้ + อายุเอกสาร (เดือน) */
-const autoExpiryFromToday = (months: number) => {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth() + months, d.getDate()).toISOString();
-};
-
 const readAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -97,7 +91,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const typeId = expandedTypeId ?? '';
   const [file, setFile] = useState<File | null>(null);
   const [expiryDate, setExpiryDate] = useState('');
-  const [remarks, setRemarks] = useState('');
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -165,7 +158,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const resetUploadForm = () => {
     setFile(null);
     setExpiryDate('');
-    setRemarks('');
   };
 
   const sourceLabel = (doc: EmployeeDocument) =>
@@ -211,7 +203,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         // มีอายุเอกสาร → ใช้วันที่อัปโหลดเป็นวันที่ออก (หลังบ้านคำนวณวันหมดอายุ)
         issuedDate: hasValidity ? todayIso() : undefined,
         expiryDate: !hasValidity && expiryDate ? expiryDate : undefined,
-        remarks: remarks.trim() || undefined,
       });
       toast.success('อัปโหลดเอกสารเข้าแฟ้มเรียบร้อย');
       resetUploadForm();
@@ -287,7 +278,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
-          <table className="table-standard text-xs w-full min-w-[900px]">
+          <table className="table-standard text-xs w-full min-w-[780px]">
             <thead className="bg-slate-50 text-slate-500 text-[11px]">
               <tr className="whitespace-nowrap">
                 <th className="w-20 text-left font-semibold px-3 py-2.5">ลำดับ</th>
@@ -295,7 +286,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                 <th className="text-left font-semibold px-4 py-2.5">ไฟล์</th>
                 <th className="text-left font-semibold px-4 py-2.5">วันที่อัปโหลด</th>
                 <th className="text-left font-semibold px-4 py-2.5">วันหมดอายุ</th>
-                <th className="text-left font-semibold px-4 py-2.5">ที่มา</th>
                 <th className="text-right font-semibold px-4 py-2.5">จัดการ</th>
               </tr>
             </thead>
@@ -308,7 +298,11 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                   <React.Fragment key={row.id}>
                     <tr
                       onClick={() => toggleRow(row.id)}
-                      className={`cursor-pointer transition-colors ${isOpen ? 'bg-slate-50 dark:bg-slate-800/60' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+                      className={`cursor-pointer transition-colors ${
+                        isOpen
+                          ? 'bg-amber-50 dark:bg-amber-900/20 shadow-[inset_4px_0_0_0_#fbbf24]'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                      }`}
                     >
                       <td className="px-3 py-3 whitespace-nowrap">
                         <span className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400">
@@ -341,16 +335,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                 {latest.expiryStatus === 'EXPIRING_SOON' && latest.daysToExpiry != null ? ` (อีก ${latest.daysToExpiry} วัน)` : ''}
                               </span>
                             )}
-                          </>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        {latest ? (
-                          <>
-                            <p className="text-slate-700 dark:text-slate-300">{sourceLabel(latest)}</p>
-                            {latest.uploadedByName && <p className="text-[10px] text-slate-400">{latest.uploadedByName}</p>}
                           </>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -392,8 +376,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                     </tr>
 
                     {isOpen && (
-                      <tr className="bg-white dark:bg-slate-900/40">
-                        <td colSpan={7} className="px-4 pb-4 pt-2 space-y-3">
+                      <tr className="bg-amber-50/40 dark:bg-amber-900/10">
+                        <td colSpan={6} className="px-4 pb-4 pt-2 space-y-3 border-l-4 border-amber-400">
                           {/* ไฟล์ก่อนหน้าในหัวข้อนี้ (ไฟล์ล่าสุดแสดงในแถวแล้ว) */}
                           {row.docs.length > 1 && (
                             <div className="space-y-1.5">
@@ -484,36 +468,17 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                               <p className="text-[10px] text-slate-400">ประเภทไฟล์ .pdf .jpg .png .doc (ไม่เกิน 5 MB)</p>
 
                               {file && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                                  {(row.type.validityMonths ?? 0) > 0 ? (
-                                    <div className="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-                                      ไม่ต้องระบุวันที่ — ใช้วันที่อัปโหลดเป็นวันที่ออก และหมดอายุอัตโนมัติ{' '}
-                                      <span className="font-semibold text-slate-800 dark:text-slate-100">
-                                        {formatDate(autoExpiryFromToday(row.type.validityMonths ?? 0))}
-                                      </span>{' '}
-                                      <span className="text-slate-400">(อายุเอกสาร {row.type.validityMonths} เดือน)</span>
-                                    </div>
-                                  ) : row.type.isExpiryRequired ? (
-                                    <div className="sm:col-span-2">
+                                <div className="space-y-3">
+                                  {/* ต้องมีวันหมดอายุแต่ข้อมูลหลักไม่ได้กำหนดอายุไว้ → ให้กรอกวันหมดอายุ (แบบอื่นระบบคำนวณเอง) */}
+                                  {row.type.isExpiryRequired && !((row.type.validityMonths ?? 0) > 0) && (
+                                    <div className="max-w-xs">
                                       <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                                         วันหมดอายุ <span className="text-rose-500">*</span>
                                       </label>
                                       <ThaiDatePicker value={expiryDate} minDate={todayIso()} onChange={(val) => setExpiryDate(val)} />
                                     </div>
-                                  ) : (
-                                    <div className="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400">
-                                      เอกสารประเภทนี้ไม่มีวันหมดอายุ
-                                    </div>
                                   )}
-                                  <div>
-                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">หมายเหตุ</label>
-                                    <input
-                                      value={remarks}
-                                      onChange={(e) => setRemarks(e.target.value)}
-                                      className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none"
-                                    />
-                                  </div>
-                                  <div className="sm:col-span-3 flex justify-end gap-2">
+                                  <div className="flex justify-end gap-2">
                                     <button
                                       type="button"
                                       onClick={resetUploadForm}
