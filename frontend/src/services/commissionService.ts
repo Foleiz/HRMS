@@ -8,6 +8,7 @@ import {
   PagedCommissionBatches,
   RevertCommissionBatchResult,
   CommissionBatchEntry,
+  CommissionMonthlyPeriod,
   UpdateCommissionItemPayload,
   AddManualCommissionPayload,
 } from '@/types/commission';
@@ -17,6 +18,26 @@ export const commissionService = {
     const res = await apiClient.get<ApiResponse<CommissionPeriodSummary>>('/salary/commission', {
       params: { year, month },
     });
+    return res.data.data;
+  },
+
+  async getMonthlyPeriods(year?: number): Promise<CommissionMonthlyPeriod[]> {
+    const res = await apiClient.get<ApiResponse<CommissionMonthlyPeriod[]>>(
+      '/salary/commission/periods',
+      {
+        params: { year },
+      }
+    );
+    return res.data.data;
+  },
+
+  async getPeriodAllEntries(year: number, month: number): Promise<CommissionBatchEntry[]> {
+    const res = await apiClient.get<ApiResponse<CommissionBatchEntry[]>>(
+      '/salary/commission/periods/all-entries',
+      {
+        params: { year, month },
+      }
+    );
     return res.data.data;
   },
 
