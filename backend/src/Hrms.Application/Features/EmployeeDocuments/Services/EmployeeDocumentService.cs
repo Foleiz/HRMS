@@ -77,6 +77,9 @@ public class EmployeeDocumentService : IEmployeeDocumentService
             throw new ValidationException("กรุณาแนบไฟล์เอกสาร");
 
         var issued = ParseDate(dto.IssuedDate);
+        // ประเภทเอกสารกำหนดอายุไว้ แต่ไม่ได้ส่งวันที่ออกมา → ใช้วันที่อัปโหลดเป็นวันที่ออก แล้วคำนวณวันหมดอายุจากอายุเอกสาร
+        if (!issued.HasValue && type.ValidityMonths is > 0)
+            issued = DocumentExpiry.Today();
         // ไม่ระบุวันหมดอายุ แต่ประเภทเอกสารกำหนดอายุไว้ → คำนวณจากวันที่ออก
         var expiry = DocumentExpiry.ResolveExpiry(issued, ParseDate(dto.ExpiryDate), type);
         if (type.IsExpiryRequired && !expiry.HasValue)

@@ -50,6 +50,18 @@ const apiMessage = (err: unknown, fallback: string): string => {
   return message || fallback;
 };
 
+const todayIso = () => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
+/** วันหมดอายุอัตโนมัติ = วันนี้ + อายุเอกสาร (เดือน) */
+const autoExpiryFromToday = (months: number) => {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() + months, d.getDate()).toISOString();
+};
+
 const readAsDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -84,7 +96,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const [dragOver, setDragOver] = useState(false);
   const typeId = expandedTypeId ?? '';
   const [file, setFile] = useState<File | null>(null);
-  const [issuedDate, setIssuedDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [remarks, setRemarks] = useState('');
   const [saving, setSaving] = useState(false);
@@ -150,20 +161,9 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   }, [docTypes, documents]);
 
   const selectedType = docTypes.find((t) => t.id === typeId);
-  // ประเภทเอกสารกำหนดอายุไว้ → คำนวณวันหมดอายุจากวันที่ออก (ถ้ายังไม่ได้กรอกเอง)
-  const autoExpiry = useMemo(() => {
-    const months = selectedType?.validityMonths;
-    if (!months || !issuedDate) return '';
-    const [y, m, d] = issuedDate.split('-').map(Number);
-    const date = new Date(y, m - 1 + months, d);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  }, [selectedType, issuedDate]);
-  const effectiveExpiry = expiryDate || autoExpiry;
 
   const resetUploadForm = () => {
     setFile(null);
-    setIssuedDate('');
     setExpiryDate('');
     setRemarks('');
   };
@@ -198,8 +198,9 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const handleSave = async () => {
     if (!typeId) return toast.warning('กรุณาเลือกประเภทเอกสาร');
     if (!file) return toast.warning('กรุณาแนบไฟล์เอกสาร');
-    if (selectedType?.isExpiryRequired && !effectiveExpiry) return toast.warning('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
-    if (issuedDate && effectiveExpiry && effectiveExpiry < issuedDate) return toast.warning('วันหมดอายุต้องไม่ก่อนวันที่ออกเอกสาร');
+    const hasValidity = (selectedType?.validityMonths ?? 0) > 0;
+    // มีอายุเอกสารในข้อมูลหลัก → ระบบคำนวณวันหมดอายุให้เอง / ต้องมีวันหมดอายุแต่ไม่ได้กำหนดอายุ → ต้องกรอกวันหมดอายุ
+    if (selectedType?.isExpiryRequired && !hasValidity && !expiryDate) return toast.warning('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
 
     setSaving(true);
     try {
@@ -207,8 +208,9 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         documentTypeId: Number(typeId),
         fileName: file.name,
         fileData: await readAsDataUrl(file),
-        issuedDate: issuedDate || undefined,
-        expiryDate: effectiveExpiry || undefined,
+        // มีอายุเอกสาร → ใช้วันที่อัปโหลดเป็นวันที่ออก (หลังบ้านคำนวณวันหมดอายุ)
+        issuedDate: hasValidity ? todayIso() : undefined,
+        expiryDate: !hasValidity && expiryDate ? expiryDate : undefined,
         remarks: remarks.trim() || undefined,
       });
       toast.success('อัปโหลดเอกสารเข้าแฟ้มเรียบร้อย');
@@ -483,19 +485,26 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
 
                               {file && (
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                                  <div>
-                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">วันที่ออกเอกสาร</label>
-                                    <ThaiDatePicker value={issuedDate} onChange={(val) => setIssuedDate(val)} />
-                                  </div>
-                                  <div>
-                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                      วันหมดอายุ {row.type.isExpiryRequired && <span className="text-rose-500">*</span>}
-                                    </label>
-                                    <ThaiDatePicker value={effectiveExpiry} minDate={issuedDate || undefined} onChange={(val) => setExpiryDate(val)} />
-                                    {!expiryDate && autoExpiry && (
-                                      <p className="text-[10px] text-slate-400 mt-1">คำนวณจากอายุเอกสาร {row.type.validityMonths} เดือน</p>
-                                    )}
-                                  </div>
+                                  {(row.type.validityMonths ?? 0) > 0 ? (
+                                    <div className="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                                      ไม่ต้องระบุวันที่ — ใช้วันที่อัปโหลดเป็นวันที่ออก และหมดอายุอัตโนมัติ{' '}
+                                      <span className="font-semibold text-slate-800 dark:text-slate-100">
+                                        {formatDate(autoExpiryFromToday(row.type.validityMonths ?? 0))}
+                                      </span>{' '}
+                                      <span className="text-slate-400">(อายุเอกสาร {row.type.validityMonths} เดือน)</span>
+                                    </div>
+                                  ) : row.type.isExpiryRequired ? (
+                                    <div className="sm:col-span-2">
+                                      <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        วันหมดอายุ <span className="text-rose-500">*</span>
+                                      </label>
+                                      <ThaiDatePicker value={expiryDate} minDate={todayIso()} onChange={(val) => setExpiryDate(val)} />
+                                    </div>
+                                  ) : (
+                                    <div className="sm:col-span-2 px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+                                      เอกสารประเภทนี้ไม่มีวันหมดอายุ
+                                    </div>
+                                  )}
                                   <div>
                                     <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">หมายเหตุ</label>
                                     <input
