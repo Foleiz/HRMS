@@ -24,6 +24,7 @@ export interface EmployeeDocument {
   daysToExpiry?: number | null;
   remarks?: string | null;
   uploadedAt: string;
+  uploadedByEmployeeId?: number | null;
   uploadedByName?: string | null;
   sourceGeneralRequestId?: number | null;
   sourceRequestNo?: string | null;

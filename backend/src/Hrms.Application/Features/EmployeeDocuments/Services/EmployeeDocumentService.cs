@@ -53,11 +53,16 @@ public class EmployeeDocumentService : IEmployeeDocumentService
 
     public async Task<EmployeeDocumentDto> UploadAsync(long employeeId, CreateEmployeeDocumentDto dto, CancellationToken cancellationToken = default)
     {
-        if (!HasDocCreate)
-            throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารเข้าแฟ้มพนักงาน");
+        // พนักงานอัปโหลดเอกสารเข้าแฟ้มของตัวเองได้จากหน้าโปรไฟล์ (ไม่ต้องผ่านคำร้อง)
+        bool isSelf = _currentUser.EmployeeId.HasValue && _currentUser.EmployeeId.Value == employeeId;
+        if (!isSelf)
+        {
+            if (!HasDocCreate)
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารเข้าแฟ้มพนักงาน");
 
-        if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_DOC_CREATE", cancellationToken))
-            throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารของพนักงานท่านนี้");
+            if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(employeeId, "EMP_DOC_CREATE", cancellationToken))
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เพิ่มเอกสารของพนักงานท่านนี้");
+        }
 
         var employeeExists = await _context.Employees.AnyAsync(e => e.Id == employeeId, cancellationToken);
         if (!employeeExists) throw new NotFoundException("พนักงาน", employeeId);
@@ -129,14 +134,20 @@ public class EmployeeDocumentService : IEmployeeDocumentService
 
     public async Task DeleteAsync(long id, CancellationToken cancellationToken = default)
     {
-        if (!HasDocEdit)
-            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารในแฟ้มพนักงาน");
-
         var doc = await _context.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == id, cancellationToken)
             ?? throw new NotFoundException("เอกสาร", id);
 
-        if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_EDIT", cancellationToken))
-            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารของพนักงานท่านนี้");
+        // พนักงานลบได้เฉพาะไฟล์ที่ตัวเองอัปโหลดเข้าแฟ้มตัวเอง (ไม่รวมที่ HR อัปโหลด/มาจากคำร้อง)
+        var me = _currentUser.EmployeeId;
+        bool isOwnUpload = me.HasValue && doc.EmployeeId == me.Value && doc.UploadedByEmployeeId == me.Value && doc.SourceGeneralRequestId == null;
+        if (!isOwnUpload)
+        {
+            if (!HasDocEdit)
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารในแฟ้มพนักงาน");
+
+            if (!IsAdmin && !await _dataScope.CanAccessEmployeeAsync(doc.EmployeeId, "EMP_DOC_EDIT", cancellationToken))
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบเอกสารของพนักงานท่านนี้");
+        }
 
         _context.EmployeeDocuments.Remove(doc);
         await _context.SaveChangesAsync(cancellationToken);
@@ -199,6 +210,7 @@ public class EmployeeDocumentService : IEmployeeDocumentService
                 d.ExpiryDate,
                 d.Remarks,
                 d.UploadedAt,
+                d.UploadedByEmployeeId,
                 UploadedByPrefix = d.UploadedByEmployee != null ? d.UploadedByEmployee.Prefix : null,
                 UploadedByFirstName = d.UploadedByEmployee != null ? d.UploadedByEmployee.FirstName : null,
                 UploadedByLastName = d.UploadedByEmployee != null ? d.UploadedByEmployee.LastName : null,
@@ -257,6 +269,7 @@ public class EmployeeDocumentService : IEmployeeDocumentService
                 DaysToExpiry = days,
                 Remarks = r.Remarks,
                 UploadedAt = r.UploadedAt,
+                UploadedByEmployeeId = r.UploadedByEmployeeId,
                 UploadedByName = r.UploadedByFirstName == null ? null : $"{r.UploadedByPrefix} {r.UploadedByFirstName} {r.UploadedByLastName}".Trim(),
                 SourceGeneralRequestId = r.SourceGeneralRequestId,
                 SourceRequestNo = requestNo

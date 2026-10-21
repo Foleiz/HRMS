@@ -1165,7 +1165,7 @@ export default function EmployeeDetailView({
           {/* TAB 7: แฟ้มเอกสารพนักงาน (Employee Documents)               */}
           {/* ============================================================ */}
           {activeTab === 'documents' && (
-            <EmployeeDocumentsTab employeeId={employee.id} canManage={canManageDocuments} />
+            <EmployeeDocumentsTab employeeId={employee.id} canManage={canManageDocuments} isSelf={isProfilePage} />
           )}
 
           {/* ============================================================ */}

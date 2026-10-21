@@ -23,6 +23,7 @@ public class EmployeeDocumentDto
     public int? DaysToExpiry { get; set; }
     public string? Remarks { get; set; }
     public DateTime UploadedAt { get; set; }
+    public long? UploadedByEmployeeId { get; set; }
     public string? UploadedByName { get; set; }
     public long? SourceGeneralRequestId { get; set; }
     public string? SourceRequestNo { get; set; }

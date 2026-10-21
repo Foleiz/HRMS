@@ -58,9 +58,8 @@ public class EmployeeDocumentsController : ControllerBase
         return Ok(ApiResponse<List<EmployeeDocumentDto>>.Ok(result, "ดึงเอกสารของฉันสำเร็จ"));
     }
 
-    /// <summary>ฝ่ายบุคคลเพิ่มเอกสารเข้าแฟ้มพนักงาน</summary>
+    /// <summary>เพิ่มเอกสารเข้าแฟ้มพนักงาน — ฝ่ายบุคคล (EMP_DOC_CREATE) หรือพนักงานอัปโหลดของตัวเอง (ตรวจสิทธิ์ใน service)</summary>
     [HttpPost("api/employees/{employeeId:long}/documents")]
-    [RequirePermission("EMP_DOC_CREATE")]
     [RequestSizeLimit(8 * 1024 * 1024)]
     public async Task<ActionResult<ApiResponse<EmployeeDocumentDto>>> Upload(long employeeId, [FromBody] CreateEmployeeDocumentDto dto, CancellationToken cancellationToken)
     {
@@ -76,9 +75,8 @@ public class EmployeeDocumentsController : ControllerBase
         return File(file.Data, file.MimeType, file.FileName);
     }
 
-    /// <summary>ลบเอกสารออกจากแฟ้ม (ฝ่ายบุคคล)</summary>
+    /// <summary>ลบเอกสารออกจากแฟ้ม — ฝ่ายบุคคล (EMP_DOC_EDIT) หรือพนักงานลบไฟล์ที่ตัวเองอัปโหลด (ตรวจสิทธิ์ใน service)</summary>
     [HttpDelete("api/employee-documents/{id:long}")]
-    [RequirePermission("EMP_DOC_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> Delete(long id, CancellationToken cancellationToken)
     {
         await _service.DeleteAsync(id, cancellationToken);

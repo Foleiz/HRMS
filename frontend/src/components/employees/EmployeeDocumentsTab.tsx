@@ -63,9 +63,14 @@ interface Props {
   employeeId: number;
   /** ฝ่ายบุคคล/แอดมิน — เพิ่มและลบเอกสารได้ */
   canManage: boolean;
+  /** หน้าโปรไฟล์ของตัวเอง — อัปโหลดเอกสารเข้าแฟ้มตัวเองได้ และลบได้เฉพาะไฟล์ที่ตัวเองอัปโหลด */
+  isSelf?: boolean;
 }
 
-export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
+export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = false }: Props) {
+  const canUpload = canManage || isSelf;
+  const isOwnUpload = (doc: EmployeeDocument) =>
+    isSelf && doc.uploadedByEmployeeId === employeeId && !doc.sourceGeneralRequestId;
   const toast = useToast();
   const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -238,7 +243,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
             </span>
           )}
         </div>
-        {canManage && (
+        {canUpload && (
           <button
             type="button"
             onClick={openUpload}
@@ -263,7 +268,11 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
         <div className="p-10 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
           <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
           <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีเอกสารในแฟ้มของพนักงานท่านนี้</p>
-          <p className="text-[11px]">เอกสารจากคำขอเอกสารทั่วไปที่อนุมัติแล้วจะถูกเก็บเข้าแฟ้มนี้อัตโนมัติ</p>
+          <p className="text-[11px]">
+            {isSelf
+              ? 'กด "เพิ่มเอกสาร" เพื่ออัปโหลดสำเนาบัตรประชาชน ทะเบียนบ้าน วุฒิการศึกษา สมุดบัญชี ฯลฯ เข้าแฟ้มของคุณ'
+              : 'พนักงานอัปโหลดเองได้จากหน้าโปรไฟล์ หรือฝ่ายบุคคลกด "เพิ่มเอกสาร"'}
+          </p>
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 rounded-xl">
@@ -302,7 +311,11 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-slate-700 dark:text-slate-300">
-                        {doc.sourceRequestNo ? `คำขอ ${doc.sourceRequestNo}` : 'ฝ่ายบุคคลอัปโหลด'}
+                        {doc.sourceRequestNo
+                          ? `คำขอ ${doc.sourceRequestNo}`
+                          : doc.uploadedByEmployeeId != null && doc.uploadedByEmployeeId === doc.employeeId
+                          ? 'พนักงานอัปโหลดเอง'
+                          : 'ฝ่ายบุคคลอัปโหลด'}
                       </p>
                       <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         {formatDate(doc.uploadedAt)}
@@ -322,7 +335,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage }: Props) {
                             {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                           </button>
                         )}
-                        {canManage && (
+                        {(canManage || isOwnUpload(doc)) && (
                           <button
                             type="button"
                             title="ลบ"
