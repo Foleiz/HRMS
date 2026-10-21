@@ -2182,7 +2182,7 @@ export default function PayrollPage() {
       case 'bank-transfer':
         return 'โอนเงินธนาคาร';
       case 'tax-sso':
-        return 'ภาษี & ประกันสังคม';
+        return 'ภาษี';
     }
   }
 
@@ -2198,6 +2198,7 @@ export default function PayrollPage() {
     ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
     ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
     ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
+    ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี' }] : []),
   ];
 
   // Auto switch tab if current active tab is not in visible permitted tabs
@@ -6179,6 +6180,84 @@ export default function PayrollPage() {
           )}
 
 
+      {/* === TAB: ภาษี (ตารางขั้นบันได) — ประกันสังคมย้ายไปตั้งที่รายการ "เงินสมทบประกันสังคม" === */}
+      {activeTab === 'tax-sso' && (
+        <div className="space-y-4">
+          {/* Card 2: Section 1: Tax Brackets */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Scale className="w-4 h-4 text-blue-700 dark:text-blue-400" />
+                <span>ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                อัตราภาษีเงินได้สุทธิสะสมต่อปีตามประมวลรัษฎากรสำหรับคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+
+                {canEditTax ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsTaxModalOpen(true)}
+                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
+                  >
+                    <Edit2 className="w-3.5 h-3.5" />
+                    <span>แก้ไขอัตราภาษี</span>
+                  </button>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
+                    <Lock className="w-3.5 h-3.5" />
+                    สิทธิ์ดูอย่างเดียว
+                  </span>
+                )}</div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+            <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
+              <thead>
+                <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
+                  <th className="py-3.5 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
+                  <th className="py-3.5 px-4 text-right">ถึงเงินได้สุทธิ</th>
+                  <th className="py-3.5 px-4 text-center">อัตราภาษี (%)</th>
+                  <th className="py-3.5 px-4 text-right">ภาษีสะสมขั้นก่อนหน้า</th>
+                  <th className="py-3.5 px-4 text-center">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                {taxBrackets.map((t) => (
+                  <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/50 transition-colors">
+                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{t.bracketName}</td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
+                      ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
+                      {t.incomeTo != null
+                        ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                        : 'ขึ้นไป (ไม่จำกัด)'}
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-blue-700 dark:text-blue-400">
+                      {(t.taxRate * 100).toFixed(0)}%
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">
+                      ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400">
+                        {t.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+      )}
+
     {/* Modals */}
       <SalaryStructureModal
         isOpen={isStructureModalOpen}
@@ -6198,7 +6277,6 @@ export default function PayrollPage() {
         taxBrackets={taxBrackets}
         ssoRates={ssoRates}
         canEditTaxSso={canEditTax || canEditSso}
-        onEditTaxBrackets={() => setIsTaxModalOpen(true)}
         onEditSsoRate={(rate) => {
           setSelectedSsoRate(rate);
           setIsSsoModalOpen(true);

@@ -24,7 +24,6 @@ interface Props {
   taxBrackets?: TaxBracket[];
   ssoRates?: SocialSecurityRate[];
   canEditTaxSso?: boolean;
-  onEditTaxBrackets?: () => void;
   /** null = เพิ่มอัตราใหม่ */
   onEditSsoRate?: (rate: SocialSecurityRate | null) => void;
   defaultType: 'EARNING' | 'DEDUCTION';
@@ -228,7 +227,6 @@ export const PayrollItemModal: React.FC<Props> = ({
   taxBrackets = [],
   ssoRates = [],
   canEditTaxSso = false,
-  onEditTaxBrackets,
   onEditSsoRate,
   defaultType,
   onSubmit,
@@ -727,15 +725,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                 <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">อัตราภาษีขั้นบันได (เงินได้สุทธิต่อปี)</span>
-                    {canEditTaxSso && (
-                      <button
-                        type="button"
-                        onClick={() => onEditTaxBrackets?.()}
-                        className="text-[11px] font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
-                      >
-                        แก้ไขขั้นบันได
-                      </button>
-                    )}
+                    <span className="text-[10px] text-slate-400">แก้ขั้นบันไดได้ที่แท็บ "ภาษี"</span>
                   </div>
                   {sortedBrackets.length === 0 ? (
                     <p className="text-[11px] text-slate-400">ยังไม่มีขั้นบันไดในระบบ</p>
