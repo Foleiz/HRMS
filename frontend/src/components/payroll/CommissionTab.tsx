@@ -47,7 +47,7 @@ import {
 import { EmployeeSalaryOverview } from '@/types/payroll';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
-import { confirmAction } from '@/lib/sweetalert';
+import { confirmAction, hrmsSwal, showError } from '@/lib/sweetalert';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import SupportedCommissionFormatsModal from './SupportedCommissionFormatsModal';
@@ -115,6 +115,9 @@ export default function CommissionTab() {
   // Monthly Periods Summary Rows State (เหมือนประวัติแต่เป็นงวดเดือน)
   const [monthlyPeriods, setMonthlyPeriods] = useState<CommissionMonthlyPeriod[]>([]);
   const [isLoadingPeriods, setIsLoadingPeriods] = useState<boolean>(false);
+  const [periodsSearch, setPeriodsSearch] = useState<string>('');
+  const [periodsPage, setPeriodsPage] = useState<number>(1);
+  const [periodsPageSize, setPeriodsPageSize] = useState<number>(10);
   const [selectedPeriodForDetails, setSelectedPeriodForDetails] = useState<CommissionMonthlyPeriod | null>(null);
   const [periodSummaryForDetails, setPeriodSummaryForDetails] = useState<CommissionPeriodSummary | null>(null);
   const [periodAllEntriesForDetails, setPeriodAllEntriesForDetails] = useState<CommissionBatchEntry[]>([]);
@@ -126,6 +129,7 @@ export default function CommissionTab() {
 
   // Employee Sub-entries Modal State
   const [selectedEmployeeForEntries, setSelectedEmployeeForEntries] = useState<CommissionRecord | null>(null);
+  const [selectedEmployeePeriodInfo, setSelectedEmployeePeriodInfo] = useState<{ year: number; month: number } | null>(null);
   const [employeeEntries, setEmployeeEntries] = useState<CommissionBatchEntry[]>([]);
   const [isLoadingEmployeeEntries, setIsLoadingEmployeeEntries] = useState<boolean>(false);
 
@@ -246,15 +250,23 @@ export default function CommissionTab() {
     setSummaryPage(1);
   }, [searchTerm]);
 
+  useEffect(() => {
+    setPeriodsPage(1);
+  }, [periodsSearch]);
+
   // Handle Opening Add Work for Specific Employee
-  const handleOpenAddWorkForEmployee = (record: CommissionRecord) => {
+  const handleOpenAddWorkForEmployee = (
+    record: CommissionRecord,
+    year: number = selectedYear,
+    month: number = selectedMonth
+  ) => {
     loadEmployees();
     setAddJobDate(new Date().toISOString().slice(0, 10));
     setAddJobTitle('');
     setAddForm({
       employeeId: record.employeeId,
-      year: selectedYear,
-      month: selectedMonth,
+      year: year,
+      month: month,
       salesAmount: 0,
       commissionRate: record.commissionRate || defaultRate,
       specialAmount: 0,
@@ -329,14 +341,19 @@ export default function CommissionTab() {
   };
 
   // Open Employee Sub-entries Breakdown Modal
-  const handleOpenEmployeeEntries = async (record: CommissionRecord) => {
+  const handleOpenEmployeeEntries = async (
+    record: CommissionRecord,
+    year: number = selectedYear,
+    month: number = selectedMonth
+  ) => {
     setSelectedEmployeeForEntries(record);
+    setSelectedEmployeePeriodInfo({ year, month });
     setIsLoadingEmployeeEntries(true);
     try {
       const data = await commissionService.getEmployeePeriodEntries(
         record.employeeId,
-        selectedYear,
-        selectedMonth
+        year,
+        month
       );
       setEmployeeEntries(data || []);
     } catch {
@@ -347,12 +364,97 @@ export default function CommissionTab() {
     }
   };
 
-  // Confirm Final Import from Preview Modal
+  // Confirm Final Import (with Option 1 Overlap Warning Guard)
   const handleConfirmImport = async () => {
     if (!selectedFile) return;
 
     try {
       setIsExecutingImport(true);
+
+      // 1. Pre-check file using preview API to detect overlaps & locked status
+      let preview: CommissionPreviewResult | null = null;
+      try {
+        preview = await commissionService.previewCommissionFile(
+          selectedFile,
+          selectedYear,
+          selectedMonth,
+          defaultRate
+        );
+      } catch (err: any) {
+        // If preview failed due to parse error, let import handle or show error
+        error(err?.response?.data?.message || 'ไม่สามารถตรวจสอบไฟล์ได้ กรุณาตรวจสอบรูปแบบไฟล์');
+        setIsExecutingImport(false);
+        return;
+      }
+
+      // Check if period is locked (PAID)
+      if (preview.isLockedPeriod) {
+        setIsExecutingImport(false);
+        await showError(
+          'ไม่สามารถนำเข้าข้อมูลได้',
+          preview.lockReason || 'งวดนี้มีสถานะจ่ายเงินแล้ว (PAID) ไม่สามารถนำเข้าข้อมูลทับได้'
+        );
+        return;
+      }
+
+      // 2. Option 1: Warning Guard when date overlap replaces existing data
+      if (preview.replacedEntriesCount > 0) {
+        setIsExecutingImport(false); // Stop loading spinner while user decides
+
+        const overlappingRows = preview.previewRows.filter((r) => r.existingOverlappingEntries > 0);
+        const overlapList = overlappingRows
+          .slice(0, 5)
+          .map((r) => `${r.employeeCode} - ${r.employeeName} (${r.dateFrom}${r.dateFrom !== r.dateTo ? ` ถึง ${r.dateTo}` : ''})`);
+        const moreCount = overlappingRows.length - overlapList.length;
+
+        const confirmRes = await hrmsSwal.fire({
+          title: '⚠️ ตรวจพบข้อมูลวันที่ซ้อนทับกัน!',
+          html: `
+            <div class="text-left text-xs space-y-3 text-slate-700 dark:text-slate-300">
+              <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200">
+                <p class="font-bold text-sm">การนำเข้าไฟล์นี้จะทำให้ข้อมูลเดิมถูกแทนที่ ${preview.replacedEntriesCount} รายการ!</p>
+                <p class="mt-1 text-[11px] leading-relaxed">
+                  ตรวจพบว่าช่วงวันที่ในไฟล์ใหม่ <b>(${preview.dateFrom || ''} ถึง ${preview.dateTo || ''})</b> ไปทับซ้อนกับข้อมูลเดิมที่เคยนำเข้าไว้ในระบบ
+                </p>
+              </div>
+
+              <div>
+                <p class="font-semibold text-slate-800 dark:text-slate-100">ตัวอย่างพนักงานที่ช่วงวันซ้ำกับข้อมูลเดิม:</p>
+                <div class="mt-1.5 p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 font-mono text-[11px] text-slate-700 dark:text-slate-300 max-h-32 overflow-y-auto space-y-1">
+                  ${overlapList.map((item) => `<div>• ${item}</div>`).join('')}
+                  ${moreCount > 0 ? `<div class="text-slate-500 italic">...และอีก ${moreCount} รายการ</div>` : ''}
+                </div>
+              </div>
+
+              <div class="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-[11px]">
+                <b>❗ คำเตือน:</b> หากคุณต้องการรวมยอดทั้งเดือนโดยไม่ได้ตั้งใจแทนที่ (เช่น พิมพ์วันซ้ำกับไฟล์แรก) แนะนำให้กด <b>"ยกเลิกไปแก้ไฟล์"</b> แล้วปรับวันที่ไม่ให้ชนกัน (เช่น 1-15 และ 16-31)
+              </div>
+            </div>
+          `,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'ยืนยันแทนที่ข้อมูลเดิม',
+          cancelButtonText: 'ยกเลิกไปแก้ไฟล์',
+          reverseButtons: true,
+          focusCancel: true,
+          customClass: {
+            popup: 'rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-6 bg-white dark:bg-slate-900',
+            title: 'text-lg font-bold text-slate-800 dark:text-white pt-2',
+            htmlContainer: 'text-sm text-slate-600 dark:text-slate-300 mt-2 text-left leading-relaxed',
+            confirmButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all shadow-sm shadow-rose-200 cursor-pointer',
+            cancelButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 transition-all mr-3 border border-slate-300 dark:border-slate-700 cursor-pointer',
+            actions: 'gap-3 mt-5 flex justify-center items-center',
+          },
+        });
+
+        if (!confirmRes.isConfirmed) {
+          return; // Abort import, user chose to cancel and fix file
+        }
+
+        setIsExecutingImport(true); // User confirmed, proceed with import
+      }
+
+      // 3. Execute actual import
       const res = await commissionService.importCommissionFile(
         selectedFile,
         selectedYear,
@@ -362,7 +464,7 @@ export default function CommissionTab() {
 
       setSummary(res.summary);
       success(
-        `นำเข้าสำเร็จ (${res.detectedTypeLabel}): ${res.totalImported} รายการ (แทนที่รายการเดิม ${res.replacedCount} รายการ)`
+        `นำเข้าสำเร็จ (${res.detectedTypeLabel}): ${res.totalImported} รายการ ${res.replacedCount > 0 ? `(แทนที่รายการเดิม ${res.replacedCount} รายการ)` : ''}`
       );
 
       if (res.warnings && res.warnings.length > 0) {
@@ -496,6 +598,15 @@ export default function CommissionTab() {
       setEditingRecord(null);
       await loadCommissionData(selectedYear, selectedMonth);
       await loadMonthlyPeriods(selectedYear);
+
+      if (selectedPeriodForDetails) {
+        const [sum, entries] = await Promise.all([
+          commissionService.getCommissionPeriod(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+          commissionService.getPeriodAllEntries(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+        ]);
+        setPeriodSummaryForDetails(sum);
+        setPeriodAllEntriesForDetails(entries || []);
+      }
     } catch (err: any) {
       error(err?.response?.data?.message || 'แก้ไขข้อมูลไม่สำเร็จ');
     }
@@ -516,10 +627,13 @@ export default function CommissionTab() {
         ? `[${addJobDate}] ${addJobTitle.trim()}${addForm.note ? ` (${addForm.note.trim()})` : ''}`
         : addForm.note?.trim() || '';
 
+      const targetYear = addForm.year || selectedYear;
+      const targetMonth = addForm.month || selectedMonth;
+
       await commissionService.addManualCommission({
         ...addForm,
-        year: selectedYear,
-        month: selectedMonth,
+        year: targetYear,
+        month: targetMonth,
         note: formattedNote,
       });
       success('บันทึกข้อมูลค่าคอมมิชชั่นเรียบร้อยแล้ว');
@@ -536,6 +650,15 @@ export default function CommissionTab() {
       });
       await loadCommissionData(selectedYear, selectedMonth);
       await loadMonthlyPeriods(selectedYear);
+
+      if (selectedPeriodForDetails) {
+        const [sum, entries] = await Promise.all([
+          commissionService.getCommissionPeriod(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+          commissionService.getPeriodAllEntries(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+        ]);
+        setPeriodSummaryForDetails(sum);
+        setPeriodAllEntriesForDetails(entries || []);
+      }
     } catch (err: any) {
       error(err?.response?.data?.message || 'เพิ่มรายการไม่สำเร็จ');
     }
@@ -603,6 +726,42 @@ export default function CommissionTab() {
   const pagedBatchRecords = filteredBatchRecords.slice(
     (safeBatchRecordsPage - 1) * batchRecordsPageSize,
     safeBatchRecordsPage * batchRecordsPageSize
+  );
+
+  // Filter & Pagination for Monthly Periods Overview (Section 5)
+  const filteredMonthlyPeriods = monthlyPeriods.filter((p) => {
+    // ซ่อนงวดฉบับร่างที่ไม่มีข้อมูลใดๆ หลงเหลืออยู่ (เช่น หลังกดยกเลิกไฟล์ทั้งหมด)
+    if (
+      p.status === 'DRAFT' &&
+      p.batchCount === 0 &&
+      p.totalEmployees === 0 &&
+      p.totalSalesAmount === 0 &&
+      p.totalCommissionAmount === 0
+    ) {
+      return false;
+    }
+
+    if (!periodsSearch.trim()) return true;
+    const q = periodsSearch.toLowerCase().trim();
+    const matchLabel = p.monthLabel.toLowerCase().includes(q);
+    const matchMonthNum = p.month.toString() === q || p.month.toString().padStart(2, '0') === q;
+    const matchYear = p.year.toString().includes(q) || (p.year + 543).toString().includes(q);
+    const matchDateRange = p.dateRange.toLowerCase().includes(q);
+    const statusLabel =
+      p.status === 'CONFIRMED'
+        ? 'ยืนยันแล้ว confirmed'
+        : p.status === 'PAID'
+        ? 'จ่ายเงินแล้ว paid'
+        : 'ฉบับร่าง draft สะสมยอดเพิ่มได้';
+    const matchStatus = statusLabel.toLowerCase().includes(q);
+    return matchLabel || matchMonthNum || matchYear || matchDateRange || matchStatus;
+  });
+
+  const totalPeriodsPages = Math.max(1, Math.ceil(filteredMonthlyPeriods.length / periodsPageSize));
+  const safePeriodsPage = Math.min(Math.max(1, periodsPage), totalPeriodsPages);
+  const pagedMonthlyPeriods = filteredMonthlyPeriods.slice(
+    (safePeriodsPage - 1) * periodsPageSize,
+    safePeriodsPage * periodsPageSize
   );
 
   // Filter & Pagination for Monthly Period Details Modal
@@ -1032,7 +1191,7 @@ export default function CommissionTab() {
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 สรุปค่าคอมมิชชั่นประจำงวดเดือน (Monthly Periods Overview)
                 <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
-                  {monthlyPeriods.length} งวด
+                  {filteredMonthlyPeriods.length} {filteredMonthlyPeriods.length !== monthlyPeriods.length ? `จาก ${monthlyPeriods.length} ` : ''}งวด
                 </span>
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -1041,15 +1200,38 @@ export default function CommissionTab() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => loadMonthlyPeriods(selectedYear)}
-            disabled={isLoadingPeriods}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer self-start sm:self-auto"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPeriods ? 'animate-spin' : ''}`} />
-            <span>รีเฟรชงวด</span>
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {/* Search Input */}
+            <div className="relative w-56 sm:w-64">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="ค้นหางวดเดือน, วันที่, สถานะ..."
+                value={periodsSearch}
+                onChange={(e) => setPeriodsSearch(e.target.value)}
+                className="w-full pl-9 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500 transition shadow-2xs"
+              />
+              {periodsSearch && (
+                <button
+                  type="button"
+                  onClick={() => setPeriodsSearch('')}
+                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => loadMonthlyPeriods(selectedYear)}
+              disabled={isLoadingPeriods}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingPeriods ? 'animate-spin' : ''}`} />
+              <span>รีเฟรชงวด</span>
+            </button>
+          </div>
         </div>
 
         {/* Table inside inner container with rounded corners */}
@@ -1077,20 +1259,22 @@ export default function CommissionTab() {
                       <p className="mt-2 text-xs">กำลังโหลดข้อมูลงวดค่าคอมมิชชั่น...</p>
                     </td>
                   </tr>
-                ) : monthlyPeriods.length === 0 ? (
+                ) : filteredMonthlyPeriods.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
                       <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
                       <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
-                        ยังไม่มีข้อมูลค่าคอมมิชชั่นในปีนี้
+                        {periodsSearch ? 'ไม่พบงวดเดือนที่ตรงกับคำค้นหา' : 'ยังไม่มีข้อมูลค่าคอมมิชชั่นในปีนี้'}
                       </p>
                       <p className="mt-1 text-xs text-slate-400">
-                        สามารถนำเข้าไฟล์ Excel/CSV ในกล่องอัปโหลดด้านบนเพื่อเริ่มบันทึกข้อมูล
+                        {periodsSearch
+                          ? 'ลองเปลี่ยนคำค้นหา หรือกดล้างการค้นหา'
+                          : 'สามารถนำเข้าไฟล์ Excel/CSV ในกล่องอัปโหลดด้านบนเพื่อเริ่มบันทึกข้อมูล'}
                       </p>
                     </td>
                   </tr>
                 ) : (
-                  monthlyPeriods.map((p) => (
+                  pagedMonthlyPeriods.map((p) => (
                     <tr
                       key={`${p.year}-${p.month}`}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
@@ -1163,6 +1347,19 @@ export default function CommissionTab() {
             </table>
           </div>
         </div>
+
+        {/* Monthly Periods Pagination */}
+        <TablePagination
+          total={filteredMonthlyPeriods.length}
+          page={safePeriodsPage}
+          pageSize={periodsPageSize}
+          onPageChange={(p) => setPeriodsPage(p)}
+          onPageSizeChange={(newSize) => {
+            setPeriodsPageSize(newSize);
+            setPeriodsPage(1);
+          }}
+          pageSizeOptions={[5, 10, 20, 50]}
+        />
       </div>
 
       {/* 6. Batch Import History Section */}
@@ -1358,7 +1555,7 @@ export default function CommissionTab() {
 
       {/* 7. Edit Item Modal */}
       {editingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               แก้ไขค่าคอมมิชชั่น: {editingRecord.employeeName}
@@ -1454,7 +1651,7 @@ export default function CommissionTab() {
         const thisJobTotal = thisJobCommissionAmount;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
             <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 max-h-[92vh] overflow-y-auto">
               <div className="flex items-start justify-between">
                 <div>
@@ -1862,7 +2059,7 @@ export default function CommissionTab() {
 
       {/* 8.5. Employee Sub-entries Breakdown Modal */}
       {selectedEmployeeForEntries && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
@@ -1880,7 +2077,7 @@ export default function CommissionTab() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    แสดงรายการย่อยทั้งหมดในรอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543} (รวมยอดจากทุกไฟล์นำเข้าและงานเพิ่ม)
+                    แสดงรายการย่อยทั้งหมดในรอบเดือน {THAI_MONTHS[(selectedEmployeePeriodInfo?.month ?? selectedMonth) - 1]} {(selectedEmployeePeriodInfo?.year ?? selectedYear) + 543} (รวมยอดจากทุกไฟล์นำเข้าและงานเพิ่ม)
                   </p>
                 </div>
               </div>
@@ -1889,6 +2086,7 @@ export default function CommissionTab() {
                 type="button"
                 onClick={() => {
                   setSelectedEmployeeForEntries(null);
+                  setSelectedEmployeePeriodInfo(null);
                   setEmployeeEntries([]);
                 }}
                 className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
@@ -2017,6 +2215,7 @@ export default function CommissionTab() {
                 type="button"
                 onClick={() => {
                   setSelectedEmployeeForEntries(null);
+                  setSelectedEmployeePeriodInfo(null);
                   setEmployeeEntries([]);
                 }}
                 className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
@@ -2234,7 +2433,7 @@ export default function CommissionTab() {
                               <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEmployeeEntries(r)}
+                                  onClick={() => handleOpenEmployeeEntries(r, selectedPeriodForDetails.year, selectedPeriodForDetails.month)}
                                   className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/60 transition cursor-pointer"
                                   title="ดูรายการย่อยที่ประกอบเป็นยอดนี้"
                                 >
@@ -2247,7 +2446,7 @@ export default function CommissionTab() {
                                   <div className="flex items-center justify-center gap-1.5">
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenAddWorkForEmployee(r)}
+                                      onClick={() => handleOpenAddWorkForEmployee(r, selectedPeriodForDetails.year, selectedPeriodForDetails.month)}
                                       className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
                                       title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
                                     >
