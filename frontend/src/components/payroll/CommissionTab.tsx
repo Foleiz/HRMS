@@ -45,6 +45,8 @@ import { EmployeeSalaryOverview } from '@/types/payroll';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { confirmAction } from '@/lib/sweetalert';
+import { TablePagination } from '@/components/ui/TablePagination';
+import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import SupportedCommissionFormatsModal from './SupportedCommissionFormatsModal';
 
 const THAI_MONTHS = [
@@ -77,6 +79,8 @@ export default function CommissionTab() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isConfirming, setIsConfirming] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [summaryPage, setSummaryPage] = useState<number>(1);
+  const [summaryPageSize, setSummaryPageSize] = useState<number>(10);
 
   // Upload & Drag-and-drop State
   const [isUploadCardOpen, setIsUploadCardOpen] = useState<boolean>(false);
@@ -93,6 +97,7 @@ export default function CommissionTab() {
   const [batches, setBatches] = useState<CommissionImportBatch[]>([]);
   const [isLoadingBatches, setIsLoadingBatches] = useState<boolean>(false);
   const [batchPage, setBatchPage] = useState<number>(1);
+  const [batchPageSize, setBatchPageSize] = useState<number>(10);
   const [batchTotalPages, setBatchTotalPages] = useState<number>(1);
   const [batchTotalCount, setBatchTotalCount] = useState<number>(0);
   const [revertingBatchId, setRevertingBatchId] = useState<number | null>(null);
@@ -144,10 +149,10 @@ export default function CommissionTab() {
   };
 
   // Load Batches
-  const loadBatches = async (page = 1) => {
+  const loadBatches = async (page = 1, size = batchPageSize) => {
     try {
       setIsLoadingBatches(true);
-      const res = await commissionService.getCommissionBatches(page, 10);
+      const res = await commissionService.getCommissionBatches(page, size);
       setBatches(res.items || []);
       setBatchPage(res.page || 1);
       setBatchTotalPages(res.totalPages || 1);
@@ -171,7 +176,12 @@ export default function CommissionTab() {
 
   useEffect(() => {
     loadCommissionData(selectedYear, selectedMonth);
+    setSummaryPage(1);
   }, [selectedYear, selectedMonth]);
+
+  useEffect(() => {
+    setSummaryPage(1);
+  }, [searchTerm]);
 
   useEffect(() => {
     loadBatches(1);
@@ -477,6 +487,13 @@ export default function CommissionTab() {
       (r.departmentName && r.departmentName.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const totalSummaryPages = Math.max(1, Math.ceil(filteredRecords.length / summaryPageSize));
+  const safeSummaryPage = Math.min(Math.max(1, summaryPage), totalSummaryPages);
+  const pagedRecords = filteredRecords.slice(
+    (safeSummaryPage - 1) * summaryPageSize,
+    safeSummaryPage * summaryPageSize
+  );
+
   const isPeriodConfirmed = summary?.status === 'CONFIRMED' || summary?.status === 'PAID';
 
   const formatFileSize = (bytes: number) => {
@@ -490,9 +507,9 @@ export default function CommissionTab() {
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* 1. Header Toolbar & Filters */}
-      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs">
-        {/* Left: Period & Rate Controls (Clean, unified inline group) */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+      <div className="flex flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:px-4 sm:py-3 shadow-xs overflow-x-auto">
+        {/* Left: Period & Rate Controls (Single line) */}
+        <div className="flex items-center gap-2.5 shrink-0">
           {/* Year & Month Selector */}
           <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-1 shadow-2xs">
             <div className="flex items-center gap-1.5 pl-2.5">
@@ -563,8 +580,8 @@ export default function CommissionTab() {
           </button>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right: Actions (Single line) */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Format Guide Button */}
           <button
             type="button"
@@ -1119,36 +1136,32 @@ export default function CommissionTab() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold">
-                <th className="py-3 px-4 text-center w-12">#</th>
-                <th className="py-3 px-4">รหัสพนักงาน</th>
-                <th className="py-3 px-4">ชื่อ - นามสกุล</th>
-                <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
-                <th className="py-3 px-4 text-right">ยอดขายรวม (บาท)</th>
-                <th className="py-3 px-4 text-center">อัตรา (%)</th>
-                <th className="py-3 px-4 text-right">ค่าคอมมิชชั่น (บาท)</th>
-                <th className="py-3 px-4 text-right">เงินพิเศษ (บาท)</th>
-                <th className="py-3 px-4 text-right font-bold text-emerald-700 dark:text-emerald-400">
-                  รวมทั้งสิ้น (บาท)
-                </th>
-                <th className="py-3 px-4">หมายเหตุ</th>
-                <th className="py-3 px-4 text-center">จัดการ</th>
+          <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+            <thead className="bg-[#0B2046] text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="py-3.5 px-4 text-center w-12">#</th>
+                <th className="py-3.5 px-4">รหัสพนักงาน</th>
+                <th className="py-3.5 px-4">ชื่อ - นามสกุล</th>
+                <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
+                <th className="py-3.5 px-4 text-right">ยอดขายรวม (บาท)</th>
+                <th className="py-3.5 px-4 text-center">อัตรา (%)</th>
+                <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
+                <th className="py-3.5 px-4">หมายเหตุ</th>
+                <th className="py-3.5 px-4 text-center">จัดการ</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-emerald-600" />
                     <p className="mt-2 text-xs">กำลังโหลดข้อมูลค่าคอมมิชชั่น...</p>
                   </td>
                 </tr>
               ) : filteredRecords.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-12 text-center text-slate-400">
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
                     <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
                     <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
                       ยังไม่มีข้อมูลค่าคอมมิชชั่นในรอบเดือนนี้
@@ -1159,92 +1172,99 @@ export default function CommissionTab() {
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((r, idx) => (
-                  <tr
-                    key={r.id}
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
-                  >
-                    <td className="py-3 px-4 text-center text-slate-400 font-mono">
-                      {idx + 1}
-                    </td>
-                    <td className="py-3 px-4 font-mono font-medium text-slate-900 dark:text-slate-100">
-                      {r.employeeCode}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100">
-                      {r.employeeName}
-                    </td>
-                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
-                      <div>{r.departmentName || '-'}</div>
-                      <div className="text-[11px] text-slate-400">{r.positionName}</div>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-medium">
-                      ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-center font-mono">
-                      <span className="inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        {r.commissionRate}%
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono">
-                      ฿{r.commissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-slate-500 dark:text-slate-400">
-                      {r.specialAmount > 0
-                        ? `฿${r.specialAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                        : '-'}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-sm">
-                      ฿{r.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400 text-[11px] max-w-xs truncate">
-                      {r.note || '-'}
-                    </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      {!isPeriodConfirmed ? (
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenAddWorkForEmployee(r)}
-                            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
-                            title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
-                          >
-                            <Plus className="h-3 w-3" />
-                            <span>+ งานเพิ่ม</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingRecord(r);
-                              setEditForm({
-                                salesAmount: r.salesAmount,
-                                commissionRate: r.commissionRate,
-                                specialAmount: r.specialAmount,
-                                note: r.note || '',
-                              });
-                            }}
-                            className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-blue-600 dark:hover:bg-slate-800 dark:hover:text-blue-400 transition cursor-pointer"
-                            title="แก้ไขยอดรวม"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteRecord(r)}
-                            className="rounded-lg p-1 text-slate-500 hover:bg-slate-100 hover:text-rose-600 dark:hover:bg-slate-800 dark:hover:text-rose-400 transition cursor-pointer"
-                            title="ลบรายการ"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 text-[11px] italic">ล็อกแล้ว</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
+                pagedRecords.map((r, idx) => {
+                  const rowNumber = (safeSummaryPage - 1) * summaryPageSize + idx + 1;
+                  return (
+                    <tr
+                      key={r.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
+                    >
+                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono">
+                        {rowNumber}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-100">
+                        {r.employeeCode}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                        {r.employeeName}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
+                        <div className="font-medium text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
+                        <div className="text-[11px] text-slate-400">{r.positionName || '-'}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-medium">
+                        ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3.5 px-4 text-center font-mono">
+                        <span className="inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {r.commissionRate}%
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                        ฿{r.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px] max-w-xs truncate" title={r.note || ''}>
+                        {r.note || '-'}
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        {!isPeriodConfirmed ? (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAddWorkForEmployee(r)}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
+                              title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
+                            >
+                              <Plus className="h-3 w-3" />
+                              <span>+ งานเพิ่ม</span>
+                            </button>
+                            <ActionDropdown
+                              menuClassName="w-32"
+                              items={[
+                                {
+                                  label: 'แก้ไขยอด',
+                                  icon: <Edit2 className="w-3.5 h-3.5 text-blue-500" />,
+                                  onClick: () => {
+                                    setEditingRecord(r);
+                                    setEditForm({
+                                      salesAmount: r.salesAmount,
+                                      commissionRate: r.commissionRate,
+                                      specialAmount: 0,
+                                      note: r.note || '',
+                                    });
+                                  },
+                                },
+                                {
+                                  label: 'ลบรายการ',
+                                  icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
+                                  danger: true,
+                                  onClick: () => handleDeleteRecord(r),
+                                },
+                              ]}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] italic">ล็อกแล้ว</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Table Pagination */}
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
+          <TablePagination
+            total={filteredRecords.length}
+            page={safeSummaryPage}
+            pageSize={summaryPageSize}
+            onPageChange={setSummaryPage}
+            onPageSizeChange={setSummaryPageSize}
+            pageSizeOptions={[10, 20, 50, 100]}
+          />
         </div>
       </div>
 
@@ -1279,21 +1299,21 @@ export default function CommissionTab() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 font-semibold">
-                <th className="py-3 px-4 text-center w-12">#ID</th>
-                <th className="py-3 px-4">วันที่/เวลานำเข้า</th>
-                <th className="py-3 px-4">ชื่อไฟล์</th>
-                <th className="py-3 px-4 text-center">รูปแบบที่ตรวจจับ</th>
-                <th className="py-3 px-4 text-center">ช่วงวันที่</th>
-                <th className="py-3 px-4 text-center">พนักงาน</th>
-                <th className="py-3 px-4 text-center">นำเข้าสำเร็จ</th>
-                <th className="py-3 px-4 text-center">ทับยอดเดิม</th>
-                <th className="py-3 px-4 text-right">ยอดรวมคอมมิชชั่น</th>
-                <th className="py-3 px-4">ผู้นำเข้า</th>
-                <th className="py-3 px-4 text-center">สถานะ</th>
-                <th className="py-3 px-4 text-center">จัดการ</th>
+          <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+            <thead className="bg-[#0B2046] text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="py-3.5 px-4 text-center w-12">#ID</th>
+                <th className="py-3.5 px-4">วันที่/เวลานำเข้า</th>
+                <th className="py-3.5 px-4">ชื่อไฟล์</th>
+                <th className="py-3.5 px-4 text-center">รูปแบบที่ตรวจจับ</th>
+                <th className="py-3.5 px-4 text-center">ช่วงวันที่</th>
+                <th className="py-3.5 px-4 text-center">พนักงาน</th>
+                <th className="py-3.5 px-4 text-center">นำเข้าสำเร็จ</th>
+                <th className="py-3.5 px-4 text-center">ทับยอดเดิม</th>
+                <th className="py-3.5 px-4 text-right">ยอดรวมคอมมิชชั่น</th>
+                <th className="py-3.5 px-4">ผู้นำเข้า</th>
+                <th className="py-3.5 px-4 text-center">สถานะ</th>
+                <th className="py-3.5 px-4 text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -1318,10 +1338,10 @@ export default function CommissionTab() {
                       b.status === 'REVERTED' ? 'opacity-60 bg-slate-50/30' : ''
                     }`}
                   >
-                    <td className="py-3 px-4 text-center font-mono font-medium text-slate-500">
+                    <td className="py-3.5 px-4 text-center font-mono font-medium text-slate-500">
                       #{b.id}
                     </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3.5 px-4 whitespace-nowrap text-slate-700 dark:text-slate-300 font-mono text-[11px]">
                       {new Date(b.importedAt).toLocaleString('th-TH', {
                         year: 'numeric',
                         month: 'short',
@@ -1330,10 +1350,10 @@ export default function CommissionTab() {
                         minute: '2-digit',
                       })}
                     </td>
-                    <td className="py-3 px-4 font-medium max-w-xs truncate" title={b.fileName || ''}>
+                    <td className="py-3.5 px-4 font-medium max-w-xs truncate text-slate-900 dark:text-slate-100" title={b.fileName || ''}>
                       {b.fileName || '-'}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center">
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           b.detectedType === 'DAY'
@@ -1346,34 +1366,34 @@ export default function CommissionTab() {
                         {b.detectedTypeLabel}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center font-mono text-[11px] whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-center font-mono text-[11px] whitespace-nowrap text-slate-600 dark:text-slate-400">
                       {b.dateFrom && b.dateTo
                         ? b.dateFrom === b.dateTo
                           ? b.dateFrom
                           : `${b.dateFrom} - ${b.dateTo}`
                         : '-'}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono">
+                    <td className="py-3.5 px-4 text-center font-mono font-medium">
                       {b.employeeCount} คน
                     </td>
-                    <td className="py-3 px-4 text-center font-mono">
+                    <td className="py-3.5 px-4 text-center font-mono">
                       <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                         {b.successRows}
                       </span>{' '}
                       / {b.totalRows}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono text-amber-600 dark:text-amber-400">
+                    <td className="py-3.5 px-4 text-center font-mono text-amber-600 dark:text-amber-400 font-medium">
                       {b.replacedEntries > 0 ? `${b.replacedEntries} รายการ` : '-'}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono font-semibold text-emerald-700 dark:text-emerald-400">
-                      ฿{b.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                      ฿{b.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td className="py-3 px-4 text-slate-500 dark:text-slate-400">
+                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
                       {b.importedByUserName || '-'}
                     </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       {b.status === 'IMPORTED' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
                           <CheckCircle2 className="h-3 w-3" /> ใช้งานอยู่
                         </span>
                       ) : b.status === 'REVERTED' ? (
@@ -1386,13 +1406,13 @@ export default function CommissionTab() {
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center whitespace-nowrap">
-                      {b.status === 'IMPORTED' && !isPeriodConfirmed && (
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      {b.status === 'IMPORTED' && !isPeriodConfirmed ? (
                         <button
                           type="button"
                           onClick={() => handleRevertBatch(b)}
                           disabled={revertingBatchId === b.id}
-                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition cursor-pointer disabled:opacity-50"
                           title="ยกเลิกชุดนี้และกู้คืนยอดเดิม"
                         >
                           {revertingBatchId === b.id ? (
@@ -1402,6 +1422,8 @@ export default function CommissionTab() {
                           )}
                           <span>ยกเลิกชุดนี้</span>
                         </button>
+                      ) : (
+                        <span className="text-slate-400 text-xs">-</span>
                       )}
                     </td>
                   </tr>
@@ -1412,31 +1434,19 @@ export default function CommissionTab() {
         </div>
 
         {/* Batch Pagination */}
-        {batchTotalPages > 1 && (
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
-            <div>
-              หน้า {batchPage} จาก {batchTotalPages} (ทั้งหมด {batchTotalCount} ชุด)
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => loadBatches(batchPage - 1)}
-                disabled={batchPage <= 1 || isLoadingBatches}
-                className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => loadBatches(batchPage + 1)}
-                disabled={batchPage >= batchTotalPages || isLoadingBatches}
-                className="p-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
+          <TablePagination
+            total={batchTotalCount}
+            page={batchPage}
+            pageSize={batchPageSize}
+            onPageChange={(p) => loadBatches(p, batchPageSize)}
+            onPageSizeChange={(newSize) => {
+              setBatchPageSize(newSize);
+              loadBatches(1, newSize);
+            }}
+            pageSizeOptions={[10, 20, 50]}
+          />
+        </div>
       </div>
 
       {/* 7. Edit Item Modal */}
@@ -1466,47 +1476,29 @@ export default function CommissionTab() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    อัตรา (%)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={editForm.commissionRate}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, commissionRate: Number(e.target.value) || 0 })
-                    }
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    เงินพิเศษเพิ่มเติม (บาท)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editForm.specialAmount}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, specialAmount: Number(e.target.value) || 0 })
-                    }
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
+              <div>
+                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  อัตราคอมมิชชั่น (%)
+                </label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={editForm.commissionRate}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, commissionRate: Number(e.target.value) || 0 })
+                  }
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
               </div>
 
               {/* Calculated preview */}
               <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 p-3 text-xs text-emerald-800 dark:text-emerald-300">
                 <div className="flex justify-between font-bold">
-                  <span>คำนวณสุทธิ:</span>
+                  <span>ค่าคอมมิชชั่นคำนวณสุทธิ:</span>
                   <span>
                     ฿
                     {(
-                      editForm.salesAmount * (editForm.commissionRate / 100) +
-                      (editForm.specialAmount || 0)
+                      editForm.salesAmount * (editForm.commissionRate / 100)
                     ).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -1552,8 +1544,7 @@ export default function CommissionTab() {
         const thisJobSales = Number(addForm.salesAmount) || 0;
         const thisJobCommissionRate = Number(addForm.commissionRate) || 0;
         const thisJobCommissionAmount = thisJobSales * (thisJobCommissionRate / 100);
-        const thisJobSpecial = Number(addForm.specialAmount) || 0;
-        const thisJobTotal = thisJobCommissionAmount + thisJobSpecial;
+        const thisJobTotal = thisJobCommissionAmount;
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-150">
@@ -1677,38 +1668,20 @@ export default function CommissionTab() {
                   />
                 </div>
 
-                {/* Rate & Special */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      อัตราคอมมิชชั่น (%)*
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={addForm.commissionRate}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, commissionRate: Number(e.target.value) || 0 })
-                      }
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      เงินพิเศษ (บาท)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={addForm.specialAmount || ''}
-                      placeholder="0.00"
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, specialAmount: Number(e.target.value) || 0 })
-                      }
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
+                {/* Rate */}
+                <div>
+                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    อัตราคอมมิชชั่น (%)*
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={addForm.commissionRate}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, commissionRate: Number(e.target.value) || 0 })
+                    }
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
                 </div>
 
                 {/* Calculated preview */}
