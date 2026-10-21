@@ -435,6 +435,7 @@ public class CommissionService : ICommissionService
             .Include(e => e.Employee)
                 .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
                     .ThenInclude(a => a.Position)
+            .Include(e => e.Batch)
             .Where(e => e.BatchId == batchId)
             .OrderBy(e => e.Employee != null ? e.Employee.EmployeeCode : "")
             .ThenBy(e => e.DateFrom)
@@ -461,7 +462,57 @@ public class CommissionService : ICommissionService
                 TotalAmount = e.TotalAmount,
                 Note = e.Note,
                 Status = e.Status,
-                CreatedAt = e.CreatedAt
+                CreatedAt = e.CreatedAt,
+                BatchFileName = e.Batch?.FileName,
+                Source = e.Source
+            };
+        }).ToList();
+    }
+
+    /// <summary>
+    /// ดึงรายการค่าคอมมิชชั่นย่อยทั้งหมดของพนักงานในรอบเดือนนั้น (รวมทุกไฟล์และรายการที่บันทึกเพิ่ม)
+    /// </summary>
+    public async Task<List<CommissionBatchEntryDto>> GetEmployeePeriodEntriesAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default)
+    {
+        var startOfMonth = new DateOnly(year, month, 1);
+        var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+
+        var entries = await _context.EmployeeCommissionEntries
+            .Include(e => e.Employee)
+                .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
+                    .ThenInclude(a => a.Department)
+            .Include(e => e.Employee)
+                .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
+                    .ThenInclude(a => a.Position)
+            .Include(e => e.Batch)
+            .Where(e => e.EmployeeId == employeeId && e.Status == "ACTIVE" && e.DateFrom <= endOfMonth && e.DateTo >= startOfMonth)
+            .OrderBy(e => e.DateFrom)
+            .ToListAsync(cancellationToken);
+
+        return entries.Select(e =>
+        {
+            var emp = e.Employee;
+            var currentAssignment = emp?.Assignments?.FirstOrDefault(a => a.IsCurrent);
+            return new CommissionBatchEntryDto
+            {
+                Id = e.Id,
+                EmployeeId = e.EmployeeId,
+                EmployeeCode = emp?.EmployeeCode ?? "-",
+                EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : "-",
+                DepartmentName = currentAssignment?.Department?.DepartmentName ?? "-",
+                PositionName = currentAssignment?.Position?.PositionName ?? "-",
+                DateFrom = e.DateFrom.ToString("yyyy-MM-dd"),
+                DateTo = e.DateTo.ToString("yyyy-MM-dd"),
+                SalesAmount = e.SalesAmount,
+                CommissionRate = e.CommissionRate,
+                CommissionAmount = e.CommissionAmount,
+                SpecialAmount = e.SpecialAmount,
+                TotalAmount = e.TotalAmount,
+                Note = e.Note,
+                Status = e.Status,
+                CreatedAt = e.CreatedAt,
+                BatchFileName = e.Batch?.FileName,
+                Source = e.Source
             };
         }).ToList();
     }

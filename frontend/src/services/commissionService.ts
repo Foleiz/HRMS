@@ -93,6 +93,18 @@ export const commissionService = {
     return res.data.data;
   },
 
+  async getEmployeePeriodEntries(
+    employeeId: number,
+    year: number,
+    month: number
+  ): Promise<CommissionBatchEntry[]> {
+    const res = await apiClient.get<ApiResponse<CommissionBatchEntry[]>>(
+      `/salary/commission/employees/${employeeId}/entries`,
+      { params: { year, month } }
+    );
+    return res.data.data;
+  },
+
   async updateCommissionItem(
     id: number,
     payload: UpdateCommissionItemPayload
