@@ -82,11 +82,6 @@ public class CommissionService : ICommissionService
             .OrderByDescending(m => m)
             .ToList();
 
-        if (monthsWithData.Count == 0)
-        {
-            monthsWithData.Add(DateTime.Today.Month);
-        }
-
         var result = new List<CommissionMonthlyPeriodDto>();
 
         foreach (var m in monthsWithData)
@@ -105,6 +100,17 @@ public class CommissionService : ICommissionService
                 .Distinct()
                 .Count();
 
+            var totalSales = monthComms.Sum(c => c.SalesAmount);
+            var totalComm = monthComms.Sum(c => c.TotalCommission);
+            var totalEmployees = monthComms.Count > 0 ? monthComms.Count : monthEntries.Select(e => e.EmployeeId).Distinct().Count();
+            var periodStatus = monthComms.Count == 0 ? "DRAFT" : monthComms.All(r => r.Status == "PAID") ? "PAID" : monthComms.Any(r => r.Status == "CONFIRMED") ? "CONFIRMED" : "DRAFT";
+
+            // ข้ามงวดที่เป็นฉบับร่าง (DRAFT) และไม่มีข้อมูลใดๆ หลงเหลืออยู่เลย (เช่น หลังกดยกเลิกไฟล์ทั้งหมด)
+            if (periodStatus == "DRAFT" && monthEntries.Count == 0 && totalSales == 0 && totalComm == 0 && batchCount == 0 && totalEmployees == 0)
+            {
+                continue;
+            }
+
             string dateRangeStr = "-";
             if (monthEntries.Count > 0)
             {
@@ -113,7 +119,6 @@ public class CommissionService : ICommissionService
                 dateRangeStr = minDate == maxDate ? minDate.ToString("yyyy-MM-dd") : $"{minDate:yyyy-MM-dd} ถึง {maxDate:yyyy-MM-dd}";
             }
 
-            var periodStatus = monthComms.Count == 0 ? "DRAFT" : monthComms.All(r => r.Status == "PAID") ? "PAID" : monthComms.Any(r => r.Status == "CONFIRMED") ? "CONFIRMED" : "DRAFT";
             var confirmedItem = monthComms.FirstOrDefault(c => c.ConfirmedAt.HasValue);
 
             result.Add(new CommissionMonthlyPeriodDto
@@ -123,9 +128,9 @@ public class CommissionService : ICommissionService
                 MonthLabel = $"{ThaiMonthNames[m - 1]} {year + 543}",
                 DateRange = dateRangeStr,
                 BatchCount = batchCount,
-                TotalEmployees = monthComms.Count > 0 ? monthComms.Count : monthEntries.Select(e => e.EmployeeId).Distinct().Count(),
-                TotalSalesAmount = monthComms.Sum(c => c.SalesAmount),
-                TotalCommissionAmount = monthComms.Sum(c => c.TotalCommission),
+                TotalEmployees = totalEmployees,
+                TotalSalesAmount = totalSales,
+                TotalCommissionAmount = totalComm,
                 Status = periodStatus,
                 ConfirmedAt = confirmedItem?.ConfirmedAt,
                 ConfirmedByName = confirmedItem?.ConfirmedByEmployee != null ? $"{confirmedItem.ConfirmedByEmployee.FirstName} {confirmedItem.ConfirmedByEmployee.LastName}".Trim() : null

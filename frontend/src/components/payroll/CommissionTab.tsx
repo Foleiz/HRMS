@@ -730,6 +730,17 @@ export default function CommissionTab() {
 
   // Filter & Pagination for Monthly Periods Overview (Section 5)
   const filteredMonthlyPeriods = monthlyPeriods.filter((p) => {
+    // ซ่อนงวดฉบับร่างที่ไม่มีข้อมูลใดๆ หลงเหลืออยู่ (เช่น หลังกดยกเลิกไฟล์ทั้งหมด)
+    if (
+      p.status === 'DRAFT' &&
+      p.batchCount === 0 &&
+      p.totalEmployees === 0 &&
+      p.totalSalesAmount === 0 &&
+      p.totalCommissionAmount === 0
+    ) {
+      return false;
+    }
+
     if (!periodsSearch.trim()) return true;
     const q = periodsSearch.toLowerCase().trim();
     const matchLabel = p.monthLabel.toLowerCase().includes(q);
