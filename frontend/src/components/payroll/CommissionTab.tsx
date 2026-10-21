@@ -1114,97 +1114,98 @@ export default function CommissionTab() {
         </div>
       )}
 
-      {/* 5. Employee Commission Summary Table */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+      {/* 5. Employee Commission Summary Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
         {/* Table Search Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 p-4">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+          <div className="relative flex-1 sm:max-w-xs w-full">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
               placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
             />
           </div>
 
-          <div className="text-xs text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
             แสดง {filteredRecords.length} จาก {records.length} รายการ
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-            <thead className="bg-[#0B2046] text-white font-semibold">
-              <tr className="whitespace-nowrap">
-                <th className="py-3.5 px-4 text-center w-12">#</th>
-                <th className="py-3.5 px-4">รหัสพนักงาน</th>
-                <th className="py-3.5 px-4">ชื่อ - นามสกุล</th>
-                <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
-                <th className="py-3.5 px-4 text-right">ยอดขายรวม (บาท)</th>
-                <th className="py-3.5 px-4 text-center">อัตรา (%)</th>
-                <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
-                <th className="py-3.5 px-4">หมายเหตุ</th>
-                <th className="py-3.5 px-4 text-center">จัดการ</th>
-              </tr>
-            </thead>
+        {/* Table inside inner container with rounded corners */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+              <thead className="bg-[#0B2046] text-white font-semibold">
+                <tr className="whitespace-nowrap">
+                  <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
+                  <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
+                  <th className="py-3.5 px-4 font-semibold">แผนก / ตำแหน่ง</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">ยอดขายรวม (บาท)</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
+                  <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
+                  <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">จัดการ</th>
+                </tr>
+              </thead>
 
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-              {loading ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
-                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-emerald-600" />
-                    <p className="mt-2 text-xs">กำลังโหลดข้อมูลค่าคอมมิชชั่น...</p>
-                  </td>
-                </tr>
-              ) : filteredRecords.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
-                    <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
-                    <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
-                      ยังไม่มีข้อมูลค่าคอมมิชชั่นในรอบเดือนนี้
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      ลากไฟล์ Excel/CSV มาวางในกล่องอัปโหลดด้านบน หรือกด &quot;เพิ่มรายคน&quot;
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                pagedRecords.map((r, idx) => {
-                  const rowNumber = (safeSummaryPage - 1) * summaryPageSize + idx + 1;
-                  return (
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-emerald-600" />
+                      <p className="mt-2 text-xs">กำลังโหลดข้อมูลค่าคอมมิชชั่น...</p>
+                    </td>
+                  </tr>
+                ) : filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
+                      <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
+                        ยังไม่มีข้อมูลค่าคอมมิชชั่นในรอบเดือนนี้
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        ลากไฟล์ Excel/CSV มาวางในกล่องอัปโหลดด้านบน หรือกด &quot;เพิ่มรายคน&quot;
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  pagedRecords.map((r) => (
                     <tr
                       key={r.id}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
                     >
-                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono">
-                        {rowNumber}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-medium text-slate-900 dark:text-slate-100">
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                         {r.employeeCode}
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-slate-100">
+                      <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                         {r.employeeName}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
-                        <div className="font-medium text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
-                        <div className="text-[11px] text-slate-400">{r.positionName || '-'}</div>
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        <div className="font-bold text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
+                        <div className="text-[11px] text-slate-400 font-normal">{r.positionName || '-'}</div>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-medium">
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                         ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className="inline-block rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center min-w-10 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 shadow-2xs">
                           {r.commissionRate}%
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs">
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
                         ฿{r.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 text-[11px] max-w-xs truncate" title={r.note || ''}>
-                        {r.note || '-'}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {r.note ? (
+                          <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={r.note}>
+                            {r.note}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         {!isPeriodConfirmed ? (
@@ -1248,31 +1249,29 @@ export default function CommissionTab() {
                         )}
                       </td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Table Pagination */}
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
-          <TablePagination
-            total={filteredRecords.length}
-            page={safeSummaryPage}
-            pageSize={summaryPageSize}
-            onPageChange={setSummaryPage}
-            onPageSizeChange={setSummaryPageSize}
-            pageSizeOptions={[10, 20, 50, 100]}
-          />
-        </div>
+        <TablePagination
+          total={filteredRecords.length}
+          page={safeSummaryPage}
+          pageSize={summaryPageSize}
+          onPageChange={setSummaryPage}
+          onPageSizeChange={setSummaryPageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
       </div>
 
-      {/* 6. Batch Import History Table (เหมือนหน้านำเข้าเวลางาน) */}
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/40">
+      {/* 6. Batch Import History Section */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-h-9">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-100 dark:border-purple-900">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-100 dark:border-purple-900 shadow-2xs">
               <History className="h-4 w-4" />
             </div>
             <div>
@@ -1291,31 +1290,33 @@ export default function CommissionTab() {
           <button
             type="button"
             onClick={() => loadBatches(batchPage)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer shadow-2xs"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${isLoadingBatches ? 'animate-spin' : ''}`} />
             <span>รีเฟรชประวัติ</span>
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-            <thead className="bg-[#0B2046] text-white font-semibold">
-              <tr className="whitespace-nowrap">
-                <th className="py-3.5 px-4 text-center w-12">#ID</th>
-                <th className="py-3.5 px-4">วันที่/เวลานำเข้า</th>
-                <th className="py-3.5 px-4">ชื่อไฟล์</th>
-                <th className="py-3.5 px-4 text-center">รูปแบบที่ตรวจจับ</th>
-                <th className="py-3.5 px-4 text-center">ช่วงวันที่</th>
-                <th className="py-3.5 px-4 text-center">พนักงาน</th>
-                <th className="py-3.5 px-4 text-center">นำเข้าสำเร็จ</th>
-                <th className="py-3.5 px-4 text-center">ทับยอดเดิม</th>
-                <th className="py-3.5 px-4 text-right">ยอดรวมคอมมิชชั่น</th>
-                <th className="py-3.5 px-4">ผู้นำเข้า</th>
-                <th className="py-3.5 px-4 text-center">สถานะ</th>
-                <th className="py-3.5 px-4 text-center">จัดการ</th>
-              </tr>
-            </thead>
+        {/* Table inside inner container with rounded corners */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+              <thead className="bg-[#0B2046] text-white font-semibold">
+                <tr className="whitespace-nowrap">
+                  <th className="py-3.5 px-4 text-center w-12">#ID</th>
+                  <th className="py-3.5 px-4">วันที่/เวลานำเข้า</th>
+                  <th className="py-3.5 px-4">ชื่อไฟล์</th>
+                  <th className="py-3.5 px-4 text-center">รูปแบบที่ตรวจจับ</th>
+                  <th className="py-3.5 px-4 text-center">ช่วงวันที่</th>
+                  <th className="py-3.5 px-4 text-center">พนักงาน</th>
+                  <th className="py-3.5 px-4 text-center">นำเข้าสำเร็จ</th>
+                  <th className="py-3.5 px-4 text-center">ทับยอดเดิม</th>
+                  <th className="py-3.5 px-4 text-right">ยอดรวมคอมมิชชั่น</th>
+                  <th className="py-3.5 px-4">ผู้นำเข้า</th>
+                  <th className="py-3.5 px-4 text-center">สถานะ</th>
+                  <th className="py-3.5 px-4 text-center">จัดการ</th>
+                </tr>
+              </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {isLoadingBatches ? (
                 <tr>
@@ -1432,22 +1433,21 @@ export default function CommissionTab() {
             </tbody>
           </table>
         </div>
-
-        {/* Batch Pagination */}
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
-          <TablePagination
-            total={batchTotalCount}
-            page={batchPage}
-            pageSize={batchPageSize}
-            onPageChange={(p) => loadBatches(p, batchPageSize)}
-            onPageSizeChange={(newSize) => {
-              setBatchPageSize(newSize);
-              loadBatches(1, newSize);
-            }}
-            pageSizeOptions={[10, 20, 50]}
-          />
-        </div>
       </div>
+
+      {/* Batch Pagination */}
+      <TablePagination
+        total={batchTotalCount}
+        page={batchPage}
+        pageSize={batchPageSize}
+        onPageChange={(p) => loadBatches(p, batchPageSize)}
+        onPageSizeChange={(newSize) => {
+          setBatchPageSize(newSize);
+          loadBatches(1, newSize);
+        }}
+        pageSizeOptions={[10, 20, 50]}
+      />
+    </div>
 
       {/* 7. Edit Item Modal */}
       {editingRecord && (
