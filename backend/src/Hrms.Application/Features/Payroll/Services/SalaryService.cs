@@ -1251,27 +1251,68 @@ public class SalaryService : ISalaryService
     public async Task<List<PayrollPeriodDto>> GetPayrollPeriodsAsync(CancellationToken cancellationToken = default)
     {
         var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
-        var periods = await _context.PayrollPeriods
-            .Include(p => p.Payrolls)
+        var rows = await LoadPeriodSummariesAsync(_context.PayrollPeriods, cancellationToken);
+        return rows.Select(r => MapPeriodToDto(r.Period, permittedIds, r.HasReceipt)).ToList();
+    }
+
+    /// <summary>
+    /// โหลดรอบเงินเดือนแบบเบา — ไม่ดึงไฟล์ใบเสร็จธนาคาร (bank_receipt_data) และสลิปรายคน (slip_data)
+    /// เดิม Include(Payrolls) ดึงไฟล์ใบเสร็จซ้ำทุกแถวพนักงาน (JOIN) ทำให้ /salary/periods ช้า 10–45 วินาที
+    /// </summary>
+    private static async Task<List<(PayrollPeriod Period, bool HasReceipt)>> LoadPeriodSummariesAsync(
+        IQueryable<PayrollPeriod> source, CancellationToken cancellationToken)
+    {
+        var rows = await source.AsNoTracking()
             .OrderByDescending(p => p.Year)
             .ThenByDescending(p => p.Month)
-            .AsNoTracking()
+            .Select(p => new
+            {
+                Period = new PayrollPeriod
+                {
+                    Id = p.Id,
+                    Year = p.Year,
+                    Month = p.Month,
+                    StartDate = p.StartDate,
+                    EndDate = p.EndDate,
+                    PaymentDate = p.PaymentDate,
+                    ClaimCutoffDate = p.ClaimCutoffDate,
+                    Status = p.Status,
+                    PaymentMethod = p.PaymentMethod,
+                    FinanceVerifiedAt = p.FinanceVerifiedAt,
+                    FinanceVerifiedBy = p.FinanceVerifiedBy,
+                    PaymentConfirmedAt = p.PaymentConfirmedAt,
+                    PaymentConfirmedBy = p.PaymentConfirmedBy,
+                    BankFileGeneratedAt = p.BankFileGeneratedAt,
+                    TotalTransferredCount = p.TotalTransferredCount,
+                    PaymentNote = p.PaymentNote,
+                    BankReceiptFileName = p.BankReceiptFileName
+                },
+                HasReceipt = p.BankReceiptData != null,
+                Payrolls = p.Payrolls.Select(r => new Domain.Entities.Payroll
+                {
+                    Id = r.Id,
+                    PeriodId = r.PeriodId,
+                    EmployeeId = r.EmployeeId,
+                    NetPayableSalary = r.NetPayableSalary,
+                    Status = r.Status
+                }).ToList()
+            })
             .ToListAsync(cancellationToken);
 
-        return periods.Select(p => MapPeriodToDto(p, permittedIds)).ToList();
+        return rows.Select(r =>
+        {
+            r.Period.Payrolls = r.Payrolls;
+            return (r.Period, r.HasReceipt);
+        }).ToList();
     }
 
     public async Task<PayrollPeriodDto?> GetPayrollPeriodByIdAsync(long id, CancellationToken cancellationToken = default)
     {
         var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
-        var p = await _context.PayrollPeriods
-            .Include(x => x.Payrolls)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var rows = await LoadPeriodSummariesAsync(_context.PayrollPeriods.Where(x => x.Id == id), cancellationToken);
+        if (rows.Count == 0) return null;
 
-        if (p == null) return null;
-
-        return MapPeriodToDto(p, permittedIds);
+        return MapPeriodToDto(rows[0].Period, permittedIds, rows[0].HasReceipt);
     }
 
     public async Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default)
@@ -4030,7 +4071,7 @@ public class SalaryService : ISalaryService
         _ => status
     };
 
-    private static PayrollPeriodDto MapPeriodToDto(PayrollPeriod period, List<long>? permittedEmployeeIds = null)
+    private static PayrollPeriodDto MapPeriodToDto(PayrollPeriod period, List<long>? permittedEmployeeIds = null, bool? hasBankReceipt = null)
     {
         var statusText = period.Status switch
         {
@@ -4082,7 +4123,7 @@ public class SalaryService : ISalaryService
             BankFileGeneratedAt = period.BankFileGeneratedAt,
             TotalTransferredCount = period.TotalTransferredCount,
             PaymentNote = period.PaymentNote,
-            HasBankReceipt = period.BankReceiptData != null && period.BankReceiptData.Length > 0,
+            HasBankReceipt = hasBankReceipt ?? (period.BankReceiptData != null && period.BankReceiptData.Length > 0),
             BankReceiptFileName = period.BankReceiptFileName,
             CanConfirmPayment = canConfirm,
         };
