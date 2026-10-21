@@ -56,6 +56,131 @@ public class CommissionService : ICommissionService
         };
     }
 
+    private static readonly string[] ThaiMonthNames = new[]
+    {
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+    };
+
+    public async Task<List<CommissionMonthlyPeriodDto>> GetMonthlyPeriodsAsync(int year, CancellationToken cancellationToken = default)
+    {
+        var commissions = await _context.EmployeeCommissions
+            .Include(c => c.ConfirmedByEmployee)
+            .Where(c => c.Year == year)
+            .ToListAsync(cancellationToken);
+
+        var startOfYear = new DateOnly(year, 1, 1);
+        var endOfYear = new DateOnly(year, 12, 31);
+        var activeEntries = await _context.EmployeeCommissionEntries
+            .Where(e => e.Status == "ACTIVE" && e.DateFrom <= endOfYear && e.DateTo >= startOfYear)
+            .ToListAsync(cancellationToken);
+
+        var monthsWithData = commissions.Select(c => c.Month)
+            .Concat(activeEntries.Select(e => e.DateFrom.Month))
+            .Concat(activeEntries.Select(e => e.DateTo.Month))
+            .Distinct()
+            .OrderByDescending(m => m)
+            .ToList();
+
+        if (monthsWithData.Count == 0)
+        {
+            monthsWithData.Add(DateTime.Today.Month);
+        }
+
+        var result = new List<CommissionMonthlyPeriodDto>();
+
+        foreach (var m in monthsWithData)
+        {
+            var monthComms = commissions.Where(c => c.Month == m).ToList();
+            var startOfMonth = new DateOnly(year, m, 1);
+            var endOfMonth = new DateOnly(year, m, DateTime.DaysInMonth(year, m));
+
+            var monthEntries = activeEntries
+                .Where(e => e.DateFrom <= endOfMonth && e.DateTo >= startOfMonth)
+                .ToList();
+
+            var batchCount = monthEntries
+                .Where(e => e.BatchId.HasValue)
+                .Select(e => e.BatchId!.Value)
+                .Distinct()
+                .Count();
+
+            string dateRangeStr = "-";
+            if (monthEntries.Count > 0)
+            {
+                var minDate = monthEntries.Min(e => e.DateFrom);
+                var maxDate = monthEntries.Max(e => e.DateTo);
+                dateRangeStr = minDate == maxDate ? minDate.ToString("yyyy-MM-dd") : $"{minDate:yyyy-MM-dd} ถึง {maxDate:yyyy-MM-dd}";
+            }
+
+            var periodStatus = monthComms.Count == 0 ? "DRAFT" : monthComms.All(r => r.Status == "PAID") ? "PAID" : monthComms.Any(r => r.Status == "CONFIRMED") ? "CONFIRMED" : "DRAFT";
+            var confirmedItem = monthComms.FirstOrDefault(c => c.ConfirmedAt.HasValue);
+
+            result.Add(new CommissionMonthlyPeriodDto
+            {
+                Year = year,
+                Month = m,
+                MonthLabel = $"{ThaiMonthNames[m - 1]} {year + 543}",
+                DateRange = dateRangeStr,
+                BatchCount = batchCount,
+                TotalEmployees = monthComms.Count > 0 ? monthComms.Count : monthEntries.Select(e => e.EmployeeId).Distinct().Count(),
+                TotalSalesAmount = monthComms.Sum(c => c.SalesAmount),
+                TotalCommissionAmount = monthComms.Sum(c => c.TotalCommission),
+                Status = periodStatus,
+                ConfirmedAt = confirmedItem?.ConfirmedAt,
+                ConfirmedByName = confirmedItem?.ConfirmedByEmployee != null ? $"{confirmedItem.ConfirmedByEmployee.FirstName} {confirmedItem.ConfirmedByEmployee.LastName}".Trim() : null
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<List<CommissionBatchEntryDto>> GetPeriodAllEntriesAsync(int year, int month, CancellationToken cancellationToken = default)
+    {
+        var startOfMonth = new DateOnly(year, month, 1);
+        var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+
+        var entries = await _context.EmployeeCommissionEntries
+            .Include(e => e.Employee)
+                .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
+                    .ThenInclude(a => a.Department)
+            .Include(e => e.Employee)
+                .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
+                    .ThenInclude(a => a.Position)
+            .Include(e => e.Batch)
+            .Where(e => e.Status == "ACTIVE" && e.DateFrom <= endOfMonth && e.DateTo >= startOfMonth)
+            .OrderBy(e => e.DateFrom)
+            .ThenBy(e => e.Employee != null ? e.Employee.EmployeeCode : "")
+            .ToListAsync(cancellationToken);
+
+        return entries.Select(e =>
+        {
+            var emp = e.Employee;
+            var currentAssignment = emp?.Assignments?.FirstOrDefault(a => a.IsCurrent);
+            return new CommissionBatchEntryDto
+            {
+                Id = e.Id,
+                EmployeeId = e.EmployeeId,
+                EmployeeCode = emp?.EmployeeCode ?? "-",
+                EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : "-",
+                DepartmentName = currentAssignment?.Department?.DepartmentName ?? "-",
+                PositionName = currentAssignment?.Position?.PositionName ?? "-",
+                DateFrom = e.DateFrom.ToString("yyyy-MM-dd"),
+                DateTo = e.DateTo.ToString("yyyy-MM-dd"),
+                SalesAmount = e.SalesAmount,
+                CommissionRate = e.CommissionRate,
+                CommissionAmount = e.CommissionAmount,
+                SpecialAmount = e.SpecialAmount,
+                TotalAmount = e.TotalAmount,
+                Note = e.Note,
+                Status = e.Status,
+                CreatedAt = e.CreatedAt,
+                BatchFileName = e.Batch?.FileName,
+                Source = e.Source
+            };
+        }).ToList();
+    }
+
     /// <summary>
     /// พรีวิวไฟล์ค่าคอมมิชชั่น ตรวจจับรูปแบบอัตโนมัติ (ทั้งเดือน, วันเดียว, หรือช่วงวัน) และคำนวณรายการที่จะถูกแทนที่
     /// </summary>

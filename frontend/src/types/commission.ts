@@ -167,3 +167,17 @@ export interface CommissionBatchEntry {
   source?: string;
 }
 
+export interface CommissionMonthlyPeriod {
+  year: number;
+  month: number;
+  monthLabel: string;
+  dateRange: string;
+  batchCount: number;
+  totalEmployees: number;
+  totalSalesAmount: number;
+  totalCommissionAmount: number;
+  status: 'DRAFT' | 'CONFIRMED' | 'PAID' | string;
+  confirmedAt?: string | null;
+  confirmedByName?: string | null;
+}
+

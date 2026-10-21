@@ -45,6 +45,36 @@ public class CommissionController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงรายการสรุปภาพรวมงวดค่าคอมมิชชั่นรายเดือนทั้งหมดของปี (Monthly Periods Overview)
+    /// </summary>
+    [HttpGet("periods")]
+    [ProducesResponseType(typeof(ApiResponse<List<CommissionMonthlyPeriodDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<CommissionMonthlyPeriodDto>>>> GetMonthlyPeriods(
+        [FromQuery] int? year,
+        CancellationToken cancellationToken)
+    {
+        var y = year ?? DateTime.Today.Year;
+        var result = await _commissionService.GetMonthlyPeriodsAsync(y, cancellationToken);
+        return Ok(ApiResponse<List<CommissionMonthlyPeriodDto>>.Ok(result, "ดึงรายการงวดค่าคอมมิชชั่นสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดึงรายการย่อยทั้งหมดในรอบเดือนนั้น (รวมทุกไฟล์ที่นำเข้าและรายการที่บันทึกเพิ่ม)
+    /// </summary>
+    [HttpGet("periods/all-entries")]
+    [ProducesResponseType(typeof(ApiResponse<List<CommissionBatchEntryDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<CommissionBatchEntryDto>>>> GetPeriodAllEntries(
+        [FromQuery] int? year,
+        [FromQuery] int? month,
+        CancellationToken cancellationToken)
+    {
+        var y = year ?? DateTime.Today.Year;
+        var m = month ?? DateTime.Today.Month;
+        var result = await _commissionService.GetPeriodAllEntriesAsync(y, m, cancellationToken);
+        return Ok(ApiResponse<List<CommissionBatchEntryDto>>.Ok(result, "ดึงรายการทั้งหมดในงวดสำเร็จ"));
+    }
+
+    /// <summary>
     /// พรีวิวไฟล์ค่าคอมมิชชั่น ตรวจจับรูปแบบอัตโนมัติ (ทั้งเดือน / วันเดียว / ช่วงวัน) และคำนวณผลกระทบก่อนนำเข้าจริง
     /// </summary>
     [HttpPost("preview")]

@@ -186,3 +186,18 @@ public class CommissionBatchEntryDto
     public string Source { get; set; } = "FILE";
 }
 
+public class CommissionMonthlyPeriodDto
+{
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public string MonthLabel { get; set; } = string.Empty;
+    public string DateRange { get; set; } = string.Empty;
+    public int BatchCount { get; set; }
+    public int TotalEmployees { get; set; }
+    public decimal TotalSalesAmount { get; set; }
+    public decimal TotalCommissionAmount { get; set; }
+    public string Status { get; set; } = "DRAFT"; // DRAFT, CONFIRMED, PAID
+    public DateTimeOffset? ConfirmedAt { get; set; }
+    public string? ConfirmedByName { get; set; }
+}
+
