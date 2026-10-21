@@ -109,6 +109,12 @@ public class AddPayrollAdjustmentRequest
     public decimal? SalesAmount { get; set; }
     /// <summary>ค่าคอมมิชชั่น: เปอร์เซ็นต์ของยอดขาย</summary>
     public decimal? SalesPercent { get; set; }
+    /// <summary>เพิ่มหัวข้อใหม่ระหว่างประมวลผล (ใช้เมื่อ PayrollItemId = 0): ชื่อรายการ</summary>
+    public string? NewItemName { get; set; }
+    /// <summary>EARNING / DEDUCTION</summary>
+    public string? NewItemType { get; set; }
+    public bool NewItemIsTaxable { get; set; } = true;
+    public bool NewItemIsSocialSecurity { get; set; }
 }
 
 /// <summary>ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้</summary>

@@ -12,6 +12,8 @@ import {
   parseFormulaParams,
   serializeFormulaParams,
   validateFormulaParams,
+  withCommas,
+  cleanNumber,
 } from './FormulaParamsEditor';
 
 interface Props {
@@ -242,6 +244,8 @@ export const PayrollItemModal: React.FC<Props> = ({
   const [calculationType, setCalculationType] = useState<'FIXED' | 'FORMULA' | 'MANUAL'>('FIXED');
   const [formulaTemplate, setFormulaTemplate] = useState<string>('');
   const [formulaValue, setFormulaValue] = useState('');
+  /** จำนวนเงินเริ่มต้นของรายการกำหนดเอง (ตัวเลขล้วน) */
+  const [amountText, setAmountText] = useState('');
   const [params, setParams] = useState<FormulaParams>(() => parseFormulaParams('', ''));
   const [isTaxable, setIsTaxable] = useState(true);
   const [isSocialSecurityCalculated, setIsSocialSecurityCalculated] = useState(true);
@@ -256,9 +260,10 @@ export const PayrollItemModal: React.FC<Props> = ({
       setDescription(item.description || '');
       const t = item.itemType || defaultType;
       setItemType(t);
-      const calcType = item.calculationType || 'FIXED';
-      // รายได้คงที่รายเดือนย้ายไปตั้งที่เมนูสวัสดิการแล้ว รายการรายได้จึงไม่ใช้แบบ FIXED
-      setCalculationType(t === 'EARNING' && calcType === 'FIXED' ? 'MANUAL' : calcType);
+      // รายการที่ไม่ใช่สูตร = แบบกำหนดเอง (ชื่อ + จำนวนเงิน)
+      setCalculationType(item.calculationType === 'FORMULA' ? 'FORMULA' : 'MANUAL');
+      const amt = (item.formulaValue || '').replace(/,/g, '').trim();
+      setAmountText(/^\d+(\.\d+)?$/.test(amt) ? amt : '');
       // รายการของระบบที่ยังไม่มีรหัสสูตร → ระบุสูตรให้ เพื่อให้แก้ค่าตัวแปรได้
       const inferredTpl =
         item.formulaTemplate ||
@@ -274,11 +279,12 @@ export const PayrollItemModal: React.FC<Props> = ({
       setItemName('');
       setDescription('');
       setItemType(defaultType);
-      setCalculationType(defaultType === 'EARNING' ? 'MANUAL' : 'FIXED');
+      setCalculationType('MANUAL');
       setFormulaTemplate('');
       setFormulaValue('');
-      setIsTaxable(true);
-      setIsSocialSecurityCalculated(defaultType === 'EARNING');
+      setAmountText('');
+      setIsTaxable(defaultType === 'EARNING');
+      setIsSocialSecurityCalculated(false);
       setIsActive(true);
     }
     setError(null);
@@ -309,95 +315,24 @@ export const PayrollItemModal: React.FC<Props> = ({
     return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
   };
   const typeLabel = (c: string) => (c === 'EARNING' ? 'รายได้' : 'รายหัก');
-  const systemOptions = SYSTEM_FORMULA_TEMPLATES.filter((t) => SYSTEM_TEMPLATE_ITEM[t.code] && t.code !== templateCode).map((t) => ({
-    ...t,
-    name: `${t.name} — รายการของระบบ (แก้ค่าที่นี่ได้)`,
-  }));
-  const availableTemplatesAll = [
-    ...(systemTemplate ? [{ ...systemTemplate, name: `${systemTemplate.name} (รายการของระบบ)` }] : []),
-    ...FORMULA_TEMPLATES.map((tpl) =>
-      tpl.category === itemType || tpl.category === 'BOTH' ? tpl : { ...tpl, name: `${tpl.name} (รายการ${typeLabel(tpl.category)})` },
-    ),
-    ...systemOptions,
-    // รายการเดิมที่ยังใช้สูตรที่เลิกใช้: แสดงไว้ให้รู้ว่าตั้งอะไรอยู่ (ระบบไม่คำนวณให้)
-    ...(legacyTemplate ? [{ ...legacyTemplate, name: `${legacyTemplate.name} (เลิกใช้ — ระบบไม่คำนวณ)` }] : []),
-  ];
-  const availableTemplates = availableTemplatesAll;
-
   const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === templateCode) ?? systemTemplate ?? legacyTemplate;
   const hasParams = !isAutoPullModuleItem && PARAM_TEMPLATES.includes(templateCode);
-
-  const handleCalculationTypeChange = (newType: 'FIXED' | 'FORMULA' | 'MANUAL') => {
-    if (isAutoPullModuleItem) return;
-    setCalculationType(newType);
-    if (newType === 'FORMULA') {
-      if (!formulaTemplate) {
-        // เงินเดือน/ประกันสังคม/ภาษี เป็นรายการของระบบอยู่แล้ว ค่าเริ่มต้นจึงเป็นสูตรที่ใช้สร้างรายการเพิ่มได้จริง
-        const defaultTpl = itemType === 'EARNING' ? 'DILIGENT_ALLOWANCE' : 'LATE_ABSENT';
-        setFormulaTemplate(defaultTpl);
-        const tplObj = FORMULA_TEMPLATES.find((t) => t.code === defaultTpl);
-        if (tplObj) {
-          if (!formulaValue) setFormulaValue(tplObj.defaultValue);
-          setParams(parseFormulaParams(defaultTpl, tplObj.defaultValue));
-          setIsTaxable(tplObj.defaultTaxable);
-          setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
-        }
-      }
-    }
-  };
-
-  const handleTemplateChange = (newTplCode: string) => {
-    // สูตรของระบบ: สลับไปแก้รายการของระบบที่ใช้สูตรนั้น
-    const sysCode = SYSTEM_TEMPLATE_ITEM[newTplCode];
-    if (sysCode) {
-      const target = allItems.find((i) => i.itemCode === sysCode);
-      if (!target) {
-        setError('ไม่พบรายการของระบบที่ใช้สูตรนี้');
-        return;
-      }
-      if (target.id !== item?.id) {
-        setError(null);
-        setRedirect({ base: itemProp, target });
-      }
-      return;
-    }
-    if (isSystemFormula) {
-      setError('รายการของระบบเปลี่ยนเป็นสูตรอื่นไม่ได้');
-      return;
-    }
-    const picked = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
-    if (picked && picked.category !== 'BOTH' && picked.category !== itemType) {
-      if (item) {
-        setError(`สูตร "${picked.name}" ใช้กับรายการ${typeLabel(picked.category)} — เปลี่ยนประเภทของรายการที่มีอยู่แล้วไม่ได้`);
-        return;
-      }
-      setItemType(picked.category);
-    }
-    if (isAutoPullModuleItem) return;
-    setFormulaTemplate(newTplCode);
-    const tplObj = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
-    if (tplObj) {
-      setFormulaValue(tplObj.defaultValue);
-      setParams(parseFormulaParams(newTplCode, tplObj.defaultValue));
-      setIsTaxable(tplObj.defaultTaxable);
-      setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!item && !itemCode.trim()) {
-      setError('กรุณาระบุรหัสรายการ');
-      return;
-    }
     if (!itemName.trim()) {
       setError('กรุณาระบุชื่อรายการ');
       return;
     }
 
-    let finalFormulaValue = formulaValue.trim();
+    const isCustom = !isAutoPullModuleItem && calculationType !== 'FORMULA';
+    if (isCustom && !(Number(amountText) > 0)) {
+      setError('กรุณาระบุจำนวนเงินมากกว่า 0');
+      return;
+    }
+    let finalFormulaValue = isCustom ? amountText : formulaValue.trim();
     if (!isAutoPullModuleItem && calculationType === 'FORMULA') {
       if (!formulaTemplate) {
         setError('กรุณาเลือกรูปแบบสูตร');
@@ -515,21 +450,6 @@ export const PayrollItemModal: React.FC<Props> = ({
               </div>
             )}
 
-          {/* Item Code (only when creating) */}
-          {!item && (
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_OTHER) <span className="text-rose-500">*</span></label>
-              <input
-                type="text"
-                required
-                placeholder="เช่น INC_OTHER"
-                value={itemCode}
-                onChange={(e) => setItemCode(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 uppercase"
-              />
-            </div>
-          )}
-
           {/* Item Name */}
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ชื่อรายการ <span className="text-rose-500">*</span></label>
@@ -543,72 +463,6 @@ export const PayrollItemModal: React.FC<Props> = ({
             />
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">คำอธิบายย่อ</label>
-            <input
-              type="text"
-              placeholder="เช่น จ่ายตามที่ปฏิบัติงานนอกสถานที่"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
-            />
-          </div>
-
-          {/* Calculation Type */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-              <span>ประเภทการคำนวณ</span>
-              {isSystemFormula && !isAutoPullModuleItem && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
-                  <Lock className="w-3 h-3" />
-                  รายการของระบบ
-                </span>
-              )}
-              {isAutoPullModuleItem && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
-                  <Lock className="w-3 h-3" />
-                  ระบบดึงข้อมูลให้
-                </span>
-              )}
-            </label>
-            {isAutoPullModuleItem ? (
-              <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
-                <Lock className="w-3.5 h-3.5 text-teal-300" />
-                <span>ดึงข้อมูลอัตโนมัติ</span>
-              </div>
-            ) : isSystemFormula ? (
-              <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
-                <Lock className="w-3.5 h-3.5 text-purple-300" />
-                <span>สูตรคำนวณ (ระบบคำนวณให้)</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {[
-                  { id: 'FIXED', label: 'จำนวนคงที่' },
-                  { id: 'FORMULA', label: 'สูตรคำนวณ' },
-                  { id: 'MANUAL', label: 'กำหนดเอง' },
-                ]
-                  .filter((opt) => !(itemType === 'EARNING' && opt.id === 'FIXED'))
-                  .filter((opt) => !(linkedBenefits.length > 0 && opt.id !== 'MANUAL'))
-                  .map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => handleCalculationTypeChange(opt.id as any)}
-                    className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer text-center ${
-                      calculationType === opt.id
-                        ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
           {isAutoPullModuleItem ? (
             <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-200">
@@ -617,32 +471,20 @@ export const PayrollItemModal: React.FC<Props> = ({
               </div>
               <p className="text-[11px] leading-relaxed text-teal-800 dark:text-teal-300">{autoPull?.hint}</p>
             </div>
-          ) : linkedBenefits.length > 0 ? (
-            <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">
-              ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงิน วิธีจ่าย และผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ (จ่ายประจำในเงินเดือน = จ่ายอัตโนมัติทุกงวด, เบิกตามจริง = จ่ายตามคำขอเบิกที่อนุมัติ) หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
-            </div>
           ) : null}
 
           {/* If FORMULA is chosen (and not locked auto-pull): Show Formula Template selector and clean Summary Card */}
           {!isAutoPullModuleItem && (calculationType === 'FORMULA' ? (
             <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl">
-              <div>
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                  <Calculator className="w-3.5 h-3.5 text-blue-700" />
-                  <span>รูปแบบสูตรมาตรฐานของระบบ (Formula Template)</span>
-                </label>
-                <CustomSelect
-                  value={formulaTemplate}
-                  onChange={(e) => handleTemplateChange(e.target.value)}
-                  disabled={isAutoPullModuleItem}
-                  className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 dark:text-slate-100 font-semibold"
-                >
-                  {availableTemplates.map((tpl) => (
-                    <option key={tpl.code} value={tpl.code}>
-                      {tpl.name}
-                    </option>
-                  ))}
-                </CustomSelect>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <Calculator className="w-3.5 h-3.5 text-blue-700" />
+                <span>สูตร: {selectedTemplate?.name ?? formulaTemplate}</span>
+                {isSystemFormula && (
+                  <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                    <Lock className="w-3 h-3" />
+                    ระบบคำนวณให้
+                  </span>
+                )}
               </div>
 
               {selectedTemplate && (
@@ -759,31 +601,21 @@ export const PayrollItemModal: React.FC<Props> = ({
           ) : (
             <div>
               <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                {calculationType === 'FIXED' ? 'จำนวนเงินคงที่ (บาท)' : 'เกณฑ์การคิด / บันทึกช่วยจำ'}
+                จำนวนเงิน (บาท) <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <input
-                  type={calculationType === 'FIXED' ? 'number' : 'text'}
-                  step={calculationType === 'FIXED' ? '0.01' : undefined}
-                  placeholder={
-                    calculationType === 'FIXED'
-                      ? 'เช่น 500'
-                      : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริงที่เกิดขึ้น'
-                  }
-                  value={formulaValue}
-                  onChange={(e) => setFormulaValue(e.target.value)}
-                  className={`w-full text-xs py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 ${
-                    calculationType === 'FIXED' ? 'pl-7 pr-3 font-semibold' : 'px-3.5'
-                  }`}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="เช่น 500"
+                  value={withCommas(amountText)}
+                  onChange={(e) => setAmountText(cleanNumber(e.target.value))}
+                  className="w-full text-xs py-2.5 pl-7 pr-3 font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
                 />
-                {calculationType === 'FIXED' && (
-                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">฿</span>
-                )}
+                <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-medium">฿</span>
               </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1 block">
-                {calculationType === 'FIXED'
-                  ? 'ระบุยอดเงินคงที่ที่จ่ายหรือหักในสลิปเงินเดือน'
-                  : 'ระบุเกณฑ์หรือคำอธิบายสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน'}
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                ยอดเริ่มต้นเมื่อเพิ่มรายการนี้ให้พนักงานตอนประมวลเงินเดือน (แก้ยอดรายคนได้)
               </span>
             </div>
           ))}

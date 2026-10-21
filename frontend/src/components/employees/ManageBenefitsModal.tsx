@@ -17,7 +17,6 @@ import {
   HelpCircle,
 } from 'lucide-react';
 import { benefitService } from '@/services/benefitService';
-import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
@@ -368,12 +367,6 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   </CustomSelect>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    จ่ายผ่านรายการ (บนสลิปเงินเดือน)
-                  </label>
-                  <PayCodeSelect value={payrollItemId} onChange={setPayrollItemId} isNew={!editingItem} />
-                </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">

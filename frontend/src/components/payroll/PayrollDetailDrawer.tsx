@@ -21,6 +21,7 @@ interface Props {
 // รายการที่ระบบคำนวณเอง — ไม่ให้เลือกเพิ่มแบบ manual
 const SYSTEM_ITEM_CODES = ['INC_BASE', 'INC_POSITION', 'INC_OT', 'DED_SSO', 'DED_TAX', 'DED_UNPAID_LEAVE', 'INC_BONUS'];
 const CORE_TEMPLATES = ['BASE_SALARY', 'SSO_STANDARD', 'TAX_STANDARD', 'PRORATED_DAYS', 'POSITION_ALLOWANCE'];
+const NEW_ITEM = '__new__';
 
 export const PayrollDetailDrawer: React.FC<Props> = ({
   isOpen,
@@ -40,12 +41,20 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const [salesAmount, setSalesAmount] = useState<string>('');
   const [salesPercent, setSalesPercent] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
+  // เพิ่มหัวข้อใหม่ (ยังไม่มีในรายการได้/หัก)
+  const [newName, setNewName] = useState('');
+  const [newType, setNewType] = useState<'EARNING' | 'DEDUCTION'>('EARNING');
+  const [newTaxable, setNewTaxable] = useState(true);
+  const [newSso, setNewSso] = useState(false);
+  const isNewHeading = newItemId === NEW_ITEM;
 
   const selectableItems = payrollItems.filter(
     (i) =>
       i.status === 'ACTIVE' &&
       !SYSTEM_ITEM_CODES.includes(i.itemCode) &&
-      !CORE_TEMPLATES.includes((i.formulaTemplate || '').toUpperCase())
+      !CORE_TEMPLATES.includes((i.formulaTemplate || '').toUpperCase()) &&
+      // ยอดสวัสดิการมาจากเมนูสวัสดิการ/คำขอเบิกอัตโนมัติ
+      !(i.linkedBenefitNames && i.linkedBenefitNames.length > 0)
   );
 
   const selectedItem = selectableItems.find((i) => String(i.id) === newItemId);
@@ -57,6 +66,11 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const handleSelectItem = (id: string) => {
     setNewItemId(id);
     const item = selectableItems.find((i) => String(i.id) === id);
+    // รายการกำหนดเอง: ใส่ยอดเริ่มต้นที่ตั้งไว้ให้ (แก้ได้)
+    if (item && item.calculationType !== 'FORMULA') {
+      const def = (item.formulaValue || '').replace(/,/g, '').trim();
+      setNewAmount(/^\d+(\.\d+)?$/.test(def) ? def : '');
+    }
     if ((item?.formulaTemplate || '').toUpperCase() === 'PERCENT_SALES') {
       // % เริ่มต้นจากที่ตั้งไว้ในหน้ารายการได้-หัก (เช่น "3% ของยอดขาย")
       const m = (item?.formulaValue || '').match(/(\d+(?:\.\d+)?)\s*%/);
@@ -76,6 +90,10 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
       }
     }
     const amount = isCommission ? commissionAmount : Number(newAmount);
+    if (isNewHeading && !newName.trim()) {
+      setError('กรุณาระบุชื่อหัวข้อรายการ');
+      return;
+    }
     if (!newItemId || !Number.isFinite(amount) || amount <= 0) {
       setError('กรุณาเลือกรายการและระบุจำนวนเงินมากกว่า 0');
       return;
@@ -84,8 +102,16 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
     setError(null);
     try {
       const updated = await salaryService.addPayrollAdjustment(record.id, {
-        payrollItemId: Number(newItemId),
+        payrollItemId: isNewHeading ? 0 : Number(newItemId),
         amount,
+        ...(isNewHeading
+          ? {
+              newItemName: newName.trim(),
+              newItemType: newType,
+              newItemIsTaxable: newType === 'EARNING' && newTaxable,
+              newItemIsSocialSecurity: newType === 'EARNING' && newSso,
+            }
+          : {}),
         note: newNote.trim() || undefined,
         ...(isCommission ? { salesAmount: Number(salesAmount), salesPercent: Number(salesPercent) } : {}),
       });
@@ -95,6 +121,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
       setNewNote('');
       setSalesAmount('');
       setSalesPercent('');
+      setNewName('');
       onChanged?.();
     } catch (err: any) {
       setError(err?.response?.data?.message || 'เพิ่มรายการไม่สำเร็จ');
@@ -264,6 +291,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                   >
                     <option value="">-- เลือกรายการ --</option>
+                    <option value={NEW_ITEM}>+ เพิ่มหัวข้อใหม่</option>
                     <optgroup label="รายได้">
                       {selectableItems.filter((i) => i.itemType === 'EARNING').map((i) => (
                         <option key={i.id} value={i.id}>{i.itemName}</option>
@@ -275,6 +303,48 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       ))}
                     </optgroup>
                   </CustomSelect>
+                  {isNewHeading && (
+                    <div className="space-y-2 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <input
+                        type="text"
+                        placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        disabled={saving}
+                        maxLength={100}
+                        className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
+                      />
+                      <div className="flex items-center gap-2">
+                        {(['EARNING', 'DEDUCTION'] as const).map((t) => (
+                          <button
+                            key={t}
+                            type="button"
+                            onClick={() => setNewType(t)}
+                            className={`flex-1 h-8 rounded-lg text-xs border cursor-pointer ${
+                              newType === t
+                                ? 'bg-[#0B2046] text-white border-[#0B2046]'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            }`}
+                          >
+                            {t === 'EARNING' ? 'รายได้' : 'รายหัก'}
+                          </button>
+                        ))}
+                      </div>
+                      {newType === 'EARNING' && (
+                        <div className="flex items-center gap-5 text-xs text-slate-700 dark:text-slate-300">
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked={newTaxable} onChange={(e) => setNewTaxable(e.target.checked)} className="w-4 h-4 rounded" />
+                            คิดภาษี
+                          </label>
+                          <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                            <input type="checkbox" checked={newSso} onChange={(e) => setNewSso(e.target.checked)} className="w-4 h-4 rounded" />
+                            คิดประกันสังคม
+                          </label>
+                        </div>
+                      )}
+                      <p className="text-[10px] text-slate-400">หัวข้อนี้จะถูกเพิ่มในเมนู รายได้และรายหัก ให้ใช้ซ้ำในงวดต่อไปได้</p>
+                    </div>
+                  )}
                   {isCommission ? (
                     <div className="space-y-2">
                       <div className="flex gap-2">

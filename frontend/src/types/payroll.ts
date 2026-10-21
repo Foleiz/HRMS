@@ -267,6 +267,11 @@ export interface AddPayrollAdjustmentPayload {
   /** ค่าคอมมิชชั่น: ยอดขาย และ % (backend คำนวณยอดเงินจากสองค่านี้) */
   salesAmount?: number;
   salesPercent?: number;
+  /** เพิ่มหัวข้อใหม่ระหว่างประมวลผล (ส่ง payrollItemId = 0) */
+  newItemName?: string;
+  newItemType?: 'EARNING' | 'DEDUCTION';
+  newItemIsTaxable?: boolean;
+  newItemIsSocialSecurity?: boolean;
 }
 
 export interface BonusPayoutResult {

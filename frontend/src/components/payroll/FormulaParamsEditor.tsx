@@ -153,13 +153,13 @@ export const validateFormulaParams = (template: string, p: FormulaParams): strin
 };
 
 /** แสดงตัวเลขพร้อมลูกน้ำ (ค่าที่เก็บยังเป็นตัวเลขล้วน) */
-const withCommas = (v: string) => {
+export const withCommas = (v: string) => {
   if (v === '' || v == null) return '';
   const [i, d] = String(v).split('.');
   return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d !== undefined ? `.${d}` : '');
 };
 /** รับค่าที่พิมพ์ (อาจมีลูกน้ำ) → ตัวเลขล้วน ทศนิยมได้จุดเดียว */
-const cleanNumber = (v: string) => {
+export const cleanNumber = (v: string) => {
   const raw = v.replace(/[^\d.]/g, '');
   const dot = raw.indexOf('.');
   return dot < 0 ? raw : raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, '');

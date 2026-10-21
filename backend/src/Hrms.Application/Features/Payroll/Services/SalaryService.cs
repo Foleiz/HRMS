@@ -1107,30 +1107,35 @@ public class SalaryService : ISalaryService
 
     public async Task<PayrollItemDto> CreatePayrollItemAsync(CreatePayrollItemRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.ItemCode))
-            throw new BusinessRuleException("รหัสรายการต้องไม่เป็นค่าว่าง");
-
         if (string.IsNullOrWhiteSpace(request.ItemName))
             throw new BusinessRuleException("ชื่อรายการต้องไม่เป็นค่าว่าง");
 
-        EnsureNotFixedEarning(request.ItemType, request.CalculationType);
+        var itemType = request.ItemType?.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING";
+        string codeUpper;
+        if (string.IsNullOrWhiteSpace(request.ItemCode))
+        {
+            codeUpper = await GenerateCustomItemCodeAsync(itemType, cancellationToken);
+        }
+        else
+        {
+            codeUpper = request.ItemCode.Trim().ToUpper();
+            if (await _context.PayrollItems.AnyAsync(i => i.ItemCode == codeUpper, cancellationToken))
+                throw new BusinessRuleException($"รหัสรายการ '{codeUpper}' มีอยู่ในระบบแล้ว");
+        }
 
-        var codeUpper = request.ItemCode.Trim().ToUpper();
-        var exists = await _context.PayrollItems.AnyAsync(i => i.ItemCode == codeUpper, cancellationToken);
-        if (exists)
-            throw new BusinessRuleException($"รหัสรายการ '{codeUpper}' มีอยู่ในระบบแล้ว");
-
+        // รายการที่เพิ่มใหม่เป็นแบบ "กำหนดเอง" เสมอ: จำนวนเงินเป็นค่าเริ่มต้น HR เพิ่มให้รายคนตอนประมวลเงินเดือน
+        // (สูตร/ดึงข้อมูลอัตโนมัติ เป็นรายการของระบบที่มีอยู่แล้ว ไม่สร้างเพิ่ม)
         var entity = new PayrollItem
         {
             ItemCode = codeUpper,
             ItemName = request.ItemName.Trim(),
             Description = request.Description,
-            ItemType = request.ItemType.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING",
-            CalculationType = request.CalculationType.ToUpper(),
-            FormulaTemplate = request.FormulaTemplate,
-            FormulaValue = request.FormulaValue,
-            IsTaxable = request.IsTaxable,
-            IsSocialSecurityCalculated = request.IsSocialSecurityCalculated,
+            ItemType = itemType,
+            CalculationType = "MANUAL",
+            FormulaTemplate = null,
+            FormulaValue = NormalizeDefaultAmount(request.FormulaValue),
+            IsTaxable = itemType == "EARNING" && request.IsTaxable,
+            IsSocialSecurityCalculated = itemType == "EARNING" && request.IsSocialSecurityCalculated,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
         };
 
@@ -1151,6 +1156,29 @@ public class SalaryService : ISalaryService
             IsSocialSecurityCalculated = entity.IsSocialSecurityCalculated,
             Status = entity.Status
         };
+    }
+
+    /// <summary>รหัสรายการกำหนดเองอัตโนมัติ เช่น INC_CUSTOM_3 / DED_CUSTOM_2</summary>
+    private async Task<string> GenerateCustomItemCodeAsync(string itemType, CancellationToken cancellationToken)
+    {
+        var prefix = itemType == "DEDUCTION" ? "DED_CUSTOM_" : "INC_CUSTOM_";
+        var existing = await _context.PayrollItems
+            .Where(i => i.ItemCode.StartsWith(prefix))
+            .Select(i => i.ItemCode)
+            .ToListAsync(cancellationToken);
+        var n = existing.Count + 1;
+        while (existing.Contains(prefix + n)) n++;
+        return prefix + n;
+    }
+
+    /// <summary>จำนวนเงินเริ่มต้นของรายการกำหนดเอง (เก็บเป็นตัวเลขล้วน) — ว่าง/ไม่ใช่ตัวเลขเก็บเป็น null</summary>
+    private static string? NormalizeDefaultAmount(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return decimal.TryParse(value.Replace(",", string.Empty).Trim(), System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var amount) && amount >= 0
+            ? amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+            : null;
     }
 
     public async Task<PayrollItemDto> UpdatePayrollItemAsync(long id, UpdatePayrollItemRequest request, CancellationToken cancellationToken = default)
@@ -1583,8 +1611,36 @@ public class SalaryService : ISalaryService
 
         EnsurePeriodEditable(payroll.Period);
 
-        var item = await _context.PayrollItems.FirstOrDefaultAsync(i => i.Id == request.PayrollItemId, cancellationToken)
-            ?? throw new NotFoundException("PayrollItem", request.PayrollItemId);
+        PayrollItem item;
+        if (request.PayrollItemId <= 0 && !string.IsNullOrWhiteSpace(request.NewItemName))
+        {
+            // เพิ่มหัวข้อใหม่ระหว่างประมวลผล: ใช้รายการกำหนดเองชื่อเดิมถ้ามีอยู่แล้ว ไม่สร้างซ้ำ
+            var newType = request.NewItemType?.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING";
+            var newName = request.NewItemName.Trim();
+            item = await _context.PayrollItems.FirstOrDefaultAsync(
+                       i => i.ItemName == newName && i.ItemType == newType && i.CalculationType == "MANUAL" && i.Status == "ACTIVE",
+                       cancellationToken)
+                   ?? new PayrollItem
+                   {
+                       ItemCode = await GenerateCustomItemCodeAsync(newType, cancellationToken),
+                       ItemName = newName,
+                       ItemType = newType,
+                       CalculationType = "MANUAL",
+                       IsTaxable = newType == "EARNING" && request.NewItemIsTaxable,
+                       IsSocialSecurityCalculated = newType == "EARNING" && request.NewItemIsSocialSecurity,
+                       Status = "ACTIVE",
+                   };
+            if (item.Id == 0)
+            {
+                _context.PayrollItems.Add(item);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+        else
+        {
+            item = await _context.PayrollItems.FirstOrDefaultAsync(i => i.Id == request.PayrollItemId, cancellationToken)
+                ?? throw new NotFoundException("PayrollItem", request.PayrollItemId);
+        }
 
         if (item.Status != "ACTIVE")
             throw new BusinessRuleException($"รายการ '{item.ItemName}' ถูกปิดใช้งานแล้ว");

@@ -2188,7 +2188,10 @@ export default function PayrollPage() {
   }
 
   // Filtered Payroll Items
-  const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
+  // รายการที่ระบบสร้างไว้จ่ายสวัสดิการ (ยอดมาจากเมนูสวัสดิการ) ไม่แสดงในหน้านี้
+  const filteredPayrollItems = payrollItems.filter(
+    (i) => i.itemType === itemsSubTab && !(i.linkedBenefitNames && i.linkedBenefitNames.length > 0),
+  );
 
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
@@ -2808,8 +2811,6 @@ export default function PayrollPage() {
 
                       const calcTypeLabel = isAutoPullModuleItem
                         ? 'ดึงข้อมูลอัตโนมัติ'
-                        : item.calculationType === 'FIXED'
-                        ? 'จำนวนคงที่'
                         : item.calculationType === 'FORMULA'
                         ? 'สูตรคำนวณ'
                         : 'กำหนดเอง';
@@ -2968,8 +2969,10 @@ export default function PayrollPage() {
                                 <span className="text-[10px] text-slate-400 font-normal">(ยอดคงที่)</span>
                               </div>
                             ) : (
-                              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">
-                                {item.formulaValue || 'กำหนดตามจริงรายงวด'}
+                              <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold">
+                                {item.formulaValue && !isNaN(Number(item.formulaValue.replace(/,/g, '')))
+                                  ? `฿${Number(item.formulaValue.replace(/,/g, '')).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+                                  : item.formulaValue || '-'}
                               </span>
                             )}
                           </td>
@@ -6628,7 +6631,11 @@ export default function PayrollPage() {
         record={selectedPayrollRecord}
         canEdit={canAccessHrView && (selectedPeriod?.status === 'DRAFT' || selectedPeriod?.status === 'REVIEW')}
         payrollItems={payrollItems}
-        onChanged={refreshSelectedPeriodPayrolls}
+        onChanged={() => {
+          refreshSelectedPeriodPayrolls();
+          // อาจมีหัวข้อรายการใหม่ที่เพิ่มระหว่างประมวลผล
+          salaryService.getPayrollItems().then(setPayrollItems).catch(() => {});
+        }}
       />
 
       {/* Confirm Modal: ไม่อนุมัติและส่งคืนรอบเงินเดือนให้ HR แก้ไข */}

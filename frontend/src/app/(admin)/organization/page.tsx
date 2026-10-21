@@ -34,7 +34,6 @@ import {
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
-import { PayCodeSelect } from '@/components/benefits/PayCodeSelect';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { employeeService } from '@/services/employeeService';
@@ -2899,18 +2898,6 @@ export default function OrganizationPage() {
                     </span>
                   </div>
 
-                  {benefitForm.payoutType !== 'IN_KIND' && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      จ่ายผ่านรายการ (บนสลิปเงินเดือน)
-                    </label>
-                    <PayCodeSelect
-                      value={benefitForm.payrollItemId}
-                      onChange={(id) => setBenefitForm({ ...benefitForm, payrollItemId: id })}
-                      isNew={modalMode === 'create'}
-                    />
-                  </div>
-                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
