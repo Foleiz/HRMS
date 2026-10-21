@@ -1761,6 +1761,12 @@ public class SalaryService : ISalaryService
         if (!validStatuses.Contains(normalized))
             throw new BusinessRuleException($"สถานะ '{status}' ไม่ถูกต้อง");
 
+        // หากสถานะปัจจุบันตรงกับสถานะเป้าหมายอยู่แล้ว (เช่น เกิดจากการกดย้ำ Double-click) ให้ส่งข้อมูลปัจจุบันกลับโดยไม่ error
+        if (period.Status == normalized)
+        {
+            return MapPeriodToDto(period);
+        }
+
         // ตรวจลำดับขั้นตอน: ห้ามข้ามขั้น (เช่น DRAFT → PAID)
         if (!AllowedStatusTransitions.TryGetValue(period.Status, out var allowedNext) || !allowedNext.Contains(normalized))
         {
@@ -1785,12 +1791,12 @@ public class SalaryService : ISalaryService
 
             if (period.PaymentMethod == "DIRECT_TRANSFER")
             {
-                // ต้องแนบสลิปเฉพาะพนักงานที่มียอดต้องโอนจริง (ไม่รวมคนที่ได้ 0 บาท / ยังไม่มีฐานเงินเดือน)
+                // ตรวจสอบเฉพาะพนักงานที่มียอดต้องโอนจริงว่าต้องมีสถานะเป็น TRANSFERRED (สลิปเป็น optional ไม่บังคับแล้ว)
                 var payrolls = period.Payrolls.Where(IsPayableRecord).ToList();
-                var missingSlip = payrolls.Where(p => p.SlipData == null || p.SlipData.Length == 0).ToList();
-                if (missingSlip.Any())
+                var notTransferred = payrolls.Where(p => p.PaymentStatus != "TRANSFERRED").ToList();
+                if (notTransferred.Any())
                 {
-                    throw new BusinessRuleException($"ไม่อนุญาตให้เปลี่ยนสถานะเป็น {normalized} เนื่องจากยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่ได้แนบสลิปการโอนเงิน ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
+                    throw new BusinessRuleException($"ไม่อนุญาตให้เปลี่ยนสถานะเป็น {normalized} เนื่องจากยังมีพนักงาน {notTransferred.Count} คนที่ยังไม่ได้ทำเครื่องหมายว่าโอนเงินแล้ว");
                 }
             }
             else if (period.PaymentMethod == "BANK_BATCH")
@@ -2007,6 +2013,28 @@ public class SalaryService : ISalaryService
             : await _context.EmployeeBonuses.AsNoTracking()
                 .Where(b => linkedBonusIds.Contains(b.Id))
                 .ToDictionaryAsync(b => b.Id, cancellationToken);
+
+        // ===== ค่าคอมมิชชั่นประจำรอบเดือน/ปี: ดึงค่าคอมมิชชั่นที่ยืนยัน (CONFIRMED) ของรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ =====
+        var commissionItem = systemItems["INC_COMMISSION"];
+        var periodCommissions = await _context.EmployeeCommissions
+            .Where(c => c.Year == period.Year && c.Month == period.Month && c.Status == "CONFIRMED" && c.TotalCommission > 0)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        // ป้องกันการจ่ายซ้ำ: คอมมิชชั่นที่จ่ายในรอบเงินเดือนอื่นไปแล้ว จะไม่ดึงมาคิดซ้ำ
+        var otherPeriodCommissionIds = await _context.PayrollDetails
+            .Where(d => d.PayrollItemId == commissionItem.Id && d.Payroll != null && d.Payroll.PeriodId != period.Id)
+            .Select(d => d.CalculationSource)
+            .ToListAsync(cancellationToken);
+        var paidOtherCommissionIds = otherPeriodCommissionIds
+            .Select(s => ReadDetailSource(s).CommissionId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .ToHashSet();
+
+        var eligiblePeriodCommissions = periodCommissions
+            .Where(c => !paidOtherCommissionIds.Contains(c.Id))
+            .ToDictionary(c => c.EmployeeId);
 
         var employeeIds = employees.Select(e => e.Id).ToList();
         var attendance = await _context.AttendanceMonthlySummaries
@@ -2269,6 +2297,7 @@ public class SalaryService : ISalaryService
             // ===== 4. รายการที่ HR เพิ่มเอง (manual / โบนัส) ที่มีอยู่แล้ว =====
             var manualDetails = payroll.Details.Where(IsManualDetail).ToList();
             bool hasBonusInManual = false;
+            bool hasCommissionInManual = false;
             foreach (var d in manualDetails)
             {
                 var item = d.PayrollItem ?? await _context.PayrollItems.FindAsync(new object[] { d.PayrollItemId }, cancellationToken);
@@ -2292,6 +2321,17 @@ public class SalaryService : ISalaryService
                         d.Rate = linked.BaseSalary > 0 ? linked.BaseSalary : null;
                     }
                     hasBonusInManual = true;
+                }
+                if (item.Id == commissionItem.Id)
+                {
+                    var source = ReadDetailSource(d.CalculationSource);
+                    // หากรายการคอมมิชชั่นนี้มาจากการดึงคอมมิชชั่นอัตโนมัติ
+                    // ให้ข้ามของเดิม เพื่ออัปเดตยอดคอมมิชชั่นล่าสุดจาก eligiblePeriodCommissions ด้านล่างเสมอ
+                    if (source.Source == "COMMISSION" || source.CommissionId.HasValue)
+                    {
+                        continue;
+                    }
+                    hasCommissionInManual = true;
                 }
                 lines.Add(new CalcLine(item, d.Amount, d.Quantity, d.Rate, null, IsRegular: false, Existing: d));
             }
@@ -2322,6 +2362,35 @@ public class SalaryService : ISalaryService
                     bonusSubtext,
                     IsRegular: false,
                     CalculationSource: bonusSourceJson
+                ));
+            }
+
+            // ===== 4.2 ดึงค่าคอมมิชชั่นประจำรอบเดือน/ปีนี้มาคำนวณอัตโนมัติ (หากยังไม่มีใน manual) =====
+            if (!hasCommissionInManual && eligiblePeriodCommissions.TryGetValue(emp.Id, out var autoComm))
+            {
+                var commSubtext = $"คอมมิชชั่นรอบ {autoComm.Month}/{autoComm.Year + 543} (ยอดขาย {autoComm.SalesAmount:N2} @ {autoComm.CommissionRate:0.##}%)" +
+                    (autoComm.SpecialAmount > 0 ? $" + พิเศษ {autoComm.SpecialAmount:N2}" : string.Empty);
+
+                var commSourceJson = System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    manual = true,
+                    source = "COMMISSION",
+                    commissionId = autoComm.Id,
+                    year = autoComm.Year,
+                    month = autoComm.Month,
+                    salesAmount = autoComm.SalesAmount,
+                    commissionRate = autoComm.CommissionRate,
+                    subtext = commSubtext
+                });
+
+                lines.Add(new CalcLine(
+                    commissionItem,
+                    autoComm.TotalCommission,
+                    autoComm.SalesAmount > 0 ? autoComm.SalesAmount : null,
+                    autoComm.CommissionRate > 0 ? autoComm.CommissionRate : null,
+                    commSubtext,
+                    IsRegular: false,
+                    CalculationSource: commSourceJson
                 ));
             }
 
@@ -2460,26 +2529,27 @@ public class SalaryService : ISalaryService
     /// <summary>รายการที่ HR เพิ่มเอง (manual / โบนัส) ซึ่งต้องคงไว้เมื่อคำนวณใหม่</summary>
     private static bool IsManualDetail(PayrollDetail detail) => ReadDetailSource(detail.CalculationSource).IsManual;
 
-    private static (bool IsManual, string? Source, long? BonusId, string? Subtext, string? Note) ReadDetailSource(string? json)
+    private static (bool IsManual, string? Source, long? BonusId, long? CommissionId, string? Subtext, string? Note) ReadDetailSource(string? json)
     {
-        if (string.IsNullOrWhiteSpace(json)) return (false, null, null, null, null);
+        if (string.IsNullOrWhiteSpace(json)) return (false, null, null, null, null, null);
         try
         {
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var root = doc.RootElement;
-            if (root.ValueKind != System.Text.Json.JsonValueKind.Object) return (false, null, null, null, null);
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object) return (false, null, null, null, null, null);
 
             bool isManual = root.TryGetProperty("manual", out var m) && m.ValueKind == System.Text.Json.JsonValueKind.True;
             string? source = root.TryGetProperty("source", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.String ? s.GetString() : null;
             long? bonusId = root.TryGetProperty("bonusId", out var bId) && bId.ValueKind == System.Text.Json.JsonValueKind.Number ? bId.GetInt64() : null;
+            long? commissionId = root.TryGetProperty("commissionId", out var cId) && cId.ValueKind == System.Text.Json.JsonValueKind.Number ? cId.GetInt64() : null;
             string? subtext = root.TryGetProperty("subtext", out var st) && st.ValueKind == System.Text.Json.JsonValueKind.String ? st.GetString()
                 : root.TryGetProperty("formula", out var f) && f.ValueKind == System.Text.Json.JsonValueKind.String ? f.GetString() : null;
             string? note = root.TryGetProperty("note", out var n) && n.ValueKind == System.Text.Json.JsonValueKind.String ? n.GetString() : null;
-            return (isManual, source, bonusId, subtext, note);
+            return (isManual, source, bonusId, commissionId, subtext, note);
         }
         catch
         {
-            return (false, null, null, null, null);
+            return (false, null, null, null, null, null);
         }
     }
 
@@ -2601,7 +2671,8 @@ public class SalaryService : ISalaryService
             ("DED_SSO", "เงินสมทบประกันสังคม", "DEDUCTION", "FORMULA", "SSO_STANDARD", false, false),
             ("DED_TAX", "ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1)", "DEDUCTION", "FORMULA", "TAX_STANDARD", false, false),
             ("DED_UNPAID_LEAVE", "หักวันลาไม่รับค่าจ้าง", "DEDUCTION", "FORMULA", null, true, true),
-            ("INC_BONUS", "โบนัส", "EARNING", "MANUAL", null, true, false)
+            ("INC_BONUS", "โบนัส", "EARNING", "MANUAL", null, true, false),
+            ("INC_COMMISSION", "ค่าคอมมิชชั่นตามยอดขาย", "EARNING", "FORMULA", "PERCENT_SALES", true, false)
         };
 
         var allItems = await _context.PayrollItems.ToListAsync(cancellationToken);
@@ -3537,12 +3608,9 @@ public class SalaryService : ISalaryService
         var items = period.Payrolls.Where(IsPayableRecord).Select(payroll =>
         {
             var primaryBank = payroll.Employee?.BankAccounts.FirstOrDefault();
+            // Effective status uses payroll.PaymentStatus directly
+            string effectiveStatus = payroll.PaymentStatus;
             bool hasSlip = payroll.SlipData != null && payroll.SlipData.Length > 0;
-            
-            // In Direct Transfer mode, payment status is only TRANSFERRED if a slip is actually uploaded!
-            string effectiveStatus = (period.PaymentMethod == "DIRECT_TRANSFER" || string.IsNullOrEmpty(period.PaymentMethod))
-                ? (hasSlip ? "TRANSFERRED" : "PENDING")
-                : payroll.PaymentStatus;
 
             return new PayrollTransferItemDto
             {
@@ -3568,9 +3636,8 @@ public class SalaryService : ISalaryService
         }).OrderBy(i => i.EmployeeCode).ToList();
 
         int transferredCount = items.Count(i => i.PaymentStatus == "TRANSFERRED");
-        // CanConfirm: ทุกคนต้องเป็น TRANSFERRED และมี Slip
-        bool canConfirm = items.Count > 0
-            && items.All(i => i.PaymentStatus == "TRANSFERRED" && i.HasSlip);
+        // CanConfirm: สำหรับ Direct Transfer สามารถยืนยันการจ่ายเงินได้เลย (ไม่บังคับว่าทุกคนต้องมี Slip)
+        bool canConfirm = items.Count > 0;
 
         return new PayrollTransferListDto
         {
@@ -3591,24 +3658,19 @@ public class SalaryService : ISalaryService
 
     public async Task<PayrollTransferItemDto> MarkTransferredAsync(long periodId, long payrollId, MarkTransferredRequest request, CancellationToken cancellationToken = default)
     {
-        // Validate Slip fields — Slip is REQUIRED
-        if (string.IsNullOrWhiteSpace(request.SlipBase64))
-            throw new BusinessRuleException("กรุณาแนบสลิปการโอนเงินสำหรับพนักงานทุกคน");
-        if (string.IsNullOrWhiteSpace(request.SlipFileName))
-            throw new BusinessRuleException("กรุณาระบุชื่อไฟล์ Slip");
-        if (string.IsNullOrWhiteSpace(request.SlipContentType))
-            throw new BusinessRuleException("กรุณาระบุประเภทไฟล์ Slip");
+        byte[]? slipBytes = null;
+        if (!string.IsNullOrWhiteSpace(request.SlipBase64))
+        {
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "application/pdf" };
+            if (!string.IsNullOrWhiteSpace(request.SlipContentType) && !allowedTypes.Contains(request.SlipContentType.ToLower()))
+                throw new BusinessRuleException("ไฟล์ Slip ต้องเป็น JPG, PNG, WEBP หรือ PDF เท่านั้น");
 
-        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "application/pdf" };
-        if (!allowedTypes.Contains(request.SlipContentType.ToLower()))
-            throw new BusinessRuleException("ไฟล์ Slip ต้องเป็น JPG, PNG, WEBP หรือ PDF เท่านั้น");
+            try { slipBytes = Convert.FromBase64String(request.SlipBase64); }
+            catch { throw new BusinessRuleException("ข้อมูล Slip ไม่ถูกต้อง (Base64 Invalid)"); }
 
-        byte[] slipBytes;
-        try { slipBytes = Convert.FromBase64String(request.SlipBase64); }
-        catch { throw new BusinessRuleException("ข้อมูล Slip ไม่ถูกต้อง (Base64 Invalid)"); }
-
-        if (slipBytes.Length > 10 * 1024 * 1024) // 10MB limit
-            throw new BusinessRuleException("ขนาดไฟล์ Slip ต้องไม่เกิน 10 MB");
+            if (slipBytes.Length > 10 * 1024 * 1024) // 10MB limit
+                throw new BusinessRuleException("ขนาดไฟล์ Slip ต้องไม่เกิน 10 MB");
+        }
 
         var payroll = await _context.Payrolls
             .Include(p => p.Employee)
@@ -3637,10 +3699,13 @@ public class SalaryService : ISalaryService
         payroll.PaymentStatus = "TRANSFERRED";
         payroll.TransferredAt = DateTimeOffset.UtcNow;
         payroll.TransferReference = request.TransferReference?.Trim();
-        payroll.SlipData = slipBytes;
-        payroll.SlipFileName = request.SlipFileName;
-        payroll.SlipContentType = request.SlipContentType;
-        payroll.SlipUploadedAt = DateTimeOffset.UtcNow;
+        if (slipBytes != null)
+        {
+            payroll.SlipData = slipBytes;
+            payroll.SlipFileName = request.SlipFileName;
+            payroll.SlipContentType = request.SlipContentType;
+            payroll.SlipUploadedAt = DateTimeOffset.UtcNow;
+        }
 
         // Update period status to PROCESSING if first transfer
         if (period.Status == "APPROVED")
@@ -3677,6 +3742,44 @@ public class SalaryService : ISalaryService
         };
     }
 
+    public async Task<PayrollTransferListDto> MarkAllTransferredAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var period = await _context.PayrollPeriods
+            .Include(p => p.Payrolls)
+                .ThenInclude(p => p.Employee)
+                    .ThenInclude(e => e!.BankAccounts.Where(b => b.IsPrimary && b.Status == "ACTIVE"))
+            .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
+            ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
+
+        if (period.Status != "APPROVED" && period.Status != "PROCESSING")
+            throw new BusinessRuleException("รอบเงินเดือนต้องอยู่ในสถานะ APPROVED หรือ PROCESSING");
+
+        if (period.PaymentMethod == "BANK_BATCH")
+            throw new BusinessRuleException("รอบเงินเดือนนี้จ่ายผ่านไฟล์ธนาคาร (BANK_BATCH) ไม่สามารถบันทึกการโอนรายบุคคลได้");
+
+        var payableRecords = period.Payrolls.Where(IsPayableRecord).ToList();
+        if (!payableRecords.Any())
+            throw new BusinessRuleException("ไม่มีข้อมูลเงินเดือนที่ต้องโอนในรอบนี้");
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var payroll in payableRecords)
+        {
+            if (payroll.PaymentStatus != "TRANSFERRED")
+            {
+                payroll.PaymentStatus = "TRANSFERRED";
+                payroll.TransferredAt = now;
+            }
+        }
+
+        if (period.Status == "APPROVED")
+            period.Status = "PROCESSING";
+
+        period.TotalTransferredCount = payableRecords.Count;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetTransferListAsync(periodId, cancellationToken);
+    }
+
     public async Task<PayrollPeriodDto> ConfirmPaymentAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default)
     {
         var period = await _context.PayrollPeriods
@@ -3690,23 +3793,25 @@ public class SalaryService : ISalaryService
         if (period.PaymentMethod == "BANK_BATCH")
             throw new BusinessRuleException("รอบเงินเดือนนี้จ่ายผ่านไฟล์ธนาคาร กรุณาใช้ขั้นตอนยืนยันการโอนผ่านธนาคารแทน");
 
-        // Business Rule: ทุกคนต้องมี Slip และ TRANSFERRED
-        // เฉพาะพนักงานที่มียอดต้องโอนจริง (คนที่ได้ 0 บาทไม่ต้องแนบสลิป)
+        // เฉพาะพนักงานที่มียอดต้องโอนจริง
         var payrolls = period.Payrolls.Where(IsPayableRecord).ToList();
         if (!payrolls.Any())
             throw new BusinessRuleException("ไม่มีข้อมูลเงินเดือนในรอบนี้");
 
-        var missingSlip = payrolls.Where(p => p.SlipData == null || p.SlipData.Length == 0).ToList();
-        if (missingSlip.Any())
-            throw new BusinessRuleException($"ยังมีพนักงาน {missingSlip.Count} คนที่ยังไม่ได้แนบสลิปการโอนเงิน ไม่อนุญาตให้กดโอนเงินเรียบร้อย ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
-
-        var notTransferred = payrolls.Where(p => p.PaymentStatus != "TRANSFERRED").ToList();
-        if (notTransferred.Any())
-            throw new BusinessRuleException($"ยังมีพนักงาน {notTransferred.Count} คนที่ยังไม่ได้โอนเงิน ไม่อนุญาตให้กดโอนเงินเรียบร้อย ห้ามเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน");
+        // เมื่อกดยืนยันการจ่ายเงินทั้งหมด ให้ปรับพนักงานที่ยังไม่โอนเป็น TRANSFERRED อัตโนมัติ (หรือตรวจสอบว่าโอนแล้ว)
+        var now = DateTimeOffset.UtcNow;
+        foreach (var p in payrolls)
+        {
+            if (p.PaymentStatus != "TRANSFERRED")
+            {
+                p.PaymentStatus = "TRANSFERRED";
+                p.TransferredAt ??= now;
+            }
+        }
 
         // Confirm payment
         period.Status = "PAID";
-        period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
+        period.PaymentConfirmedAt = now;
         period.PaymentConfirmedBy = confirmedByEmployeeId;
         period.PaymentNote = request.Note?.Trim();
         period.TotalTransferredCount = payrolls.Count;
@@ -3944,8 +4049,7 @@ public class SalaryService : ISalaryService
             .Where(p => permittedEmployeeIds == null || permittedEmployeeIds.Contains(p.EmployeeId))
             .ToList();
         var payableRecords = payrolls.Where(IsPayableRecord).ToList();
-        bool canConfirm = payableRecords.Count > 0
-            && payableRecords.All(p => p.PaymentStatus == "TRANSFERRED" && p.SlipData != null);
+        bool canConfirm = payableRecords.Count > 0;
 
         return new PayrollPeriodDto
         {

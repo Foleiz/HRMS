@@ -94,6 +94,9 @@ public interface IHrmsDbContext
     DbSet<PayrollDetail> PayrollDetails { get; }
     DbSet<Payslip> Payslips { get; }
     DbSet<EmployeeBonus> EmployeeBonuses { get; }
+    DbSet<EmployeeCommission> EmployeeCommissions { get; }
+    DbSet<EmployeeCommissionEntry> EmployeeCommissionEntries { get; }
+    DbSet<CommissionImportBatch> CommissionImportBatches { get; }
 
     // Audit Trail (PDPA Compliance)
     DbSet<AuditLog> AuditLogs { get; }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, Info, Calculator } from 'lucide-react';
+import { X, Loader2, AlertCircle, Info, Calculator, Lock, Sparkles } from 'lucide-react';
 import { PayrollItem } from '@/types/payroll';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
@@ -47,17 +47,6 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     hint: 'จ่ายเมื่อมีข้อมูลลงเวลาของเดือนนั้น ไม่ขาดงาน และมาสาย/ลาไม่เกินจำนวนที่กำหนด',
   },
   {
-    code: 'PERCENT_SALES',
-    name: 'ค่าคอมมิชชั่นตามยอดขาย',
-    category: 'EARNING',
-    defaultValue: '3% ของยอดขาย',
-    defaultTaxable: true,
-    defaultSocialSecurity: false,
-    parameterLabel: 'อัตราเปอร์เซ็นต์ / เงื่อนไขยอดขาย',
-    parameterPlaceholder: 'เช่น 3% หรือ 5% จากยอดขายสุทธิ',
-    hint: 'ตั้ง % เริ่มต้นไว้ที่นี่ แล้วกรอกยอดขายรายคนตอนเปิดดูรายละเอียดเงินเดือนของพนักงาน (ระบบคูณให้ และแก้ % รายคนได้)',
-  },
-  {
     code: 'LATE_ABSENT',
     name: 'หักมาสาย / ขาดงาน',
     category: 'DEDUCTION',
@@ -81,8 +70,19 @@ export const FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
 ];
 
-/** รายการของระบบ (เงินเดือน / ประกันสังคม / ภาษี): ระบบสร้างและคำนวณเอง แสดงเมื่อเปิดดูรายการนั้นเท่านั้น */
+/** รายการของระบบ (เงินเดือน / ประกันสังคม / ภาษี / คอมมิชชั่น): ระบบสร้างและคำนวณเอง แสดงเมื่อเปิดดูรายการนั้นเท่านั้น */
 export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
+  {
+    code: 'PERCENT_SALES',
+    name: 'ค่าคอมมิชชั่นตามยอดขาย',
+    category: 'EARNING',
+    defaultValue: 'ดึงยอดอัตโนมัติจากแท็บค่าคอมมิชชั่น',
+    defaultTaxable: true,
+    defaultSocialSecurity: false,
+    parameterLabel: 'แหล่งข้อมูลค่าคอมมิชชั่น',
+    parameterPlaceholder: 'ดึงจากแท็บค่าคอมมิชชั่น',
+    hint: 'ระบบดึงยอดค่าคอมมิชชั่นที่กดยืนยัน (CONFIRMED) ในแท็บค่าคอมมิชชั่นของรอบเดือนนั้นเข้าสลิปเงินเดือนให้อัตโนมัติ',
+  },
   {
     code: 'POSITION_ALLOWANCE',
     name: 'เงินประจำตำแหน่ง / ค่าวิชาชีพ',
@@ -235,6 +235,10 @@ export const PayrollItemModal: React.FC<Props> = ({
   if (!isOpen) return null;
 
   const linkedBenefits = item?.linkedBenefitNames ?? [];
+  const isBonusItem = item?.itemCode === 'INC_BONUS';
+  const isCommissionItem = item?.itemCode === 'INC_COMMISSION';
+  /** เฉพาะโบนัสและค่าคอมมิชชั่นเท่านั้นที่ใช้โหมด "ดึงยอดอัตโนมัติ" และถูกล็อกไม่ให้เปลี่ยนประเภทการคำนวณ */
+  const isAutoPullModuleItem = Boolean(isBonusItem || isCommissionItem);
 
   // Filter templates for current item type
   const templateCode = (formulaTemplate || '').toUpperCase();
@@ -250,9 +254,10 @@ export const PayrollItemModal: React.FC<Props> = ({
   ];
 
   const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === templateCode) ?? systemTemplate ?? legacyTemplate;
-  const hasParams = PARAM_TEMPLATES.includes(templateCode);
+  const hasParams = !isAutoPullModuleItem && PARAM_TEMPLATES.includes(templateCode);
 
   const handleCalculationTypeChange = (newType: 'FIXED' | 'FORMULA' | 'MANUAL') => {
+    if (isAutoPullModuleItem) return;
     setCalculationType(newType);
     if (newType === 'FORMULA') {
       if (!formulaTemplate) {
@@ -271,6 +276,7 @@ export const PayrollItemModal: React.FC<Props> = ({
   };
 
   const handleTemplateChange = (newTplCode: string) => {
+    if (isAutoPullModuleItem) return;
     setFormulaTemplate(newTplCode);
     const tplObj = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
     if (tplObj) {
@@ -295,7 +301,7 @@ export const PayrollItemModal: React.FC<Props> = ({
     }
 
     let finalFormulaValue = formulaValue.trim();
-    if (calculationType === 'FORMULA') {
+    if (!isAutoPullModuleItem && calculationType === 'FORMULA') {
       if (!formulaTemplate) {
         setError('กรุณาเลือกรูปแบบสูตร');
         return;
@@ -312,14 +318,24 @@ export const PayrollItemModal: React.FC<Props> = ({
 
     try {
       setLoading(true);
+      const effectiveCalcType = isAutoPullModuleItem
+        ? (isCommissionItem ? 'FORMULA' : 'MANUAL')
+        : calculationType;
+      const effectiveFormulaTemplate = isAutoPullModuleItem
+        ? (isCommissionItem ? 'PERCENT_SALES' : null)
+        : (calculationType === 'FORMULA' ? (formulaTemplate || null) : null);
+      const effectiveFormulaValue = isAutoPullModuleItem
+        ? (isCommissionItem ? 'ดึงยอดอัตโนมัติจากแท็บค่าคอมมิชชั่น' : 'ดึงยอดอัตโนมัติจากแท็บโบนัส')
+        : (finalFormulaValue || null);
+
       const payload: Partial<PayrollItem> = {
         itemCode: itemCode.trim().toUpperCase(),
         itemName: itemName.trim(),
         description: description.trim() || null,
         itemType,
-        calculationType,
-        formulaTemplate: calculationType === 'FORMULA' ? (formulaTemplate || null) : null,
-        formulaValue: finalFormulaValue || null,
+        calculationType: effectiveCalcType,
+        formulaTemplate: effectiveFormulaTemplate,
+        formulaValue: effectiveFormulaValue,
         isTaxable,
         isSocialSecurityCalculated,
         status: isActive ? 'ACTIVE' : 'INACTIVE',
@@ -368,7 +384,7 @@ export const PayrollItemModal: React.FC<Props> = ({
           {/* Item Code (only when creating) */}
           {!item && (
             <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_BONUS) <span className="text-rose-500">*</span></label>
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_OTHER) <span className="text-rose-500">*</span></label>
               <input
                 type="text"
                 required
@@ -407,35 +423,64 @@ export const PayrollItemModal: React.FC<Props> = ({
 
           {/* Calculation Type */}
           <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              ประเภทการคำนวณ
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+              <span>ประเภทการคำนวณ</span>
+              {isAutoPullModuleItem && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
+                  <Lock className="w-3 h-3" />
+                  ล็อกเฉพาะโบนัสและค่าคอมมิชชั่น
+                </span>
+              )}
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {[
-                { id: 'FIXED', label: 'จำนวนคงที่' },
-                { id: 'FORMULA', label: 'สูตรคำนวณ' },
-                { id: 'MANUAL', label: 'กำหนดเอง' },
-              ]
-                .filter((opt) => !(itemType === 'EARNING' && opt.id === 'FIXED'))
-                .filter((opt) => !(linkedBenefits.length > 0 && opt.id !== 'MANUAL'))
-                .map((opt) => (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => handleCalculationTypeChange(opt.id as any)}
-                  className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer text-center ${
-                    calculationType === opt.id
-                      ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            {isAutoPullModuleItem ? (
+              <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
+                <Lock className="w-3.5 h-3.5 text-teal-300" />
+                <span>ดึงยอดอัตโนมัติ (จากแท็บ{isBonusItem ? 'โบนัส' : 'ค่าคอมมิชชั่น'})</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {[
+                  { id: 'FIXED', label: 'จำนวนคงที่' },
+                  { id: 'FORMULA', label: 'สูตรคำนวณ' },
+                  { id: 'MANUAL', label: 'กำหนดเอง' },
+                ]
+                  .filter((opt) => !(itemType === 'EARNING' && opt.id === 'FIXED'))
+                  .filter((opt) => !(linkedBenefits.length > 0 && opt.id !== 'MANUAL'))
+                  .map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => handleCalculationTypeChange(opt.id as any)}
+                    className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer text-center ${
+                      calculationType === opt.id
+                        ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {linkedBenefits.length > 0 ? (
+          {isAutoPullModuleItem ? (
+            <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-200">
+                <Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+                <span>
+                  {isBonusItem
+                    ? 'เชื่อมโยงกับแท็บ "โบนัส (Annual Bonus)" โดยอัตโนมัติ'
+                    : 'เชื่อมโยงกับแท็บ "ค่าคอมมิชชั่น (Sales Commission)" โดยอัตโนมัติ'}
+                </span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-teal-800 dark:text-teal-300">
+                {isBonusItem
+                  ? 'ระบบล็อกให้ดึงยอดโบนัสจากแท็บโบนัสเฉพาะเดือนที่มีการจัดสรรและอนุมัติโบนัสเท่านั้น (เดือนที่ไม่มีโบนัส ระบบจะข้ามให้อัตโนมัติ ไม่แสดงในสลิป) หน้านี้ใช้สำหรับตั้งค่าการคิดภาษีและประกันสังคม'
+                  : 'ระบบล็อกให้ดึงยอดค่าคอมมิชชั่นจากแท็บค่าคอมมิชชั่นเฉพาะเดือนที่กดยืนยันยอด (CONFIRMED) แล้วเท่านั้น หน้านี้ใช้สำหรับตั้งค่าการคิดภาษีและประกันสังคม'}
+              </p>
+            </div>
+          ) : linkedBenefits.length > 0 ? (
             <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">
               ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงินและผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
             </div>
@@ -445,8 +490,8 @@ export const PayrollItemModal: React.FC<Props> = ({
             </div>
           ) : null}
 
-          {/* If FORMULA is chosen: Show Formula Template selector and clean Summary Card */}
-          {calculationType === 'FORMULA' ? (
+          {/* If FORMULA is chosen (and not locked auto-pull): Show Formula Template selector and clean Summary Card */}
+          {!isAutoPullModuleItem && (calculationType === 'FORMULA' ? (
             <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl">
               <div>
                 <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
@@ -520,7 +565,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                   : 'ระบุเกณฑ์หรือคำอธิบายสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน'}
               </span>
             </div>
-          )}
+          ))}
 
           {/* Checkboxes: คิดภาษี & คิดประกันสังคม */}
           <div className="flex items-center gap-6 pt-1">

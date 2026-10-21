@@ -49,6 +49,7 @@ import {
   X,
   ArrowDownToLine,
   FileText,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -93,6 +94,9 @@ import { confirmAction } from '@/lib/sweetalert';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { PayrollViewSwitcher, PayrollViewMode } from '@/components/payroll/PayrollViewSwitcher';
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
+import CommissionTab from '@/components/payroll/CommissionTab';
+import { commissionService } from '@/services/commissionService';
+import { CommissionPeriodSummary } from '@/types/commission';
 
 type ActiveTab =
   | 'overview'
@@ -100,6 +104,7 @@ type ActiveTab =
   | 'structures'
   | 'items'
   | 'bonus'
+  | 'commission'
   | 'process'
   | 'bank-transfer'
   | 'tax-sso';
@@ -290,8 +295,8 @@ const isFuturePeriod = (period?: PayrollPeriod | null) => {
   return periodVal > currentPeriodVal;
 };
 
-/** รายการหลักที่ลบไม่ได้ (แก้ไข/ปิดใช้งานได้ตามปกติ): เงินเดือนพื้นฐาน, เงินประจำตำแหน่ง */
-const UNDELETABLE_ITEM_CODES = ['INC_BASE', 'INC_POSITION'];
+/** รายการหลักที่ลบไม่ได้ (แก้ไข/ปิดใช้งานได้ตามปกติ): เงินเดือนพื้นฐาน, เงินประจำตำแหน่ง, โบนัส, ค่าคอมมิชชั่น */
+const UNDELETABLE_ITEM_CODES = ['INC_BASE', 'INC_POSITION', 'INC_BONUS', 'INC_COMMISSION'];
 
 export default function PayrollPage() {
   const router = useRouter();
@@ -593,6 +598,7 @@ export default function PayrollPage() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [isAddingBonus, setIsAddingBonus] = useState(false);
   const [bonusPayoutYear, setBonusPayoutYear] = useState<number | null>(null);
+  const [isAdvancingStatus, setIsAdvancingStatus] = useState(false);
   const [isCreatePeriodModalOpen, setIsCreatePeriodModalOpen] = useState(false);
   const [isAllPeriodsModalOpen, setIsAllPeriodsModalOpen] = useState(false);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
@@ -832,13 +838,27 @@ export default function PayrollPage() {
     }
   };
 
-  // Dynamic fetch when switching to Bank Transfer or Tax/SSO tab
+  const [currentPeriodCommission, setCurrentPeriodCommission] = useState<CommissionPeriodSummary | null>(null);
+
+  // Dynamic fetch when switching to Process, Bank Transfer, or Tax/SSO tab
   useEffect(() => {
     if (!selectedPeriod) {
       setTransferList(null);
       setBankSummary(null);
       setTaxSsoSummary(null);
+      setCurrentPeriodCommission(null);
       return;
+    }
+
+    if (activeTab === 'process') {
+      commissionService
+        .getCommissionPeriod(selectedPeriod.year, selectedPeriod.month)
+        .then((res) => setCurrentPeriodCommission(res))
+        .catch(() => setCurrentPeriodCommission(null));
+      salaryService
+        .getBonusPeriods()
+        .then((res) => setBonusPeriods(res || []))
+        .catch(() => {});
     }
 
     if (activeTab === 'bank-transfer' || (activeTab === 'process' && processSubTab === 'BANK')) {
@@ -848,6 +868,36 @@ export default function PayrollPage() {
       loadTaxSsoSummary(selectedPeriod.id);
     }
   }, [activeTab, processSubTab, selectedPeriod, selectedBankFilter]);
+
+  // Dynamic fetch when switching to Periods tab
+  useEffect(() => {
+    if (activeTab === 'periods' && periods.length === 0) {
+      loadPayrollPeriods();
+    }
+  }, [activeTab]);
+
+  const loadPayrollPeriods = async () => {
+    try {
+      setLoading(true);
+      const data = await salaryService.getPayrollPeriods();
+      if (data && data.length > 0) {
+        setPeriods(data);
+        if (!selectedPeriod) {
+          const today = new Date();
+          const openPeriods = data.filter((p) => p.status !== 'CLOSED');
+          const targetPeriod =
+            openPeriods.find((p) => p.year === today.getFullYear() && p.month === today.getMonth() + 1) ||
+            openPeriods[0] ||
+            data[0];
+          setSelectedPeriod(targetPeriod);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load payroll periods:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Dynamic fetch when switching to Bonus tab
   useEffect(() => {
@@ -1152,27 +1202,29 @@ export default function PayrollPage() {
   };
 
   const handleMarkTransferred = async () => {
-    if (!selectedPeriod || !slipModalTarget || !slipFile) {
-      showToast('กรุณาแนบสลิปการโอนเงิน');
+    if (!selectedPeriod || !slipModalTarget) {
       return;
     }
     setIsMarkingTransferred(slipModalTarget.payrollId);
     try {
-      // Convert file to base64
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          resolve(result.split(',')[1]); // Remove data:xxx/xxx;base64, prefix
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(slipFile);
-      });
+      let base64: string | undefined = undefined;
+      if (slipFile) {
+        // Convert file to base64
+        base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const result = reader.result as string;
+            resolve(result.split(',')[1]); // Remove data:xxx/xxx;base64, prefix
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(slipFile);
+        });
+      }
 
       await salaryService.markTransferred(selectedPeriod.id, slipModalTarget.payrollId, {
         transferReference: slipTransferRef.trim() || undefined,
-        slipFileName: slipFile.name,
-        slipContentType: slipFile.type,
+        slipFileName: slipFile?.name || undefined,
+        slipContentType: slipFile?.type || undefined,
         slipBase64: base64,
       });
 
@@ -1183,11 +1235,37 @@ export default function PayrollPage() {
       const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
       setSelectedPeriod(updatedPeriod);
       setPeriods(prev => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
-      showToast('✅ บันทึกการโอนเงินและสลิปสำเร็จ');
+      showToast('✅ บันทึกการโอนเงินเรียบร้อยแล้ว');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกการโอนเงิน');
     } finally {
       setIsMarkingTransferred(null);
+    }
+  };
+
+  const [isMarkingAllTransferred, setIsMarkingAllTransferred] = useState(false);
+  const handleMarkAllTransferred = async () => {
+    if (!selectedPeriod) return;
+    const isConfirmed = await confirmAction({
+      title: 'ยืนยันการโอนเงินทั้งหมด',
+      text: `ต้องการทำเครื่องหมายว่า "โอนเงินเรียบร้อยแล้ว" สำหรับพนักงานทุกคนในรอบนี้ใช่หรือไม่? (สามารถกดยืนยันการจ่ายเงินทั้งหมดต่อได้ทันที)`,
+      confirmButtonText: 'ยืนยันโอนแล้วทุกคน',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
+
+    setIsMarkingAllTransferred(true);
+    try {
+      const list = await salaryService.markAllTransferred(selectedPeriod.id);
+      setTransferList(list);
+      const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
+      setSelectedPeriod(updatedPeriod);
+      setPeriods(prev => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
+      showToast('✅ ทำเครื่องหมายว่าโอนเงินให้พนักงานทุกคนเรียบร้อยแล้ว');
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการทำเครื่องหมายโอนทั้งหมด');
+    } finally {
+      setIsMarkingAllTransferred(false);
     }
   };
 
@@ -1862,7 +1940,7 @@ export default function PayrollPage() {
   };
 
   const handleAdvancePeriodStatus = async () => {
-    if (!selectedPeriod) return;
+    if (!selectedPeriod || isAdvancingStatus) return;
     let nextStatus = '';
     let actionToast = '';
     if (selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT') {
@@ -1913,6 +1991,15 @@ export default function PayrollPage() {
       nextStatus = 'PAID';
       actionToast = 'บันทึกว่าจ่ายเงินเดือนแล้วสำเร็จ (สถานะ: จ่ายแล้ว)';
     } else if (selectedPeriod.status === 'PAID') {
+      const confirmed = await confirmAction({
+        title: 'ยืนยันการปิดรอบเงินเดือน?',
+        text: `รอบเงินเดือน: ${selectedPeriod.periodName}\nเมื่อปิดรอบแล้วจะไม่สามารถแก้ไขข้อมูลหรือคำนวณเงินเดือนในรอบนี้ได้อีก`,
+        icon: 'warning',
+        confirmButtonText: 'ยืนยันปิดรอบ',
+        cancelButtonText: 'ยกเลิก',
+      });
+      if (!confirmed) return;
+
       nextStatus = 'CLOSED';
       actionToast = 'ปิดรอบเงินเดือนสำเร็จ';
     } else {
@@ -1920,6 +2007,7 @@ export default function PayrollPage() {
     }
 
     try {
+      setIsAdvancingStatus(true);
       const updated = await salaryService.updatePayrollPeriodStatus(selectedPeriod.id, nextStatus);
       showToast(actionToast);
       setSelectedPeriod(updated);
@@ -1932,6 +2020,8 @@ export default function PayrollPage() {
       }
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปรับสถานะ');
+    } finally {
+      setIsAdvancingStatus(false);
     }
   };
 
@@ -2121,6 +2211,8 @@ export default function PayrollPage() {
         return 'รายได้และรายหัก';
       case 'bonus':
         return 'โบนัส';
+      case 'commission':
+        return 'ค่าคอมมิชชั่น';
       case 'process':
         return 'ประมวลเงินเดือน';
       case 'bank-transfer':
@@ -2140,6 +2232,7 @@ export default function PayrollPage() {
     ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'โครงสร้างเงินเดือน' }] : []),
     ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
     ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
+    ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
     ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
     ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี & ประกันสังคม' }] : []),
   ];
@@ -2737,12 +2830,17 @@ export default function PayrollPage() {
                   {filteredPayrollItems
                     .map((item) => {
                       const isItemActive = item.status ? item.status.toUpperCase() === 'ACTIVE' : true;
-                      const calcTypeLabel =
-                        item.calculationType === 'FIXED'
-                          ? 'จำนวนคงที่'
-                          : item.calculationType === 'FORMULA'
-                          ? 'สูตรคำนวณ'
-                          : 'กำหนดเอง';
+                      const isBonusItem = item.itemCode === 'INC_BONUS';
+                      const isCommissionItem = item.itemCode === 'INC_COMMISSION';
+                      const isAutoPullModuleItem = isBonusItem || isCommissionItem;
+
+                      const calcTypeLabel = isAutoPullModuleItem
+                        ? 'ดึงยอดอัตโนมัติ'
+                        : item.calculationType === 'FIXED'
+                        ? 'จำนวนคงที่'
+                        : item.calculationType === 'FORMULA'
+                        ? 'สูตรคำนวณ'
+                        : 'กำหนดเอง';
 
                       const getTemplateBadge = (tplCode?: string | null) => {
                         switch (tplCode) {
@@ -2752,13 +2850,13 @@ export default function PayrollPage() {
                             return { label: 'ค่าตำแหน่งจากโครงสร้างเงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
 
                           case 'PERCENT_SALES':
-                            return { label: 'คอมมิชชั่น % ยอดขาย', color: 'bg-emerald-50 text-emerald-800 border-emerald-200' };
+                            return { label: 'ดึงจากแท็บค่าคอมมิชชั่น', color: 'bg-teal-50 text-teal-800 border-teal-200' };
                           case 'DILIGENT_ALLOWANCE':
                             return { label: 'เบี้ยขยัน (เงื่อนไขขาด/สาย/ลา)', color: 'bg-teal-50 text-teal-800 border-teal-200' };
                           case 'PRORATED_DAYS':
                             return { label: 'สัดส่วนวันทำงานจริง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
                           case 'MANUAL_BONUS':
-                            return { label: 'โบนัสพิเศษ / Incentive', color: 'bg-pink-50 text-pink-800 border-pink-200' };
+                            return { label: 'ดึงจากแท็บโบนัส', color: 'bg-teal-50 text-teal-800 border-teal-200' };
                           case 'SSO_STANDARD':
                             return { label: 'ประกันสังคม 5% (สูงสุด 875)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
                           case 'TAX_STANDARD':
@@ -2798,18 +2896,32 @@ export default function PayrollPage() {
                             )}
                           </td>
                           <td className="py-3.5 px-5">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                              item.calculationType === 'FORMULA'
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                              isAutoPullModuleItem
+                                ? 'bg-teal-50 text-teal-800 border border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800'
+                                : item.calculationType === 'FORMULA'
                                 ? 'bg-purple-50 text-purple-700 border border-purple-200'
                                 : item.calculationType === 'FIXED'
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                 : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}>
-                              {calcTypeLabel}
+                              {isAutoPullModuleItem && <Lock className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
+                              <span>{calcTypeLabel}</span>
                             </span>
                           </td>
                           <td className="py-3.5 px-5">
-                            {item.calculationType === 'FORMULA' ? (
+                            {isAutoPullModuleItem ? (
+                              <div className="flex items-center">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-50/80 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800">
+                                  <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                                  <span>
+                                    {isBonusItem
+                                      ? 'ดึงยอดจากแท็บโบนัส (เฉพาะงวดเดือนที่อนุมัติโบนัส)'
+                                      : 'ดึงยอดจากแท็บค่าคอมมิชชั่น (เฉพาะงวดเดือนที่ยืนยันยอด)'}
+                                  </span>
+                                </span>
+                              </div>
+                            ) : item.calculationType === 'FORMULA' ? (
                               <div className="flex flex-col items-start gap-1">
                                 {templateBadge && (
                                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
@@ -2929,6 +3041,18 @@ export default function PayrollPage() {
               {/* Toolbar — ตำแหน่ง/ความสูงเดียวกับแท็บอื่น */}
               <div className="flex flex-wrap items-center justify-end gap-3 px-4 pt-4 min-h-9">
                 <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      loadPayrollPeriods();
+                      loadData();
+                    }}
+                    className="h-9 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                    title="รีเฟรชข้อมูลรอบเงินเดือน"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                    <span>รีเฟรช</span>
+                  </button>
                   <div className="w-36">
                     <CustomSelect
                       value={periodsTabYearFilter}
@@ -2968,18 +3092,31 @@ export default function PayrollPage() {
                     </div>
                     <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">ไม่พบรอบเงินเดือนตามตัวกรอง</h4>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                      คุณสามารถเปลี่ยนตัวกรองปี หรือสร้างรอบการคำนวณเงินเดือนใหม่ได้ทันที
+                      คุณสามารถเปลี่ยนตัวกรองปี หรือกดรีเฟรชเพื่อโหลดข้อมูลใหม่
                     </p>
-                    {canAccessHrView && (
+                    <div className="flex items-center justify-center gap-2">
                       <button
                         type="button"
-                        onClick={handleOpenCreatePeriodModal}
-                        className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                        onClick={() => {
+                          loadPayrollPeriods();
+                          loadData();
+                        }}
+                        className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>สร้างรอบเงินเดือนใหม่</span>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>รีเฟรชข้อมูล</span>
                       </button>
-                    )}
+                      {canAccessHrView && (
+                        <button
+                          type="button"
+                          onClick={handleOpenCreatePeriodModal}
+                          className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>สร้างรอบเงินเดือนใหม่</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
@@ -3340,7 +3477,6 @@ export default function PayrollPage() {
                       <span>บันทึกเข้างวด</span>
                     </button>
                   )}
-
                   {canExportBonus && (
                     <button
                       type="button"
@@ -4035,6 +4171,9 @@ export default function PayrollPage() {
         );
       })()}
 
+      {/* === TAB: ค่าคอมมิชชั่น (Sales Commission) === */}
+      {activeTab === 'commission' && <CommissionTab />}
+
       {/* === TAB 4: ประมวลเงินเดือน (Payroll Processing) === */}
       {activeTab === 'process' && (() => {
         const totalEmployees = payrolls.length;
@@ -4322,23 +4461,90 @@ export default function PayrollPage() {
                     <span className="font-semibold text-slate-700 dark:text-slate-200">{payrolls.length} คน</span>
                   </div>
 
-                  {/* โบนัสประจำรอบ (ถ้ามี - ดึงคำนวณอัตโนมัติ) */}
-                  {(() => {
+                  {/* ค่าคอมมิชชั่นประจำรอบ (ดึงคำนวณอัตโนมัติ) */}
+                  {selectedPeriod && (() => {
+                    const comm = currentPeriodCommission && currentPeriodCommission.year === selectedPeriod.year && currentPeriodCommission.month === selectedPeriod.month
+                      ? currentPeriodCommission
+                      : null;
+                    if (comm && comm.totalEmployees > 0 && comm.totalCommission > 0) {
+                      const isConfirmed = comm.status === 'CONFIRMED' || comm.status === 'PAID_IN_PAYROLL';
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab('commission')}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                            isConfirmed
+                              ? 'bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300'
+                              : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
+                          }`}
+                          title="คลิกเพื่อเปิดดู/จัดการแท็บค่าคอมมิชชั่น"
+                        >
+                          <Coins className={`w-3.5 h-3.5 ${isConfirmed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`} />
+                          <span>ค่าคอมมิชชั่น:</span>
+                          <span className="font-semibold font-mono">
+                            ฿{comm.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[11px] font-medium">
+                            {isConfirmed
+                              ? `(${comm.totalEmployees} คน • ยืนยันแล้ว พร้อมดึงอัตโนมัติ)`
+                              : `(${comm.totalEmployees} คน • ⚠️ รอยืนยัน คลิกไปยืนยัน)`}
+                          </span>
+                        </button>
+                      );
+                    }
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('commission')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                        title="คลิกเพื่อไปยังแท็บค่าคอมมิชชั่น"
+                      >
+                        <Coins className="w-3.5 h-3.5 text-slate-400" />
+                        <span>ค่าคอมมิชชั่น:</span>
+                        <span className="text-slate-400 dark:text-slate-500">ไม่มีรายการในรอบนี้</span>
+                      </button>
+                    );
+                  })()}
+
+                  {/* โบนัสประจำรอบ (เฉพาะเดือนที่มีโบนัส - ดึงคำนวณอัตโนมัติ) */}
+                  {selectedPeriod && (() => {
                     const currentPeriodBonus = bonusPeriods.find(
                       (bp) => bp.year === selectedPeriod?.year && bp.month === selectedPeriod?.month
                     );
-                    if (!currentPeriodBonus || currentPeriodBonus.totalBonusAmount <= 0) return null;
+                    if (currentPeriodBonus && currentPeriodBonus.totalBonusAmount > 0) {
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBonusYear(selectedPeriod.year);
+                            setBonusMonth(selectedPeriod.month);
+                            setActiveTab('bonus');
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 transition-colors cursor-pointer"
+                          title="คลิกเพื่อเปิดดูรายละเอียดในแท็บโบนัส"
+                        >
+                          <Gift className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span>โบนัสประจำรอบ:</span>
+                          <span className="font-semibold font-mono">
+                            ฿{currentPeriodBonus.totalBonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                            ({currentPeriodBonus.totalEmployees || currentPeriodBonus.approvedCount || 0} คน • ดึงอัตโนมัติ)
+                          </span>
+                        </button>
+                      );
+                    }
                     return (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300">
-                        <Gift className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                        <span>โบนัสประจำรอบ:</span>
-                        <span className="font-semibold font-mono">
-                          ฿{currentPeriodBonus.totalBonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-normal">
-                          ({currentPeriodBonus.totalEmployees || currentPeriodBonus.approvedCount || 0} คน • รวมอัตโนมัติ)
-                        </span>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('bonus')}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                        title="คลิกเพื่อไปยังแท็บโบนัส"
+                      >
+                        <Gift className="w-3.5 h-3.5 text-slate-400" />
+                        <span>โบนัส:</span>
+                        <span className="text-slate-400 dark:text-slate-500">ไม่มีรอบจ่ายในเดือนนี้</span>
+                      </button>
                     );
                   })()}
                 </div>
@@ -4425,10 +4631,11 @@ export default function PayrollPage() {
                           {selectedPeriod?.status === 'PAID' && (
                             <button
                               onClick={handleAdvancePeriodStatus}
-                              className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                              disabled={isAdvancingStatus}
+                              className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              <span>ปิดรอบเงินเดือน</span>
+                              {isAdvancingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                              <span>{isAdvancingStatus ? 'กำลังปิดรอบ...' : 'ปิดรอบเงินเดือน'}</span>
                             </button>
                           )}
 
@@ -4510,10 +4717,11 @@ export default function PayrollPage() {
                       {selectedPeriod?.status === 'PAID' && (isFinance || isAdmin || isCEO) && (
                         <button
                           onClick={handleAdvancePeriodStatus}
-                          className="h-9 inline-flex items-center gap-2 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                          disabled={isAdvancingStatus}
+                          className="h-9 inline-flex items-center gap-2 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <ShieldCheck className="w-3.5 h-3.5" />
-                          <span>ปิดรอบเงินเดือน</span>
+                          {isAdvancingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                          <span>{isAdvancingStatus ? 'กำลังปิดรอบ...' : 'ปิดรอบเงินเดือน'}</span>
                         </button>
                       )}
 
@@ -4782,7 +4990,6 @@ export default function PayrollPage() {
                           <th className="py-3.5 px-5">พนักงาน</th>
                           <th className="py-3.5 px-5">แผนก</th>
                           <th className="py-3.5 px-5">วันลา</th>
-                          <th className="py-3.5 px-5">รายการปรับ/สวัสดิการ</th>
                           <th className="py-3.5 px-5">สถานะข้อมูล</th>
                           <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
                         </tr>
@@ -4807,9 +5014,6 @@ export default function PayrollPage() {
                                 ) : (
                                   <span className="text-slate-400">-</span>
                                 )}
-                              </td>
-                              <td className="py-4 px-5 text-slate-600 dark:text-slate-400">
-                                {pr.adjustmentsSummary || '-'}
                               </td>
                               <td className="py-4 px-5">
                                 {pr.inputStatus === 'COMPLETE' ? (
@@ -5644,25 +5848,37 @@ export default function PayrollPage() {
                       </h3>
                     </div>
 
-                    {/* Confirm Button — only when all transferred and (isCEO || isAdmin) and DIRECT_TRANSFER */}
-                    {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (isCEO || isAdmin) && transferList?.canConfirmPayment && selectedPeriod?.status !== 'PAID' && (
-                      <button
-                        onClick={() => setConfirmPaymentModalOpen(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer animate-pulse"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        <span>ยืนยันการจ่ายเงินทั้งหมด</span>
-                      </button>
-                    )}
+                    {/* Action Buttons for Direct Transfer */}
+                    {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && selectedPeriod?.status !== 'PAID' && (
+                      <div className="flex items-center gap-2.5">
+                        {/* Mark All Button */}
+                        {(isFinance || isCEO || isAdmin) && (
+                          <button
+                            onClick={handleMarkAllTransferred}
+                            disabled={isMarkingAllTransferred || transferList?.pendingCount === 0}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                            title="ทำเครื่องหมายว่าโอนเงินให้พนักงานทุกคนเรียบร้อยแล้วโดยไม่ต้องแนบสลิปทีละคน"
+                          >
+                            {isMarkingAllTransferred ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                            )}
+                            <span>ทำเครื่องหมายว่าโอนแล้วทุกคน</span>
+                          </button>
+                        )}
 
-                    {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && (isCEO || isAdmin) && !transferList?.canConfirmPayment && transferList && transferList.totalEmployees > 0 && selectedPeriod?.status !== 'PAID' && (
-                      <button
-                        disabled
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-xl text-xs font-bold cursor-not-allowed opacity-80"
-                      >
-                        <Lock className="w-4 h-4 text-slate-400" />
-                        <span>ไม่สามารถยืนยันได้ (สลิปยังไม่ครบ {transferList.pendingCount}/{transferList.totalEmployees} คน)</span>
-                      </button>
+                        {/* Confirm Payment Button — (isFinance || isCEO || isAdmin) */}
+                        {(isFinance || isCEO || isAdmin) && (
+                          <button
+                            onClick={() => setConfirmPaymentModalOpen(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            <span>ยืนยันการจ่ายเงินทั้งหมด</span>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -5781,7 +5997,7 @@ export default function PayrollPage() {
                                         ) : (
                                           <Upload className="w-3.5 h-3.5" />
                                         )}
-                                        {item.paymentStatus === 'TRANSFERRED' ? 'อัปเดต Slip' : 'โอนแล้ว + แนบ Slip'}
+                                        {item.paymentStatus === 'TRANSFERRED' ? (item.hasSlip ? 'อัปเดต Slip' : 'แนบ Slip ย้อนหลัง') : 'บันทึกโอนเงิน'}
                                       </button>
                                     )}
                                   </td>
@@ -5836,9 +6052,20 @@ export default function PayrollPage() {
 
                 {/* Slip Upload Zone */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    สลิปการโอนเงิน <span className="text-rose-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      สลิปการโอนเงิน <span className="text-slate-400 font-normal">(ไม่บังคับ)</span>
+                    </label>
+                    {slipFile && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setSlipFile(null); }}
+                        className="text-[11px] text-rose-500 hover:text-rose-600 cursor-pointer"
+                      >
+                        นำไฟล์ออก
+                      </button>
+                    )}
+                  </div>
                   <div
                     onDragOver={e => { e.preventDefault(); setSlipDragOver(true); }}
                     onDragLeave={() => setSlipDragOver(false)}
@@ -5868,7 +6095,7 @@ export default function PayrollPage() {
                       <div className="text-slate-400">
                         <Upload className="w-7 h-7 mx-auto mb-2 text-slate-400" />
                         <div className="text-xs font-medium">ลาก & วาง หรือคลิกเพื่อเลือกไฟล์</div>
-                        <div className="text-[11px] mt-1">JPG, PNG, WEBP, PDF · สูงสุด 10 MB</div>
+                        <div className="text-[11px] mt-1">JPG, PNG, WEBP, PDF · สูงสุด 10 MB (แนบหรือไม่แนบก็ได้)</div>
                       </div>
                     )}
                     <input
@@ -5890,7 +6117,7 @@ export default function PayrollPage() {
                   </button>
                   <button
                     onClick={handleMarkTransferred}
-                    disabled={!slipFile || isMarkingTransferred !== null}
+                    disabled={isMarkingTransferred !== null}
                     className="flex-1 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-sm font-bold cursor-pointer transition-all inline-flex items-center justify-center gap-2"
                   >
                     {isMarkingTransferred !== null ? (
@@ -5918,7 +6145,7 @@ export default function PayrollPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     {selectedPeriod?.paymentMethod === 'BANK_BATCH'
                       ? 'ยืนยันว่าธนาคารได้โอนเงินเดือนตามไฟล์ Bank Batch เรียบร้อยแล้ว (สถานะจะเปลี่ยนเป็น ส่งโอนธนาคารแล้ว เพื่อให้ฝ่ายการเงินตรวจสลิป)'
-                      : `ยืนยันว่าโอนเงินเดือนให้พนักงานครบ ${transferList?.totalEmployees} คน พร้อมสลิปครบถ้วนแล้ว`}
+                      : `ยืนยันว่าโอนเงินเดือนให้พนักงานครบ ${transferList?.totalEmployees} คน เรียบร้อยแล้ว`}
                   </p>
                 </div>
 
@@ -5938,7 +6165,7 @@ export default function PayrollPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500 dark:text-slate-400">วิธีการจ่าย</span>
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
-                      {selectedPeriod?.paymentMethodText ?? (selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? 'CEO โอนเอง' : 'ส่งไฟล์ธนาคาร (Bank Batch)')}
+                      {selectedPeriod?.paymentMethodText ?? (selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? 'โอนเงินโดยตรง' : 'ส่งไฟล์ธนาคาร (Bank Batch)')}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -5965,13 +6192,6 @@ export default function PayrollPage() {
                   />
                 </div>
 
-                {selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && !transferList?.canConfirmPayment && (
-                  <div className="text-xs text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-xl p-3 flex items-start gap-2 leading-relaxed">
-                    <Lock className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                    <span>ไม่อนุญาตให้กดโอนเงินเรียบร้อยหรือเปลี่ยนสถานะจนกว่าจะโอนเงินและแนบสลิปครบทุกคน (ยังขาดสลิปอีก {transferList?.pendingCount} คน)</span>
-                  </div>
-                )}
-
                 <div className="flex gap-3">
                   <button
                     onClick={() => { setConfirmPaymentModalOpen(false); setConfirmPaymentNote(''); }}
@@ -5981,13 +6201,13 @@ export default function PayrollPage() {
                   </button>
                   <button
                     onClick={selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? handleConfirmPayment : handleConfirmBankTransfer}
-                    disabled={isConfirmingPayment || (selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' && !transferList?.canConfirmPayment)}
+                    disabled={isConfirmingPayment}
                     className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
                   >
                     {isConfirmingPayment ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลังยืนยัน...</span></>
                     ) : (
-                      <><CheckCircle className="w-4 h-4" /><span>{selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'CEO ยืนยันการจ่ายเงิน'}</span></>
+                      <><CheckCircle className="w-4 h-4" /><span>{selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'ยืนยันการจ่ายเงิน'}</span></>
                     )}
                   </button>
                 </div>

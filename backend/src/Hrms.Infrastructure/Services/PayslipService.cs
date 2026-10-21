@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using Hrms.Application.Common.Exceptions;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Payroll.Services;
@@ -17,6 +18,7 @@ public class PayslipService : IPayslipService
 {
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAesEncryptionService _encryptionService;
 
     private static readonly string[] ThaiMonths =
     {
@@ -24,10 +26,14 @@ public class PayslipService : IPayslipService
         "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
     };
 
-    public PayslipService(IHrmsDbContext context, ICurrentUserService currentUserService)
+    public PayslipService(
+        IHrmsDbContext context,
+        ICurrentUserService currentUserService,
+        IAesEncryptionService encryptionService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _encryptionService = encryptionService;
     }
 
     /// <inheritdoc />
@@ -91,19 +97,23 @@ public class PayslipService : IPayslipService
         var monthName = (periodMonth >= 1 && periodMonth <= 12) ? ThaiMonths[periodMonth] : $"เดือนที่ {periodMonth}";
         var thaiYear = periodYear > 2400 ? periodYear : periodYear + 543;
 
-        // 1. Password Determination (วันเกิด DDMMYYYY หรือเลขบัตรประชาชน 4 ตัวท้าย)
+        // 1. Password Determination (เลขบัตรประชาชน 4 ตัวท้าย)
         string password = "";
-        if (emp?.BirthDate.HasValue == true)
+        string rawCitizenId = _encryptionService.UnprotectText(emp?.CitizenId ?? "");
+        string digits = Regex.Replace(rawCitizenId, @"\D", "");
+        if (digits.Length >= 4)
         {
-            password = emp.BirthDate.Value.ToString("ddMMyyyy");
+            password = digits[^4..];
         }
-        else if (!string.IsNullOrEmpty(emp?.CitizenId) && emp.CitizenId.Length >= 4)
+        else if (emp?.BirthDate.HasValue == true)
         {
-            password = emp.CitizenId[^4..];
+            var birth = emp.BirthDate.Value;
+            int beYear = birth.Year > 2400 ? birth.Year : birth.Year + 543;
+            password = $"{birth:ddMM}{beYear}";
         }
         else
         {
-            password = emp?.EmployeeCode ?? "12345678";
+            password = emp?.EmployeeCode ?? "1234";
         }
 
         // 2. Query Company Master
@@ -261,12 +271,12 @@ public class PayslipService : IPayslipService
         var fontSmall = new XFont("Tahoma", 7.5, XFontStyle.Regular);
         var fontNetBig = new XFont("Tahoma", 14, XFontStyle.Bold);
 
-        // Colors
-        var navyBrush = new XSolidBrush(XColor.FromArgb(11, 32, 70));       // #0B2046
-        var greenBrush = new XSolidBrush(XColor.FromArgb(16, 185, 129));   // #10B981
-        var roseBrush = new XSolidBrush(XColor.FromArgb(225, 29, 72));      // #E11D48
-        var darkGrayBrush = new XSolidBrush(XColor.FromArgb(51, 65, 85));  // #334155
-        var borderPen = new XPen(XColor.FromArgb(226, 232, 240), 1);      // #E2E8F0
+        // Colors - Theme Syaco (Navy & Slate Corporate Palette)
+        var navyBrush = new XSolidBrush(XColor.FromArgb(11, 32, 70));        // #0B2046 Primary Navy
+        var darkNavyBrush = new XSolidBrush(XColor.FromArgb(15, 23, 42));    // #0F172A Slate-900
+        var slateBrush = new XSolidBrush(XColor.FromArgb(71, 85, 105));      // #475569 Slate-600
+        var darkGrayBrush = new XSolidBrush(XColor.FromArgb(51, 65, 85));   // #334155
+        var borderPen = new XPen(XColor.FromArgb(203, 213, 225), 1);       // #CBD5E1 Slate-300
         var darkPen = new XPen(XColor.FromArgb(11, 32, 70), 1.2);
 
         double pageWidth = page.Width;
@@ -291,7 +301,7 @@ public class PayslipService : IPayslipService
 
         var subTitleText = "ส่วนบุคคลและเป็นความลับ (CONFIDENTIAL)";
         var subTitleSize = gfx.MeasureString(subTitleText, fontSubTitle);
-        gfx.DrawString(subTitleText, fontSubTitle, roseBrush, new XPoint(right - subTitleSize.Width, 49));
+        gfx.DrawString(subTitleText, fontSubTitle, slateBrush, new XPoint(right - subTitleSize.Width, 49));
 
         var periodText = $"งวดประจำเดือน: {monthName} {thaiYear}";
         var periodSize = gfx.MeasureString(periodText, fontBold);
@@ -349,14 +359,14 @@ public class PayslipService : IPayslipService
         double tableBodyHeight = maxRows * rowHeight;
         double tableTotalHeight = 24;
 
-        // Left Table Header (Earnings)
-        var earnHeaderBrush = new XSolidBrush(XColor.FromArgb(16, 185, 129));
+        // Left Table Header (Earnings - Corporate Navy Theme)
+        var earnHeaderBrush = new XSolidBrush(XColor.FromArgb(11, 32, 70)); // #0B2046 Navy
         gfx.DrawRectangle(earnHeaderBrush, leftColX, y, colWidth, tableHeaderHeight);
         gfx.DrawString("รายการได้ (EARNINGS)", fontBold, XBrushes.White, new XPoint(leftColX + 8, y + 15));
         gfx.DrawString("จำนวนเงิน (บาท)", fontBold, XBrushes.White, new XPoint(leftColX + colWidth - 75, y + 15));
 
-        // Right Table Header (Deductions)
-        var dedHeaderBrush = new XSolidBrush(XColor.FromArgb(225, 29, 72));
+        // Right Table Header (Deductions - Dark Slate/Navy Theme)
+        var dedHeaderBrush = new XSolidBrush(XColor.FromArgb(30, 41, 59)); // #1E293B Slate-800
         gfx.DrawRectangle(dedHeaderBrush, rightColX, y, colWidth, tableHeaderHeight);
         gfx.DrawString("รายการหัก (DEDUCTIONS)", fontBold, XBrushes.White, new XPoint(rightColX + 8, y + 15));
         gfx.DrawString("จำนวนเงิน (บาท)", fontBold, XBrushes.White, new XPoint(rightColX + colWidth - 75, y + 15));
@@ -372,7 +382,7 @@ public class PayslipService : IPayslipService
             double rowY = tableTopY + (i * rowHeight);
             if (i % 2 == 1)
             {
-                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(250, 250, 250)), leftColX + 1, rowY, colWidth - 2, rowHeight);
+                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), leftColX + 1, rowY, colWidth - 2, rowHeight);
             }
 
             if (i < earnings.Count)
@@ -392,7 +402,7 @@ public class PayslipService : IPayslipService
             double rowY = tableTopY + (i * rowHeight);
             if (i % 2 == 1)
             {
-                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(250, 250, 250)), rightColX + 1, rowY, colWidth - 2, rowHeight);
+                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), rightColX + 1, rowY, colWidth - 2, rowHeight);
             }
 
             if (i < deductions.Count)
@@ -402,7 +412,7 @@ public class PayslipService : IPayslipService
                 gfx.DrawString(name, fontRegular, darkGrayBrush, new XPoint(rightColX + 8, rowY + 12));
                 string amt = item.Amount.ToString("N2");
                 var sz = gfx.MeasureString(amt, fontRegular);
-                gfx.DrawString(amt, fontRegular, roseBrush, new XPoint(rightColX + colWidth - 8 - sz.Width, rowY + 12));
+                gfx.DrawString(amt, fontRegular, darkGrayBrush, new XPoint(rightColX + colWidth - 8 - sz.Width, rowY + 12));
             }
         }
 
@@ -418,10 +428,10 @@ public class PayslipService : IPayslipService
 
         gfx.DrawRectangle(totalBgBrush, rightColX, totalY, colWidth, tableTotalHeight);
         gfx.DrawRectangle(borderPen, rightColX, totalY, colWidth, tableTotalHeight);
-        gfx.DrawString("รวมเงินหัก (Total Deductions)", fontBold, roseBrush, new XPoint(rightColX + 8, totalY + 16));
+        gfx.DrawString("รวมเงินหัก (Total Deductions)", fontBold, darkNavyBrush, new XPoint(rightColX + 8, totalY + 16));
         string totalDedText = totalDeductions.ToString("N2");
         var totalDedSz = gfx.MeasureString(totalDedText, fontBold);
-        gfx.DrawString(totalDedText, fontBold, roseBrush, new XPoint(rightColX + colWidth - 8 - totalDedSz.Width, totalY + 16));
+        gfx.DrawString(totalDedText, fontBold, darkNavyBrush, new XPoint(rightColX + colWidth - 8 - totalDedSz.Width, totalY + 16));
 
         y = totalY + tableTotalHeight + 14;
 
@@ -459,7 +469,7 @@ public class PayslipService : IPayslipService
         gfx.DrawString($"฿{ytdGross:N2}", fontBold, navyBrush, new XPoint(ytdCol1, y + 32));
 
         gfx.DrawString($"ภาษีสะสมประจำปี (YTD Tax):", fontSmall, darkGrayBrush, new XPoint(ytdCol2, y + 16));
-        gfx.DrawString($"฿{ytdTax:N2}", fontBold, roseBrush, new XPoint(ytdCol2, y + 32));
+        gfx.DrawString($"฿{ytdTax:N2}", fontBold, darkNavyBrush, new XPoint(ytdCol2, y + 32));
 
         gfx.DrawString($"ประกันสังคมสะสมประจำปี (YTD SSO):", fontSmall, darkGrayBrush, new XPoint(ytdCol3, y + 16));
         gfx.DrawString($"฿{ytdSso:N2}", fontBold, navyBrush, new XPoint(ytdCol3, y + 32));
@@ -472,9 +482,9 @@ public class PayslipService : IPayslipService
         gfx.DrawLine(borderPen, left, y, right, y);
         y += 12;
 
-        gfx.DrawString("🔒 เอกสารนี้เป็นความลับเฉพาะบุคคล และได้รับการคุ้มครองตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)", fontSmall, darkGrayBrush, new XPoint(left, y));
+        gfx.DrawString("• เอกสารนี้เป็นความลับเฉพาะบุคคล และได้รับการคุ้มครองตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)", fontSmall, darkGrayBrush, new XPoint(left, y));
         y += 11;
-        gfx.DrawString("• รหัสผ่านในการเปิดไฟล์ PDF คือ: วันเดือนปีเกิด 8 หลัก (ววดดปปปป) หรือเลขบัตรประชาชน 4 หลักสุดท้าย", fontSmall, roseBrush, new XPoint(left, y));
+        gfx.DrawString("• รหัสผ่านในการเปิดไฟล์ PDF คือ: เลขประจำตัวประชาชน 4 หลักสุดท้าย", fontSmall, slateBrush, new XPoint(left, y));
         y += 11;
         gfx.DrawString($"• เอกสารนี้สร้างจากระบบ HRMS อัตโนมัติเมื่อ {DateTime.Now:dd/MM/yyyy HH:mm:ss} ไม่จำเป็นต้องลงนาม", fontSmall, darkGrayBrush, new XPoint(left, y));
 

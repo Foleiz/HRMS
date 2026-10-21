@@ -119,8 +119,10 @@ export const attendanceImportService = {
     link.download = `attendance_import_template.${format}`;
     document.body.appendChild(link);
     link.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(link);
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 1000);
   },
 
   /**

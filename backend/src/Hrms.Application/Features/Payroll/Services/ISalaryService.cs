@@ -71,10 +71,13 @@ public interface ISalaryService
     /// <summary>ดึงรายการโอนเงินพนักงานพร้อมข้อมูล Bank Account และสถานะการโอน</summary>
     Task<PayrollTransferListDto> GetTransferListAsync(long periodId, CancellationToken cancellationToken = default);
 
-    /// <summary>Mark พนักงานรายบุคคลว่าโอนแล้ว พร้อม Slip (DIRECT_TRANSFER)</summary>
+    /// <summary>Mark พนักงานรายบุคคลว่าโอนแล้ว (Slip เป็น optional) (DIRECT_TRANSFER)</summary>
     Task<PayrollTransferItemDto> MarkTransferredAsync(long periodId, long payrollId, MarkTransferredRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>CEO Confirm การจ่ายเงินทั้งหมด — ต้องทุกคนมี Slip และ TRANSFERRED</summary>
+    /// <summary>Mark พนักงานทุกคนว่าโอนเงินเรียบร้อยแล้วทั้งหมด (DIRECT_TRANSFER)</summary>
+    Task<PayrollTransferListDto> MarkAllTransferredAsync(long periodId, CancellationToken cancellationToken = default);
+
+    /// <summary>CEO Confirm การจ่ายเงินทั้งหมด (DIRECT_TRANSFER)</summary>
     Task<PayrollPeriodDto> ConfirmPaymentAsync(long periodId, ConfirmPaymentRequest request, long confirmedByEmployeeId, CancellationToken cancellationToken = default);
 
     /// <summary>ดาวน์โหลด Slip ของพนักงานรายบุคคล</summary>

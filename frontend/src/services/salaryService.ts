@@ -291,7 +291,7 @@ export const salaryService = {
     return res.data.data;
   },
 
-  /** Mark พนักงานรายบุคคลว่าโอนเงินแล้ว พร้อมแนบ Slip */
+  /** Mark พนักงานรายบุคคลว่าโอนเงินแล้ว (Slip เป็น optional) */
   async markTransferred(
     periodId: number,
     payrollId: number,
@@ -300,6 +300,14 @@ export const salaryService = {
     const res = await apiClient.post<ApiResponse<PayrollTransferItem>>(
       `/salary/periods/${periodId}/payrolls/${payrollId}/mark-transferred`,
       payload
+    );
+    return res.data.data;
+  },
+
+  /** Mark พนักงานทุกคนว่าโอนเงินแล้วทั้งหมด (DIRECT_TRANSFER) */
+  async markAllTransferred(periodId: number): Promise<PayrollTransferList> {
+    const res = await apiClient.post<ApiResponse<PayrollTransferList>>(
+      `/salary/periods/${periodId}/mark-all-transferred`
     );
     return res.data.data;
   },
