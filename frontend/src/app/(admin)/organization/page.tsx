@@ -1903,17 +1903,17 @@ export default function OrganizationPage() {
                           <td className="py-3 px-4 text-center whitespace-nowrap">
                             <div className="flex flex-col items-center gap-1">
                               {ben.isStatutory ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
-                                  ⚖️ สิทธิตามกฎหมาย
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
+                                  สิทธิตามกฎหมาย
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
-                                  ⭐ สวัสดิการบริษัท
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
+                                  สวัสดิการบริษัท
                                 </span>
                               )}
                               {ben.isDocumentRequired && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300">
-                                  📎 บังคับแนบเอกสาร
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300">
+                                  บังคับแนบเอกสาร
                                 </span>
                               )}
                             </div>

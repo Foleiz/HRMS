@@ -106,6 +106,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     public DbSet<PayrollDetail> PayrollDetails => Set<PayrollDetail>();
     public DbSet<Payslip> Payslips => Set<Payslip>();
     public DbSet<EmployeeBonus> EmployeeBonuses => Set<EmployeeBonus>();
+    public DbSet<EmployeeCommission> EmployeeCommissions => Set<EmployeeCommission>();
+    public DbSet<EmployeeCommissionEntry> EmployeeCommissionEntries => Set<EmployeeCommissionEntry>();
+    public DbSet<CommissionImportBatch> CommissionImportBatches => Set<CommissionImportBatch>();
 
     // Audit Trail (PDPA Compliance)
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -1775,6 +1778,112 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .WithMany()
                 .HasForeignKey(e => e.EmployeeId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Configuration: EmployeeCommission
+        modelBuilder.Entity<EmployeeCommission>(entity =>
+        {
+            entity.ToTable("employee_commission", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.Year).HasColumnName("year").IsRequired();
+            entity.Property(e => e.Month).HasColumnName("month").IsRequired();
+            entity.Property(e => e.SalesAmount).HasColumnName("sales_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.CommissionRate).HasColumnName("commission_rate").HasPrecision(6, 2).HasDefaultValue(0);
+            entity.Property(e => e.CommissionAmount).HasColumnName("commission_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.SpecialAmount).HasColumnName("special_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.TotalCommission).HasColumnName("total_commission").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.CalculationMode).HasColumnName("calculation_mode").HasMaxLength(30).HasDefaultValue("PERCENTAGE");
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("DRAFT");
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.ConfirmedAt).HasColumnName("confirmed_at");
+            entity.Property(e => e.ConfirmedByEmployeeId).HasColumnName("confirmed_by_employee_id");
+            entity.Property(e => e.PaidPeriodId).HasColumnName("paid_period_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()").IsRequired();
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ConfirmedByEmployee)
+                .WithMany()
+                .HasForeignKey(e => e.ConfirmedByEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.PaidPeriod)
+                .WithMany()
+                .HasForeignKey(e => e.PaidPeriodId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: CommissionImportBatch
+        modelBuilder.Entity<CommissionImportBatch>(entity =>
+        {
+            entity.ToTable("commission_import_batch", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.FileName).HasColumnName("file_name").HasMaxLength(300);
+            entity.Property(e => e.FileHash).HasColumnName("file_hash").HasMaxLength(100);
+            entity.Property(e => e.DetectedType).HasColumnName("detected_type").HasMaxLength(20).HasDefaultValue("MONTH").IsRequired();
+            entity.Property(e => e.DateFrom).HasColumnName("date_from");
+            entity.Property(e => e.DateTo).HasColumnName("date_to");
+            entity.Property(e => e.TotalRows).HasColumnName("total_rows").HasDefaultValue(0);
+            entity.Property(e => e.SuccessRows).HasColumnName("success_rows").HasDefaultValue(0);
+            entity.Property(e => e.FailedRows).HasColumnName("failed_rows").HasDefaultValue(0);
+            entity.Property(e => e.EmployeeCount).HasColumnName("employee_count").HasDefaultValue(0);
+            entity.Property(e => e.ReplacedEntries).HasColumnName("replaced_entries").HasDefaultValue(0);
+            entity.Property(e => e.TotalAmount).HasColumnName("total_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("IMPORTED").IsRequired();
+            entity.Property(e => e.ErrorsJson).HasColumnName("errors_json");
+            entity.Property(e => e.ImportedByUserId).HasColumnName("imported_by_user_id");
+            entity.Property(e => e.ImportedAt).HasColumnName("imported_at").HasDefaultValueSql("now()").IsRequired();
+            entity.Property(e => e.RevertedAt).HasColumnName("reverted_at");
+            entity.Property(e => e.RevertedByUserId).HasColumnName("reverted_by_user_id");
+
+            entity.HasOne(e => e.ImportedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ImportedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.RevertedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.RevertedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // Configuration: EmployeeCommissionEntry
+        modelBuilder.Entity<EmployeeCommissionEntry>(entity =>
+        {
+            entity.ToTable("employee_commission_entry", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
+            entity.Property(e => e.DateFrom).HasColumnName("date_from").IsRequired();
+            entity.Property(e => e.DateTo).HasColumnName("date_to").IsRequired();
+            entity.Property(e => e.SalesAmount).HasColumnName("sales_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.CommissionRate).HasColumnName("commission_rate").HasPrecision(6, 2).HasDefaultValue(0);
+            entity.Property(e => e.CommissionAmount).HasColumnName("commission_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.SpecialAmount).HasColumnName("special_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.TotalAmount).HasColumnName("total_amount").HasPrecision(14, 2).HasDefaultValue(0);
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.Source).HasColumnName("source").HasMaxLength(20).HasDefaultValue("FILE").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("ACTIVE").IsRequired();
+            entity.Property(e => e.BatchId).HasColumnName("batch_id");
+            entity.Property(e => e.SupersededByBatchId).HasColumnName("superseded_by_batch_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()").IsRequired();
+
+            entity.HasOne(e => e.Employee)
+                .WithMany()
+                .HasForeignKey(e => e.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Batch)
+                .WithMany()
+                .HasForeignKey(e => e.BatchId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Configuration: PayrollItem

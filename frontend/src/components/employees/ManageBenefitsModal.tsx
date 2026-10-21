@@ -518,7 +518,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                             )}
                             {item.isDocumentRequired && (
                               <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100/80 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300 font-medium">
-                                📎 บังคับแนบเอกสาร
+                                บังคับแนบเอกสาร
                               </span>
                             )}
                           </div>

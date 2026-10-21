@@ -669,7 +669,7 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<PayrollTransferListDto>.Ok(result));
     }
 
-    /// <summary>Mark พนักงานรายบุคคลว่าโอนเงินแล้ว พร้อมแนบ Slip (DIRECT_TRANSFER)</summary>
+    /// <summary>Mark พนักงานรายบุคคลว่าโอนเงินแล้ว (DIRECT_TRANSFER)</summary>
     [HttpPost("periods/{periodId:long}/payrolls/{payrollId:long}/mark-transferred")]
     [ProducesResponseType(typeof(ApiResponse<PayrollTransferItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -684,7 +684,20 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<PayrollTransferItemDto>.Ok(result, "บันทึกการโอนเงินสำเร็จ"));
     }
 
-    /// <summary>CEO Confirm การจ่ายเงินทั้งหมด (DIRECT_TRANSFER) — เฉพาะ CEO เท่านั้น</summary>
+    /// <summary>Mark พนักงานทุกคนว่าโอนเงินแล้วทั้งหมด (DIRECT_TRANSFER)</summary>
+    [HttpPost("periods/{periodId:long}/mark-all-transferred")]
+    [ProducesResponseType(typeof(ApiResponse<PayrollTransferListDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<PayrollTransferListDto>>> MarkAllTransferred(
+        long periodId,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser) || PayrollAccess.IsApprover(_currentUser), "ดำเนินการโอนเงินเดือน");
+        var result = await _salaryService.MarkAllTransferredAsync(periodId, cancellationToken);
+        return Ok(ApiResponse<PayrollTransferListDto>.Ok(result, "ทำเครื่องหมายว่าโอนเงินครบทุกคนเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>Confirm การจ่ายเงินทั้งหมด (DIRECT_TRANSFER) — การเงิน / CEO / Admin</summary>
     [HttpPost("periods/{id:long}/confirm-payment")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -694,7 +707,7 @@ public class SalaryController : ControllerBase
         [FromBody] ConfirmPaymentRequest request,
         CancellationToken cancellationToken)
     {
-        PayrollAccess.Ensure(PayrollAccess.IsApprover(_currentUser), "อนุมัติ/ยืนยันการจ่ายเงินเดือน");
+        PayrollAccess.Ensure(PayrollAccess.IsFinance(_currentUser) || PayrollAccess.IsApprover(_currentUser), "อนุมัติ/ยืนยันการจ่ายเงินเดือน");
         var employeeId = GetCurrentEmployeeId();
         if (employeeId == null)
             return Forbid();
@@ -838,9 +851,11 @@ public class SalaryController : ControllerBase
     // ===== HELPER: ดึง Employee ID ของ User ที่ Login อยู่ =====
     private long? GetCurrentEmployeeId()
     {
+        if (_currentUser.EmployeeId.HasValue)
+            return _currentUser.EmployeeId.Value;
         var claim = User.FindFirst("employee_id") ?? User.FindFirst(ClaimTypes.NameIdentifier);
         if (claim != null && long.TryParse(claim.Value, out var id))
             return id;
-        return null;
+        return _currentUser.UserId;
     }
 }

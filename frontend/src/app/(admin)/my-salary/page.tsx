@@ -212,7 +212,7 @@ export default function MySalaryPage() {
             {/* Top Right Security Notice Pill */}
             <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 text-slate-700 dark:text-slate-300 border border-slate-200 text-[11px] font-medium shadow-xs">
               <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>รหัสเปิดไฟล์: วันเกิด (ววดดปปปป)</span>
+              <span>รหัสเปิดไฟล์: เลขบัตรประชาชน 4 ตัวท้าย</span>
             </div>
           </div>
         </div>

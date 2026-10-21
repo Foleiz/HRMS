@@ -416,9 +416,9 @@ export interface SetPaymentMethodPayload {
 
 export interface MarkTransferredPayload {
   transferReference?: string | null;
-  slipFileName: string;
-  slipContentType: string;
-  slipBase64: string;
+  slipFileName?: string | null;
+  slipContentType?: string | null;
+  slipBase64?: string | null;
 }
 
 export interface ConfirmPaymentPayload {

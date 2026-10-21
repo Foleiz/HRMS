@@ -345,7 +345,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                           </h5>
                           {b.isDocumentRequired && (
                             <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              📎 บังคับแนบเอกสาร
+                              บังคับแนบเอกสาร
                             </span>
                           )}
                         </div>

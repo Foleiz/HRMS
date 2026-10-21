@@ -284,17 +284,17 @@ public class SetPaymentMethodRequest
     public string PaymentMethod { get; set; } = string.Empty;
 }
 
-/// <summary>Request: Mark พนักงานว่าโอนเงินแล้ว (พร้อม Slip)</summary>
+/// <summary>Request: Mark พนักงานว่าโอนเงินแล้ว (Slip เป็น optional)</summary>
 public class MarkTransferredRequest
 {
     /// <summary>เลข Reference การโอน (เช่น เลขที่รายการจาก Internet Banking)</summary>
     public string? TransferReference { get; set; }
-    /// <summary>ชื่อไฟล์ Slip เดิม</summary>
-    public string SlipFileName { get; set; } = string.Empty;
-    /// <summary>MIME type เช่น image/jpeg, image/png, application/pdf</summary>
-    public string SlipContentType { get; set; } = string.Empty;
-    /// <summary>ข้อมูล Slip เป็น Base64 string</summary>
-    public string SlipBase64 { get; set; } = string.Empty;
+    /// <summary>ชื่อไฟล์ Slip (optional)</summary>
+    public string? SlipFileName { get; set; }
+    /// <summary>MIME type เช่น image/jpeg, image/png, application/pdf (optional)</summary>
+    public string? SlipContentType { get; set; }
+    /// <summary>ข้อมูล Slip เป็น Base64 string (optional)</summary>
+    public string? SlipBase64 { get; set; }
 }
 
 /// <summary>Request: CEO Confirm การจ่ายเงินทั้งหมด</summary>
