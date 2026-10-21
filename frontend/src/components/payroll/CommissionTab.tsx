@@ -85,7 +85,6 @@ export default function CommissionTab() {
   const [summaryPageSize, setSummaryPageSize] = useState<number>(10);
 
   // Upload & Drag-and-drop State
-  const [isUploadCardOpen, setIsUploadCardOpen] = useState<boolean>(false);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
@@ -618,23 +617,8 @@ export default function CommissionTab() {
             <span>รูปแบบไฟล์ที่รองรับ</span>
           </button>
 
-          {/* Unified Upload Toggle Button */}
+          {/* Add Manual Item */}
           {!isPeriodConfirmed && (
-            <>
-              <button
-                type="button"
-                onClick={() => setIsUploadCardOpen((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-2xs transition active:scale-95 cursor-pointer ${
-                  isUploadCardOpen
-                    ? 'bg-emerald-700 text-white shadow-emerald-600/20 ring-2 ring-emerald-500/30'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                }`}
-              >
-                <UploadCloud className="h-4 w-4" />
-                <span>{isUploadCardOpen ? 'ซ่อนกล่องนำเข้า' : 'นำเข้าไฟล์ค่าคอมมิชชั่น'}</span>
-              </button>
-
-              {/* Add Manual Item */}
               <button
                 type="button"
                 onClick={() => {
@@ -658,7 +642,6 @@ export default function CommissionTab() {
                 <Plus className="h-4 w-4" />
                 <span>เพิ่มรายคน</span>
               </button>
-            </>
           )}
 
           {/* Confirm or Reset Button */}
