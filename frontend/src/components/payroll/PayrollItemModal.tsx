@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Info, Calculator, Lock, Sparkles } from 'lucide-react';
-import { PayrollItem, SocialSecurityRate } from '@/types/payroll';
-import { salaryService } from '@/services/salaryService';
+import { PayrollItem, SocialSecurityRate, TaxBracket } from '@/types/payroll';
 import { getAutoPullSource } from './autoPullItems';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
@@ -21,6 +20,13 @@ interface Props {
   item: PayrollItem | null;
   /** รายการทั้งหมด — ใช้สลับไปแก้รายการของระบบเมื่อเลือกสูตรของระบบ */
   allItems?: PayrollItem[];
+  /** ตั้งค่าภาษี/ประกันสังคม (ย้ายมาจากแท็บภาษี & ประกันสังคม) */
+  taxBrackets?: TaxBracket[];
+  ssoRates?: SocialSecurityRate[];
+  canEditTaxSso?: boolean;
+  onEditTaxBrackets?: () => void;
+  /** null = เพิ่มอัตราใหม่ */
+  onEditSsoRate?: (rate: SocialSecurityRate | null) => void;
   defaultType: 'EARNING' | 'DEDUCTION';
   onSubmit: (payload: Partial<PayrollItem>, id?: number) => Promise<void>;
 }
@@ -219,6 +225,11 @@ export const PayrollItemModal: React.FC<Props> = ({
   onClose,
   item: itemProp,
   allItems = [],
+  taxBrackets = [],
+  ssoRates = [],
+  canEditTaxSso = false,
+  onEditTaxBrackets,
+  onEditSsoRate,
   defaultType,
   onSubmit,
 }) => {
@@ -239,8 +250,6 @@ export const PayrollItemModal: React.FC<Props> = ({
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  /** อัตราประกันสังคมที่มีผลปัจจุบัน (แก้ร่วมกับแท็บภาษี & ประกันสังคม) */
-  const [ssoRate, setSsoRate] = useState<SocialSecurityRate | null>(null);
 
   useEffect(() => {
     if (item) {
@@ -277,34 +286,6 @@ export const PayrollItemModal: React.FC<Props> = ({
     setError(null);
   }, [item, defaultType, isOpen]);
 
-  // ประกันสังคม: อ่านอัตรา/ฐานค่าจ้างจริงจากตั้งค่าในแท็บภาษี & ประกันสังคม
-  useEffect(() => {
-    if (!isOpen || (item?.formulaTemplate || '').toUpperCase() !== 'SSO_STANDARD') return;
-    let active = true;
-    salaryService
-      .getSocialSecurityRates()
-      .then((rates) => {
-        if (!active || !rates?.length) return;
-        const now = new Date();
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-        const current =
-          rates.find(
-            (r) => r.status === 'ACTIVE' && r.effectiveFrom <= today && (!r.effectiveTo || r.effectiveTo >= today),
-          ) ?? [...rates].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
-        setSsoRate(current);
-        setParams((prev) => ({
-          ...prev,
-          ssoPercent: String(current.employeeContributionPercent),
-          ssoMin: String(current.minWageBaseAmount),
-          ssoMax: String(current.maxWageBaseAmount),
-        }));
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [item, isOpen]);
 
   if (!isOpen) return null;
 
@@ -425,6 +406,7 @@ export const PayrollItemModal: React.FC<Props> = ({
         }
         finalFormulaValue = serializeFormulaParams(templateCode, params);
       }
+      if (templateCode === 'SSO_STANDARD' && currentSso) finalFormulaValue = ssoFormulaText(currentSso);
     }
 
     try {
@@ -459,20 +441,6 @@ export const PayrollItemModal: React.FC<Props> = ({
         status: isActive ? 'ACTIVE' : 'INACTIVE',
       };
 
-      // ประกันสังคม: บันทึกอัตรา/ฐานค่าจ้างลงตั้งค่าเดียวกับแท็บภาษี & ประกันสังคม
-      if (templateCode === 'SSO_STANDARD' && ssoRate) {
-        await salaryService.updateSocialSecurityRate(ssoRate.id, {
-          rateName: ssoRate.rateName,
-          employeeContributionPercent: Number(params.ssoPercent),
-          employerContributionPercent: Number(params.ssoPercent),
-          minWageBaseAmount: Number(params.ssoMin),
-          maxWageBaseAmount: Number(params.ssoMax),
-          effectiveFrom: ssoRate.effectiveFrom,
-          effectiveTo: ssoRate.effectiveTo ?? null,
-          status: ssoRate.status,
-        });
-      }
-
       await onSubmit(payload, item?.id);
       onClose();
     } catch (err: any) {
@@ -483,6 +451,25 @@ export const PayrollItemModal: React.FC<Props> = ({
   };
 
   const isEarning = itemType === 'EARNING';
+
+  // ===== ภาษี / ประกันสังคม (ตั้งค่าที่นี่แทนแท็บภาษี & ประกันสังคมเดิม) =====
+  const pctOf = (v: number) => (v <= 1 ? v * 100 : v);
+  const todayIso = (() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  })();
+  const sortedSso = [...ssoRates].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+  const currentSso =
+    sortedSso.find((r) => r.status === 'ACTIVE' && r.effectiveFrom <= todayIso && (!r.effectiveTo || r.effectiveTo >= todayIso)) ??
+    sortedSso.find((r) => r.status === 'ACTIVE') ??
+    null;
+  const sortedBrackets = [...taxBrackets].filter((b) => b.status === 'ACTIVE').sort((a, b) => a.incomeFrom - b.incomeFrom);
+  const money = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const ssoFormulaText = (r: SocialSecurityRate) =>
+    `${pctOf(r.employeeContributionPercent)}% ฐานค่าจ้าง ${money(r.minWageBaseAmount)} - ${money(r.maxWageBaseAmount)} บาท (หักสูงสุด ${money(
+      (r.maxWageBaseAmount * pctOf(r.employeeContributionPercent)) / 100,
+    )} บาท/เดือน)`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
@@ -666,6 +653,110 @@ export const PayrollItemModal: React.FC<Props> = ({
                         : selectedTemplate.hint}
                     </span>
                   </p>
+                </div>
+              )}
+
+              {/* ประกันสังคม: อัตราตามช่วงวันที่มีผล (แทนแท็บภาษี & ประกันสังคม) */}
+              {templateCode === 'SSO_STANDARD' && (
+                <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">อัตราเงินสมทบตามช่วงเวลา</span>
+                    {canEditTaxSso && (
+                      <button
+                        type="button"
+                        onClick={() => onEditSsoRate?.(null)}
+                        className="text-[11px] font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        + เพิ่มอัตราใหม่ (มีผลวันที่…)
+                      </button>
+                    )}
+                  </div>
+                  {sortedSso.length === 0 ? (
+                    <p className="text-[11px] text-slate-400">ยังไม่มีอัตราในระบบ — ระบบใช้ค่ามาตรฐาน 5% ฐาน 1,650–15,000 บาท</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {sortedSso.map((r) => {
+                        const isCurrent = currentSso?.id === r.id;
+                        const isFuture = r.effectiveFrom > todayIso;
+                        return (
+                          <div
+                            key={r.id}
+                            className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-[11px] ${
+                              isCurrent
+                                ? 'border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-800'
+                                : 'border-slate-100 dark:border-slate-700'
+                            }`}
+                          >
+                            <span
+                              className={`shrink-0 px-1.5 py-0.5 rounded font-semibold ${
+                                isCurrent
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : isFuture
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              {isCurrent ? 'ใช้อยู่' : isFuture ? 'รอมีผล' : r.status === 'ACTIVE' ? 'ช่วงก่อน' : 'ปิดใช้'}
+                            </span>
+                            <span className="flex-1 text-slate-700 dark:text-slate-300">
+                              มีผล {r.effectiveFrom} · ลูกจ้าง {pctOf(r.employeeContributionPercent)}% / นายจ้าง {pctOf(r.employerContributionPercent)}% · ฐาน{' '}
+                              {money(r.minWageBaseAmount)}–{money(r.maxWageBaseAmount)} บาท
+                            </span>
+                            {canEditTaxSso && (
+                              <button
+                                type="button"
+                                onClick={() => onEditSsoRate?.(r)}
+                                className="shrink-0 font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
+                              >
+                                แก้ไข
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <p className="text-[10px] text-slate-400">
+                    งวดเงินเดือนใช้อัตราที่มีผลในช่วงของงวดนั้น (ถ้ามีหลายอัตราใช้อันที่มีผลล่าสุด) — เพิ่มอัตราใหม่เมื่อกฎหมายเปลี่ยน เพื่อไม่ให้งวดเก่าเปลี่ยนตาม
+                  </p>
+                </div>
+              )}
+
+              {/* ภาษี: ตารางอัตราขั้นบันได (แทนแท็บภาษี & ประกันสังคม) */}
+              {templateCode === 'TAX_STANDARD' && (
+                <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">อัตราภาษีขั้นบันได (เงินได้สุทธิต่อปี)</span>
+                    {canEditTaxSso && (
+                      <button
+                        type="button"
+                        onClick={() => onEditTaxBrackets?.()}
+                        className="text-[11px] font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
+                      >
+                        แก้ไขขั้นบันได
+                      </button>
+                    )}
+                  </div>
+                  {sortedBrackets.length === 0 ? (
+                    <p className="text-[11px] text-slate-400">ยังไม่มีขั้นบันไดในระบบ</p>
+                  ) : (
+                    <div className="rounded-lg border border-slate-100 dark:border-slate-700 overflow-hidden">
+                      <table className="w-full text-[11px]">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                          {sortedBrackets.map((b) => (
+                            <tr key={b.id}>
+                              <td className="px-2.5 py-1.5 text-slate-700 dark:text-slate-300">
+                                {money(b.incomeFrom)} – {b.incomeTo != null ? money(b.incomeTo) : 'ขึ้นไป'}
+                              </td>
+                              <td className="px-2.5 py-1.5 text-right font-semibold text-slate-900 dark:text-slate-100">
+                                {pctOf(b.taxRate).toLocaleString(undefined, { maximumFractionDigits: 2 })}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

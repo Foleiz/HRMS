@@ -1416,7 +1416,16 @@ export default function PayrollPage() {
   };
 
   // Handler: Export Tax (ภ.ง.ด.1) or SSO (สปส. 1-10) CSV
-  const handleExportTaxSsoCsv = (type: 'PND1' | 'SSO') => {
+  const handleExportTaxSsoCsv = async (type: 'PND1' | 'SSO') => {
+    // ดึงสรุปภาษี/ประกันสังคมของงวดที่เลือก (ย้ายปุ่มมาไว้หน้าประมวลเงินเดือน)
+    let taxSsoSummary: TaxSsoSummary | null = null;
+    if (selectedPeriod) {
+      try {
+        taxSsoSummary = await salaryService.getTaxSsoSummary(selectedPeriod.id);
+      } catch {
+        taxSsoSummary = null;
+      }
+    }
     if (!taxSsoSummary || !taxSsoSummary.items || taxSsoSummary.items.length === 0) {
       showToast('ไม่มีข้อมูลสรุปภาษี/ประกันสังคมในรอบนี้');
       return;
@@ -2235,7 +2244,6 @@ export default function PayrollPage() {
     ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
     ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
     ...(canViewProcess ? [{ id: 'process' as ActiveTab, label: 'ประมวลเงินเดือน' }] : []),
-    ...(canViewTaxSso ? [{ id: 'tax-sso' as ActiveTab, label: 'ภาษี & ประกันสังคม' }] : []),
   ];
 
   // Auto switch tab if current active tab is not in visible permitted tabs
@@ -4342,7 +4350,30 @@ export default function PayrollPage() {
                   )}
                 </div>
 
-                {/* Right: Period Management CRUD Buttons (สร้างรอบ / ลบรอบ) */}
+                {/* Right: ส่งออกรายงานภาษี/ประกันสังคม + สร้าง/ลบรอบ */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                {canViewTaxSso && selectedPeriod && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleExportTaxSsoCsv('PND1')}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                      title="ส่งออกข้อมูลภาษีหัก ณ ที่จ่ายของงวดนี้ (ภ.ง.ด.1)"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
+                      <span>ภ.ง.ด.1</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleExportTaxSsoCsv('SSO')}
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                      title="ส่งออกข้อมูลเงินสมทบประกันสังคมของงวดนี้ (สปส. 1-10)"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
+                      <span>สปส. 1-10</span>
+                    </button>
+                  </>
+                )}
                 {processSubTab === 'HR' && canAccessHrView && (
                   <div className="flex items-center gap-2 shrink-0">
                     <button
@@ -4366,6 +4397,7 @@ export default function PayrollPage() {
                     )}
                   </div>
                 )}
+                </div>
               </div>
 
               {/* ── TIER 2: Period Info Badges (Left) & Workflow Actions (Right) ── */}
@@ -6214,177 +6246,6 @@ export default function PayrollPage() {
             </div>
           )}
 
-      {/* === TAB 7: ภาษี & ประกันสังคม (Tax & SSO Tab) === */}
-      {activeTab === 'tax-sso' && (
-        <div className="space-y-4">
-          {/* Card 2: Section 1: Tax Brackets */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
-            <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Scale className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                <span>ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                อัตราภาษีเงินได้สุทธิสะสมต่อปีตามประมวลรัษฎากรสำหรับคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                  type="button"
-                  onClick={() => handleExportTaxSsoCsv('PND1')}
-                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>ส่งออก ภ.ง.ด.1 (CSV)</span>
-                </button>
-
-                {canEditTax ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsTaxModalOpen(true)}
-                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>แก้ไขอัตราภาษี</span>
-                  </button>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                    <Lock className="w-3.5 h-3.5" />
-                    สิทธิ์ดูอย่างเดียว
-                  </span>
-                )}</div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-            <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
-                  <th className="py-3.5 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
-                  <th className="py-3.5 px-4 text-right">ถึงเงินได้สุทธิ</th>
-                  <th className="py-3.5 px-4 text-center">อัตราภาษี (%)</th>
-                  <th className="py-3.5 px-4 text-right">ภาษีสะสมขั้นก่อนหน้า</th>
-                  <th className="py-3.5 px-4 text-center">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
-                {taxBrackets.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{t.bracketName}</td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                      ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                      {t.incomeTo != null
-                        ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                        : 'ขึ้นไป (ไม่จำกัด)'}
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-blue-700 dark:text-blue-400">
-                      {(t.taxRate * 100).toFixed(0)}%
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">
-                      ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400">
-                        {t.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Card 3: Section 2: Social Security Rates */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
-            <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-purple-700 dark:text-purple-400" />
-                <span>เกณฑ์และอัตราเงินสมทบกองทุนประกันสังคม (Social Security Fund)</span>
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                อัตราเงินสมทบฝ่ายลูกจ้างและนายจ้าง พร้อมฐานเพดานค่าจ้างขั้นต่ำและสูงสุดตามกฎหมาย
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                  type="button"
-                  onClick={() => handleExportTaxSsoCsv('SSO')}
-                  className="h-9 inline-flex items-center gap-2 px-3.5 bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>ส่งออก สปส. 1-10 (CSV)</span>
-                </button>
-
-                {canEditSso ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSsoRate(ssoRates.find(s => s.status === 'ACTIVE') || ssoRates[0] || null);
-                      setIsSsoModalOpen(true);
-                    }}
-                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-purple-200 dark:border-purple-800 text-xs font-semibold text-purple-700 dark:text-purple-300 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/70 transition-all shadow-2xs cursor-pointer"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>แก้ไขอัตราประกันสังคม</span>
-                  </button>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
-                    <Lock className="w-3.5 h-3.5" />
-                    สิทธิ์ดูอย่างเดียว
-                  </span>
-                )}</div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-            <table className="table-standard text-xs w-full min-w-[800px] text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  <th className="py-3.5 px-4">ชื่อเกณฑ์</th>
-                  <th className="py-3.5 px-4 text-center">สมทบฝ่ายผู้ประกันตน (%)</th>
-                  <th className="py-3.5 px-4 text-center">สมทบฝ่ายนายจ้าง (%)</th>
-                  <th className="py-3.5 px-4 text-right">ฐานค่าจ้างต่ำสุด</th>
-                  <th className="py-3.5 px-4 text-right">เพดานค่าจ้างสูงสุด</th>
-                  <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
-                  <th className="py-3.5 px-6 text-right">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
-                {ssoRates.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{s.rateName}</td>
-                    <td className="py-3 px-4 text-center font-bold text-purple-700 dark:text-purple-400">
-                      {(s.employeeContributionPercent * 100).toFixed(1)}%
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-purple-700 dark:text-purple-400">
-                      {(s.employerContributionPercent * 100).toFixed(1)}%
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                      ฿{s.minWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-900 dark:text-slate-100 font-semibold">
-                      ฿{s.maxWageBaseAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
-                      {s.effectiveFrom}
-                    </td>
-                    <td className="py-3 px-6 text-right">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400">
-                        {s.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    )}
 
     {/* Modals */}
       <SalaryStructureModal
@@ -6402,6 +6263,14 @@ export default function PayrollPage() {
         onClose={() => setIsPayrollItemModalOpen(false)}
         item={selectedPayrollItem}
         allItems={payrollItems}
+        taxBrackets={taxBrackets}
+        ssoRates={ssoRates}
+        canEditTaxSso={canEditTax || canEditSso}
+        onEditTaxBrackets={() => setIsTaxModalOpen(true)}
+        onEditSsoRate={(rate) => {
+          setSelectedSsoRate(rate);
+          setIsSsoModalOpen(true);
+        }}
         defaultType={itemsSubTab}
         onSubmit={handleSaveItem}
       />
