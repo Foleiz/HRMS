@@ -11,7 +11,6 @@ import {
   FolderOpen,
   ChevronDown,
   ChevronRight,
-  Eye,
   Paperclip,
 } from 'lucide-react';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
@@ -235,21 +234,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
     }
   };
 
-  // เปิดดูไฟล์ในแท็บใหม่ (รูป/PDF)
-  const handlePreview = async (doc: EmployeeDocument) => {
-    setDownloadingId(doc.id);
-    try {
-      const blob = await employeeDocumentService.download(doc.id);
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank', 'noopener');
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch {
-      toast.error('ไม่สามารถเปิดดูเอกสารได้');
-    } finally {
-      setDownloadingId(null);
-    }
-  };
-
   /** ข้อความใต้วันหมดอายุ: อีก N วัน / หมดอายุแล้ว N วัน */
   const expiryHint = (doc: EmployeeDocument) => {
     if (doc.daysToExpiry == null) return null;
@@ -348,15 +332,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                         <>
                           <button
                             type="button"
-                            title="ดูไฟล์"
-                            onClick={() => handlePreview(doc)}
-                            disabled={downloadingId === doc.id}
-                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
                             title="ดาวน์โหลด"
                             onClick={() => handleDownload(doc)}
                             disabled={downloadingId === doc.id}
@@ -386,7 +361,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                       onClick={() => toggleRow(row.id)}
                       className={`cursor-pointer transition-colors ${
                         isOpen
-                          ? 'bg-amber-100/80 dark:bg-amber-900/30 shadow-[inset_4px_0_0_0_#f59e0b]'
+                          ? 'bg-amber-100/80 dark:bg-amber-900/30'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
@@ -396,9 +371,6 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                           <>
                             <p className="inline-flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-100">
                               <Paperclip className="w-3.5 h-3.5 text-slate-500" /> {row.docs.length} ไฟล์
-                            </p>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px]" title={row.docs.map((d) => d.fileName).join(' · ')}>
-                              {row.docs.map((d) => d.fileName).join(' · ')}
                             </p>
                           </>
                         ) : (
@@ -454,7 +426,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
 
                     {isOpen && (
                       <tr className="bg-orange-50/70 dark:bg-amber-900/15">
-                        <td colSpan={5} className="px-5 pb-5 pt-3 space-y-3 border-l-4 border-amber-500">
+                        <td colSpan={5} className="px-5 pb-5 pt-3 space-y-3">
                           {/* ไฟล์ปัจจุบัน */}
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-700 dark:text-slate-200">ไฟล์ปัจจุบัน</span>
