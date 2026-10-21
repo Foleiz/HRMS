@@ -299,7 +299,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                       onClick={() => toggleRow(row.id)}
                       className={`cursor-pointer transition-colors ${
                         isOpen
-                          ? 'bg-amber-50 dark:bg-amber-900/20 shadow-[inset_4px_0_0_0_#fbbf24]'
+                          ? 'bg-amber-100/80 dark:bg-amber-900/30 shadow-[inset_4px_0_0_0_#f59e0b]'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
@@ -336,6 +336,10 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                         {latest?.expiryDate ? (
                           <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
                             {formatDate(latest.expiryDate)}
+                          </span>
+                        ) : latest ? (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
+                            ไม่มีวันหมดอายุ
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -377,8 +381,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                     </tr>
 
                     {isOpen && (
-                      <tr className="bg-amber-50/40 dark:bg-amber-900/10">
-                        <td colSpan={6} className="px-4 pb-4 pt-2 space-y-3 border-l-4 border-amber-400">
+                      <tr className="bg-orange-50/70 dark:bg-amber-900/15">
+                        <td colSpan={6} className="px-4 pb-4 pt-2 space-y-3 border-l-4 border-amber-500">
                           {/* ไฟล์ก่อนหน้าในหัวข้อนี้ (ไฟล์ล่าสุดแสดงในแถวแล้ว) */}
                           {row.docs.length > 1 && (
                             <div className="space-y-1.5">
