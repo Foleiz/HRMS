@@ -1416,52 +1416,6 @@ export default function PayrollPage() {
   };
 
   // Handler: Export Tax (ภ.ง.ด.1) or SSO (สปส. 1-10) CSV
-  const handleExportTaxSsoCsv = async (type: 'PND1' | 'SSO') => {
-    // ดึงสรุปภาษี/ประกันสังคมของงวดที่เลือก (ย้ายปุ่มมาไว้หน้าประมวลเงินเดือน)
-    let taxSsoSummary: TaxSsoSummary | null = null;
-    if (selectedPeriod) {
-      try {
-        taxSsoSummary = await salaryService.getTaxSsoSummary(selectedPeriod.id);
-      } catch {
-        taxSsoSummary = null;
-      }
-    }
-    if (!taxSsoSummary || !taxSsoSummary.items || taxSsoSummary.items.length === 0) {
-      showToast('ไม่มีข้อมูลสรุปภาษี/ประกันสังคมในรอบนี้');
-      return;
-    }
-
-    let csvContent = '';
-    if (type === 'PND1') {
-      csvContent = 'ลำดับ,รหัสพนักงาน,ชื่อพนักงาน,เลขประจำตัวประชาชน,รายได้รวม (บาท),ภาษีหัก ณ ที่จ่าย (บาท)\n';
-      taxSsoSummary.items.forEach((item, idx) => {
-        const gross = item.totalGrossIncome ?? item.grossIncome ?? 0;
-        const tax = item.withholdingTax ?? item.pnd1Tax ?? 0;
-        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${gross},${tax}\n`;
-      });
-    } else {
-      csvContent = 'ลำดับ,รหัสพนักงาน,ชื่อพนักงาน,เลขประจำตัวประชาชน,ฐานค่าจ้าง,สมทบฝ่ายผู้ประกันตน (5%),สมทบฝ่ายนายจ้าง (5%),รวมเงินสมทบ\n';
-      taxSsoSummary.items.forEach((item, idx) => {
-        const gross = item.totalGrossIncome ?? item.grossIncome ?? 0;
-        const ssoEmp = item.ssoEmployeeContribution ?? item.ssoEmployee ?? 0;
-        const ssoComp = item.ssoEmployerContribution ?? item.ssoEmployer ?? 0;
-        const totalSso = ssoEmp + ssoComp;
-        csvContent += `${idx + 1},"${item.employeeCode}","${item.employeeName}","${item.citizenId || ''}",${gross},${ssoEmp},${ssoComp},${totalSso}\n`;
-      });
-    }
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = type === 'PND1' ? `PND1_Tax_Report_P${taxSsoSummary.periodId}.csv` : `SSO_1_10_Report_P${taxSsoSummary.periodId}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-    showToast(`ส่งออกไฟล์รายงาน ${type === 'PND1' ? 'ภ.ง.ด.1' : 'สปส. 1-10'} สำเร็จเรียบร้อย`);
-  };
-
   // Structure handlers
   const handleOpenCreateStructure = () => {
     setSelectedStructure(null);
@@ -4350,30 +4304,8 @@ export default function PayrollPage() {
                   )}
                 </div>
 
-                {/* Right: ส่งออกรายงานภาษี/ประกันสังคม + สร้าง/ลบรอบ */}
+                {/* Right: Period Management CRUD Buttons (สร้างรอบ / ลบรอบ) */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
-                {canViewTaxSso && selectedPeriod && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => handleExportTaxSsoCsv('PND1')}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                      title="ส่งออกข้อมูลภาษีหัก ณ ที่จ่ายของงวดนี้ (ภ.ง.ด.1)"
-                    >
-                      <FileSpreadsheet className="w-3.5 h-3.5 text-blue-600" />
-                      <span>ภ.ง.ด.1</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleExportTaxSsoCsv('SSO')}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                      title="ส่งออกข้อมูลเงินสมทบประกันสังคมของงวดนี้ (สปส. 1-10)"
-                    >
-                      <FileSpreadsheet className="w-3.5 h-3.5 text-purple-600" />
-                      <span>สปส. 1-10</span>
-                    </button>
-                  </>
-                )}
                 {processSubTab === 'HR' && canAccessHrView && (
                   <div className="flex items-center gap-2 shrink-0">
                     <button
