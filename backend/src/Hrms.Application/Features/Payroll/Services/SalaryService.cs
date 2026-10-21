@@ -1985,6 +1985,7 @@ public class SalaryService : ISalaryService
                 .ToListAsync(cancellationToken))
             .Where(i => !systemItemIds.Contains(i.Id) && IsAutoCalculatedItem(i))
             .ToList();
+        var autoItemIds = autoItems.Select(i => i.Id).ToHashSet();
 
         // ค่าตัวแปรของสูตร (ตั้งที่หน้ารายการรายได้/รายหัก) — ไม่ตั้ง = ค่ามาตรฐานเดิม
         var taxConfig = ParseTaxConfig(systemItems["DED_TAX"].FormulaValue);
@@ -2292,15 +2293,9 @@ public class SalaryService : ISalaryService
             }
 
             // ===== 3. รายการรายได้/รายหักที่ตั้งค่าไว้ (FIXED / FORMULA) =====
-            // ถ้าพนักงานได้รับสวัสดิการ ALLOWANCE ที่ผูกรายการนี้ไว้ ยอดมาจากสวัสดิการ (ข้อ 3.1) ไม่คิดซ้ำ
-            var empBenefitLinkedItemIds = (curAssign?.EmployeeType?.EmployeeTypeBenefits ?? Enumerable.Empty<EmployeeTypeBenefit>())
-                .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null
-                    && etb.BenefitItem.Category == "ALLOWANCE" && etb.BenefitItem.PayrollItemId != null)
-                .Select(etb => etb.BenefitItem!.PayrollItemId!.Value)
-                .ToHashSet();
+            // รายการหนึ่งมีที่มาทางเดียว: รายการที่เป็นสูตร/ยอดคงที่ คิดตามสูตรเสมอ (สวัสดิการที่ผูกรายการนี้จะไม่จ่ายซ้ำ)
             foreach (var item in autoItems)
             {
-                if (empBenefitLinkedItemIds.Contains(item.Id)) continue;
                 prevDiligenceStreak.TryGetValue((item.Id, emp.Id), out var prevStreak);
                 var line = CalculateConfiguredItem(item, baseSalary, dailyRate, hourlyRate, empAttendance, periodLeaveDays, prevStreak);
                 if (line != null) lines.Add(line);
@@ -2310,7 +2305,10 @@ public class SalaryService : ISalaryService
             if (curAssign?.EmployeeType?.EmployeeTypeBenefits != null)
             {
                 var allowanceBenefits = curAssign.EmployeeType.EmployeeTypeBenefits
-                    .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null && etb.BenefitItem.Category == "ALLOWANCE")
+                    .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null && etb.BenefitItem.Category == "ALLOWANCE"
+                        && etb.BenefitItem.Status == "ACTIVE"
+                        // ผูกกับรายการที่เป็นสูตร → ยอดมาจากสูตรอย่างเดียว ไม่จ่ายจากสวัสดิการซ้ำ
+                        && !(etb.BenefitItem.PayrollItemId.HasValue && autoItemIds.Contains(etb.BenefitItem.PayrollItemId.Value)))
                     .ToList();
 
                 foreach (var b in allowanceBenefits)

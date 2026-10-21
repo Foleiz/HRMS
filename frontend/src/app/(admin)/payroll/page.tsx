@@ -6401,6 +6401,7 @@ export default function PayrollPage() {
         isOpen={isPayrollItemModalOpen}
         onClose={() => setIsPayrollItemModalOpen(false)}
         item={selectedPayrollItem}
+        allItems={payrollItems}
         defaultType={itemsSubTab}
         onSubmit={handleSaveItem}
       />

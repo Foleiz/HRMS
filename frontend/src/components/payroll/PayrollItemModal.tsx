@@ -19,6 +19,8 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   item: PayrollItem | null;
+  /** รายการทั้งหมด — ใช้สลับไปแก้รายการของระบบเมื่อเลือกสูตรของระบบ */
+  allItems?: PayrollItem[];
   defaultType: 'EARNING' | 'DEDUCTION';
   onSubmit: (payload: Partial<PayrollItem>, id?: number) => Promise<void>;
 }
@@ -204,13 +206,26 @@ export const LEGACY_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
   },
 ];
 
+/** สูตรของระบบ → รายการของระบบที่ใช้สูตรนั้น (มีได้รายการเดียว — เลือกแล้วสลับไปแก้รายการนั้น) */
+const SYSTEM_TEMPLATE_ITEM: Record<string, string> = {
+  SSO_STANDARD: 'DED_SSO',
+  TAX_STANDARD: 'DED_TAX',
+  OVERTIME: 'INC_OT',
+  UNPAID_LEAVE: 'DED_UNPAID_LEAVE',
+};
+
 export const PayrollItemModal: React.FC<Props> = ({
   isOpen,
   onClose,
-  item,
+  item: itemProp,
+  allItems = [],
   defaultType,
   onSubmit,
 }) => {
+  // เลือกสูตรของระบบ → สลับไปแก้รายการของระบบนั้นในหน้าต่างเดิม (ไม่สร้างรายการซ้ำ)
+  const [redirect, setRedirect] = useState<{ base: PayrollItem | null; target: PayrollItem } | null>(null);
+  const item = redirect && redirect.base === itemProp && isOpen ? redirect.target : itemProp;
+  const isRedirected = item !== itemProp;
   const [itemCode, setItemCode] = useState('');
   const [itemName, setItemName] = useState('');
   const [description, setDescription] = useState('');
@@ -307,12 +322,21 @@ export const PayrollItemModal: React.FC<Props> = ({
   const legacyTemplate = LEGACY_FORMULA_TEMPLATES.find((t) => t.code === templateCode);
   /** รายการของระบบ: เปลี่ยนสูตรไม่ได้ */
   const isSystemFormula = !!systemTemplate;
-  const availableTemplates = [
+  const typeLabel = (c: string) => (c === 'EARNING' ? 'รายได้' : 'รายหัก');
+  const systemOptions = SYSTEM_FORMULA_TEMPLATES.filter((t) => SYSTEM_TEMPLATE_ITEM[t.code] && t.code !== templateCode).map((t) => ({
+    ...t,
+    name: `${t.name} — รายการของระบบ (แก้ค่าที่นี่ได้)`,
+  }));
+  const availableTemplatesAll = [
     ...(systemTemplate ? [{ ...systemTemplate, name: `${systemTemplate.name} (รายการของระบบ)` }] : []),
-    ...FORMULA_TEMPLATES.filter((tpl) => tpl.category === itemType || tpl.category === 'BOTH'),
+    ...FORMULA_TEMPLATES.map((tpl) =>
+      tpl.category === itemType || tpl.category === 'BOTH' ? tpl : { ...tpl, name: `${tpl.name} (รายการ${typeLabel(tpl.category)})` },
+    ),
+    ...systemOptions,
     // รายการเดิมที่ยังใช้สูตรที่เลิกใช้: แสดงไว้ให้รู้ว่าตั้งอะไรอยู่ (ระบบไม่คำนวณให้)
     ...(legacyTemplate ? [{ ...legacyTemplate, name: `${legacyTemplate.name} (เลิกใช้ — ระบบไม่คำนวณ)` }] : []),
   ];
+  const availableTemplates = availableTemplatesAll;
 
   const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === templateCode) ?? systemTemplate ?? legacyTemplate;
   const hasParams = !isAutoPullModuleItem && PARAM_TEMPLATES.includes(templateCode);
@@ -337,6 +361,32 @@ export const PayrollItemModal: React.FC<Props> = ({
   };
 
   const handleTemplateChange = (newTplCode: string) => {
+    // สูตรของระบบ: สลับไปแก้รายการของระบบที่ใช้สูตรนั้น
+    const sysCode = SYSTEM_TEMPLATE_ITEM[newTplCode];
+    if (sysCode) {
+      const target = allItems.find((i) => i.itemCode === sysCode);
+      if (!target) {
+        setError('ไม่พบรายการของระบบที่ใช้สูตรนี้');
+        return;
+      }
+      if (target.id !== item?.id) {
+        setError(null);
+        setRedirect({ base: itemProp, target });
+      }
+      return;
+    }
+    if (isSystemFormula) {
+      setError('รายการของระบบเปลี่ยนเป็นสูตรอื่นไม่ได้');
+      return;
+    }
+    const picked = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
+    if (picked && picked.category !== 'BOTH' && picked.category !== itemType) {
+      if (item) {
+        setError(`สูตร "${picked.name}" ใช้กับรายการ${typeLabel(picked.category)} — เปลี่ยนประเภทของรายการที่มีอยู่แล้วไม่ได้`);
+        return;
+      }
+      setItemType(picked.category);
+    }
     if (isAutoPullModuleItem) return;
     setFormulaTemplate(newTplCode);
     const tplObj = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
@@ -440,10 +490,20 @@ export const PayrollItemModal: React.FC<Props> = ({
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {item
+            {isRedirected
+              ? `แก้ไขรายการของระบบ: ${item?.itemName ?? ''}`
+              : item
               ? `แก้ไข${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
               : `เพิ่ม${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`}
           </h3>
+          {isRedirected && (
+            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+              สูตรนี้ใช้ได้กับรายการของระบบเท่านั้น — แก้ค่าแล้วกดบันทึกจะอัปเดตรายการนี้ (ไม่สร้างรายการใหม่){' '}
+              <button type="button" onClick={() => setRedirect(null)} className="font-semibold text-[#0B2046] dark:text-blue-300 underline cursor-pointer">
+                กลับ
+              </button>
+            </p>
+          )}
           <button
             onClick={onClose}
             type="button"
@@ -575,7 +635,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                 <CustomSelect
                   value={formulaTemplate}
                   onChange={(e) => handleTemplateChange(e.target.value)}
-                  disabled={isSystemFormula}
+                  disabled={isAutoPullModuleItem}
                   className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 dark:text-slate-100 font-semibold"
                 >
                   {availableTemplates.map((tpl) => (
