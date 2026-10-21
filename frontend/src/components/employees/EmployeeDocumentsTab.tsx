@@ -9,12 +9,14 @@ import {
   UploadCloud,
   AlertTriangle,
   FolderOpen,
-  CheckCircle2,
   ChevronDown,
+  ChevronRight,
+  Eye,
+  Paperclip,
 } from 'lucide-react';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
 import { masterDataService } from '@/services/masterDataService';
-import { EmployeeDocument, DocumentExpiryStatus } from '@/types/employeeDocument';
+import { EmployeeDocument } from '@/types/employeeDocument';
 import { DocumentTypeItem } from '@/types/master';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -22,6 +24,7 @@ import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+const MAX_FILES_PER_UPLOAD = 5;
 
 const formatDate = (value?: string | null) => {
   if (!value) return '-';
@@ -35,13 +38,6 @@ const formatSize = (bytes?: number | null) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-};
-
-const EXPIRY_BADGE: Record<DocumentExpiryStatus, { label: string; className: string }> = {
-  VALID: { label: 'ใช้งานได้', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  EXPIRING_SOON: { label: 'ใกล้หมดอายุ', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  EXPIRED: { label: 'หมดอายุแล้ว', className: 'bg-rose-50 text-rose-700 border-rose-200' },
-  NO_EXPIRY: { label: 'ไม่มีวันหมดอายุ', className: 'bg-slate-50 text-slate-500 dark:text-slate-400 border-slate-200' },
 };
 
 /** ข้อความ error จาก API (ApiResponse.message) */
@@ -89,7 +85,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const [expandedTypeId, setExpandedTypeId] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const typeId = expandedTypeId ?? '';
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [expiryDate, setExpiryDate] = useState('');
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -156,7 +153,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const selectedType = docTypes.find((t) => t.id === typeId);
 
   const resetUploadForm = () => {
-    setFile(null);
+    setFiles([]);
     setExpiryDate('');
   };
 
@@ -169,42 +166,49 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
 
   const toggleRow = (id: number) => {
     resetUploadForm();
+    setShowHistory(false);
     setExpandedTypeId((cur) => (cur === id ? null : id));
   };
 
-  const acceptFile = (f: File | null) => {
-    if (!f) return;
-    if (f.size > MAX_FILE_BYTES) {
-      toast.warning('ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
-      return;
-    }
-    setFile(f);
+  // เลือกได้หลายไฟล์ (เช่น หน้า-หลังบัตร) — ไฟล์ใหม่จะเพิ่มต่อจากไฟล์เดิมในแฟ้ม
+  const acceptFiles = (list: FileList | File[] | null) => {
+    const picked = Array.from(list ?? []);
+    if (picked.length === 0) return;
+    const tooBig = picked.filter((f) => f.size > MAX_FILE_BYTES);
+    if (tooBig.length > 0) toast.warning(`ไฟล์ต้องมีขนาดไม่เกิน 5 MB (ข้าม ${tooBig.length} ไฟล์)`);
+    const ok = picked.filter((f) => f.size <= MAX_FILE_BYTES);
+    setFiles((prev) => {
+      const merged = [...prev, ...ok];
+      if (merged.length > MAX_FILES_PER_UPLOAD) toast.warning(`อัปโหลดได้สูงสุด ${MAX_FILES_PER_UPLOAD} ไฟล์ต่อครั้ง`);
+      return merged.slice(0, MAX_FILES_PER_UPLOAD);
+    });
   };
 
   const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
+    acceptFiles(e.target.files);
     e.target.value = '';
-    acceptFile(f);
   };
 
   const handleSave = async () => {
     if (!typeId) return toast.warning('กรุณาเลือกประเภทเอกสาร');
-    if (!file) return toast.warning('กรุณาแนบไฟล์เอกสาร');
+    if (files.length === 0) return toast.warning('กรุณาแนบไฟล์เอกสาร');
     const hasValidity = (selectedType?.validityMonths ?? 0) > 0;
     // มีอายุเอกสารในข้อมูลหลัก → ระบบคำนวณวันหมดอายุให้เอง / ต้องมีวันหมดอายุแต่ไม่ได้กำหนดอายุ → ต้องกรอกวันหมดอายุ
     if (selectedType?.isExpiryRequired && !hasValidity && !expiryDate) return toast.warning('เอกสารประเภทนี้ต้องระบุวันหมดอายุ');
 
     setSaving(true);
     try {
-      await employeeDocumentService.upload(employeeId, {
-        documentTypeId: Number(typeId),
-        fileName: file.name,
-        fileData: await readAsDataUrl(file),
-        // มีอายุเอกสาร → ใช้วันที่อัปโหลดเป็นวันที่ออก (หลังบ้านคำนวณวันหมดอายุ)
-        issuedDate: hasValidity ? todayIso() : undefined,
-        expiryDate: !hasValidity && expiryDate ? expiryDate : undefined,
-      });
-      toast.success('อัปโหลดเอกสารเข้าแฟ้มเรียบร้อย');
+      for (const f of files) {
+        await employeeDocumentService.upload(employeeId, {
+          documentTypeId: Number(typeId),
+          fileName: f.name,
+          fileData: await readAsDataUrl(f),
+          // มีอายุเอกสาร → ใช้วันที่อัปโหลดเป็นวันที่ออก (หลังบ้านคำนวณวันหมดอายุ)
+          issuedDate: hasValidity ? todayIso() : undefined,
+          expiryDate: !hasValidity && expiryDate ? expiryDate : undefined,
+        });
+      }
+      toast.success(`อัปโหลดเอกสารเข้าแฟ้มเรียบร้อย (${files.length} ไฟล์)`);
       resetUploadForm();
       reload();
     } catch (err: unknown) {
@@ -229,6 +233,29 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
     } finally {
       setDownloadingId(null);
     }
+  };
+
+  // เปิดดูไฟล์ในแท็บใหม่ (รูป/PDF)
+  const handlePreview = async (doc: EmployeeDocument) => {
+    setDownloadingId(doc.id);
+    try {
+      const blob = await employeeDocumentService.download(doc.id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch {
+      toast.error('ไม่สามารถเปิดดูเอกสารได้');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  /** ข้อความใต้วันหมดอายุ: อีก N วัน / หมดอายุแล้ว N วัน */
+  const expiryHint = (doc: EmployeeDocument) => {
+    if (doc.daysToExpiry == null) return null;
+    if (doc.daysToExpiry < 0) return { text: `หมดอายุแล้ว ${Math.abs(doc.daysToExpiry)} วัน`, cls: 'text-rose-600' };
+    if (doc.daysToExpiry === 0) return { text: 'หมดอายุวันนี้', cls: 'text-rose-600' };
+    return { text: `อีก ${doc.daysToExpiry} วัน`, cls: doc.expiryStatus === 'EXPIRING_SOON' ? 'text-amber-600' : 'text-slate-700 dark:text-slate-300' };
   };
 
   const handleDelete = async () => {
@@ -267,7 +294,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         </div>
       </div>
 
-      {/* รายการหัวข้อเอกสาร — กดหัวข้อเพื่อเปิดช่องอัปโหลด */}
+      {/* รายการหัวข้อเอกสาร — กดหัวข้อเพื่อดูไฟล์และอัปโหลด */}
       {loading && docTypes.length === 0 ? (
         <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดเอกสาร...
@@ -278,21 +305,81 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         </div>
       ) : (
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
-          <table className="table-standard text-xs w-full min-w-[780px]">
+          <table className="table-standard text-xs w-full min-w-[760px]">
             <thead className="bg-slate-50 text-slate-500 text-[11px]">
               <tr className="whitespace-nowrap">
-                <th className="w-20 text-left font-semibold px-3 py-2.5">ลำดับ</th>
-                <th className="text-left font-semibold px-4 py-2.5">เอกสาร</th>
+                <th className="text-left font-semibold px-5 py-2.5">เอกสาร</th>
                 <th className="text-left font-semibold px-4 py-2.5">ไฟล์</th>
-                <th className="text-left font-semibold px-4 py-2.5">วันที่อัปโหลด</th>
-                <th className="text-left font-semibold px-4 py-2.5">วันหมดอายุ</th>
-                <th className="text-right font-semibold px-4 py-2.5">จัดการ</th>
+                <th className="text-left font-semibold px-4 py-2.5">อัปโหลดล่าสุด</th>
+                <th className="text-left font-semibold px-4 py-2.5">หมดอายุ</th>
+                <th className="text-right font-semibold px-5 py-2.5">จัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-              {rows.map((row, idx) => {
-                const latest = row.docs[0];
+              {rows.map((row) => {
                 const isOpen = expandedTypeId === row.id;
+                // ไฟล์ปัจจุบัน = ยังไม่หมดอายุ / ประวัติไฟล์เดิม = หมดอายุแล้ว
+                const current = row.docs.filter((d) => d.expiryStatus !== 'EXPIRED');
+                const history = row.docs.filter((d) => d.expiryStatus === 'EXPIRED');
+                const latest = row.docs[0];
+                const hint = latest ? expiryHint(latest) : null;
+                const needsExpiryInput = !!row.type?.isExpiryRequired && !((row.type?.validityMonths ?? 0) > 0);
+
+                const renderFileCard = (doc: EmployeeDocument) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-100 dark:border-slate-700 bg-white dark:bg-slate-900"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-slate-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-800 dark:text-slate-100 break-all">
+                        {doc.fileName || '-'} <span className="font-normal text-[11px] text-slate-400">{formatSize(doc.fileSize)}</span>
+                      </p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {doc.issuedDate && <>ออก {formatDate(doc.issuedDate)} · </>}
+                        {doc.expiryDate ? <>หมดอายุ {formatDate(doc.expiryDate)} · </> : <>ไม่มีวันหมดอายุ · </>}
+                        อัปโหลดโดย {sourceLabel(doc) === 'พนักงานอัปโหลดเอง' ? 'พนักงานเอง' : doc.uploadedByName || sourceLabel(doc)} {formatDate(doc.uploadedAt)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {doc.hasFile && (
+                        <>
+                          <button
+                            type="button"
+                            title="ดูไฟล์"
+                            onClick={() => handlePreview(doc)}
+                            disabled={downloadingId === doc.id}
+                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            title="ดาวน์โหลด"
+                            onClick={() => handleDownload(doc)}
+                            disabled={downloadingId === doc.id}
+                            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                          >
+                            {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                          </button>
+                        </>
+                      )}
+                      {(canManage || isOwnUpload(doc)) && (
+                        <button
+                          type="button"
+                          title="ลบ"
+                          onClick={() => setDeleteTarget(doc)}
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+
                 return (
                   <React.Fragment key={row.id}>
                     <tr
@@ -303,76 +390,61 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                          <CheckCircle2 className={`w-5 h-5 ${latest ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`} />
-                          {idx + 1}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">{row.name}</td>
-                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                        {latest ? (
+                      <td className="px-5 py-3.5 font-semibold text-slate-800 dark:text-slate-100">{row.name}</td>
+                      <td className="px-4 py-3.5">
+                        {row.docs.length > 0 ? (
                           <>
-                            <p className="break-all max-w-[200px]">{latest.fileName || '-'}</p>
-                            <p className="text-[10px] text-slate-400">
-                              {formatSize(latest.fileSize)}
-                              {row.docs.length > 1 && ` · มีไฟล์ก่อนหน้า ${row.docs.length - 1} ไฟล์`}
+                            <p className="inline-flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-100">
+                              <Paperclip className="w-3.5 h-3.5 text-slate-500" /> {row.docs.length} ไฟล์
+                            </p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px]" title={row.docs.map((d) => d.fileName).join(' · ')}>
+                              {row.docs.map((d) => d.fileName).join(' · ')}
                             </p>
                           </>
                         ) : (
                           <span className="text-slate-400">ยังไม่ได้อัปโหลด</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
+                      <td className="px-4 py-3.5 whitespace-nowrap">
                         {latest ? (
-                          <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
-                            {formatDate(latest.uploadedAt)}
-                          </span>
+                          <>
+                            <p className="text-slate-800 dark:text-slate-100">{formatDate(latest.uploadedAt)}</p>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400">{sourceLabel(latest)}</p>
+                          </>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {latest?.expiryDate ? (
-                          <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800">
-                            {formatDate(latest.expiryDate)}
-                          </span>
-                        ) : latest ? (
-                          <span className="inline-block px-2.5 py-0.5 rounded-full border text-[11px] font-medium bg-slate-50 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
-                            ไม่มีวันหมดอายุ
-                          </span>
-                        ) : (
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {!latest ? (
                           <span className="text-slate-400">-</span>
+                        ) : latest.expiryDate ? (
+                          <>
+                            <p className="text-slate-800 dark:text-slate-100">{formatDate(latest.expiryDate)}</p>
+                            {hint && <p className={`text-[11px] font-semibold ${hint.cls}`}>{hint.text}</p>}
+                          </>
+                        ) : (
+                          <span className="text-slate-500 dark:text-slate-400">ไม่มีวันหมดอายุ</span>
                         )}
                       </td>
-                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                      <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
                           {latest?.hasFile && (
                             <button
                               type="button"
-                              title="ดาวน์โหลด"
+                              title="ดาวน์โหลดไฟล์ล่าสุด"
                               onClick={() => handleDownload(latest)}
                               disabled={downloadingId === latest.id}
-                              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                              className="p-1.5 rounded-lg text-slate-600 hover:bg-white/70 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
                             >
                               {downloadingId === latest.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             </button>
                           )}
-                          {latest && (canManage || isOwnUpload(latest)) && (
-                            <button
-                              type="button"
-                              title="ลบ"
-                              onClick={() => setDeleteTarget(latest)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
                           <button
                             type="button"
-                            title={isOpen ? 'ปิด' : canUpload ? 'อัปโหลดเอกสาร' : 'ดูไฟล์'}
+                            title={isOpen ? 'ปิด' : 'เปิด'}
                             onClick={() => toggleRow(row.id)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                            className="p-1.5 rounded-lg text-slate-600 hover:bg-white/70 dark:hover:bg-slate-800 cursor-pointer"
                           >
                             <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                           </button>
@@ -382,61 +454,24 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
 
                     {isOpen && (
                       <tr className="bg-orange-50/70 dark:bg-amber-900/15">
-                        <td colSpan={6} className="px-4 pb-4 pt-2 space-y-3 border-l-4 border-amber-500">
-                          {/* ไฟล์ก่อนหน้าในหัวข้อนี้ (ไฟล์ล่าสุดแสดงในแถวแล้ว) */}
-                          {row.docs.length > 1 && (
-                            <div className="space-y-1.5">
-                              <p className="text-[11px] font-semibold text-slate-500">ไฟล์ก่อนหน้า</p>
-                              {row.docs.slice(1).map((doc) => {
-                                const b = EXPIRY_BADGE[doc.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY;
-                                return (
-                                  <div key={doc.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
-                                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
-                                    <div className="flex-1 min-w-[180px]">
-                                      <p className="text-slate-800 dark:text-slate-200 break-all" title={doc.remarks || undefined}>
-                                        {doc.fileName || '-'} <span className="text-[10px] text-slate-400">{formatSize(doc.fileSize)}</span>
-                                      </p>
-                                      <p className="text-[10px] text-slate-400">
-                                        ออก {formatDate(doc.issuedDate)} · หมดอายุ {formatDate(doc.expiryDate)} ·{' '}
-                                        {sourceLabel(doc)}{' '}
-                                        {formatDate(doc.uploadedAt)}
-                                        {doc.uploadedByName ? ` · ${doc.uploadedByName}` : ''}
-                                      </p>
-                                    </div>
-                                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-medium ${b.className}`}>{b.label}</span>
-                                    <div className="flex items-center gap-1">
-                                      {doc.hasFile && (
-                                        <button
-                                          type="button"
-                                          title="ดาวน์โหลด"
-                                          onClick={() => handleDownload(doc)}
-                                          disabled={downloadingId === doc.id}
-                                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
-                                        >
-                                          {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                                        </button>
-                                      )}
-                                      {(canManage || isOwnUpload(doc)) && (
-                                        <button
-                                          type="button"
-                                          title="ลบ"
-                                          onClick={() => setDeleteTarget(doc)}
-                                          className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
-                                        >
-                                          <Trash2 className="w-4 h-4" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                        <td colSpan={5} className="px-5 pb-5 pt-3 space-y-3 border-l-4 border-amber-500">
+                          {/* ไฟล์ปัจจุบัน */}
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">ไฟล์ปัจจุบัน</span>
+                            <span className="px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-[11px] text-slate-600 dark:text-slate-300">
+                              {current.length}
+                            </span>
+                          </div>
+                          {current.length > 0 ? (
+                            <div className="space-y-2">{current.map(renderFileCard)}</div>
+                          ) : (
+                            <p className="text-slate-400">ยังไม่มีไฟล์ที่ใช้งานได้ในหัวข้อนี้</p>
                           )}
 
-                          {/* ช่องอัปโหลด (ลากไฟล์มาวาง หรือกดเลือกไฟล์) */}
+                          {/* ช่องอัปโหลด */}
                           {canUpload && row.type && (
                             <div className="space-y-3">
-                              <input ref={fileRef} type="file" accept={ACCEPT} className="hidden" onChange={handlePickFile} />
+                              <input ref={fileRef} type="file" accept={ACCEPT} multiple className="hidden" onChange={handlePickFile} />
                               <div
                                 role="button"
                                 tabIndex={0}
@@ -450,32 +485,50 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                 onDrop={(e) => {
                                   e.preventDefault();
                                   setDragOver(false);
-                                  acceptFile(e.dataTransfer.files?.[0] ?? null);
+                                  acceptFiles(e.dataTransfer.files);
                                 }}
-                                className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-dashed cursor-pointer transition-colors ${
+                                className={`px-4 py-5 rounded-xl border border-dashed text-center cursor-pointer transition-colors ${
                                   dragOver
-                                    ? 'border-[#0B2046] bg-slate-50 dark:bg-slate-800'
-                                    : 'border-slate-300 dark:border-slate-600 hover:border-[#0B2046] hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                                    ? 'border-amber-500 bg-amber-50 dark:bg-slate-800'
+                                    : 'border-amber-300/80 dark:border-slate-600 hover:border-amber-500 hover:bg-white/60 dark:hover:bg-slate-800/40'
                                 }`}
                               >
-                                <UploadCloud className="w-9 h-9 text-slate-300 dark:text-slate-500" />
-                                {file ? (
-                                  <p className="text-slate-700 dark:text-slate-200 break-all px-4 text-center">
-                                    {file.name} <span className="text-slate-400">({formatSize(file.size)})</span>
-                                    <span className="block text-[10px] text-slate-400 mt-0.5">กดอีกครั้งเพื่อเปลี่ยนไฟล์</span>
-                                  </p>
-                                ) : (
-                                  <p className="text-slate-500 dark:text-slate-400">
-                                    ลากไฟล์วางที่นี่หรือ<span className="font-bold text-slate-700 dark:text-slate-200">เลือกไฟล์</span>
-                                  </p>
-                                )}
+                                <p className="inline-flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                                  <UploadCloud className="w-5 h-5 text-slate-500" />
+                                  ลากไฟล์วางที่นี่ หรือ
+                                  <span className="font-bold underline text-[#0B2046] dark:text-white">เลือกไฟล์</span>
+                                </p>
+                                <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                  เอกสารนี้เก็บได้หลายไฟล์ — ไฟล์ใหม่จะเพิ่มต่อจากไฟล์เดิม
+                                </p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  รองรับ .pdf .jpg .png .doc .docx · ไม่เกิน 5 MB ต่อไฟล์ · สูงสุด {MAX_FILES_PER_UPLOAD} ไฟล์ต่อครั้ง
+                                </p>
                               </div>
-                              <p className="text-[10px] text-slate-400">ประเภทไฟล์ .pdf .jpg .png .doc (ไม่เกิน 5 MB)</p>
 
-                              {file && (
+                              {files.length > 0 && (
                                 <div className="space-y-3">
-                                  {/* ต้องมีวันหมดอายุแต่ข้อมูลหลักไม่ได้กำหนดอายุไว้ → ให้กรอกวันหมดอายุ (แบบอื่นระบบคำนวณเอง) */}
-                                  {row.type.isExpiryRequired && !((row.type.validityMonths ?? 0) > 0) && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {files.map((f, i) => (
+                                      <span
+                                        key={`${f.name}-${i}`}
+                                        className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-slate-700 text-slate-700 dark:text-slate-200"
+                                      >
+                                        <Paperclip className="w-3 h-3 text-slate-400" />
+                                        <span className="break-all">{f.name}</span>
+                                        <span className="text-[10px] text-slate-400">{formatSize(f.size)}</span>
+                                        <button
+                                          type="button"
+                                          title="เอาออก"
+                                          onClick={() => setFiles((prev) => prev.filter((_, idx) => idx !== i))}
+                                          className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-400 hover:text-rose-600"
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                  {needsExpiryInput && (
                                     <div className="max-w-xs">
                                       <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                                         วันหมดอายุ <span className="text-rose-500">*</span>
@@ -487,7 +540,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                     <button
                                       type="button"
                                       onClick={resetUploadForm}
-                                      className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                      className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                                     >
                                       ยกเลิก
                                     </button>
@@ -498,7 +551,7 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] text-white hover:bg-[#153468] cursor-pointer disabled:opacity-60"
                                     >
                                       {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                                      อัปโหลด
+                                      อัปโหลด {files.length > 1 ? `(${files.length} ไฟล์)` : ''}
                                     </button>
                                   </div>
                                 </div>
@@ -506,8 +559,19 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                             </div>
                           )}
 
-                          {!canUpload && row.docs.length <= 1 && (
-                            <p className="py-4 text-center text-slate-400">{row.docs.length === 0 ? 'ยังไม่มีไฟล์ในหัวข้อนี้' : 'ไม่มีไฟล์ก่อนหน้า'}</p>
+                          {/* ประวัติไฟล์เดิม (หมดอายุแล้ว) */}
+                          {history.length > 0 && (
+                            <div className="space-y-2">
+                              <button
+                                type="button"
+                                onClick={() => setShowHistory((v) => !v)}
+                                className="inline-flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200 cursor-pointer"
+                              >
+                                <ChevronRight className={`w-4 h-4 transition-transform ${showHistory ? 'rotate-90' : ''}`} />
+                                ประวัติไฟล์เดิม ({history.length})
+                              </button>
+                              {showHistory && <div className="space-y-2 opacity-80">{history.map(renderFileCard)}</div>}
+                            </div>
                           )}
                         </td>
                       </tr>
