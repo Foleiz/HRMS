@@ -1115,17 +1115,17 @@ export default function CommissionTab() {
       )}
 
       {/* 5. Employee Commission Summary Section */}
-      <div className="space-y-3">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
         {/* Table Search Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+          <div className="relative flex-1 sm:max-w-xs w-full">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
               placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] shadow-2xs"
+              className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
             />
           </div>
 
@@ -1134,20 +1134,20 @@ export default function CommissionTab() {
           </div>
         </div>
 
-        {/* Table with rounded corners */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+        {/* Table inside inner container with rounded corners */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
               <thead className="bg-[#0B2046] text-white font-semibold">
                 <tr className="whitespace-nowrap">
-                  <th className="py-3.5 px-4 font-semibold first:rounded-tl-2xl">รหัสพนักงาน</th>
+                  <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
                   <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
                   <th className="py-3.5 px-4 font-semibold">แผนก / ตำแหน่ง</th>
                   <th className="py-3.5 px-4 text-right font-semibold">ยอดขายรวม (บาท)</th>
                   <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
                   <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
                   <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
-                  <th className="py-3.5 px-4 text-center font-semibold last:rounded-tr-2xl">จัดการ</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">จัดการ</th>
                 </tr>
               </thead>
 
@@ -1254,24 +1254,22 @@ export default function CommissionTab() {
               </tbody>
             </table>
           </div>
-
-          {/* Table Pagination */}
-          <div className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <TablePagination
-              total={filteredRecords.length}
-              page={safeSummaryPage}
-              pageSize={summaryPageSize}
-              onPageChange={setSummaryPage}
-              onPageSizeChange={setSummaryPageSize}
-              pageSizeOptions={[10, 20, 50, 100]}
-            />
-          </div>
         </div>
+
+        {/* Table Pagination */}
+        <TablePagination
+          total={filteredRecords.length}
+          page={safeSummaryPage}
+          pageSize={summaryPageSize}
+          onPageChange={setSummaryPage}
+          onPageSizeChange={setSummaryPageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
       </div>
 
       {/* 6. Batch Import History Section */}
-      <div className="space-y-3 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-h-9">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400 border border-purple-100 dark:border-purple-900 shadow-2xs">
               <History className="h-4 w-4" />
@@ -1299,13 +1297,13 @@ export default function CommissionTab() {
           </button>
         </div>
 
-        {/* Table with rounded corners */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-xs overflow-hidden">
+        {/* Table inside inner container with rounded corners */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
               <thead className="bg-[#0B2046] text-white font-semibold">
                 <tr className="whitespace-nowrap">
-                  <th className="py-3.5 px-4 text-center w-12 first:rounded-tl-2xl">#ID</th>
+                  <th className="py-3.5 px-4 text-center w-12">#ID</th>
                   <th className="py-3.5 px-4">วันที่/เวลานำเข้า</th>
                   <th className="py-3.5 px-4">ชื่อไฟล์</th>
                   <th className="py-3.5 px-4 text-center">รูปแบบที่ตรวจจับ</th>
@@ -1316,7 +1314,7 @@ export default function CommissionTab() {
                   <th className="py-3.5 px-4 text-right">ยอดรวมคอมมิชชั่น</th>
                   <th className="py-3.5 px-4">ผู้นำเข้า</th>
                   <th className="py-3.5 px-4 text-center">สถานะ</th>
-                  <th className="py-3.5 px-4 text-center last:rounded-tr-2xl">จัดการ</th>
+                  <th className="py-3.5 px-4 text-center">จัดการ</th>
                 </tr>
               </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
@@ -1435,22 +1433,20 @@ export default function CommissionTab() {
             </tbody>
           </table>
         </div>
-
-        {/* Batch Pagination */}
-        <div className="p-3 border-t border-slate-200 dark:border-slate-800">
-          <TablePagination
-            total={batchTotalCount}
-            page={batchPage}
-            pageSize={batchPageSize}
-            onPageChange={(p) => loadBatches(p, batchPageSize)}
-            onPageSizeChange={(newSize) => {
-              setBatchPageSize(newSize);
-              loadBatches(1, newSize);
-            }}
-            pageSizeOptions={[10, 20, 50]}
-          />
-        </div>
       </div>
+
+      {/* Batch Pagination */}
+      <TablePagination
+        total={batchTotalCount}
+        page={batchPage}
+        pageSize={batchPageSize}
+        onPageChange={(p) => loadBatches(p, batchPageSize)}
+        onPageSizeChange={(newSize) => {
+          setBatchPageSize(newSize);
+          loadBatches(1, newSize);
+        }}
+        pageSizeOptions={[10, 20, 50]}
+      />
     </div>
 
       {/* 7. Edit Item Modal */}
