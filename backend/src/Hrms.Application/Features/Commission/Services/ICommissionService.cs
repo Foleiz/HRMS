@@ -11,6 +11,7 @@ public interface ICommissionService
     Task<CommissionPreviewResultDto> PreviewCommissionFileAsync(int year, int month, decimal defaultRate, Stream fileStream, string fileName, CancellationToken cancellationToken = default);
     Task<ImportCommissionResultDto> ImportCommissionFileAsync(int year, int month, decimal defaultRate, Stream fileStream, string fileName, long? userId = null, CancellationToken cancellationToken = default);
     Task<PagedCommissionBatchResult> GetCommissionBatchesAsync(int page = 1, int pageSize = 10, CancellationToken cancellationToken = default);
+    Task<List<CommissionBatchEntryDto>> GetBatchRecordsAsync(long batchId, CancellationToken cancellationToken = default);
     Task<RevertCommissionBatchResultDto> RevertCommissionBatchAsync(long batchId, long? userId = null, CancellationToken cancellationToken = default);
     Task<CommissionRecordDto> UpdateCommissionRecordAsync(long id, UpdateCommissionItemRequest request, CancellationToken cancellationToken = default);
     Task<CommissionRecordDto> AddManualCommissionRecordAsync(AddManualCommissionRequest request, CancellationToken cancellationToken = default);

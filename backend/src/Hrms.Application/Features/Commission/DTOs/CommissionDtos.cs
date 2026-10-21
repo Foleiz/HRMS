@@ -163,3 +163,24 @@ public class RevertCommissionBatchResultDto
     public int AffectedEmployeesCount { get; set; }
     public string Message { get; set; } = string.Empty;
 }
+
+public class CommissionBatchEntryDto
+{
+    public long Id { get; set; }
+    public long EmployeeId { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? DepartmentName { get; set; }
+    public string? PositionName { get; set; }
+    public string DateFrom { get; set; } = string.Empty;
+    public string DateTo { get; set; } = string.Empty;
+    public decimal SalesAmount { get; set; }
+    public decimal CommissionRate { get; set; }
+    public decimal CommissionAmount { get; set; }
+    public decimal SpecialAmount { get; set; }
+    public decimal TotalAmount { get; set; }
+    public string? Note { get; set; }
+    public string Status { get; set; } = "ACTIVE";
+    public DateTime CreatedAt { get; set; }
+}
+

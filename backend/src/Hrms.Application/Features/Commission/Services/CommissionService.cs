@@ -424,6 +424,49 @@ public class CommissionService : ICommissionService
     }
 
     /// <summary>
+    /// ดึงรายการค่าคอมมิชชั่นรายคนที่บันทึกไว้ในชุด Batch นี้
+    /// </summary>
+    public async Task<List<CommissionBatchEntryDto>> GetBatchRecordsAsync(long batchId, CancellationToken cancellationToken = default)
+    {
+        var entries = await _context.EmployeeCommissionEntries
+            .Include(e => e.Employee)
+                .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
+                    .ThenInclude(a => a.Department)
+            .Include(e => e.Employee)
+                .ThenInclude(emp => emp!.Assignments.Where(a => a.IsCurrent))
+                    .ThenInclude(a => a.Position)
+            .Where(e => e.BatchId == batchId)
+            .OrderBy(e => e.Employee != null ? e.Employee.EmployeeCode : "")
+            .ThenBy(e => e.DateFrom)
+            .ToListAsync(cancellationToken);
+
+        return entries.Select(e =>
+        {
+            var emp = e.Employee;
+            var currentAssignment = emp?.Assignments?.FirstOrDefault(a => a.IsCurrent);
+            return new CommissionBatchEntryDto
+            {
+                Id = e.Id,
+                EmployeeId = e.EmployeeId,
+                EmployeeCode = emp?.EmployeeCode ?? "-",
+                EmployeeName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : "-",
+                DepartmentName = currentAssignment?.Department?.DepartmentName ?? "-",
+                PositionName = currentAssignment?.Position?.PositionName ?? "-",
+                DateFrom = e.DateFrom.ToString("yyyy-MM-dd"),
+                DateTo = e.DateTo.ToString("yyyy-MM-dd"),
+                SalesAmount = e.SalesAmount,
+                CommissionRate = e.CommissionRate,
+                CommissionAmount = e.CommissionAmount,
+                SpecialAmount = e.SpecialAmount,
+                TotalAmount = e.TotalAmount,
+                Note = e.Note,
+                Status = e.Status,
+                CreatedAt = e.CreatedAt
+            };
+        }).ToList();
+    }
+
+    /// <summary>
     /// ยกเลิกชุดการนำเข้า (Revert Batch) คืนค่ารายการที่เคยถูกแทนที่ และคำนวณยอดรวมรายเดือนใหม่
     /// </summary>
     public async Task<RevertCommissionBatchResultDto> RevertCommissionBatchAsync(long batchId, long? userId = null, CancellationToken cancellationToken = default)

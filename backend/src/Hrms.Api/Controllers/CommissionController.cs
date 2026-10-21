@@ -126,6 +126,20 @@ public class CommissionController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงรายการข้อมูลค่าคอมมิชชั่นที่นำเข้าในชุด Batch (Batch Records)
+    /// </summary>
+    [HttpGet("batches/{batchId:long}/records")]
+    [ProducesResponseType(typeof(ApiResponse<List<CommissionBatchEntryDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<CommissionBatchEntryDto>>>> GetBatchRecords(
+        long batchId,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_MANAGE"), "ดูรายการในชุดนำเข้าค่าคอมมิชชั่น");
+        var result = await _commissionService.GetBatchRecordsAsync(batchId, cancellationToken);
+        return Ok(ApiResponse<List<CommissionBatchEntryDto>>.Ok(result, "ดึงรายการในชุดนำเข้าสำเร็จ"));
+    }
+
+    /// <summary>
     /// ยกเลิกชุดการนำเข้า (Revert Batch) และกู้คืนรายการก่อนหน้า
     /// </summary>
     [HttpPost("batches/{batchId:long}/revert")]

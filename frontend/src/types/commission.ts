@@ -145,3 +145,23 @@ export interface RevertCommissionBatchResult {
   affectedEmployeesCount: number;
   message: string;
 }
+
+export interface CommissionBatchEntry {
+  id: number;
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName?: string | null;
+  positionName?: string | null;
+  dateFrom: string;
+  dateTo: string;
+  salesAmount: number;
+  commissionRate: number;
+  commissionAmount: number;
+  specialAmount: number;
+  totalAmount: number;
+  note?: string | null;
+  status: string;
+  createdAt: string;
+}
+

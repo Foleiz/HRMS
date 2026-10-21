@@ -7,6 +7,7 @@ import {
   ImportCommissionResult,
   PagedCommissionBatches,
   RevertCommissionBatchResult,
+  CommissionBatchEntry,
   UpdateCommissionItemPayload,
   AddManualCommissionPayload,
 } from '@/types/commission';
@@ -81,6 +82,13 @@ export const commissionService = {
   async revertCommissionBatch(batchId: number): Promise<RevertCommissionBatchResult> {
     const res = await apiClient.post<ApiResponse<RevertCommissionBatchResult>>(
       `/salary/commission/batches/${batchId}/revert`
+    );
+    return res.data.data;
+  },
+
+  async getBatchRecords(batchId: number): Promise<CommissionBatchEntry[]> {
+    const res = await apiClient.get<ApiResponse<CommissionBatchEntry[]>>(
+      `/salary/commission/batches/${batchId}/records`
     );
     return res.data.data;
   },

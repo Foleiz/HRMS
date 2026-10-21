@@ -28,6 +28,7 @@ import {
   Sparkles,
   History,
   RotateCcw,
+  Eye,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -38,6 +39,7 @@ import {
   CommissionRecord,
   CommissionPreviewResult,
   CommissionImportBatch,
+  CommissionBatchEntry,
   UpdateCommissionItemPayload,
   AddManualCommissionPayload,
 } from '@/types/commission';
@@ -101,6 +103,14 @@ export default function CommissionTab() {
   const [batchTotalPages, setBatchTotalPages] = useState<number>(1);
   const [batchTotalCount, setBatchTotalCount] = useState<number>(0);
   const [revertingBatchId, setRevertingBatchId] = useState<number | null>(null);
+
+  // Batch Records Popup State
+  const [selectedBatchForDetails, setSelectedBatchForDetails] = useState<CommissionImportBatch | null>(null);
+  const [batchRecords, setBatchRecords] = useState<CommissionBatchEntry[]>([]);
+  const [isLoadingBatchRecords, setIsLoadingBatchRecords] = useState<boolean>(false);
+  const [batchRecordsSearch, setBatchRecordsSearch] = useState<string>('');
+  const [batchRecordsPage, setBatchRecordsPage] = useState<number>(1);
+  const [batchRecordsPageSize, setBatchRecordsPageSize] = useState<number>(10);
 
   // Modals State
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
@@ -242,31 +252,30 @@ export default function CommissionTab() {
     }
   };
 
-  // Trigger Preview Immediately on File Pick
-  const processSelectedFile = async (file: File) => {
+  // Select File Handler (No auto modal popup, show selected file state like Picture 2)
+  const processSelectedFile = (file: File) => {
     const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
     if (!['.xlsx', '.xls', '.csv'].includes(ext)) {
       error('รองรับเฉพาะไฟล์ .xlsx, .xls หรือ .csv เท่านั้น');
       return;
     }
+    setSelectedFile(file);
+  };
 
+  // Open Batch Details Popup Modal
+  const handleOpenBatchDetails = async (batch: CommissionImportBatch) => {
+    setSelectedBatchForDetails(batch);
+    setBatchRecordsSearch('');
+    setBatchRecordsPage(1);
+    setIsLoadingBatchRecords(true);
     try {
-      setIsPreviewLoading(true);
-      setSelectedFile(file);
-      const preview = await commissionService.previewCommissionFile(
-        file,
-        selectedYear,
-        selectedMonth,
-        defaultRate
-      );
-      setPreviewData(preview);
-      setIsPreviewModalOpen(true);
-    } catch (err: any) {
-      error(err?.response?.data?.message || 'ไม่สามารถอ่านโครงสร้างไฟล์เพื่อพรีวิวได้');
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      const records = await commissionService.getBatchRecords(batch.id);
+      setBatchRecords(records || []);
+    } catch {
+      error('ไม่สามารถโหลดรายการข้อมูลในชุดนำเข้าได้');
+      setBatchRecords([]);
     } finally {
-      setIsPreviewLoading(false);
+      setIsLoadingBatchRecords(false);
     }
   };
 
@@ -503,6 +512,23 @@ export default function CommissionTab() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
+
+  // Batch Records Filter & Pagination (for Batch Details Popup Modal)
+  const filteredBatchRecords = batchRecords.filter((r) => {
+    if (!batchRecordsSearch.trim()) return true;
+    const q = batchRecordsSearch.toLowerCase();
+    return (
+      r.employeeCode.toLowerCase().includes(q) ||
+      r.employeeName.toLowerCase().includes(q) ||
+      (r.departmentName && r.departmentName.toLowerCase().includes(q))
+    );
+  });
+  const totalBatchRecordsPages = Math.max(1, Math.ceil(filteredBatchRecords.length / batchRecordsPageSize));
+  const safeBatchRecordsPage = Math.min(Math.max(1, batchRecordsPage), totalBatchRecordsPages);
+  const pagedBatchRecords = filteredBatchRecords.slice(
+    (safeBatchRecordsPage - 1) * batchRecordsPageSize,
+    safeBatchRecordsPage * batchRecordsPageSize
+  );
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -775,7 +801,7 @@ export default function CommissionTab() {
       </div>
 
       {/* 3. Unified File Upload Dropzone (Automatic Mode Detection — No Manual Choice Cards) */}
-      {!isPeriodConfirmed && (records.length === 0 || isUploadCardOpen) && (
+      {!isPeriodConfirmed && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all animate-in fade-in duration-200">
           <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/40">
             <div className="flex items-center gap-3">
@@ -809,6 +835,29 @@ export default function CommissionTab() {
                 )}
                 <span>ดาวน์โหลดเทมเพลต</span>
               </button>
+
+              <button
+                type="button"
+                disabled={!selectedFile || isExecutingImport}
+                onClick={handleConfirmImport}
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
+                  !selectedFile || isExecutingImport
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 active:scale-[0.98] cursor-pointer'
+                }`}
+              >
+                {isExecutingImport ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>กำลังนำเข้าและประมวลผล...</span>
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="w-4 h-4" />
+                    <span>เริ่มประมวลผลนำเข้าไฟล์</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
 
@@ -822,6 +871,8 @@ export default function CommissionTab() {
               className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center ${
                 isDragOver
                   ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 scale-[0.99] ring-4 ring-emerald-500/10'
+                  : selectedFile
+                  ? 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20'
                   : 'border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
               }`}
             >
@@ -833,12 +884,27 @@ export default function CommissionTab() {
                 className="hidden"
               />
 
-              {isPreviewLoading ? (
+              {selectedFile ? (
                 <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-                  <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    กำลังตรวจสอบโครงสร้างไฟล์และคำนวณผลกระทบ...
-                  </p>
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200 shadow-sm dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800">
+                    <FileSpreadsheet className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-slate-900 dark:text-slate-100">{selectedFile.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ขนาด: {formatFileSize(selectedFile.size)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>ยกเลิกเลือกไฟล์</span>
+                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3">
@@ -862,410 +928,6 @@ export default function CommissionTab() {
           </div>
         </div>
       )}
-
-      {/* 4. Preview Modal (ตรวจสอบข้อมูลก่อนยืนยันนำเข้าจริง) */}
-      {isPreviewModalOpen && previewData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 flex items-center justify-center shadow-xs">
-                  <FileSpreadsheet className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      ตรวจสอบข้อมูลก่อนนำเข้า (Preview)
-                    </h3>
-                    {/* Detected Type Badge */}
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                        previewData.detectedType === 'DAY'
-                          ? 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300'
-                          : previewData.detectedType === 'RANGE'
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                      }`}
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      {previewData.detectedTypeLabel}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    ไฟล์: <strong>{previewData.fileName}</strong> | แฮช:{' '}
-                    <span className="font-mono text-[11px]">{previewData.fileHash.slice(0, 10)}...</span>
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setIsPreviewModalOpen(false);
-                  setSelectedFile(null);
-                  setPreviewData(null);
-                }}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-4">
-              {/* Stat Summary Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">รายการในไฟล์</div>
-                  <div className="text-lg font-bold text-slate-900 dark:text-white">
-                    {previewData.validRows}{' '}
-                    <span className="text-xs font-normal text-slate-500">
-                      / {previewData.totalRows} แถว
-                    </span>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">จำนวนพนักงาน</div>
-                  <div className="text-lg font-bold text-purple-700 dark:text-purple-400">
-                    {previewData.employeeCount}{' '}
-                    <span className="text-xs font-normal text-slate-500">คน</span>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">ยอดขายรวม</div>
-                  <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
-                    ฿{previewData.totalSalesAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400">คอมมิชชั่นรวม</div>
-                  <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
-                    ฿{previewData.totalCommissionAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 p-3">
-                  <div className="text-[11px] text-amber-800 dark:text-amber-300">
-                    แทนที่รายการเดิม
-                  </div>
-                  <div className="text-lg font-bold text-amber-700 dark:text-amber-400">
-                    {previewData.replacedEntriesCount}{' '}
-                    <span className="text-xs font-normal text-amber-600/80">รายการ</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Locked Warning */}
-              {previewData.isLockedPeriod && (
-                <div className="flex items-center gap-2 p-3.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300 text-xs">
-                  <AlertCircle className="h-5 w-5 shrink-0" />
-                  <span>
-                    <strong>ไม่สามารถนำเข้าได้:</strong> {previewData.lockReason}
-                  </span>
-                </div>
-              )}
-
-              {/* General Warnings */}
-              {previewData.warnings.length > 0 && (
-                <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300 text-xs space-y-1">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4" />
-                    พบข้อควรระวัง {previewData.warnings.length} รายการ:
-                  </div>
-                  <ul className="list-disc pl-5 space-y-0.5 text-[11px]">
-                    {previewData.warnings.slice(0, 5).map((w, i) => (
-                      <li key={i}>{w}</li>
-                    ))}
-                    {previewData.warnings.length > 5 && (
-                      <li>และอีก {previewData.warnings.length - 5} รายการ...</li>
-                    )}
-                  </ul>
-                </div>
-              )}
-
-              {/* Rows Table */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                <div className="overflow-x-auto max-h-80">
-                  <table className="w-full border-collapse text-left text-xs">
-                    <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                      <tr>
-                        <th className="py-2 px-3 text-center w-10">#</th>
-                        <th className="py-2 px-3">รหัสพนักงาน</th>
-                        <th className="py-2 px-3">ชื่อ - นามสกุล</th>
-                        <th className="py-2 px-3">แผนก</th>
-                        <th className="py-2 px-3 text-center">ช่วงวันที่</th>
-                        <th className="py-2 px-3 text-right">ยอดขาย (บาท)</th>
-                        <th className="py-2 px-3 text-center">อัตรา %</th>
-                        <th className="py-2 px-3 text-right font-bold text-emerald-700 dark:text-emerald-400">
-                          คอมมิชชั่น (บาท)
-                        </th>
-                        <th className="py-2 px-3 text-center">ผลกระทบ</th>
-                        <th className="py-2 px-3 text-center">สถานะ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {previewData.previewRows.map((row, idx) => (
-                        <tr
-                          key={idx}
-                          className={`${
-                            !row.isValid
-                              ? 'bg-rose-50/60 dark:bg-rose-950/20 text-rose-900 dark:text-rose-300'
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300'
-                          }`}
-                        >
-                          <td className="py-2 px-3 text-center text-slate-400 font-mono">
-                            {idx + 1}
-                          </td>
-                          <td className="py-2 px-3 font-mono font-semibold">
-                            {row.employeeCode}
-                          </td>
-                          <td className="py-2 px-3 font-medium">
-                            {row.employeeName || '-'}
-                          </td>
-                          <td className="py-2 px-3 text-slate-500 dark:text-slate-400">
-                            {row.departmentName || '-'}
-                          </td>
-                          <td className="py-2 px-3 text-center font-mono text-[11px]">
-                            {row.dateFrom === row.dateTo ? row.dateFrom : `${row.dateFrom} - ${row.dateTo}`}
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono">
-                            ฿{row.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2 px-3 text-center font-mono">
-                            {row.commissionRate}%
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400">
-                            ฿{row.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-2 px-3 text-center">
-                            {row.existingOverlappingEntries > 0 ? (
-                              <span className="inline-flex rounded-md bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-2 py-0.5 text-[10px] font-bold">
-                                ทับรายการเดิม ({row.existingOverlappingEntries})
-                              </span>
-                            ) : (
-                              <span className="inline-flex rounded-md bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-2 py-0.5 text-[10px]">
-                                รายการใหม่
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-2 px-3 text-center">
-                            {row.isValid ? (
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px] flex items-center justify-center gap-1">
-                                <CheckCircle2 className="h-3.5 w-3.5" /> ผ่าน
-                              </span>
-                            ) : (
-                              <span className="text-rose-600 dark:text-rose-400 font-semibold text-[11px]" title={row.errorMessage || ''}>
-                                {row.errorMessage || 'ข้อผิดพลาด'}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/60">
-              <div className="text-xs text-slate-500 dark:text-slate-400">
-                แสดงตัวอย่างสูงสุด 100 รายการแรกจากไฟล์
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsPreviewModalOpen(false);
-                    setSelectedFile(null);
-                    setPreviewData(null);
-                  }}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  ยกเลิก
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleConfirmImport}
-                  disabled={isExecutingImport || previewData.isLockedPeriod || previewData.validRows === 0}
-                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-emerald-700 transition active:scale-95 disabled:opacity-50 cursor-pointer"
-                >
-                  {isExecutingImport ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>กำลังบันทึกข้อมูลและคำนวณยอด...</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span>ยืนยันนำเข้าข้อมูล ({previewData.validRows} รายการ)</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 5. Employee Commission Summary Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
-        {/* Table Search Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
-          <div className="relative flex-1 sm:max-w-xs w-full">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
-            />
-          </div>
-
-          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-            แสดง {filteredRecords.length} จาก {records.length} รายการ
-          </div>
-        </div>
-
-        {/* Table inside inner container with rounded corners */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead className="bg-[#0B2046] text-white font-semibold">
-                <tr className="whitespace-nowrap">
-                  <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
-                  <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
-                  <th className="py-3.5 px-4 font-semibold">แผนก / ตำแหน่ง</th>
-                  <th className="py-3.5 px-4 text-right font-semibold">ยอดขายรวม (บาท)</th>
-                  <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
-                  <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
-                  <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
-                  <th className="py-3.5 px-4 text-center font-semibold">จัดการ</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-emerald-600" />
-                      <p className="mt-2 text-xs">กำลังโหลดข้อมูลค่าคอมมิชชั่น...</p>
-                    </td>
-                  </tr>
-                ) : filteredRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400">
-                      <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
-                      <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
-                        ยังไม่มีข้อมูลค่าคอมมิชชั่นในรอบเดือนนี้
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        ลากไฟล์ Excel/CSV มาวางในกล่องอัปโหลดด้านบน หรือกด &quot;เพิ่มรายคน&quot;
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  pagedRecords.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                        {r.employeeCode}
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                        {r.employeeName}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
-                        <div className="text-[11px] text-slate-400 font-normal">{r.positionName || '-'}</div>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                        ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center min-w-10 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 shadow-2xs">
-                          {r.commissionRate}%
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
-                        ฿{r.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {r.note ? (
-                          <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={r.note}>
-                            {r.note}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {!isPeriodConfirmed ? (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenAddWorkForEmployee(r)}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
-                              title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
-                            >
-                              <Plus className="h-3 w-3" />
-                              <span>+ งานเพิ่ม</span>
-                            </button>
-                            <ActionDropdown
-                              menuClassName="w-32"
-                              items={[
-                                {
-                                  label: 'แก้ไขยอด',
-                                  icon: <Edit2 className="w-3.5 h-3.5 text-blue-500" />,
-                                  onClick: () => {
-                                    setEditingRecord(r);
-                                    setEditForm({
-                                      salesAmount: r.salesAmount,
-                                      commissionRate: r.commissionRate,
-                                      specialAmount: 0,
-                                      note: r.note || '',
-                                    });
-                                  },
-                                },
-                                {
-                                  label: 'ลบรายการ',
-                                  icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
-                                  danger: true,
-                                  onClick: () => handleDeleteRecord(r),
-                                },
-                              ]}
-                            />
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-[11px] italic">ล็อกแล้ว</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Table Pagination */}
-        <TablePagination
-          total={filteredRecords.length}
-          page={safeSummaryPage}
-          pageSize={summaryPageSize}
-          onPageChange={setSummaryPage}
-          onPageSizeChange={setSummaryPageSize}
-          pageSizeOptions={[10, 20, 50, 100]}
-        />
-      </div>
 
       {/* 6. Batch Import History Section */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
@@ -1408,24 +1070,33 @@ export default function CommissionTab() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      {b.status === 'IMPORTED' && !isPeriodConfirmed ? (
+                      <div className="flex items-center justify-center gap-1.5">
                         <button
                           type="button"
-                          onClick={() => handleRevertBatch(b)}
-                          disabled={revertingBatchId === b.id}
-                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition cursor-pointer disabled:opacity-50"
-                          title="ยกเลิกชุดนี้และกู้คืนยอดเดิม"
+                          onClick={() => handleOpenBatchDetails(b)}
+                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40 border border-blue-200 dark:border-blue-900 transition cursor-pointer"
+                          title="ดูรายการข้อมูลในชุดนี้"
                         >
-                          {revertingBatchId === b.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <RotateCcw className="h-3 w-3" />
-                          )}
-                          <span>ยกเลิกชุดนี้</span>
+                          <Eye className="h-3 w-3" />
+                          <span>ดูรายการ</span>
                         </button>
-                      ) : (
-                        <span className="text-slate-400 text-xs">-</span>
-                      )}
+                        {b.status === 'IMPORTED' && !isPeriodConfirmed && (
+                          <button
+                            type="button"
+                            onClick={() => handleRevertBatch(b)}
+                            disabled={revertingBatchId === b.id}
+                            className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900 transition cursor-pointer disabled:opacity-50"
+                            title="ยกเลิกชุดนี้และกู้คืนยอดเดิม"
+                          >
+                            {revertingBatchId === b.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RotateCcw className="h-3 w-3" />
+                            )}
+                            <span>ยกเลิกชุดนี้</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1725,6 +1396,233 @@ export default function CommissionTab() {
           </div>
         );
       })()}
+
+      {/* 8. Batch Records Detail Popup Modal */}
+      {selectedBatchForDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 flex items-center justify-center shadow-xs">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      รายการข้อมูลค่าคอมมิชชั่นในชุดนำเข้า #{selectedBatchForDetails.id}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                        selectedBatchForDetails.status === 'IMPORTED'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : selectedBatchForDetails.status === 'REVERTED'
+                          ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                      }`}
+                    >
+                      {selectedBatchForDetails.status === 'IMPORTED' ? 'ใช้งานอยู่' : selectedBatchForDetails.status === 'REVERTED' ? 'ยกเลิกแล้ว' : selectedBatchForDetails.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    ไฟล์: <strong>{selectedBatchForDetails.fileName || '-'}</strong> | วันที่นำเข้า: {new Date(selectedBatchForDetails.importedAt).toLocaleString('th-TH')}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBatchForDetails(null);
+                  setBatchRecords([]);
+                }}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4">
+              {/* Stat Summary Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">จำนวนรายการ</div>
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
+                    {batchRecords.length}{' '}
+                    <span className="text-xs font-normal text-slate-500">แถว</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">จำนวนพนักงาน</div>
+                  <div className="text-lg font-bold text-purple-700 dark:text-purple-400">
+                    {new Set(batchRecords.map((r) => r.employeeId)).size}{' '}
+                    <span className="text-xs font-normal text-slate-500">คน</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">ยอดขายรวม</div>
+                  <div className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                    ฿{batchRecords.reduce((sum, r) => sum + r.salesAmount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">คอมมิชชั่นรวม</div>
+                  <div className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+                    ฿{batchRecords.reduce((sum, r) => sum + r.totalAmount, 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Toolbar */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
+                <div className="relative flex-1 sm:max-w-xs w-full">
+                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
+                    value={batchRecordsSearch}
+                    onChange={(e) => {
+                      setBatchRecordsSearch(e.target.value);
+                      setBatchRecordsPage(1);
+                    }}
+                    className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  แสดง {filteredBatchRecords.length} จาก {batchRecords.length} รายการ
+                </div>
+              </div>
+
+              {/* Table inside inner container with rounded corners */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+                    <thead className="bg-[#0B2046] text-white font-semibold">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
+                        <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
+                        <th className="py-3.5 px-4 font-semibold">แผนก / ตำแหน่ง</th>
+                        <th className="py-3.5 px-4 text-center">ช่วงวันที่</th>
+                        <th className="py-3.5 px-4 text-right font-semibold">ยอดขายรวม (บาท)</th>
+                        <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
+                        <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
+                        <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
+                        <th className="py-3.5 px-4 text-center font-semibold">สถานะ</th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {isLoadingBatchRecords ? (
+                        <tr>
+                          <td colSpan={9} className="py-12 text-center text-slate-400">
+                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-blue-600" />
+                            <p className="mt-2 text-xs">กำลังโหลดรายการข้อมูลในชุดนำเข้า...</p>
+                          </td>
+                        </tr>
+                      ) : filteredBatchRecords.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} className="py-12 text-center text-slate-400">
+                            <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
+                            <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
+                              ไม่พบรายการข้อมูลในชุดนี้
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        pagedBatchRecords.map((r) => (
+                          <tr
+                            key={r.id}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
+                          >
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                              {r.employeeCode}
+                            </td>
+                            <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                              {r.employeeName}
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                              <div className="font-bold text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
+                              <div className="text-[11px] text-slate-400 font-normal">{r.positionName || '-'}</div>
+                            </td>
+                            <td className="py-3.5 px-4 text-center font-mono text-[11px] text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                              {r.dateFrom === r.dateTo ? r.dateFrom : `${r.dateFrom} ถึง ${r.dateTo}`}
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                              ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <span className="inline-flex items-center justify-center min-w-10 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 shadow-2xs">
+                                {r.commissionRate}%
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
+                              ฿{r.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {r.note ? (
+                                <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={r.note}>
+                                  {r.note}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <span
+                                className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                  r.status === 'ACTIVE'
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                    : r.status === 'SUPERSEDED'
+                                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                    : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                                }`}
+                              >
+                                {r.status === 'ACTIVE' ? 'ใช้งานอยู่' : r.status === 'SUPERSEDED' ? 'ถูกแทนที่' : r.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Pagination */}
+              <TablePagination
+                total={filteredBatchRecords.length}
+                page={safeBatchRecordsPage}
+                pageSize={batchRecordsPageSize}
+                onPageChange={setBatchRecordsPage}
+                onPageSizeChange={setBatchRecordsPageSize}
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/60">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                รวมทั้งหมด {batchRecords.length} รายการ
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBatchForDetails(null);
+                  setBatchRecords([]);
+                }}
+                className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 9. Supported File Formats Guide Modal */}
       <SupportedCommissionFormatsModal
