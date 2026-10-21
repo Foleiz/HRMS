@@ -490,9 +490,9 @@ export default function CommissionTab() {
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       {/* 1. Header Toolbar & Filters */}
-      <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 shadow-xs">
-        {/* Left: Period & Rate Controls (Clean, unified inline group) */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+      <div className="flex flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:px-4 sm:py-3 shadow-xs overflow-x-auto">
+        {/* Left: Period & Rate Controls (Single line) */}
+        <div className="flex items-center gap-2.5 shrink-0">
           {/* Year & Month Selector */}
           <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-1 shadow-2xs">
             <div className="flex items-center gap-1.5 pl-2.5">
@@ -563,8 +563,8 @@ export default function CommissionTab() {
           </button>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right: Actions (Single line) */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Format Guide Button */}
           <button
             type="button"
