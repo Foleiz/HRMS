@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, Info, Calculator, Lock, Sparkles } from 'lucide-react';
+import { X, Loader2, AlertCircle, Calculator, Lock, Sparkles } from 'lucide-react';
 import { PayrollItem, SocialSecurityRate, TaxBracket } from '@/types/payroll';
 import { getAutoPullSource } from './autoPullItems';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -621,10 +621,6 @@ export const PayrollItemModal: React.FC<Props> = ({
             <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">
               ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงิน วิธีจ่าย และผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ (จ่ายประจำในเงินเดือน = จ่ายอัตโนมัติทุกงวด, เบิกตามจริง = จ่ายตามคำขอเบิกที่อนุมัติ) หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
             </div>
-          ) : itemType === 'EARNING' ? (
-            <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300">
-              เงินได้คงที่รายเดือน (เช่น ค่าโทรศัพท์ ค่าที่พัก) ให้ตั้งเป็นสวัสดิการวิธีจ่าย &quot;จ่ายประจำในเงินเดือน&quot; ที่เมนูสวัสดิการ ส่วนค่าใช้จ่ายตามใบเสร็จ (เช่น ค่าเดินทาง) ให้ตั้งเป็น &quot;เบิกตามจริง&quot; แล้วเลือกรายการรายได้นี้เป็นรหัสในสลิป
-            </div>
           ) : null}
 
           {/* If FORMULA is chosen (and not locked auto-pull): Show Formula Template selector and clean Summary Card */}
@@ -661,14 +657,6 @@ export const PayrollItemModal: React.FC<Props> = ({
                       </span>
                     </div>
                   )}
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-start gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                    <span>
-                      {isSystemFormula
-                        ? `${selectedTemplate.hint} — รายการของระบบ ระบบคำนวณให้เอง`
-                        : selectedTemplate.hint}
-                    </span>
-                  </p>
                 </div>
               )}
 
