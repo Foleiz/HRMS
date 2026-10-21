@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle, Info, Calculator, Lock, Sparkles } from 'lucide-react';
-import { PayrollItem } from '@/types/payroll';
+import { PayrollItem, SocialSecurityRate } from '@/types/payroll';
+import { salaryService } from '@/services/salaryService';
+import { getAutoPullSource } from './autoPullItems';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   FormulaParamsEditor,
@@ -114,13 +116,35 @@ export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     defaultSocialSecurity: false,
     parameterLabel: 'อัตราสมทบและเพดาน',
     parameterPlaceholder: 'เช่น 5% ฐานค่าจ้าง 1,650 - 17,500 บาท',
-    hint: 'คำนวณ 5% จากฐานค่าจ้างตามกฎหมายประกันสังคม (ขั้นต่ำ 1,650 สูงสุด 17,500 บ. ตั้งแต่ 1 ม.ค. 2569) หักสูงสุด 875 บ./เดือน',
+    hint: 'คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" — อัตราและฐานค่าจ้างที่แก้ตรงนี้คือค่าเดียวกับแท็บภาษี & ประกันสังคม (ช่วงที่มีผลปัจจุบัน)',
+  },
+  {
+    code: 'OVERTIME',
+    name: 'ค่าล่วงเวลา (OT)',
+    category: 'EARNING',
+    defaultValue: '1.5 เท่าของค่าจ้างต่อชั่วโมง (เงินเดือน ÷ 30 วัน ÷ 8 ชม.)',
+    defaultTaxable: true,
+    defaultSocialSecurity: true,
+    parameterLabel: 'ตัวคูณและตัวหาร',
+    parameterPlaceholder: '',
+    hint: 'ใช้ชั่วโมง OT จากสรุปเวลารายเดือน (เมนูลงเวลา) เฉพาะประเภทพนักงานที่มีสิทธิ์ OT',
+  },
+  {
+    code: 'UNPAID_LEAVE',
+    name: 'หักวันลาไม่รับค่าจ้าง',
+    category: 'DEDUCTION',
+    defaultValue: 'หักวันละ เงินเดือน ÷ 30 วัน',
+    defaultTaxable: true,
+    defaultSocialSecurity: true,
+    parameterLabel: 'ตัวหารวัน',
+    parameterPlaceholder: '',
+    hint: 'ใช้วันลาประเภทไม่รับค่าจ้างที่อนุมัติแล้วในรอบนั้น ยอดหักรวมไม่เกินเงินเดือน',
   },
   {
     code: 'TAX_STANDARD',
-    name: 'ภาษีเงินได้บุคคลธรรมดา (ภ.ง.ด. 91 ขั้นบันได 8 ขั้น)',
+    name: 'ภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1 ขั้นบันได)',
     category: 'DEDUCTION',
-    defaultValue: 'ภ.ง.ด. 91 ขั้นบันได 8 ขั้น (0% - 35%)',
+    defaultValue: 'ภ.ง.ด.1 ขั้นบันได (ค่าใช้จ่าย 50% ไม่เกิน 100,000 บาท, ลดหย่อนส่วนตัว 60,000 บาท)',
     defaultTaxable: false,
     defaultSocialSecurity: false,
     parameterLabel: 'เกณฑ์ภาษีเงินได้',
@@ -200,6 +224,8 @@ export const PayrollItemModal: React.FC<Props> = ({
   const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** อัตราประกันสังคมที่มีผลปัจจุบัน (แก้ร่วมกับแท็บภาษี & ประกันสังคม) */
+  const [ssoRate, setSsoRate] = useState<SocialSecurityRate | null>(null);
 
   useEffect(() => {
     if (item) {
@@ -211,9 +237,13 @@ export const PayrollItemModal: React.FC<Props> = ({
       const calcType = item.calculationType || 'FIXED';
       // รายได้คงที่รายเดือนย้ายไปตั้งที่เมนูสวัสดิการแล้ว รายการรายได้จึงไม่ใช้แบบ FIXED
       setCalculationType(t === 'EARNING' && calcType === 'FIXED' ? 'MANUAL' : calcType);
-      setFormulaTemplate(item.formulaTemplate || '');
+      // รายการของระบบที่ยังไม่มีรหัสสูตร → ระบุสูตรให้ เพื่อให้แก้ค่าตัวแปรได้
+      const inferredTpl =
+        item.formulaTemplate ||
+        (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : item.itemCode === 'INC_OT' ? 'OVERTIME' : '');
+      setFormulaTemplate(inferredTpl);
       setFormulaValue(item.formulaValue || '');
-      setParams(parseFormulaParams((item.formulaTemplate || '').toUpperCase(), item.formulaValue));
+      setParams(parseFormulaParams(inferredTpl.toUpperCase(), item.formulaValue));
       setIsTaxable(item.isTaxable);
       setIsSocialSecurityCalculated(item.isSocialSecurityCalculated);
       setIsActive(item.status ? item.status.toUpperCase() === 'ACTIVE' : true);
@@ -232,13 +262,44 @@ export const PayrollItemModal: React.FC<Props> = ({
     setError(null);
   }, [item, defaultType, isOpen]);
 
+  // ประกันสังคม: อ่านอัตรา/ฐานค่าจ้างจริงจากตั้งค่าในแท็บภาษี & ประกันสังคม
+  useEffect(() => {
+    if (!isOpen || (item?.formulaTemplate || '').toUpperCase() !== 'SSO_STANDARD') return;
+    let active = true;
+    salaryService
+      .getSocialSecurityRates()
+      .then((rates) => {
+        if (!active || !rates?.length) return;
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const current =
+          rates.find(
+            (r) => r.status === 'ACTIVE' && r.effectiveFrom <= today && (!r.effectiveTo || r.effectiveTo >= today),
+          ) ?? [...rates].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+        setSsoRate(current);
+        setParams((prev) => ({
+          ...prev,
+          ssoPercent: String(current.employeeContributionPercent),
+          ssoMin: String(current.minWageBaseAmount),
+          ssoMax: String(current.maxWageBaseAmount),
+        }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [item, isOpen]);
+
   if (!isOpen) return null;
 
   const linkedBenefits = item?.linkedBenefitNames ?? [];
   const isBonusItem = item?.itemCode === 'INC_BONUS';
   const isCommissionItem = item?.itemCode === 'INC_COMMISSION';
   /** เฉพาะโบนัสและค่าคอมมิชชั่นเท่านั้นที่ใช้โหมด "ดึงยอดอัตโนมัติ" และถูกล็อกไม่ให้เปลี่ยนประเภทการคำนวณ */
-  const isAutoPullModuleItem = Boolean(isBonusItem || isCommissionItem);
+  const autoPull = getAutoPullSource(item?.itemCode);
+  /** รายการที่ดึงข้อมูลอัตโนมัติจากเมนูอื่น (เงินเดือน / ค่าตำแหน่ง / โบนัส / ค่าคอมมิชชั่น) */
+  const isAutoPullModuleItem = Boolean(autoPull);
 
   // Filter templates for current item type
   const templateCode = (formulaTemplate || '').toUpperCase();
@@ -318,13 +379,20 @@ export const PayrollItemModal: React.FC<Props> = ({
 
     try {
       setLoading(true);
-      const effectiveCalcType = isAutoPullModuleItem
+      const keepOriginal = isAutoPullModuleItem && !isBonusItem && !isCommissionItem; // เงินเดือน / ค่าตำแหน่ง
+      const effectiveCalcType = keepOriginal
+        ? item!.calculationType
+        : isAutoPullModuleItem
         ? (isCommissionItem ? 'FORMULA' : 'MANUAL')
         : calculationType;
-      const effectiveFormulaTemplate = isAutoPullModuleItem
+      const effectiveFormulaTemplate = keepOriginal
+        ? item!.formulaTemplate ?? null
+        : isAutoPullModuleItem
         ? (isCommissionItem ? 'PERCENT_SALES' : null)
         : (calculationType === 'FORMULA' ? (formulaTemplate || null) : null);
-      const effectiveFormulaValue = isAutoPullModuleItem
+      const effectiveFormulaValue = keepOriginal
+        ? item!.formulaValue ?? null
+        : isAutoPullModuleItem
         ? (isCommissionItem ? 'ดึงยอดอัตโนมัติจากแท็บค่าคอมมิชชั่น' : 'ดึงยอดอัตโนมัติจากแท็บโบนัส')
         : (finalFormulaValue || null);
 
@@ -340,6 +408,20 @@ export const PayrollItemModal: React.FC<Props> = ({
         isSocialSecurityCalculated,
         status: isActive ? 'ACTIVE' : 'INACTIVE',
       };
+
+      // ประกันสังคม: บันทึกอัตรา/ฐานค่าจ้างลงตั้งค่าเดียวกับแท็บภาษี & ประกันสังคม
+      if (templateCode === 'SSO_STANDARD' && ssoRate) {
+        await salaryService.updateSocialSecurityRate(ssoRate.id, {
+          rateName: ssoRate.rateName,
+          employeeContributionPercent: Number(params.ssoPercent),
+          employerContributionPercent: Number(params.ssoPercent),
+          minWageBaseAmount: Number(params.ssoMin),
+          maxWageBaseAmount: Number(params.ssoMax),
+          effectiveFrom: ssoRate.effectiveFrom,
+          effectiveTo: ssoRate.effectiveTo ?? null,
+          status: ssoRate.status,
+        });
+      }
 
       await onSubmit(payload, item?.id);
       onClose();
@@ -428,14 +510,14 @@ export const PayrollItemModal: React.FC<Props> = ({
               {isAutoPullModuleItem && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                   <Lock className="w-3 h-3" />
-                  ล็อกเฉพาะโบนัสและค่าคอมมิชชั่น
+                  ระบบดึงข้อมูลให้
                 </span>
               )}
             </label>
             {isAutoPullModuleItem ? (
               <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
                 <Lock className="w-3.5 h-3.5 text-teal-300" />
-                <span>ดึงยอดอัตโนมัติ (จากแท็บ{isBonusItem ? 'โบนัส' : 'ค่าคอมมิชชั่น'})</span>
+                <span>ดึงข้อมูลอัตโนมัติ</span>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -468,17 +550,9 @@ export const PayrollItemModal: React.FC<Props> = ({
             <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-200">
                 <Sparkles className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
-                <span>
-                  {isBonusItem
-                    ? 'เชื่อมโยงกับแท็บ "โบนัส (Annual Bonus)" โดยอัตโนมัติ'
-                    : 'เชื่อมโยงกับแท็บ "ค่าคอมมิชชั่น (Sales Commission)" โดยอัตโนมัติ'}
-                </span>
+                <span>ดึงจาก: {autoPull?.source}</span>
               </div>
-              <p className="text-[11px] leading-relaxed text-teal-800 dark:text-teal-300">
-                {isBonusItem
-                  ? 'ระบบล็อกให้ดึงยอดโบนัสจากแท็บโบนัสเฉพาะเดือนที่มีการจัดสรรและอนุมัติโบนัสเท่านั้น (เดือนที่ไม่มีโบนัส ระบบจะข้ามให้อัตโนมัติ ไม่แสดงในสลิป) หน้านี้ใช้สำหรับตั้งค่าการคิดภาษีและประกันสังคม'
-                  : 'ระบบล็อกให้ดึงยอดค่าคอมมิชชั่นจากแท็บค่าคอมมิชชั่นเฉพาะเดือนที่กดยืนยันยอด (CONFIRMED) แล้วเท่านั้น หน้านี้ใช้สำหรับตั้งค่าการคิดภาษีและประกันสังคม'}
-              </p>
+              <p className="text-[11px] leading-relaxed text-teal-800 dark:text-teal-300">{autoPull?.hint}</p>
             </div>
           ) : linkedBenefits.length > 0 ? (
             <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">

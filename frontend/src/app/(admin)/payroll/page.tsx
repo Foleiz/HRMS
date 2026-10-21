@@ -86,6 +86,7 @@ import { SalaryStructureModal } from '@/components/payroll/SalaryStructureModal'
 import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
+import { getAutoPullSource } from '@/components/payroll/autoPullItems';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
@@ -2826,12 +2827,11 @@ export default function PayrollPage() {
                   {filteredPayrollItems
                     .map((item) => {
                       const isItemActive = item.status ? item.status.toUpperCase() === 'ACTIVE' : true;
-                      const isBonusItem = item.itemCode === 'INC_BONUS';
-                      const isCommissionItem = item.itemCode === 'INC_COMMISSION';
-                      const isAutoPullModuleItem = isBonusItem || isCommissionItem;
+                      const autoPull = getAutoPullSource(item.itemCode);
+                      const isAutoPullModuleItem = !!autoPull;
 
                       const calcTypeLabel = isAutoPullModuleItem
-                        ? 'ดึงยอดอัตโนมัติ'
+                        ? 'ดึงข้อมูลอัตโนมัติ'
                         : item.calculationType === 'FIXED'
                         ? 'จำนวนคงที่'
                         : item.calculationType === 'FORMULA'
@@ -2854,9 +2854,13 @@ export default function PayrollPage() {
                           case 'MANUAL_BONUS':
                             return { label: 'ดึงจากแท็บโบนัส', color: 'bg-teal-50 text-teal-800 border-teal-200' };
                           case 'SSO_STANDARD':
-                            return { label: 'ประกันสังคม 5% (สูงสุด 875)', color: 'bg-purple-50 text-purple-700 border-purple-200' };
+                            return { label: 'ประกันสังคม % ของค่าจ้าง', color: 'bg-purple-50 text-purple-700 border-purple-200' };
+                          case 'OVERTIME':
+                            return { label: 'ชม. OT × อัตราต่อชั่วโมง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
+                          case 'UNPAID_LEAVE':
+                            return { label: 'วันลาไม่รับค่าจ้าง × ค่าจ้างรายวัน', color: 'bg-orange-50 text-orange-800 border-orange-200' };
                           case 'TAX_STANDARD':
-                            return { label: 'ภ.ง.ด. 91 ขั้นบันได 8 ขั้น', color: 'bg-rose-50 text-rose-700 border-rose-200' };
+                            return { label: 'ภ.ง.ด.1 ขั้นบันได', color: 'bg-rose-50 text-rose-700 border-rose-200' };
                           case 'LATE_ABSENT':
                             return { label: 'หักตามเวลาสาย/ขาดจริง', color: 'bg-orange-50 text-orange-800 border-orange-200' };
                           case 'PERCENT_SALARY':
@@ -2869,7 +2873,10 @@ export default function PayrollPage() {
                             return null;
                         }
                       };
-                      const templateBadge = item.calculationType === 'FORMULA' ? getTemplateBadge(item.formulaTemplate) : null;
+                      const templateBadge =
+                        item.calculationType === 'FORMULA'
+                          ? getTemplateBadge(item.formulaTemplate || (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : null))
+                          : null;
 
                       const fixedNumber = item.calculationType === 'FIXED' && item.formulaValue && !isNaN(Number(item.formulaValue))
                         ? Number(item.formulaValue)
@@ -2910,11 +2917,7 @@ export default function PayrollPage() {
                               <div className="flex items-center">
                                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-50/80 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800">
                                   <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                                  <span>
-                                    {isBonusItem
-                                      ? 'ดึงยอดจากแท็บโบนัส (เฉพาะงวดเดือนที่อนุมัติโบนัส)'
-                                      : 'ดึงยอดจากแท็บค่าคอมมิชชั่น (เฉพาะงวดเดือนที่ยืนยันยอด)'}
-                                  </span>
+                                  <span>ดึงจาก: {autoPull?.source}</span>
                                 </span>
                               </div>
                             ) : item.calculationType === 'FORMULA' ? (
