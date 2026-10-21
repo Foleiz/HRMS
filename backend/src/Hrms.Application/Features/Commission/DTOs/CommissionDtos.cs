@@ -182,5 +182,7 @@ public class CommissionBatchEntryDto
     public string? Note { get; set; }
     public string Status { get; set; } = "ACTIVE";
     public DateTime CreatedAt { get; set; }
+    public string? BatchFileName { get; set; }
+    public string Source { get; set; } = "FILE";
 }
 

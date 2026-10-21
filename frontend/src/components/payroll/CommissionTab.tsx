@@ -111,6 +111,11 @@ export default function CommissionTab() {
   const [batchRecordsPage, setBatchRecordsPage] = useState<number>(1);
   const [batchRecordsPageSize, setBatchRecordsPageSize] = useState<number>(10);
 
+  // Employee Sub-entries Modal State
+  const [selectedEmployeeForEntries, setSelectedEmployeeForEntries] = useState<CommissionRecord | null>(null);
+  const [employeeEntries, setEmployeeEntries] = useState<CommissionBatchEntry[]>([]);
+  const [isLoadingEmployeeEntries, setIsLoadingEmployeeEntries] = useState<boolean>(false);
+
   // Modals State
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
   const [editingRecord, setEditingRecord] = useState<CommissionRecord | null>(null);
@@ -275,6 +280,25 @@ export default function CommissionTab() {
       setBatchRecords([]);
     } finally {
       setIsLoadingBatchRecords(false);
+    }
+  };
+
+  // Open Employee Sub-entries Breakdown Modal
+  const handleOpenEmployeeEntries = async (record: CommissionRecord) => {
+    setSelectedEmployeeForEntries(record);
+    setIsLoadingEmployeeEntries(true);
+    try {
+      const data = await commissionService.getEmployeePeriodEntries(
+        record.employeeId,
+        selectedYear,
+        selectedMonth
+      );
+      setEmployeeEntries(data || []);
+    } catch {
+      error('ไม่สามารถโหลดรายการย่อยของพนักงานได้');
+      setEmployeeEntries([]);
+    } finally {
+      setIsLoadingEmployeeEntries(false);
     }
   };
 
@@ -911,6 +935,189 @@ export default function CommissionTab() {
           </div>
         </div>
       )}
+
+      {/* 5. Employee Commission Summary Section (Monthly Overview Ledger) */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
+        {/* Table Search Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-h-9">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400 border border-blue-100 dark:border-blue-900 shadow-2xs">
+              <Users className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                สรุปค่าคอมมิชชั่นประจำงวดเดือน (Monthly Overview)
+                <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                  {records.length} คน
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                ยอดรวมสุทธิของพนักงานทุกคนในงวดนี้ (รวมทุกไฟล์ที่นำเข้า และรายการที่บันทึกเพิ่ม)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 sm:w-64 w-full">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setSummaryPage(1);
+                }}
+                className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Table inside inner container with rounded corners */}
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="table-standard w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
+              <thead className="bg-[#0B2046] text-white font-semibold">
+                <tr className="whitespace-nowrap">
+                  <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
+                  <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
+                  <th className="py-3.5 px-4 font-semibold">แผนก / ตำแหน่ง</th>
+                  <th className="py-3.5 px-4 text-right font-semibold">ยอดขายรวม (บาท)</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
+                  <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่นสุทธิ (บาท)</th>
+                  <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">ที่มา / รายการย่อย</th>
+                  <th className="py-3.5 px-4 text-center font-semibold">จัดการ</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-emerald-600" />
+                      <p className="mt-2 text-xs">กำลังโหลดข้อมูลค่าคอมมิชชั่นประจำงวด...</p>
+                    </td>
+                  </tr>
+                ) : filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-400">
+                      <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
+                      <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
+                        ยังไม่มีข้อมูลค่าคอมมิชชั่นในรอบเดือนนี้
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        นำเข้าไฟล์ Excel/CSV ในกล่องอัปโหลดด้านบน หรือกด &quot;เพิ่มรายคน&quot;
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
+                  pagedRecords.map((r) => (
+                    <tr
+                      key={r.id}
+                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
+                    >
+                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                        {r.employeeCode}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                        {r.employeeName}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        <div className="font-bold text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
+                        <div className="text-[11px] text-slate-400 font-normal">{r.positionName || '-'}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                        ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center min-w-10 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 shadow-2xs">
+                          {r.commissionRate}%
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
+                        ฿{r.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {r.note ? (
+                          <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={r.note}>
+                            {r.note}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEmployeeEntries(r)}
+                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/60 transition cursor-pointer"
+                          title="ดูรายการย่อยและที่มาของยอดค่าคอมมิชชั่นของพนักงานท่านนี้"
+                        >
+                          <Eye className="h-3 w-3" />
+                          <span>ดูที่มา</span>
+                        </button>
+                      </td>
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        {!isPeriodConfirmed ? (
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAddWorkForEmployee(r)}
+                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
+                              title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
+                            >
+                              <Plus className="h-3 w-3" />
+                              <span>+ งานเพิ่ม</span>
+                            </button>
+                            <ActionDropdown
+                              menuClassName="w-32"
+                              items={[
+                                {
+                                  label: 'แก้ไขยอด',
+                                  icon: <Edit2 className="w-3.5 h-3.5 text-blue-500" />,
+                                  onClick: () => {
+                                    setEditingRecord(r);
+                                    setEditForm({
+                                      salesAmount: r.salesAmount,
+                                      commissionRate: r.commissionRate,
+                                      specialAmount: 0,
+                                      note: r.note || '',
+                                    });
+                                  },
+                                },
+                                {
+                                  label: 'ลบรายการ',
+                                  icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
+                                  danger: true,
+                                  onClick: () => handleDeleteRecord(r),
+                                },
+                              ]}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] italic">ล็อกแล้ว</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Table Pagination */}
+        <TablePagination
+          total={filteredRecords.length}
+          page={safeSummaryPage}
+          pageSize={summaryPageSize}
+          onPageChange={setSummaryPage}
+          onPageSizeChange={setSummaryPageSize}
+          pageSizeOptions={[10, 20, 50, 100]}
+        />
+      </div>
 
       {/* 6. Batch Import History Section */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
@@ -1597,6 +1804,174 @@ export default function CommissionTab() {
                 onClick={() => {
                   setSelectedBatchForDetails(null);
                   setBatchRecords([]);
+                }}
+                className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+              >
+                ปิดหน้าต่าง
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8.5. Employee Sub-entries Breakdown Modal */}
+      {selectedEmployeeForEntries && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-300 flex items-center justify-center shadow-xs">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      ที่มาและรายการย่อยค่าคอมมิชชั่น
+                    </h3>
+                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                      {selectedEmployeeForEntries.employeeCode} - {selectedEmployeeForEntries.employeeName}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    แสดงรายการย่อยทั้งหมดในรอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543} (รวมยอดจากทุกไฟล์นำเข้าและงานเพิ่ม)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEmployeeForEntries(null);
+                  setEmployeeEntries([]);
+                }}
+                className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Stat Summary Box */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-700">
+                <div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">ยอดขายรวมทั้งเดือน</div>
+                  <div className="text-base font-bold font-mono text-slate-900 dark:text-white">
+                    ฿{selectedEmployeeForEntries.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">อัตรา (%)</div>
+                  <div className="text-base font-bold font-mono text-blue-600 dark:text-blue-400">
+                    {selectedEmployeeForEntries.commissionRate}%
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">ค่าคอมมิชชั่นสุทธิรวม</div>
+                  <div className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                    ฿{selectedEmployeeForEntries.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
+                    <thead className="bg-[#0B2046] text-white font-semibold">
+                      <tr className="whitespace-nowrap">
+                        <th className="py-3.5 px-4 font-semibold">ช่วงวันที่</th>
+                        <th className="py-3.5 px-4 font-semibold">ที่มา / ไฟล์</th>
+                        <th className="py-3.5 px-4 text-right font-semibold">ยอดขาย (บาท)</th>
+                        <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
+                        <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
+                        <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
+                        <th className="py-3.5 px-4 text-center font-semibold">วันที่นำเข้า</th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {isLoadingEmployeeEntries ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-slate-400">
+                            <Loader2 className="mx-auto h-6 w-6 animate-spin text-blue-600" />
+                            <p className="mt-2 text-xs">กำลังโหลดที่มาและรายการย่อย...</p>
+                          </td>
+                        </tr>
+                      ) : employeeEntries.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="py-12 text-center text-slate-400">
+                            <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
+                            <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
+                              ไม่พบรายการย่อย
+                            </p>
+                          </td>
+                        </tr>
+                      ) : (
+                        employeeEntries.map((e) => (
+                          <tr
+                            key={e.id}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
+                          >
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                              {e.dateFrom === e.dateTo ? e.dateFrom : `${e.dateFrom} ถึง ${e.dateTo}`}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {e.batchFileName ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono text-xs">
+                                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>{e.batchFileName}</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs">
+                                  <Plus className="w-3 h-3" />
+                                  <span>บันทึกด้วยตนเอง</span>
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                              ฿{e.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                              <span className="inline-flex items-center justify-center min-w-10 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
+                                {e.commissionRate}%
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
+                              ฿{e.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {e.note ? (
+                                <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={e.note}>
+                                  {e.note}
+                                </span>
+                              ) : (
+                                <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 text-center text-slate-500 dark:text-slate-400 text-xs font-mono whitespace-nowrap">
+                              {new Date(e.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/60">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                รวมทั้งหมด {employeeEntries.length} รายการย่อย
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEmployeeForEntries(null);
+                  setEmployeeEntries([]);
                 }}
                 className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >

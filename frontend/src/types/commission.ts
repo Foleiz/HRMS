@@ -163,5 +163,7 @@ export interface CommissionBatchEntry {
   note?: string | null;
   status: string;
   createdAt: string;
+  batchFileName?: string | null;
+  source?: string;
 }
 

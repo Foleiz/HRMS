@@ -140,6 +140,24 @@ public class CommissionController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงรายการค่าคอมมิชชั่นย่อยทั้งหมดของพนักงานในรอบเดือน (รวมทุกไฟล์ที่นำเข้าและรายการที่บันทึกเพิ่ม)
+    /// </summary>
+    [HttpGet("employees/{employeeId:long}/entries")]
+    [ProducesResponseType(typeof(ApiResponse<List<CommissionBatchEntryDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<CommissionBatchEntryDto>>>> GetEmployeePeriodEntries(
+        long employeeId,
+        [FromQuery] int year,
+        [FromQuery] int month,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_MANAGE"), "ดูรายการค่าคอมมิชชั่นย่อยของพนักงาน");
+        var y = year > 0 ? year : DateTime.Today.Year;
+        var m = month > 0 ? month : DateTime.Today.Month;
+        var result = await _commissionService.GetEmployeePeriodEntriesAsync(employeeId, y, m, cancellationToken);
+        return Ok(ApiResponse<List<CommissionBatchEntryDto>>.Ok(result, "ดึงรายการค่าคอมมิชชั่นย่อยสำเร็จ"));
+    }
+
+    /// <summary>
     /// ยกเลิกชุดการนำเข้า (Revert Batch) และกู้คืนรายการก่อนหน้า
     /// </summary>
     [HttpPost("batches/{batchId:long}/revert")]
