@@ -126,6 +126,7 @@ export default function CommissionTab() {
 
   // Employee Sub-entries Modal State
   const [selectedEmployeeForEntries, setSelectedEmployeeForEntries] = useState<CommissionRecord | null>(null);
+  const [selectedEmployeePeriodInfo, setSelectedEmployeePeriodInfo] = useState<{ year: number; month: number } | null>(null);
   const [employeeEntries, setEmployeeEntries] = useState<CommissionBatchEntry[]>([]);
   const [isLoadingEmployeeEntries, setIsLoadingEmployeeEntries] = useState<boolean>(false);
 
@@ -247,14 +248,18 @@ export default function CommissionTab() {
   }, [searchTerm]);
 
   // Handle Opening Add Work for Specific Employee
-  const handleOpenAddWorkForEmployee = (record: CommissionRecord) => {
+  const handleOpenAddWorkForEmployee = (
+    record: CommissionRecord,
+    year: number = selectedYear,
+    month: number = selectedMonth
+  ) => {
     loadEmployees();
     setAddJobDate(new Date().toISOString().slice(0, 10));
     setAddJobTitle('');
     setAddForm({
       employeeId: record.employeeId,
-      year: selectedYear,
-      month: selectedMonth,
+      year: year,
+      month: month,
       salesAmount: 0,
       commissionRate: record.commissionRate || defaultRate,
       specialAmount: 0,
@@ -329,14 +334,19 @@ export default function CommissionTab() {
   };
 
   // Open Employee Sub-entries Breakdown Modal
-  const handleOpenEmployeeEntries = async (record: CommissionRecord) => {
+  const handleOpenEmployeeEntries = async (
+    record: CommissionRecord,
+    year: number = selectedYear,
+    month: number = selectedMonth
+  ) => {
     setSelectedEmployeeForEntries(record);
+    setSelectedEmployeePeriodInfo({ year, month });
     setIsLoadingEmployeeEntries(true);
     try {
       const data = await commissionService.getEmployeePeriodEntries(
         record.employeeId,
-        selectedYear,
-        selectedMonth
+        year,
+        month
       );
       setEmployeeEntries(data || []);
     } catch {
@@ -496,6 +506,15 @@ export default function CommissionTab() {
       setEditingRecord(null);
       await loadCommissionData(selectedYear, selectedMonth);
       await loadMonthlyPeriods(selectedYear);
+
+      if (selectedPeriodForDetails) {
+        const [sum, entries] = await Promise.all([
+          commissionService.getCommissionPeriod(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+          commissionService.getPeriodAllEntries(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+        ]);
+        setPeriodSummaryForDetails(sum);
+        setPeriodAllEntriesForDetails(entries || []);
+      }
     } catch (err: any) {
       error(err?.response?.data?.message || 'แก้ไขข้อมูลไม่สำเร็จ');
     }
@@ -516,10 +535,13 @@ export default function CommissionTab() {
         ? `[${addJobDate}] ${addJobTitle.trim()}${addForm.note ? ` (${addForm.note.trim()})` : ''}`
         : addForm.note?.trim() || '';
 
+      const targetYear = addForm.year || selectedYear;
+      const targetMonth = addForm.month || selectedMonth;
+
       await commissionService.addManualCommission({
         ...addForm,
-        year: selectedYear,
-        month: selectedMonth,
+        year: targetYear,
+        month: targetMonth,
         note: formattedNote,
       });
       success('บันทึกข้อมูลค่าคอมมิชชั่นเรียบร้อยแล้ว');
@@ -536,6 +558,15 @@ export default function CommissionTab() {
       });
       await loadCommissionData(selectedYear, selectedMonth);
       await loadMonthlyPeriods(selectedYear);
+
+      if (selectedPeriodForDetails) {
+        const [sum, entries] = await Promise.all([
+          commissionService.getCommissionPeriod(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+          commissionService.getPeriodAllEntries(selectedPeriodForDetails.year, selectedPeriodForDetails.month),
+        ]);
+        setPeriodSummaryForDetails(sum);
+        setPeriodAllEntriesForDetails(entries || []);
+      }
     } catch (err: any) {
       error(err?.response?.data?.message || 'เพิ่มรายการไม่สำเร็จ');
     }
@@ -1358,7 +1389,7 @@ export default function CommissionTab() {
 
       {/* 7. Edit Item Modal */}
       {editingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               แก้ไขค่าคอมมิชชั่น: {editingRecord.employeeName}
@@ -1454,7 +1485,7 @@ export default function CommissionTab() {
         const thisJobTotal = thisJobCommissionAmount;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
             <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 max-h-[92vh] overflow-y-auto">
               <div className="flex items-start justify-between">
                 <div>
@@ -1862,7 +1893,7 @@ export default function CommissionTab() {
 
       {/* 8.5. Employee Sub-entries Breakdown Modal */}
       {selectedEmployeeForEntries && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
@@ -1880,7 +1911,7 @@ export default function CommissionTab() {
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    แสดงรายการย่อยทั้งหมดในรอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543} (รวมยอดจากทุกไฟล์นำเข้าและงานเพิ่ม)
+                    แสดงรายการย่อยทั้งหมดในรอบเดือน {THAI_MONTHS[(selectedEmployeePeriodInfo?.month ?? selectedMonth) - 1]} {(selectedEmployeePeriodInfo?.year ?? selectedYear) + 543} (รวมยอดจากทุกไฟล์นำเข้าและงานเพิ่ม)
                   </p>
                 </div>
               </div>
@@ -1889,6 +1920,7 @@ export default function CommissionTab() {
                 type="button"
                 onClick={() => {
                   setSelectedEmployeeForEntries(null);
+                  setSelectedEmployeePeriodInfo(null);
                   setEmployeeEntries([]);
                 }}
                 className="h-8 w-8 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
@@ -2017,6 +2049,7 @@ export default function CommissionTab() {
                 type="button"
                 onClick={() => {
                   setSelectedEmployeeForEntries(null);
+                  setSelectedEmployeePeriodInfo(null);
                   setEmployeeEntries([]);
                 }}
                 className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
@@ -2234,7 +2267,7 @@ export default function CommissionTab() {
                               <td className="py-3.5 px-4 text-center whitespace-nowrap">
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEmployeeEntries(r)}
+                                  onClick={() => handleOpenEmployeeEntries(r, selectedPeriodForDetails.year, selectedPeriodForDetails.month)}
                                   className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/60 transition cursor-pointer"
                                   title="ดูรายการย่อยที่ประกอบเป็นยอดนี้"
                                 >
@@ -2247,7 +2280,7 @@ export default function CommissionTab() {
                                   <div className="flex items-center justify-center gap-1.5">
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenAddWorkForEmployee(r)}
+                                      onClick={() => handleOpenAddWorkForEmployee(r, selectedPeriodForDetails.year, selectedPeriodForDetails.month)}
                                       className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
                                       title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
                                     >
