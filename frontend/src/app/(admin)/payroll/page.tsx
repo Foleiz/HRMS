@@ -2189,9 +2189,13 @@ export default function PayrollPage() {
 
   // Filtered Payroll Items
   // รายการที่ระบบสร้างไว้จ่ายสวัสดิการ (ยอดมาจากเมนูสวัสดิการ) ไม่แสดงในหน้านี้
-  const filteredPayrollItems = payrollItems.filter(
-    (i) => i.itemType === itemsSubTab && !(i.linkedBenefitNames && i.linkedBenefitNames.length > 0),
-  );
+  // เรียง: ดึงข้อมูลอัตโนมัติ → สูตรคำนวณ → กำหนดเอง (ในกลุ่มเดียวกันคงลำดับเดิม)
+  const calcRank = (i: PayrollItem) => (getAutoPullSource(i.itemCode) ? 0 : i.calculationType === 'FORMULA' ? 1 : 2);
+  const filteredPayrollItems = payrollItems
+    .filter((i) => i.itemType === itemsSubTab && !(i.linkedBenefitNames && i.linkedBenefitNames.length > 0))
+    .map((i, idx) => ({ i, idx }))
+    .sort((a, b) => calcRank(a.i) - calcRank(b.i) || a.idx - b.idx)
+    .map(({ i }) => i);
 
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
