@@ -162,14 +162,18 @@ public class BenefitService : IBenefitService
             UpdatedAt = DateTime.UtcNow
         };
 
-        if (request.PayrollItemId.HasValue)
+        // จ่ายประจำในเงินเดือน = จ่ายอัตโนมัติทุกงวด ไม่มีการยื่นเอกสาร
+        if (benefit.PayoutType == "PAYROLL") benefit.IsDocumentRequired = false;
+
+        if (request.PayrollItemId.HasValue && benefit.PayoutType != "IN_KIND")
             await LinkPayCodeAsync(benefit, request.PayrollItemId.Value, cancellationToken);
 
         _context.BenefitItems.Add(benefit);
         await _context.SaveChangesAsync(cancellationToken);
 
         // ไม่ได้เลือกรายการ → สร้างรหัสรายได้ BEN_xxx ให้ แล้วผูกไว้
-        if (!benefit.PayrollItemId.HasValue)
+        // ไม่ใช่ตัวเงิน (บริการ/สิทธิ์ตามระเบียบ) ไม่ต้องมีรหัสในสลิป
+        if (!benefit.PayrollItemId.HasValue && benefit.PayoutType != "IN_KIND")
             await BenefitPayCode.EnsureAsync(_context, benefit, cancellationToken);
 
         return await GetByIdAsync(benefit.Id, cancellationToken);
@@ -198,7 +202,8 @@ public class BenefitService : IBenefitService
             benefit.PayoutType = request.PayoutType.Trim().ToUpper();
         benefit.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim().ToUpper();
         benefit.UpdatedAt = DateTime.UtcNow;
-        if (request.PayrollItemId.HasValue && request.PayrollItemId != benefit.PayrollItemId)
+        if (benefit.PayoutType == "PAYROLL") benefit.IsDocumentRequired = false;
+        if (request.PayrollItemId.HasValue && request.PayrollItemId != benefit.PayrollItemId && benefit.PayoutType != "IN_KIND")
             await LinkPayCodeAsync(benefit, request.PayrollItemId.Value, cancellationToken);
 
         await _context.SaveChangesAsync(cancellationToken);

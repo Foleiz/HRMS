@@ -27,7 +27,7 @@ export interface FormulaParams {
   /** ตัวหารวันต่อเดือน (OT / หักลาไม่รับค่าจ้าง) */
   daysPerMonth: string;
   hoursPerDay: string;
-  /** ประกันสังคม (บันทึกลงตั้งค่าในแท็บภาษี & ประกันสังคม) */
+  /** ประกันสังคม (อัตราตามช่วงเวลา จัดการในหน้าต่างแก้รายการประกันสังคม) */
   ssoPercent: string;
   ssoMin: string;
   ssoMax: string;
@@ -152,6 +152,19 @@ export const validateFormulaParams = (template: string, p: FormulaParams): strin
   }
 };
 
+/** แสดงตัวเลขพร้อมลูกน้ำ (ค่าที่เก็บยังเป็นตัวเลขล้วน) */
+const withCommas = (v: string) => {
+  if (v === '' || v == null) return '';
+  const [i, d] = String(v).split('.');
+  return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d !== undefined ? `.${d}` : '');
+};
+/** รับค่าที่พิมพ์ (อาจมีลูกน้ำ) → ตัวเลขล้วน ทศนิยมได้จุดเดียว */
+const cleanNumber = (v: string) => {
+  const raw = v.replace(/[^\d.]/g, '');
+  const dot = raw.indexOf('.');
+  return dot < 0 ? raw : raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, '');
+};
+
 const inputCls =
   'w-full text-xs px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-900 dark:text-slate-100 font-semibold';
 
@@ -173,15 +186,14 @@ interface Props {
 
 export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChange }) => {
   const set = (patch: Partial<FormulaParams>) => onChange({ ...params, ...patch });
-  const numberInput = (key: keyof FormulaParams, placeholder: string, step = '1') => (
+  // step คงไว้เพื่อความเข้ากันได้ — ช่องเป็น text เพื่อแสดงลูกน้ำ
+  const numberInput = (key: keyof FormulaParams, placeholder: string, _step = '1') => (
     <input
-      type="number"
-      min="0"
-      step={step}
+      type="text"
       inputMode="decimal"
-      placeholder={placeholder}
-      value={params[key] as string}
-      onChange={(e) => set({ [key]: e.target.value } as Partial<FormulaParams>)}
+      placeholder={withCommas(placeholder)}
+      value={withCommas(params[key] as string)}
+      onChange={(e) => set({ [key]: cleanNumber(e.target.value) } as Partial<FormulaParams>)}
       className={inputCls}
     />
   );
@@ -205,13 +217,11 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
                   {tiers.length === 1 ? 'ทุกเดือน' : i === tiers.length - 1 ? `เดือนที่ ${i + 1} ขึ้นไป` : `เดือนที่ ${i + 1}`}
                 </span>
                 <input
-                  type="number"
-                  min="0"
-                  step="0.01"
+                  type="text"
                   inputMode="decimal"
                   placeholder="500"
-                  value={t}
-                  onChange={(e) => setTier(i, e.target.value)}
+                  value={withCommas(t)}
+                  onChange={(e) => setTier(i, cleanNumber(e.target.value))}
                   className={inputCls}
                 />
                 <span className="text-[11px] text-slate-500 shrink-0">บาท</span>
@@ -278,7 +288,7 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
           <Field label="ฐานค่าจ้างสูงสุด" suffix="บาท">{numberInput('ssoMax', '17500')}</Field>
         </div>
       );
-      preview = `หัก ${params.ssoPercent || 0}% ของค่าจ้าง (ค่าจ้างต่ำกว่า ${fmt(params.ssoMin || '0')} ใช้ ${fmt(params.ssoMin || '0')}, เกิน ${fmt(params.ssoMax || '0')} ใช้ ${fmt(params.ssoMax || '0')}) — หักสูงสุด ${fmt(String(max))} บาท/เดือน • ค่านี้ใช้ร่วมกับแท็บภาษี & ประกันสังคม`;
+      preview = `หัก ${params.ssoPercent || 0}% ของค่าจ้าง (ค่าจ้างต่ำกว่า ${fmt(params.ssoMin || '0')} ใช้ ${fmt(params.ssoMin || '0')}, เกิน ${fmt(params.ssoMax || '0')} ใช้ ${fmt(params.ssoMax || '0')}) — หักสูงสุด ${fmt(String(max))} บาท/เดือน`;
       break;
     }
     case 'TAX_STANDARD':
@@ -289,7 +299,7 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
           <Field label="ลดหย่อนส่วนตัว" suffix="บาท">{numberInput('taxPersonal', '60000')}</Field>
         </div>
       );
-      preview = `เงินได้ทั้งปี − ค่าใช้จ่าย ${params.taxExpensePercent || 0}% (ไม่เกิน ${fmt(params.taxExpenseCap || '0')}) − ลดหย่อนส่วนตัว ${fmt(params.taxPersonal || '0')} − ประกันสังคม − กองทุนสำรองเลี้ยงชีพ แล้วคิดอัตราขั้นบันได (แก้อัตราขั้นบันไดได้ที่แท็บภาษี & ประกันสังคม) แล้วหารเฉลี่ยรายเดือน`;
+      preview = `เงินได้ทั้งปี − ค่าใช้จ่าย ${params.taxExpensePercent || 0}% (ไม่เกิน ${fmt(params.taxExpenseCap || '0')}) − ลดหย่อนส่วนตัว ${fmt(params.taxPersonal || '0')} − ประกันสังคม − กองทุนสำรองเลี้ยงชีพ แล้วคิดอัตราขั้นบันได (แก้อัตราขั้นบันไดได้ที่แท็บ "ภาษี") แล้วหารเฉลี่ยรายเดือน`;
       break;
     case 'LATE_ABSENT':
       fields = (

@@ -622,12 +622,12 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
-          isDocumentRequired: benefitForm.isDocumentRequired,
+          isDocumentRequired: benefitForm.payoutType === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
           defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
           status: benefitForm.status,
-          payrollItemId: benefitForm.payrollItemId,
+          payrollItemId: benefitForm.payoutType === 'IN_KIND' ? undefined : benefitForm.payrollItemId,
         });
         showSuccess('เพิ่มสวัสดิการของบริษัทสำเร็จ');
       } else if (benefitForm.id) {
@@ -636,12 +636,12 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
-          isDocumentRequired: benefitForm.isDocumentRequired,
+          isDocumentRequired: benefitForm.payoutType === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
           defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
           status: benefitForm.status,
-          payrollItemId: benefitForm.payrollItemId,
+          payrollItemId: benefitForm.payoutType === 'IN_KIND' ? undefined : benefitForm.payrollItemId,
         });
         showSuccess('แก้ไขสวัสดิการสำเร็จ');
       }
@@ -1859,11 +1859,11 @@ export default function OrganizationPage() {
                       const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
                       const CatIcon = catInfo.icon;
                       const freqLabel = ben.defaultFrequency === 'MONTHLY' ? 'ด.' : ben.defaultFrequency === 'YEARLY' ? 'ปี' : ben.defaultFrequency === 'DAILY' ? 'วัน' : 'ครั้ง';
-                      const payoutBadge = ben.payoutType === 'PAYROLL' 
-                        ? { label: 'จ่ายในเงินเดือน', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' }
+                      const payoutBadge = ben.payoutType === 'PAYROLL' && !ben.isDocumentRequired
+                        ? { label: 'จ่ายประจำในเงินเดือน', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' }
                         : ben.payoutType === 'IN_KIND'
-                        ? { label: 'ตามระเบียบบริษัท', cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' }
-                        : { label: 'ยื่นเบิกตามบิล', cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800' };
+                        ? { label: 'ไม่ใช่ตัวเงิน', cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' }
+                        : { label: 'เบิกตามจริง', cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800' };
 
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1879,6 +1879,11 @@ export default function OrganizationPage() {
                                 <div>{ben.benefitName}</div>
                                 {ben.description && (
                                   <div className="text-[11px] text-slate-400 dark:text-slate-500 font-normal truncate max-w-xs">{ben.description}</div>
+                                )}
+                                {ben.isStatutory && (
+                                  <div className="text-[10px] text-blue-600 dark:text-blue-300 font-normal">
+                                    แสดงเพื่ออ้างอิงสิทธิ์ — อัตรา/การคำนวณตั้งที่ เงินเดือน &gt; รายได้และรายหัก
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -2868,19 +2873,33 @@ export default function OrganizationPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      รูปแบบการให้สิทธิ์ / เบิกจ่าย <span className="text-rose-500">*</span>
+                      วิธีจ่าย <span className="text-rose-500">*</span>
                     </label>
                     <CustomSelect
                       value={benefitForm.payoutType || 'REIMBURSEMENT'}
-                      onChange={(e) => setBenefitForm({ ...benefitForm, payoutType: e.target.value })}
+                      onChange={(e) =>
+                        setBenefitForm({
+                          ...benefitForm,
+                          payoutType: e.target.value,
+                          isDocumentRequired: e.target.value === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
+                        })
+                      }
                       className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
                     >
-                      <option value="IN_KIND">ตามระเบียบบริษัท</option>
-                      <option value="REIMBURSEMENT">ยื่นเบิกตามบิล / ใบเสร็จ</option>
-                      <option value="PAYROLL">จ่ายในเงินเดือน</option>
+                      <option value="PAYROLL">จ่ายประจำในเงินเดือน (อัตโนมัติทุกงวด)</option>
+                      <option value="REIMBURSEMENT">เบิกตามจริง (ยื่นคำขอเบิก)</option>
+                      <option value="IN_KIND">ไม่ใช่ตัวเงิน (บริการ / สิทธิ์ตามระเบียบ)</option>
                     </CustomSelect>
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      {benefitForm.payoutType === 'PAYROLL'
+                        ? 'ระบบจ่ายยอดตามสิทธิ์ของประเภทพนักงานในสลิปทุกงวดให้อัตโนมัติ ไม่ต้องยื่นเบิก'
+                        : benefitForm.payoutType === 'IN_KIND'
+                        ? 'ไม่จ่ายเป็นเงิน (เช่น รถรับส่ง ประกันกลุ่ม) จึงไม่ต้องมีรายการในสลิป'
+                        : 'พนักงานยื่นคำขอเบิกพร้อมหลักฐาน เมื่ออนุมัติแล้วระบบจ่ายในงวดเงินเดือนถัดไป ไม่เกินวงเงิน'}
+                    </span>
                   </div>
 
+                  {benefitForm.payoutType !== 'IN_KIND' && (
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       จ่ายผ่านรายการ (บนสลิปเงินเดือน)
@@ -2891,6 +2910,7 @@ export default function OrganizationPage() {
                       isNew={modalMode === 'create'}
                     />
                   </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -2940,6 +2960,7 @@ export default function OrganizationPage() {
                   </label>
                 </div>
 
+                {benefitForm.payoutType !== 'PAYROLL' && (
                 <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
                   <input
                     type="checkbox"
@@ -2952,6 +2973,7 @@ export default function OrganizationPage() {
                     แนบเอกสารประกอบหรือใบรับรองแพทย์
                   </label>
                 </div>
+                )}
 
                 {modalMode === 'edit' && (
                   <div>

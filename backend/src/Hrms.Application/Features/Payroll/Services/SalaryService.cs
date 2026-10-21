@@ -953,7 +953,12 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var latestPeriod = periods.FirstOrDefault();
+        // "เดือนนี้" = รอบของเดือนปัจจุบัน (ถ้ามี) ไม่ใช่รอบล่าสุดที่อาจเป็นร่างของเดือนอนาคต
+        var nowThai = DateTime.UtcNow.AddHours(7);
+        var nowKey = nowThai.Year * 12 + nowThai.Month;
+        var latestPeriod = periods.FirstOrDefault(p => p.Year * 12 + p.Month == nowKey)
+            ?? periods.FirstOrDefault(p => p.Year * 12 + p.Month <= nowKey)
+            ?? periods.LastOrDefault();
 
         var activeSalariesQuery = _context.EmployeeSalaries
             .Where(s => s.EffectiveTo == null)
@@ -987,11 +992,14 @@ public class SalaryService : ISalaryService
             ? $"{ThaiMonths[latestPeriod.Month <= 12 ? latestPeriod.Month : 1]} {latestPeriod.Year + 543}"
             : "ไม่มีรอบเงินเดือน";
 
-        // "กำหนดปิดรอบถัดไป" = รอบที่ยังไม่ปิด/ไม่จ่าย ที่เก่าที่สุด — เดิมใช้รอบล่าสุดเสมอ แม้รอบนั้นจ่ายเงินไปแล้ว
-        var nextOpenPeriod = periods
+        // "กำหนดปิดรอบถัดไป" = รอบที่ยังไม่ปิด/ไม่จ่าย ตั้งแต่เดือนปัจจุบันเป็นต้นไป (เก่าสุดก่อน)
+        // รอบเดือนก่อนหน้าที่ยังค้างอยู่ นับแยกเป็น "รอบค้าง" แทน
+        var openPeriods = periods
             .Where(p => p.Status != "PAID" && p.Status != "CLOSED" && p.Status != "CANCELLED")
             .OrderBy(p => p.Year).ThenBy(p => p.Month)
-            .FirstOrDefault();
+            .ToList();
+        var overdueOpenCount = openPeriods.Count(p => p.Year * 12 + p.Month < nowKey);
+        var nextOpenPeriod = openPeriods.FirstOrDefault(p => p.Year * 12 + p.Month >= nowKey) ?? openPeriods.LastOrDefault();
 
         var thaiCulture = new System.Globalization.CultureInfo("th-TH");
         string nextClosingDate = nextOpenPeriod != null
@@ -1047,6 +1055,7 @@ public class SalaryService : ISalaryService
             PendingApprovalCount = Math.Max(0, totalCount - calculatedCount),
             NextClosingDate = nextClosingDate,
             RemainingDays = remainingDays,
+            OverdueOpenPeriodCount = overdueOpenCount,
             RecentPeriods = recentPeriods
         };
     }
@@ -1066,14 +1075,22 @@ public class SalaryService : ISalaryService
         var list = await query.OrderBy(i => i.Id).ToListAsync(cancellationToken);
         var linked = (await _context.BenefitItems.AsNoTracking()
                 .Where(b => b.PayrollItemId != null)
-                .Select(b => new { PayrollItemId = b.PayrollItemId!.Value, b.BenefitName })
+                .Select(b => new { PayrollItemId = b.PayrollItemId!.Value, b.BenefitName, b.DefaultCoverageAmount, b.DefaultFrequency, b.PayoutType, b.IsDocumentRequired, b.Status })
                 .ToListAsync(cancellationToken))
             .GroupBy(x => x.PayrollItemId)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.BenefitName).ToList());
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         return list.Select(i => new PayrollItemDto
         {
-            LinkedBenefitNames = linked.GetValueOrDefault(i.Id) ?? new List<string>(),
+            LinkedBenefitNames = linked.GetValueOrDefault(i.Id)?.Select(b => b.BenefitName).ToList() ?? new List<string>(),
+            LinkedBenefits = linked.GetValueOrDefault(i.Id)?.Select(b => new LinkedBenefitDto
+            {
+                BenefitName = b.BenefitName,
+                DefaultCoverageAmount = b.DefaultCoverageAmount,
+                DefaultFrequency = b.DefaultFrequency,
+                PayoutType = b.PayoutType == "PAYROLL" && b.IsDocumentRequired ? "REIMBURSEMENT" : b.PayoutType,
+                Status = b.Status,
+            }).ToList() ?? new List<LinkedBenefitDto>(),
             Id = i.Id,
             ItemCode = i.ItemCode,
             ItemName = i.ItemName,
@@ -2307,6 +2324,9 @@ public class SalaryService : ISalaryService
                 var allowanceBenefits = curAssign.EmployeeType.EmployeeTypeBenefits
                     .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null && etb.BenefitItem.Category == "ALLOWANCE"
                         && etb.BenefitItem.Status == "ACTIVE"
+                        // จ่ายอัตโนมัติทุกงวดเฉพาะวิธีจ่าย "จ่ายประจำในเงินเดือน" ที่ไม่ต้องแนบเอกสาร
+                        // (เบิกตามจริง → จ่ายจากคำขอเบิกที่อนุมัติแล้ว, ไม่ใช่ตัวเงิน → ไม่จ่าย)
+                        && etb.BenefitItem.PayoutType == "PAYROLL" && !etb.BenefitItem.IsDocumentRequired
                         // ผูกกับรายการที่เป็นสูตร → ยอดมาจากสูตรอย่างเดียว ไม่จ่ายจากสวัสดิการซ้ำ
                         && !(etb.BenefitItem.PayrollItemId.HasValue && autoItemIds.Contains(etb.BenefitItem.PayrollItemId.Value)))
                     .ToList();

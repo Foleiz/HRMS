@@ -123,7 +123,7 @@ export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     defaultSocialSecurity: false,
     parameterLabel: 'อัตราสมทบและเพดาน',
     parameterPlaceholder: 'เช่น 5% ฐานค่าจ้าง 1,650 - 17,500 บาท',
-    hint: 'คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" — อัตราและฐานค่าจ้างที่แก้ตรงนี้คือค่าเดียวกับแท็บภาษี & ประกันสังคม (ช่วงที่มีผลปัจจุบัน)',
+    hint: 'คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" ตามอัตราที่มีผลในงวดนั้น (จัดการอัตราได้ที่ด้านล่าง)',
   },
   {
     code: 'OVERTIME',
@@ -301,6 +301,13 @@ export const PayrollItemModal: React.FC<Props> = ({
   const legacyTemplate = LEGACY_FORMULA_TEMPLATES.find((t) => t.code === templateCode);
   /** รายการของระบบ: เปลี่ยนสูตรไม่ได้ */
   const isSystemFormula = !!systemTemplate;
+  /** รายการของระบบที่ต้องคำนวณเสมอ (ปิดใช้งานแล้วเงินเดือน/ภาษี/ประกันสังคม/OT จะผิด) — ค่าตำแหน่งปิดได้ */
+  const lockActive = isSystemFormula && templateCode !== 'POSITION_ALLOWANCE';
+  const wasInactive = item?.status ? item.status.toUpperCase() !== 'ACTIVE' : false;
+  const thaiDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
   const typeLabel = (c: string) => (c === 'EARNING' ? 'รายได้' : 'รายหัก');
   const systemOptions = SYSTEM_FORMULA_TEMPLATES.filter((t) => SYSTEM_TEMPLATE_ITEM[t.code] && t.code !== templateCode).map((t) => ({
     ...t,
@@ -552,6 +559,12 @@ export const PayrollItemModal: React.FC<Props> = ({
           <div>
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
               <span>ประเภทการคำนวณ</span>
+              {isSystemFormula && !isAutoPullModuleItem && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                  <Lock className="w-3 h-3" />
+                  รายการของระบบ
+                </span>
+              )}
               {isAutoPullModuleItem && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
                   <Lock className="w-3 h-3" />
@@ -563,6 +576,11 @@ export const PayrollItemModal: React.FC<Props> = ({
               <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
                 <Lock className="w-3.5 h-3.5 text-teal-300" />
                 <span>ดึงข้อมูลอัตโนมัติ</span>
+              </div>
+            ) : isSystemFormula ? (
+              <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
+                <Lock className="w-3.5 h-3.5 text-purple-300" />
+                <span>สูตรคำนวณ (ระบบคำนวณให้)</span>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -601,11 +619,11 @@ export const PayrollItemModal: React.FC<Props> = ({
             </div>
           ) : linkedBenefits.length > 0 ? (
             <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">
-              ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงินและผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
+              ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงิน วิธีจ่าย และผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ (จ่ายประจำในเงินเดือน = จ่ายอัตโนมัติทุกงวด, เบิกตามจริง = จ่ายตามคำขอเบิกที่อนุมัติ) หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
             </div>
           ) : itemType === 'EARNING' ? (
             <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300">
-              เงินได้คงที่รายเดือน (เช่น ค่าเดินทาง ค่าโทรศัพท์) ให้ตั้งเป็นสวัสดิการแบบ &quot;เบี้ยเลี้ยง&quot; ที่เมนูสวัสดิการ แล้วเลือกรายการรายได้นี้เป็นรหัสในสลิป
+              เงินได้คงที่รายเดือน (เช่น ค่าโทรศัพท์ ค่าที่พัก) ให้ตั้งเป็นสวัสดิการวิธีจ่าย &quot;จ่ายประจำในเงินเดือน&quot; ที่เมนูสวัสดิการ ส่วนค่าใช้จ่ายตามใบเสร็จ (เช่น ค่าเดินทาง) ให้ตั้งเป็น &quot;เบิกตามจริง&quot; แล้วเลือกรายการรายได้นี้เป็นรหัสในสลิป
             </div>
           ) : null}
 
@@ -697,7 +715,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                               {isCurrent ? 'ใช้อยู่' : isFuture ? 'รอมีผล' : r.status === 'ACTIVE' ? 'ช่วงก่อน' : 'ปิดใช้'}
                             </span>
                             <span className="flex-1 text-slate-700 dark:text-slate-300">
-                              มีผล {r.effectiveFrom} · ลูกจ้าง {pctOf(r.employeeContributionPercent)}% / นายจ้าง {pctOf(r.employerContributionPercent)}% · ฐาน{' '}
+                              มีผล {thaiDate(r.effectiveFrom)} · ลูกจ้าง {pctOf(r.employeeContributionPercent)}% / นายจ้าง {pctOf(r.employerContributionPercent)}% · ฐาน{' '}
                               {money(r.minWageBaseAmount)}–{money(r.maxWageBaseAmount)} บาท
                             </span>
                             {canEditTaxSso && (
@@ -782,7 +800,8 @@ export const PayrollItemModal: React.FC<Props> = ({
             </div>
           ))}
 
-          {/* Checkboxes: คิดภาษี & คิดประกันสังคม */}
+          {/* Checkboxes: คิดภาษี & คิดประกันสังคม (เฉพาะรายได้ — รายหักไม่ได้เป็นเงินได้) */}
+          {isEarning && (
           <div className="flex items-center gap-6 pt-1">
             <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
               <input
@@ -804,9 +823,10 @@ export const PayrollItemModal: React.FC<Props> = ({
               <span>คิดประกันสังคม</span>
             </label>
           </div>
+          )}
 
           {/* เปิดการใช้งานรายการนี้ (Toggle Switch - แสดงเฉพาะตอนแก้ไข) */}
-          {item && (
+          {item && (!lockActive || wasInactive) && (
             <div className="flex items-center justify-between pt-2 pb-1 border-t border-slate-100 dark:border-slate-700/60">
               <span className="text-xs font-medium text-slate-800 dark:text-slate-200">เปิดใช้งานรายการนี้</span>
               <button

@@ -170,19 +170,19 @@ export default function EmployeeBenefitBalancesPage() {
       case 'PAYROLL':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-            จ่ายในเงินเดือน
+            จ่ายประจำในเงินเดือน
           </span>
         );
       case 'REIMBURSEMENT':
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-            ยื่นเบิกตามบิล / ใบเสร็จ
+            เบิกตามจริง
           </span>
         );
       default:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            ตามระเบียบบริษัท
+            ไม่ใช่ตัวเงิน
           </span>
         );
     }

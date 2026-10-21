@@ -87,6 +87,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
+import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
@@ -2350,7 +2351,14 @@ export default function PayrollPage() {
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
-                <span className="text-slate-400">สถานะกำหนดการ</span>
+                <span className="text-slate-400">
+                  สถานะกำหนดการ
+                  {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 font-semibold">
+                      ค้าง {overview!.overdueOpenPeriodCount} รอบ
+                    </span>
+                  )}
+                </span>
                 <span className={`font-semibold ${
                   overview?.remainingDays != null && overview.remainingDays < 0
                     ? 'text-rose-600 dark:text-rose-400'
@@ -2386,7 +2394,12 @@ export default function PayrollPage() {
               )}
             </div>
 
-            {(!overview?.recentPeriods || overview.recentPeriods.length === 0) ? (
+            {!overview ? (
+              <div className="py-8 text-center text-xs text-slate-400">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-300" />
+                กำลังโหลดข้อมูล...
+              </div>
+            ) : (!overview.recentPeriods || overview.recentPeriods.length === 0) ? (
               <div className="py-8 text-center">
                 <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่มีรอบเงินเดือนในระบบ</p>
@@ -2819,7 +2832,7 @@ export default function PayrollPage() {
                           case 'SSO_STANDARD':
                             return { label: 'ประกันสังคม % ของค่าจ้าง', color: 'bg-purple-50 text-purple-700 border-purple-200' };
                           case 'OVERTIME':
-                            return { label: 'ชม. OT × อัตราต่อชั่วโมง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
+                            return { label: 'ชม. OT × อัตราต่อชั่วโมง × ตัวคูณ', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
                           case 'UNPAID_LEAVE':
                             return { label: 'วันลาไม่รับค่าจ้าง × ค่าจ้างรายวัน', color: 'bg-orange-50 text-orange-800 border-orange-200' };
                           case 'TAX_STANDARD':
@@ -2836,10 +2849,33 @@ export default function PayrollPage() {
                             return null;
                         }
                       };
-                      const templateBadge =
-                        item.calculationType === 'FORMULA'
-                          ? getTemplateBadge(item.formulaTemplate || (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : null))
-                          : null;
+                      const effectiveTpl = (
+                        item.formulaTemplate ||
+                        (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : item.itemCode === 'INC_OT' ? 'OVERTIME' : '')
+                      ).toUpperCase();
+                      const templateBadge = item.calculationType === 'FORMULA' ? getTemplateBadge(effectiveTpl || null) : null;
+                      // ข้อความสูตรสร้างจากค่าตัวแปรจริง (ข้อความเดิมใน DB อาจเก่า/ไม่ครบ เช่น ไม่บอกเงื่อนไขลา หรือไม่มีตัวคูณ OT)
+                      const formulaText = (() => {
+                        if (effectiveTpl === 'SSO_STANDARD') {
+                          const todayKey = new Date().toLocaleDateString('sv-SE');
+                          const cur =
+                            [...ssoRates]
+                              .filter((r) => r.status === 'ACTIVE' && r.effectiveFrom <= todayKey && (!r.effectiveTo || r.effectiveTo >= todayKey))
+                              .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+                          if (cur) {
+                            const pct = cur.employeeContributionPercent <= 1 ? cur.employeeContributionPercent * 100 : cur.employeeContributionPercent;
+                            const max = (cur.maxWageBaseAmount * pct) / 100;
+                            return `${pct}% ฐานค่าจ้าง ${cur.minWageBaseAmount.toLocaleString()}–${cur.maxWageBaseAmount.toLocaleString()} บาท (หักสูงสุด ${max.toLocaleString()} บาท/เดือน)`;
+                          }
+                        }
+                        if (PARAM_TEMPLATES.includes(effectiveTpl) && effectiveTpl !== 'PERCENT_SALES') {
+                          return serializeFormulaParams(effectiveTpl, parseFormulaParams(effectiveTpl, item.formulaValue));
+                        }
+                        return item.formulaValue || '-';
+                      })();
+                      const freqText = (f?: string | null) =>
+                        f === 'DAILY' ? 'วัน' : f === 'MONTHLY' ? 'เดือน' : f === 'YEARLY' ? 'ปี' : 'ครั้ง';
+                      const linkedBenefits = (item.linkedBenefits ?? []).filter((b) => b.status === 'ACTIVE');
 
                       const fixedNumber = item.calculationType === 'FIXED' && item.formulaValue && !isNaN(Number(item.formulaValue))
                         ? Number(item.formulaValue)
@@ -2883,15 +2919,39 @@ export default function PayrollPage() {
                                   <span>ดึงจาก: {autoPull?.source}</span>
                                 </span>
                               </div>
+                            ) : linkedBenefits.length > 0 ? (
+                              <div className="flex flex-col items-start gap-0.5 whitespace-normal">
+                                {linkedBenefits.map((b) => (
+                                  <span key={b.benefitName} className="text-xs text-slate-700 dark:text-slate-300">
+                                    {b.payoutType === 'PAYROLL' ? (
+                                      <>
+                                        <span className="font-semibold">
+                                          {b.defaultCoverageAmount > 0 ? `${b.defaultCoverageAmount.toLocaleString()} บาท/${freqText(b.defaultFrequency)}` : 'ตามสิทธิ์'}
+                                        </span>{' '}
+                                        <span className="text-[10px] text-slate-400">จ่ายประจำในเงินเดือน (ยอดตามประเภทพนักงาน)</span>
+                                      </>
+                                    ) : b.payoutType === 'IN_KIND' ? (
+                                      <span className="text-slate-400">ไม่ใช่ตัวเงิน — ไม่จ่ายในสลิป</span>
+                                    ) : (
+                                      <>
+                                        <span className="font-semibold">เบิกตามจริง</span>{' '}
+                                        <span className="text-[10px] text-slate-400">
+                                          จ่ายตามคำขอเบิกที่อนุมัติ{b.defaultCoverageAmount > 0 ? ` (วงเงิน ${b.defaultCoverageAmount.toLocaleString()} บาท/${freqText(b.defaultFrequency)})` : ''}
+                                        </span>
+                                      </>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
                             ) : item.calculationType === 'FORMULA' ? (
-                              <div className="flex flex-col items-start gap-1">
+                              <div className="flex flex-col items-start gap-1 whitespace-normal max-w-[360px]">
                                 {templateBadge && (
                                   <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
                                     {templateBadge.label}
                                   </span>
                                 )}
                                 <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                  {item.formulaValue || '-'}
+                                  {formulaText}
                                 </span>
                               </div>
                             ) : item.calculationType === 'FIXED' ? (

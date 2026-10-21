@@ -10,6 +10,8 @@ public class PayrollOverviewDto
     public int PendingApprovalCount { get; set; } = 27;
     public string NextClosingDate { get; set; } = "29 ส.ค. 2569";
     public int RemainingDays { get; set; } = 2;
+    /// <summary>รอบของเดือนก่อนหน้าที่ยังไม่ปิด/ไม่จ่าย</summary>
+    public int OverdueOpenPeriodCount { get; set; }
     public List<RecentPayrollPeriodDto> RecentPeriods { get; set; } = new();
 }
 
@@ -36,6 +38,17 @@ public class PayrollItemDto
     public string Status { get; set; } = "ACTIVE";
     /// <summary>สวัสดิการที่จ่ายผ่านรายการนี้ (ยอดมาจากสวัสดิการ ไม่ได้คำนวณจากรายการนี้เอง)</summary>
     public List<string> LinkedBenefitNames { get; set; } = new();
+    /// <summary>ยอด/วิธีจ่ายของสวัสดิการที่ผูกกับรายการนี้ (แสดงในตารางแทนบันทึกช่วยจำ)</summary>
+    public List<LinkedBenefitDto> LinkedBenefits { get; set; } = new();
+}
+
+public class LinkedBenefitDto
+{
+    public string BenefitName { get; set; } = string.Empty;
+    public decimal DefaultCoverageAmount { get; set; }
+    public string? DefaultFrequency { get; set; }
+    public string PayoutType { get; set; } = "REIMBURSEMENT";
+    public string Status { get; set; } = "ACTIVE";
 }
 
 public class CreatePayrollItemRequest
