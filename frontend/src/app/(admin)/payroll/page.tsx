@@ -2672,7 +2672,6 @@ export default function PayrollPage() {
                         <th className="py-3.5 px-4">ระดับพนักงาน</th>
                         <th className="py-3.5 px-4">กรอบเงินเดือนอ้างอิง</th>
                         <th className="py-3.5 px-4 text-right">ฐานเงินเดือนปัจจุบัน</th>
-                        <th className="py-3.5 px-4 text-center">วันที่มีผล</th>
                         <th className="py-3.5 px-4 text-center">จัดการ</th>
                       </tr>
                     </thead>
@@ -2721,9 +2720,6 @@ export default function PayrollPage() {
                                   ยังไม่ระบุ
                                 </span>
                               )}
-                            </td>
-                            <td className="py-3.5 px-4 text-center text-xs text-slate-500 dark:text-slate-400 font-mono">
-                              {emp.currentEffectiveFrom || '-'}
                             </td>
                             <td className="py-3.5 px-4 text-center">
                               <div className="inline-flex items-center gap-2">

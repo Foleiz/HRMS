@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Calendar, History, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { X, Loader2, Calendar, History, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 import { salaryService } from '@/services/salaryService';
 import { EmployeeSalary, EmployeeSalaryOverview } from '@/types/payroll';
 
@@ -83,7 +83,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
                 <table className="table-standard text-xs w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-700 text-xs font-semibold whitespace-nowrap">
-                      <th className="py-3 px-4 w-28 text-center">สถานะ</th>
+                      <th className="py-3 px-4 w-40 text-center">สถานะ</th>
                       <th className="py-3 px-4 w-36 text-right whitespace-nowrap">ฐานเงินเดือน</th>
                       <th className="py-3 px-4 w-56 whitespace-nowrap">ช่วงเวลาที่มีผล</th>
                       <th className="py-3 px-4">เหตุผลในการปรับ</th>
@@ -92,16 +92,26 @@ export const SalaryHistoryModal: React.FC<Props> = ({
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs text-slate-700 dark:text-slate-200">
                     {history.map((h) => {
-                      const isCurrent = !h.effectiveTo;
+                      // สถานะตามวันที่วันนี้: ยังไม่ถึงวันที่มีผล = รอปรับ / ครอบคลุมวันนี้ = ปัจจุบัน / ผ่านไปแล้ว = สิ้นสุด
+                      const now = new Date();
+                      const pad = (n: number) => String(n).padStart(2, '0');
+                      const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+                      const isPending = h.effectiveFrom > today;
+                      const isCurrent = !isPending && (!h.effectiveTo || h.effectiveTo >= today);
                       return (
                         <tr
                           key={h.id}
                           className={`hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors ${
-                            isCurrent ? 'bg-emerald-50/40 dark:bg-emerald-950/20' : ''
+                            isCurrent ? 'bg-emerald-50/40 dark:bg-emerald-950/20' : isPending ? 'bg-amber-50/50 dark:bg-amber-950/20' : ''
                           }`}
                         >
                           <td className="py-3 px-4 text-center whitespace-nowrap">
-                            {isCurrent ? (
+                            {isPending ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 whitespace-nowrap">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                รอปรับฐานเงินเดือน
+                              </span>
+                            ) : isCurrent ? (
                               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 ปัจจุบัน
