@@ -5,12 +5,12 @@ import {
   FileText,
   Download,
   Trash2,
-  Plus,
   Loader2,
-  X,
-  Upload,
+  UploadCloud,
   AlertTriangle,
   FolderOpen,
+  CheckCircle2,
+  ChevronDown,
 } from 'lucide-react';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
 import { masterDataService } from '@/services/masterDataService';
@@ -19,7 +19,6 @@ import { DocumentTypeItem } from '@/types/master';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
-import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
@@ -79,10 +78,11 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   const [deleteTarget, setDeleteTarget] = useState<EmployeeDocument | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // ฟอร์มเพิ่มเอกสาร
-  const [showUpload, setShowUpload] = useState(false);
+  // รายการหัวข้อเอกสาร (ประเภทเอกสารจากข้อมูลหลัก) — กดหัวข้อเพื่อเปิดช่องอัปโหลด
   const [docTypes, setDocTypes] = useState<DocumentTypeItem[]>([]);
-  const [typeId, setTypeId] = useState<number | ''>('');
+  const [expandedTypeId, setExpandedTypeId] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const typeId = expandedTypeId ?? '';
   const [file, setFile] = useState<File | null>(null);
   const [issuedDate, setIssuedDate] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -113,6 +113,14 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
     };
   }, [employeeId, reloadKey]);
 
+  useEffect(() => {
+    masterDataService
+      .getDocumentTypes('ACTIVE')
+      .then(setDocTypes)
+      .catch(() => toast.error('ไม่สามารถโหลดประเภทเอกสารได้'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const reload = () => {
     setLoading(true);
     setReloadKey((k) => k + 1);
@@ -127,6 +135,20 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
     [documents],
   );
 
+  // หัวข้อคงที่ = ประเภทเอกสารที่เปิดใช้งาน + ประเภทที่ปิดไปแล้วแต่ยังมีไฟล์อยู่ในแฟ้ม
+  const rows = useMemo(() => {
+    const list: { id: number; name: string; type?: DocumentTypeItem }[] = docTypes.map((t) => ({ id: t.id, name: t.documentName, type: t }));
+    documents.forEach((d) => {
+      if (!list.some((r) => r.id === d.documentTypeId)) list.push({ id: d.documentTypeId, name: d.documentTypeName });
+    });
+    return list.map((r) => ({
+      ...r,
+      docs: documents
+        .filter((d) => d.documentTypeId === r.id)
+        .sort((a, b) => (b.uploadedAt || '').localeCompare(a.uploadedAt || '')),
+    }));
+  }, [docTypes, documents]);
+
   const selectedType = docTypes.find((t) => t.id === typeId);
   // ประเภทเอกสารกำหนดอายุไว้ → คำนวณวันหมดอายุจากวันที่ออก (ถ้ายังไม่ได้กรอกเอง)
   const autoExpiry = useMemo(() => {
@@ -139,31 +161,31 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
   }, [selectedType, issuedDate]);
   const effectiveExpiry = expiryDate || autoExpiry;
 
-  const openUpload = async () => {
-    setTypeId('');
+  const resetUploadForm = () => {
     setFile(null);
     setIssuedDate('');
     setExpiryDate('');
     setRemarks('');
-    setShowUpload(true);
-    if (docTypes.length === 0) {
-      try {
-        setDocTypes(await masterDataService.getDocumentTypes('ACTIVE'));
-      } catch {
-        toast.error('ไม่สามารถโหลดประเภทเอกสารได้');
-      }
-    }
   };
 
-  const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
-    e.target.value = '';
+  const toggleRow = (id: number) => {
+    resetUploadForm();
+    setExpandedTypeId((cur) => (cur === id ? null : id));
+  };
+
+  const acceptFile = (f: File | null) => {
     if (!f) return;
     if (f.size > MAX_FILE_BYTES) {
       toast.warning('ไฟล์ต้องมีขนาดไม่เกิน 5 MB');
       return;
     }
     setFile(f);
+  };
+
+  const handlePickFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    e.target.value = '';
+    acceptFile(f);
   };
 
   const handleSave = async () => {
@@ -182,8 +204,8 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
         expiryDate: effectiveExpiry || undefined,
         remarks: remarks.trim() || undefined,
       });
-      toast.success('เพิ่มเอกสารเข้าแฟ้มเรียบร้อย');
-      setShowUpload(false);
+      toast.success('อัปโหลดเอกสารเข้าแฟ้มเรียบร้อย');
+      resetUploadForm();
       reload();
     } catch (err: unknown) {
       toast.error(apiMessage(err, 'ไม่สามารถเพิ่มเอกสารได้'));
@@ -243,218 +265,226 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
             </span>
           )}
         </div>
-        {canUpload && (
-          <button
-            type="button"
-            onClick={openUpload}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white text-xs font-medium rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            เพิ่มเอกสาร
-          </button>
-        )}
       </div>
 
-      {/* รายการ */}
-      {loading ? (
-        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
+      {/* รายการหัวข้อเอกสาร — กดหัวข้อเพื่อเปิดช่องอัปโหลด */}
+      {loading && docTypes.length === 0 ? (
+        <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
           <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดเอกสาร...
         </div>
       ) : error ? (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
         </div>
-      ) : documents.length === 0 ? (
-        <div className="p-10 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-          <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-          <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีเอกสารในแฟ้มของพนักงานท่านนี้</p>
-          <p className="text-[11px]">
-            {isSelf
-              ? 'กด "เพิ่มเอกสาร" เพื่ออัปโหลดสำเนาบัตรประชาชน ทะเบียนบ้าน วุฒิการศึกษา สมุดบัญชี ฯลฯ เข้าแฟ้มของคุณ'
-              : 'พนักงานอัปโหลดเองได้จากหน้าโปรไฟล์ หรือฝ่ายบุคคลกด "เพิ่มเอกสาร"'}
-          </p>
-        </div>
       ) : (
-        <div className="overflow-x-auto border border-slate-200 rounded-xl">
-          <table className="table-standard text-xs w-full min-w-[760px] whitespace-nowrap">
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-xl">
+          <table className="table-standard text-xs w-full min-w-[640px]">
             <thead className="bg-slate-50 text-slate-500 text-[11px]">
               <tr className="whitespace-nowrap">
-                <th className="text-left font-semibold px-4 py-2.5">ประเภทเอกสาร</th>
-                <th className="text-left font-semibold px-4 py-2.5">ไฟล์</th>
-                <th className="text-left font-semibold px-4 py-2.5">วันที่ออก</th>
-                <th className="text-left font-semibold px-4 py-2.5">วันหมดอายุ</th>
-                <th className="text-left font-semibold px-4 py-2.5">ที่มา</th>
-                <th className="text-right font-semibold px-4 py-2.5">จัดการ</th>
+                <th className="w-12 px-3 py-2.5" />
+                <th className="w-16 text-left font-semibold px-2 py-2.5">ลำดับ</th>
+                <th className="text-left font-semibold px-4 py-2.5">เอกสาร</th>
+                <th className="text-left font-semibold px-4 py-2.5">ไฟล์ล่าสุด</th>
+                <th className="text-left font-semibold px-4 py-2.5">สถานะ</th>
+                <th className="w-12 px-3 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {documents.map((doc) => {
-                const badge = EXPIRY_BADGE[doc.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY;
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+              {rows.map((row, idx) => {
+                const latest = row.docs[0];
+                const isOpen = expandedTypeId === row.id;
+                const badge = latest ? EXPIRY_BADGE[latest.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY : null;
                 return (
-                  <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 align-top">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-slate-800 dark:text-slate-200" title={doc.remarks || undefined}>
-                        {doc.documentTypeName}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-slate-700 dark:text-slate-300 break-all max-w-[200px]">{doc.fileName || '-'}</p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">{formatSize(doc.fileSize)}</p>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{formatDate(doc.issuedDate)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <p className="text-slate-600 dark:text-slate-400">{formatDate(doc.expiryDate)}</p>
-                      <span className={`inline-block mt-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
-                        {badge.label}
-                        {doc.expiryStatus === 'EXPIRING_SOON' && doc.daysToExpiry != null ? ` (อีก ${doc.daysToExpiry} วัน)` : ''}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="text-slate-700 dark:text-slate-300">
-                        {doc.sourceRequestNo
-                          ? `คำขอ ${doc.sourceRequestNo}`
-                          : doc.uploadedByEmployeeId != null && doc.uploadedByEmployeeId === doc.employeeId
-                          ? 'พนักงานอัปโหลดเอง'
-                          : 'ฝ่ายบุคคลอัปโหลด'}
-                      </p>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                        {formatDate(doc.uploadedAt)}
-                        {doc.uploadedByName ? ` · ${doc.uploadedByName}` : ''}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {doc.hasFile && (
-                          <button
-                            type="button"
-                            title="ดาวน์โหลด"
-                            onClick={() => handleDownload(doc)}
-                            disabled={downloadingId === doc.id}
-                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
-                          >
-                            {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                          </button>
+                  <React.Fragment key={row.id}>
+                    <tr
+                      onClick={() => toggleRow(row.id)}
+                      className={`cursor-pointer transition-colors ${isOpen ? 'bg-slate-50 dark:bg-slate-800/60' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+                    >
+                      <td className="px-3 py-3 text-center">
+                        <CheckCircle2
+                          className={`w-5 h-5 inline-block ${latest ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`}
+                        />
+                      </td>
+                      <td className="px-2 py-3 text-slate-600 dark:text-slate-400">{idx + 1}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-200">
+                        {row.name}
+                        {row.type?.isExpiryRequired && <span className="ml-1.5 text-[10px] font-normal text-slate-400">(มีวันหมดอายุ)</span>}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
+                        {latest ? (
+                          <span className="break-all">
+                            {latest.fileName || '-'}
+                            {row.docs.length > 1 && <span className="ml-1 text-[10px] text-slate-400">(+{row.docs.length - 1} ไฟล์)</span>}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">ยังไม่ได้อัปโหลด</span>
                         )}
-                        {(canManage || isOwnUpload(doc)) && (
-                          <button
-                            type="button"
-                            title="ลบ"
-                            onClick={() => setDeleteTarget(doc)}
-                            className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {badge && (
+                          <span className={`inline-block px-2 py-0.5 rounded-full border text-[10px] font-medium ${badge.className}`}>
+                            {badge.label}
+                            {latest?.expiryStatus === 'EXPIRING_SOON' && latest.daysToExpiry != null ? ` (อีก ${latest.daysToExpiry} วัน)` : ''}
+                          </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <ChevronDown className={`w-4 h-4 inline-block text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                      </td>
+                    </tr>
+
+                    {isOpen && (
+                      <tr className="bg-white dark:bg-slate-900/40">
+                        <td colSpan={6} className="px-4 pb-4 pt-2 space-y-3">
+                          {/* ไฟล์ที่อัปโหลดแล้วในหัวข้อนี้ */}
+                          {row.docs.length > 0 && (
+                            <div className="space-y-1.5">
+                              {row.docs.map((doc) => {
+                                const b = EXPIRY_BADGE[doc.expiryStatus] ?? EXPIRY_BADGE.NO_EXPIRY;
+                                return (
+                                  <div key={doc.id} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/40">
+                                    <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                                    <div className="flex-1 min-w-[180px]">
+                                      <p className="text-slate-800 dark:text-slate-200 break-all" title={doc.remarks || undefined}>
+                                        {doc.fileName || '-'} <span className="text-[10px] text-slate-400">{formatSize(doc.fileSize)}</span>
+                                      </p>
+                                      <p className="text-[10px] text-slate-400">
+                                        ออก {formatDate(doc.issuedDate)} · หมดอายุ {formatDate(doc.expiryDate)} ·{' '}
+                                        {doc.sourceRequestNo
+                                          ? `คำขอ ${doc.sourceRequestNo}`
+                                          : doc.uploadedByEmployeeId != null && doc.uploadedByEmployeeId === doc.employeeId
+                                          ? 'พนักงานอัปโหลดเอง'
+                                          : 'ฝ่ายบุคคลอัปโหลด'}{' '}
+                                        {formatDate(doc.uploadedAt)}
+                                        {doc.uploadedByName ? ` · ${doc.uploadedByName}` : ''}
+                                      </p>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-medium ${b.className}`}>{b.label}</span>
+                                    <div className="flex items-center gap-1">
+                                      {doc.hasFile && (
+                                        <button
+                                          type="button"
+                                          title="ดาวน์โหลด"
+                                          onClick={() => handleDownload(doc)}
+                                          disabled={downloadingId === doc.id}
+                                          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                                        >
+                                          {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                                        </button>
+                                      )}
+                                      {(canManage || isOwnUpload(doc)) && (
+                                        <button
+                                          type="button"
+                                          title="ลบ"
+                                          onClick={() => setDeleteTarget(doc)}
+                                          className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                                        >
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {/* ช่องอัปโหลด (ลากไฟล์มาวาง หรือกดเลือกไฟล์) */}
+                          {canUpload && row.type && (
+                            <div className="space-y-3">
+                              <input ref={fileRef} type="file" accept={ACCEPT} className="hidden" onChange={handlePickFile} />
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => fileRef.current?.click()}
+                                onKeyDown={(e) => e.key === 'Enter' && fileRef.current?.click()}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  setDragOver(true);
+                                }}
+                                onDragLeave={() => setDragOver(false)}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  setDragOver(false);
+                                  acceptFile(e.dataTransfer.files?.[0] ?? null);
+                                }}
+                                className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border border-dashed cursor-pointer transition-colors ${
+                                  dragOver
+                                    ? 'border-[#0B2046] bg-slate-50 dark:bg-slate-800'
+                                    : 'border-slate-300 dark:border-slate-600 hover:border-[#0B2046] hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+                                }`}
+                              >
+                                <UploadCloud className="w-9 h-9 text-slate-300 dark:text-slate-500" />
+                                {file ? (
+                                  <p className="text-slate-700 dark:text-slate-200 break-all px-4 text-center">
+                                    {file.name} <span className="text-slate-400">({formatSize(file.size)})</span>
+                                    <span className="block text-[10px] text-slate-400 mt-0.5">กดอีกครั้งเพื่อเปลี่ยนไฟล์</span>
+                                  </p>
+                                ) : (
+                                  <p className="text-slate-500 dark:text-slate-400">
+                                    ลากไฟล์วางที่นี่หรือ<span className="font-bold text-slate-700 dark:text-slate-200">เลือกไฟล์</span>
+                                  </p>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-slate-400">ประเภทไฟล์ .pdf .jpg .png .doc (ไม่เกิน 5 MB)</p>
+
+                              {file && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                                  <div>
+                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">วันที่ออกเอกสาร</label>
+                                    <ThaiDatePicker value={issuedDate} onChange={(val) => setIssuedDate(val)} />
+                                  </div>
+                                  <div>
+                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                      วันหมดอายุ {row.type.isExpiryRequired && <span className="text-rose-500">*</span>}
+                                    </label>
+                                    <ThaiDatePicker value={effectiveExpiry} minDate={issuedDate || undefined} onChange={(val) => setExpiryDate(val)} />
+                                    {!expiryDate && autoExpiry && (
+                                      <p className="text-[10px] text-slate-400 mt-1">คำนวณจากอายุเอกสาร {row.type.validityMonths} เดือน</p>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">หมายเหตุ</label>
+                                    <input
+                                      value={remarks}
+                                      onChange={(e) => setRemarks(e.target.value)}
+                                      className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-[#0B2046]/20 focus:outline-none"
+                                    />
+                                  </div>
+                                  <div className="sm:col-span-3 flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={resetUploadForm}
+                                      className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                                    >
+                                      ยกเลิก
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={handleSave}
+                                      disabled={saving}
+                                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] text-white hover:bg-[#153468] cursor-pointer disabled:opacity-60"
+                                    >
+                                      {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                      อัปโหลด
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {!canUpload && row.docs.length === 0 && (
+                            <p className="py-4 text-center text-slate-400">ยังไม่มีไฟล์ในหัวข้อนี้</p>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 );
               })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Modal เพิ่มเอกสาร */}
-      {showUpload && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg text-xs">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">เพิ่มเอกสารเข้าแฟ้มพนักงาน</h3>
-              <button type="button" onClick={() => setShowUpload(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                <X className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  ประเภทเอกสาร <span className="text-rose-500">*</span>
-                </label>
-                <CustomSelect
-                  value={typeId}
-                  onChange={(e) => setTypeId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none cursor-pointer"
-                >
-                  <option value="">-- เลือกประเภทเอกสาร --</option>
-                  {docTypes.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.documentName}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  ไฟล์เอกสาร <span className="text-rose-500">*</span>
-                </label>
-                <input ref={fileRef} type="file" accept={ACCEPT} className="hidden" onChange={handlePickFile} />
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full flex items-center gap-2 px-3 py-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl hover:border-[#0B2046] hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer text-left"
-                >
-                  <Upload className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span className={`break-all ${file ? 'text-slate-800 dark:text-slate-200' : 'text-slate-400'}`}>
-                    {file ? `${file.name} (${formatSize(file.size)})` : 'เลือกไฟล์ PDF, JPG, PNG, DOC (ไม่เกิน 5 MB)'}
-                  </span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">วันที่ออกเอกสาร</label>
-                  <ThaiDatePicker
-                    value={issuedDate}
-                    onChange={(val) => setIssuedDate(val)}
-                  />
-                </div>
-                <div>
-                  <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    วันหมดอายุ {selectedType?.isExpiryRequired && <span className="text-rose-500">*</span>}
-                  </label>
-                  <ThaiDatePicker
-                    value={effectiveExpiry}
-                    minDate={issuedDate || undefined}
-                    onChange={(val) => setExpiryDate(val)}
-                  />
-                  {!expiryDate && autoExpiry && (
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">คำนวณจากอายุเอกสาร {selectedType?.validityMonths} เดือน</p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">หมายเหตุ</label>
-                <textarea
-                  rows={2}
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none resize-none break-words"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 px-5 py-4 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
-                onClick={() => setShowUpload(false)}
-                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#0B2046] text-white hover:bg-[#153468] cursor-pointer disabled:opacity-60"
-              >
-                {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                บันทึก
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
