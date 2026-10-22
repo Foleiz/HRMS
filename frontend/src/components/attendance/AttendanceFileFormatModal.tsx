@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { attendanceImportService } from '@/services/attendanceImportService';
 import { useToast } from '@/context/ToastContext';
+import { Button } from '@/components/ui';
 
 interface Props {
   isOpen: boolean;
@@ -257,7 +258,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
                     : 'hover:bg-white/60 dark:hover:bg-slate-900/40'
                 }`}
               >
-                <span className={`flex items-center gap-1.5 font-bold ${tab === key ? 'text-[#0B2046] dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'}`}>
+                <span className={`flex items-center gap-1.5 font-bold ${tab === key ? 'text-primary dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'}`}>
                   <Icon className="w-3.5 h-3.5" />
                   {label}
                   {badge && (
@@ -337,15 +338,13 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
                   </tbody>
                 </table>
               </div>
-              <button
-                type="button"
+              <Button
                 onClick={handleDownload}
-                disabled={isDownloading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#0B2046] hover:bg-[#112d5e] dark:bg-blue-600 dark:hover:bg-blue-700 text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                loading={isDownloading}
+                icon={<Download className="w-3.5 h-3.5" />}
               >
-                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                <span>ดาวน์โหลดไฟล์แม่แบบ (.xlsx)</span>
-              </button>
+                ดาวน์โหลดไฟล์แม่แบบ (.xlsx)
+              </Button>
             </div>
           )}
 
@@ -380,13 +379,12 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
 
         {/* Footer */}
         <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/80 flex justify-end shrink-0">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
           >
             ปิดหน้าต่าง
-          </button>
+          </Button>
         </div>
       </div>
     </div>
