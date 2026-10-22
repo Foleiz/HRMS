@@ -399,7 +399,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       {/* Title + date range filter */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2">
-          <History className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+          <History className="w-4 h-4 text-primary dark:text-blue-400" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
         </div>
         {!loading && !error && entries.length > 0 && (
@@ -445,7 +445,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
             onClick={() => setCategory('ALL')}
             className={`px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
               category === 'ALL'
-                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                ? 'bg-primary text-white border-primary shadow-xs'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             }`}
           >
@@ -465,7 +465,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
                 onClick={() => setCategory(key)}
                 className={`px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
                   isSelected
-                    ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
+                    ? 'bg-primary text-white border-primary shadow-xs'
                     : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                 }`}
               >
@@ -481,7 +481,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       {/* Body */}
       {loading ? (
         <div className="py-16 flex items-center justify-center text-slate-400 gap-2 text-sm">
-          <Loader2 className="w-4 h-4 animate-spin text-[#0B2046]" /> กำลังโหลด...
+          <Loader2 className="w-4 h-4 animate-spin text-primary" /> กำลังโหลด...
         </div>
       ) : error ? (
         <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2 text-sm">

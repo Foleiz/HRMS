@@ -39,6 +39,7 @@ import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHisto
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 import { formatRoleName } from '@/lib/roleUtils';
 import EditEmployeeModal, { EditModalTab } from '@/components/employees/EditEmployeeModal';
+import { RowActionButton } from '@/components/ui';
 
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -98,7 +99,7 @@ function ProfileSection({
   return (
     <section id={id} className="scroll-mt-24 rounded-xl border border-slate-200/90 dark:border-slate-700/80 p-5">
       <div className="flex items-center gap-2 mb-4">
-        <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-[#0B2046] dark:text-blue-300 flex items-center justify-center">
+        <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center">
           {icon}
         </span>
         <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{title}</h3>
@@ -459,11 +460,11 @@ export default function EmployeeDetailView({
                 type="button"
                 onClick={handleAvatarClick}
                 disabled={isUploadingAvatar}
-                className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 dark:ring-slate-700 shadow-md bg-[#0B2046] flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-[#0B2046]/40 group-hover/avatar:shadow-xl focus:outline-none block"
+                className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 dark:ring-slate-700 shadow-md bg-primary flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-primary/40 group-hover/avatar:shadow-xl focus:outline-none block"
                 title="คลิกเพื่อแก้ไขรูปโปรไฟล์"
               >
                 {isUploadingAvatar ? (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-[#0B2046]/80 text-white">
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-primary/80 text-white">
                     <Loader2 className="w-8 h-8 animate-spin mb-1 text-white" />
                     <span className="text-[10px] font-medium">กำลังบันทึก...</span>
                   </div>
@@ -479,7 +480,7 @@ export default function EmployeeDetailView({
                         }}
                       />
                     ) : null}
-                    <span className={`w-full h-full ${avatarUrl ? 'absolute inset-0 -z-10' : ''} flex items-center justify-center text-3xl font-bold bg-[#0B2046] text-white`}>
+                    <span className={`w-full h-full ${avatarUrl ? 'absolute inset-0 -z-10' : ''} flex items-center justify-center text-3xl font-bold bg-primary text-white`}>
                       {employee.firstName?.charAt(0) || 'U'}
                     </span>
 
@@ -498,7 +499,7 @@ export default function EmployeeDetailView({
               <button
                 type="button"
                 onClick={handleAvatarClick}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#0B2046] text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-[#153468] hover:scale-110 transition-all cursor-pointer z-20"
+                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
                 title="แก้ไขรูปโปรไฟล์"
               >
                 <Camera className="w-3.5 h-3.5" />
@@ -633,7 +634,7 @@ export default function EmployeeDetailView({
                 <div>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้างาน</p>
                   {employee.managerEmployeeId ? (
-                    <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-[#0B2046] dark:text-blue-400 hover:underline">
+                    <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-primary dark:text-blue-400 hover:underline">
                       {employee.managerName || '-'}
                     </Link>
                   ) : (
@@ -681,7 +682,7 @@ export default function EmployeeDetailView({
                   onClick={() => setActiveTab(tab.id)}
                   className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
                     activeTab === tab.id
-                      ? 'border-[#0B2046] text-[#0B2046] dark:border-blue-400 dark:text-blue-400'
+                      ? 'border-primary text-primary dark:border-blue-400 dark:text-blue-400'
                       : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
@@ -692,14 +693,7 @@ export default function EmployeeDetailView({
 
             {/* ปุ่มแก้ไขข้อมูล: ตำแหน่งเดิม แต่มีเฉพาะ icon อย่างเดียว */}
             {canEditEmployee && (
-              <button
-                type="button"
-                onClick={() => handleEditClick()}
-                className="w-8 h-8 rounded-lg bg-[#0B2046] hover:bg-[#153468] text-white flex items-center justify-center transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
-                title="แก้ไขข้อมูล"
-              >
-                <Pencil className="w-3.5 h-3.5" />
-              </button>
+              <RowActionButton action="edit" onClick={() => handleEditClick()} title="แก้ไขข้อมูล" />
             )}
           </div>
 
@@ -891,7 +885,7 @@ export default function EmployeeDetailView({
                   <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {employee.familyMembers.map((member, idx) => (
                       <div key={member.id || idx} className="py-3 first:pt-0 last:pb-0 grid grid-cols-1 sm:grid-cols-[150px_1fr_1fr_1fr] gap-x-6 gap-y-1.5 items-center">
-                        <span className="w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0B2046]/8 text-[#0B2046] dark:bg-blue-500/15 dark:text-blue-300">
+                        <span className="w-fit px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/8 text-primary dark:bg-blue-500/15 dark:text-blue-300">
                           {member.relationshipType || 'สมาชิก'}
                         </span>
                         <div>
@@ -948,7 +942,7 @@ export default function EmployeeDetailView({
                           </div>
                           <a
                             href={contact.primaryPhone ? `tel:${contact.primaryPhone}` : undefined}
-                            className="mt-3 inline-flex items-center gap-2 font-mono text-base font-bold text-[#0B2046] dark:text-sky-300 hover:underline"
+                            className="mt-3 inline-flex items-center gap-2 font-mono text-base font-bold text-primary dark:text-sky-300 hover:underline"
                           >
                             <Phone className="w-4 h-4" />
                             {formatPhoneNumber(contact.primaryPhone)}
@@ -988,7 +982,7 @@ export default function EmployeeDetailView({
           {activeTab === 'user' && (
             <div className="pt-6 flex-1 w-full space-y-6 text-xs animate-in fade-in duration-150">
               <div className="flex items-center gap-2 mb-2">
-                <Shield className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                <Shield className="w-4 h-4 text-primary dark:text-blue-400" />
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
               </div>
 
@@ -1066,7 +1060,7 @@ export default function EmployeeDetailView({
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-[#0B2046] dark:text-blue-400" />
+                      <KeyRound className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
                       รหัสผ่านสำหรับเข้าสู่ระบบ
                     </h4>
                     <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -1098,7 +1092,7 @@ export default function EmployeeDetailView({
               <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-5 space-y-4">
                 <div>
                   <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                    <FileSignature className="w-3.5 h-3.5 text-[#0B2046] dark:text-blue-400" />
+                    <FileSignature className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
                     ลายเซ็นดิจิทัล (Digital Signature)
                   </h4>
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
@@ -1134,7 +1128,7 @@ export default function EmployeeDetailView({
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
                       >
                         {isUploadingSig ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0B2046]" />
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                         ) : (
                           <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                         )}
@@ -1186,7 +1180,7 @@ export default function EmployeeDetailView({
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-400 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-400 flex items-center justify-center">
                   <KeyRound className="w-4 h-4" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">เปลี่ยนรหัสผ่าน</h3>
@@ -1213,7 +1207,7 @@ export default function EmployeeDetailView({
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="กรอกรหัสผ่านปัจจุบัน"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary"
                     required
                   />
                   <button
@@ -1237,7 +1231,7 @@ export default function EmployeeDetailView({
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="ความยาวอย่างน้อย 8 ตัวอักษร"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary"
                     required
                   />
                   <button
@@ -1261,7 +1255,7 @@ export default function EmployeeDetailView({
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
-                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                    className="w-full h-9.5 px-3 pr-10 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary"
                     required
                   />
                   <button
@@ -1287,7 +1281,7 @@ export default function EmployeeDetailView({
                 <button
                   type="submit"
                   disabled={isChangingPassword}
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#153468] text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                 >
                   {isChangingPassword ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

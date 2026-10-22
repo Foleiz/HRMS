@@ -183,7 +183,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-slate-500 dark:text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] dark:text-cyan-400 mb-2" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-cyan-400 mb-2" />
         <p className="text-xs font-medium">กำลังโหลดข้อมูลสวัสดิการและการใช้สิทธิ์...</p>
       </div>
     );
@@ -195,7 +195,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-700/60">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Gift className="w-4 h-4 text-[#0B2046] dark:text-cyan-400" />
+            <Gift className="w-4 h-4 text-primary dark:text-cyan-400" />
             ระบบติดตามการใช้สิทธิ์และโควตาสวัสดิการ
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -228,7 +228,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
               setSelectedBenefitForClaim(null);
               setIsModalOpen(true);
             }}
-            className="px-3.5 py-1.5 rounded-xl bg-[#0B2046] dark:bg-blue-600 hover:bg-[#153468] dark:hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            className="px-3.5 py-1.5 rounded-xl bg-primary dark:bg-blue-600 hover:bg-primary-hover dark:hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>{isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์'}</span>
@@ -432,7 +432,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                         className={`text-[11px] font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
                           b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
                             ? 'text-slate-400 bg-slate-100 dark:bg-slate-800 cursor-not-allowed'
-                            : 'text-[#0B2046] dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                            : 'text-primary dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                         }`}
                       >
                         <Plus className="w-3 h-3" />

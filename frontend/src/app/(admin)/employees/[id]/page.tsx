@@ -63,7 +63,7 @@ export default function EmployeeDetailPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400 font-sans">
-        <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mb-3" />
+        <Loader2 className="w-9 h-9 animate-spin text-primary mb-3" />
         <p className="text-sm font-medium">กำลังโหลดข้อมูลพนักงาน...</p>
       </div>
     );
@@ -89,7 +89,7 @@ export default function EmployeeDetailPage() {
         )}
         <Link
           href="/employees"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] text-white text-xs rounded-xl font-medium hover:bg-[#153468] transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-xs rounded-xl font-medium hover:bg-primary-hover transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
           <span>กลับไปยังหน้ารายชื่อพนักงาน</span>

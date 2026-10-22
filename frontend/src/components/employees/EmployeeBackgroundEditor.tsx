@@ -9,7 +9,7 @@ import { formatGpaInput, clampGpa } from '@/lib/gpaUtils';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
-const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
+const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary';
 const currentBE = new Date().getFullYear() + 543;
 const YEARS = Array.from({ length: 50 }, (_, i) => currentBE + 1 - i);
 
@@ -91,7 +91,7 @@ export default function EmployeeBackgroundEditor({
       <section className="space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4 text-[#0B2046]" />
+            <GraduationCap className="w-4 h-4 text-primary" />
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการศึกษา</h3>
             <span className="text-[11px] text-slate-400 dark:text-slate-500">({educations.length} รายการ)</span>
           </div>
@@ -99,7 +99,7 @@ export default function EmployeeBackgroundEditor({
             <button
               type="button"
               onClick={handleAddEducation}
-              className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#0B2046] text-[#0B2046] rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> เพิ่มวุฒิการศึกษา
             </button>
@@ -121,7 +121,7 @@ export default function EmployeeBackgroundEditor({
                   onClick={() => setActiveEduIndex(idx)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
                     safeEduIndex === idx
-                      ? 'bg-[#0B2046] text-white shadow-xs'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -258,7 +258,7 @@ export default function EmployeeBackgroundEditor({
       <section className="space-y-4">
         <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-[#0B2046]" />
+            <Briefcase className="w-4 h-4 text-primary" />
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการทำงาน</h3>
             <span className="text-[11px] text-slate-400 dark:text-slate-500">({workExperiences.length} แห่ง)</span>
           </div>
@@ -266,7 +266,7 @@ export default function EmployeeBackgroundEditor({
             <button
               type="button"
               onClick={handleAddWorkExperience}
-              className="inline-flex items-center gap-1 px-3 py-1.5 border border-[#0B2046] text-[#0B2046] rounded-lg hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" /> เพิ่มประวัติการทำงาน
             </button>
@@ -288,7 +288,7 @@ export default function EmployeeBackgroundEditor({
                   onClick={() => setActiveWorkIndex(idx)}
                   className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all relative cursor-pointer ${
                     safeWorkIndex === idx
-                      ? 'bg-[#0B2046] text-white shadow-xs'
+                      ? 'bg-primary text-white shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >

@@ -179,7 +179,7 @@ export default function ContractsPage() {
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -194,7 +194,7 @@ export default function ContractsPage() {
         <div className="flex items-center justify-end">
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-sm font-medium rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#07152d] text-white text-sm font-medium rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>สร้างสัญญาใหม่</span>
@@ -253,7 +253,7 @@ export default function ContractsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ค้นหาชื่อ หรือ รหัสพนักงาน..."
-                className="w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                className="w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
@@ -305,7 +305,7 @@ export default function ContractsPage() {
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
+                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
                       <span>กำลังโหลดข้อมูลสัญญาจ้างงาน...</span>
                     </div>
                   </td>
@@ -503,7 +503,7 @@ export default function ContractsPage() {
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -531,7 +531,7 @@ export default function ContractsPage() {
                 onClick={() => setCurrentPage(page)}
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
                   page === currentPage
-                    ? 'bg-[#0B2046] text-white'
+                    ? 'bg-primary text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >

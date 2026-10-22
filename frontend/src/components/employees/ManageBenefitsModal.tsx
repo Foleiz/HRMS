@@ -20,6 +20,7 @@ import { benefitService } from '@/services/benefitService';
 import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types/benefit';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { RowActionButton, inputClass } from '@/components/ui';
 
 interface ManageBenefitsModalProps {
   isOpen: boolean;
@@ -214,7 +215,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700/60 my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#0B2046] text-white">
+        <div className="flex items-center justify-between px-6 py-4 bg-primary text-white">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/10 rounded-xl">
               <Gift className="w-5 h-5 text-cyan-300" />
@@ -257,12 +258,12 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 placeholder="ค้นหารหัส หรือชื่อสวัสดิการ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 px-3.5 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+                className={inputClass}
               />
               <CustomSelect
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                className="px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
               >
                 <option value="ALL">ทุกหมวดหมู่</option>
                 <option value="STATUTORY">กฎหมายแรงงาน</option>
@@ -277,7 +278,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
             {!isFormOpen && (
               <button
                 onClick={handleOpenCreate}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-[#0B2046] hover:bg-[#14326d] rounded-xl transition-all shadow-sm shrink-0"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary hover:bg-primary-hover rounded-xl transition-all shadow-sm shrink-0"
               >
                 <Plus className="w-4 h-4" />
                 <span>เพิ่มสวัสดิการใหม่</span>
@@ -293,7 +294,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
             >
               <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700/80 pb-2.5">
                 <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Gift className="w-4 h-4 text-[#0B2046]" />
+                  <Gift className="w-4 h-4 text-primary" />
                   {editingItem ? 'แก้ไขสิทธิประโยชน์ / สวัสดิการ' : 'สร้างสิทธิประโยชน์ / สวัสดิการใหม่'}
                 </h3>
                 <button
@@ -315,7 +316,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     value={benefitName}
                     onChange={(e) => setBenefitName(e.target.value)}
                     placeholder="เช่น ประกันสุขภาพกลุ่ม AIA, ค่าอาหารกลางวัน"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
+                    className={inputClass}
                   />
                 </div>
 
@@ -326,7 +327,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   <CustomSelect
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                    className={inputClass}
                   >
                     <option value="HEALTH">สุขภาพ & ประกัน</option>
                     <option value="ALLOWANCE">เบี้ยเลี้ยง & ช่วยเหลือ</option>
@@ -348,7 +349,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   <CustomSelect
                     value={payoutType}
                     onChange={(e) => setPayoutType(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                    className={inputClass}
                   >
                     <option value="PAYROLL">จ่ายประจำในเงินเดือน (อัตโนมัติทุกงวด)</option>
                     <option value="REIMBURSEMENT">เบิกตามจริง (ยื่นคำขอเบิก)</option>
@@ -368,7 +369,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     value={defaultCoverageAmount}
                     onChange={(e) => setDefaultCoverageAmount(Number(e.target.value) || 0)}
                     placeholder="0 = ตามระเบียบ/ไม่จำกัด"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
+                    className={inputClass}
                   />
                   <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
                 </div>
@@ -380,7 +381,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                   <CustomSelect
                     value={defaultFrequency}
                     onChange={(e) => setDefaultFrequency(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 bg-white dark:bg-slate-800"
+                    className={inputClass}
                   >
                     <option value="YEARLY">ต่อปี</option>
                     <option value="MONTHLY">ต่อเดือน</option>
@@ -398,7 +399,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="เช่น คุ้มครองผู้ป่วยในและนอก วงเงิน 30,000 บาท/ปี"
-                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20"
+                    className={inputClass}
                   />
                 </div>
 
@@ -409,7 +410,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                       id="manageIsStatutory"
                       checked={isStatutory}
                       onChange={(e) => setIsStatutory(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
+                      className="w-4 h-4 rounded text-primary focus:ring-primary"
                     />
                     <label htmlFor="manageIsStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                       เป็นสิทธิตามกฎหมายแรงงานบังคับ
@@ -421,7 +422,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                       id="manageIsDocumentRequired"
                       checked={isDocumentRequired}
                       onChange={(e) => setIsDocumentRequired(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
+                      className="w-4 h-4 rounded text-primary focus:ring-primary"
                     />
                     <label htmlFor="manageIsDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
                       แนบเอกสารประกอบหรือใบรับรองแพทย์
@@ -441,7 +442,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 <button
                   type="submit"
                   disabled={formSubmitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-white bg-[#0B2046] hover:bg-[#14326d] rounded-xl transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-white bg-primary hover:bg-primary-hover rounded-xl transition-colors disabled:opacity-50"
                 >
                   {formSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>{editingItem ? 'บันทึกการแก้ไข' : 'สร้างสวัสดิการ'}</span>
@@ -454,7 +455,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           <div className="border border-slate-200/80 dark:border-slate-700/80 rounded-2xl overflow-hidden bg-white dark:bg-slate-800">
             {loading ? (
               <div className="p-8 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
-                <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
                 <span className="text-xs">กำลังโหลดสวัสดิการ...</span>
               </div>
             ) : filteredBenefits.length === 0 ? (
@@ -550,13 +551,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                         </td>
                         <td className="py-3 px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
 
                             {!item.isStatutory && (
                               <button

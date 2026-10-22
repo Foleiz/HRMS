@@ -7,6 +7,7 @@ import { useToast } from '@/context/ToastContext';
 import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { inputClass } from '@/components/ui';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -234,7 +235,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                 value={selectedBenefitId}
                 onChange={(e) => setSelectedBenefitId(Number(e.target.value))}
                 required
-                className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+                className={inputClass}
               >
                 <option value="">-- กรุณาเลือกสวัสดิการ --</option>
                 {claimableBenefits.map((b) => (
@@ -306,7 +307,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
                 required
-                className="w-full text-xs pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+                className="w-full text-xs pl-3 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-primary dark:focus:ring-blue-500"
               />
               <span className="absolute right-3 top-2.5 text-xs text-slate-400 dark:text-slate-500 font-medium">
                 บาท
@@ -338,7 +339,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               value={receiptNumber}
               onChange={(e) => setReceiptNumber(e.target.value)}
               placeholder="เช่น RCP-2026-0012"
-              className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+              className={inputClass}
             />
           </div>
 
@@ -353,7 +354,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               value={serviceProvider}
               onChange={(e) => setServiceProvider(e.target.value)}
               placeholder="เช่น รพ.กรุงเทพ, คลินิกทันตกรรมสยาม"
-              className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+              className={inputClass}
             />
           </div>
 
@@ -394,7 +395,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               className={`flex items-center gap-2.5 w-full px-3.5 py-2.5 rounded-xl border border-dashed transition-all cursor-pointer ${
                 activeBenefit?.isDocumentRequired && !attachment
                   ? 'border-amber-400 bg-amber-50/50 dark:border-amber-600/60 dark:bg-amber-950/30 hover:border-amber-500'
-                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0B2046] dark:hover:border-blue-500'
+                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-primary dark:hover:border-blue-500'
               }`}
             >
               <Paperclip
@@ -448,7 +449,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               onChange={(e) => setRemarks(e.target.value)}
               rows={2}
               placeholder="เช่น ขูดหินปูนและอุดฟัน 1 ซี่"
-              className="w-full text-xs px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] dark:focus:ring-blue-500 resize-none"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
@@ -478,7 +479,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2 rounded-xl text-xs font-semibold bg-[#0B2046] dark:bg-blue-600 hover:bg-[#153468] dark:hover:bg-blue-500 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              className="px-5 py-2 rounded-xl text-xs font-semibold bg-primary dark:bg-blue-600 hover:bg-primary-hover dark:hover:bg-blue-500 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <>

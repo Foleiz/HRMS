@@ -162,7 +162,7 @@ export default function TransfersPage() {
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -215,7 +215,7 @@ export default function TransfersPage() {
         <div className="flex items-center justify-end">
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="h-10 px-5 bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
+            className="h-10 px-5 bg-primary hover:bg-primary-hover text-white text-xs font-medium rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
@@ -241,7 +241,7 @@ export default function TransfersPage() {
                   setCurrentPage(1);
                 }}
                 placeholder="ค้นหาชื่อ, รหัส, ตำแหน่ง หรือ เลขที่คำสั่ง..."
-                className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
             </div>
 
@@ -283,7 +283,7 @@ export default function TransfersPage() {
                 <tr>
                   <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-[#0B2046] dark:text-blue-400" />
+                      <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-400" />
                       <span>กำลังโหลดประวัติการโยกย้ายตำแหน่ง...</span>
                     </div>
                   </td>
@@ -414,7 +414,7 @@ export default function TransfersPage() {
                           });
                           setIsTimelineModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-[#0B2046] hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 rounded-lg transition-all font-medium text-xs cursor-pointer shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-primary hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 rounded-lg transition-all font-medium text-xs cursor-pointer shadow-2xs"
                         title="ดูประวัติการทำงานและสายอาชีพรายบุคคล"
                       >
                         <Clock className="w-3.5 h-3.5 text-emerald-600 hover:text-white" />
@@ -468,7 +468,7 @@ export default function TransfersPage() {
                 onClick={() => setCurrentPage(page)}
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   currentPage === page
-                    ? 'bg-[#0B2046] dark:bg-white text-white dark:text-slate-900 font-bold'
+                    ? 'bg-primary dark:bg-white text-white dark:text-slate-900 font-bold'
                     : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >

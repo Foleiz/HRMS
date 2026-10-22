@@ -3,7 +3,7 @@
 import React from 'react';
 import { Landmark, ShieldCheck } from 'lucide-react';
 
-const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]';
+const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary';
 
 export interface TaxSsoValues {
   socialSecurityNo?: string;
@@ -30,7 +30,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
     <div className="w-full space-y-8 text-xs animate-in fade-in duration-150">
       <section className="space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-          <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
+          <ShieldCheck className="w-4 h-4 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประกันสังคม</h3>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
             (ใช้เลขเดียวกับเลขประจำตัวประชาชน 13 หลัก)
@@ -52,7 +52,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
 
       <section className="space-y-3">
         <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-          <Landmark className="w-4 h-4 text-[#0B2046]" />
+          <Landmark className="w-4 h-4 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลลดหย่อนภาษี</h3>
           <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณภาษีหัก ณ ที่จ่ายในรอบเงินเดือน</span>
         </div>
@@ -62,7 +62,7 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
               type="checkbox"
               checked={values.spouseHasIncome}
               onChange={(e) => set({ spouseHasIncome: e.target.checked })}
-              className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
+              className="w-4 h-4 rounded text-primary focus:ring-primary"
             />
             <span className="text-slate-700 dark:text-slate-300">คู่สมรสมีเงินได้ (ไม่ใช้สิทธิ์ลดหย่อนคู่สมรส)</span>
           </label>

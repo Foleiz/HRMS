@@ -32,6 +32,7 @@ import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { inputClass } from '@/components/ui';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -549,7 +550,7 @@ export default function EditEmployeeModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#0B2046] text-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 bg-primary text-white shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold">แก้ไขข้อมูลพนักงาน</h2>
@@ -592,7 +593,7 @@ export default function EditEmployeeModal({
                   onClick={() => setActiveTab(tab.id as EditModalTab)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-[#0B2046] text-white shadow-xs font-bold'
+                      ? 'bg-primary text-white shadow-xs font-bold'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -607,7 +608,7 @@ export default function EditEmployeeModal({
         {/* Form Body */}
         {loading ? (
           <div className="flex-1 flex flex-col items-center justify-center py-24 text-slate-500 dark:text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] dark:text-blue-400 mb-2" />
+            <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-400 mb-2" />
             <p className="text-xs font-medium">กำลังโหลดข้อมูลพนักงาน...</p>
           </div>
         ) : (
@@ -630,7 +631,7 @@ export default function EditEmployeeModal({
                         placeholder="เช่น EMP001"
                         value={formData.employeeCode}
                         onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
 
@@ -645,7 +646,7 @@ export default function EditEmployeeModal({
                         placeholder="เช่น 100001"
                         value={formData.biometricId || ''}
                         onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
 
@@ -682,7 +683,7 @@ export default function EditEmployeeModal({
                         return (
                           <div className="mt-1.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-between text-xs">
                             <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม (หัวหน้างานอัตโนมัติ):</span>
-                            <span className="font-semibold text-[#0B2046] dark:text-blue-300">
+                            <span className="font-semibold text-primary dark:text-blue-300">
                               {currentTeam.leadEmployeeName || 'ยังไม่มีหัวหน้าทีม'}
                             </span>
                           </div>
@@ -763,7 +764,7 @@ export default function EditEmployeeModal({
                         required
                         value={formData.firstName}
                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
 
@@ -780,7 +781,7 @@ export default function EditEmployeeModal({
                         required
                         value={formData.lastName}
                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
                   </div>
@@ -801,7 +802,7 @@ export default function EditEmployeeModal({
                         placeholder="เลขบัตรประชาชน 13 หลัก"
                         value={formData.citizenId || ''}
                         onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
 
@@ -934,7 +935,7 @@ export default function EditEmployeeModal({
                         placeholder="test001@gmail.com"
                         value={formData.personalEmail}
                         onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
 
@@ -950,7 +951,7 @@ export default function EditEmployeeModal({
                         placeholder="name@company.com"
                         value={formData.organizationEmail}
                         onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
 
@@ -967,7 +968,7 @@ export default function EditEmployeeModal({
                         placeholder="08X-XXX-XXXX"
                         value={formData.personalPhone}
                         onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
 
@@ -990,7 +991,7 @@ export default function EditEmployeeModal({
                                 value={t}
                                 checked={formData.addressType === t}
                                 onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-                                className="text-[#0B2046] focus:ring-[#0B2046]"
+                                className="text-primary focus:ring-primary"
                               />
                               <span>{t}</span>
                             </label>
@@ -1007,7 +1008,7 @@ export default function EditEmployeeModal({
                           placeholder="บ้านเลขที่ 4"
                           value={formData.addressLine}
                           onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                          className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={`${inputClass} h-10`}
                         />
                       </div>
 
@@ -1020,7 +1021,7 @@ export default function EditEmployeeModal({
                           placeholder="แขวงหัวหมาก"
                           value={formData.subDistrict}
                           onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                          className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={`${inputClass} h-10`}
                         />
                       </div>
 
@@ -1033,7 +1034,7 @@ export default function EditEmployeeModal({
                           placeholder="บางกะปิ"
                           value={formData.district}
                           onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                          className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={`${inputClass} h-10`}
                         />
                       </div>
 
@@ -1047,7 +1048,7 @@ export default function EditEmployeeModal({
                             placeholder="กรุงเทพมหานคร"
                             value={formData.province}
                             onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                            className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            className={`${inputClass} h-10`}
                           />
                         </div>
                         <div>
@@ -1060,7 +1061,7 @@ export default function EditEmployeeModal({
                             placeholder="10240"
                             value={formData.postalCode}
                             onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                            className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                            className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                           />
                         </div>
                       </div>
@@ -1153,7 +1154,7 @@ export default function EditEmployeeModal({
                               accountNumber: e.target.value.replace(/\D/g, '').slice(0, maxDigits),
                             });
                           }}
-                          className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                         />
                       </div>
                     </div>
@@ -1165,7 +1166,7 @@ export default function EditEmployeeModal({
               {activeTab === 'family' && (
                 <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                   <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-                    <Users className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                    <Users className="w-4 h-4 text-primary dark:text-blue-400" />
                     <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">สมาชิกในครอบครัว</h3>
                   </div>
 
@@ -1178,7 +1179,7 @@ export default function EditEmployeeModal({
                           onClick={() => setActiveFamilyIndex(idx)}
                           className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
                             activeFamilyIndex === idx
-                              ? 'bg-[#0B2046] text-white shadow-xs'
+                              ? 'bg-primary text-white shadow-xs'
                               : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                           }`}
                         >
@@ -1219,7 +1220,7 @@ export default function EditEmployeeModal({
                               list[activeFamilyIndex].relationshipType = e.target.value;
                               setFormData({ ...formData, familyMembers: list });
                             }}
-                            className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            className={inputClass}
                           >
                             <option value="บิดา">บิดา</option>
                             <option value="มารดา">มารดา</option>
@@ -1240,7 +1241,7 @@ export default function EditEmployeeModal({
                               list[activeFamilyIndex].prefix = e.target.value;
                               setFormData({ ...formData, familyMembers: list });
                             }}
-                            className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                            className={inputClass}
                           >
                             <option value="">เลือกคำนำหน้า</option>
                             <option value="นาย">นาย</option>
@@ -1264,7 +1265,7 @@ export default function EditEmployeeModal({
                               list[activeFamilyIndex].firstName = e.target.value;
                               setFormData({ ...formData, familyMembers: list });
                             }}
-                            className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            className={inputClass}
                           />
                         </div>
 
@@ -1281,7 +1282,7 @@ export default function EditEmployeeModal({
                               list[activeFamilyIndex].lastName = e.target.value;
                               setFormData({ ...formData, familyMembers: list });
                             }}
-                            className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                            className={inputClass}
                           />
                         </div>
 
@@ -1296,7 +1297,7 @@ export default function EditEmployeeModal({
                               list[activeFamilyIndex].citizenId = e.target.value;
                               setFormData({ ...formData, familyMembers: list });
                             }}
-                            className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                            className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                           />
                         </div>
 
@@ -1321,7 +1322,7 @@ export default function EditEmployeeModal({
               {activeTab === 'emergency' && (
                 <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                   <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-                    <Phone className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                    <Phone className="w-4 h-4 text-primary dark:text-blue-400" />
                     <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
                   </div>
 
@@ -1344,7 +1345,7 @@ export default function EditEmployeeModal({
                             },
                           })
                         }
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                        className={inputClass}
                       >
                         <option value="บิดา">บิดา</option>
                         <option value="มารดา">มารดา</option>
@@ -1372,7 +1373,7 @@ export default function EditEmployeeModal({
                             },
                           })
                         }
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                        className={inputClass}
                       >
                         <option value="">เลือกคำนำหน้า</option>
                         <option value="นาย">นาย</option>
@@ -1400,7 +1401,7 @@ export default function EditEmployeeModal({
                             },
                           })
                         }
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={inputClass}
                       />
                     </div>
 
@@ -1423,7 +1424,7 @@ export default function EditEmployeeModal({
                             },
                           })
                         }
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={inputClass}
                       />
                     </div>
 
@@ -1447,7 +1448,7 @@ export default function EditEmployeeModal({
                             },
                           })
                         }
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
 
@@ -1469,7 +1470,7 @@ export default function EditEmployeeModal({
                             },
                           })
                         }
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={inputClass}
                       />
                     </div>
                   </div>
@@ -1514,7 +1515,7 @@ export default function EditEmployeeModal({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-xl bg-[#0B2046] text-white text-xs font-semibold hover:bg-[#153468] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
+                className="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
               >
                 {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>บันทึกข้อมูล</span>

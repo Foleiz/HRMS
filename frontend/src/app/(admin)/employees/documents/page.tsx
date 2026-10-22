@@ -146,7 +146,7 @@ export default function ExpiringDocumentsPage() {
               href={tab.href}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                 tab.active
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -194,7 +194,7 @@ export default function ExpiringDocumentsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="ค้นหาชื่อ รหัสพนักงาน แผนก หรือประเภทเอกสาร"
-              className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+              className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <div className="flex items-center gap-1.5">
@@ -205,7 +205,7 @@ export default function ExpiringDocumentsPage() {
                 onClick={() => setStatusFilter(b.key)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
                   statusFilter === b.key
-                    ? 'bg-[#0B2046] text-white border-[#0B2046]'
+                    ? 'bg-primary text-white border-primary'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
@@ -218,7 +218,7 @@ export default function ExpiringDocumentsPage() {
           type="button"
           onClick={handleRunCheck}
           disabled={checking}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white text-xs font-medium rounded-xl hover:bg-[#0B2046] hover:text-white transition-colors cursor-pointer disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-primary dark:border-white text-primary dark:text-white text-xs font-medium rounded-xl hover:bg-primary hover:text-white transition-colors cursor-pointer disabled:opacity-60"
           title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
         >
           {checking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellRing className="w-3.5 h-3.5" />}
@@ -286,7 +286,7 @@ export default function ExpiringDocumentsPage() {
                               title="ดาวน์โหลด"
                               onClick={() => handleDownload(doc)}
                               disabled={downloadingId === doc.id}
-                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-[#0B2046] cursor-pointer disabled:opacity-50"
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-primary cursor-pointer disabled:opacity-50"
                             >
                               {downloadingId === doc.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                             </button>
@@ -294,7 +294,7 @@ export default function ExpiringDocumentsPage() {
                           <Link
                             href={`/employees/${doc.employeeId}?tab=documents`}
                             title="เปิดแฟ้มเอกสารพนักงาน"
-                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-[#0B2046]"
+                            className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 hover:text-primary"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Link>

@@ -31,7 +31,7 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
     <div className="pt-6 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <GraduationCap className="w-4 h-4 text-[#0B2046]" />
+          <GraduationCap className="w-4 h-4 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการศึกษา</h3>
         </div>
         {educations.length === 0 ? (
@@ -40,7 +40,7 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
           <ol className="relative border-l border-slate-200 dark:border-slate-700 ml-2 space-y-5">
             {educations.map((e, i) => (
               <li key={e.id ?? i} className="ml-4">
-                <span className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full bg-[#0B2046] ring-4 ring-white" />
+                <span className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full bg-primary ring-4 ring-white" />
                 <p className="font-bold text-slate-800 dark:text-slate-200">
                   {e.educationLevel}
                   {e.major ? ` · ${e.major}` : ''}
@@ -58,7 +58,7 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
 
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Briefcase className="w-4 h-4 text-[#0B2046]" />
+          <Briefcase className="w-4 h-4 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการทำงาน</h3>
         </div>
         {works.length === 0 ? (
@@ -98,7 +98,7 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
     <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#0B2046]" />
+          <ShieldCheck className="w-4 h-4 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประกันสังคม</h3>
         </div>
         {row('เลขประกันสังคม', <span className="font-mono">{employee.socialSecurity?.socialSecurityNoMasked || '-'}</span>)}
@@ -106,7 +106,7 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
       </section>
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Landmark className="w-4 h-4 text-[#0B2046]" />
+          <Landmark className="w-4 h-4 text-primary" />
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลลดหย่อนภาษี</h3>
         </div>
         {row('คู่สมรสมีเงินได้', employee.spouseHasIncome ? 'มี' : 'ไม่มี / ไม่ระบุ')}

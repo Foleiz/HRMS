@@ -31,6 +31,7 @@ import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { ActiveStatus } from '@/components/ui';
 
 export default function EmployeeTypesPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -185,7 +186,7 @@ export default function EmployeeTypesPage() {
                 href={tab.href}
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                   isActive
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
@@ -220,7 +221,7 @@ export default function EmployeeTypesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-            <Layers className="w-5 h-5 text-[#0B2046]" />
+            <Layers className="w-5 h-5 text-primary" />
             ประเภทการจ้างงานและสัญญาจ้าง
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -235,7 +236,7 @@ export default function EmployeeTypesPage() {
                 setSelectedTypeForEdit(null);
                 setIsCreateModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มประเภทสัญญา/การจ้างงาน</span>
@@ -252,7 +253,7 @@ export default function EmployeeTypesPage() {
             <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">ประเภทสัญญาทั้งหมด</h4>
             <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ประเภทการจ้างงานที่กำหนดในระบบ</p>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 text-[#0B2046] px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-blue-50 dark:bg-blue-900/20 text-primary px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
             {stats.totalTypes}
           </div>
         </div>
@@ -298,7 +299,7 @@ export default function EmployeeTypesPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="ค้นหาชื่อ หรือรหัสประเภท..."
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -322,7 +323,7 @@ export default function EmployeeTypesPage() {
         <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[300px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mb-2" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
               <span>กำลังโหลดข้อมูลประเภทสัญญา...</span>
             </div>
           ) : paginatedTypes.length === 0 ? (
@@ -446,18 +447,7 @@ export default function EmployeeTypesPage() {
 
                       {/* สถานะ */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                            item.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
-                          }`}
-                        >
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              item.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
-                            }`}
-                          />
-                          {item.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดการใช้งาน'}
-                        </span>
+                        <ActiveStatus active={item.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดการใช้งาน" />
                       </td>
 
                       {/* จัดการ (3 Dots Action Menu) */}
@@ -505,7 +495,7 @@ export default function EmployeeTypesPage() {
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -534,7 +524,7 @@ export default function EmployeeTypesPage() {
                 onClick={() => setCurrentPage(page)}
                 className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                   page === currentPage
-                    ? 'bg-[#0B2046] text-white font-bold'
+                    ? 'bg-primary text-white font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >

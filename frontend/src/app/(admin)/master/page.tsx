@@ -41,6 +41,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter } from '@/components/ui';
 
 type MasterTab =
   | 'document-types'
@@ -405,12 +406,12 @@ export default function MasterDataHubPage() {
             className="p-2.5 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
             title="รีเฟรชข้อมูล"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#0B2046]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
           </button>
           {canCreateMasterData && (
             <button
               onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               เพิ่มข้อมูลใหม่
@@ -425,7 +426,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('document-types')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'document-types'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -437,7 +438,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('certificate-types')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'certificate-types'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -449,7 +450,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('nationalities')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'nationalities'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -461,7 +462,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('religions')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'religions'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -473,7 +474,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('marital-statuses')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'marital-statuses'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -485,7 +486,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('genders')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'genders'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -497,7 +498,7 @@ export default function MasterDataHubPage() {
           onClick={() => setActiveTab('banks')}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
             activeTab === 'banks'
-              ? 'bg-[#0B2046] text-white shadow-sm'
+              ? 'bg-primary text-white shadow-sm'
               : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
           }`}
         >
@@ -514,7 +515,7 @@ export default function MasterDataHubPage() {
           placeholder="พิมพ์คำค้นหา..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
         />
       </div>
 
@@ -566,34 +567,14 @@ export default function MasterDataHubPage() {
                       </td>
                       <td className="py-3.5 px-4 text-center text-slate-600 dark:text-slate-400">{item.notifyBeforeDays ?? 30} วัน</td>
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                            item.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 dark:text-slate-400 border-slate-200'
-                          }`}
-                        >
-                          {item.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-                        </span>
+                        <ActiveStatus active={item.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดใช้งาน" />
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.documentName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.documentName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -633,22 +614,10 @@ export default function MasterDataHubPage() {
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.nationalityName}</td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.nationalityName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.nationalityName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -688,22 +657,10 @@ export default function MasterDataHubPage() {
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.religionName}</td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.religionName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.religionName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -743,22 +700,10 @@ export default function MasterDataHubPage() {
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.maritalStatusName}</td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.maritalStatusName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.maritalStatusName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -804,22 +749,10 @@ export default function MasterDataHubPage() {
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.certificateName}</td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.certificateName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.certificateName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -865,22 +798,10 @@ export default function MasterDataHubPage() {
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.genderName}</td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.genderName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.genderName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -932,34 +853,14 @@ export default function MasterDataHubPage() {
                         {item.accountDigits ? `${item.accountDigits} หลัก` : 'ไม่ตรวจ'}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                            item.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 dark:text-slate-400 border-slate-200'
-                          }`}
-                        >
-                          {item.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-                        </span>
+                        <ActiveStatus active={item.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดใช้งาน" />
                       </td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenEdit(item)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="แก้ไข"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(item.id, item.bankName)}
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                              title="ลบ"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenEdit(item)} />
+                            <RowActionButton action="delete" onClick={() => handleDelete(item.id, item.bankName)} />
+                          </RowActions>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
                         )}
@@ -975,245 +876,221 @@ export default function MasterDataHubPage() {
 
       {/* Modal Dialog for Create & Edit */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                {modalMode === 'create' ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} className="space-y-4 pt-4">
-              {activeTab === 'document-types' && (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                      ชื่อประเภทเอกสาร <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={docForm.documentName}
-                      onChange={(e) => setDocForm({ ...docForm, documentName: e.target.value })}
-                      placeholder="เช่น หนังสือเดินทาง (Passport)"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-                    <input
-                      type="checkbox"
-                      id="isExpiryRequired"
-                      checked={docForm.isExpiryRequired}
-                      onChange={(e) => setDocForm({ ...docForm, isExpiryRequired: e.target.checked })}
-                      className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046]"
-                    />
-                    <label htmlFor="isExpiryRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none dark:text-slate-300">
-                      เอกสารนี้ต้องระบุวันหมดอายุ
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">อายุเอกสาร (เดือน)</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={600}
-                        value={docForm.validityMonths ?? ''}
-                        onChange={(e) =>
-                          setDocForm({ ...docForm, validityMonths: e.target.value ? Number(e.target.value) : null })
-                        }
-                        placeholder="ไม่กำหนด"
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ</p>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">แจ้งเตือนล่วงหน้า (วัน) <span className="text-rose-500">*</span></label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={365}
-                        required
-                        value={docForm.notifyBeforeDays ?? ''}
-                        onChange={(e) =>
-                          setDocForm({ ...docForm, notifyBeforeDays: e.target.value ? Number(e.target.value) : null })
-                        }
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                      />
-                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">แจ้งพนักงานและฝ่ายบุคคลก่อนหมดอายุ</p>
-                    </div>
-                  </div>
-
-                  {modalMode === 'edit' && (
-                    <ActiveToggleRow label="เปิดใช้งาน" checked={docForm.status === 'ACTIVE'} onChange={(v) => setDocForm({ ...docForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-                  )}
-                </>
-              )}
-
-              {activeTab === 'nationalities' && (
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มข้อมูลใหม่' : 'แก้ไขข้อมูล'}
+          onSubmit={handleSave}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} loading={submitting} submitText="บันทึกข้อมูล" />}
+        >
+            {activeTab === 'document-types' && (
+              <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสัญชาติ <span className="text-rose-500">*</span></label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
+                    ชื่อประเภทเอกสาร <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
-                    value={simpleNameInput}
-                    onChange={(e) => setSimpleNameInput(e.target.value)}
-                    placeholder="เช่น ไทย, ญี่ปุ่น, อเมริกัน..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                    value={docForm.documentName}
+                    onChange={(e) => setDocForm({ ...docForm, documentName: e.target.value })}
+                    placeholder="เช่น หนังสือเดินทาง (Passport)"
+                    className={inputClass}
                   />
                 </div>
-              )}
 
-              {activeTab === 'religions' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อศาสนา <span className="text-rose-500">*</span></label>
+                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
                   <input
-                    type="text"
-                    required
-                    value={simpleNameInput}
-                    onChange={(e) => setSimpleNameInput(e.target.value)}
-                    placeholder="เช่น พุทธ, คริสต์, อิสลาม..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                    type="checkbox"
+                    id="isExpiryRequired"
+                    checked={docForm.isExpiryRequired}
+                    onChange={(e) => setDocForm({ ...docForm, isExpiryRequired: e.target.checked })}
+                    className="w-4 h-4 rounded text-primary focus:ring-primary"
                   />
+                  <label htmlFor="isExpiryRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none dark:text-slate-300">
+                    เอกสารนี้ต้องระบุวันหมดอายุ
+                  </label>
                 </div>
-              )}
 
-              {activeTab === 'marital-statuses' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส <span className="text-rose-500">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={simpleNameInput}
-                    onChange={(e) => setSimpleNameInput(e.target.value)}
-                    placeholder="เช่น โสด, สมรส, หย่าร้าง..."
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">อายุเอกสาร (เดือน)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={docForm.validityMonths ?? ''}
+                      onChange={(e) =>
+                        setDocForm({ ...docForm, validityMonths: e.target.value ? Number(e.target.value) : null })
+                      }
+                      placeholder="ไม่กำหนด"
+                      className={inputClass}
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณวันหมดอายุจากวันที่ออกให้อัตโนมัติ</p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">แจ้งเตือนล่วงหน้า (วัน) <span className="text-rose-500">*</span></label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={365}
+                      required
+                      value={docForm.notifyBeforeDays ?? ''}
+                      onChange={(e) =>
+                        setDocForm({ ...docForm, notifyBeforeDays: e.target.value ? Number(e.target.value) : null })
+                      }
+                      className={inputClass}
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-500 dark:text-slate-400">แจ้งพนักงานและฝ่ายบุคคลก่อนหมดอายุ</p>
+                  </div>
                 </div>
-              )}
 
-              {(activeTab === 'genders' || activeTab === 'certificate-types') && (
-                <>
-                  <div>
-                    <CodeInput
-                      type={activeTab === 'genders' ? 'gender' : 'certificate-type'}
-                      prefix={activeTab === 'genders' ? 'G' : 'CERT_'}
-                      digits={activeTab === 'genders' ? 2 : 3}
-                      existingCodes={activeTab === 'genders' ? genders.map((x) => x.genderCode) : certTypes.map((x) => x.certificateCode)}
-                      label={activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'}
-                      required
-                      mode={modalMode}
-                      maxLength={activeTab === 'genders' ? 20 : 50}
-                      value={codeNameForm.code}
-                      onChange={(v) => setCodeNameForm((f) => ({ ...f, code: v }))}
-                      labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
-                      inputClassName="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 disabled:bg-slate-100 dark:disabled:bg-slate-900"
-                    />
-                    {activeTab === 'certificate-types' && (
-                      <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสที่มีคำว่า SALARY จะแสดงเงินเดือนในหนังสือรับรอง</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      {activeTab === 'genders' ? 'ชื่อเพศ' : 'ชื่อหนังสือรับรอง'} <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      maxLength={activeTab === 'genders' ? 50 : 255}
-                      value={codeNameForm.name}
-                      onChange={(e) => setCodeNameForm({ ...codeNameForm, name: e.target.value })}
-                      placeholder={activeTab === 'genders' ? 'เช่น ชาย, หญิง, ไม่ระบุ' : 'เช่น หนังสือรับรองการทำงาน'}
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-                </>
-              )}
+                {modalMode === 'edit' && (
+                  <ActiveToggleRow label="เปิดใช้งาน" checked={docForm.status === 'ACTIVE'} onChange={(v) => setDocForm({ ...docForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+                )}
+              </>
+            )}
 
-              {activeTab === 'banks' && (
-                <>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รหัสธนาคาร <span className="text-rose-500">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      disabled={modalMode === 'edit'}
-                      value={bankForm.bankCode}
-                      onChange={(e) => setBankForm({ ...bankForm, bankCode: e.target.value.toUpperCase() })}
-                      placeholder="รหัสมาตรฐาน 3 หลัก เช่น 004 (กสิกรไทย), 014 (ไทยพาณิชย์)"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อธนาคาร <span className="text-rose-500">*</span></label>
-                    <input
-                      type="text"
-                      required
-                      value={bankForm.bankName}
-                      onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
-                      placeholder="เช่น ธนาคารกสิกรไทย"
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อย่อ</label>
-                      <input
-                        type="text"
-                        maxLength={20}
-                        value={bankForm.shortName}
-                        onChange={(e) => setBankForm({ ...bankForm, shortName: e.target.value.toUpperCase() })}
-                        placeholder="เช่น KBANK"
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">จำนวนหลักเลขบัญชี</label>
-                      <input
-                        type="number"
-                        min={6}
-                        max={20}
-                        value={bankForm.accountDigits}
-                        onChange={(e) => setBankForm({ ...bankForm, accountDigits: e.target.value })}
-                        placeholder="เว้นว่าง = ไม่ตรวจ"
-                        className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                      />
-                    </div>
-                  </div>
-
-                  {modalMode === 'edit' && (
-                    <ActiveToggleRow label="เปิดใช้งาน" checked={bankForm.status === 'ACTIVE'} onChange={(v) => setBankForm({ ...bankForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-                  )}
-                </>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm cursor-pointer disabled:opacity-50"
-                >
-                  {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  บันทึกข้อมูล
-                </button>
+            {activeTab === 'nationalities' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสัญชาติ <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={simpleNameInput}
+                  onChange={(e) => setSimpleNameInput(e.target.value)}
+                  placeholder="เช่น ไทย, ญี่ปุ่น, อเมริกัน..."
+                  className={inputClass}
+                />
               </div>
-            </form>
-          </div>
-        </div>
+            )}
+
+            {activeTab === 'religions' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อศาสนา <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={simpleNameInput}
+                  onChange={(e) => setSimpleNameInput(e.target.value)}
+                  placeholder="เช่น พุทธ, คริสต์, อิสลาม..."
+                  className={inputClass}
+                />
+              </div>
+            )}
+
+            {activeTab === 'marital-statuses' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อสถานภาพสมรส <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={simpleNameInput}
+                  onChange={(e) => setSimpleNameInput(e.target.value)}
+                  placeholder="เช่น โสด, สมรส, หย่าร้าง..."
+                  className={inputClass}
+                />
+              </div>
+            )}
+
+            {(activeTab === 'genders' || activeTab === 'certificate-types') && (
+              <>
+                <div>
+                  <CodeInput
+                    type={activeTab === 'genders' ? 'gender' : 'certificate-type'}
+                    prefix={activeTab === 'genders' ? 'G' : 'CERT_'}
+                    digits={activeTab === 'genders' ? 2 : 3}
+                    existingCodes={activeTab === 'genders' ? genders.map((x) => x.genderCode) : certTypes.map((x) => x.certificateCode)}
+                    label={activeTab === 'genders' ? 'รหัสเพศ' : 'รหัสประเภทหนังสือรับรอง'}
+                    required
+                    mode={modalMode}
+                    maxLength={activeTab === 'genders' ? 20 : 50}
+                    value={codeNameForm.code}
+                    onChange={(v) => setCodeNameForm((f) => ({ ...f, code: v }))}
+                    labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                    inputClassName="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 disabled:bg-slate-100 dark:disabled:bg-slate-900"
+                  />
+                  {activeTab === 'certificate-types' && (
+                    <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">รหัสที่มีคำว่า SALARY จะแสดงเงินเดือนในหนังสือรับรอง</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {activeTab === 'genders' ? 'ชื่อเพศ' : 'ชื่อหนังสือรับรอง'} <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={activeTab === 'genders' ? 50 : 255}
+                    value={codeNameForm.name}
+                    onChange={(e) => setCodeNameForm({ ...codeNameForm, name: e.target.value })}
+                    placeholder={activeTab === 'genders' ? 'เช่น ชาย, หญิง, ไม่ระบุ' : 'เช่น หนังสือรับรองการทำงาน'}
+                    className={inputClass}
+                  />
+                </div>
+              </>
+            )}
+
+            {activeTab === 'banks' && (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">รหัสธนาคาร <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    disabled={modalMode === 'edit'}
+                    value={bankForm.bankCode}
+                    onChange={(e) => setBankForm({ ...bankForm, bankCode: e.target.value.toUpperCase() })}
+                    placeholder="รหัสมาตรฐาน 3 หลัก เช่น 004 (กสิกรไทย), 014 (ไทยพาณิชย์)"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono disabled:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อธนาคาร <span className="text-rose-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    value={bankForm.bankName}
+                    onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                    placeholder="เช่น ธนาคารกสิกรไทย"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อย่อ</label>
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={bankForm.shortName}
+                      onChange={(e) => setBankForm({ ...bankForm, shortName: e.target.value.toUpperCase() })}
+                      placeholder="เช่น KBANK"
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">จำนวนหลักเลขบัญชี</label>
+                    <input
+                      type="number"
+                      min={6}
+                      max={20}
+                      value={bankForm.accountDigits}
+                      onChange={(e) => setBankForm({ ...bankForm, accountDigits: e.target.value })}
+                      placeholder="เว้นว่าง = ไม่ตรวจ"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                {modalMode === 'edit' && (
+                  <ActiveToggleRow label="เปิดใช้งาน" checked={bankForm.status === 'ACTIVE'} onChange={(v) => setBankForm({ ...bankForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+                )}
+              </>
+            )}
+        </Modal>
       )}
     </div>
   );

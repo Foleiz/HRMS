@@ -26,6 +26,7 @@ import { benefitService } from '@/services/benefitService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { inputClass } from '@/components/ui';
 
 interface CreateEmployeeTypeModalProps {
   isOpen: boolean;
@@ -343,7 +344,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 font-sans">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 bg-[#0B2046] text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 bg-primary text-white">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-white/10 rounded-xl">
               <Sparkles className="w-4 h-4 text-cyan-300" />
@@ -387,7 +388,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             onChange={setTypeCode}
             resetKey={isOpen}
             labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
-            inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/20 focus:border-primary dark:focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
           />
 
           {/* ชื่อประเภทสัญญา/การจ้างงาน */}
@@ -401,7 +402,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
               value={typeName}
               onChange={(e) => setTypeName(e.target.value)}
               placeholder="เช่น พนักงานสัญญาจ้างโครงการ, ผู้รับเหมาบริการภายนอก, พนักงานประจำ"
-              className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+              className={`${inputClass} h-10`}
             />
           </div>
 
@@ -414,7 +415,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
               <CustomSelect
                 value={wageType}
                 onChange={(e) => setWageType(e.target.value)}
-                className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                className={`${inputClass} h-10`}
               >
                 <option value="MONTHLY">รายเดือน</option>
                 <option value="DAILY">รายวัน</option>
@@ -434,7 +435,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             {/* Header section with refresh button */}
             <div className="flex items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-2.5">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-[#0B2046] text-white rounded-lg shadow-2xs">
+                <div className="p-1.5 bg-primary text-white rounded-lg shadow-2xs">
                   <ShieldCheck className="w-4 h-4 text-cyan-300" />
                 </div>
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
@@ -503,7 +504,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                     value={benefitSearch}
                     onChange={(e) => setBenefitSearch(e.target.value)}
                     placeholder="ค้นหาชื่อสวัสดิการ, รหัส หรือหมวดหมู่..."
-                    className="w-full h-8 pl-8 pr-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-[#0B2046] dark:focus:ring-blue-500"
+                    className="w-full h-8 pl-8 pr-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500"
                   />
                   {benefitSearch && (
                     <button
@@ -521,7 +522,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   <button
                     type="button"
                     onClick={handleSelectStatutoryOnly}
-                    className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-[#0B2046] dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-medium transition-colors cursor-pointer"
+                    className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-medium transition-colors cursor-pointer"
                   >
                     สิทธิตามกฎหมาย
                   </button>
@@ -542,7 +543,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   onClick={() => setSelectedCategoryTab('ALL')}
                   className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     selectedCategoryTab === 'ALL'
-                      ? 'bg-[#0B2046] text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -553,7 +554,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   onClick={() => setSelectedCategoryTab('STATUTORY')}
                   className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     selectedCategoryTab === 'STATUTORY'
-                      ? 'bg-[#0B2046] text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -564,7 +565,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   onClick={() => setSelectedCategoryTab('HEALTH')}
                   className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     selectedCategoryTab === 'HEALTH'
-                      ? 'bg-[#0B2046] text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -575,7 +576,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                   onClick={() => setSelectedCategoryTab('ALLOWANCE')}
                   className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                     selectedCategoryTab === 'ALLOWANCE'
-                      ? 'bg-[#0B2046] text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
                 >
@@ -587,7 +588,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                     onClick={() => setSelectedCategoryTab('OTHER')}
                     className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
                       selectedCategoryTab === 'OTHER'
-                        ? 'bg-[#0B2046] text-white'
+                        ? 'bg-primary text-white'
                         : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                     }`}
                   >
@@ -600,7 +601,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             {/* Benefit Items List */}
             {loadingBenefits ? (
               <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin text-[#0B2046] dark:text-cyan-400" />
+                <Loader2 className="w-5 h-5 animate-spin text-primary dark:text-cyan-400" />
                 กำลังโหลดรายการสวัสดิการทั้งหมดจากระบบ...
               </div>
             ) : filteredBenefits.length === 0 ? (
@@ -613,7 +614,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                       setBenefitSearch('');
                       setSelectedCategoryTab('ALL');
                     }}
-                    className="mt-2 text-[#0B2046] dark:text-cyan-400 hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+                    className="mt-2 text-primary dark:text-cyan-400 hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
                   >
                     <RotateCcw className="w-3 h-3" />
                     ล้างตัวกรองทั้งหมด
@@ -646,7 +647,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => {}} // Click handled by parent container
-                          className="w-4 h-4 mt-0.5 rounded text-[#0B2046] dark:text-blue-500 border-slate-300 dark:border-slate-600 focus:ring-[#0B2046] dark:focus:ring-blue-500 cursor-pointer pointer-events-none"
+                          className="w-4 h-4 mt-0.5 rounded text-primary dark:text-blue-500 border-slate-300 dark:border-slate-600 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer pointer-events-none"
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
@@ -714,7 +715,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#07152d] rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-primary hover:bg-[#07152d] rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>{isEdit ? 'บันทึกการแก้ไข' : 'สร้างประเภทสัญญา'}</span>

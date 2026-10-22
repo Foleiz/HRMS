@@ -32,6 +32,7 @@ import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundE
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
+import { inputClass } from '@/components/ui';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -473,7 +474,7 @@ export default function CreateEmployeeModal({
     } ${
       hasError
         ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 dark:text-slate-100 placeholder:text-rose-300 focus:outline-none focus:border-rose-600 focus:ring-rose-500/30'
-        : 'border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]'
+        : 'border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary'
     }`;
   };
 
@@ -662,7 +663,7 @@ export default function CreateEmployeeModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header (ตรงตามสไตล์เดียวกับ EditEmployeeModal) */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#0B2046] text-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 bg-primary text-white shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-base sm:text-lg font-bold">เพิ่มพนักงานใหม่</h2>
@@ -703,7 +704,7 @@ export default function CreateEmployeeModal({
                   onClick={() => setActiveTab(tab.id as CreateModalTab)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-[#0B2046] text-white shadow-xs font-bold'
+                      ? 'bg-primary text-white shadow-xs font-bold'
                       : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -752,7 +753,7 @@ export default function CreateEmployeeModal({
                         clearFieldError('employeeCode');
                       }}
                       labelClassName="font-semibold text-slate-700 dark:text-slate-300 text-xs"
-                      inputClassName="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-mono font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                      inputClassName="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 font-mono font-semibold uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                     />
                     {renderFieldError('employeeCode')}
                   </div>
@@ -877,7 +878,7 @@ export default function CreateEmployeeModal({
                       return (
                         <div className="mt-1.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-between text-xs">
                           <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม:</span>
-                          <span className="font-semibold text-[#0B2046] dark:text-blue-300">
+                          <span className="font-semibold text-primary dark:text-blue-300">
                             {currentTeam.leadEmployeeName || 'ยังไม่มีหัวหน้าทีม'}
                           </span>
                         </div>
@@ -1204,7 +1205,7 @@ export default function CreateEmployeeModal({
                                 setFormData({ ...formData, addressType: e.target.value });
                                 clearFieldError('addressType');
                               }}
-                              className="text-[#0B2046] focus:ring-[#0B2046]"
+                              className="text-primary focus:ring-primary"
                             />
                             <span>{t}</span>
                           </label>
@@ -1380,7 +1381,7 @@ export default function CreateEmployeeModal({
             {activeTab === 'family' && (
               <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <Users className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                  <Users className="w-4 h-4 text-primary dark:text-blue-400" />
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">สมาชิกในครอบครัว</h3>
                   <span className="text-slate-400 font-normal text-[11px]">(ไม่บังคับ)</span>
                 </div>
@@ -1394,7 +1395,7 @@ export default function CreateEmployeeModal({
                         onClick={() => setActiveFamilyIndex(idx)}
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
                           activeFamilyIndex === idx
-                            ? 'bg-[#0B2046] text-white shadow-xs'
+                            ? 'bg-primary text-white shadow-xs'
                             : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
@@ -1436,7 +1437,7 @@ export default function CreateEmployeeModal({
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_relationshipType`);
                           }}
-                          className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          className={inputClass}
                         >
                           <option value="บิดา">บิดา</option>
                           <option value="มารดา">มารดา</option>
@@ -1459,7 +1460,7 @@ export default function CreateEmployeeModal({
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_prefix`);
                           }}
-                          className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          className={inputClass}
                         >
                           <option value="">เลือกคำนำหน้า</option>
                           <option value="นาย">นาย</option>
@@ -1485,7 +1486,7 @@ export default function CreateEmployeeModal({
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_firstName`);
                           }}
-                          className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={inputClass}
                         />
                         {renderFieldError(`family_${activeFamilyIndex}_firstName`)}
                       </div>
@@ -1504,7 +1505,7 @@ export default function CreateEmployeeModal({
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_lastName`);
                           }}
-                          className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={inputClass}
                         />
                         {renderFieldError(`family_${activeFamilyIndex}_lastName`)}
                       </div>
@@ -1525,7 +1526,7 @@ export default function CreateEmployeeModal({
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_citizenId`);
                           }}
-                          className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                         />
                         {renderFieldError(`family_${activeFamilyIndex}_citizenId`)}
                       </div>
@@ -1554,7 +1555,7 @@ export default function CreateEmployeeModal({
             {activeTab === 'emergency' && (
               <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <Phone className="w-4 h-4 text-[#0B2046] dark:text-blue-400" />
+                  <Phone className="w-4 h-4 text-primary dark:text-blue-400" />
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">
                     กรณีฉุกเฉินติดต่อใคร (Emergency Contact)
                   </h3>
@@ -1580,7 +1581,7 @@ export default function CreateEmployeeModal({
                         });
                         clearFieldError('emergency_relationship');
                       }}
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className={inputClass}
                     >
                       <option value="บิดา">บิดา</option>
                       <option value="มารดา">มารดา</option>
@@ -1612,7 +1613,7 @@ export default function CreateEmployeeModal({
                         });
                         clearFieldError('emergency_prefix');
                       }}
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className={inputClass}
                     >
                       <option value="">เลือกคำนำหน้า</option>
                       <option value="นาย">นาย</option>
@@ -1642,7 +1643,7 @@ export default function CreateEmployeeModal({
                         });
                         clearFieldError('emergency_firstName');
                       }}
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={inputClass}
                     />
                     {renderFieldError('emergency_firstName')}
                   </div>
@@ -1667,7 +1668,7 @@ export default function CreateEmployeeModal({
                         });
                         clearFieldError('emergency_lastName');
                       }}
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={inputClass}
                     />
                     {renderFieldError('emergency_lastName')}
                   </div>
@@ -1693,7 +1694,7 @@ export default function CreateEmployeeModal({
                         });
                         clearFieldError('emergency_primaryPhone');
                       }}
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                     {renderFieldError('emergency_primaryPhone')}
                   </div>
@@ -1719,7 +1720,7 @@ export default function CreateEmployeeModal({
                         });
                         clearFieldError('emergency_address');
                       }}
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={inputClass}
                     />
                     {renderFieldError('emergency_address')}
                   </div>
@@ -1761,7 +1762,7 @@ export default function CreateEmployeeModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-[#0B2046] text-white text-xs font-semibold hover:bg-[#153468] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
+              className="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>บันทึกข้อมูล</span>

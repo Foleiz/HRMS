@@ -31,6 +31,7 @@ import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundE
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { inputClass } from '@/components/ui';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -139,7 +140,7 @@ export default function EmployeeEditPage() {
       fallback={
         <div className="flex h-[70vh] items-center justify-center">
           <div className="text-center space-y-3">
-            <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mx-auto" />
+            <Loader2 className="w-9 h-9 animate-spin text-primary mx-auto" />
             <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">กำลังโหลดข้อมูล...</p>
           </div>
         </div>
@@ -543,7 +544,7 @@ function EmployeeEditPageContent() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400 font-sans">
-        <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mb-3" />
+        <Loader2 className="w-9 h-9 animate-spin text-primary mb-3" />
         <p className="text-sm font-medium">กำลังโหลดข้อมูลสำหรับแก้ไข...</p>
       </div>
     );
@@ -563,7 +564,7 @@ function EmployeeEditPageContent() {
                 onClick={() => router.push(tab.href)}
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                   isActive
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
@@ -585,7 +586,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('personal')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'personal'
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -597,7 +598,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('family')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'family'
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -609,7 +610,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('emergency')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'emergency'
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -621,7 +622,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('background')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'background'
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -633,7 +634,7 @@ function EmployeeEditPageContent() {
                 onClick={() => setActiveTab('tax')}
                 className={`pb-2 transition-all border-b-2 cursor-pointer ${
                   activeTab === 'tax'
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
                 }`}
               >
@@ -671,7 +672,7 @@ function EmployeeEditPageContent() {
                       placeholder="เช่น EMP001"
                       value={formData.employeeCode}
                       onChange={(e) => setFormData({ ...formData, employeeCode: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                   </div>
 
@@ -686,7 +687,7 @@ function EmployeeEditPageContent() {
                       placeholder="เช่น 100001"
                       value={formData.biometricId || ''}
                       onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                   </div>
 
@@ -723,7 +724,7 @@ function EmployeeEditPageContent() {
                       return (
                         <div className="mt-1.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-between text-xs">
                           <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม (หัวหน้างานอัตโนมัติ):</span>
-                          <span className="font-semibold text-[#0B2046] dark:text-blue-300">
+                          <span className="font-semibold text-primary dark:text-blue-300">
                             {currentTeam.leadEmployeeName || 'ยังไม่มีหัวหน้าทีม'}
                           </span>
                         </div>
@@ -798,7 +799,7 @@ function EmployeeEditPageContent() {
                       required
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={`${inputClass} h-10`}
                     />
                   </div>
 
@@ -813,7 +814,7 @@ function EmployeeEditPageContent() {
                       required
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={`${inputClass} h-10`}
                     />
                   </div>
                 </div>
@@ -832,7 +833,7 @@ function EmployeeEditPageContent() {
                       placeholder="เลขบัตรประชาชน 13 หลัก"
                       value={formData.citizenId || ''}
                       onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                   </div>
 
@@ -953,7 +954,7 @@ function EmployeeEditPageContent() {
                       placeholder="test001@gmail.com"
                       value={formData.personalEmail}
                       onChange={(e) => setFormData({ ...formData, personalEmail: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={`${inputClass} h-10`}
                     />
                   </div>
 
@@ -967,7 +968,7 @@ function EmployeeEditPageContent() {
                       placeholder="name@company.com"
                       value={formData.organizationEmail}
                       onChange={(e) => setFormData({ ...formData, organizationEmail: e.target.value })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={`${inputClass} h-10`}
                     />
                   </div>
 
@@ -982,7 +983,7 @@ function EmployeeEditPageContent() {
                       placeholder="08X-XXX-XXXX"
                       value={formData.personalPhone}
                       onChange={(e) => setFormData({ ...formData, personalPhone: autoFormatPhone(e.target.value) })}
-                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                   </div>
 
@@ -1006,7 +1007,7 @@ function EmployeeEditPageContent() {
                               value={t}
                               checked={formData.addressType === t}
                               onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-                              className="text-[#0B2046] focus:ring-[#0B2046]"
+                              className="text-primary focus:ring-primary"
                             />
                             <span>{t}</span>
                           </label>
@@ -1024,7 +1025,7 @@ function EmployeeEditPageContent() {
                         placeholder="บ้านเลขที่ 4"
                         value={formData.addressLine}
                         onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
 
@@ -1037,7 +1038,7 @@ function EmployeeEditPageContent() {
                         placeholder="แขวงหัวหมาก"
                         value={formData.subDistrict}
                         onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
 
@@ -1050,7 +1051,7 @@ function EmployeeEditPageContent() {
                         placeholder="บางกะปิ"
                         value={formData.district}
                         onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                        className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                        className={`${inputClass} h-10`}
                       />
                     </div>
 
@@ -1064,7 +1065,7 @@ function EmployeeEditPageContent() {
                           placeholder="กรุงเทพมหานคร"
                           value={formData.province}
                           onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                          className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={`${inputClass} h-10`}
                         />
                       </div>
                       <div>
@@ -1077,7 +1078,7 @@ function EmployeeEditPageContent() {
                           placeholder="10240"
                           value={formData.postalCode}
                           onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                          className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full h-10 px-3.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                         />
                       </div>
                     </div>
@@ -1171,7 +1172,7 @@ function EmployeeEditPageContent() {
                             accountNumber: e.target.value.replace(/\D/g, '').slice(0, maxDigits),
                           });
                         }}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
                   </div>
@@ -1186,7 +1187,7 @@ function EmployeeEditPageContent() {
             {activeTab === 'family' && (
               <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <Users className="w-4 h-4 text-[#0B2046]" />
+                  <Users className="w-4 h-4 text-primary" />
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">สมาชิกในครอบครัว</h3>
                 </div>
 
@@ -1200,7 +1201,7 @@ function EmployeeEditPageContent() {
                         onClick={() => setActiveFamilyIndex(idx)}
                         className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs transition-all cursor-pointer ${
                           activeFamilyIndex === idx
-                            ? 'bg-[#0B2046] text-white shadow-xs'
+                            ? 'bg-primary text-white shadow-xs'
                             : 'bg-slate-100 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
                         }`}
                       >
@@ -1243,7 +1244,7 @@ function EmployeeEditPageContent() {
                             list[activeFamilyIndex].relationshipType = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          className={inputClass}
                         >
                           <option value="บิดา">บิดา</option>
                           <option value="มารดา">มารดา</option>
@@ -1264,7 +1265,7 @@ function EmployeeEditPageContent() {
                             list[activeFamilyIndex].prefix = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                          className={inputClass}
                         >
                           <option value="">เลือกคำนำหน้า</option>
                           <option value="นาย">นาย</option>
@@ -1288,7 +1289,7 @@ function EmployeeEditPageContent() {
                             list[activeFamilyIndex].firstName = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={inputClass}
                         />
                       </div>
 
@@ -1305,7 +1306,7 @@ function EmployeeEditPageContent() {
                             list[activeFamilyIndex].lastName = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                          className={inputClass}
                         />
                       </div>
 
@@ -1320,7 +1321,7 @@ function EmployeeEditPageContent() {
                             list[activeFamilyIndex].citizenId = e.target.value;
                             setFormData({ ...formData, familyMembers: list });
                           }}
-                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                          className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                         />
                       </div>
 
@@ -1347,7 +1348,7 @@ function EmployeeEditPageContent() {
             {activeTab === 'emergency' && (
               <div className="w-full space-y-6 text-xs animate-in fade-in duration-150">
                 <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-                  <Phone className="w-4 h-4 text-[#0B2046]" />
+                  <Phone className="w-4 h-4 text-primary" />
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">กรณีฉุกเฉินติดต่อใคร (Emergency Contact)</h3>
                 </div>
 
@@ -1370,7 +1371,7 @@ function EmployeeEditPageContent() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className={inputClass}
                     >
                       <option value="บิดา">บิดา</option>
                       <option value="มารดา">มารดา</option>
@@ -1398,7 +1399,7 @@ function EmployeeEditPageContent() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer"
+                      className={inputClass}
                     >
                       <option value="">เลือกคำนำหน้า</option>
                       <option value="นาย">นาย</option>
@@ -1426,7 +1427,7 @@ function EmployeeEditPageContent() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={inputClass}
                     />
                   </div>
 
@@ -1449,7 +1450,7 @@ function EmployeeEditPageContent() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={inputClass}
                     />
                   </div>
 
@@ -1473,7 +1474,7 @@ function EmployeeEditPageContent() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] font-mono"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                     />
                   </div>
 
@@ -1495,7 +1496,7 @@ function EmployeeEditPageContent() {
                           },
                         })
                       }
-                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046]"
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -1516,7 +1517,7 @@ function EmployeeEditPageContent() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-7 py-2.5 rounded-xl bg-[#0B2046] text-white text-xs font-semibold hover:bg-[#153468] transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
+              className="px-7 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>บันทึกข้อมูล</span>

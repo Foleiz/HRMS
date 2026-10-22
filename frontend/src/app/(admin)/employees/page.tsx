@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
+import { inputClass } from '@/components/ui';
 
 interface DepartmentItem {
   id: number;
@@ -391,7 +392,7 @@ export default function EmployeesPage() {
 
   // Avatar colors for fallback
   const avatarColors = [
-    'bg-[#0B2046] text-white',
+    'bg-primary text-white',
     'bg-teal-600 text-white',
     'bg-stone-400 text-white',
     'bg-amber-500 text-white',
@@ -454,7 +455,7 @@ export default function EmployeesPage() {
                 onClick={() => setActiveTab(tab.title)}
                 className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
                   isActive
-                    ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                     : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
                 }`}
               >
@@ -476,7 +477,7 @@ export default function EmployeesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาพนักงาน"
-              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs"
+              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
             />
           </div>
 
@@ -505,7 +506,7 @@ export default function EmployeesPage() {
           {canCreateEmp && (
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112a59] text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               เพิ่มพนักงาน
@@ -520,10 +521,10 @@ export default function EmployeesPage() {
           <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
-              <tr className="bg-[#0B2046] text-white font-medium text-xs whitespace-nowrap">
+              <tr className="bg-primary text-white font-medium text-xs whitespace-nowrap">
                 <th
                   onClick={() => handleSort('employeeCode')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -537,7 +538,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('fullName')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px] cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px] cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -551,7 +552,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('citizenId')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px] cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px] cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -565,7 +566,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('division')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -579,7 +580,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('department')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -593,7 +594,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('position')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px] cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px] cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -607,7 +608,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('birthDate')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -621,7 +622,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('gender')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -635,7 +636,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('email')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -649,7 +650,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('phone')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -663,7 +664,7 @@ export default function EmployeesPage() {
                 </th>
                 <th
                   onClick={() => handleSort('status')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-[#122c5e] transition-colors"
+                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
                   title="คลิกเพื่อเรียงลำดับ"
                 >
                   <div className="flex items-center gap-1">
@@ -683,7 +684,7 @@ export default function EmployeesPage() {
               {isLoading ? (
                 <tr>
                   <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#0B2046] mb-2" />
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
                     กำลังโหลดข้อมูลพนักงาน...
                   </td>
                 </tr>
@@ -726,7 +727,7 @@ export default function EmployeesPage() {
                                 setCommentModalEmp(emp);
                                 setCommentInput(comments[emp.id] || '');
                               }}
-                              className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-bold text-[11px] shadow-2xs hover:ring-2 hover:ring-[#0B2046]/40 transition-all focus:outline-none"
+                              className="relative w-7 h-7 rounded-full overflow-hidden flex items-center justify-center font-bold text-[11px] shadow-2xs hover:ring-2 hover:ring-primary/40 transition-all focus:outline-none"
                               title={hasComment ? `คอมเมนต์: ${commentText}` : 'คลิกเพื่อเพิ่มคอมเมนต์'}
                             >
                               {emp.avatarUrl ? (
@@ -752,7 +753,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="absolute -top-1 -right-1 z-20 w-3.5 h-3.5 rounded-full bg-[#0B2046] text-white flex items-center justify-center text-[9px] font-bold ring-1.5 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                className="absolute -top-1 -right-1 z-20 w-3.5 h-3.5 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-bold ring-1.5 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
                                 title="คลิกเพื่อแก้ไขคอมเมนต์"
                               >
                                 !
@@ -761,7 +762,7 @@ export default function EmployeesPage() {
 
                             {/* Tooltip เมื่อเอา mouse ไป hold (hover) เหนือ avatar หรือ badge */}
                             {hasComment ? (
-                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0B2046] text-white text-[11px] px-3 py-1 rounded-full shadow-xl border border-white/20 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-primary text-white text-[11px] px-3 py-1 rounded-full shadow-xl border border-white/20 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
                                 <div className="w-3.5 h-3.5 rounded-full bg-white/25 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
                                   !
                                 </div>
@@ -778,7 +779,7 @@ export default function EmployeesPage() {
                           {/* ชื่อเต็ม */}
                           <Link
                             href={`/employees/${emp.id}`}
-                            className="font-medium text-slate-800 dark:text-slate-200 hover:text-[#0B2046] hover:underline"
+                            className="font-medium text-slate-800 dark:text-slate-200 hover:text-primary hover:underline"
                           >
                             {emp.prefix} {emp.firstName} {emp.lastName}
                           </Link>
@@ -927,7 +928,7 @@ export default function EmployeesPage() {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -960,7 +961,7 @@ export default function EmployeesPage() {
                 onClick={() => setCurrentPage(p)}
                 className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all ${
                   currentPage === p
-                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                 }`}
               >
@@ -987,7 +988,7 @@ export default function EmployeesPage() {
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[#0B2046] text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
                   !
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -1011,7 +1012,7 @@ export default function EmployeesPage() {
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
                 placeholder="พิมพ์คอมเมนต์ตรงนี้..."
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+                className={inputClass}
               />
             </div>
 
@@ -1036,7 +1037,7 @@ export default function EmployeesPage() {
                 <button
                   type="button"
                   onClick={() => handleSaveComment(commentModalEmp.id, commentInput)}
-                  className="px-4 py-1.5 bg-[#0B2046] hover:bg-[#143268] text-white text-xs font-semibold rounded-lg shadow-xs"
+                  className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs"
                 >
                   บันทึกคอมเมนต์
                 </button>
@@ -1052,7 +1053,7 @@ export default function EmployeesPage() {
           <div className="bg-white dark:bg-slate-800 w-full max-w-xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/70 dark:bg-slate-950/70">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-[#0B2046] text-white font-bold text-xs flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-primary text-white font-bold text-xs flex items-center justify-center">
                   {selectedEmployee.firstName.charAt(0)}
                 </div>
                 <div>
