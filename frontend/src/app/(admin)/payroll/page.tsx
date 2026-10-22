@@ -2803,9 +2803,7 @@ export default function PayrollPage() {
                     {itemsSubTab === 'DEDUCTION' ? (
                       <>
                         {['ลดฐานภาษี', 'ลดฐานประกันสังคม', 'เป็นค่าลดหย่อน'].map((h) => (
-                          <th key={h} className="py-3.5 px-3 text-center">
-                            <span className="inline-block px-3 py-1 rounded-md bg-amber-400 text-[#0B2046] font-semibold">{h}</span>
-                          </th>
+                          <th key={h} className="py-3.5 px-5 text-center">{h}</th>
                         ))}
                       </>
                     ) : (
@@ -2878,7 +2876,6 @@ export default function PayrollPage() {
                                 : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}>
                               <span>{calcTypeLabel}</span>
-                              {['DED_SSO', 'DED_TAX'].includes(item.itemCode) && <Lock className="w-3 h-3 text-purple-500" />}
                             </span>
                           </td>
                           <td className="py-3.5 px-5">
@@ -2904,21 +2901,23 @@ export default function PayrollPage() {
                                 item.itemCode === 'DED_SSO' ||
                                 /PVD|PROVIDENT/i.test(item.itemCode) ||
                                 (item.itemName || '').includes('สำรองเลี้ยงชีพ');
-                              const pill = (on: boolean, label: string, onCls: string) => (
-                                <td className="py-3.5 px-3 text-center">
+                              // ติ๊กถูกแบบเดียวกับแท็บรายการได้
+                              const mark = (on: boolean) => (
+                                <td className="py-3.5 px-5 text-center">
                                   {on ? (
-                                    <span className={`inline-block px-3 py-1 rounded-md text-[11px] font-semibold ${onCls}`}>{label}</span>
+                                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                    </div>
                                   ) : (
-                                    <span className="inline-block px-3 py-1 rounded-md text-[11px] text-slate-400 bg-slate-100 dark:bg-slate-800">-</span>
+                                    <span className="text-slate-400 text-sm">-</span>
                                   )}
                                 </td>
                               );
-                              const reduceCls = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
                               return (
                                 <>
-                                  {pill(item.isTaxable && !isAllowance, 'ลดฐาน', reduceCls)}
-                                  {pill(item.isSocialSecurityCalculated && !isAllowance, 'ลดฐาน', reduceCls)}
-                                  {pill(isAllowance, 'ลดหย่อนได้', 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300')}
+                                  {mark(item.isTaxable && !isAllowance)}
+                                  {mark(item.isSocialSecurityCalculated && !isAllowance)}
+                                  {mark(isAllowance)}
                                 </>
                               );
                             })()
