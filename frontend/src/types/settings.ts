@@ -133,6 +133,10 @@ export interface AuditLogItem {
   ipAddress?: string;
   description?: string;
   createdAt: string;
+  /** เจ้าของข้อมูล (พนักงาน) ที่ถูกสร้าง/แก้ไข/ลบ */
+  subjectEmployeeId?: number | null;
+  subjectEmployeeCode?: string | null;
+  subjectEmployeeName?: string | null;
 }
 
 export interface AuditLogQueryFilter {

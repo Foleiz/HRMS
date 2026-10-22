@@ -40,8 +40,8 @@ interface DiffField {
 
 const FIELD_TRANSLATIONS: Record<string, string> = {
   id: 'รหัสข้อมูล',
-  employee_id: 'รหัสพนักงาน',
-  employeeid: 'รหัสพนักงาน',
+  employee_id: 'ID พนักงาน',
+  employeeid: 'ID พนักงาน',
   username: 'ชื่อผู้ใช้งาน',
   firstname: 'ชื่อจริง',
   lastname: 'นามสกุล',
@@ -132,19 +132,10 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, handlePrev, handleNext]);
 
-  // Target User extraction from description or metadata
+  // เจ้าของข้อมูล (พนักงาน) ที่ backend หาให้จากตาราง/ค่าใน log
   const targetUser = useMemo(() => {
-    if (!log) return null;
-    const desc = log.description || '';
-    // Check if contains "ของ [Name]"
-    const match = desc.match(/ของ\s+([^(\s]+(?:\s+[^(\s]+)?)/);
-    if (match && match[1]) {
-      const name = match[1].replace(/<[^>]+>/g, '').trim();
-      if (name && name !== log.fullName && name !== log.username && name !== 'ตัวเอง') {
-        return { name, id: log.entityId || 2 };
-      }
-    }
-    return null;
+    if (!log?.subjectEmployeeId || !log.subjectEmployeeName) return null;
+    return { name: log.subjectEmployeeName, code: log.subjectEmployeeCode || '', id: log.subjectEmployeeId };
   }, [log]);
 
   // Role changes parsing
@@ -373,11 +364,11 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             </div>
           </div>
 
-          {/* 1.5 ผู้ถูกกระทำ (ถ้ามีและไม่ใช่คนเดียวกัน) */}
+          {/* 1.5 เจ้าของข้อมูล (พนักงานที่ข้อมูลนี้เป็นของ) */}
           {targetUser && (
             <div>
               <h3 className="text-xs font-semibold text-slate-500 mb-1.5">
-                ผู้ถูกกระทำ
+                เจ้าของข้อมูล
               </h3>
               <div className="flex items-center gap-2.5 border border-slate-200 rounded-xl p-2.5 bg-white shadow-2xs">
                 <div className="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
@@ -388,19 +379,9 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                     {targetUser.name}
                   </div>
                   <div className="text-[11px] text-slate-500">
-                    ผู้ใช้ #{targetUser.id}
+                    {targetUser.code ? `รหัสพนักงาน ${targetUser.code}` : `พนักงาน #${targetUser.id}`}
                   </div>
                 </div>
-                {onFilterByUser && (
-                  <button
-                    type="button"
-                    onClick={() => onFilterByUser(targetUser.id)}
-                    className="text-xs text-blue-600 hover:underline cursor-pointer font-medium shrink-0 flex items-center gap-0.5"
-                  >
-                    <span>ดูประวัติ</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             </div>
           )}

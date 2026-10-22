@@ -18,6 +18,17 @@ public class AuditLogDto
     public string? IpAddress { get; set; }
     public string? Description { get; set; }
     public DateTime CreatedAt { get; set; }
+    /// <summary>เจ้าของข้อมูลที่ถูกสร้าง/แก้ไข/ลบ (พนักงาน) — null ถ้าไม่ใช่ข้อมูลของพนักงานคนใดคนหนึ่ง</summary>
+    public long? SubjectEmployeeId { get; set; }
+    public string? SubjectEmployeeCode { get; set; }
+    public string? SubjectEmployeeName { get; set; }
+}
+
+/// <summary>ผลค้นหา employee_id ของแถวข้อมูล (ใช้หาเจ้าของข้อมูลใน audit log)</summary>
+public class AuditRowOwner
+{
+    public long Id { get; set; }
+    public long? EmployeeId { get; set; }
 }
 
 /// <summary>
