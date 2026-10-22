@@ -21,5 +21,6 @@ public interface ICommissionService
     Task DeleteCommissionRecordAsync(long id, CancellationToken cancellationToken = default);
     Task<CommissionPeriodSummaryDto> ConfirmCommissionPeriodAsync(int year, int month, long confirmedByEmployeeId, CancellationToken cancellationToken = default);
     Task<CommissionPeriodSummaryDto> ResetCommissionPeriodAsync(int year, int month, CancellationToken cancellationToken = default);
+    Task<CommissionPeriodSummaryDto> RecalculatePeriodWithRateAsync(int year, int month, decimal newRate, CancellationToken cancellationToken = default);
     Task<byte[]> GenerateExcelTemplateAsync(CancellationToken cancellationToken = default);
 }

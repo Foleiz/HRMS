@@ -966,6 +966,44 @@ public class CommissionService : ICommissionService
         return await GetCommissionPeriodAsync(year, month, cancellationToken);
     }
 
+    public async Task<CommissionPeriodSummaryDto> RecalculatePeriodWithRateAsync(int year, int month, decimal newRate, CancellationToken cancellationToken = default)
+    {
+        if (newRate <= 0) newRate = 3.00m;
+
+        // 1. ตรวจสอบว่ารอบถูกล็อก (PAID) หรือไม่
+        var isLocked = await _context.PayrollPeriods
+            .AnyAsync(p => p.Year == year && p.Month == month && p.Status == "PAID", cancellationToken);
+        if (isLocked)
+        {
+            throw new BusinessRuleException("งวดนี้มีสถานะจ่ายเงินแล้ว (PAID) ในระบบเงินเดือน ไม่สามารถคำนวณใหม่ได้");
+        }
+
+        var startOfMonth = new DateOnly(year, month, 1);
+        var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+
+        // 2. ดึง active entries ทั้งหมดของเดือนนี้
+        var entries = await _context.EmployeeCommissionEntries
+            .Where(e => e.Status == "ACTIVE" && e.DateFrom <= endOfMonth && e.DateTo >= startOfMonth)
+            .ToListAsync(cancellationToken);
+
+        foreach (var entry in entries)
+        {
+            entry.CommissionRate = newRate;
+            entry.CommissionAmount = Math.Round(entry.SalesAmount * (newRate / 100m), 2, MidpointRounding.AwayFromZero);
+            entry.TotalAmount = entry.CommissionAmount + entry.SpecialAmount;
+        }
+
+        // 3. ปรับปรุงยอดสรุปใน employee_commission
+        var empIds = entries.Select(e => e.EmployeeId).Distinct().ToList();
+        if (empIds.Any())
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            await RecalculateMonthlyCommissionsAsync(empIds, new[] { (year, month) }, newRate, cancellationToken);
+        }
+
+        return await GetCommissionPeriodAsync(year, month, cancellationToken);
+    }
+
     public async Task<byte[]> GenerateExcelTemplateAsync(CancellationToken cancellationToken = default)
     {
         var rows = new List<Dictionary<string, object>>
@@ -1211,21 +1249,9 @@ public class CommissionService : ICommissionService
                 var effectiveRate = g.FirstOrDefault(x => x.Rate.HasValue)?.Rate;
                 var notes = g.Where(x => !string.IsNullOrWhiteSpace(x.Note)).Select(x => x.Note!).Distinct().ToList();
 
-                decimal commAmount;
-                decimal calcRate;
-
-                if (mergedDirectComm.HasValue && mergedDirectComm.Value > 0)
-                {
-                    commAmount = Math.Round(mergedDirectComm.Value, 2, MidpointRounding.AwayFromZero);
-                    if (effectiveRate.HasValue) calcRate = effectiveRate.Value;
-                    else if (totalSales > 0) calcRate = Math.Round((commAmount / totalSales) * 100m, 2);
-                    else calcRate = defaultRate;
-                }
-                else
-                {
-                    calcRate = effectiveRate ?? defaultRate;
-                    commAmount = Math.Round(totalSales * (calcRate / 100m), 2, MidpointRounding.AwayFromZero);
-                }
+                // ใช้อัตราตามระบบเท่านั้น (defaultRate) ไม่นำอัตราในไฟล์มาคิด
+                decimal calcRate = defaultRate > 0 ? defaultRate : 3.00m;
+                decimal commAmount = Math.Round(totalSales * (calcRate / 100m), 2, MidpointRounding.AwayFromZero);
 
                 return new ParsedCommissionRow
                 {
@@ -1233,8 +1259,8 @@ public class CommissionService : ICommissionService
                     DateFrom = g.Key.DateFrom,
                     DateTo = g.Key.DateTo,
                     SalesAmount = totalSales,
-                    DirectCommission = mergedDirectComm,
-                    Rate = effectiveRate,
+                    DirectCommission = null,
+                    Rate = calcRate,
                     SpecialAmount = totalSpecial,
                     CommissionRate = calcRate,
                     CommissionAmount = commAmount,

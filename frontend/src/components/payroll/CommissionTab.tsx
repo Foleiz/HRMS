@@ -94,6 +94,7 @@ export default function CommissionTab() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isExecutingImport, setIsExecutingImport] = useState<boolean>(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState<boolean>(false);
+  const [isRecalculatingRate, setIsRecalculatingRate] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Batch History State
@@ -182,6 +183,22 @@ export default function CommissionTab() {
       error(err?.response?.data?.message || 'ไม่สามารถโหลดข้อมูลค่าคอมมิชชั่นได้');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Recalculate Period with Current Default Rate
+  const handleApplyDefaultRate = async () => {
+    if (isPeriodConfirmed) return;
+    try {
+      setIsRecalculatingRate(true);
+      const res = await commissionService.recalculatePeriod(selectedYear, selectedMonth, defaultRate);
+      setSummary(res);
+      success(`คำนวณยอดค่าคอมมิชชั่นทั้งงวดใหม่ด้วยอัตรา ${defaultRate}% สำเร็จ`);
+      await loadMonthlyPeriods(selectedYear);
+    } catch (err: any) {
+      error(err?.response?.data?.message || 'คำนวณใหม่ไม่สำเร็จ');
+    } finally {
+      setIsRecalculatingRate(false);
     }
   };
 
@@ -838,6 +855,17 @@ export default function CommissionTab() {
               />
               <span className="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
             </div>
+            {!isPeriodConfirmed && summary && summary.records && summary.records.length > 0 && (
+              <button
+                type="button"
+                onClick={handleApplyDefaultRate}
+                disabled={isRecalculatingRate}
+                title={`นำอัตรา ${defaultRate}% ไปคำนวณใหม่กับทุกรายการในงวดนี้`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition active:scale-95 disabled:opacity-50 cursor-pointer shadow-2xs ml-1"
+              >
+                {isRecalculatingRate ? <Loader2 className="w-3 h-3 animate-spin" /> : <span>คำนวณใหม่</span>}
+              </button>
+            )}
           </div>
 
           {/* Refresh Button */}

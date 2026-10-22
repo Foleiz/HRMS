@@ -170,6 +170,15 @@ export const commissionService = {
     return res.data.data;
   },
 
+  async recalculatePeriod(year: number, month: number, rate: number): Promise<CommissionPeriodSummary> {
+    const res = await apiClient.post<ApiResponse<CommissionPeriodSummary>>(
+      '/salary/commission/recalculate',
+      null,
+      { params: { year, month, rate } }
+    );
+    return res.data.data;
+  },
+
   async downloadTemplate(): Promise<Blob> {
     const res = await apiClient.get('/salary/commission/template', {
       responseType: 'blob',

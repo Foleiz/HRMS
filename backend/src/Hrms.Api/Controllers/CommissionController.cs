@@ -278,6 +278,22 @@ public class CommissionController : ControllerBase
     }
 
     /// <summary>
+    /// คำนวณค่าคอมมิชชั่นทั้งงวดใหม่ตามอัตราของระบบที่ระบุ
+    /// </summary>
+    [HttpPost("recalculate")]
+    [ProducesResponseType(typeof(ApiResponse<CommissionPeriodSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<CommissionPeriodSummaryDto>>> RecalculatePeriod(
+        [FromQuery] int year,
+        [FromQuery] int month,
+        [FromQuery] decimal rate = 3.00m,
+        CancellationToken cancellationToken = default)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_MANAGE"), "คำนวณค่าคอมมิชชั่นใหม่");
+        var result = await _commissionService.RecalculatePeriodWithRateAsync(year, month, rate, cancellationToken);
+        return Ok(ApiResponse<CommissionPeriodSummaryDto>.Ok(result, $"คำนวณค่าคอมมิชชั่นงวด {month}/{year} ใหม่ด้วยอัตรา {rate}% สำเร็จ"));
+    }
+
+    /// <summary>
     /// ดาวน์โหลดไฟล์เทมเพลต Excel สำหรับกรอกยอดขาย
     /// </summary>
     [HttpGet("template")]
