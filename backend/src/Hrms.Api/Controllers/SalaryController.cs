@@ -498,16 +498,17 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>
-    /// ลบรอบเงินเดือน (เฉพาะสถานะ DRAFT หรือ REVIEW)
+    /// ลบรอบเงินเดือน (เฉพาะสถานะ DRAFT หรือ REVIEW หรือระบุ force=true สำหรับ Admin/HR)
     /// </summary>
     [HttpDelete("periods/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> DeletePayrollPeriod(
         long id,
-        CancellationToken cancellationToken)
+        [FromQuery] bool force = false,
+        CancellationToken cancellationToken = default)
     {
         PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
-        await _salaryService.DeletePayrollPeriodAsync(id, cancellationToken);
+        await _salaryService.DeletePayrollPeriodAsync(id, force, cancellationToken);
         return Ok(ApiResponse<object>.Ok(null!, "ลบรอบเงินเดือนสำเร็จ"));
     }
 

@@ -46,7 +46,7 @@ public interface ISalaryService
 
     /// <summary>คำเตือนจาก CalculatePayrollForPeriodAsync ครั้งล่าสุด</summary>
     IReadOnlyList<string> LastCalculationWarnings { get; }
-    Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default);
+    Task DeletePayrollPeriodAsync(long periodId, bool force = false, CancellationToken cancellationToken = default);
 
     // Manual adjustments & bonus payout (รายการที่ HR เพิ่มเองรายบุคคล / โบนัสประจำปี)
     Task<List<PayrollDetailItemDto>> AddPayrollAdjustmentAsync(long payrollId, AddPayrollAdjustmentRequest request, CancellationToken cancellationToken = default);

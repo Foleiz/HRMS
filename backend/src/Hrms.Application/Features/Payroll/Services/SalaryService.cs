@@ -3044,7 +3044,7 @@ public class SalaryService : ISalaryService
 
     #endregion
 
-    public async Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default)
+    public async Task DeletePayrollPeriodAsync(long periodId, bool force = false, CancellationToken cancellationToken = default)
     {
         var period = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
@@ -3052,8 +3052,8 @@ public class SalaryService : ISalaryService
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
             ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
 
-        // Allow deletion ONLY in DRAFT or REVIEW status
-        if (period.Status != "DRAFT" && period.Status != "REVIEW")
+        // Allow deletion ONLY in DRAFT or REVIEW status (unless force is explicitly requested)
+        if (!force && period.Status != "DRAFT" && period.Status != "REVIEW")
         {
             throw new BusinessRuleException(
                 $"ไม่สามารถลบรอบเงินเดือนในสถานะ '{period.Status}' ได้ " +
@@ -3066,6 +3066,22 @@ public class SalaryService : ISalaryService
             .ExecuteUpdateAsync(s => s
                 .SetProperty(c => c.PaymentStatus, BenefitPayCode.PaymentUnpaid)
                 .SetProperty(c => c.PayrollPeriodId, (long?)null), cancellationToken);
+
+        // ปลดล็อกค่าคอมมิชชั่นที่ผูกกับรอบนี้ ให้กลับเป็นสถานะ CONFIRMED เพื่อให้นำไปคำนวณใหม่ได้
+        await _context.EmployeeCommissions
+            .Where(c => c.PaidPeriodId == period.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(c => c.Status, "CONFIRMED")
+                .SetProperty(c => c.PaidPeriodId, (long?)null), cancellationToken);
+
+        var payrollIds = period.Payrolls.Select(p => p.Id).ToList();
+        if (payrollIds.Any())
+        {
+            // ลบ Payslips ที่อ้างอิง Payroll ก่อนเพื่อไม่ให้ติด FK Constraint ใน PostgreSQL
+            await _context.Payslips
+                .Where(ps => payrollIds.Contains(ps.PayrollId))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
 
         // Clean up payroll details and payroll records
         foreach (var pr in period.Payrolls)
