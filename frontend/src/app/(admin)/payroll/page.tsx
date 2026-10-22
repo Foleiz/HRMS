@@ -3080,14 +3080,6 @@ export default function PayrollPage() {
       {/* === TAB: กำหนดวันตัดรอบและจ่ายเงิน (Payroll Schedule Settings) === */}
       {activeTab === 'schedule-settings' && (
         <PayrollScheduleTab
-          periods={periods}
-          onOpenPeriodInProcess={(periodId) => {
-            handlePeriodChange(periodId);
-            setActiveTab('process');
-          }}
-          onCreatePeriodForMonth={(year, month) => {
-            handleCreatePeriodInstant(year, month);
-          }}
           canEdit={canAccessHrView || isAdmin}
         />
       )}
