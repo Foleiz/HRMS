@@ -543,7 +543,7 @@ export default function ApprovalHistoryPage() {
         {loading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
-              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+              <Loader2 className="w-5 h-5 animate-spin text-primary dark:text-blue-400" />
               กำลังโหลดประวัติเอกสาร...
             </div>
           </div>
@@ -574,7 +574,7 @@ export default function ApprovalHistoryPage() {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
                       {/* 1. เลขที่เอกสาร */}
-                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-primary">
+                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-primary dark:text-blue-300">
                         {item.requestNo}
                       </td>
 
