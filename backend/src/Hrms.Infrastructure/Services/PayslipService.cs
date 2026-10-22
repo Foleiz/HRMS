@@ -5,9 +5,7 @@ using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Payroll.Services;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using PdfSharpCore;
-using PdfSharpCore.Drawing;
-using PdfSharpCore.Pdf;
+using Hrms.Infrastructure.Services.PayslipPdf;
 
 namespace Hrms.Infrastructure.Services;
 
@@ -99,28 +97,33 @@ public class PayslipService : IPayslipService
 
         // 1. Password Determination (เลขบัตรประชาชน 4 ตัวท้าย)
         string password = "";
+        string passwordHint;
         string rawCitizenId = _encryptionService.UnprotectText(emp?.CitizenId ?? "");
         string digits = Regex.Replace(rawCitizenId, @"\D", "");
         if (digits.Length >= 4)
         {
             password = digits[^4..];
+            passwordHint = "เลขประจำตัวประชาชน 4 หลักสุดท้าย";
         }
         else if (emp?.BirthDate.HasValue == true)
         {
             var birth = emp.BirthDate.Value;
             int beYear = birth.Year > 2400 ? birth.Year : birth.Year + 543;
             password = $"{birth:ddMM}{beYear}";
+            passwordHint = "วันเดือนปีเกิด (วันวันเดือนเดือนปี พ.ศ. 4 หลัก เช่น 15052531)";
         }
         else
         {
             password = emp?.EmployeeCode ?? "1234";
+            passwordHint = "รหัสพนักงาน";
         }
 
         // 2. Query Company Master
         var company = await _context.Companies.FirstOrDefaultAsync(cancellationToken);
-        string companyName = company?.CompanyName ?? "บริษัท สยาม อินโนเวชั่น เทคโนโลยี จำกัด";
-        string companyAddress = company?.Address ?? "123 อาคารสยามทาวเวอร์ ชั้น 18 ถนนสุขุมวิท คลองเตย กรุงเทพฯ";
-        string companyPhone = company?.Phone ?? "02-123-4567";
+        // ยังไม่ได้ตั้งข้อมูลบริษัท → ไม่ใส่ชื่อสมมติ (เดิมแสดงบริษัทตัวอย่าง)
+        string companyName = string.IsNullOrWhiteSpace(company?.CompanyName) ? "(ยังไม่ได้ตั้งค่าข้อมูลบริษัท)" : company!.CompanyName;
+        string companyAddress = company?.Address ?? string.Empty;
+        string companyPhone = company?.Phone ?? string.Empty;
 
         // 3. Query YTD totals
         var yearPayrolls = await _context.Payrolls
@@ -137,10 +140,10 @@ public class PayslipService : IPayslipService
 
         decimal ytdGross = yearPayrolls.Sum(p => p.TotalGrossIncome);
         decimal ytdTax = yearPayrolls.SelectMany(p => p.Details)
-            .Where(d => d.PayrollItem != null && (d.PayrollItem.ItemType == "TAX" || d.PayrollItem.ItemName.Contains("ภาษี")))
+            .Where(d => d.PayrollItem != null && (d.PayrollItem.ItemCode == "DED_TAX" || d.PayrollItem.ItemType == "TAX"))
             .Sum(d => d.Amount);
         decimal ytdSso = yearPayrolls.SelectMany(p => p.Details)
-            .Where(d => d.PayrollItem != null && (d.PayrollItem.ItemType == "SSO" || d.PayrollItem.ItemName.Contains("ประกันสังคม")))
+            .Where(d => d.PayrollItem != null && (d.PayrollItem.ItemCode == "DED_SSO" || d.PayrollItem.ItemType == "SSO"))
             .Sum(d => d.Amount);
 
         // 4. Employee metadata
@@ -176,7 +179,8 @@ public class PayslipService : IPayslipService
                         d.PayrollItem?.ItemType == "ALLOWANCE" ||
                         d.PayrollItem?.ItemType == "OVERTIME" ||
                         d.PayrollItem?.ItemType == "BONUS")
-            .OrderBy(d => d.Id)
+            .OrderBy(d => EarningOrder(d.PayrollItem?.ItemCode))
+            .ThenBy(d => d.Id)
             .ToList();
 
         var deductions = payroll.Details
@@ -184,7 +188,8 @@ public class PayslipService : IPayslipService
                         d.PayrollItem?.ItemType == "TAX" ||
                         d.PayrollItem?.ItemType == "SSO" ||
                         d.PayrollItem?.ItemType == "LEAVE_DEDUCTION")
-            .OrderBy(d => d.Id)
+            .OrderBy(d => DeductionOrder(d.PayrollItem?.ItemCode))
+            .ThenBy(d => d.Id)
             .ToList();
 
         // If no details recorded, add base earnings from TotalGross
@@ -197,16 +202,17 @@ public class PayslipService : IPayslipService
             });
         }
 
-        // 6. Generate PDF with PdfSharpCore
-        byte[] pdfBytes = BuildPdfDocument(
+        // 6. Generate PDF (หน้าตาอยู่ที่ PayslipPdf/PayslipTheme.cs, การวาดอยู่ที่ PayslipPdf/PayslipRenderer.cs)
+        byte[] pdfBytes = PayslipRenderer.Render(new PayslipData(
             companyName, companyAddress, companyPhone,
             empCode, empName, positionName, departmentName,
             monthName, thaiYear, paymentDateText, bankText,
             payroll.TotalGrossIncome, payroll.TotalDeductionAmount, payroll.NetPayableSalary,
-            earnings, deductions,
+            ToThaiBahtText(payroll.NetPayableSalary),
+            earnings.Select(d => (d.PayrollItem?.ItemName ?? "รายได้อื่นๆ", d.Amount)).ToList(),
+            deductions.Select(d => (d.PayrollItem?.ItemName ?? "รายการหัก", d.Amount)).ToList(),
             ytdGross, ytdTax, ytdSso,
-            password
-        );
+            password, passwordHint));
 
         // 7. Store or update in hrms.payslip table
         var payslipRecord = await _context.Payslips.FirstOrDefaultAsync(p => p.PayrollId == payrollId, cancellationToken);
@@ -234,264 +240,25 @@ public class PayslipService : IPayslipService
         return (pdfBytes, fileName);
     }
 
-    private static byte[] BuildPdfDocument(
-        string companyName, string companyAddress, string companyPhone,
-        string empCode, string empName, string positionName, string departmentName,
-        string monthName, int thaiYear, string paymentDateText, string bankText,
-        decimal totalGross, decimal totalDeductions, decimal netPay,
-        List<PayrollDetail> earnings, List<PayrollDetail> deductions,
-        decimal ytdGross, decimal ytdTax, decimal ytdSso,
-        string password)
+    /// <summary>ลำดับรายการได้ในสลิป: เงินเดือน → ค่าตำแหน่ง → OT → อื่นๆ → โบนัส/ค่าคอม</summary>
+    private static int EarningOrder(string? code) => code switch
     {
-        using var doc = new PdfDocument();
-        doc.Info.Title = $"ใบแจ้งยอดเงินเดือน {monthName} {thaiYear} - {empName}";
-        doc.Info.Author = companyName;
-        doc.Info.Subject = "สลิปเงินเดือนพนักงาน (E-Payslip)";
+        "INC_BASE" => 0,
+        "INC_POSITION" => 1,
+        "INC_OT" => 2,
+        "INC_BONUS" => 8,
+        "INC_COMMISSION" => 9,
+        _ => 5,
+    };
 
-        // Set Password Encryption
-        if (!string.IsNullOrWhiteSpace(password))
-        {
-            doc.SecuritySettings.UserPassword = password;
-            doc.SecuritySettings.OwnerPassword = Guid.NewGuid().ToString("N");
-        }
-
-        var page = doc.AddPage();
-        page.Size = PageSize.A4;
-        page.Orientation = PageOrientation.Portrait;
-
-        var gfx = XGraphics.FromPdfPage(page);
-
-        // Fonts
-        var fontCompany = new XFont("Tahoma", 12, XFontStyle.Bold);
-        var fontCompanySmall = new XFont("Tahoma", 7.5, XFontStyle.Regular);
-        var fontTitle = new XFont("Tahoma", 12, XFontStyle.Bold);
-        var fontSubTitle = new XFont("Tahoma", 8, XFontStyle.Regular);
-        var fontBold = new XFont("Tahoma", 8.5, XFontStyle.Bold);
-        var fontRegular = new XFont("Tahoma", 8.5, XFontStyle.Regular);
-        var fontSmall = new XFont("Tahoma", 7.5, XFontStyle.Regular);
-        var fontNetBig = new XFont("Tahoma", 14, XFontStyle.Bold);
-
-        // Colors - Theme Syaco (Navy & Slate Corporate Palette)
-        var navyBrush = new XSolidBrush(XColor.FromArgb(11, 32, 70));        // #0B2046 Primary Navy
-        var darkNavyBrush = new XSolidBrush(XColor.FromArgb(15, 23, 42));    // #0F172A Slate-900
-        var slateBrush = new XSolidBrush(XColor.FromArgb(71, 85, 105));      // #475569 Slate-600
-        var darkGrayBrush = new XSolidBrush(XColor.FromArgb(51, 65, 85));   // #334155
-        var borderPen = new XPen(XColor.FromArgb(203, 213, 225), 1);       // #CBD5E1 Slate-300
-        var darkPen = new XPen(XColor.FromArgb(11, 32, 70), 1.2);
-
-        double pageWidth = page.Width;
-        double left = 36;
-        double right = pageWidth - 36;
-        double contentWidth = right - left;
-        double y = 36;
-
-        // ─────────────────────────────────────────────────────────────
-        // 1. TOP HEADER: Company Info (Left) + Payslip Title (Right)
-        // ─────────────────────────────────────────────────────────────
-        gfx.DrawString(companyName, fontCompany, navyBrush, new XPoint(left, y));
-        y += 13;
-        gfx.DrawString(companyAddress, fontCompanySmall, darkGrayBrush, new XPoint(left, y));
-        y += 11;
-        gfx.DrawString($"โทรศัพท์: {companyPhone}", fontCompanySmall, darkGrayBrush, new XPoint(left, y));
-
-        // Right Header
-        var titleText = "ใบแจ้งยอดเงินเดือน / PAYSLIP";
-        var titleSize = gfx.MeasureString(titleText, fontTitle);
-        gfx.DrawString(titleText, fontTitle, navyBrush, new XPoint(right - titleSize.Width, 36));
-
-        var subTitleText = "ส่วนบุคคลและเป็นความลับ (CONFIDENTIAL)";
-        var subTitleSize = gfx.MeasureString(subTitleText, fontSubTitle);
-        gfx.DrawString(subTitleText, fontSubTitle, slateBrush, new XPoint(right - subTitleSize.Width, 49));
-
-        var periodText = $"งวดประจำเดือน: {monthName} {thaiYear}";
-        var periodSize = gfx.MeasureString(periodText, fontBold);
-        gfx.DrawString(periodText, fontBold, darkGrayBrush, new XPoint(right - periodSize.Width, 62));
-
-        y += 14;
-        gfx.DrawLine(darkPen, left, y, right, y);
-        y += 10;
-
-        // ─────────────────────────────────────────────────────────────
-        // 2. EMPLOYEE INFORMATION BOX
-        // ─────────────────────────────────────────────────────────────
-        double infoBoxHeight = 52;
-        var infoBgBrush = new XSolidBrush(XColor.FromArgb(248, 250, 252));
-        gfx.DrawRectangle(infoBgBrush, left, y, contentWidth, infoBoxHeight);
-        gfx.DrawRectangle(borderPen, left, y, contentWidth, infoBoxHeight);
-
-        double col1 = left + 10;
-        double col2 = left + 180;
-        double col3 = left + 360;
-
-        double infoY = y + 15;
-        gfx.DrawString($"รหัสพนักงาน: ", fontRegular, darkGrayBrush, new XPoint(col1, infoY));
-        gfx.DrawString(empCode, fontBold, navyBrush, new XPoint(col1 + 58, infoY));
-
-        gfx.DrawString($"ชื่อ-นามสกุล: ", fontRegular, darkGrayBrush, new XPoint(col2, infoY));
-        gfx.DrawString(empName, fontBold, navyBrush, new XPoint(col2 + 58, infoY));
-
-        gfx.DrawString($"วันที่โอนเงิน: ", fontRegular, darkGrayBrush, new XPoint(col3, infoY));
-        gfx.DrawString(paymentDateText, fontBold, navyBrush, new XPoint(col3 + 55, infoY));
-
-        infoY += 18;
-        gfx.DrawString($"ตำแหน่ง: ", fontRegular, darkGrayBrush, new XPoint(col1, infoY));
-        gfx.DrawString(positionName, fontRegular, darkGrayBrush, new XPoint(col1 + 45, infoY));
-
-        gfx.DrawString($"ฝ่าย/แผนก: ", fontRegular, darkGrayBrush, new XPoint(col2, infoY));
-        gfx.DrawString(departmentName, fontRegular, darkGrayBrush, new XPoint(col2 + 50, infoY));
-
-        gfx.DrawString($"บัญชีธนาคาร: ", fontRegular, darkGrayBrush, new XPoint(col3, infoY));
-        gfx.DrawString(bankText, fontRegular, darkGrayBrush, new XPoint(col3 + 60, infoY));
-
-        y += infoBoxHeight + 14;
-
-        // ─────────────────────────────────────────────────────────────
-        // 3. EARNINGS & DEDUCTIONS SIDE-BY-SIDE TABLE
-        // ─────────────────────────────────────────────────────────────
-        double gap = 12;
-        double colWidth = (contentWidth - gap) / 2;
-        double leftColX = left;
-        double rightColX = left + colWidth + gap;
-
-        double tableHeaderHeight = 22;
-        double rowHeight = 18;
-        int maxRows = Math.Max(Math.Max(earnings.Count, deductions.Count), 6);
-        double tableBodyHeight = maxRows * rowHeight;
-        double tableTotalHeight = 24;
-
-        // Left Table Header (Earnings - Corporate Navy Theme)
-        var earnHeaderBrush = new XSolidBrush(XColor.FromArgb(11, 32, 70)); // #0B2046 Navy
-        gfx.DrawRectangle(earnHeaderBrush, leftColX, y, colWidth, tableHeaderHeight);
-        gfx.DrawString("รายการได้ (EARNINGS)", fontBold, XBrushes.White, new XPoint(leftColX + 8, y + 15));
-        gfx.DrawString("จำนวนเงิน (บาท)", fontBold, XBrushes.White, new XPoint(leftColX + colWidth - 75, y + 15));
-
-        // Right Table Header (Deductions - Dark Slate/Navy Theme)
-        var dedHeaderBrush = new XSolidBrush(XColor.FromArgb(30, 41, 59)); // #1E293B Slate-800
-        gfx.DrawRectangle(dedHeaderBrush, rightColX, y, colWidth, tableHeaderHeight);
-        gfx.DrawString("รายการหัก (DEDUCTIONS)", fontBold, XBrushes.White, new XPoint(rightColX + 8, y + 15));
-        gfx.DrawString("จำนวนเงิน (บาท)", fontBold, XBrushes.White, new XPoint(rightColX + colWidth - 75, y + 15));
-
-        // Draw Table Outlines
-        double tableTopY = y + tableHeaderHeight;
-        gfx.DrawRectangle(borderPen, leftColX, tableTopY, colWidth, tableBodyHeight);
-        gfx.DrawRectangle(borderPen, rightColX, tableTopY, colWidth, tableBodyHeight);
-
-        // Fill Earnings Rows
-        for (int i = 0; i < maxRows; i++)
-        {
-            double rowY = tableTopY + (i * rowHeight);
-            if (i % 2 == 1)
-            {
-                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), leftColX + 1, rowY, colWidth - 2, rowHeight);
-            }
-
-            if (i < earnings.Count)
-            {
-                var item = earnings[i];
-                string name = item.PayrollItem?.ItemName ?? "รายได้อื่นๆ";
-                gfx.DrawString(name, fontRegular, darkGrayBrush, new XPoint(leftColX + 8, rowY + 12));
-                string amt = item.Amount.ToString("N2");
-                var sz = gfx.MeasureString(amt, fontRegular);
-                gfx.DrawString(amt, fontRegular, darkGrayBrush, new XPoint(leftColX + colWidth - 8 - sz.Width, rowY + 12));
-            }
-        }
-
-        // Fill Deductions Rows
-        for (int i = 0; i < maxRows; i++)
-        {
-            double rowY = tableTopY + (i * rowHeight);
-            if (i % 2 == 1)
-            {
-                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(248, 250, 252)), rightColX + 1, rowY, colWidth - 2, rowHeight);
-            }
-
-            if (i < deductions.Count)
-            {
-                var item = deductions[i];
-                string name = item.PayrollItem?.ItemName ?? "รายการหัก";
-                gfx.DrawString(name, fontRegular, darkGrayBrush, new XPoint(rightColX + 8, rowY + 12));
-                string amt = item.Amount.ToString("N2");
-                var sz = gfx.MeasureString(amt, fontRegular);
-                gfx.DrawString(amt, fontRegular, darkGrayBrush, new XPoint(rightColX + colWidth - 8 - sz.Width, rowY + 12));
-            }
-        }
-
-        // Total Rows
-        double totalY = tableTopY + tableBodyHeight;
-        var totalBgBrush = new XSolidBrush(XColor.FromArgb(241, 245, 249));
-        gfx.DrawRectangle(totalBgBrush, leftColX, totalY, colWidth, tableTotalHeight);
-        gfx.DrawRectangle(borderPen, leftColX, totalY, colWidth, tableTotalHeight);
-        gfx.DrawString("รวมเงินได้ (Total Earnings)", fontBold, navyBrush, new XPoint(leftColX + 8, totalY + 16));
-        string totalGrossText = totalGross.ToString("N2");
-        var totalGrossSz = gfx.MeasureString(totalGrossText, fontBold);
-        gfx.DrawString(totalGrossText, fontBold, navyBrush, new XPoint(leftColX + colWidth - 8 - totalGrossSz.Width, totalY + 16));
-
-        gfx.DrawRectangle(totalBgBrush, rightColX, totalY, colWidth, tableTotalHeight);
-        gfx.DrawRectangle(borderPen, rightColX, totalY, colWidth, tableTotalHeight);
-        gfx.DrawString("รวมเงินหัก (Total Deductions)", fontBold, darkNavyBrush, new XPoint(rightColX + 8, totalY + 16));
-        string totalDedText = totalDeductions.ToString("N2");
-        var totalDedSz = gfx.MeasureString(totalDedText, fontBold);
-        gfx.DrawString(totalDedText, fontBold, darkNavyBrush, new XPoint(rightColX + colWidth - 8 - totalDedSz.Width, totalY + 16));
-
-        y = totalY + tableTotalHeight + 14;
-
-        // ─────────────────────────────────────────────────────────────
-        // 4. NET PAYABLE HIGHLIGHT BOX (CYAN ACCENT)
-        // ─────────────────────────────────────────────────────────────
-        double netBoxHeight = 56;
-        var netBgBrush = new XSolidBrush(XColor.FromArgb(235, 245, 251)); // #EBF5FB
-        var netBorderPen = new XPen(XColor.FromArgb(14, 116, 144), 1.5); // Cyan-700
-        gfx.DrawRectangle(netBgBrush, left, y, contentWidth, netBoxHeight);
-        gfx.DrawRectangle(netBorderPen, left, y, contentWidth, netBoxHeight);
-
-        gfx.DrawString("เงินได้สุทธิ / NET PAYABLE SALARY", fontBold, navyBrush, new XPoint(left + 14, y + 22));
-        string thaiBahtText = $"( {ToThaiBahtText(netPay)} )";
-        gfx.DrawString(thaiBahtText, fontSmall, darkGrayBrush, new XPoint(left + 14, y + 42));
-
-        string netPayFormatted = $"฿{netPay:N2}";
-        var netPaySize = gfx.MeasureString(netPayFormatted, fontNetBig);
-        gfx.DrawString(netPayFormatted, fontNetBig, navyBrush, new XPoint(right - 14 - netPaySize.Width, y + 34));
-
-        y += netBoxHeight + 14;
-
-        // ─────────────────────────────────────────────────────────────
-        // 5. YTD CUMULATIVE BOX (3 COLUMNS)
-        // ─────────────────────────────────────────────────────────────
-        double ytdBoxHeight = 44;
-        gfx.DrawRectangle(infoBgBrush, left, y, contentWidth, ytdBoxHeight);
-        gfx.DrawRectangle(borderPen, left, y, contentWidth, ytdBoxHeight);
-
-        double ytdCol1 = left + 14;
-        double ytdCol2 = left + (contentWidth / 3) + 14;
-        double ytdCol3 = left + (contentWidth * 2 / 3) + 14;
-
-        gfx.DrawString($"รายได้สะสมประจำปี (YTD Gross):", fontSmall, darkGrayBrush, new XPoint(ytdCol1, y + 16));
-        gfx.DrawString($"฿{ytdGross:N2}", fontBold, navyBrush, new XPoint(ytdCol1, y + 32));
-
-        gfx.DrawString($"ภาษีสะสมประจำปี (YTD Tax):", fontSmall, darkGrayBrush, new XPoint(ytdCol2, y + 16));
-        gfx.DrawString($"฿{ytdTax:N2}", fontBold, darkNavyBrush, new XPoint(ytdCol2, y + 32));
-
-        gfx.DrawString($"ประกันสังคมสะสมประจำปี (YTD SSO):", fontSmall, darkGrayBrush, new XPoint(ytdCol3, y + 16));
-        gfx.DrawString($"฿{ytdSso:N2}", fontBold, navyBrush, new XPoint(ytdCol3, y + 32));
-
-        y += ytdBoxHeight + 16;
-
-        // ─────────────────────────────────────────────────────────────
-        // 6. FOOTER & SECURITY NOTICE
-        // ─────────────────────────────────────────────────────────────
-        gfx.DrawLine(borderPen, left, y, right, y);
-        y += 12;
-
-        gfx.DrawString("• เอกสารนี้เป็นความลับเฉพาะบุคคล และได้รับการคุ้มครองตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล (PDPA)", fontSmall, darkGrayBrush, new XPoint(left, y));
-        y += 11;
-        gfx.DrawString("• รหัสผ่านในการเปิดไฟล์ PDF คือ: เลขประจำตัวประชาชน 4 หลักสุดท้าย", fontSmall, slateBrush, new XPoint(left, y));
-        y += 11;
-        gfx.DrawString($"• เอกสารนี้สร้างจากระบบ HRMS อัตโนมัติเมื่อ {DateTime.Now:dd/MM/yyyy HH:mm:ss} ไม่จำเป็นต้องลงนาม", fontSmall, darkGrayBrush, new XPoint(left, y));
-
-        using var ms = new MemoryStream();
-        doc.Save(ms);
-        return ms.ToArray();
-    }
+    /// <summary>ลำดับรายการหักในสลิป: ประกันสังคม → ภาษี → กองทุนสำรองเลี้ยงชีพ → อื่นๆ</summary>
+    private static int DeductionOrder(string? code) => code switch
+    {
+        "DED_SSO" => 0,
+        "DED_TAX" => 1,
+        "DED_PVD" => 2,
+        _ => 5,
+    };
 
     private static readonly string[] Units = { "", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" };
     private static readonly string[] Positions = { "", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน" };
