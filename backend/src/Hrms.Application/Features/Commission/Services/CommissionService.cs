@@ -972,8 +972,64 @@ public class CommissionService : ICommissionService
             }
         }
 
+        // หากมีรอบเงินเดือนในงวดนี้ที่ยังอยู่ในขั้นร่างหรือตรวจทาน (DRAFT/REVIEW)
+        // ให้ลบรายการค่าคอมมิชชั่นเดิมที่เคยดึงเข้าเงินเดือนออกทันที
+        // เพื่อไม่ให้มียอดคอมมิชชั่นค้าง และเมื่อทำการแก้ไขยืนยันใหม่จะไม่เกิดยอดขึ้นเบิ้ล
+        if (payrollPeriod != null && (payrollPeriod.Status == "DRAFT" || payrollPeriod.Status == "REVIEW"))
+        {
+            var commissionItem = await _context.PayrollItems
+                .FirstOrDefaultAsync(i => i.ItemCode == "INC_COMMISSION", cancellationToken);
+            if (commissionItem != null)
+            {
+                var payrollsInPeriod = await _context.Payrolls
+                    .Include(p => p.Details)
+                    .Where(p => p.PeriodId == payrollPeriod.Id)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var p in payrollsInPeriod)
+                {
+                    var commDetailsToRemove = p.Details
+                        .Where(d => d.PayrollItemId == commissionItem.Id && IsAutoCommissionDetail(d.CalculationSource))
+                        .ToList();
+
+                    if (commDetailsToRemove.Count > 0)
+                    {
+                        _context.PayrollDetails.RemoveRange(commDetailsToRemove);
+                        foreach (var cd in commDetailsToRemove)
+                        {
+                            p.Details.Remove(cd);
+                        }
+
+                        decimal totalGross = p.Details.Where(d => d.PayrollItemId != commissionItem.Id && d.Amount > 0).Sum(d => d.Amount);
+                        decimal totalDed = p.Details.Where(d => d.Amount < 0).Sum(d => Math.Abs(d.Amount));
+                        p.TotalGrossIncome = totalGross;
+                        p.TotalDeductionAmount = totalDed;
+                        p.NetPayableSalary = Math.Max(0, totalGross - totalDed);
+                    }
+                }
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
         return await GetCommissionPeriodAsync(year, month, cancellationToken);
+    }
+
+    private static bool IsAutoCommissionDetail(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return false;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object) return false;
+            string? source = root.TryGetProperty("source", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.String ? s.GetString() : null;
+            bool hasCommId = root.TryGetProperty("commissionId", out var cId) && cId.ValueKind == System.Text.Json.JsonValueKind.Number;
+            return source == "COMMISSION" || hasCommId;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<CommissionPeriodSummaryDto> RecalculatePeriodWithRateAsync(int year, int month, decimal newRate, CancellationToken cancellationToken = default)

@@ -1518,8 +1518,34 @@ public class SalaryService : ISalaryService
             .Where(d => d.PayrollId == payrollId)
             .OrderBy(d => d.PayrollItem != null ? d.PayrollItem.ItemType : "")
             .ThenBy(d => d.Id)
-            .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+        // ตรวจจับและทำความสะอาดรายการ auto-commission ที่ตกค้างซ้ำซ้อนในฐานข้อมูลทันที
+        var autoCommDetails = details
+            .Where(d => d.PayrollItem?.ItemCode == "INC_COMMISSION" && ReadDetailSource(d.CalculationSource).Source == "COMMISSION")
+            .ToList();
+
+        if (autoCommDetails.Count > 1)
+        {
+            var duplicatesToRemove = autoCommDetails.Skip(1).ToList();
+            _context.PayrollDetails.RemoveRange(duplicatesToRemove);
+            foreach (var dup in duplicatesToRemove)
+            {
+                details.Remove(dup);
+            }
+
+            var payroll = await _context.Payrolls.FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
+            if (payroll != null)
+            {
+                decimal totalGross = details.Where(d => d.PayrollItem?.ItemType == "EARNING").Sum(d => d.Amount);
+                decimal totalDed = details.Where(d => d.PayrollItem?.ItemType == "DEDUCTION").Sum(d => d.Amount);
+                payroll.TotalGrossIncome = totalGross;
+                payroll.TotalDeductionAmount = totalDed;
+                payroll.NetPayableSalary = Math.Max(0, totalGross - totalDed);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
         return details.Select(d =>
         {
@@ -2410,11 +2436,36 @@ public class SalaryService : ISalaryService
                 if (item.Id == commissionItem.Id)
                 {
                     var source = ReadDetailSource(d.CalculationSource);
-                    // หากรายการคอมมิชชั่นนี้มาจากการดึงคอมมิชชั่นอัตโนมัติ
-                    // ให้ข้ามของเดิม เพื่ออัปเดตยอดคอมมิชชั่นล่าสุดจาก eligiblePeriodCommissions ด้านล่างเสมอ
+                    // รายการคอมมิชชั่นที่ดึงมาจากระบบคอมมิชชั่นอัตโนมัติ (source == "COMMISSION")
                     if (source.Source == "COMMISSION" || source.CommissionId.HasValue)
                     {
-                        continue;
+                        var hasEligibleComm = eligiblePeriodCommissions.TryGetValue(emp.Id, out var linkedComm);
+                        // ถ้าคอมมิชชั่นถูกปลดล็อก/ยกเลิก/ลบ/ยอดเป็น 0 หรือมีรายการคอมมิชชั่นในรอบนี้แล้ว (กันซ้ำ) ให้ลบรายการเดิมนี้ออกทันที
+                        if (!hasEligibleComm || linkedComm == null || linkedComm.TotalCommission <= 0 || hasCommissionInManual)
+                        {
+                            _context.PayrollDetails.Remove(d);
+                            payroll.Details.Remove(d);
+                            continue;
+                        }
+
+                        // อัปเดตข้อมูลและยอดล่าสุดตาม EmployeeCommission ที่ยืนยันแล้ว
+                        var commSubtext = $"คอมมิชชั่นรอบ {linkedComm.Month}/{linkedComm.Year + 543} (ยอดขาย {linkedComm.SalesAmount:N2} @ {linkedComm.CommissionRate:0.##}%)" +
+                            (linkedComm.SpecialAmount > 0 ? $" + พิเศษ {linkedComm.SpecialAmount:N2}" : string.Empty);
+
+                        d.Amount = linkedComm.TotalCommission;
+                        d.Quantity = linkedComm.SalesAmount > 0 ? linkedComm.SalesAmount : null;
+                        d.Rate = linkedComm.CommissionRate > 0 ? linkedComm.CommissionRate : null;
+                        d.CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            manual = true,
+                            source = "COMMISSION",
+                            commissionId = linkedComm.Id,
+                            year = linkedComm.Year,
+                            month = linkedComm.Month,
+                            salesAmount = linkedComm.SalesAmount,
+                            commissionRate = linkedComm.CommissionRate,
+                            subtext = commSubtext
+                        });
                     }
                     hasCommissionInManual = true;
                 }
