@@ -46,6 +46,15 @@ public class MySalaryService : IMySalaryService
         string bankName = bankAccount?.Bank?.BankName ?? "-";
         string maskedAccount = bankAccount != null ? PayslipHelper.MaskAccountNumber(bankAccount.AccountNumber) : "-";
 
+        // คำใบ้รหัส PDF — กติกาเดียวกับตัวสร้างสลิป
+        var empForHint = await _context.Employees
+            .AsNoTracking()
+            .Where(e => e.Id == employeeId)
+            .Select(e => new { e.CitizenId, e.BirthDate, e.EmployeeCode })
+            .FirstOrDefaultAsync(cancellationToken);
+        var overviewHint = PayslipHelper.ResolvePassword(
+            empForHint?.CitizenId, empForHint?.BirthDate, empForHint?.EmployeeCode, _encryptionService).Hint;
+
         // 2. Fetch all payroll records for this employee (กรองเฉพาะงวดที่อนุมัติแล้วขึ้นไป)
         var payrollQuery = _context.Payrolls
             .Include(p => p.Period)
@@ -148,6 +157,7 @@ public class MySalaryService : IMySalaryService
             DeductionSubtext = deductionSubtext,
             BankAccountMasked = maskedAccount,
             BankName = bankName,
+            PasswordHint = overviewHint,
             History = history,
             ChartData = new MySalaryChartDataDto
             {
@@ -280,10 +290,10 @@ public class MySalaryService : IMySalaryService
             PayrollId = payroll.Id,
             PeriodId = payroll.PeriodId,
             PeriodMonthName = GetThaiMonthName(pMonth, pYear),
-            EmployeeCode = payroll.Employee?.EmployeeCode ?? "EMP005",
+            EmployeeCode = payroll.Employee?.EmployeeCode ?? "-",
             EmployeeName = payroll.SnapshotEmployeeName ?? $"{payroll.Employee?.FirstName} {payroll.Employee?.LastName}".Trim(),
-            DepartmentName = payroll.SnapshotDepartmentName ?? "แผนกพัฒนาซอฟต์แวร์",
-            PositionName = payroll.SnapshotPositionName ?? "วิศวกรซอฟต์แวร์",
+            DepartmentName = payroll.SnapshotDepartmentName ?? "-",
+            PositionName = payroll.SnapshotPositionName ?? "-",
             BankName = bankName,
             BankAccountMasked = maskedAccount,
             PaymentDateThai = payDate.HasValue ? FormatThaiDate(payDate.Value) : "-",
