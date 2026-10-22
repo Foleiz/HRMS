@@ -2778,9 +2778,14 @@ public class SalaryService : ISalaryService
                         ? decimal.Parse(leaveLimitMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)
                         : 0m;
                     decimal leaveDays = Math.Max(periodLeaveDays, attendance.TotalLeaveDays);
-                    if (attendance.TotalAbsentDays > 0 || attendance.TotalLateDays > lateLimit || leaveDays > leaveLimit) return null;
+                    // ขาดงานได้ไม่เกิน: "ขาด<=N" (ค่าเดิม "ขาด=0" = ขาดไม่ได้เลย)
+                    var absentLimitMatch = System.Text.RegularExpressions.Regex.Match(item.FormulaValue ?? string.Empty, @"ขาด\s*(?:<=|=|<)\s*(\d+(?:\.\d+)?)");
+                    decimal absentLimit = absentLimitMatch.Success
+                        ? decimal.Parse(absentLimitMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)
+                        : 0m;
+                    if (attendance.TotalAbsentDays > absentLimit || attendance.TotalLateDays > lateLimit || leaveDays > leaveLimit) return null;
                     amount = allowance;
-                    subtext = $"เบี้ยขยัน (ไม่ขาดงาน, มาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง, ลา {leaveDays:0.##} วัน ไม่เกิน {leaveLimit:0.##} วัน)";
+                    subtext = $"เบี้ยขยัน (ขาดงาน {attendance.TotalAbsentDays:0.##} วัน ไม่เกิน {absentLimit:0.##} วัน, มาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง, ลา {leaveDays:0.##} วัน ไม่เกิน {leaveLimit:0.##} วัน)";
                     if (tiers.Count > 1)
                         subtext = $"เบี้ยขยันขั้นที่ {Math.Min(streak, tiers.Count)}/{tiers.Count} (ได้ต่อเนื่อง {streak} เดือน) — " + subtext;
                     calcSource = System.Text.Json.JsonSerializer.Serialize(new { subtext, streak });
