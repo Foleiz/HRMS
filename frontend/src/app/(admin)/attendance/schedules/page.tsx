@@ -187,8 +187,9 @@ function SchedulesContent() {
   const canViewSchedules = hasPermission('TIME_SCHEDULE_VIEW') || hasPermission('TIME_VIEW') || isSuper;
   const canCreateSchedule = hasPermission('TIME_SCHEDULE_CREATE') || isSuper;
   const canEditSchedule = hasPermission('TIME_SCHEDULE_EDIT') || isSuper;
-  const canCreateShift = hasPermission('TIME_SHIFT_CREATE') || isSuper;
-  const canEditShift = hasPermission('TIME_SHIFT_EDIT') || isSuper;
+  // ไม่มีสิทธิ์ TIME_SHIFT_* ในระบบ — backend (ShiftsController) ใช้ TIME_SCHEDULE_CREATE / EDIT
+  const canCreateShift = canCreateSchedule;
+  const canEditShift = canEditSchedule;
 
   // -------------------------------------------------------------
   // 1. Tab Navigation: Roster (1) -> Shifts (2)
@@ -647,7 +648,9 @@ function SchedulesContent() {
     const [eh, em] = end.split(':').map(Number);
     let startMin = sh * 60 + sm;
     let endMin = eh * 60 + em;
-    if (isCrossDay || endMin < startMin) {
+    // ข้ามเที่ยงคืนจริงเมื่อเวลาเลิก <= เวลาเข้า (ไม่ยึด flag ข้ามวัน — กะ 00:00-06:00 ต้องได้ 6 ชม.)
+    void isCrossDay;
+    if (endMin <= startMin) {
       endMin += 24 * 60;
     }
     const grossMinutes = endMin - startMin;
