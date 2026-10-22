@@ -2245,7 +2245,7 @@ export default function PayrollPage() {
       case 'periods':
         return 'รอบเงินเดือน';
       case 'structures':
-        return 'โครงสร้างเงินเดือน';
+        return 'ฐานเงินเดือนพนักงาน';
       case 'items':
         return 'รายได้และรายหัก';
       case 'bonus':
@@ -2276,7 +2276,7 @@ export default function PayrollPage() {
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
     ...(canViewPeriods ? [{ id: 'periods' as ActiveTab, label: 'รอบเงินเดือน' }] : []),
-    ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'โครงสร้างเงินเดือน' }] : []),
+    ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'ฐานเงินเดือนพนักงาน' }] : []),
     ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
     ...(canViewBonus ? [{ id: 'bonus' as ActiveTab, label: 'โบนัส' }] : []),
     ...(canViewBonus || canViewProcess || canViewItems || isAdmin ? [{ id: 'commission' as ActiveTab, label: 'ค่าคอมมิชชั่น' }] : []),
