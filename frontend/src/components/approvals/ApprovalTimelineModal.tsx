@@ -21,6 +21,7 @@ import {
 import { ApprovalTimeline, LeaveRequest } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { showError } from '@/lib/sweetalert';
+import { Button } from '@/components/ui';
 
 export interface GenericApprovalRequestInfo {
   id: number;
@@ -137,8 +138,8 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#0B2046]/10 dark:bg-[#0B2046]/30 flex items-center justify-center text-[#0B2046]">
-              <ShieldCheck className="w-5 h-5 text-[#0B2046]" />
+            <div className="w-9 h-9 rounded-xl bg-primary/10 dark:bg-primary/30 flex items-center justify-center text-primary">
+              <ShieldCheck className="w-5 h-5 text-primary" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -178,7 +179,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
           {leaveRequest && (
             <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-xs space-y-3">
               <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-700">
-                <FileText className="w-3.5 h-3.5 text-[#0B2046]" /> ข้อมูลคำขอลา
+                <FileText className="w-3.5 h-3.5 text-primary" /> ข้อมูลคำขอลา
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-slate-600 dark:text-slate-400">
                 <div>
@@ -240,7 +241,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
 
           {loading ? (
             <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 space-y-2">
-              <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#0B2046]" />
+              <Loader2 className="w-7 h-7 animate-spin mx-auto text-primary" />
               <p className="text-xs">กำลังโหลดข้อมูลผังการอนุมัติ...</p>
             </div>
           ) : error ? (
@@ -376,7 +377,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[10px] font-bold flex items-center justify-center">
+                            <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
                               {step.stepNo}
                             </span>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -450,12 +451,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all shadow-2xs cursor-pointer"
-          >
-            ปิดหน้าต่าง
-          </button>
+          <Button variant="secondary" onClick={onClose}>ปิดหน้าต่าง</Button>
         </div>
       </div>
     </ModalShell>

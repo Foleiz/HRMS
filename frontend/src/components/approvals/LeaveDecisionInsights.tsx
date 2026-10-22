@@ -265,7 +265,7 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
           </span>
           <span className="font-medium text-slate-800 dark:text-slate-200 text-right">
             {formatThaiDate(startOf(request))} - {formatThaiDate(endOf(request))}{' '}
-            <span className="font-bold text-[#0B2046] dark:text-blue-300">({fmtDays(reqDays)} วัน)</span>
+            <span className="font-bold text-primary dark:text-blue-300">({fmtDays(reqDays)} วัน)</span>
           </span>
         </div>
         <div className="flex justify-between gap-3">
@@ -501,7 +501,7 @@ export function CertDecisionInsightsPanel({ request, onPreview, compact = false 
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-slate-500 dark:text-slate-400 shrink-0">ประเภทหนังสือรับรอง</span>
-          <span className="font-bold text-[#0B2046] dark:text-blue-300 text-right">{request.certificateName}</span>
+          <span className="font-bold text-primary dark:text-blue-300 text-right">{request.certificateName}</span>
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-slate-500 dark:text-slate-400 shrink-0">วัตถุประสงค์การขอ</span>
@@ -615,7 +615,7 @@ export function ResignDecisionInsightsPanel({ request, onPreview, compact = fals
           <span className="text-slate-500 dark:text-slate-400 shrink-0 flex items-center gap-1">
             <CalendarDays className="w-3.5 h-3.5" /> วันทำงานสุดท้าย
           </span>
-          <span className="font-bold text-[#0B2046] dark:text-blue-300 text-right">
+          <span className="font-bold text-primary dark:text-blue-300 text-right">
             {formatThaiDate(request.requestedLastWorkingDate)}
           </span>
         </div>
@@ -768,7 +768,7 @@ export function GeneralDecisionInsightsPanel({
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-slate-500 dark:text-slate-400 shrink-0">ประเภทเอกสาร</span>
-          <span className="font-bold text-[#0B2046] dark:text-blue-300 text-right">{request.documentType}</span>
+          <span className="font-bold text-primary dark:text-blue-300 text-right">{request.documentType}</span>
         </div>
         <div className="flex justify-between gap-3">
           <span className="text-slate-500 dark:text-slate-400 shrink-0">วัตถุประสงค์</span>
