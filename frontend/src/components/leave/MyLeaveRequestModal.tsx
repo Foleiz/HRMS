@@ -5,6 +5,7 @@ import { X, Loader2, Paperclip } from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button } from '@/components/ui';
 
 interface MyLeaveRequestModalProps {
   isOpen: boolean;
@@ -226,21 +227,18 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3">
-            <button
-              type="button"
+            <Button
+              variant="secondary"
               onClick={onClose}
-              className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl transition-colors"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2"
+              loading={loading}
             >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               ยื่นคำขอลา
-            </button>
+            </Button>
           </div>
         </form>
       </div>

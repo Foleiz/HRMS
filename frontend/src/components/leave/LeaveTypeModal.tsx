@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { LEAVE_COLOR_PRESETS, resolveLeaveColor } from '@/lib/leaveColors';
-import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { Modal, ModalFooter, ToggleSwitch, ActiveToggleRow, inputClass } from '@/components/ui';
 
 interface LeaveTypeModalProps {
   isOpen: boolean;
@@ -35,10 +34,6 @@ export const inferFormCategory = (code?: string | null, name?: string | null): L
   if (c.includes('ANNUAL') || c.includes('VACATION') || n.includes('พักร้อน') || n.includes('พักผ่อน')) return 'VACATION';
   return 'SPECIAL';
 };
-
-const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
-  <ToggleSwitch checked={checked} onChange={onChange} />
-);
 
 /**
  * ฟอร์ม "ประเภทการลา" — ตอบคำถามว่า "ลาอะไร" เท่านั้น
@@ -104,7 +99,6 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
           leaveName: leaveName.trim(),
           quotaUnit: 'DAY',
           isPaidLeave,
-          // ไม่มีช่องนี้ในฟอร์มแล้ว — ส่งค่าเดิมกลับไปเพื่อไม่ให้ข้อมูลหาย
           documentDescription: leaveTypeToEdit.documentDescription || undefined,
           status: isActive ? 'ACTIVE' : 'INACTIVE',
           formCategory,
@@ -132,151 +126,167 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 text-center flex-1">
-            {isEditing ? 'แก้ไขประเภทการลา' : 'เพิ่มประเภทการลา'}
-          </h3>
-          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? 'แก้ไขประเภทการลา' : 'เพิ่มประเภทการลา'}
+      onSubmit={handleSubmit}
+      size="md"
+      footer={
+        <ModalFooter
+          onCancel={onClose}
+          submitText="บันทึก"
+          cancelText="ยกเลิก"
+          loading={loading}
+        />
+      }
+    >
+      <div className="space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl dark:bg-red-900/20 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* รหัสประเภทการลา — ระบบแนะนำ แก้ได้ */}
+        <CodeInput
+          type="leave-type"
+          prefix="LV"
+          existingCodes={existingCodes}
+          label="รหัสประเภทการลา"
+          mode={isEditing ? 'edit' : 'create'}
+          value={isEditing ? leaveTypeToEdit?.leaveCode ?? '' : leaveCode}
+          onChange={setLeaveCode}
+          labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+          inputClassName={`${inputClass} font-mono uppercase disabled:opacity-60 disabled:cursor-not-allowed`}
+        />
+
+        {/* ชื่อประเภทการลา */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            ชื่อประเภทการลา <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="เช่น ลาพักร้อน"
+            value={leaveName}
+            onChange={(e) => setLeaveName(e.target.value)}
+            className={inputClass}
+            required
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>}
-
-          {/* รหัสประเภทการลา — ระบบแนะนำ แก้ได้ */}
-          <CodeInput
-            type="leave-type"
-            prefix="LV"
-            existingCodes={existingCodes}
-            label="รหัสประเภทการลา"
-            mode={isEditing ? 'edit' : 'create'}
-            value={isEditing ? leaveTypeToEdit?.leaveCode ?? '' : leaveCode}
-            onChange={setLeaveCode}
-            labelClassName="block text-sm font-medium text-gray-700 dark:text-slate-300"
-            inputClassName="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono uppercase disabled:opacity-60 disabled:cursor-not-allowed"
-          />
-
-          {/* ชื่อประเภทการลา */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ชื่อประเภทการลา <span className="text-rose-500">*</span></label>
-            <input
-              type="text"
-              placeholder="เช่น ลาพักร้อน"
-              value={leaveName}
-              onChange={(e) => setLeaveName(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              required
-            />
-          </div>
-
-          {/* หมวดแบบฟอร์ม */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">หมวดในแบบฟอร์มใบลา</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {LEAVE_FORM_CATEGORIES.map((c) => (
-                <button
-                  key={c.value}
-                  type="button"
-                  onClick={() => setFormCategory(c.value)}
-                  className={`text-left px-3.5 py-2.5 rounded-xl border transition-all ${
-                    formCategory === c.value
-                      ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300'
-                      : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  <span className={`block text-sm font-medium ${formCategory === c.value ? 'text-blue-700' : 'text-gray-700 dark:text-slate-300'}`}>
-                    {c.label}
-                  </span>
-                  <span className="block text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">{c.hint}</span>
-                </button>
-              ))}
-            </div>
-            <p className="mt-1.5 text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ใช้ติ๊กช่องในเอกสารใบลา และเป็นแม่แบบค่าเริ่มต้นตอนตั้งสิทธิ์การลา</p>
-          </div>
-
-          {/* สีการ์ด */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">สีการ์ดยอดวันลา</label>
-            <div className="flex flex-wrap items-center gap-2">
-              {LEAVE_COLOR_PRESETS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  title={c}
-                  className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-transform ${
-                    color.toUpperCase() === c ? 'border-slate-900 dark:border-white scale-110' : 'border-white dark:border-slate-800'
-                  } shadow-xs`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-              <label className="relative w-7 h-7 rounded-full border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer overflow-hidden" title="เลือกสีเอง">
-                +
-                <input
-                  type="color"
-                  value={resolveLeaveColor(color, leaveName || 'new')}
-                  onChange={(e) => setColor(e.target.value.toUpperCase())}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-              </label>
+        {/* หมวดแบบฟอร์ม */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            หมวดในแบบฟอร์มใบลา
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {LEAVE_FORM_CATEGORIES.map((c) => (
               <button
+                key={c.value}
                 type="button"
-                onClick={() => setColor('')}
-                className={`ml-1 px-2.5 py-1 rounded-lg text-xs border cursor-pointer ${
-                  color === '' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900' : 'border-slate-200 text-slate-500 dark:border-slate-700'
+                onClick={() => setFormCategory(c.value)}
+                className={`text-left px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer ${
+                  formCategory === c.value
+                    ? 'bg-primary-soft border-primary ring-1 ring-primary'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/40'
                 }`}
               >
-                ค่าเริ่มต้น
+                <span
+                  className={`block text-xs font-bold ${
+                    formCategory === c.value ? 'text-primary dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {c.label}
+                </span>
+                <span className="block text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">{c.hint}</span>
               </button>
-            </div>
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold" style={{
+            ))}
+          </div>
+          <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500">
+            ใช้ติ๊กช่องในเอกสารใบลา และเป็นแม่แบบค่าเริ่มต้นตอนตั้งสิทธิ์การลา
+          </p>
+        </div>
+
+        {/* สีการ์ด */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            สีการ์ดยอดวันลา
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {LEAVE_COLOR_PRESETS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                title={c}
+                className={`w-7 h-7 rounded-full border-2 cursor-pointer transition-transform ${
+                  color.toUpperCase() === c ? 'border-primary dark:border-white scale-110' : 'border-white dark:border-slate-800'
+                } shadow-xs`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+            <label
+              className="relative w-7 h-7 rounded-full border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-[10px] text-slate-500 cursor-pointer overflow-hidden"
+              title="เลือกสีเอง"
+            >
+              +
+              <input
+                type="color"
+                value={resolveLeaveColor(color, leaveName || 'new')}
+                onChange={(e) => setColor(e.target.value.toUpperCase())}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => setColor('')}
+              className={`ml-1 px-2.5 py-1 rounded-lg text-xs border cursor-pointer ${
+                color === ''
+                  ? 'bg-primary text-white border-primary dark:bg-white dark:text-slate-900'
+                  : 'border-slate-200 text-slate-500 dark:border-slate-700'
+              }`}
+            >
+              ค่าเริ่มต้น
+            </button>
+          </div>
+          <div
+            className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold"
+            style={{
               color: resolveLeaveColor(color, leaveTypeToEdit?.leaveCode ?? (leaveName || 'new')),
               backgroundColor: `${resolveLeaveColor(color, leaveTypeToEdit?.leaveCode ?? (leaveName || 'new'))}1A`,
-            }}>
-              ตัวอย่าง: {leaveName || 'ชื่อประเภทการลา'}
+            }}
+          >
+            ตัวอย่าง: {leaveName || 'ชื่อประเภทการลา'}
+          </div>
+        </div>
+
+        {/* สวิตช์ */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-700/60 space-y-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
+                ได้รับค่าจ้างระหว่างลา
+              </span>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                ปิด = ลาไม่รับค่าจ้าง ระบบเงินเดือนจะหักตามจำนวนวันลา
+              </span>
             </div>
+            <ToggleSwitch checked={isPaidLeave} onChange={setIsPaidLeave} />
           </div>
-
-          {/* สวิตช์ */}
-          <div className="p-4 bg-gray-50 dark:bg-slate-950 rounded-2xl border border-gray-100 dark:border-slate-700/60 space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">ได้รับค่าจ้างระหว่างลา</span>
-                <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ปิด = ลาไม่รับค่าจ้าง ระบบเงินเดือนจะหักตามจำนวนวันลา</span>
-              </div>
-              <Toggle checked={isPaidLeave} onChange={setIsPaidLeave} />
+          {isEditing && (
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700">
+              <ActiveToggleRow
+                checked={isActive}
+                onChange={setIsActive}
+                label="เปิดใช้งานประเภทการลานี้"
+                hint="ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล"
+              />
             </div>
-            {isEditing && (
-              <div className="flex items-center justify-between gap-4 pt-3 border-t border-gray-200/60">
-                <div>
-                  <span className="text-sm font-medium text-gray-800 dark:text-slate-200 block">เปิดใช้งาน</span>
-                  <span className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400">ปิดไว้เพื่อระงับการยื่นลาประเภทนี้ชั่วคราวโดยไม่ลบข้อมูล</span>
-                </div>
-                <Toggle checked={isActive} onChange={setIsActive} />
-              </div>
-            )}
-          </div>
-
-
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl transition-colors">
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2"
-            >
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              บันทึก
-            </button>
-          </div>
-        </form>
+          )}
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 };

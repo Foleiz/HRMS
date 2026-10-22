@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, Lock, Search, X } from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { LeaveYearEndPreview } from '@/types/leaveInsights';
+import { Button, inputClass } from '@/components/ui';
 
 interface Props {
   isOpen: boolean;
@@ -91,7 +92,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
       <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-[#0B2046]" />
+            <Lock className="w-5 h-5 text-primary" />
             <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">ปิดยอดวันลาสิ้นปี {year + 543}</h3>
           </div>
           <button onClick={handleClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800">
@@ -211,7 +212,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder="หมายเหตุ (ถ้ามี)"
-                    className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-white dark:bg-slate-900 text-sm"
+                    className={inputClass}
                   />
                 </div>
               )}
@@ -223,25 +224,22 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
         </div>
 
         <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-700/60 flex justify-end gap-2">
-          <button onClick={handleClose} className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-900">
+          <Button variant="secondary" onClick={handleClose}>
             ปิดหน้าต่าง
-          </button>
+          </Button>
           {data?.canClose && !confirming && (
-            <button
-              onClick={() => setConfirming(true)}
-              className="px-4 py-2 rounded-xl bg-[#0B2046] text-white text-sm font-medium hover:opacity-90"
-            >
+            <Button onClick={() => setConfirming(true)}>
               ปิดยอดปี {year + 543}
-            </button>
+            </Button>
           )}
           {data?.canClose && confirming && (
-            <button
+            <Button
+              variant="danger"
               onClick={handleSubmit}
-              disabled={submitting}
-              className="px-4 py-2 rounded-xl bg-rose-600 text-white text-sm font-medium hover:bg-rose-700 disabled:opacity-60 flex items-center gap-2"
+              loading={submitting}
             >
-              {submitting && <Loader2 className="w-4 h-4 animate-spin" />} ยืนยันปิดยอด
-            </button>
+              ยืนยันปิดยอด
+            </Button>
           )}
         </div>
       </div>

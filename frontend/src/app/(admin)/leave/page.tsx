@@ -61,6 +61,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button, ActiveStatus, RowActions, RowActionButton } from '@/components/ui';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -462,7 +463,7 @@ export default function LeaveManagementPage() {
               onClick={() => setActiveTab('types')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'types'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -474,7 +475,7 @@ export default function LeaveManagementPage() {
               onClick={() => setActiveTab('policies')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'policies'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -486,7 +487,7 @@ export default function LeaveManagementPage() {
               onClick={() => setActiveTab('balances')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'balances'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -514,12 +515,12 @@ export default function LeaveManagementPage() {
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">ประเภทการลา</h2>
               {canCreateType && (
-                <button
+                <Button
                   onClick={handleOpenCreateType}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all cursor-pointer"
+                  icon={<Plus className="w-4 h-4" />}
                 >
-                  <Plus className="w-4 h-4" /> เพิ่มประเภทการลา
-                </button>
+                  เพิ่มประเภทการลา
+                </Button>
               )}
             </div>
 
@@ -572,42 +573,23 @@ export default function LeaveManagementPage() {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
-                              type.status === 'ACTIVE' ? 'text-emerald-600' : 'text-gray-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                type.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-gray-400'
-                              }`}
-                            />
-                            {type.status === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ใช้งาน'}
-                          </span>
+                          <ActiveStatus active={type.status === 'ACTIVE'} />
                         </td>
                         <td className="py-4 px-4 text-center">
                           {canEditType ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
+                            <RowActions>
+                              <RowActionButton
+                                action="edit"
                                 onClick={() => handleOpenEditType(type)}
-                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                                 title="แก้ไข"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
+                              />
+                              <RowActionButton
+                                action="delete"
                                 onClick={() => handleDeleteType(type)}
-                                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                                  type.canDelete === false
-                                    ? 'text-gray-300 cursor-not-allowed'
-                                    : 'text-gray-400 hover:text-rose-600 hover:bg-rose-50'
-                                }`}
+                                disabled={type.canDelete === false}
                                 title={type.canDelete === false ? type.deleteBlockedReason || 'ลบไม่ได้ เพราะถูกใช้งานแล้ว' : 'ลบถาวร'}
-                                aria-disabled={type.canDelete === false}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                              />
+                            </RowActions>
                           ) : (
                             <span className="text-gray-400 text-xs">-</span>
                           )}
@@ -628,12 +610,12 @@ export default function LeaveManagementPage() {
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">สิทธิ์การลา</h2>
               {canCreatePolicy && (
-                <button
+                <Button
                   onClick={handleOpenCreatePolicy}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-medium shadow-sm transition-all cursor-pointer"
+                  icon={<Plus className="w-4 h-4" />}
                 >
-                  <Plus className="w-4 h-4" /> เพิ่มสิทธิ์การลา
-                </button>
+                  เพิ่มสิทธิ์การลา
+                </Button>
               )}
             </div>
 
@@ -706,22 +688,18 @@ export default function LeaveManagementPage() {
                         </td>
                         <td className="py-4 px-4 text-center">
                           {canEditPolicy ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
+                            <RowActions>
+                              <RowActionButton
+                                action="edit"
                                 onClick={() => handleOpenEditPolicy(policy)}
-                                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                                 title="แก้ไข"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
+                              />
+                              <RowActionButton
+                                action="delete"
                                 onClick={() => handleDeletePolicy(policy)}
-                                className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                 title="ลบ"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                              />
+                            </RowActions>
                           ) : (
                             <span className="text-gray-400 text-xs">-</span>
                           )}
@@ -793,12 +771,13 @@ export default function LeaveManagementPage() {
                   <Sparkles className="w-4 h-4" /> สิทธิ์ปีนี้คำนวณอัตโนมัติตามแท็บสิทธิ์การลา
                 </div>
                 {canCloseYear && (
-                  <button
+                  <Button
                     onClick={() => setIsYearEndOpen(true)}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-medium hover:opacity-90 whitespace-nowrap"
+                    icon={<Lock className="w-4 h-4" />}
+                    size="sm"
                   >
-                    <Lock className="w-4 h-4" /> ปิดยอดปี {selectedYear + 543}
-                  </button>
+                    ปิดยอดปี {selectedYear + 543}
+                  </Button>
                 )}
               </div>
             </div>

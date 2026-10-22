@@ -14,7 +14,7 @@ import { employeeTypeService } from '@/services/employeeTypeService';
 import { inferFormCategory } from './LeaveTypeModal';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { Button, ToggleSwitch } from '@/components/ui';
 
 interface EmployeeLevelOption {
   id: number;
@@ -119,7 +119,7 @@ const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = (
 const Section: React.FC<{ no: number; title: string; children: React.ReactNode }> = ({ no, title, children }) => (
   <section className="rounded-2xl border border-gray-100 dark:border-slate-700/60 bg-gray-50/60 p-4 space-y-3.5">
     <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-slate-200">
-      <span className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] flex items-center justify-center">{no}</span>
+      <span className="w-5 h-5 rounded-full bg-primary text-white text-[11px] flex items-center justify-center font-bold">{no}</span>
       {title}
     </h4>
     {children}
@@ -476,14 +476,19 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
             <p className="text-sm text-blue-900 leading-relaxed">{summary}</p>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-1">
-            <button type="button" onClick={onClose} className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl">
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button
+              variant="secondary"
+              onClick={onClose}
+            >
               ยกเลิก
-            </button>
-            <button type="submit" disabled={loading} className="px-6 py-2.5 text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl flex items-center gap-2">
-              {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            </Button>
+            <Button
+              type="submit"
+              loading={loading}
+            >
               บันทึก
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -222,7 +222,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                 type="button"
                 onClick={toggleMonthPicker}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-sm font-semibold transition-colors ${
-                  monthPickerOpen ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]' : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40'
+                  monthPickerOpen ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40'
                 }`}
               >
                 {THAI_MONTHS_FULL[month]}
@@ -232,7 +232,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                 type="button"
                 onClick={toggleYearPicker}
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-sm font-semibold transition-colors ${
-                  yearPickerOpen ? 'border-[#0B2046] bg-[#0B2046]/5 text-[#0B2046]' : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40'
+                  yearPickerOpen ? 'border-primary bg-primary/5 text-primary' : 'border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/40'
                 }`}
               >
                 {year + 543}
@@ -294,18 +294,18 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
 
                 let dayBtnClass = 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 cursor-pointer';
                 if (isConfirmedStart || isConfirmedEnd) {
-                  dayBtnClass = 'bg-[#0B2046] text-white font-semibold shadow-sm cursor-pointer';
+                  dayBtnClass = 'bg-primary text-white font-semibold shadow-sm cursor-pointer';
                 } else if (isPreviewHoverDay) {
-                  dayBtnClass = 'ring-2 ring-[#0B2046] text-[#0B2046] font-semibold bg-white dark:bg-slate-900 cursor-pointer';
+                  dayBtnClass = 'ring-2 ring-primary text-primary font-semibold bg-white dark:bg-slate-900 cursor-pointer';
                 } else if (isToday) {
-                  dayBtnClass = 'ring-1 ring-[#0B2046]/60 text-[#0B2046] font-semibold cursor-pointer';
+                  dayBtnClass = 'ring-1 ring-primary/60 text-primary font-semibold cursor-pointer';
                 }
 
                 return (
                   <div
                     key={idx}
                     className={`h-9 flex items-center justify-center ${
-                      inBand ? (confirmedInBand ? 'bg-[#0B2046]/10 dark:bg-[#0B2046]/30' : 'bg-[#0B2046]/[0.06]') : ''
+                      inBand ? (confirmedInBand ? 'bg-primary/10 dark:bg-primary/30' : 'bg-primary/[0.06]') : ''
                     } ${isBandEdgeStart ? 'rounded-l-full' : ''} ${isBandEdgeEnd ? 'rounded-r-full' : ''}`}
                   >
                     <button
@@ -335,7 +335,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                         setMonthPickerOpen(false);
                       }}
                       className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                        i === month ? 'bg-[#0B2046] text-white' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+                        i === month ? 'bg-primary text-white' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       {m}
@@ -376,7 +376,7 @@ export const LeaveDateRangePicker: React.FC<LeaveDateRangePickerProps> = ({
                         setYearPickerOpen(false);
                       }}
                       className={`py-2 rounded-lg text-sm font-medium transition-colors ${
-                        y === year ? 'bg-[#0B2046] text-white' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
+                        y === year ? 'bg-primary text-white' : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       {y + 543}

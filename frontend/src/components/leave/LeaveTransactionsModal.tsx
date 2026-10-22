@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, History, PlusCircle, MinusCircle, RefreshCw } from 'lucide-react';
 import { LeaveBalance, LeaveBalanceTransaction } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
+import { Button } from '@/components/ui';
 
 interface LeaveTransactionsModalProps {
   isOpen: boolean;
@@ -171,13 +172,12 @@ export const LeaveTransactionsModal: React.FC<LeaveTransactionsModalProps> = ({
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-700/60 flex justify-end">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl transition-colors"
           >
             ปิด
-          </button>
+          </Button>
         </div>
       </div>
     </div>
