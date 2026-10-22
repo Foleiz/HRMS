@@ -15,6 +15,8 @@ import {
   withCommas,
   cleanNumber,
 } from './FormulaParamsEditor';
+import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
   isOpen: boolean;
@@ -622,49 +624,15 @@ export const PayrollItemModal: React.FC<Props> = ({
 
           {/* Checkboxes: คิดภาษี & คิดประกันสังคม (เฉพาะรายได้ — รายหักไม่ได้เป็นเงินได้) */}
           {isEarning && (
-          <div className="flex items-center gap-6 pt-1">
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={isTaxable}
-                onChange={(e) => setIsTaxable(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
-              />
-              <span>คิดภาษี</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={isSocialSecurityCalculated}
-                onChange={(e) => setIsSocialSecurityCalculated(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
-              />
-              <span>คิดประกันสังคม</span>
-            </label>
+          <div className="space-y-2 pt-1">
+            <OptionCheckCard checked={isTaxable} onChange={setIsTaxable} {...TAX_OPTION_TEXT} />
+            <OptionCheckCard checked={isSocialSecurityCalculated} onChange={setIsSocialSecurityCalculated} {...SSO_OPTION_TEXT} />
           </div>
           )}
 
           {/* เปิดการใช้งานรายการนี้ (Toggle Switch - แสดงเฉพาะตอนแก้ไข) */}
           {item && (!lockActive || wasInactive) && (
-            <div className="flex items-center justify-between pt-2 pb-1 border-t border-slate-100 dark:border-slate-700/60">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">เปิดใช้งานรายการนี้</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isActive}
-                onClick={() => setIsActive(!isActive)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  isActive ? 'bg-blue-600' : 'bg-slate-300'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow-md ring-0 transition duration-200 ease-in-out ${
-                    isActive ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
+            <ActiveToggleRow label="เปิดใช้งานรายการนี้" checked={isActive} onChange={setIsActive} divider />
           )}
 
           </div>

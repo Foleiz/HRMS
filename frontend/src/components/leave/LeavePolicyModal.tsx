@@ -14,6 +14,7 @@ import { employeeTypeService } from '@/services/employeeTypeService';
 import { inferFormCategory } from './LeaveTypeModal';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 interface EmployeeLevelOption {
   id: number;
@@ -112,17 +113,7 @@ const policyToForm = (p: LeavePolicy): PolicyForm => ({
 
 // ───────────────────────── UI helpers ─────────────────────────
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={checked}
-    onClick={() => onChange(!checked)}
-    className={`w-11 h-6 shrink-0 flex items-center rounded-full p-1 transition-colors ${
-      checked ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
-    }`}
-  >
-    <div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 shadow" />
-  </button>
+  <ToggleSwitch checked={checked} onChange={onChange} />
 );
 
 const Section: React.FC<{ no: number; title: string; children: React.ReactNode }> = ({ no, title, children }) => (

@@ -5,6 +5,7 @@ import { LEAVE_COLOR_PRESETS, resolveLeaveColor } from '@/lib/leaveColors';
 import { X, Loader2 } from 'lucide-react';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
 import { CodeInput } from '@/components/ui/CodeInput';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 interface LeaveTypeModalProps {
   isOpen: boolean;
@@ -36,17 +37,7 @@ export const inferFormCategory = (code?: string | null, name?: string | null): L
 };
 
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={checked}
-    onClick={() => onChange(!checked)}
-    className={`w-12 h-6 shrink-0 flex items-center rounded-full p-1 transition-colors duration-200 ease-in-out ${
-      checked ? 'bg-blue-600 justify-end' : 'bg-gray-300 justify-start'
-    }`}
-  >
-    <div className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 shadow-md" />
-  </button>
+  <ToggleSwitch checked={checked} onChange={onChange} />
 );
 
 /**

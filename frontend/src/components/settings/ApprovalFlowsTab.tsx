@@ -40,6 +40,7 @@ import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
@@ -909,35 +910,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      สถานะการใช้งาน
-                    </label>
-                    <div className="flex gap-4 items-center pt-1">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <input
-                          type="radio"
-                          name="flowStatus"
-                          value="ACTIVE"
-                          checked={form.status === 'ACTIVE'}
-                          onChange={() => setForm({ ...form, status: 'ACTIVE' })}
-                          className="text-[#0B2046] focus:ring-[#0B2046]"
-                        />
-                        <span className="text-slate-700 dark:text-slate-300">เปิดใช้งาน</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <input
-                          type="radio"
-                          name="flowStatus"
-                          value="INACTIVE"
-                          checked={form.status === 'INACTIVE'}
-                          onChange={() => setForm({ ...form, status: 'INACTIVE' })}
-                          className="text-[#0B2046] focus:ring-[#0B2046]"
-                        />
-                        <span className="text-slate-700 dark:text-slate-300">ปิดการใช้งาน</span>
-                      </label>
-                    </div>
-                  </div>
+                  <ActiveToggleRow
+                    label="เปิดใช้งานสายการอนุมัตินี้"
+                    checked={form.status === 'ACTIVE'}
+                    onChange={(v) => setForm({ ...form, status: v ? 'ACTIVE' : 'INACTIVE' })}
+                  />
                 </div>
 
                 {/* 4. Form Steps Builder */}

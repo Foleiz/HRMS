@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
+import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
   isOpen: boolean;
@@ -275,15 +276,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     />
                   </div>
                   {newType === 'EARNING' && (
-                    <div className="flex items-center gap-5 text-xs text-slate-700 dark:text-slate-300">
-                      <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={newTaxable} onChange={(e) => setNewTaxable(e.target.checked)} className="w-4 h-4 rounded" />
-                        คิดภาษี
-                      </label>
-                      <label className="inline-flex items-center gap-1.5 cursor-pointer">
-                        <input type="checkbox" checked={newSso} onChange={(e) => setNewSso(e.target.checked)} className="w-4 h-4 rounded" />
-                        คิดประกันสังคม
-                      </label>
+                    <div className="space-y-2">
+                      <OptionCheckCard checked={newTaxable} onChange={setNewTaxable} {...TAX_OPTION_TEXT} />
+                      <OptionCheckCard checked={newSso} onChange={setNewSso} {...SSO_OPTION_TEXT} />
                     </div>
                   )}
                   {error && <p className="text-[11px] text-rose-600">{error}</p>}

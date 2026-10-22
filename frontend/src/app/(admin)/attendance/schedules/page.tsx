@@ -55,6 +55,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
+import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -2935,17 +2936,7 @@ function SchedulesContent() {
 
               {/* Status (แสดงเฉพาะตอนแก้ไข) */}
               {shiftModalMode === 'edit' && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สถานะกะการทำงาน</label>
-                  <CustomSelect
-                    value={shiftForm.status}
-                    onChange={(e) => setShiftForm({ ...shiftForm, status: e.target.value as 'ACTIVE' | 'INACTIVE' })}
-                    className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                  >
-                    <option value="ACTIVE">เปิดใช้งาน</option>
-                    <option value="INACTIVE">ระงับการใช้งานชั่วคราว</option>
-                  </CustomSelect>
-                </div>
+                <ActiveToggleRow label="เปิดใช้งานกะนี้" checked={shiftForm.status === 'ACTIVE'} onChange={(v) => setShiftForm({ ...shiftForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
               )}
 
               {/* Actions */}
