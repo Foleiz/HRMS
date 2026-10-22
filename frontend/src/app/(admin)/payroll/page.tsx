@@ -4379,42 +4379,249 @@ export default function PayrollPage() {
                   )}
                 </div>
 
-                {/* Right: Period Management CRUD Buttons (สร้างรอบ / ลบรอบ) */}
+                {/* Right: Primary Role Workflow Actions (วางฝั่งขวาของแถวบน เป็นระเบียบและเด่นชัด) */}
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
-                {processSubTab === 'HR' && canAccessHrView && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={handleOpenCreatePeriodModal}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                      <span>สร้างรอบเงินเดือน</span>
-                    </button>
-
-                    {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                  {processSubTab === 'HR' && canAccessHrView && (
+                    <>
                       <button
-                        onClick={() => setDeletePeriodConfirmOpen(true)}
-                        disabled={!selectedPeriod || isDeletingPeriod}
-                        className="h-9 inline-flex items-center gap-1.5 px-3 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
-                        title="ลบรอบเงินเดือนนี้ออกจากระบบ"
+                        type="button"
+                        onClick={handleOpenCreatePeriodModal}
+                        className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
-                        <span>ลบรอบเงินเดือน</span>
+                        <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        <span>สร้างรอบ</span>
                       </button>
-                    )}
-                  </div>
-                )}
+
+                      {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                        <button
+                          type="button"
+                          onClick={() => setDeletePeriodConfirmOpen(true)}
+                          disabled={!selectedPeriod || isDeletingPeriod}
+                          className="h-9 inline-flex items-center gap-1.5 px-3 border border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                          title="ลบรอบเงินเดือนนี้ออกจากระบบ"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                          <span>ลบรอบ</span>
+                        </button>
+                      )}
+
+                      {/* คำนวณเงินเดือน */}
+                      <button
+                        type="button"
+                        onClick={handleCalculatePayroll}
+                        disabled={
+                          isCalculating ||
+                          !selectedPeriod ||
+                          (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
+                        }
+                        className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {isCalculating ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Scale className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
+                      </button>
+
+                      {/* ส่งให้ฝ่ายการเงิน */}
+                      {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
+                        payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)) ? (
+                          <button
+                            type="button"
+                            onClick={handleSubmitToFinance}
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>ส่งให้ฝ่ายการเงินตรวจสอบ</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled
+                            className="h-9 inline-flex items-center gap-1.5 px-3 bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
+                            title="กรุณากดคำนวณเงินเดือนก่อนส่งการเงิน"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                            <span>ส่งให้การเงิน (ต้องคำนวณก่อน)</span>
+                          </button>
+                        )
+                      )}
+                    </>
+                  )}
+
+                  {processSubTab === 'FINANCE' && (
+                    <>
+                      {(selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' || selectedPeriod?.status === 'FINANCE_VERIFIED') && (
+                        <button
+                          type="button"
+                          onClick={() => setIsRejectModalOpen(true)}
+                          className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                        >
+                          <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                          <span>ไม่อนุมัติ (ส่งคืน HR แก้ไข)</span>
+                        </button>
+                      )}
+
+                      {selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' && (
+                        <button
+                          type="button"
+                          onClick={handleVerifyByFinance}
+                          className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)</span>
+                        </button>
+                      )}
+
+                      {selectedPeriod?.status === 'FINANCE_VERIFIED' && (
+                        <span className="h-9 inline-flex items-center gap-1.5 px-3 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-xl text-xs font-semibold">
+                          <Clock className="w-3.5 h-3.5 text-purple-500" />
+                          <span>ส่งขออนุมัติจาก CEO แล้ว (รออนุมัติ)</span>
+                        </span>
+                      )}
+
+                      {['APPROVED', 'PAID', 'CLOSED'].includes(selectedPeriod?.status || '') ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleDownloadBankFile}
+                            disabled={isExportingBankFile}
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                            <span>{isExportingBankFile ? 'กำลังสร้างไฟล์...' : '↓ ไฟล์โอนเงินธนาคาร'}</span>
+                          </button>
+
+                          {selectedPeriod?.status === 'APPROVED' && (
+                            <button
+                              type="button"
+                              onClick={handleAdvancePeriodStatus}
+                              className="h-9 inline-flex items-center gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                            >
+                              <Banknote className="w-3.5 h-3.5" />
+                              <span>บันทึกว่าจ่ายแล้ว</span>
+                            </button>
+                          )}
+
+                          {selectedPeriod?.status === 'PAID' && (
+                            <button
+                              type="button"
+                              onClick={handleAdvancePeriodStatus}
+                              disabled={isAdvancingStatus}
+                              className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {isAdvancingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                              <span>{isAdvancingStatus ? 'กำลังปิดรอบ...' : 'ปิดรอบเงินเดือน'}</span>
+                            </button>
+                          )}
+
+                          {selectedPeriod?.status === 'CLOSED' && (
+                            <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold">
+                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>ปิดรอบเงินเดือนเรียบร้อยแล้ว</span>
+                            </span>
+                          )}
+                        </>
+                      ) : selectedPeriod?.status !== 'SUBMITTED_TO_FINANCE' && selectedPeriod?.status !== 'FINANCE_VERIFIED' ? (
+                        <span className="h-9 inline-flex items-center gap-1.5 px-3 bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold">
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>รอ HR ส่งเรื่องให้การเงิน</span>
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+
+                  {processSubTab === 'APPROVER' && (
+                    <>
+                      {(selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setIsRejectModalOpen(true)}
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>ไม่อนุมัติ (ส่งคืน HR)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleAdvancePeriodStatus}
+                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>อนุมัติรอบเงินเดือน</span>
+                          </button>
+                        </>
+                      ) : ['APPROVED', 'PAID', 'CLOSED'].includes(selectedPeriod?.status || '') ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          <span>{selectedPeriod?.status === 'CLOSED' ? 'ปิดรอบเงินเดือนสมบูรณ์แล้ว' : 'CEO อนุมัติรอบนี้เรียบร้อยแล้ว'}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                          <Clock className="w-4 h-4 text-slate-400" />
+                          <span>ยังไม่ถึงขั้นตอนการอนุมัติ (รอ HR และการเงิน)</span>
+                        </span>
+                      )}
+                    </>
+                  )}
+
+                  {processSubTab === 'BANK' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleDownloadBankFile}
+                        disabled={isExportingBankFile || !['APPROVED', 'PAID', 'CLOSED'].includes(selectedPeriod?.status || '')}
+                        className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                        <span>{isExportingBankFile ? 'กำลังสร้างไฟล์...' : '↓ ไฟล์โอนเงินธนาคาร'}</span>
+                      </button>
+
+                      {selectedPeriod?.status === 'APPROVED' && (isFinance || isAdmin || isCEO) && (
+                        <button
+                          type="button"
+                          onClick={handleAdvancePeriodStatus}
+                          className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                        >
+                          <Banknote className="w-3.5 h-3.5" />
+                          <span>บันทึกว่าจ่ายแล้ว</span>
+                        </button>
+                      )}
+
+                      {selectedPeriod?.status === 'PAID' && (isFinance || isAdmin || isCEO) && (
+                        <button
+                          type="button"
+                          onClick={handleAdvancePeriodStatus}
+                          disabled={isAdvancingStatus}
+                          className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isAdvancingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                          <span>{isAdvancingStatus ? 'กำลังปิดรอบ...' : 'ปิดรอบเงินเดือน'}</span>
+                        </button>
+                      )}
+
+                      {selectedPeriod?.status === 'CLOSED' && (
+                        <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-750 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>ปิดรอบเงินเดือนเรียบร้อยแล้ว</span>
+                        </span>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* ── TIER 2: Period Info Badges (Left) & Workflow Actions (Right) ── */}
-              <div className="mt-3.5 pt-3.5 border-t border-slate-100 dark:border-slate-700/60 flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-                {/* Left: Structured Info Pill Badges */}
-                <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* ── TIER 2: Schedule Metadata (Left) & Linked Earnings Chips (Right) ── */}
+              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+                {/* Left: Schedule Metadata Row */}
+                <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                   {/* ช่วงเงินเดือน */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    <span>ช่วงเงินเดือน:</span>
+                  <div className="inline-flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                    <span className="text-slate-500 dark:text-slate-400">ช่วงเงินเดือน:</span>
                     <span className="font-semibold text-slate-700 dark:text-slate-200">
                       {selectedPeriod
                         ? `${formatThaiShortDate(selectedPeriod.startDate)} - ${formatThaiShortDate(selectedPeriod.endDate)}`
@@ -4422,20 +4629,24 @@ export default function PayrollPage() {
                     </span>
                   </div>
 
+                  <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
+
                   {/* วันจ่ายเงิน */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
-                    <Banknote className="w-3.5 h-3.5 text-slate-400" />
-                    <span>วันจ่ายเงิน:</span>
+                  <div className="inline-flex items-center gap-1.5">
+                    <Banknote className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                    <span className="text-slate-500 dark:text-slate-400">วันจ่ายเงิน:</span>
                     <span className="font-semibold text-slate-700 dark:text-slate-200">
                       {formatThaiShortDate(selectedPeriod?.paymentDate)}
                     </span>
                   </div>
 
+                  <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
+
                   {/* ตัดรอบเงินเบิก */}
                   {selectedPeriod && (
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>ตัดรอบเงินเบิก:</span>
+                    <div className="inline-flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                      <span className="text-slate-500 dark:text-slate-400">ตัดรอบเงินเบิก:</span>
                       {claimCutoffEditing ? (
                         <div className="inline-flex items-center gap-1.5">
                           <ThaiDatePicker
@@ -4482,7 +4693,7 @@ export default function PayrollPage() {
                                 setClaimCutoffDraft(selectedPeriod.claimCutoffDate || selectedPeriod.effectiveClaimCutoffDate || '');
                                 setClaimCutoffEditing(true);
                               }}
-                              className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                              className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer ml-0.5"
                             >
                               แก้ไข
                             </button>
@@ -4492,14 +4703,19 @@ export default function PayrollPage() {
                     </div>
                   )}
 
+                  <span className="hidden sm:inline text-slate-300 dark:text-slate-600">•</span>
+
                   {/* พนักงานในรอบ */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400">
-                    <Users className="w-3.5 h-3.5 text-slate-400" />
-                    <span>พนักงานในรอบ:</span>
+                  <div className="inline-flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                    <span className="text-slate-500 dark:text-slate-400">พนักงานในรอบ:</span>
                     <span className="font-semibold text-slate-700 dark:text-slate-200">{payrolls.length} คน</span>
                   </div>
+                </div>
 
-                  {/* ค่าคอมมิชชั่นประจำรอบ (ดึงคำนวณอัตโนมัติ) */}
+                {/* Right: Linked Auto-calculated Earnings (Commission & Bonus) */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {/* ค่าคอมมิชชั่นประจำรอบ */}
                   {selectedPeriod && (() => {
                     const comm = currentPeriodCommission && currentPeriodCommission.year === selectedPeriod.year && currentPeriodCommission.month === selectedPeriod.month
                       ? currentPeriodCommission
@@ -4510,7 +4726,7 @@ export default function PayrollPage() {
                         <button
                           type="button"
                           onClick={() => setActiveTab('commission')}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors cursor-pointer ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs transition-colors cursor-pointer ${
                             isConfirmed
                               ? 'bg-emerald-50 hover:bg-emerald-100/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300'
                               : 'bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300'
@@ -4518,33 +4734,22 @@ export default function PayrollPage() {
                           title="คลิกเพื่อเปิดดู/จัดการแท็บค่าคอมมิชชั่น"
                         >
                           <Coins className={`w-3.5 h-3.5 ${isConfirmed ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`} />
-                          <span>ค่าคอมมิชชั่น:</span>
+                          <span className="font-medium">ค่าคอมฯ:</span>
                           <span className="font-semibold font-mono">
                             ฿{comm.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                          <span className="text-[11px] font-medium">
+                          <span className="text-[11px] opacity-90">
                             {isConfirmed
-                              ? `(${comm.totalEmployees} คน • ยืนยันแล้ว พร้อมดึงอัตโนมัติ)`
-                              : `(${comm.totalEmployees} คน • ⚠️ รอยืนยัน คลิกไปยืนยัน)`}
+                              ? `(${comm.totalEmployees} คน · ยืนยันแล้ว)`
+                              : `(${comm.totalEmployees} คน · รอยืนยัน)`}
                           </span>
                         </button>
                       );
                     }
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('commission')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                        title="คลิกเพื่อไปยังแท็บค่าคอมมิชชั่น"
-                      >
-                        <Coins className="w-3.5 h-3.5 text-slate-400" />
-                        <span>ค่าคอมมิชชั่น:</span>
-                        <span className="text-slate-400 dark:text-slate-500">ไม่มีรายการในรอบนี้</span>
-                      </button>
-                    );
+                    return null;
                   })()}
 
-                  {/* โบนัสประจำรอบ (เฉพาะเดือนที่มีโบนัส - ดึงคำนวณอัตโนมัติ) */}
+                  {/* โบนัสประจำรอบ */}
                   {selectedPeriod && (() => {
                     const currentPeriodBonus = bonusPeriods.find(
                       (bp) => bp.year === selectedPeriod?.year && bp.month === selectedPeriod?.month
@@ -4558,244 +4763,22 @@ export default function PayrollPage() {
                             setBonusMonth(selectedPeriod.month);
                             setActiveTab('bonus');
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-800 dark:text-amber-300 text-xs transition-colors cursor-pointer"
                           title="คลิกเพื่อเปิดดูรายละเอียดในแท็บโบนัส"
                         >
                           <Gift className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span>โบนัสประจำรอบ:</span>
+                          <span className="font-medium">โบนัส:</span>
                           <span className="font-semibold font-mono">
                             ฿{currentPeriodBonus.totalBonusAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
-                          <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
-                            ({currentPeriodBonus.totalEmployees || currentPeriodBonus.approvedCount || 0} คน • ดึงอัตโนมัติ)
+                          <span className="text-[11px] text-amber-700 dark:text-amber-400">
+                            ({currentPeriodBonus.totalEmployees || currentPeriodBonus.approvedCount || 0} คน)
                           </span>
                         </button>
                       );
                     }
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => setActiveTab('bonus')}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/50 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                        title="คลิกเพื่อไปยังแท็บโบนัส"
-                      >
-                        <Gift className="w-3.5 h-3.5 text-slate-400" />
-                        <span>โบนัส:</span>
-                        <span className="text-slate-400 dark:text-slate-500">ไม่มีรอบจ่ายในเดือนนี้</span>
-                      </button>
-                    );
+                    return null;
                   })()}
-                </div>
-
-                {/* Right: Contextual Workflow Actions (คำนวณ, ส่งการเงิน, อนุมัติ ฯลฯ) */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
-                  {processSubTab === 'HR' && canAccessHrView && (
-                    <>
-                      {/* คำนวณเงินเดือน (ดึงโบนัสอัตโนมัติ) */}
-                      <button
-                        onClick={handleCalculatePayroll}
-                        disabled={
-                          isCalculating ||
-                          !selectedPeriod ||
-                          (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
-                        }
-                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {isCalculating ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Scale className="w-3.5 h-3.5" />
-                        )}
-                        <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
-                      </button>
-
-                      {/* ส่งให้ฝ่ายการเงิน */}
-                      {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
-                        payrolls.length > 0 && payrolls.some(p => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)) ? (
-                          <button
-                            onClick={handleSubmitToFinance}
-                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>ส่งให้ฝ่ายการเงินตรวจสอบ</span>
-                          </button>
-                        ) : (
-                          <button
-                            disabled
-                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
-                            title="กรุณากดคำนวณเงินเดือนก่อนส่งการเงิน"
-                          >
-                            <Lock className="w-3.5 h-3.5 text-slate-400" />
-                            <span>ส่งให้การเงิน (ต้องคำนวณก่อน)</span>
-                          </button>
-                        )
-                      )}
-                    </>
-                  )}
-
-                  {processSubTab === 'FINANCE' && (
-                    <>
-                      {selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsRejectModalOpen(true)}
-                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
-                          >
-                            <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                            <span>ไม่อนุมัติ (ส่งคืน HR แก้ไข)</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleVerifyByFinance}
-                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" />
-                            <span>การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)</span>
-                          </button>
-                        </div>
-                      )}
-
-                      {selectedPeriod?.status === 'FINANCE_VERIFIED' && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsRejectModalOpen(true)}
-                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
-                          >
-                            <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                            <span>ไม่อนุมัติ (ส่งคืน HR แก้ไข)</span>
-                          </button>
-                        </div>
-                      )}
-
-                      {selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (
-                        <>
-                          <button
-                            onClick={handleDownloadBankFile}
-                            disabled={isExportingBankFile}
-                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold transition-all cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                            <span>{isExportingBankFile ? 'กำลังสร้างไฟล์...' : '↓ ไฟล์โอนเงินธนาคาร'}</span>
-                          </button>
-
-                          {selectedPeriod?.status === 'APPROVED' && (
-                            <button
-                              onClick={handleAdvancePeriodStatus}
-                              className="h-9 inline-flex items-center gap-2 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                            >
-                              <Banknote className="w-3.5 h-3.5" />
-                              <span>บันทึกว่าจ่ายแล้ว</span>
-                            </button>
-                          )}
-
-                          {selectedPeriod?.status === 'PAID' && (
-                            <button
-                              onClick={handleAdvancePeriodStatus}
-                              disabled={isAdvancingStatus}
-                              className="h-9 inline-flex items-center gap-2 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isAdvancingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                              <span>{isAdvancingStatus ? 'กำลังปิดรอบ...' : 'ปิดรอบเงินเดือน'}</span>
-                            </button>
-                          )}
-
-                          {selectedPeriod?.status === 'CLOSED' && (
-                            <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold">
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>ปิดรอบเงินเดือนเรียบร้อยแล้ว</span>
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <button
-                          disabled
-                          className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold cursor-not-allowed opacity-80"
-                          title="รอ CEO อนุมัติรอบเงินเดือนก่อนดาวน์โหลดไฟล์จ่ายเงิน"
-                        >
-                          <Lock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>ไฟล์โอนเงินธนาคาร (รอ CEO อนุมัติ)</span>
-                        </button>
-                      )}
-                    </>
-                  )}
-
-                  {processSubTab === 'APPROVER' && (
-                    <>
-                      {(selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL') ? (
-                        <>
-                          <button
-                            onClick={() => setIsRejectModalOpen(true)}
-                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                          >
-                            <XCircle className="w-3.5 h-3.5 text-rose-600" />
-                            <span>ไม่อนุมัติ (ส่งคืน HR)</span>
-                          </button>
-
-                          <button
-                            onClick={handleAdvancePeriodStatus}
-                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>อนุมัติรอบเงินเดือน</span>
-                          </button>
-                        </>
-                      ) : selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          <span>{selectedPeriod?.status === 'CLOSED' ? 'ปิดรอบเงินเดือนสมบูรณ์แล้ว' : 'CEO อนุมัติรอบนี้เรียบร้อยแล้ว'}</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                          <Clock className="w-4 h-4 text-slate-400" />
-                          <span>ยังไม่ถึงขั้นตอนการอนุมัติ (รอ HR และการเงิน)</span>
-                        </span>
-                      )}
-                    </>
-                  )}
-
-                  {processSubTab === 'BANK' && (
-                    <>
-                      <button
-                        onClick={handleDownloadBankFile}
-                        disabled={isExportingBankFile || (selectedPeriod?.status !== 'APPROVED' && selectedPeriod?.status !== 'PAID' && selectedPeriod?.status !== 'CLOSED')}
-                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isExportingBankFile ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />}
-                        <span>{isExportingBankFile ? 'กำลังสร้างไฟล์...' : '↓ ไฟล์โอนเงินธนาคาร'}</span>
-                      </button>
-
-                      {selectedPeriod?.status === 'APPROVED' && (isFinance || isAdmin || isCEO) && (
-                        <button
-                          onClick={handleAdvancePeriodStatus}
-                          className="h-9 inline-flex items-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                        >
-                          <Banknote className="w-3.5 h-3.5" />
-                          <span>บันทึกว่าจ่ายแล้ว</span>
-                        </button>
-                      )}
-
-                      {selectedPeriod?.status === 'PAID' && (isFinance || isAdmin || isCEO) && (
-                        <button
-                          onClick={handleAdvancePeriodStatus}
-                          disabled={isAdvancingStatus}
-                          className="h-9 inline-flex items-center gap-2 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isAdvancingStatus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
-                          <span>{isAdvancingStatus ? 'กำลังปิดรอบ...' : 'ปิดรอบเงินเดือน'}</span>
-                        </button>
-                      )}
-
-                      {selectedPeriod?.status === 'CLOSED' && (
-                        <span className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-slate-100 dark:bg-slate-750 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-semibold">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>ปิดรอบเงินเดือนเรียบร้อยแล้ว</span>
-                        </span>
-                      )}
-                    </>
-                  )}
                 </div>
               </div>
             </div>
