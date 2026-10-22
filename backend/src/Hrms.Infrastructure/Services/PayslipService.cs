@@ -66,6 +66,20 @@ public class PayslipService : IPayslipService
         return await GenerateOrRetrievePayslipPdfAsync(payrollId, cancellationToken);
     }
 
+    public async Task FreezePeriodPayslipsAsync(long periodId, CancellationToken cancellationToken = default)
+    {
+        var payrollIds = await _context.Payrolls.AsNoTracking()
+            .Where(p => p.PeriodId == periodId)
+            .Select(p => p.Id)
+            .ToListAsync(cancellationToken);
+        var existing = await _context.Payslips.AsNoTracking()
+            .Where(s => payrollIds.Contains(s.PayrollId) && s.PdfData != null)
+            .Select(s => s.PayrollId)
+            .ToListAsync(cancellationToken);
+        foreach (var id in payrollIds.Except(existing))
+            await GenerateOrRetrievePayslipPdfAsync(id, cancellationToken);
+    }
+
     private async Task<(byte[] FileBytes, string FileName)> GenerateOrRetrievePayslipPdfAsync(long payrollId, CancellationToken cancellationToken)
     {
         var payroll = await _context.Payrolls
@@ -90,6 +104,18 @@ public class PayslipService : IPayslipService
 
         var emp = payroll.Employee;
         var period = payroll.Period;
+
+        // รอบที่เลยขั้นตรวจสอบแล้ว (ยอดล็อก): ใช้สลิปที่เก็บไว้ ไม่สร้างใหม่ — บัญชีธนาคาร/ข้อมูลบริษัทในสลิปไม่เปลี่ยนตามข้อมูลปัจจุบัน
+        bool periodLocked = period != null && period.Status != "DRAFT" && period.Status != "REVIEW";
+        if (periodLocked)
+        {
+            var stored = await _context.Payslips.AsNoTracking()
+                .Where(s => s.PayrollId == payrollId && s.PdfData != null)
+                .Select(s => s.PdfData)
+                .FirstOrDefaultAsync(cancellationToken);
+            if (stored != null && stored.Length > 0)
+                return (stored, $"Payslip_{period!.Year}_{period.Month:D2}_{emp?.EmployeeCode ?? "EMP"}.pdf");
+        }
         var periodYear = period?.Year ?? DateTime.Now.Year;
         var periodMonth = period?.Month ?? DateTime.Now.Month;
         var monthName = (periodMonth >= 1 && periodMonth <= 12) ? ThaiMonths[periodMonth] : $"เดือนที่ {periodMonth}";

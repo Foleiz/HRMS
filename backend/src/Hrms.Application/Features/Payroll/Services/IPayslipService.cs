@@ -14,4 +14,9 @@ public interface IPayslipService
     /// สร้างหรือดึงไฟล์ PDF สลิปเงินเดือน (เข้ารหัสผ่าน) สำหรับ HR/Admin (ระบุ payrollId ใดๆ ได้)
     /// </summary>
     Task<(byte[] FileBytes, string FileName)> GetPayslipPdfAsync(long payrollId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// สร้างสลิปของทุกคนในรอบที่จ่าย/ปิดแล้วเก็บไว้ (ถ้ายังไม่มี) — ดาวน์โหลดภายหลังจะได้ไฟล์เดิมเสมอ
+    /// </summary>
+    Task FreezePeriodPayslipsAsync(long periodId, CancellationToken cancellationToken = default);
 }

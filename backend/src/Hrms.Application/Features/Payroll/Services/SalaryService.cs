@@ -10,14 +10,16 @@ namespace Hrms.Application.Features.Payroll.Services;
 
 public class SalaryService : ISalaryService
 {
+    private readonly IPayslipService _payslipService;
     private readonly IHrmsDbContext _context;
     private readonly IAttendanceDailyService _attendanceDailyService;
     private readonly ICurrentUserService _currentUser;
     private readonly IAesEncryptionService _crypto;
 
     public SalaryService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService,
-        ICurrentUserService currentUser, IAesEncryptionService crypto)
+        ICurrentUserService currentUser, IAesEncryptionService crypto, IPayslipService payslipService)
     {
+        _payslipService = payslipService;
         _context = context;
         _attendanceDailyService = attendanceDailyService;
         _currentUser = currentUser;
@@ -1988,6 +1990,7 @@ public class SalaryService : ISalaryService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        await FreezePayslipsIfPaidAsync(period, cancellationToken);
 
         return MapPeriodToDto(period);
     }
@@ -2690,6 +2693,14 @@ public class SalaryService : ISalaryService
             period.Payrolls.Remove(stale);
         }
 
+        // คำนวณใหม่แล้ว สลิปที่เคยสร้างเก็บไว้ไม่ตรงกับยอดล่าสุด → ลบทิ้ง ให้สร้างใหม่ตอนดาวน์โหลด
+        var periodPayrollIds = period.Payrolls.Where(p => p.Id > 0).Select(p => p.Id).ToList();
+        if (periodPayrollIds.Count > 0)
+        {
+            var staleSlips = await _context.Payslips.Where(s => periodPayrollIds.Contains(s.PayrollId)).ToListAsync(cancellationToken);
+            _context.Payslips.RemoveRange(staleSlips);
+        }
+
         period.Status = "REVIEW";
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -2706,6 +2717,23 @@ public class SalaryService : ISalaryService
         LastCalculationWarnings = warnings;
 
         return records;
+    }
+
+    /// <summary>
+    /// จ่ายเงิน/ปิดรอบแล้ว → สร้างสลิปเก็บไว้ทันที (ล็อกข้อมูลบัญชีธนาคาร/บริษัท ณ ตอนจ่าย)
+    /// สร้างไม่สำเร็จไม่ขัดการจ่ายเงิน — จะสร้างตอนดาวน์โหลดครั้งแรกแทน
+    /// </summary>
+    private async Task FreezePayslipsIfPaidAsync(PayrollPeriod period, CancellationToken cancellationToken)
+    {
+        if (period.Status != "PAID" && period.Status != "CLOSED") return;
+        try
+        {
+            await _payslipService.FreezePeriodPayslipsAsync(period.Id, cancellationToken);
+        }
+        catch
+        {
+            // ignore
+        }
     }
 
     /// <summary>คำเตือนจากการคำนวณรอบล่าสุดใน request นี้ (service เป็น scoped)</summary>
@@ -4130,6 +4158,7 @@ public class SalaryService : ISalaryService
         period.TotalTransferredCount = payrolls.Count;
 
         await _context.SaveChangesAsync(cancellationToken);
+        await FreezePayslipsIfPaidAsync(period, cancellationToken);
         return MapPeriodToDto(period);
     }
 
@@ -4305,6 +4334,7 @@ public class SalaryService : ISalaryService
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        await FreezePayslipsIfPaidAsync(period, cancellationToken);
         return MapPeriodToDto(period);
     }
 
