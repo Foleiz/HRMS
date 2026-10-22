@@ -25,7 +25,7 @@ export const ToggleSwitch: React.FC<{
       if (!disabled) onChange(!checked);
     }}
     className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-      checked ? 'bg-blue-600' : 'bg-slate-300'
+      checked ? 'bg-accent' : 'bg-slate-300'
     } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
   >
     <span

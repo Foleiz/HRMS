@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { withCommas, cleanNumber, NumberInput } from '@/components/ui/Input';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 /**
  * ช่องกรอกค่าตัวแปรของสูตรมาตรฐาน (แทนการพิมพ์ข้อความสูตรเอง)
@@ -157,21 +159,8 @@ export const validateFormulaParams = (template: string, p: FormulaParams): strin
   }
 };
 
-/** แสดงตัวเลขพร้อมลูกน้ำ (ค่าที่เก็บยังเป็นตัวเลขล้วน) */
-export const withCommas = (v: string) => {
-  if (v === '' || v == null) return '';
-  const [i, d] = String(v).split('.');
-  return i.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (d !== undefined ? `.${d}` : '');
-};
-/** รับค่าที่พิมพ์ (อาจมีลูกน้ำ) → ตัวเลขล้วน ทศนิยมได้จุดเดียว */
-export const cleanNumber = (v: string) => {
-  const raw = v.replace(/[^\d.]/g, '');
-  const dot = raw.indexOf('.');
-  return dot < 0 ? raw : raw.slice(0, dot + 1) + raw.slice(dot + 1).replace(/\./g, '');
-};
-
-const inputCls =
-  'w-full text-xs px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-900 dark:text-slate-100 font-semibold';
+// ฟังก์ชันตัวเลขอยู่ที่ components/ui/Input (ที่เดียวทั้งระบบ)
+export { withCommas, cleanNumber };
 
 const Field: React.FC<{ label: string; suffix?: string; children: React.ReactNode }> = ({ label, suffix, children }) => (
   <label className="block">
@@ -193,13 +182,10 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
   const set = (patch: Partial<FormulaParams>) => onChange({ ...params, ...patch });
   // step คงไว้เพื่อความเข้ากันได้ — ช่องเป็น text เพื่อแสดงลูกน้ำ
   const numberInput = (key: keyof FormulaParams, placeholder: string, _step = '1') => (
-    <input
-      type="text"
-      inputMode="decimal"
-      placeholder={withCommas(placeholder)}
-      value={withCommas(params[key] as string)}
-      onChange={(e) => set({ [key]: cleanNumber(e.target.value) } as Partial<FormulaParams>)}
-      className={inputCls}
+    <NumberInput
+      value={params[key] as string}
+      onChange={(v) => set({ [key]: v } as Partial<FormulaParams>)}
+      placeholder={placeholder}
     />
   );
 
@@ -213,17 +199,12 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
       const tierLabel = (i: number) =>
         tiers.length === 1 ? 'ทุกเดือน' : i === tiers.length - 1 ? `เดือนที่ ${i + 1} ขึ้นไป` : `เดือนที่ ${i + 1}`;
       const suffixInput = (key: keyof FormulaParams, unit: string, placeholder: string) => (
-        <div className="relative">
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder={placeholder}
-            value={withCommas(params[key] as string)}
-            onChange={(e) => set({ [key]: cleanNumber(e.target.value) } as Partial<FormulaParams>)}
-            className={`${inputCls} pr-12`}
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">{unit}</span>
-        </div>
+        <NumberInput
+          value={params[key] as string}
+          onChange={(v) => set({ [key]: v } as Partial<FormulaParams>)}
+          placeholder={placeholder}
+          suffix={unit}
+        />
       );
       fields = (
         <div className="space-y-4">
@@ -235,20 +216,12 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
             </div>
             {tiers.map((t, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-6 h-6 shrink-0 rounded-full bg-[#0B2046] text-white text-[11px] font-semibold flex items-center justify-center">
+                <span className="w-6 h-6 shrink-0 rounded-full bg-primary text-white text-[11px] font-semibold flex items-center justify-center">
                   {i + 1}
                 </span>
                 <span className="w-24 shrink-0 text-[11px] text-slate-600 dark:text-slate-400">{tierLabel(i)}</span>
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">฿</span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={withCommas(t)}
-                    onChange={(e) => setTier(i, cleanNumber(e.target.value))}
-                    className={`${inputCls} pl-7`}
-                  />
+                <div className="flex-1">
+                  <NumberInput value={t} onChange={(v) => setTier(i, v)} prefix="฿" placeholder="0" />
                 </div>
                 <button
                   type="button"
@@ -264,7 +237,7 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
             <button
               type="button"
               onClick={() => set({ tiers: [...tiers, tiers[tiers.length - 1] || ''] })}
-              className="w-full py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-[11px] font-semibold text-[#0B2046] dark:text-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center justify-center gap-1"
+              className="w-full py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-[11px] font-semibold text-primary dark:text-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center justify-center gap-1"
             >
               <Plus className="w-3.5 h-3.5" />
               เพิ่มขั้น
@@ -333,25 +306,14 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
     case 'LATE_ABSENT':
       fields = (
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              ['RATE', 'ตามอัตราค่าจ้าง'],
-              ['PER_MINUTE', 'กำหนดบาทต่อนาที'],
-            ] as [LateMode, string][]).map(([mode, label]) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => set({ lateMode: mode })}
-                className={`py-2 text-xs rounded-lg border cursor-pointer ${
-                  params.lateMode === mode
-                    ? 'bg-[#0B2046] text-white border-[#0B2046]'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={params.lateMode}
+            onChange={(m) => set({ lateMode: m })}
+            options={[
+              { value: 'RATE' as LateMode, label: 'ตามอัตราค่าจ้าง' },
+              { value: 'PER_MINUTE' as LateMode, label: 'กำหนดบาทต่อนาที' },
+            ]}
+          />
           {params.lateMode === 'PER_MINUTE' && (
             <Field label="หักมาสาย นาทีละ" suffix="บาท">{numberInput('perMinute', '2', '0.01')}</Field>
           )}

@@ -16,7 +16,7 @@ export const OptionCheckCard: React.FC<{
       disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
     } ${
       checked
-        ? 'border-[#0B2046] bg-blue-50/60 dark:border-blue-400 dark:bg-blue-950/30'
+        ? 'border-primary bg-primary-soft dark:border-blue-400 dark:bg-blue-950/30'
         : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:hover:bg-slate-800/60'
     }`}
   >
@@ -29,7 +29,7 @@ export const OptionCheckCard: React.FC<{
     />
     <span
       className={`mt-0.5 w-5 h-5 shrink-0 rounded-md border flex items-center justify-center ${
-        checked ? 'bg-[#0B2046] border-[#0B2046] dark:bg-blue-500 dark:border-blue-500' : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-600'
+        checked ? 'bg-primary border-primary dark:bg-blue-500 dark:border-blue-500' : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-600'
       }`}
     >
       {checked && <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />}

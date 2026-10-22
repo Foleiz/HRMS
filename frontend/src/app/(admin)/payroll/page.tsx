@@ -87,6 +87,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
+import { Button, ActiveStatus } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
@@ -2783,13 +2784,9 @@ export default function PayrollPage() {
 
             {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
             {canCreateItem && (
-              <button
-                onClick={handleOpenCreateItem}
-                className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
-              </button>
+              <Button size="sm" className="h-9" onClick={handleOpenCreateItem} icon={<Plus className="w-3.5 h-3.5" />}>
+                {itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}
+              </Button>
             )}
             </div>
 
@@ -2944,17 +2941,7 @@ export default function PayrollPage() {
                             </>
                           )}
                           <td className="py-3.5 px-5">
-                            {isItemActive ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                <span>ใช้งาน</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                                <span>ไม่ได้ใช้งาน</span>
-                              </span>
-                            )}
+                            <ActiveStatus active={isItemActive} />
                           </td>
                           <td className="py-3.5 px-5 text-center">
                             {canEditItem ? (

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
+import { Button, Input, NumberInput, SegmentedControl } from '@/components/ui';
 import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
@@ -228,51 +229,32 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
               {canEdit && (
                 <div className="border border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-4 space-y-3 bg-slate-50/50">
                   <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">เพิ่มรายการรายได้ / รายหัก</h4>
-                  <div className="flex items-center gap-2">
-                    {(['EARNING', 'DEDUCTION'] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setNewType(t)}
-                        disabled={saving}
-                        className={`flex-1 h-8 rounded-lg text-xs border cursor-pointer ${
-                          newType === t
-                            ? 'bg-[#0B2046] text-white border-[#0B2046]'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        {t === 'EARNING' ? 'รายได้' : 'รายหัก'}
-                      </button>
-                    ))}
-                  </div>
-                  <input
+                  <SegmentedControl
+                    value={newType}
+                    onChange={setNewType}
+                    disabled={saving}
+                    options={[
+                      { value: 'EARNING', label: 'รายได้' },
+                      { value: 'DEDUCTION', label: 'รายหัก' },
+                    ]}
+                  />
+                  <Input
                     type="text"
                     placeholder="ชื่อหัวข้อ เช่น ค่าเบี้ยเลี้ยงต่างจังหวัด"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     disabled={saving}
                     maxLength={100}
-                    className="w-full h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                   />
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="จำนวนเงิน (บาท)"
-                      value={newAmount}
-                      onChange={(e) => setNewAmount(e.target.value)}
-                      disabled={saving}
-                      className="w-36 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
-                    />
-                    <input
+                  <div className="grid grid-cols-[9rem_1fr] gap-2">
+                    <NumberInput value={newAmount} onChange={setNewAmount} prefix="฿" placeholder="จำนวนเงิน" disabled={saving} />
+                    <Input
                       type="text"
                       placeholder="หมายเหตุ (แสดงบนสลิป)"
                       value={newNote}
                       onChange={(e) => setNewNote(e.target.value)}
                       disabled={saving}
                       maxLength={200}
-                      className="flex-1 h-9 px-3 border border-slate-200 dark:border-slate-700 rounded-lg text-xs bg-white dark:bg-slate-800"
                     />
                   </div>
                   {newType === 'EARNING' && (
@@ -282,14 +264,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                     </div>
                   )}
                   {error && <p className="text-[11px] text-rose-600">{error}</p>}
-                  <button
-                    onClick={handleAdd}
-                    disabled={saving}
-                    className="w-full h-9 inline-flex items-center justify-center gap-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold cursor-pointer disabled:opacity-50"
-                  >
-                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-                    <span>{saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}</span>
-                  </button>
+                  <Button fullWidth onClick={handleAdd} loading={saving} icon={<Plus className="w-3.5 h-3.5" />}>
+                    {saving ? 'กำลังคำนวณใหม่...' : 'เพิ่มรายการและคำนวณใหม่'}
+                  </Button>
                 </div>
               )}
               {!canEdit && error && <p className="text-[11px] text-rose-600">{error}</p>}

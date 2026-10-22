@@ -17,6 +17,8 @@ import {
   cleanNumber,
 } from './FormulaParamsEditor';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { FormField, Input, NumberInput } from '@/components/ui/Input';
 import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
@@ -503,37 +505,29 @@ export const PayrollItemModal: React.FC<Props> = ({
     )} บาท/เดือน)`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {isRedirected
-              ? `แก้ไขรายการของระบบ: ${item?.itemName ?? ''}`
-              : item
-              ? `แก้ไข${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
-              : `เพิ่ม${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`}
-          </h3>
-          {isRedirected && (
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-              สูตรนี้ใช้ได้กับรายการของระบบเท่านั้น — แก้ค่าแล้วกดบันทึกจะอัปเดตรายการนี้ (ไม่สร้างรายการใหม่){' '}
-              <button type="button" onClick={() => setRedirect(null)} className="font-semibold text-[#0B2046] dark:text-blue-300 underline cursor-pointer">
-                กลับ
-              </button>
-            </p>
-          )}
-          <button
-            onClick={onClose}
-            type="button"
-            className="absolute right-4 top-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={
+        isRedirected
+          ? `แก้ไขรายการของระบบ: ${item?.itemName ?? ''}`
+          : item
+          ? `แก้ไข${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
+          : `เพิ่ม${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
+      }
+      subtitle={
+        isRedirected ? (
+          <>
+            สูตรนี้ใช้ได้กับรายการของระบบเท่านั้น — แก้ค่าแล้วกดบันทึกจะอัปเดตรายการนี้ (ไม่สร้างรายการใหม่){' '}
+            <button type="button" onClick={() => setRedirect(null)} className="font-semibold text-primary dark:text-blue-300 underline cursor-pointer">
+              กลับ
+            </button>
+          </>
+        ) : undefined
+      }
+      footer={<ModalFooter onCancel={onClose} loading={loading} />}
+    >
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs dark:bg-red-900/20 dark:text-red-400">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -542,17 +536,9 @@ export const PayrollItemModal: React.FC<Props> = ({
             )}
 
           {/* Item Name */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ชื่อรายการ <span className="text-rose-500">*</span></label>
-            <input
-              type="text"
-              required
-              placeholder="เช่น เบี้ยเลี้ยงพิเศษ"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
-            />
-          </div>
+          <FormField label="ชื่อรายการ" required>
+            <Input type="text" required placeholder="เช่น เบี้ยเลี้ยงพิเศษ" value={itemName} onChange={(e) => setItemName(e.target.value)} />
+          </FormField>
 
           {isAutoPullModuleItem ? (
             <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 space-y-2">
@@ -601,21 +587,9 @@ export const PayrollItemModal: React.FC<Props> = ({
                 const mn = Number(ssoMin) || 0;
                 const ro = !canEditTaxSso;
                 const field = (label: string, value: string, setter: (v: string) => void, unit: string, prefix?: string) => (
-                  <label className="block">
-                    <span className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">{label}</span>
-                    <div className="relative">
-                      {prefix && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{prefix}</span>}
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        disabled={ro}
-                        value={withCommas(value)}
-                        onChange={(e) => setter(cleanNumber(e.target.value))}
-                        className={`w-full text-xs px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-900 dark:text-slate-100 font-semibold disabled:bg-slate-50 disabled:text-slate-500 pr-12 ${prefix ? 'pl-7' : ''}`}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400">{unit}</span>
-                    </div>
-                  </label>
+                  <FormField label={label}>
+                    <NumberInput value={value} onChange={setter} prefix={prefix} suffix={unit} disabled={ro} />
+                  </FormField>
                 );
                 return (
                   <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
@@ -723,25 +697,9 @@ export const PayrollItemModal: React.FC<Props> = ({
               )}
             </div>
           ) : (
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                จำนวนเงิน (บาท) <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="เช่น 500"
-                  value={withCommas(amountText)}
-                  onChange={(e) => setAmountText(cleanNumber(e.target.value))}
-                  className="w-full text-xs py-2.5 pl-7 pr-3 font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
-                />
-                <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 font-medium">฿</span>
-              </div>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                ยอดเริ่มต้นเมื่อเพิ่มรายการนี้ให้พนักงานตอนประมวลเงินเดือน (แก้ยอดรายคนได้)
-              </span>
-            </div>
+            <FormField label="จำนวนเงิน (บาท)" required hint="ยอดเริ่มต้นเมื่อเพิ่มรายการนี้ให้พนักงานตอนประมวลเงินเดือน (แก้ยอดรายคนได้)">
+              <NumberInput value={amountText} onChange={setAmountText} prefix="฿" placeholder="500" />
+            </FormField>
           ))}
 
           {/* ภาษี / ประกันสังคม
@@ -787,34 +745,6 @@ export const PayrollItemModal: React.FC<Props> = ({
             <ActiveToggleRow label="เปิดใช้งานรายการนี้" checked={isActive} onChange={setIsActive} divider />
           )}
 
-          </div>
-
-          {/* Actions - Sticky Footer */}
-          <div className="shrink-0 px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-xl transition-all cursor-pointer text-center"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  กำลังบันทึก...
-                </>
-              ) : (
-                'บันทึก'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
