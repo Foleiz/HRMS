@@ -728,7 +728,7 @@ export default function PayrollPage() {
   const [bonusMonth, setBonusMonth] = useState<number>(12);
   // โหมดกรอกโบนัส: กำหนดตัวคูณ (ยอด = ฐานเงินเดือน × ตัวคูณ) หรือ กำหนดยอดโบนัสเอง
   const [bonusInputMode, setBonusInputMode] = useState<'MULTIPLIER' | 'AMOUNT'>('MULTIPLIER');
-  const [showBonusFilters, setShowBonusFilters] = useState<boolean>(false);
+  const [showBonusFilters, setShowBonusFilters] = useState<boolean>(true);
   // แถวโบนัสที่แก้ไขแล้วแต่ยังไม่ได้กด "คำนวณ" (บันทึก)
   const [dirtyBonusIds, setDirtyBonusIds] = useState<Set<number>>(new Set());
   const markBonusDirty = (employeeId: number) =>
