@@ -969,7 +969,7 @@ export default function CommissionTab() {
             </span>
             <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               ฿
-              {(summary?.totalSales ?? 0).toLocaleString(undefined, {
+              {(summary?.totalSalesAmount ?? summary?.totalSales ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -991,7 +991,7 @@ export default function CommissionTab() {
             </span>
             <div className="text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">
               ฿
-              {(summary?.totalCommission ?? 0).toLocaleString(undefined, {
+              {(summary?.totalCommissionAmount ?? summary?.totalCommission ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}

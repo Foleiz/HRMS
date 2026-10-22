@@ -30,7 +30,9 @@ public class CommissionPeriodSummaryDto
     public int Month { get; set; }
     public int TotalEmployees { get; set; }
     public decimal TotalSalesAmount { get; set; }
+    public decimal TotalSales => TotalSalesAmount;
     public decimal TotalCommissionAmount { get; set; }
+    public decimal TotalCommission => TotalCommissionAmount;
     public decimal DefaultRate { get; set; } = 3.00m;
     public string Status { get; set; } = "DRAFT"; // DRAFT, CONFIRMED, PAID
     public List<CommissionRecordDto> Records { get; set; } = new();

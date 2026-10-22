@@ -946,22 +946,32 @@ public class CommissionService : ICommissionService
 
         if (records.Any(r => r.Status == "PAID"))
         {
-            throw new BusinessRuleException("ไม่สามารถรีเซ็ตได้เนื่องจากมีบางรายการถูกจ่ายเงินไปแล้ว");
+            throw new BusinessRuleException("ไม่สามารถปลดล็อกได้เนื่องจากมีบางรายการถูกจ่ายเงินในงวดเงินเดือนไปแล้ว (สถานะ PAID)");
         }
 
-        var startOfMonth = new DateOnly(year, month, 1);
-        var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+        // ตรวจสอบว่ารอบเงินเดือนของงวดนี้เดินทางไปถึงขั้นตอนของฝ่ายการเงินหรือยัง
+        var payrollPeriod = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.Year == year && p.Month == month, cancellationToken);
 
-        var entries = await _context.EmployeeCommissionEntries
-            .Where(e => e.Status == "ACTIVE" && e.DateFrom <= endOfMonth && e.DateTo >= startOfMonth)
-            .ToListAsync(cancellationToken);
-
-        foreach (var e in entries)
+        if (payrollPeriod != null && payrollPeriod.Status != "DRAFT" && payrollPeriod.Status != "REVIEW")
         {
-            e.Status = "REMOVED";
+            throw new BusinessRuleException(
+                $"ไม่สามารถปลดล็อกแก้ไขค่าคอมมิชชั่นได้ เนื่องจากรอบเงินเดือนประจำงวดนี้กำลังอยู่ในขั้นตอนของฝ่ายการเงิน/รออนุมัติ (สถานะ: '{payrollPeriod.Status}') " +
+                "หากต้องการแก้ไข กรุณาประสานงานให้ฝ่ายการเงินทำการส่งกลับรอบเงินเดือน (Return to Review) มายังฝ่ายบุคคลก่อน");
         }
 
-        _context.EmployeeCommissions.RemoveRange(records);
+        // ปลดล็อกสถานะกลับเป็น DRAFT เพื่อให้สามารถแก้ไขข้อมูล/นำเข้าเพิ่มเติมได้โดยข้อมูลเดิมไม่สูญหาย
+        foreach (var r in records)
+        {
+            if (r.Status != "PAID")
+            {
+                r.Status = "DRAFT";
+                r.ConfirmedAt = null;
+                r.ConfirmedByEmployeeId = null;
+                r.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
         return await GetCommissionPeriodAsync(year, month, cancellationToken);
     }

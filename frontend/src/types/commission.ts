@@ -26,7 +26,9 @@ export interface CommissionPeriodSummary {
   status: 'DRAFT' | 'CONFIRMED' | 'PAID' | string;
   totalEmployees: number;
   totalSales: number;
+  totalSalesAmount?: number;
   totalCommission: number;
+  totalCommissionAmount?: number;
   confirmedAt?: string | null;
   confirmedByName?: string | null;
   records: CommissionRecord[];
