@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from './Button';
 
@@ -21,7 +22,21 @@ export const Modal: React.FC<{
   footer?: React.ReactNode;
   children: React.ReactNode;
 }> = ({ isOpen, onClose, title, subtitle, size = 'md', onSubmit, footer, children }) => {
-  if (!isOpen) return null;
+  // render ที่ document.body เสมอ — ไม่โดน parent ที่มี transform/overflow ตัด
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  // ล็อกการเลื่อนหน้าหลังขณะเปิด popup
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
   const body = (
     <>
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">{children}</div>
@@ -30,10 +45,12 @@ export const Modal: React.FC<{
       )}
     </>
   );
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+  return createPortal(
+    // จอเตี้ย/ซูม: popup สูงไม่เกิน 100dvh - ขอบ และถ้ายังล้น ตัว overlay เลื่อนได้ หัว/ปุ่มไม่โดนขอบจอบัง
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="flex min-h-full items-center justify-center p-4">
       <div
-        className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${SIZES[size]} max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200`}
+        className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${SIZES[size]} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200`}
       >
         <div className="relative px-6 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h3>
@@ -54,7 +71,9 @@ export const Modal: React.FC<{
           body
         )}
       </div>
-    </div>
+      </div>
+    </div>,
+    document.body,
   );
 };
 
