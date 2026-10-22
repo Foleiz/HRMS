@@ -6294,6 +6294,11 @@ export default function PayrollPage() {
           setSelectedSsoRate(rate);
           setIsSsoModalOpen(true);
         }}
+        onSaveSsoRate={async (payload, id) => {
+          if (id) await salaryService.updateSocialSecurityRate(id, payload);
+          else await salaryService.createSocialSecurityRate(payload);
+          setSsoRates(await salaryService.getSocialSecurityRates());
+        }}
         defaultType={itemsSubTab}
         onSubmit={handleSaveItem}
       />
