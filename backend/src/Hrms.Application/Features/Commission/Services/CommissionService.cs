@@ -1497,15 +1497,9 @@ public class CommissionService : ICommissionService
         var str = val.ToString()?.Trim();
         if (string.IsNullOrWhiteSpace(str)) return null;
 
-        if (DateTime.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDt))
-        {
-            var y = parsedDt.Year > 2400 ? parsedDt.Year - 543 : parsedDt.Year;
-            return new DateOnly(y, parsedDt.Month, parsedDt.Day);
-        }
-
         var formats = new[] { 
-            "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "yyyy/MM/dd", "d-M-yyyy", "dd-MM-yyyy", 
-            "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm", "dd/MM/yyyy HH:mm",
+            "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "d-M-yyyy", "dd-MM-yyyy", "yyyy/MM/dd", 
+            "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm", 
             "d/M/yy", "dd/MM/yy"
         };
         if (DateTime.TryParseExact(str, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dtExact))
@@ -1519,6 +1513,12 @@ public class CommissionService : ICommissionService
         {
             var y = dtThai.Year > 2400 ? dtThai.Year - 543 : dtThai.Year;
             return new DateOnly(y, dtThai.Month, dtThai.Day);
+        }
+
+        if (DateTime.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDt))
+        {
+            var y = parsedDt.Year > 2400 ? parsedDt.Year - 543 : parsedDt.Year;
+            return new DateOnly(y, parsedDt.Month, parsedDt.Day);
         }
 
         return null;
