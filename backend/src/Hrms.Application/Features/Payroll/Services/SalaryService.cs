@@ -953,7 +953,12 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        var latestPeriod = periods.FirstOrDefault();
+        // "เดือนนี้" = รอบของเดือนปัจจุบัน (ถ้ามี) ไม่ใช่รอบล่าสุดที่อาจเป็นร่างของเดือนอนาคต
+        var nowThai = DateTime.UtcNow.AddHours(7);
+        var nowKey = nowThai.Year * 12 + nowThai.Month;
+        var latestPeriod = periods.FirstOrDefault(p => p.Year * 12 + p.Month == nowKey)
+            ?? periods.FirstOrDefault(p => p.Year * 12 + p.Month <= nowKey)
+            ?? periods.LastOrDefault();
 
         var activeSalariesQuery = _context.EmployeeSalaries
             .Where(s => s.EffectiveTo == null)
@@ -987,11 +992,14 @@ public class SalaryService : ISalaryService
             ? $"{ThaiMonths[latestPeriod.Month <= 12 ? latestPeriod.Month : 1]} {latestPeriod.Year + 543}"
             : "ไม่มีรอบเงินเดือน";
 
-        // "กำหนดปิดรอบถัดไป" = รอบที่ยังไม่ปิด/ไม่จ่าย ที่เก่าที่สุด — เดิมใช้รอบล่าสุดเสมอ แม้รอบนั้นจ่ายเงินไปแล้ว
-        var nextOpenPeriod = periods
+        // "กำหนดปิดรอบถัดไป" = รอบที่ยังไม่ปิด/ไม่จ่าย ตั้งแต่เดือนปัจจุบันเป็นต้นไป (เก่าสุดก่อน)
+        // รอบเดือนก่อนหน้าที่ยังค้างอยู่ นับแยกเป็น "รอบค้าง" แทน
+        var openPeriods = periods
             .Where(p => p.Status != "PAID" && p.Status != "CLOSED" && p.Status != "CANCELLED")
             .OrderBy(p => p.Year).ThenBy(p => p.Month)
-            .FirstOrDefault();
+            .ToList();
+        var overdueOpenCount = openPeriods.Count(p => p.Year * 12 + p.Month < nowKey);
+        var nextOpenPeriod = openPeriods.FirstOrDefault(p => p.Year * 12 + p.Month >= nowKey) ?? openPeriods.LastOrDefault();
 
         var thaiCulture = new System.Globalization.CultureInfo("th-TH");
         string nextClosingDate = nextOpenPeriod != null
@@ -1047,6 +1055,7 @@ public class SalaryService : ISalaryService
             PendingApprovalCount = Math.Max(0, totalCount - calculatedCount),
             NextClosingDate = nextClosingDate,
             RemainingDays = remainingDays,
+            OverdueOpenPeriodCount = overdueOpenCount,
             RecentPeriods = recentPeriods
         };
     }
@@ -1066,14 +1075,22 @@ public class SalaryService : ISalaryService
         var list = await query.OrderBy(i => i.Id).ToListAsync(cancellationToken);
         var linked = (await _context.BenefitItems.AsNoTracking()
                 .Where(b => b.PayrollItemId != null)
-                .Select(b => new { PayrollItemId = b.PayrollItemId!.Value, b.BenefitName })
+                .Select(b => new { PayrollItemId = b.PayrollItemId!.Value, b.BenefitName, b.DefaultCoverageAmount, b.DefaultFrequency, b.PayoutType, b.IsDocumentRequired, b.Status })
                 .ToListAsync(cancellationToken))
             .GroupBy(x => x.PayrollItemId)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.BenefitName).ToList());
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         return list.Select(i => new PayrollItemDto
         {
-            LinkedBenefitNames = linked.GetValueOrDefault(i.Id) ?? new List<string>(),
+            LinkedBenefitNames = linked.GetValueOrDefault(i.Id)?.Select(b => b.BenefitName).ToList() ?? new List<string>(),
+            LinkedBenefits = linked.GetValueOrDefault(i.Id)?.Select(b => new LinkedBenefitDto
+            {
+                BenefitName = b.BenefitName,
+                DefaultCoverageAmount = b.DefaultCoverageAmount,
+                DefaultFrequency = b.DefaultFrequency,
+                PayoutType = b.PayoutType == "PAYROLL" && b.IsDocumentRequired ? "REIMBURSEMENT" : b.PayoutType,
+                Status = b.Status,
+            }).ToList() ?? new List<LinkedBenefitDto>(),
             Id = i.Id,
             ItemCode = i.ItemCode,
             ItemName = i.ItemName,
@@ -1090,30 +1107,35 @@ public class SalaryService : ISalaryService
 
     public async Task<PayrollItemDto> CreatePayrollItemAsync(CreatePayrollItemRequest request, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.ItemCode))
-            throw new BusinessRuleException("รหัสรายการต้องไม่เป็นค่าว่าง");
-
         if (string.IsNullOrWhiteSpace(request.ItemName))
             throw new BusinessRuleException("ชื่อรายการต้องไม่เป็นค่าว่าง");
 
-        EnsureNotFixedEarning(request.ItemType, request.CalculationType);
+        var itemType = request.ItemType?.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING";
+        string codeUpper;
+        if (string.IsNullOrWhiteSpace(request.ItemCode))
+        {
+            codeUpper = await GenerateCustomItemCodeAsync(itemType, cancellationToken);
+        }
+        else
+        {
+            codeUpper = request.ItemCode.Trim().ToUpper();
+            if (await _context.PayrollItems.AnyAsync(i => i.ItemCode == codeUpper, cancellationToken))
+                throw new BusinessRuleException($"รหัสรายการ '{codeUpper}' มีอยู่ในระบบแล้ว");
+        }
 
-        var codeUpper = request.ItemCode.Trim().ToUpper();
-        var exists = await _context.PayrollItems.AnyAsync(i => i.ItemCode == codeUpper, cancellationToken);
-        if (exists)
-            throw new BusinessRuleException($"รหัสรายการ '{codeUpper}' มีอยู่ในระบบแล้ว");
-
+        // รายการที่เพิ่มใหม่เป็นแบบ "กำหนดเอง" เสมอ: จำนวนเงินเป็นค่าเริ่มต้น HR เพิ่มให้รายคนตอนประมวลเงินเดือน
+        // (สูตร/ดึงข้อมูลอัตโนมัติ เป็นรายการของระบบที่มีอยู่แล้ว ไม่สร้างเพิ่ม)
         var entity = new PayrollItem
         {
             ItemCode = codeUpper,
             ItemName = request.ItemName.Trim(),
             Description = request.Description,
-            ItemType = request.ItemType.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING",
-            CalculationType = request.CalculationType.ToUpper(),
-            FormulaTemplate = request.FormulaTemplate,
-            FormulaValue = request.FormulaValue,
-            IsTaxable = request.IsTaxable,
-            IsSocialSecurityCalculated = request.IsSocialSecurityCalculated,
+            ItemType = itemType,
+            CalculationType = "MANUAL",
+            FormulaTemplate = null,
+            FormulaValue = NormalizeDefaultAmount(request.FormulaValue),
+            IsTaxable = itemType == "EARNING" && request.IsTaxable,
+            IsSocialSecurityCalculated = itemType == "EARNING" && request.IsSocialSecurityCalculated,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status
         };
 
@@ -1136,6 +1158,29 @@ public class SalaryService : ISalaryService
         };
     }
 
+    /// <summary>รหัสรายการกำหนดเองอัตโนมัติ เช่น INC_CUSTOM_3 / DED_CUSTOM_2</summary>
+    private async Task<string> GenerateCustomItemCodeAsync(string itemType, CancellationToken cancellationToken)
+    {
+        var prefix = itemType == "DEDUCTION" ? "DED_CUSTOM_" : "INC_CUSTOM_";
+        var existing = await _context.PayrollItems
+            .Where(i => i.ItemCode.StartsWith(prefix))
+            .Select(i => i.ItemCode)
+            .ToListAsync(cancellationToken);
+        var n = existing.Count + 1;
+        while (existing.Contains(prefix + n)) n++;
+        return prefix + n;
+    }
+
+    /// <summary>จำนวนเงินเริ่มต้นของรายการกำหนดเอง (เก็บเป็นตัวเลขล้วน) — ว่าง/ไม่ใช่ตัวเลขเก็บเป็น null</summary>
+    private static string? NormalizeDefaultAmount(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return decimal.TryParse(value.Replace(",", string.Empty).Trim(), System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var amount) && amount >= 0
+            ? amount.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)
+            : null;
+    }
+
     public async Task<PayrollItemDto> UpdatePayrollItemAsync(long id, UpdatePayrollItemRequest request, CancellationToken cancellationToken = default)
     {
         var entity = await _context.PayrollItems.FindAsync(new object[] { id }, cancellationToken);
@@ -1156,8 +1201,15 @@ public class SalaryService : ISalaryService
         entity.CalculationType = request.CalculationType.ToUpper();
         entity.FormulaTemplate = request.FormulaTemplate;
         entity.FormulaValue = request.FormulaValue;
-        entity.IsTaxable = request.IsTaxable;
-        entity.IsSocialSecurityCalculated = request.IsSocialSecurityCalculated;
+        // ภาษี/ประกันสังคมของรายการระบบและรายการหักแบบสูตร กำหนดตามกฎหมาย — ไม่รับค่าจากหน้าเว็บ
+        var flagsLocked = SystemItemCodes.Contains(entity.ItemCode)
+            || entity.ItemCode == "INC_COMMISSION"
+            || (entity.ItemType == "DEDUCTION" && entity.CalculationType == "FORMULA");
+        if (!flagsLocked)
+        {
+            entity.IsTaxable = request.IsTaxable;
+            entity.IsSocialSecurityCalculated = request.IsSocialSecurityCalculated;
+        }
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status;
 
         await _context.SaveChangesAsync(cancellationToken);
@@ -1187,6 +1239,10 @@ public class SalaryService : ISalaryService
         // เงินเดือนพื้นฐาน / เงินประจำตำแหน่ง ระบบใช้ทุกครั้งที่คำนวณเงินเดือน — ปิดใช้งานได้ แต่ลบไม่ได้
         if (UndeletableItemCodes.Contains(entity.ItemCode))
             throw new BusinessRuleException($"รายการ '{entity.ItemName}' เป็นรายการหลักของระบบ ลบไม่ได้ (แก้ไขหรือปิดใช้งานได้)");
+
+        // รายการแบบสูตร/ของระบบ แก้ไขได้อย่างเดียว — ลบได้เฉพาะรายการแบบกำหนดเอง
+        if (entity.CalculationType == "FORMULA" || SystemItemCodes.Contains(entity.ItemCode))
+            throw new BusinessRuleException($"รายการ '{entity.ItemName}' เป็นรายการแบบสูตร/ดึงข้อมูลอัตโนมัติ แก้ไขได้แต่ลบไม่ได้");
 
         // รายการที่เคยอยู่ในสลิปเงินเดือนแล้ว ลบไม่ได้ เพื่อเก็บประวัติสลิปไว้ — ให้ปิดใช้งานแทน
         var usedCount = await _context.PayrollDetails.CountAsync(d => d.PayrollItemId == id, cancellationToken);
@@ -1592,8 +1648,36 @@ public class SalaryService : ISalaryService
 
         EnsurePeriodEditable(payroll.Period);
 
-        var item = await _context.PayrollItems.FirstOrDefaultAsync(i => i.Id == request.PayrollItemId, cancellationToken)
-            ?? throw new NotFoundException("PayrollItem", request.PayrollItemId);
+        PayrollItem item;
+        if (request.PayrollItemId <= 0 && !string.IsNullOrWhiteSpace(request.NewItemName))
+        {
+            // เพิ่มหัวข้อใหม่ระหว่างประมวลผล: ใช้รายการกำหนดเองชื่อเดิมถ้ามีอยู่แล้ว ไม่สร้างซ้ำ
+            var newType = request.NewItemType?.ToUpper() == "DEDUCTION" ? "DEDUCTION" : "EARNING";
+            var newName = request.NewItemName.Trim();
+            item = await _context.PayrollItems.FirstOrDefaultAsync(
+                       i => i.ItemName == newName && i.ItemType == newType && i.CalculationType == "MANUAL" && i.Status == "ACTIVE",
+                       cancellationToken)
+                   ?? new PayrollItem
+                   {
+                       ItemCode = await GenerateCustomItemCodeAsync(newType, cancellationToken),
+                       ItemName = newName,
+                       ItemType = newType,
+                       CalculationType = "MANUAL",
+                       IsTaxable = newType == "EARNING" && request.NewItemIsTaxable,
+                       IsSocialSecurityCalculated = newType == "EARNING" && request.NewItemIsSocialSecurity,
+                       Status = "ACTIVE",
+                   };
+            if (item.Id == 0)
+            {
+                _context.PayrollItems.Add(item);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+        else
+        {
+            item = await _context.PayrollItems.FirstOrDefaultAsync(i => i.Id == request.PayrollItemId, cancellationToken)
+                ?? throw new NotFoundException("PayrollItem", request.PayrollItemId);
+        }
 
         if (item.Status != "ACTIVE")
             throw new BusinessRuleException($"รายการ '{item.ItemName}' ถูกปิดใช้งานแล้ว");
@@ -2338,6 +2422,9 @@ public class SalaryService : ISalaryService
                 var allowanceBenefits = curAssign.EmployeeType.EmployeeTypeBenefits
                     .Where(etb => etb.IsActive && etb.CoverageAmount > 0 && etb.BenefitItem != null && etb.BenefitItem.Category == "ALLOWANCE"
                         && etb.BenefitItem.Status == "ACTIVE"
+                        // จ่ายอัตโนมัติทุกงวดเฉพาะวิธีจ่าย "จ่ายประจำในเงินเดือน" ที่ไม่ต้องแนบเอกสาร
+                        // (เบิกตามจริง → จ่ายจากคำขอเบิกที่อนุมัติแล้ว, ไม่ใช่ตัวเงิน → ไม่จ่าย)
+                        && etb.BenefitItem.PayoutType == "PAYROLL" && !etb.BenefitItem.IsDocumentRequired
                         // ผูกกับรายการที่เป็นสูตร → ยอดมาจากสูตรอย่างเดียว ไม่จ่ายจากสวัสดิการซ้ำ
                         && !(etb.BenefitItem.PayrollItemId.HasValue && autoItemIds.Contains(etb.BenefitItem.PayrollItemId.Value)))
                     .ToList();
@@ -2747,9 +2834,14 @@ public class SalaryService : ISalaryService
                         ? decimal.Parse(leaveLimitMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)
                         : 0m;
                     decimal leaveDays = Math.Max(periodLeaveDays, attendance.TotalLeaveDays);
-                    if (attendance.TotalAbsentDays > 0 || attendance.TotalLateDays > lateLimit || leaveDays > leaveLimit) return null;
+                    // ขาดงานได้ไม่เกิน: "ขาด<=N" (ค่าเดิม "ขาด=0" = ขาดไม่ได้เลย)
+                    var absentLimitMatch = System.Text.RegularExpressions.Regex.Match(item.FormulaValue ?? string.Empty, @"ขาด\s*(?:<=|=|<)\s*(\d+(?:\.\d+)?)");
+                    decimal absentLimit = absentLimitMatch.Success
+                        ? decimal.Parse(absentLimitMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture)
+                        : 0m;
+                    if (attendance.TotalAbsentDays > absentLimit || attendance.TotalLateDays > lateLimit || leaveDays > leaveLimit) return null;
                     amount = allowance;
-                    subtext = $"เบี้ยขยัน (ไม่ขาดงาน, มาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง, ลา {leaveDays:0.##} วัน ไม่เกิน {leaveLimit:0.##} วัน)";
+                    subtext = $"เบี้ยขยัน (ขาดงาน {attendance.TotalAbsentDays:0.##} วัน ไม่เกิน {absentLimit:0.##} วัน, มาสาย {attendance.TotalLateDays} ครั้ง ไม่เกิน {lateLimit} ครั้ง, ลา {leaveDays:0.##} วัน ไม่เกิน {leaveLimit:0.##} วัน)";
                     if (tiers.Count > 1)
                         subtext = $"เบี้ยขยันขั้นที่ {Math.Min(streak, tiers.Count)}/{tiers.Count} (ได้ต่อเนื่อง {streak} เดือน) — " + subtext;
                     calcSource = System.Text.Json.JsonSerializer.Serialize(new { subtext, streak });

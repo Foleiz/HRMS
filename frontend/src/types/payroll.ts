@@ -144,6 +144,8 @@ export interface PayrollOverview {
   pendingApprovalCount: number;
   nextClosingDate: string;
   remainingDays: number;
+  /** รอบของเดือนก่อนหน้าที่ยังไม่ปิด/ไม่จ่าย */
+  overdueOpenPeriodCount?: number;
   recentPeriods: RecentPayrollPeriod[];
 }
 
@@ -161,6 +163,17 @@ export interface PayrollItem {
   status: string;
   /** สวัสดิการที่จ่ายผ่านรายการนี้ (ยอดมาจากสวัสดิการ) */
   linkedBenefitNames?: string[];
+  /** ยอด/วิธีจ่ายของสวัสดิการที่ผูกกับรายการนี้ */
+  linkedBenefits?: LinkedBenefit[];
+}
+
+export interface LinkedBenefit {
+  benefitName: string;
+  defaultCoverageAmount: number;
+  defaultFrequency?: string | null;
+  /** PAYROLL = จ่ายประจำในเงินเดือน, REIMBURSEMENT = เบิกตามจริง, IN_KIND = ไม่ใช่ตัวเงิน */
+  payoutType: string;
+  status: string;
 }
 
 export interface PayrollPeriod {
@@ -254,6 +267,11 @@ export interface AddPayrollAdjustmentPayload {
   /** ค่าคอมมิชชั่น: ยอดขาย และ % (backend คำนวณยอดเงินจากสองค่านี้) */
   salesAmount?: number;
   salesPercent?: number;
+  /** เพิ่มหัวข้อใหม่ระหว่างประมวลผล (ส่ง payrollItemId = 0) */
+  newItemName?: string;
+  newItemType?: 'EARNING' | 'DEDUCTION';
+  newItemIsTaxable?: boolean;
+  newItemIsSocialSecurity?: boolean;
 }
 
 export interface BonusPayoutResult {

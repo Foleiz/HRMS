@@ -87,6 +87,8 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
+import { Button, ActiveStatus } from '@/components/ui';
+import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
@@ -727,7 +729,7 @@ export default function PayrollPage() {
   const [bonusMonth, setBonusMonth] = useState<number>(12);
   // โหมดกรอกโบนัส: กำหนดตัวคูณ (ยอด = ฐานเงินเดือน × ตัวคูณ) หรือ กำหนดยอดโบนัสเอง
   const [bonusInputMode, setBonusInputMode] = useState<'MULTIPLIER' | 'AMOUNT'>('MULTIPLIER');
-  const [showBonusFilters, setShowBonusFilters] = useState<boolean>(false);
+  const [showBonusFilters, setShowBonusFilters] = useState<boolean>(true);
   // แถวโบนัสที่แก้ไขแล้วแต่ยังไม่ได้กด "คำนวณ" (บันทึก)
   const [dirtyBonusIds, setDirtyBonusIds] = useState<Set<number>>(new Set());
   const markBonusDirty = (employeeId: number) =>
@@ -2197,7 +2199,14 @@ export default function PayrollPage() {
   }
 
   // Filtered Payroll Items
-  const filteredPayrollItems = payrollItems.filter((i) => i.itemType === itemsSubTab);
+  // รายการที่ระบบสร้างไว้จ่ายสวัสดิการ (ยอดมาจากเมนูสวัสดิการ) ไม่แสดงในหน้านี้
+  // เรียง: ดึงข้อมูลอัตโนมัติ → สูตรคำนวณ → กำหนดเอง (ในกลุ่มเดียวกันคงลำดับเดิม)
+  const calcRank = (i: PayrollItem) => (getAutoPullSource(i.itemCode) ? 0 : i.calculationType === 'FORMULA' ? 1 : 2);
+  const filteredPayrollItems = payrollItems
+    .filter((i) => i.itemType === itemsSubTab && !(i.linkedBenefitNames && i.linkedBenefitNames.length > 0))
+    .map((i, idx) => ({ i, idx }))
+    .sort((a, b) => calcRank(a.i) - calcRank(b.i) || a.idx - b.idx)
+    .map(({ i }) => i);
 
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
@@ -2360,7 +2369,14 @@ export default function PayrollPage() {
                 </div>
               </div>
               <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
-                <span className="text-slate-400">สถานะกำหนดการ</span>
+                <span className="text-slate-400">
+                  สถานะกำหนดการ
+                  {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 font-semibold">
+                      ค้าง {overview!.overdueOpenPeriodCount} รอบ
+                    </span>
+                  )}
+                </span>
                 <span className={`font-semibold ${
                   overview?.remainingDays != null && overview.remainingDays < 0
                     ? 'text-rose-600 dark:text-rose-400'
@@ -2396,7 +2412,12 @@ export default function PayrollPage() {
               )}
             </div>
 
-            {(!overview?.recentPeriods || overview.recentPeriods.length === 0) ? (
+            {!overview ? (
+              <div className="py-8 text-center text-xs text-slate-400">
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-300" />
+                กำลังโหลดข้อมูล...
+              </div>
+            ) : (!overview.recentPeriods || overview.recentPeriods.length === 0) ? (
               <div className="py-8 text-center">
                 <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
                 <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่มีรอบเงินเดือนในระบบ</p>
@@ -2773,13 +2794,9 @@ export default function PayrollPage() {
 
             {/* Action Button: "+ เพิ่มรายการรายได้" / "+ เพิ่มรายการรายหัก" */}
             {canCreateItem && (
-              <button
-                onClick={handleOpenCreateItem}
-                className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}</span>
-              </button>
+              <Button size="sm" className="h-9" onClick={handleOpenCreateItem} icon={<Plus className="w-3.5 h-3.5" />}>
+                {itemsSubTab === 'EARNING' ? 'เพิ่มรายการรายได้' : 'เพิ่มรายการรายหัก'}
+              </Button>
             )}
             </div>
 
@@ -2790,8 +2807,18 @@ export default function PayrollPage() {
                     <th className="py-3.5 px-5">รายการ</th>
                     <th className="py-3.5 px-5">ประเภทการคำนวณ</th>
                     <th className="py-3.5 px-5">ค่า / สูตร</th>
-                    <th className="py-3.5 px-5 text-center">คิดภาษี</th>
-                    <th className="py-3.5 px-5 text-center">คิดประกันสังคม</th>
+                    {itemsSubTab === 'DEDUCTION' ? (
+                      <>
+                        {['ลดฐานภาษี', 'ลดฐานประกันสังคม', 'เป็นค่าลดหย่อน'].map((h) => (
+                          <th key={h} className="py-3.5 px-5 text-center">{h}</th>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <th className="py-3.5 px-5 text-center">คิดภาษี</th>
+                        <th className="py-3.5 px-5 text-center">คิดประกันสังคม</th>
+                      </>
+                    )}
                     <th className="py-3.5 px-5">สถานะ</th>
                     <th className="py-3.5 px-5 text-center">จัดการ</th>
                   </tr>
@@ -2804,64 +2831,38 @@ export default function PayrollPage() {
                       const isAutoPullModuleItem = !!autoPull;
 
                       const calcTypeLabel = isAutoPullModuleItem
-                        ? 'ดึงข้อมูลอัตโนมัติ'
-                        : item.calculationType === 'FIXED'
-                        ? 'จำนวนคงที่'
+                        ? 'ดึงข้อมูลจากระบบ'
                         : item.calculationType === 'FORMULA'
                         ? 'สูตรคำนวณ'
                         : 'กำหนดเอง';
 
-                      const getTemplateBadge = (tplCode?: string | null) => {
-                        switch (tplCode) {
-                          case 'BASE_SALARY':
-                            return { label: 'ฐานเงินเดือน', color: 'bg-blue-50 text-blue-700 border-blue-200' };
-                          case 'POSITION_ALLOWANCE':
-                            return { label: 'ค่าตำแหน่งจากโครงสร้างเงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-
-                          case 'PERCENT_SALES':
-                            return { label: 'ดึงจากแท็บค่าคอมมิชชั่น', color: 'bg-teal-50 text-teal-800 border-teal-200' };
-                          case 'DILIGENT_ALLOWANCE':
-                            return { label: 'เบี้ยขยัน (เงื่อนไขขาด/สาย/ลา)', color: 'bg-teal-50 text-teal-800 border-teal-200' };
-                          case 'PRORATED_DAYS':
-                            return { label: 'สัดส่วนวันทำงานจริง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
-                          case 'MANUAL_BONUS':
-                            return { label: 'ดึงจากแท็บโบนัส', color: 'bg-teal-50 text-teal-800 border-teal-200' };
-                          case 'SSO_STANDARD':
-                            return { label: 'ประกันสังคม % ของค่าจ้าง', color: 'bg-purple-50 text-purple-700 border-purple-200' };
-                          case 'OVERTIME':
-                            return { label: 'ชม. OT × อัตราต่อชั่วโมง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
-                          case 'UNPAID_LEAVE':
-                            return { label: 'วันลาไม่รับค่าจ้าง × ค่าจ้างรายวัน', color: 'bg-orange-50 text-orange-800 border-orange-200' };
-                          case 'TAX_STANDARD':
-                            return { label: 'ภ.ง.ด.1 ขั้นบันได', color: 'bg-rose-50 text-rose-700 border-rose-200' };
-                          case 'LATE_ABSENT':
-                            return { label: 'หักตามเวลาสาย/ขาดจริง', color: 'bg-orange-50 text-orange-800 border-orange-200' };
-                          case 'PERCENT_SALARY':
-                            return { label: 'PVD / % เงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                          case 'STAFF_LOAN':
-                            return { label: 'หักเงินกู้ยืมสวัสดิการ', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200' };
-                          case 'CUSTOM_FORMULA':
-                            return { label: 'สูตรกำหนดเอง', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200' };
-                          default:
-                            return null;
+                      const effectiveTpl = (
+                        item.formulaTemplate ||
+                        (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : item.itemCode === 'INC_OT' ? 'OVERTIME' : '')
+                      ).toUpperCase();
+                      // ข้อความสูตรสร้างจากค่าตัวแปรจริง (ข้อความเดิมใน DB อาจเก่า/ไม่ครบ เช่น ไม่บอกเงื่อนไขลา หรือไม่มีตัวคูณ OT)
+                      const formulaText = (() => {
+                        if (effectiveTpl === 'SSO_STANDARD') {
+                          const todayKey = new Date().toLocaleDateString('sv-SE');
+                          const cur =
+                            [...ssoRates]
+                              .filter((r) => r.status === 'ACTIVE' && r.effectiveFrom <= todayKey && (!r.effectiveTo || r.effectiveTo >= todayKey))
+                              .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+                          if (cur) {
+                            const pct = cur.employeeContributionPercent <= 1 ? cur.employeeContributionPercent * 100 : cur.employeeContributionPercent;
+                            const max = (cur.maxWageBaseAmount * pct) / 100;
+                            return `${pct}% ฐานค่าจ้าง ${cur.minWageBaseAmount.toLocaleString()}–${cur.maxWageBaseAmount.toLocaleString()} บาท (หักสูงสุด ${max.toLocaleString()} บาท/เดือน)`;
+                          }
                         }
-                      };
-                      const templateBadge =
-                        item.calculationType === 'FORMULA'
-                          ? getTemplateBadge(item.formulaTemplate || (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : null))
-                          : null;
-
-                      const fixedNumber = item.calculationType === 'FIXED' && item.formulaValue && !isNaN(Number(item.formulaValue))
-                        ? Number(item.formulaValue)
-                        : null;
-
+                        if (PARAM_TEMPLATES.includes(effectiveTpl) && effectiveTpl !== 'PERCENT_SALES') {
+                          return serializeFormulaParams(effectiveTpl, parseFormulaParams(effectiveTpl, item.formulaValue));
+                        }
+                        return item.formulaValue || '-';
+                      })();
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3.5 px-5">
                             <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">{item.itemName}</div>
-                            {item.description && (
-                              <div className="text-[11px] text-slate-400 mt-0.5">{item.description}</div>
-                            )}
                             {item.linkedBenefitNames && item.linkedBenefitNames.length > 0 && (
                               <div
                                 className="inline-flex mt-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900"
@@ -2881,48 +2882,54 @@ export default function PayrollPage() {
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                 : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}>
-                              {isAutoPullModuleItem && <Lock className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
                               <span>{calcTypeLabel}</span>
                             </span>
                           </td>
                           <td className="py-3.5 px-5">
                             {isAutoPullModuleItem ? (
-                              <div className="flex items-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-50/80 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800">
-                                  <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                                  <span>ดึงจาก: {autoPull?.source}</span>
-                                </span>
-                              </div>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">จาก {autoPull?.short}</span>
                             ) : item.calculationType === 'FORMULA' ? (
-                              <div className="flex flex-col items-start gap-1">
-                                {templateBadge && (
-                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
-                                    {templateBadge.label}
-                                  </span>
-                                )}
-                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                  {item.formulaValue || '-'}
+                              <span className="text-xs text-slate-700 dark:text-slate-300 whitespace-normal">{formulaText}</span>
+                            ) : (() => {
+                              const amt = (item.formulaValue || '').replace(/,/g, '').trim();
+                              return amt !== '' && !isNaN(Number(amt)) ? (
+                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                  ฿{Number(amt).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                 </span>
-                              </div>
-                            ) : item.calculationType === 'FIXED' ? (
-                              <div className="flex items-center gap-1.5">
-                                {fixedNumber !== null ? (
-                                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">
-                                    ฿{fixedNumber.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                    {item.formulaValue || '-'}
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-slate-400 font-normal">(ยอดคงที่)</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium italic">
-                                {item.formulaValue || 'กำหนดตามจริงรายงวด'}
-                              </span>
-                            )}
+                              ) : (
+                                <span className="text-xs text-slate-400">ระบุตอนประมวลผล</span>
+                              );
+                            })()}
                           </td>
+                          {item.itemType === 'DEDUCTION' ? (
+                            (() => {
+                              // ค่าลดหย่อนตอนคิดภาษีทั้งปี: ประกันสังคม และกองทุนสำรองเลี้ยงชีพ (ระบบรู้จากรหัส/ชื่อรายการ)
+                              const isAllowance =
+                                item.itemCode === 'DED_SSO' ||
+                                /PVD|PROVIDENT/i.test(item.itemCode) ||
+                                (item.itemName || '').includes('สำรองเลี้ยงชีพ');
+                              // ติ๊กถูกแบบเดียวกับแท็บรายการได้
+                              const mark = (on: boolean) => (
+                                <td className="py-3.5 px-5 text-center">
+                                  {on ? (
+                                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400 text-sm">-</span>
+                                  )}
+                                </td>
+                              );
+                              return (
+                                <>
+                                  {mark(item.isTaxable && !isAllowance)}
+                                  {mark(item.isSocialSecurityCalculated && !isAllowance)}
+                                  {mark(isAllowance)}
+                                </>
+                              );
+                            })()
+                          ) : (
+                            <>
                           <td className="py-3.5 px-5 text-center">
                             {item.isTaxable ? (
                               <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -2941,18 +2948,10 @@ export default function PayrollPage() {
                               <span className="text-slate-400 text-sm">-</span>
                             )}
                           </td>
+                            </>
+                          )}
                           <td className="py-3.5 px-5">
-                            {isItemActive ? (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                <span>ใช้งาน</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                                <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                                <span>ไม่ได้ใช้งาน</span>
-                              </span>
-                            )}
+                            <ActiveStatus active={isItemActive} />
                           </td>
                           <td className="py-3.5 px-5 text-center">
                             {canEditItem ? (
@@ -2964,7 +2963,8 @@ export default function PayrollPage() {
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
-                                {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && (
+                                {/* ลบได้เฉพาะแบบกำหนดเอง — ดึงข้อมูลอัตโนมัติ/สูตร แก้ไขได้อย่างเดียว */}
+                                {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && !isAutoPullModuleItem && item.calculationType !== 'FORMULA' && (
                                   <button
                                     onClick={() => {
                                       setItemToDelete(item);
@@ -6363,6 +6363,11 @@ export default function PayrollPage() {
           setSelectedSsoRate(rate);
           setIsSsoModalOpen(true);
         }}
+        onSaveSsoRate={async (payload, id) => {
+          if (id) await salaryService.updateSocialSecurityRate(id, payload);
+          else await salaryService.createSocialSecurityRate(payload);
+          setSsoRates(await salaryService.getSocialSecurityRates());
+        }}
         defaultType={itemsSubTab}
         onSubmit={handleSaveItem}
       />
@@ -6650,7 +6655,11 @@ export default function PayrollPage() {
         record={selectedPayrollRecord}
         canEdit={canAccessHrView && (selectedPeriod?.status === 'DRAFT' || selectedPeriod?.status === 'REVIEW')}
         payrollItems={payrollItems}
-        onChanged={refreshSelectedPeriodPayrolls}
+        onChanged={() => {
+          refreshSelectedPeriodPayrolls();
+          // อาจมีหัวข้อรายการใหม่ที่เพิ่มระหว่างประมวลผล
+          salaryService.getPayrollItems().then(setPayrollItems).catch(() => {});
+        }}
       />
 
       {/* Confirm Modal: ไม่อนุมัติและส่งคืนรอบเงินเดือนให้ HR แก้ไข */}

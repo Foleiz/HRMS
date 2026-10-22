@@ -40,6 +40,7 @@ import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ActiveToggleRow, ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
@@ -691,31 +692,18 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </div>
 
                     {/* Footer Actions */}
-                    <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100">
+                    <div className="pt-2 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100">
 
                       <div className="flex items-center gap-4">
-                        {/* Toggle Status */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStatus(flow)}
-                            disabled={togglingId === flow.id}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${ flow.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
-                            }`}
-                          >
-                            <span
-                              className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white dark:bg-slate-800 shadow-md ring-0 transition duration-200 ease-in-out ${ flow.status === 'ACTIVE' ? 'translate-x-4' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                          <span
-                            className={`text-xs font-medium cursor-pointer ${ flow.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
-                            }`}
-                            onClick={() => handleToggleStatus(flow)}
-                          >
-                            {flow.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
-                          </span>
-                        </div>
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteFlow(flow)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>ลบ</span>
+                        </button>
 
                         {/* Edit Button */}
                         <button
@@ -727,15 +715,22 @@ export const ApprovalFlowsTab: React.FC = () => {
                           <span>แก้ไข</span>
                         </button>
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteFlow(flow)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>ลบ</span>
-                        </button>
+                        {/* Toggle Status */}
+                        <div className="flex items-center gap-2">
+                          <ToggleSwitch
+                            checked={flow.status === 'ACTIVE'}
+                            onChange={() => handleToggleStatus(flow)}
+                            disabled={togglingId === flow.id}
+                            ariaLabel="เปิดใช้งานสายการอนุมัติ"
+                          />
+                          <span
+                            className={`text-xs font-medium cursor-pointer ${ flow.status === 'ACTIVE' ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'
+                            }`}
+                            onClick={() => handleToggleStatus(flow)}
+                          >
+                            {flow.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -909,35 +904,11 @@ export const ApprovalFlowsTab: React.FC = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      สถานะการใช้งาน
-                    </label>
-                    <div className="flex gap-4 items-center pt-1">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <input
-                          type="radio"
-                          name="flowStatus"
-                          value="ACTIVE"
-                          checked={form.status === 'ACTIVE'}
-                          onChange={() => setForm({ ...form, status: 'ACTIVE' })}
-                          className="text-[#0B2046] focus:ring-[#0B2046]"
-                        />
-                        <span className="text-slate-700 dark:text-slate-300">เปิดใช้งาน</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <input
-                          type="radio"
-                          name="flowStatus"
-                          value="INACTIVE"
-                          checked={form.status === 'INACTIVE'}
-                          onChange={() => setForm({ ...form, status: 'INACTIVE' })}
-                          className="text-[#0B2046] focus:ring-[#0B2046]"
-                        />
-                        <span className="text-slate-700 dark:text-slate-300">ปิดการใช้งาน</span>
-                      </label>
-                    </div>
-                  </div>
+                  <ActiveToggleRow
+                    label="เปิดใช้งานสายการอนุมัตินี้"
+                    checked={form.status === 'ACTIVE'}
+                    onChange={(v) => setForm({ ...form, status: v ? 'ACTIVE' : 'INACTIVE' })}
+                  />
                 </div>
 
                 {/* 4. Form Steps Builder */}

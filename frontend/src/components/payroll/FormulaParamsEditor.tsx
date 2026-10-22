@@ -1,6 +1,9 @@
 'use client';
 
 import React from 'react';
+import { Plus, Trash2 } from 'lucide-react';
+import { withCommas, cleanNumber, NumberInput } from '@/components/ui/Input';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 /**
  * ช่องกรอกค่าตัวแปรของสูตรมาตรฐาน (แทนการพิมพ์ข้อความสูตรเอง)
@@ -17,6 +20,8 @@ export interface FormulaParams {
   amount: string;
   /** เบี้ยขยันขั้นบันได: ยอดเดือนที่ 1, 2, 3, ... (ขั้นสุดท้ายใช้ต่อไปเรื่อยๆ) */
   tiers: string[];
+  /** เบี้ยขยัน: ขาดงานได้ไม่เกิน (วัน) */
+  absentLimit: string;
   lateLimit: string;
   leaveLimit: string;
   percent: string;
@@ -27,7 +32,7 @@ export interface FormulaParams {
   /** ตัวหารวันต่อเดือน (OT / หักลาไม่รับค่าจ้าง) */
   daysPerMonth: string;
   hoursPerDay: string;
-  /** ประกันสังคม (บันทึกลงตั้งค่าในแท็บภาษี & ประกันสังคม) */
+  /** ประกันสังคม (อัตราตามช่วงเวลา จัดการในหน้าต่างแก้รายการประกันสังคม) */
   ssoPercent: string;
   ssoMin: string;
   ssoMax: string;
@@ -76,6 +81,7 @@ export const parseFormulaParams = (template: string, value: string | null | unde
     taxExpensePercent: num(v, /ค่าใช้จ่าย\s*(\d+(?:\.\d+)?)\s*%/) || '50',
     taxExpenseCap: num(v, /ไม่เกิน\s*(\d[\d,]*)/) || '100000',
     taxPersonal: num(v, /ลดหย่อนส่วนตัว\s*(\d[\d,]*)/) || '60000',
+    absentLimit: num(v, /ขาด\s*(?:<=|=|<)\s*(\d+(?:\.\d+)?)/) || '0',
     lateLimit: num(v, /สาย\s*<=?\s*(\d+)/) || '1',
     leaveLimit: num(v, /ลา\s*<=?\s*(\d+(?:\.\d+)?)/) || '0',
     percent: num(v, /(\d+(?:\.\d+)?)\s*%/),
@@ -88,7 +94,8 @@ export const serializeFormulaParams = (template: string, p: FormulaParams): stri
   switch (template) {
     case 'DILIGENT_ALLOWANCE': {
       const tiers = p.tiers.filter((t) => t !== '');
-      const cond = `(ขาด=0, สาย<=${p.lateLimit || '0'} ครั้ง, ลา<=${p.leaveLimit || '0'} วัน)`;
+      const absent = p.absentLimit || '0';
+      const cond = `(${absent === '0' ? 'ขาด=0' : `ขาด<=${absent} วัน`}, สาย<=${p.lateLimit || '0'} ครั้ง, ลา<=${p.leaveLimit || '0'} วัน)`;
       return tiers.length > 1
         ? `ขั้นบันได ${tiers.map(fmt).join(' > ')} บาท ${cond}`
         : `${fmt(tiers[0] || p.amount || '0')} บาท ${cond}`;
@@ -122,7 +129,7 @@ export const validateFormulaParams = (template: string, p: FormulaParams): strin
   switch (template) {
     case 'DILIGENT_ALLOWANCE':
       if (p.tiers.length === 0 || p.tiers.some((t) => !pos(t) || Number(t) <= 0)) return 'กรุณาระบุจำนวนเงินเบี้ยขยันให้ครบทุกขั้น';
-      if (!pos(p.lateLimit) || !pos(p.leaveLimit)) return 'กรุณาระบุเงื่อนไขมาสาย/วันลาเป็นตัวเลข';
+      if (!pos(p.absentLimit || '0') || !pos(p.lateLimit) || !pos(p.leaveLimit)) return 'กรุณาระบุเงื่อนไขขาดงาน/มาสาย/วันลาเป็นตัวเลข';
       return null;
     case 'LATE_ABSENT':
       if (p.lateMode === 'PER_MINUTE' && (!pos(p.perMinute) || Number(p.perMinute) <= 0)) return 'กรุณาระบุจำนวนเงินที่หักต่อนาที';
@@ -152,8 +159,8 @@ export const validateFormulaParams = (template: string, p: FormulaParams): strin
   }
 };
 
-const inputCls =
-  'w-full text-xs px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046] text-slate-900 dark:text-slate-100 font-semibold';
+// ฟังก์ชันตัวเลขอยู่ที่ components/ui/Input (ที่เดียวทั้งระบบ)
+export { withCommas, cleanNumber };
 
 const Field: React.FC<{ label: string; suffix?: string; children: React.ReactNode }> = ({ label, suffix, children }) => (
   <label className="block">
@@ -173,16 +180,12 @@ interface Props {
 
 export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChange }) => {
   const set = (patch: Partial<FormulaParams>) => onChange({ ...params, ...patch });
-  const numberInput = (key: keyof FormulaParams, placeholder: string, step = '1') => (
-    <input
-      type="number"
-      min="0"
-      step={step}
-      inputMode="decimal"
-      placeholder={placeholder}
+  // step คงไว้เพื่อความเข้ากันได้ — ช่องเป็น text เพื่อแสดงลูกน้ำ
+  const numberInput = (key: keyof FormulaParams, placeholder: string, _step = '1') => (
+    <NumberInput
       value={params[key] as string}
-      onChange={(e) => set({ [key]: e.target.value } as Partial<FormulaParams>)}
-      className={inputCls}
+      onChange={(v) => set({ [key]: v } as Partial<FormulaParams>)}
+      placeholder={placeholder}
     />
   );
 
@@ -193,62 +196,71 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
     case 'DILIGENT_ALLOWANCE': {
       const tiers = params.tiers.length > 0 ? params.tiers : [''];
       const setTier = (i: number, v: string) => set({ tiers: tiers.map((t, idx) => (idx === i ? v : t)) });
+      const tierLabel = (i: number) =>
+        tiers.length === 1 ? 'ทุกเดือน' : i === tiers.length - 1 ? `เดือนที่ ${i + 1} ขึ้นไป` : `เดือนที่ ${i + 1}`;
+      const suffixInput = (key: keyof FormulaParams, unit: string, placeholder: string) => (
+        <NumberInput
+          value={params[key] as string}
+          onChange={(v) => set({ [key]: v } as Partial<FormulaParams>)}
+          placeholder={placeholder}
+          suffix={unit}
+        />
+      );
       fields = (
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <span className="block text-[11px] font-medium text-slate-600 dark:text-slate-400">
-              จำนวนเงินตามเดือนที่ได้ต่อเนื่อง (ขั้นบันได)
-            </span>
+        <div className="space-y-4">
+          {/* ขั้นบันได */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">ยอดเบี้ยขยันตามเดือนที่ได้ต่อเนื่อง</span>
+              <span className="text-[10px] text-slate-400">ขั้นสุดท้ายใช้ต่อไปเรื่อยๆ</span>
+            </div>
             {tiers.map((t, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className="w-28 shrink-0 text-[11px] text-slate-600 dark:text-slate-400">
-                  {tiers.length === 1 ? 'ทุกเดือน' : i === tiers.length - 1 ? `เดือนที่ ${i + 1} ขึ้นไป` : `เดือนที่ ${i + 1}`}
+                <span className="w-6 h-6 shrink-0 rounded-full bg-primary text-white text-[11px] font-semibold flex items-center justify-center">
+                  {i + 1}
                 </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  inputMode="decimal"
-                  placeholder="500"
-                  value={t}
-                  onChange={(e) => setTier(i, e.target.value)}
-                  className={inputCls}
-                />
-                <span className="text-[11px] text-slate-500 shrink-0">บาท</span>
-                {tiers.length > 1 && (
-                  <button
-                    type="button"
-                    title="ลบขั้นนี้"
-                    onClick={() => set({ tiers: tiers.filter((_, idx) => idx !== i) })}
-                    className="px-2 py-1 text-[11px] text-rose-600 hover:bg-rose-50 rounded-md cursor-pointer"
-                  >
-                    ลบ
-                  </button>
-                )}
+                <span className="w-24 shrink-0 text-[11px] text-slate-600 dark:text-slate-400">{tierLabel(i)}</span>
+                <div className="flex-1">
+                  <NumberInput value={t} onChange={(v) => setTier(i, v)} prefix="฿" placeholder="0" />
+                </div>
+                <button
+                  type="button"
+                  title="ลบขั้นนี้"
+                  disabled={tiers.length === 1}
+                  onClick={() => set({ tiers: tiers.filter((_, idx) => idx !== i) })}
+                  className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             ))}
             <button
               type="button"
-              onClick={() => set({ tiers: [...tiers, ''] })}
-              className="text-[11px] font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
+              onClick={() => set({ tiers: [...tiers, tiers[tiers.length - 1] || ''] })}
+              className="w-full py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 text-[11px] font-semibold text-primary dark:text-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center justify-center gap-1"
             >
-              + เพิ่มขั้น
+              <Plus className="w-3.5 h-3.5" />
+              เพิ่มขั้น
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="มาสายได้ไม่เกิน" suffix="ครั้ง">{numberInput('lateLimit', '1')}</Field>
-            <Field label="ลาได้ไม่เกิน" suffix="วัน">{numberInput('leaveLimit', '0', '0.5')}</Field>
+
+          {/* เงื่อนไข */}
+          <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+            <span className="block text-xs font-semibold text-slate-800 dark:text-slate-200">เงื่อนไขที่ต้องผ่านในเดือนนั้น</span>
+            <div className="grid grid-cols-3 gap-2">
+              <Field label="ขาดงานไม่เกิน">{suffixInput('absentLimit', 'วัน', '0')}</Field>
+              <Field label="มาสายไม่เกิน">{suffixInput('lateLimit', 'ครั้ง', '1')}</Field>
+              <Field label="ลาไม่เกิน">{suffixInput('leaveLimit', 'วัน', '0')}</Field>
+            </div>
           </div>
         </div>
       );
       const filled = tiers.filter((t) => t !== '');
+      const condText = `ขาดงานไม่เกิน ${params.absentLimit || 0} วัน, มาสายไม่เกิน ${params.lateLimit || 0} ครั้ง และลาไม่เกิน ${params.leaveLimit || 0} วัน`;
       preview =
         filled.length > 1
-          ? `ได้ต่อเนื่องเดือนที่ 1 = ${fmt(filled[0])} บาท${filled
-              .slice(1)
-              .map((t, i) => `, เดือนที่ ${i + 2}${i + 2 === filled.length ? ' ขึ้นไป' : ''} = ${fmt(t)} บาท`)
-              .join('')} — เดือนไหนไม่ผ่านเงื่อนไข (ขาดงาน / สายเกิน ${params.lateLimit || 0} ครั้ง / ลาเกิน ${params.leaveLimit || 0} วัน) เริ่มนับขั้นที่ 1 ใหม่`
-          : `ได้ ${fmt(filled[0] || '0')} บาท เมื่อไม่ขาดงาน, มาสายไม่เกิน ${params.lateLimit || 0} ครั้ง และลาไม่เกิน ${params.leaveLimit || 0} วันในเดือนนั้น`;
+          ? `${filled.map((t, i) => `เดือนที่ ${i + 1}${i === filled.length - 1 ? '+' : ''} ฿${fmt(t)}`).join(' → ')} • เมื่อ${condText} — เดือนไหนไม่ผ่าน เริ่มนับขั้นที่ 1 ใหม่`
+          : `ได้ ฿${fmt(filled[0] || '0')} ทุกเดือน เมื่อ${condText}`;
       break;
     }
     case 'OVERTIME':
@@ -278,7 +290,7 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
           <Field label="ฐานค่าจ้างสูงสุด" suffix="บาท">{numberInput('ssoMax', '17500')}</Field>
         </div>
       );
-      preview = `หัก ${params.ssoPercent || 0}% ของค่าจ้าง (ค่าจ้างต่ำกว่า ${fmt(params.ssoMin || '0')} ใช้ ${fmt(params.ssoMin || '0')}, เกิน ${fmt(params.ssoMax || '0')} ใช้ ${fmt(params.ssoMax || '0')}) — หักสูงสุด ${fmt(String(max))} บาท/เดือน • ค่านี้ใช้ร่วมกับแท็บภาษี & ประกันสังคม`;
+      preview = `หัก ${params.ssoPercent || 0}% ของค่าจ้าง (ค่าจ้างต่ำกว่า ${fmt(params.ssoMin || '0')} ใช้ ${fmt(params.ssoMin || '0')}, เกิน ${fmt(params.ssoMax || '0')} ใช้ ${fmt(params.ssoMax || '0')}) — หักสูงสุด ${fmt(String(max))} บาท/เดือน`;
       break;
     }
     case 'TAX_STANDARD':
@@ -289,30 +301,19 @@ export const FormulaParamsEditor: React.FC<Props> = ({ template, params, onChang
           <Field label="ลดหย่อนส่วนตัว" suffix="บาท">{numberInput('taxPersonal', '60000')}</Field>
         </div>
       );
-      preview = `เงินได้ทั้งปี − ค่าใช้จ่าย ${params.taxExpensePercent || 0}% (ไม่เกิน ${fmt(params.taxExpenseCap || '0')}) − ลดหย่อนส่วนตัว ${fmt(params.taxPersonal || '0')} − ประกันสังคม − กองทุนสำรองเลี้ยงชีพ แล้วคิดอัตราขั้นบันได (แก้อัตราขั้นบันไดได้ที่แท็บภาษี & ประกันสังคม) แล้วหารเฉลี่ยรายเดือน`;
+      preview = `เงินได้ทั้งปี − ค่าใช้จ่าย ${params.taxExpensePercent || 0}% (ไม่เกิน ${fmt(params.taxExpenseCap || '0')}) − ลดหย่อนส่วนตัว ${fmt(params.taxPersonal || '0')} − ประกันสังคม − กองทุนสำรองเลี้ยงชีพ แล้วคิดอัตราขั้นบันได (แก้อัตราขั้นบันไดได้ที่แท็บ "ภาษี") แล้วหารเฉลี่ยรายเดือน`;
       break;
     case 'LATE_ABSENT':
       fields = (
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            {([
-              ['RATE', 'ตามอัตราค่าจ้าง'],
-              ['PER_MINUTE', 'กำหนดบาทต่อนาที'],
-            ] as [LateMode, string][]).map(([mode, label]) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => set({ lateMode: mode })}
-                className={`py-2 text-xs rounded-lg border cursor-pointer ${
-                  params.lateMode === mode
-                    ? 'bg-[#0B2046] text-white border-[#0B2046]'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={params.lateMode}
+            onChange={(m) => set({ lateMode: m })}
+            options={[
+              { value: 'RATE' as LateMode, label: 'ตามอัตราค่าจ้าง' },
+              { value: 'PER_MINUTE' as LateMode, label: 'กำหนดบาทต่อนาที' },
+            ]}
+          />
           {params.lateMode === 'PER_MINUTE' && (
             <Field label="หักมาสาย นาทีละ" suffix="บาท">{numberInput('perMinute', '2', '0.01')}</Field>
           )}

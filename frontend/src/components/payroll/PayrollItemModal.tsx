@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, Info, Calculator, Lock, Sparkles } from 'lucide-react';
-import { PayrollItem, SocialSecurityRate, TaxBracket } from '@/types/payroll';
+import { X, Loader2, AlertCircle, Calculator, Lock, Sparkles } from 'lucide-react';
+import { PayrollItem, SocialSecurityRate, TaxBracket, UpdateSocialSecurityRatePayload } from '@/types/payroll';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { getAutoPullSource } from './autoPullItems';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
@@ -12,7 +13,13 @@ import {
   parseFormulaParams,
   serializeFormulaParams,
   validateFormulaParams,
+  withCommas,
+  cleanNumber,
 } from './FormulaParamsEditor';
+import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { FormField, Input, NumberInput } from '@/components/ui/Input';
+import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
   isOpen: boolean;
@@ -26,6 +33,8 @@ interface Props {
   canEditTaxSso?: boolean;
   /** null = เพิ่มอัตราใหม่ */
   onEditSsoRate?: (rate: SocialSecurityRate | null) => void;
+  /** บันทึกอัตราประกันสังคมที่แก้ในหน้าต่างนี้ (id = แก้อัตราเดิม, ไม่มี id = เพิ่มอัตราใหม่) */
+  onSaveSsoRate?: (payload: UpdateSocialSecurityRatePayload, id?: number) => Promise<void>;
   defaultType: 'EARNING' | 'DEDUCTION';
   onSubmit: (payload: Partial<PayrollItem>, id?: number) => Promise<void>;
 }
@@ -123,7 +132,7 @@ export const SYSTEM_FORMULA_TEMPLATES: FormulaTemplateOption[] = [
     defaultSocialSecurity: false,
     parameterLabel: 'อัตราสมทบและเพดาน',
     parameterPlaceholder: 'เช่น 5% ฐานค่าจ้าง 1,650 - 17,500 บาท',
-    hint: 'คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" — อัตราและฐานค่าจ้างที่แก้ตรงนี้คือค่าเดียวกับแท็บภาษี & ประกันสังคม (ช่วงที่มีผลปัจจุบัน)',
+    hint: 'คิดจากค่าจ้างที่ติ๊ก "คิดประกันสังคม" ตามอัตราที่มีผลในงวดนั้น (จัดการอัตราได้ที่ด้านล่าง)',
   },
   {
     code: 'OVERTIME',
@@ -228,6 +237,7 @@ export const PayrollItemModal: React.FC<Props> = ({
   ssoRates = [],
   canEditTaxSso = false,
   onEditSsoRate,
+  onSaveSsoRate,
   defaultType,
   onSubmit,
 }) => {
@@ -242,6 +252,8 @@ export const PayrollItemModal: React.FC<Props> = ({
   const [calculationType, setCalculationType] = useState<'FIXED' | 'FORMULA' | 'MANUAL'>('FIXED');
   const [formulaTemplate, setFormulaTemplate] = useState<string>('');
   const [formulaValue, setFormulaValue] = useState('');
+  /** จำนวนเงินเริ่มต้นของรายการกำหนดเอง (ตัวเลขล้วน) */
+  const [amountText, setAmountText] = useState('');
   const [params, setParams] = useState<FormulaParams>(() => parseFormulaParams('', ''));
   const [isTaxable, setIsTaxable] = useState(true);
   const [isSocialSecurityCalculated, setIsSocialSecurityCalculated] = useState(true);
@@ -256,9 +268,10 @@ export const PayrollItemModal: React.FC<Props> = ({
       setDescription(item.description || '');
       const t = item.itemType || defaultType;
       setItemType(t);
-      const calcType = item.calculationType || 'FIXED';
-      // รายได้คงที่รายเดือนย้ายไปตั้งที่เมนูสวัสดิการแล้ว รายการรายได้จึงไม่ใช้แบบ FIXED
-      setCalculationType(t === 'EARNING' && calcType === 'FIXED' ? 'MANUAL' : calcType);
+      // รายการที่ไม่ใช่สูตร = แบบกำหนดเอง (ชื่อ + จำนวนเงิน)
+      setCalculationType(item.calculationType === 'FORMULA' ? 'FORMULA' : 'MANUAL');
+      const amt = (item.formulaValue || '').replace(/,/g, '').trim();
+      setAmountText(/^\d+(\.\d+)?$/.test(amt) ? amt : '');
       // รายการของระบบที่ยังไม่มีรหัสสูตร → ระบุสูตรให้ เพื่อให้แก้ค่าตัวแปรได้
       const inferredTpl =
         item.formulaTemplate ||
@@ -274,15 +287,47 @@ export const PayrollItemModal: React.FC<Props> = ({
       setItemName('');
       setDescription('');
       setItemType(defaultType);
-      setCalculationType(defaultType === 'EARNING' ? 'MANUAL' : 'FIXED');
+      setCalculationType('MANUAL');
       setFormulaTemplate('');
       setFormulaValue('');
-      setIsTaxable(true);
-      setIsSocialSecurityCalculated(defaultType === 'EARNING');
+      setAmountText('');
+      setIsTaxable(defaultType === 'EARNING');
+      setIsSocialSecurityCalculated(false);
       setIsActive(true);
     }
     setError(null);
   }, [item, defaultType, isOpen]);
+
+  // ===== ประกันสังคม: แก้อัตราในหน้าต่างนี้ได้เลย =====
+  const [ssoEmp, setSsoEmp] = useState('');
+  const [ssoEr, setSsoEr] = useState('');
+  const [ssoMin, setSsoMin] = useState('');
+  const [ssoMax, setSsoMax] = useState('');
+  const [ssoFrom, setSsoFrom] = useState('');
+  const [showSsoHistory, setShowSsoHistory] = useState(false);
+  const ssoCurrent = (() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const today = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const sorted = [...ssoRates].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+    return (
+      sorted.find((r) => r.status === 'ACTIVE' && r.effectiveFrom <= today && (!r.effectiveTo || r.effectiveTo >= today)) ??
+      sorted.find((r) => r.status === 'ACTIVE') ??
+      null
+    );
+  })();
+  useEffect(() => {
+    if (!isOpen) return;
+    const pct = (v: number) => String(v <= 1 ? Math.round(v * 10000) / 100 : v);
+    setShowSsoHistory(false);
+    // วันที่มีผลเริ่มต้น = วันของอัตราที่ใช้อยู่ (ไม่เปลี่ยนวัน = แก้อัตราเดิม, เลือกวันใหม่ = สร้างอัตราใหม่)
+    setSsoFrom(ssoCurrent?.effectiveFrom ?? '');
+    setSsoEmp(ssoCurrent ? pct(ssoCurrent.employeeContributionPercent) : '5');
+    setSsoEr(ssoCurrent ? pct(ssoCurrent.employerContributionPercent) : '5');
+    setSsoMin(ssoCurrent ? String(ssoCurrent.minWageBaseAmount) : '1650');
+    setSsoMax(ssoCurrent ? String(ssoCurrent.maxWageBaseAmount) : '17500');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, item?.id, ssoCurrent?.id]);
 
 
   if (!isOpen) return null;
@@ -301,96 +346,32 @@ export const PayrollItemModal: React.FC<Props> = ({
   const legacyTemplate = LEGACY_FORMULA_TEMPLATES.find((t) => t.code === templateCode);
   /** รายการของระบบ: เปลี่ยนสูตรไม่ได้ */
   const isSystemFormula = !!systemTemplate;
+  /** รายการของระบบที่ต้องคำนวณเสมอ (ปิดใช้งานแล้วเงินเดือน/ภาษี/ประกันสังคม/OT จะผิด) — ค่าตำแหน่งปิดได้ */
+  const lockActive = isSystemFormula && templateCode !== 'POSITION_ALLOWANCE';
+  const wasInactive = item?.status ? item.status.toUpperCase() !== 'ACTIVE' : false;
+  const thaiDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00`);
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
   const typeLabel = (c: string) => (c === 'EARNING' ? 'รายได้' : 'รายหัก');
-  const systemOptions = SYSTEM_FORMULA_TEMPLATES.filter((t) => SYSTEM_TEMPLATE_ITEM[t.code] && t.code !== templateCode).map((t) => ({
-    ...t,
-    name: `${t.name} — รายการของระบบ (แก้ค่าที่นี่ได้)`,
-  }));
-  const availableTemplatesAll = [
-    ...(systemTemplate ? [{ ...systemTemplate, name: `${systemTemplate.name} (รายการของระบบ)` }] : []),
-    ...FORMULA_TEMPLATES.map((tpl) =>
-      tpl.category === itemType || tpl.category === 'BOTH' ? tpl : { ...tpl, name: `${tpl.name} (รายการ${typeLabel(tpl.category)})` },
-    ),
-    ...systemOptions,
-    // รายการเดิมที่ยังใช้สูตรที่เลิกใช้: แสดงไว้ให้รู้ว่าตั้งอะไรอยู่ (ระบบไม่คำนวณให้)
-    ...(legacyTemplate ? [{ ...legacyTemplate, name: `${legacyTemplate.name} (เลิกใช้ — ระบบไม่คำนวณ)` }] : []),
-  ];
-  const availableTemplates = availableTemplatesAll;
-
   const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === templateCode) ?? systemTemplate ?? legacyTemplate;
   const hasParams = !isAutoPullModuleItem && PARAM_TEMPLATES.includes(templateCode);
-
-  const handleCalculationTypeChange = (newType: 'FIXED' | 'FORMULA' | 'MANUAL') => {
-    if (isAutoPullModuleItem) return;
-    setCalculationType(newType);
-    if (newType === 'FORMULA') {
-      if (!formulaTemplate) {
-        // เงินเดือน/ประกันสังคม/ภาษี เป็นรายการของระบบอยู่แล้ว ค่าเริ่มต้นจึงเป็นสูตรที่ใช้สร้างรายการเพิ่มได้จริง
-        const defaultTpl = itemType === 'EARNING' ? 'DILIGENT_ALLOWANCE' : 'LATE_ABSENT';
-        setFormulaTemplate(defaultTpl);
-        const tplObj = FORMULA_TEMPLATES.find((t) => t.code === defaultTpl);
-        if (tplObj) {
-          if (!formulaValue) setFormulaValue(tplObj.defaultValue);
-          setParams(parseFormulaParams(defaultTpl, tplObj.defaultValue));
-          setIsTaxable(tplObj.defaultTaxable);
-          setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
-        }
-      }
-    }
-  };
-
-  const handleTemplateChange = (newTplCode: string) => {
-    // สูตรของระบบ: สลับไปแก้รายการของระบบที่ใช้สูตรนั้น
-    const sysCode = SYSTEM_TEMPLATE_ITEM[newTplCode];
-    if (sysCode) {
-      const target = allItems.find((i) => i.itemCode === sysCode);
-      if (!target) {
-        setError('ไม่พบรายการของระบบที่ใช้สูตรนี้');
-        return;
-      }
-      if (target.id !== item?.id) {
-        setError(null);
-        setRedirect({ base: itemProp, target });
-      }
-      return;
-    }
-    if (isSystemFormula) {
-      setError('รายการของระบบเปลี่ยนเป็นสูตรอื่นไม่ได้');
-      return;
-    }
-    const picked = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
-    if (picked && picked.category !== 'BOTH' && picked.category !== itemType) {
-      if (item) {
-        setError(`สูตร "${picked.name}" ใช้กับรายการ${typeLabel(picked.category)} — เปลี่ยนประเภทของรายการที่มีอยู่แล้วไม่ได้`);
-        return;
-      }
-      setItemType(picked.category);
-    }
-    if (isAutoPullModuleItem) return;
-    setFormulaTemplate(newTplCode);
-    const tplObj = FORMULA_TEMPLATES.find((t) => t.code === newTplCode);
-    if (tplObj) {
-      setFormulaValue(tplObj.defaultValue);
-      setParams(parseFormulaParams(newTplCode, tplObj.defaultValue));
-      setIsTaxable(tplObj.defaultTaxable);
-      setIsSocialSecurityCalculated(tplObj.defaultSocialSecurity);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!item && !itemCode.trim()) {
-      setError('กรุณาระบุรหัสรายการ');
-      return;
-    }
     if (!itemName.trim()) {
       setError('กรุณาระบุชื่อรายการ');
       return;
     }
 
-    let finalFormulaValue = formulaValue.trim();
+    const isCustom = !isAutoPullModuleItem && calculationType !== 'FORMULA';
+    if (isCustom && !(Number(amountText) > 0)) {
+      setError('กรุณาระบุจำนวนเงินมากกว่า 0');
+      return;
+    }
+    let finalFormulaValue = isCustom ? amountText : formulaValue.trim();
     if (!isAutoPullModuleItem && calculationType === 'FORMULA') {
       if (!formulaTemplate) {
         setError('กรุณาเลือกรูปแบบสูตร');
@@ -404,7 +385,55 @@ export const PayrollItemModal: React.FC<Props> = ({
         }
         finalFormulaValue = serializeFormulaParams(templateCode, params);
       }
-      if (templateCode === 'SSO_STANDARD' && currentSso) finalFormulaValue = ssoFormulaText(currentSso);
+      if (templateCode === 'SSO_STANDARD') {
+        const emp = Number(ssoEmp), er = Number(ssoEr), mn = Number(ssoMin), mx = Number(ssoMax);
+        if (!(emp > 0 && emp <= 100) || !(er > 0 && er <= 100)) {
+          setError('อัตราเงินสมทบต้องอยู่ระหว่าง 0–100%');
+          return;
+        }
+        if (!(mn > 0) || !(mx >= mn)) {
+          setError('ฐานค่าจ้างสูงสุดต้องมากกว่าหรือเท่ากับฐานต่ำสุด');
+          return;
+        }
+        if (!ssoFrom) {
+          setError('กรุณาเลือกวันที่มีผล');
+          return;
+        }
+        if (ssoCurrent && ssoFrom < ssoCurrent.effectiveFrom) {
+          setError('วันที่มีผลต้องไม่ก่อนวันที่ของอัตราที่ใช้อยู่ (ถ้าแก้ตัวเลขที่กรอกผิด ให้คงวันที่เดิม)');
+          return;
+        }
+        const isNewRate = !ssoCurrent || ssoFrom !== ssoCurrent.effectiveFrom;
+        const changed =
+          isNewRate ||
+          Math.abs(pctOf(ssoCurrent!.employeeContributionPercent) - emp) > 0.0001 ||
+          Math.abs(pctOf(ssoCurrent!.employerContributionPercent) - er) > 0.0001 ||
+          ssoCurrent!.minWageBaseAmount !== mn ||
+          ssoCurrent!.maxWageBaseAmount !== mx;
+        if (changed && canEditTaxSso && onSaveSsoRate) {
+          try {
+            setLoading(true);
+            await onSaveSsoRate(
+              {
+                rateName: isNewRate ? `อัตราประกันสังคม มีผล ${ssoFrom}` : ssoCurrent!.rateName,
+                employeeContributionPercent: emp / 100,
+                employerContributionPercent: er / 100,
+                minWageBaseAmount: mn,
+                maxWageBaseAmount: mx,
+                effectiveFrom: ssoFrom,
+                effectiveTo: isNewRate ? null : ssoCurrent!.effectiveTo ?? null,
+                status: 'ACTIVE',
+              },
+              isNewRate ? undefined : ssoCurrent!.id,
+            );
+          } catch (err: any) {
+            setLoading(false);
+            setError(err?.response?.data?.message || err?.message || 'บันทึกอัตราประกันสังคมไม่สำเร็จ');
+            return;
+          }
+        }
+        finalFormulaValue = `${emp}% ฐานค่าจ้าง ${mn.toLocaleString()} - ${mx.toLocaleString()} บาท (หักสูงสุด ${((mx * emp) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })} บาท/เดือน)`;
+      }
     }
 
     try {
@@ -449,6 +478,12 @@ export const PayrollItemModal: React.FC<Props> = ({
   };
 
   const isEarning = itemType === 'EARNING';
+  /** รายได้ของระบบ: ค่าภาษี/ประกันสังคมกำหนดตามกฎหมาย แก้ไม่ได้ */
+  const flagsLocked = !!item && (isAutoPullModuleItem || isSystemFormula);
+  /** รายการหักที่เป็นค่าลดหย่อน (ประกันสังคม / กองทุนสำรองเลี้ยงชีพ) */
+  const isAllowanceItem =
+    !isEarning &&
+    (itemCode === 'DED_SSO' || /PVD|PROVIDENT/i.test(itemCode) || itemName.includes('สำรองเลี้ยงชีพ'));
 
   // ===== ภาษี / ประกันสังคม (ตั้งค่าที่นี่แทนแท็บภาษี & ประกันสังคมเดิม) =====
   const pctOf = (v: number) => (v <= 1 ? v * 100 : v);
@@ -470,37 +505,29 @@ export const PayrollItemModal: React.FC<Props> = ({
     )} บาท/เดือน)`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="relative px-6 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {isRedirected
-              ? `แก้ไขรายการของระบบ: ${item?.itemName ?? ''}`
-              : item
-              ? `แก้ไข${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
-              : `เพิ่ม${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`}
-          </h3>
-          {isRedirected && (
-            <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-              สูตรนี้ใช้ได้กับรายการของระบบเท่านั้น — แก้ค่าแล้วกดบันทึกจะอัปเดตรายการนี้ (ไม่สร้างรายการใหม่){' '}
-              <button type="button" onClick={() => setRedirect(null)} className="font-semibold text-[#0B2046] dark:text-blue-300 underline cursor-pointer">
-                กลับ
-              </button>
-            </p>
-          )}
-          <button
-            onClick={onClose}
-            type="button"
-            className="absolute right-4 top-4 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      onSubmit={handleSubmit}
+      title={
+        isRedirected
+          ? `แก้ไขรายการของระบบ: ${item?.itemName ?? ''}`
+          : item
+          ? `แก้ไข${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
+          : `เพิ่ม${isEarning ? 'รายการรายได้' : 'รายการรายหัก'}`
+      }
+      subtitle={
+        isRedirected ? (
+          <>
+            สูตรนี้ใช้ได้กับรายการของระบบเท่านั้น — แก้ค่าแล้วกดบันทึกจะอัปเดตรายการนี้ (ไม่สร้างรายการใหม่){' '}
+            <button type="button" onClick={() => setRedirect(null)} className="font-semibold text-primary dark:text-blue-300 underline cursor-pointer">
+              กลับ
+            </button>
+          </>
+        ) : undefined
+      }
+      footer={<ModalFooter onCancel={onClose} loading={loading} />}
+    >
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-700 text-xs dark:bg-red-900/20 dark:text-red-400">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -508,88 +535,10 @@ export const PayrollItemModal: React.FC<Props> = ({
               </div>
             )}
 
-          {/* Item Code (only when creating) */}
-          {!item && (
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">รหัสรายการ (เช่น INC_OTHER) <span className="text-rose-500">*</span></label>
-              <input
-                type="text"
-                required
-                placeholder="เช่น INC_OTHER"
-                value={itemCode}
-                onChange={(e) => setItemCode(e.target.value)}
-                className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 uppercase"
-              />
-            </div>
-          )}
-
           {/* Item Name */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">ชื่อรายการ <span className="text-rose-500">*</span></label>
-            <input
-              type="text"
-              required
-              placeholder="เช่น เบี้ยเลี้ยงพิเศษ"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">คำอธิบายย่อ</label>
-            <input
-              type="text"
-              placeholder="เช่น จ่ายตามที่ปฏิบัติงานนอกสถานที่"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
-            />
-          </div>
-
-          {/* Calculation Type */}
-          <div>
-            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-              <span>ประเภทการคำนวณ</span>
-              {isAutoPullModuleItem && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/50 px-2 py-0.5 rounded-full border border-teal-200 dark:border-teal-800">
-                  <Lock className="w-3 h-3" />
-                  ระบบดึงข้อมูลให้
-                </span>
-              )}
-            </label>
-            {isAutoPullModuleItem ? (
-              <div className="w-full py-2.5 px-3.5 text-xs font-semibold rounded-xl border border-[#0B2046] bg-[#0B2046] text-white shadow-xs flex items-center justify-center gap-2 cursor-not-allowed">
-                <Lock className="w-3.5 h-3.5 text-teal-300" />
-                <span>ดึงข้อมูลอัตโนมัติ</span>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                {[
-                  { id: 'FIXED', label: 'จำนวนคงที่' },
-                  { id: 'FORMULA', label: 'สูตรคำนวณ' },
-                  { id: 'MANUAL', label: 'กำหนดเอง' },
-                ]
-                  .filter((opt) => !(itemType === 'EARNING' && opt.id === 'FIXED'))
-                  .filter((opt) => !(linkedBenefits.length > 0 && opt.id !== 'MANUAL'))
-                  .map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => handleCalculationTypeChange(opt.id as any)}
-                    className={`py-2 px-3 text-xs font-medium rounded-xl border transition-all cursor-pointer text-center ${
-                      calculationType === opt.id
-                        ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          <FormField label="ชื่อรายการ" required>
+            <Input type="text" required placeholder="เช่น เบี้ยเลี้ยงพิเศษ" value={itemName} onChange={(e) => setItemName(e.target.value)} />
+          </FormField>
 
           {isAutoPullModuleItem ? (
             <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/70 space-y-2">
@@ -599,39 +548,23 @@ export const PayrollItemModal: React.FC<Props> = ({
               </div>
               <p className="text-[11px] leading-relaxed text-teal-800 dark:text-teal-300">{autoPull?.hint}</p>
             </div>
-          ) : linkedBenefits.length > 0 ? (
-            <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-300">
-              ใช้กับสวัสดิการ: <span className="font-semibold">{linkedBenefits.join(', ')}</span> — ยอดเงินและผู้มีสิทธิ์กำหนดที่เมนูสวัสดิการ หน้านี้ใช้ตั้งค่าการคิดภาษี/ประกันสังคมของรายการในสลิป
-            </div>
-          ) : itemType === 'EARNING' ? (
-            <div className="text-[11px] leading-relaxed px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-300">
-              เงินได้คงที่รายเดือน (เช่น ค่าเดินทาง ค่าโทรศัพท์) ให้ตั้งเป็นสวัสดิการแบบ &quot;เบี้ยเลี้ยง&quot; ที่เมนูสวัสดิการ แล้วเลือกรายการรายได้นี้เป็นรหัสในสลิป
-            </div>
           ) : null}
 
           {/* If FORMULA is chosen (and not locked auto-pull): Show Formula Template selector and clean Summary Card */}
           {!isAutoPullModuleItem && (calculationType === 'FORMULA' ? (
             <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-2xl">
-              <div>
-                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                  <Calculator className="w-3.5 h-3.5 text-blue-700" />
-                  <span>รูปแบบสูตรมาตรฐานของระบบ (Formula Template)</span>
-                </label>
-                <CustomSelect
-                  value={formulaTemplate}
-                  onChange={(e) => handleTemplateChange(e.target.value)}
-                  disabled={isAutoPullModuleItem}
-                  className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-900 dark:text-slate-100 font-semibold"
-                >
-                  {availableTemplates.map((tpl) => (
-                    <option key={tpl.code} value={tpl.code}>
-                      {tpl.name}
-                    </option>
-                  ))}
-                </CustomSelect>
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200">
+                <Calculator className="w-3.5 h-3.5 text-blue-700" />
+                <span>สูตร: {selectedTemplate?.name ?? formulaTemplate}</span>
+                {isSystemFormula && (
+                  <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                    <Lock className="w-3 h-3" />
+                    ระบบคำนวณให้
+                  </span>
+                )}
               </div>
 
-              {selectedTemplate && (
+              {selectedTemplate && templateCode !== 'SSO_STANDARD' && (
                 <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5 shadow-2xs">
                   {hasParams ? (
                     <FormulaParamsEditor template={templateCode} params={params} onChange={setParams} />
@@ -643,82 +576,95 @@ export const PayrollItemModal: React.FC<Props> = ({
                       </span>
                     </div>
                   )}
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-start gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
-                    <span>
-                      {isSystemFormula
-                        ? `${selectedTemplate.hint} — รายการของระบบ ระบบคำนวณให้เอง`
-                        : selectedTemplate.hint}
-                    </span>
-                  </p>
                 </div>
               )}
 
               {/* ประกันสังคม: อัตราตามช่วงวันที่มีผล (แทนแท็บภาษี & ประกันสังคม) */}
-              {templateCode === 'SSO_STANDARD' && (
-                <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">อัตราเงินสมทบตามช่วงเวลา</span>
-                    {canEditTaxSso && (
-                      <button
-                        type="button"
-                        onClick={() => onEditSsoRate?.(null)}
-                        className="text-[11px] font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
-                      >
-                        + เพิ่มอัตราใหม่ (มีผลวันที่…)
-                      </button>
+              {templateCode === 'SSO_STANDARD' && (() => {
+                const emp = Number(ssoEmp) || 0;
+                const er = Number(ssoEr) || 0;
+                const mx = Number(ssoMax) || 0;
+                const mn = Number(ssoMin) || 0;
+                const ro = !canEditTaxSso;
+                const field = (label: string, value: string, setter: (v: string) => void, unit: string, prefix?: string) => (
+                  <FormField label={label}>
+                    <NumberInput value={value} onChange={setter} prefix={prefix} suffix={unit} disabled={ro} />
+                  </FormField>
+                );
+                return (
+                  <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
+                    <span className="block text-[11px] font-semibold text-slate-800 dark:text-slate-200">อัตราเงินสมทบ</span>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {field('ลูกจ้างสมทบ', ssoEmp, setSsoEmp, '%')}
+                      {field('นายจ้างสมทบ', ssoEr, setSsoEr, '%')}
+                      {field('ฐานค่าจ้างต่ำสุด', ssoMin, setSsoMin, 'บาท', '฿')}
+                      {field('ฐานค่าจ้างสูงสุด', ssoMax, setSsoMax, 'บาท', '฿')}
+                    </div>
+
+                    {(() => {
+                      const isNewRate = !ssoCurrent || (!!ssoFrom && ssoFrom !== ssoCurrent.effectiveFrom);
+                      return (
+                        <label className="block">
+                          <span className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">มีผลตั้งแต่วันที่</span>
+                          <ThaiDatePicker
+                            value={ssoFrom}
+                            onChange={setSsoFrom}
+                            placeholder="เลือกวันที่มีผล"
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium"
+                          />
+                          <span className={`block mt-1 text-[10px] ${isNewRate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`}>
+                            {!ssoCurrent
+                              ? 'จะสร้างอัตราแรกของระบบ'
+                              : isNewRate
+                              ? `จะสร้างอัตราใหม่ — งวดก่อน ${ssoFrom ? thaiDate(ssoFrom) : '...'} ยังใช้อัตราเดิม`
+                              : 'วันที่เดิม — บันทึกแล้วจะแก้อัตราที่ใช้อยู่ (ใช้กรณีกรอกตัวเลขผิด) ถ้ากฎหมายเปลี่ยนให้เลือกวันที่มีผลใหม่'}
+                          </span>
+                        </label>
+                      );
+                    })()}
+
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="px-2.5 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
+                        หักลูกจ้างสูงสุด <span className="font-bold">{((mx * emp) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> บาท/เดือน
+                      </div>
+                      <div className="px-2.5 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300">
+                        ขั้นต่ำ <span className="font-bold">{((mn * emp) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> บาท · นายจ้างสูงสุด{' '}
+                        <span className="font-bold">{((mx * er) / 100).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span> บาท
+                      </div>
+                    </div>
+
+                    <p className="text-[10px] text-slate-400">
+                      งวดที่ยังเป็นร่างจะใช้อัตรานี้เมื่อคำนวณใหม่ งวดที่ปิดแล้วไม่เปลี่ยน
+                    </p>
+
+                    {sortedSso.length > 1 && (
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                        <button
+                          type="button"
+                          onClick={() => setShowSsoHistory((v) => !v)}
+                          className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
+                        >
+                          {showSsoHistory ? 'ซ่อนประวัติอัตรา' : `ดูประวัติอัตรา (${sortedSso.length})`}
+                        </button>
+                        {showSsoHistory && (
+                          <div className="mt-2 space-y-1">
+                            {sortedSso.map((r) => (
+                              <div key={r.id} className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400">
+                                <span>มีผล {thaiDate(r.effectiveFrom)}</span>
+                                <span>
+                                  {pctOf(r.employeeContributionPercent)}% · ฐาน {money(r.minWageBaseAmount)}–{money(r.maxWageBaseAmount)}
+                                  {r.id === ssoCurrent?.id && <span className="ml-1.5 text-emerald-600 font-semibold">ใช้อยู่</span>}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
-                  {sortedSso.length === 0 ? (
-                    <p className="text-[11px] text-slate-400">ยังไม่มีอัตราในระบบ — ระบบใช้ค่ามาตรฐาน 5% ฐาน 1,650–15,000 บาท</p>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {sortedSso.map((r) => {
-                        const isCurrent = currentSso?.id === r.id;
-                        const isFuture = r.effectiveFrom > todayIso;
-                        return (
-                          <div
-                            key={r.id}
-                            className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border text-[11px] ${
-                              isCurrent
-                                ? 'border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/20 dark:border-emerald-800'
-                                : 'border-slate-100 dark:border-slate-700'
-                            }`}
-                          >
-                            <span
-                              className={`shrink-0 px-1.5 py-0.5 rounded font-semibold ${
-                                isCurrent
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : isFuture
-                                  ? 'bg-amber-100 text-amber-800'
-                                  : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'
-                              }`}
-                            >
-                              {isCurrent ? 'ใช้อยู่' : isFuture ? 'รอมีผล' : r.status === 'ACTIVE' ? 'ช่วงก่อน' : 'ปิดใช้'}
-                            </span>
-                            <span className="flex-1 text-slate-700 dark:text-slate-300">
-                              มีผล {r.effectiveFrom} · ลูกจ้าง {pctOf(r.employeeContributionPercent)}% / นายจ้าง {pctOf(r.employerContributionPercent)}% · ฐาน{' '}
-                              {money(r.minWageBaseAmount)}–{money(r.maxWageBaseAmount)} บาท
-                            </span>
-                            {canEditTaxSso && (
-                              <button
-                                type="button"
-                                onClick={() => onEditSsoRate?.(r)}
-                                className="shrink-0 font-semibold text-[#0B2046] dark:text-blue-300 hover:underline cursor-pointer"
-                              >
-                                แก้ไข
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <p className="text-[10px] text-slate-400">
-                    งวดเงินเดือนใช้อัตราที่มีผลในช่วงของงวดนั้น (ถ้ามีหลายอัตราใช้อันที่มีผลล่าสุด) — เพิ่มอัตราใหม่เมื่อกฎหมายเปลี่ยน เพื่อไม่ให้งวดเก่าเปลี่ยนตาม
-                  </p>
-                </div>
-              )}
+                );
+              })()}
 
               {/* ภาษี: ตารางอัตราขั้นบันได (แทนแท็บภาษี & ประกันสังคม) */}
               {templateCode === 'TAX_STANDARD' && (
@@ -751,110 +697,54 @@ export const PayrollItemModal: React.FC<Props> = ({
               )}
             </div>
           ) : (
-            <div>
-              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                {calculationType === 'FIXED' ? 'จำนวนเงินคงที่ (บาท)' : 'เกณฑ์การคิด / บันทึกช่วยจำ'}
-              </label>
-              <div className="relative">
-                <input
-                  type={calculationType === 'FIXED' ? 'number' : 'text'}
-                  step={calculationType === 'FIXED' ? '0.01' : undefined}
-                  placeholder={
-                    calculationType === 'FIXED'
-                      ? 'เช่น 500'
-                      : 'เช่น กำหนดเป็นรายครั้ง หรือ ตามยอดจริงที่เกิดขึ้น'
-                  }
-                  value={formulaValue}
-                  onChange={(e) => setFormulaValue(e.target.value)}
-                  className={`w-full text-xs py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 ${
-                    calculationType === 'FIXED' ? 'pl-7 pr-3 font-semibold' : 'px-3.5'
-                  }`}
-                />
-                {calculationType === 'FIXED' && (
-                  <span className="absolute left-2.5 top-2.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">฿</span>
-                )}
-              </div>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1 block">
-                {calculationType === 'FIXED'
-                  ? 'ระบุยอดเงินคงที่ที่จ่ายหรือหักในสลิปเงินเดือน'
-                  : 'ระบุเกณฑ์หรือคำอธิบายสำหรับอ้างอิงและแสดงบนสลิปเงินเดือน'}
-              </span>
-            </div>
+            <FormField label="จำนวนเงิน (บาท)" required hint="ยอดเริ่มต้นเมื่อเพิ่มรายการนี้ให้พนักงานตอนประมวลเงินเดือน (แก้ยอดรายคนได้)">
+              <NumberInput value={amountText} onChange={setAmountText} prefix="฿" placeholder="500" />
+            </FormField>
           ))}
 
-          {/* Checkboxes: คิดภาษี & คิดประกันสังคม */}
-          <div className="flex items-center gap-6 pt-1">
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={isTaxable}
-                onChange={(e) => setIsTaxable(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
+          {/* ภาษี / ประกันสังคม
+              - รายได้ที่ HR เพิ่มเอง: เลือกได้
+              - รายได้ของระบบ (ดึงข้อมูลจากระบบ / สูตรของระบบ): แสดงแต่แก้ไม่ได้
+              - รายการหักแบบสูตร: แสดงผลต่อฐานภาษี/ประกันสังคม/ค่าลดหย่อน แต่แก้ไม่ได้
+              - รายการหักที่ HR เพิ่มเอง: ไม่ลดฐานเสมอ จึงไม่แสดง */}
+          {isEarning ? (
+            <div className="space-y-2 pt-1">
+              {flagsLocked && <p className="text-[11px] text-slate-400">ระบบกำหนดตามกฎหมาย แก้ไขไม่ได้</p>}
+              <OptionCheckCard checked={isTaxable} onChange={setIsTaxable} disabled={flagsLocked} {...TAX_OPTION_TEXT} />
+              <OptionCheckCard checked={isSocialSecurityCalculated} onChange={setIsSocialSecurityCalculated} disabled={flagsLocked} {...SSO_OPTION_TEXT} />
+            </div>
+          ) : calculationType === 'FORMULA' ? (
+            <div className="space-y-2 pt-1">
+              <p className="text-[11px] text-slate-400">ระบบกำหนดตามกฎหมาย แก้ไขไม่ได้</p>
+              <OptionCheckCard
+                checked={isTaxable && !isAllowanceItem}
+                onChange={() => {}}
+                disabled
+                title="ลดฐานภาษี"
+                description="นำยอดที่หักไปลดเงินได้ที่ต้องเสียภาษี (ค่าจ้างที่ไม่ได้รับจริง)"
               />
-              <span>คิดภาษี</span>
-            </label>
-
-            <label className="inline-flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
-              <input
-                type="checkbox"
-                checked={isSocialSecurityCalculated}
-                onChange={(e) => setIsSocialSecurityCalculated(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600"
+              <OptionCheckCard
+                checked={isSocialSecurityCalculated && !isAllowanceItem}
+                onChange={() => {}}
+                disabled
+                title="ลดฐานประกันสังคม"
+                description="นำยอดที่หักไปลดฐานค่าจ้างที่ใช้คิดเงินสมทบ"
               />
-              <span>คิดประกันสังคม</span>
-            </label>
-          </div>
+              <OptionCheckCard
+                checked={isAllowanceItem}
+                onChange={() => {}}
+                disabled
+                title="เป็นค่าลดหย่อน"
+                description="ใช้เป็นค่าลดหย่อนตอนคิดภาษีทั้งปี (ประกันสังคม / กองทุนสำรองเลี้ยงชีพ)"
+              />
+            </div>
+          ) : null}
 
           {/* เปิดการใช้งานรายการนี้ (Toggle Switch - แสดงเฉพาะตอนแก้ไข) */}
-          {item && (
-            <div className="flex items-center justify-between pt-2 pb-1 border-t border-slate-100 dark:border-slate-700/60">
-              <span className="text-xs font-medium text-slate-800 dark:text-slate-200">เปิดใช้งานรายการนี้</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isActive}
-                onClick={() => setIsActive(!isActive)}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  isActive ? 'bg-blue-600' : 'bg-slate-300'
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow-md ring-0 transition duration-200 ease-in-out ${
-                    isActive ? 'translate-x-5' : 'translate-x-0'
-                  }`}
-                />
-              </button>
-            </div>
+          {item && (!lockActive || wasInactive) && (
+            <ActiveToggleRow label="เปิดใช้งานรายการนี้" checked={isActive} onChange={setIsActive} divider />
           )}
 
-          </div>
-
-          {/* Actions - Sticky Footer */}
-          <div className="shrink-0 px-6 py-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-xl transition-all cursor-pointer text-center"
-            >
-              ยกเลิก
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  กำลังบันทึก...
-                </>
-              ) : (
-                'บันทึก'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </Modal>
   );
 };

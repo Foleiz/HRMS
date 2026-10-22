@@ -30,6 +30,13 @@
 @theme {
   --text-xs: 0.8125rem;   /* เดิม 0.75rem (12px) → 13px */
   --text-sm: 0.9375rem;   /* เดิม 0.875rem (14px) → 15px */
+
+  /* ===== สีหลักของระบบ (ใช้ผ่าน class เช่น bg-primary, text-primary, border-primary) =====
+     แก้ที่นี่ที่เดียว ทุก component ใน components/ui เปลี่ยนตาม */
+  --color-primary: #0B2046;
+  --color-primary-hover: #112d5e;
+  --color-primary-soft: #eff4ff;
+  --color-accent: #2563eb;   /* สวิตช์ / ลิงก์ / ตัวเลือกที่เปิดอยู่ */
 }
 
 .theme-light {

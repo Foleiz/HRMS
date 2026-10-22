@@ -7,6 +7,7 @@ import { Employee } from '@/types/employee';
 import { RoleSummary, UserAccount, CreateUserRequest, UpdateUserRequest } from '@/types/settings';
 import { settingsService } from '@/services/settingsService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 interface UserDrawerProps {
   isOpen: boolean;
@@ -399,19 +400,10 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
 
                       {/* Bottom row: Status toggle and Delete button */}
                       <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700/60 text-xs">
-                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <div className="flex items-center gap-2 select-none">
                           <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">เปิดใช้งาน</span>
-                          <div
-                            onClick={() => handleRoleToggleActive(index)}
-                            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${ roleItem.isActive ? 'bg-[#0B2046]' : 'bg-slate-200'
-                            }`}
-                          >
-                            <div
-                              className={`w-3.5 h-3.5 rounded-full bg-white dark:bg-slate-800 absolute top-0.5 transition-transform shadow-xs ${ roleItem.isActive ? 'left-4.5' : 'left-1'
-                              }`}
-                            />
-                          </div>
-                        </label>
+                          <ToggleSwitch checked={roleItem.isActive} onChange={() => handleRoleToggleActive(index)} />
+                        </div>
 
                         {selectedRoles.length > 1 && (
                           <button
