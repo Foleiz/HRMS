@@ -40,21 +40,22 @@ public class PayslipService : IPayslipService
         var employeeId = _currentUserService.EmployeeId;
         if (!employeeId.HasValue)
         {
-            throw new UnauthorizedAccessException("ไม่พบข้อมูลพนักงานที่ล็อกอินอยู่");
+            throw new NotFoundException("ไม่พบข้อมูลพนักงานที่ผูกกับบัญชีนี้");
         }
 
         var payroll = await _context.Payrolls
             .AsNoTracking()
+            .Include(p => p.Period)
             .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
 
-        if (payroll == null)
+        if (payroll == null || payroll.Period == null || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
         {
             throw new NotFoundException($"ไม่พบข้อมูลสลิปเงินเดือนรหัส #{payrollId}");
         }
 
         if (payroll.EmployeeId != employeeId.Value && !_currentUserService.HasRole("ADMIN"))
         {
-            throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์ดาวน์โหลดสลิปเงินเดือนของพนักงานท่านอื่น");
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ดาวน์โหลดสลิปเงินเดือนของพนักงานท่านอื่น");
         }
 
         return await GenerateOrRetrievePayslipPdfAsync(payrollId, cancellationToken);
@@ -121,28 +122,10 @@ public class PayslipService : IPayslipService
         var monthName = (periodMonth >= 1 && periodMonth <= 12) ? ThaiMonths[periodMonth] : $"เดือนที่ {periodMonth}";
         var thaiYear = periodYear > 2400 ? periodYear : periodYear + 543;
 
-        // 1. Password Determination (เลขบัตรประชาชน 4 ตัวท้าย)
-        string password = "";
-        string passwordHint;
-        string rawCitizenId = _encryptionService.UnprotectText(emp?.CitizenId ?? "");
-        string digits = Regex.Replace(rawCitizenId, @"\D", "");
-        if (digits.Length >= 4)
-        {
-            password = digits[^4..];
-            passwordHint = "เลขประจำตัวประชาชน 4 หลักสุดท้าย";
-        }
-        else if (emp?.BirthDate.HasValue == true)
-        {
-            var birth = emp.BirthDate.Value;
-            int beYear = birth.Year > 2400 ? birth.Year : birth.Year + 543;
-            password = $"{birth:ddMM}{beYear}";
-            passwordHint = "วันเดือนปีเกิด (วันวันเดือนเดือนปี พ.ศ. 4 หลัก เช่น 15052531)";
-        }
-        else
-        {
-            password = emp?.EmployeeCode ?? "1234";
-            passwordHint = "รหัสพนักงาน";
-        }
+        // 1. Password Determination (แยกกฎไว้ใน PayslipHelper เพื่อใช้ร่วมกันทั้งระบบ)
+        var passwordInfo = PayslipHelper.ResolvePassword(emp?.CitizenId, emp?.BirthDate, emp?.EmployeeCode, _encryptionService);
+        string password = passwordInfo.Password;
+        string passwordHint = passwordInfo.Hint;
 
         // 2. Query Company Master
         var company = await _context.Companies.FirstOrDefaultAsync(cancellationToken);
@@ -151,7 +134,7 @@ public class PayslipService : IPayslipService
         string companyAddress = company?.Address ?? string.Empty;
         string companyPhone = company?.Phone ?? string.Empty;
 
-        // 3. Query YTD totals
+        // 3. Query YTD totals (คำนวณจากงวดที่ผ่านการอนุมัติแล้วขึ้นไปเท่านั้น)
         var yearPayrolls = await _context.Payrolls
             .AsNoTracking()
             .Include(p => p.Period)
@@ -161,7 +144,7 @@ public class PayslipService : IPayslipService
                         p.Period != null &&
                         p.Period.Year == periodYear &&
                         p.Period.Month <= periodMonth &&
-                        (p.Status == "PAID" || p.Status == "APPROVED" || p.Status == "CALCULATED"))
+                        PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status))
             .ToListAsync(cancellationToken);
 
         decimal ytdGross = yearPayrolls.Sum(p => p.TotalGrossIncome);
@@ -184,10 +167,7 @@ public class PayslipService : IPayslipService
         string bankText = "-";
         if (primaryBank != null)
         {
-            var rawAcc = primaryBank.AccountNumber;
-            string masked = rawAcc.Length >= 4
-                ? $"xxx-xxx-{rawAcc[^4..^2]}-{rawAcc[^1..]}"
-                : rawAcc;
+            string masked = PayslipHelper.MaskAccountNumber(primaryBank.AccountNumber);
             bankText = $"{primaryBank.Bank?.BankName ?? "ธนาคาร"} ({masked})";
         }
 
@@ -267,24 +247,10 @@ public class PayslipService : IPayslipService
     }
 
     /// <summary>ลำดับรายการได้ในสลิป: เงินเดือน → ค่าตำแหน่ง → OT → อื่นๆ → โบนัส/ค่าคอม</summary>
-    private static int EarningOrder(string? code) => code switch
-    {
-        "INC_BASE" => 0,
-        "INC_POSITION" => 1,
-        "INC_OT" => 2,
-        "INC_BONUS" => 8,
-        "INC_COMMISSION" => 9,
-        _ => 5,
-    };
+    private static int EarningOrder(string? code) => PayslipHelper.EarningOrder(code);
 
     /// <summary>ลำดับรายการหักในสลิป: ประกันสังคม → ภาษี → กองทุนสำรองเลี้ยงชีพ → อื่นๆ</summary>
-    private static int DeductionOrder(string? code) => code switch
-    {
-        "DED_SSO" => 0,
-        "DED_TAX" => 1,
-        "DED_PVD" => 2,
-        _ => 5,
-    };
+    private static int DeductionOrder(string? code) => PayslipHelper.DeductionOrder(code);
 
     private static readonly string[] Units = { "", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" };
     private static readonly string[] Positions = { "", "สิบ", "ร้อย", "พัน", "หมื่น", "แสน", "ล้าน" };

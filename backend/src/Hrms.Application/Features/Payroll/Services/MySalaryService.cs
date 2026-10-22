@@ -9,16 +9,26 @@ public class MySalaryService : IMySalaryService
 {
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IAesEncryptionService _encryptionService;
 
-    public MySalaryService(IHrmsDbContext context, ICurrentUserService currentUserService)
+    public MySalaryService(
+        IHrmsDbContext context,
+        ICurrentUserService currentUserService,
+        IAesEncryptionService encryptionService)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _encryptionService = encryptionService;
     }
 
     public async Task<MySalaryOverviewDto> GetMySalaryOverviewAsync(int? year, CancellationToken cancellationToken = default)
     {
-        long employeeId = _currentUserService.EmployeeId ?? 1;
+        long? currentEmpId = _currentUserService.EmployeeId;
+        if (!currentEmpId.HasValue)
+        {
+            throw new NotFoundException("ไม่พบข้อมูลพนักงานที่ผูกกับบัญชีนี้");
+        }
+        long employeeId = currentEmpId.Value;
 
         int selectedYear = year ?? DateTime.Today.Year;
         if (selectedYear > 2400)
@@ -32,14 +42,16 @@ public class MySalaryService : IMySalaryService
             .Where(b => b.EmployeeId == employeeId && b.IsPrimary && b.Status == "ACTIVE")
             .FirstOrDefaultAsync(cancellationToken);
 
-        // ไม่มีบัญชี = แสดง "-" (ไม่ใส่ธนาคาร/เลขบัญชีตัวอย่าง)
+        // ไม่มีบัญชี = แสดง "-"
         string bankName = bankAccount?.Bank?.BankName ?? "-";
-        string maskedAccount = bankAccount != null ? MaskAccountNumber(bankAccount.AccountNumber) : "-";
+        string maskedAccount = bankAccount != null ? PayslipHelper.MaskAccountNumber(bankAccount.AccountNumber) : "-";
 
-        // 2. Fetch all payroll records for this employee
+        // 2. Fetch all payroll records for this employee (กรองเฉพาะงวดที่อนุมัติแล้วขึ้นไป)
         var payrollQuery = _context.Payrolls
             .Include(p => p.Period)
-            .Where(p => p.EmployeeId == employeeId);
+            .Where(p => p.EmployeeId == employeeId &&
+                        p.Period != null &&
+                        PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status));
 
         var allPayrolls = await payrollQuery
             .OrderByDescending(p => p.Period!.Year)
@@ -72,6 +84,7 @@ public class MySalaryService : IMySalaryService
             latestItems = details.Select(d => new MySalaryLineItemDto
             {
                 ItemName = d.PayrollItem?.ItemName ?? "รายการเงินเดือน",
+                ItemCode = d.PayrollItem?.ItemCode ?? string.Empty,
                 ItemType = d.PayrollItem?.ItemType ?? "EARNING",
                 Amount = d.Amount,
                 SubDescription = d.PayrollItem?.Description
@@ -105,7 +118,7 @@ public class MySalaryService : IMySalaryService
                 NetPayableSalary = p.NetPayableSalary,
                 PaymentDate = payDate,
                 PaymentDateThai = payDate.HasValue ? FormatThaiDate(payDate.Value) : "-",
-                Status = p.PaymentStatus == "TRANSFERRED" || p.Status == "CLOSED" ? "ปกติ" : "รอโอน"
+                Status = p.PaymentStatus == "TRANSFERRED" || p.Period?.Status == "PAID" || p.Period?.Status == "CLOSED" || p.Status == "CLOSED" ? "โอนแล้ว" : "รอโอน"
             };
         }).ToList();
 
@@ -150,14 +163,19 @@ public class MySalaryService : IMySalaryService
 
     public async Task<MySalaryDetailDto> GetMySalaryDetailAsync(long payrollId, CancellationToken cancellationToken = default)
     {
-        long employeeId = _currentUserService.EmployeeId ?? 1;
+        long? currentEmpId = _currentUserService.EmployeeId;
+        if (!currentEmpId.HasValue)
+        {
+            throw new NotFoundException("ไม่พบข้อมูลพนักงานที่ผูกกับบัญชีนี้");
+        }
+        long employeeId = currentEmpId.Value;
 
         var payroll = await _context.Payrolls
             .Include(p => p.Period)
             .Include(p => p.Employee)
             .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
 
-        if (payroll == null)
+        if (payroll == null || payroll.Period == null || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
         {
             throw new NotFoundException("Payroll", payrollId);
         }
@@ -178,37 +196,84 @@ public class MySalaryService : IMySalaryService
             .FirstOrDefaultAsync(cancellationToken);
 
         string bankName = bankAccount?.Bank?.BankName ?? "-";
-        string maskedAccount = bankAccount != null ? MaskAccountNumber(bankAccount.AccountNumber) : "-";
+        string maskedAccount = bankAccount != null ? PayslipHelper.MaskAccountNumber(bankAccount.AccountNumber) : "-";
 
-        int pYear = payroll.Period?.Year ?? DateTime.Today.Year;
-        int pMonth = payroll.Period?.Month ?? 1;
-        DateTime? payDate = payroll.Period?.PaymentDate?.ToDateTime(TimeOnly.MinValue);
+        int pYear = payroll.Period.Year;
+        int pMonth = payroll.Period.Month;
+        DateTime? payDate = payroll.Period.PaymentDate?.ToDateTime(TimeOnly.MinValue);
 
-        // Fetch details
+        // Fetch details with ordering matching PDF (B8)
         var details = await _context.PayrollDetails
             .Include(d => d.PayrollItem)
             .Where(d => d.PayrollId == payrollId)
             .ToListAsync(cancellationToken);
 
         var earnings = details
-            .Where(d => d.PayrollItem?.ItemType == "EARNING")
+            .Where(d => d.PayrollItem?.ItemType == "EARNING" ||
+                        d.PayrollItem?.ItemType == "ALLOWANCE" ||
+                        d.PayrollItem?.ItemType == "OVERTIME" ||
+                        d.PayrollItem?.ItemType == "BONUS")
+            .OrderBy(d => PayslipHelper.EarningOrder(d.PayrollItem?.ItemCode))
+            .ThenBy(d => d.Id)
             .Select(d => new MySalaryLineItemDto
             {
                 ItemName = d.PayrollItem?.ItemName ?? "รายได้",
+                ItemCode = d.PayrollItem?.ItemCode ?? string.Empty,
                 ItemType = "EARNING",
                 Amount = d.Amount,
                 SubDescription = d.PayrollItem?.Description
             }).ToList();
 
         var deductions = details
-            .Where(d => d.PayrollItem?.ItemType == "DEDUCTION")
+            .Where(d => d.PayrollItem?.ItemType == "DEDUCTION" ||
+                        d.PayrollItem?.ItemType == "TAX" ||
+                        d.PayrollItem?.ItemType == "SSO" ||
+                        d.PayrollItem?.ItemType == "LEAVE_DEDUCTION")
+            .OrderBy(d => PayslipHelper.DeductionOrder(d.PayrollItem?.ItemCode))
+            .ThenBy(d => d.Id)
             .Select(d => new MySalaryLineItemDto
             {
                 ItemName = d.PayrollItem?.ItemName ?? "รายหัก",
+                ItemCode = d.PayrollItem?.ItemCode ?? string.Empty,
                 ItemType = "DEDUCTION",
                 Amount = d.Amount,
                 SubDescription = d.PayrollItem?.Description
             }).ToList();
+
+        // Calculate YTD totals from approved periods of same year and month <= current period (B6)
+        var ytdPayrolls = await _context.Payrolls
+            .AsNoTracking()
+            .Include(p => p.Period)
+            .Include(p => p.Details)
+                .ThenInclude(d => d.PayrollItem)
+            .Where(p => p.EmployeeId == payroll.EmployeeId &&
+                        p.Period != null &&
+                        p.Period.Year == pYear &&
+                        p.Period.Month <= pMonth &&
+                        PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status))
+            .ToListAsync(cancellationToken);
+
+        decimal ytdGross = ytdPayrolls.Sum(p => p.TotalGrossIncome);
+        decimal ytdTax = ytdPayrolls.SelectMany(p => p.Details)
+            .Where(d => d.PayrollItem != null && d.PayrollItem.ItemCode == "DED_TAX")
+            .Sum(d => d.Amount);
+        decimal ytdSso = ytdPayrolls.SelectMany(p => p.Details)
+            .Where(d => d.PayrollItem != null && d.PayrollItem.ItemCode == "DED_SSO")
+            .Sum(d => d.Amount);
+
+        // Derive password hint (A3)
+        var passwordInfo = PayslipHelper.ResolvePassword(
+            payroll.Employee?.CitizenId,
+            payroll.Employee?.BirthDate,
+            payroll.Employee?.EmployeeCode,
+            _encryptionService);
+
+        // Payment status & transfer status (B7)
+        bool isTransferred = payroll.PaymentStatus == "TRANSFERRED" ||
+                             payroll.Period.Status == "PAID" ||
+                             payroll.Period.Status == "CLOSED" ||
+                             payroll.Status == "CLOSED";
+        string statusText = isTransferred ? "โอนแล้ว" : "รอโอน";
 
         return new MySalaryDetailDto
         {
@@ -222,21 +287,18 @@ public class MySalaryService : IMySalaryService
             BankName = bankName,
             BankAccountMasked = maskedAccount,
             PaymentDateThai = payDate.HasValue ? FormatThaiDate(payDate.Value) : "-",
+            PaymentStatus = payroll.PaymentStatus ?? string.Empty,
+            Status = statusText,
+            PasswordHint = passwordInfo.Hint,
             TotalGrossIncome = payroll.TotalGrossIncome,
             TotalDeductions = payroll.TotalDeductionAmount,
             NetPayableSalary = payroll.NetPayableSalary,
+            YtdGross = ytdGross,
+            YtdTax = ytdTax,
+            YtdSso = ytdSso,
             Earnings = earnings,
             Deductions = deductions
         };
-    }
-
-    private static string MaskAccountNumber(string account)
-    {
-        if (string.IsNullOrWhiteSpace(account)) return "xxx-xxx-xxx-x";
-        var cleaned = account.Trim();
-        if (cleaned.Length <= 4) return cleaned;
-        string last4 = cleaned.Substring(cleaned.Length - 4);
-        return $"xxx-xxx-{last4}";
     }
 
     private static string GetThaiMonthName(int month, int year)

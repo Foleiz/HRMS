@@ -56,11 +56,18 @@ export interface MySalaryDetail {
   totalGrossIncome: number;
   totalDeductions: number;
   netPayableSalary: number;
+  paymentStatus?: string;
+  status?: string;
+  passwordHint?: string;
+  ytdGross?: number;
+  ytdTax?: number;
+  ytdSso?: number;
   earnings: MySalaryLineItem[];
   deductions: MySalaryLineItem[];
 }
 
 export interface MySalaryLineItem {
+  itemCode?: string | null;
   itemName: string;
   itemType: 'EARNING' | 'DEDUCTION';
   amount: number;

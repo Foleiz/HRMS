@@ -63,9 +63,15 @@ public class MySalaryDetailDto
     public string BankName { get; set; } = string.Empty;
     public string BankAccountMasked { get; set; } = string.Empty;
     public string PaymentDateThai { get; set; } = string.Empty;
+    public string PaymentStatus { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string PasswordHint { get; set; } = string.Empty;
     public decimal TotalGrossIncome { get; set; }
     public decimal TotalDeductions { get; set; }
     public decimal NetPayableSalary { get; set; }
+    public decimal YtdGross { get; set; }
+    public decimal YtdTax { get; set; }
+    public decimal YtdSso { get; set; }
     public List<MySalaryLineItemDto> Earnings { get; set; } = new();
     public List<MySalaryLineItemDto> Deductions { get; set; } = new();
 }
@@ -73,6 +79,7 @@ public class MySalaryDetailDto
 public class MySalaryLineItemDto
 {
     public string ItemName { get; set; } = string.Empty;
+    public string ItemCode { get; set; } = string.Empty;
     public string ItemType { get; set; } = "EARNING"; // EARNING / DEDUCTION
     public decimal Amount { get; set; }
     public string? SubDescription { get; set; }
