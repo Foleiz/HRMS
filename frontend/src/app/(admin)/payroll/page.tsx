@@ -6269,13 +6269,9 @@ export default function PayrollPage() {
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
             <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Scale className="w-4 h-4 text-blue-700 dark:text-blue-400" />
-                <span>ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)</span>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                อัตราภาษีเงินได้สุทธิสะสมต่อปีตามประมวลรัษฎากรสำหรับคำนวณหักภาษี ณ ที่จ่าย (Withholding Tax)
-              </p>
             </div>
             <div className="flex items-center gap-2">
 
