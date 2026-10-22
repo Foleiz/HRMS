@@ -496,6 +496,7 @@ export default function PayrollPage() {
   // Tab 4: Payroll Processing (ประมวลเงินเดือน)
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
+  const [selectedProcessMonth, setSelectedProcessMonth] = useState<number | null>(null);
   const [selectedYearFilter, setSelectedYearFilter] = useState<number>(() => new Date().getFullYear());
   const [periodsTabYearFilter, setPeriodsTabYearFilter] = useState<string>('ALL');
   const [periodsTabSelectedYear, setPeriodsTabSelectedYear] = useState<number>(() => new Date().getFullYear());
@@ -1861,6 +1862,7 @@ export default function PayrollPage() {
 
   // Tab 4 Handlers: Payroll Processing (ประมวลเงินเดือน)
   const handlePeriodChange = async (periodId: number) => {
+    setSelectedProcessMonth(null);
     const p = periods.find((x) => x.id === periodId);
     if (p) {
       setSelectedPeriod(p);
@@ -1879,6 +1881,7 @@ export default function PayrollPage() {
 
   const handleYearFilterChange = (targetYear: number) => {
     setSelectedYearFilter(targetYear);
+    setSelectedProcessMonth(null);
     const inYear = periods.filter((p) => p.year === targetYear).sort((a, b) => a.month - b.month);
     if (inYear.length > 0) {
       const target = inYear.find((p) => p.status !== 'CLOSED') || inYear[inYear.length - 1];
@@ -2189,6 +2192,7 @@ export default function PayrollPage() {
       const updatedPeriods = await salaryService.getPayrollPeriods();
       setPeriods(updatedPeriods || []);
       setSelectedPeriod(created);
+      setSelectedProcessMonth(null);
       const pRows = await salaryService.getPayrollsByPeriod(created.id);
       setPayrolls(pRows || []);
     } catch (err: any) {
@@ -3825,15 +3829,22 @@ export default function PayrollPage() {
                   {/* 1. ตัวเลือกรอบเดือน (แสดงครบทั้ง 12 เดือน) */}
                   <div className="relative inline-block">
                     <CustomSelect
-                      value={selectedPeriod?.year === activeYear ? selectedPeriod.id : (periodsInSelectedYear[0]?.id || '')}
+                      value={
+                        selectedProcessMonth != null
+                          ? `UNCREATED_${selectedProcessMonth}`
+                          : selectedPeriod && selectedPeriod.year === activeYear
+                          ? selectedPeriod.id
+                          : (periodsInSelectedYear[0]?.id || '')
+                      }
                       onChange={(e) => {
                         const val = String(e?.target?.value ?? e ?? '');
                         if (val.startsWith('UNCREATED_')) {
                           const monthNum = parseInt(val.replace('UNCREATED_', ''), 10);
-                          setPeriodsTabSelectedYear(activeYear);
-                          setPeriodsTabSelectedMonth(monthNum);
-                          handleCreatePeriodInstant(activeYear, monthNum);
+                          setSelectedProcessMonth(monthNum);
+                          setSelectedPeriod(null);
+                          setPayrolls([]);
                         } else if (val) {
+                          setSelectedProcessMonth(null);
                           handlePeriodChange(Number(val));
                         }
                       }}
@@ -3896,7 +3907,7 @@ export default function PayrollPage() {
                   </div>
 
                   {/* สถานะรอบ */}
-                  {selectedPeriod && (
+                  {selectedPeriod ? (
                     <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                           selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
@@ -3930,6 +3941,10 @@ export default function PayrollPage() {
                           ? 'ปิดรอบแล้ว'
                           : selectedPeriod.statusText}
                       </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                      ยังไม่มีรอบเงินเดือน
+                    </span>
                   )}
                   {isFuturePeriod(selectedPeriod) && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -3953,7 +3968,10 @@ export default function PayrollPage() {
                     <>
                       <button
                         type="button"
-                        onClick={handleCreatePeriodFromProcessTab}
+                        onClick={() => {
+                          const targetMonth = selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : (new Date().getMonth() + 1));
+                          handleCreatePeriodInstant(activeYear, targetMonth);
+                        }}
                         className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -4351,6 +4369,43 @@ export default function PayrollPage() {
               </div>
             </div>
 
+            {/* If no period exists for this selected month */}
+            {(!selectedPeriod || selectedProcessMonth != null) ? (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-12 text-center space-y-4 shadow-xs">
+                <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-blue-400 mx-auto flex items-center justify-center">
+                  <Calendar className="w-8 h-8" />
+                </div>
+                <div className="max-w-md mx-auto space-y-1.5">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    ยังไม่มีรอบเงินเดือนประจำเดือน {THAI_MONTH_NAMES[(selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : (new Date().getMonth() + 1))) - 1]} {activeYear + 543}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    ยังไม่ได้สร้างรอบเงินเดือนสำหรับเดือนนี้ คุณสามารถกดปุ่ม &ldquo;สร้างรอบเงินเดือน&rdquo; เพื่อเริ่มประมวลผล
+                  </p>
+                </div>
+                {canAccessHrView && (
+                  <button
+                    type="button"
+                    disabled={isCreatingPeriod}
+                    onClick={() => {
+                      const targetMonth = selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : (new Date().getMonth() + 1));
+                      handleCreatePeriodInstant(activeYear, targetMonth);
+                    }}
+                    className="h-10 px-6 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                  >
+                    {isCreatingPeriod ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4" />
+                    )}
+                    <span>
+                      สร้างรอบเงินเดือน {THAI_MONTH_NAMES[(selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : (new Date().getMonth() + 1))) - 1]} {activeYear + 543}
+                    </span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <>
             {/* ── TOP ROLE BANNER (Workflow Stepper & Role Switcher) ── */}
             {(isAdmin || [canAccessHrView, canAccessFinanceView, canAccessApproverView, canAccessBankView].filter(Boolean).length > 1) && (
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 p-4 shadow-xs">
@@ -5625,6 +5680,8 @@ export default function PayrollPage() {
                   )}
                 </div>
               </div>
+            )}
+              </>
             )}
           </div>
         );
