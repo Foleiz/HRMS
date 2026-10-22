@@ -297,7 +297,6 @@ export const PayrollItemModal: React.FC<Props> = ({
   }, [item, defaultType, isOpen]);
 
   // ===== ประกันสังคม: แก้อัตราในหน้าต่างนี้ได้เลย =====
-  const [ssoMode, setSsoMode] = useState<'EDIT' | 'NEW'>('EDIT');
   const [ssoEmp, setSsoEmp] = useState('');
   const [ssoEr, setSsoEr] = useState('');
   const [ssoMin, setSsoMin] = useState('');
@@ -318,9 +317,9 @@ export const PayrollItemModal: React.FC<Props> = ({
   useEffect(() => {
     if (!isOpen) return;
     const pct = (v: number) => String(v <= 1 ? Math.round(v * 10000) / 100 : v);
-    setSsoMode('EDIT');
     setShowSsoHistory(false);
-    setSsoFrom('');
+    // วันที่มีผลเริ่มต้น = วันของอัตราที่ใช้อยู่ (ไม่เปลี่ยนวัน = แก้อัตราเดิม, เลือกวันใหม่ = สร้างอัตราใหม่)
+    setSsoFrom(ssoCurrent?.effectiveFrom ?? '');
     setSsoEmp(ssoCurrent ? pct(ssoCurrent.employeeContributionPercent) : '5');
     setSsoEr(ssoCurrent ? pct(ssoCurrent.employerContributionPercent) : '5');
     setSsoMin(ssoCurrent ? String(ssoCurrent.minWageBaseAmount) : '1650');
@@ -394,33 +393,36 @@ export const PayrollItemModal: React.FC<Props> = ({
           setError('ฐานค่าจ้างสูงสุดต้องมากกว่าหรือเท่ากับฐานต่ำสุด');
           return;
         }
-        if (ssoMode === 'NEW' && !ssoFrom) {
-          setError('กรุณาเลือกวันที่อัตราใหม่มีผล');
+        if (!ssoFrom) {
+          setError('กรุณาเลือกวันที่มีผล');
           return;
         }
+        if (ssoCurrent && ssoFrom < ssoCurrent.effectiveFrom) {
+          setError('วันที่มีผลต้องไม่ก่อนวันที่ของอัตราที่ใช้อยู่ (ถ้าแก้ตัวเลขที่กรอกผิด ให้คงวันที่เดิม)');
+          return;
+        }
+        const isNewRate = !ssoCurrent || ssoFrom !== ssoCurrent.effectiveFrom;
         const changed =
-          !ssoCurrent ||
-          ssoMode === 'NEW' ||
-          Math.abs(pctOf(ssoCurrent.employeeContributionPercent) - emp) > 0.0001 ||
-          Math.abs(pctOf(ssoCurrent.employerContributionPercent) - er) > 0.0001 ||
-          ssoCurrent.minWageBaseAmount !== mn ||
-          ssoCurrent.maxWageBaseAmount !== mx;
+          isNewRate ||
+          Math.abs(pctOf(ssoCurrent!.employeeContributionPercent) - emp) > 0.0001 ||
+          Math.abs(pctOf(ssoCurrent!.employerContributionPercent) - er) > 0.0001 ||
+          ssoCurrent!.minWageBaseAmount !== mn ||
+          ssoCurrent!.maxWageBaseAmount !== mx;
         if (changed && canEditTaxSso && onSaveSsoRate) {
-          const from = ssoMode === 'NEW' || !ssoCurrent ? ssoFrom || todayIso : ssoCurrent.effectiveFrom;
           try {
             setLoading(true);
             await onSaveSsoRate(
               {
-                rateName: ssoMode === 'NEW' || !ssoCurrent ? `อัตราประกันสังคม มีผล ${from}` : ssoCurrent.rateName,
+                rateName: isNewRate ? `อัตราประกันสังคม มีผล ${ssoFrom}` : ssoCurrent!.rateName,
                 employeeContributionPercent: emp / 100,
                 employerContributionPercent: er / 100,
                 minWageBaseAmount: mn,
                 maxWageBaseAmount: mx,
-                effectiveFrom: from,
-                effectiveTo: ssoMode === 'NEW' || !ssoCurrent ? null : ssoCurrent.effectiveTo ?? null,
+                effectiveFrom: ssoFrom,
+                effectiveTo: isNewRate ? null : ssoCurrent!.effectiveTo ?? null,
                 status: 'ACTIVE',
               },
-              ssoMode === 'NEW' || !ssoCurrent ? undefined : ssoCurrent.id,
+              isNewRate ? undefined : ssoCurrent!.id,
             );
           } catch (err: any) {
             setLoading(false);
@@ -617,35 +619,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                 );
                 return (
                   <div className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl space-y-3">
-                    {/* โหมด: แก้อัตราที่ใช้อยู่ / เพิ่มอัตราใหม่ */}
-                    {canEditTaxSso && ssoCurrent && (
-                      <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-900">
-                        {([
-                          ['EDIT', 'แก้อัตราที่ใช้อยู่'],
-                          ['NEW', 'เพิ่มอัตราใหม่ (กฎหมายเปลี่ยน)'],
-                        ] as const).map(([m, label]) => (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => setSsoMode(m)}
-                            className={`py-1.5 rounded-md text-[11px] font-semibold cursor-pointer ${
-                              ssoMode === m ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white shadow-xs' : 'text-slate-500'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {ssoMode === 'NEW' ? 'อัตราใหม่' : 'อัตราที่ใช้อยู่'}
-                      </span>
-                      {ssoMode === 'EDIT' && ssoCurrent && (
-                        <span className="text-slate-400">มีผลตั้งแต่ {thaiDate(ssoCurrent.effectiveFrom)}</span>
-                      )}
-                    </div>
+                    <span className="block text-[11px] font-semibold text-slate-800 dark:text-slate-200">อัตราเงินสมทบ</span>
 
                     <div className="grid grid-cols-2 gap-2">
                       {field('ลูกจ้างสมทบ', ssoEmp, setSsoEmp, '%')}
@@ -654,17 +628,27 @@ export const PayrollItemModal: React.FC<Props> = ({
                       {field('ฐานค่าจ้างสูงสุด', ssoMax, setSsoMax, 'บาท', '฿')}
                     </div>
 
-                    {ssoMode === 'NEW' && (
-                      <label className="block">
-                        <span className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">มีผลตั้งแต่วันที่</span>
-                        <ThaiDatePicker
-                          value={ssoFrom}
-                          onChange={setSsoFrom}
-                          placeholder="เลือกวันที่อัตราใหม่มีผล"
-                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium"
-                        />
-                      </label>
-                    )}
+                    {(() => {
+                      const isNewRate = !ssoCurrent || (!!ssoFrom && ssoFrom !== ssoCurrent.effectiveFrom);
+                      return (
+                        <label className="block">
+                          <span className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">มีผลตั้งแต่วันที่</span>
+                          <ThaiDatePicker
+                            value={ssoFrom}
+                            onChange={setSsoFrom}
+                            placeholder="เลือกวันที่มีผล"
+                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-xs font-medium"
+                          />
+                          <span className={`block mt-1 text-[10px] ${isNewRate ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`}>
+                            {!ssoCurrent
+                              ? 'จะสร้างอัตราแรกของระบบ'
+                              : isNewRate
+                              ? `จะสร้างอัตราใหม่ — งวดก่อน ${ssoFrom ? thaiDate(ssoFrom) : '...'} ยังใช้อัตราเดิม`
+                              : 'วันที่เดิม — บันทึกแล้วจะแก้อัตราที่ใช้อยู่ (ใช้กรณีกรอกตัวเลขผิด) ถ้ากฎหมายเปลี่ยนให้เลือกวันที่มีผลใหม่'}
+                          </span>
+                        </label>
+                      );
+                    })()}
 
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div className="px-2.5 py-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
@@ -677,9 +661,7 @@ export const PayrollItemModal: React.FC<Props> = ({
                     </div>
 
                     <p className="text-[10px] text-slate-400">
-                      {ssoMode === 'NEW'
-                        ? 'งวดก่อนวันที่มีผลยังใช้อัตราเดิม งวดตั้งแต่วันที่มีผลใช้อัตราใหม่'
-                        : 'แก้แล้วกดบันทึก มีผลกับงวดที่ยังเป็นร่างเมื่อคำนวณใหม่ (งวดที่ปิดแล้วไม่เปลี่ยน)'}
+                      งวดที่ยังเป็นร่างจะใช้อัตรานี้เมื่อคำนวณใหม่ งวดที่ปิดแล้วไม่เปลี่ยน
                     </p>
 
                     {sortedSso.length > 1 && (
