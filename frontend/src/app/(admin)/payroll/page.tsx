@@ -2814,7 +2814,7 @@ export default function PayrollPage() {
                       const isAutoPullModuleItem = !!autoPull;
 
                       const calcTypeLabel = isAutoPullModuleItem
-                        ? 'ดึงข้อมูลอัตโนมัติ'
+                        ? 'ดึงข้อมูลจากระบบ'
                         : item.calculationType === 'FORMULA'
                         ? 'สูตรคำนวณ'
                         : 'กำหนดเอง';
@@ -2912,7 +2912,6 @@ export default function PayrollPage() {
                                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                 : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}>
-                              {isAutoPullModuleItem && <Lock className="w-3 h-3 text-teal-600 dark:text-teal-400" />}
                               <span>{calcTypeLabel}</span>
                             </span>
                           </td>
