@@ -260,34 +260,52 @@ public class CommissionService : ICommissionService
 
         // ตรวจสอบการทับซ้อนกับรายการเดิม (Overlapping entries in employee_commission_entry)
         int replacedEntriesCount = 0;
+        var overlappingDatesList = new List<string>();
+        int overlappingEmployeesCount = 0;
+        int overlappingCount = 0;
+
         if (validEmpIds.Count > 0)
         {
             var existingActive = await _context.EmployeeCommissionEntries
                 .Where(e => validEmpIds.Contains(e.EmployeeId) && e.Status == "ACTIVE")
                 .ToListAsync(cancellationToken);
 
+            var overlappingDatesSet = new HashSet<DateOnly>();
+            var overlappingEmpIdsSet = new HashSet<long>();
+
             foreach (var pItem in previewRows.Where(p => p.IsValid && p.EmployeeId.HasValue))
             {
                 var dFrom = DateOnly.Parse(pItem.DateFrom);
                 var dTo = DateOnly.Parse(pItem.DateTo);
-                var overlapping = existingActive.Count(e =>
+                var overlappingEntries = existingActive.Where(e =>
                     e.EmployeeId == pItem.EmployeeId.Value &&
-                    e.DateFrom <= dTo && e.DateTo >= dFrom);
+                    e.DateFrom <= dTo && e.DateTo >= dFrom).ToList();
 
-                pItem.ExistingOverlappingEntries = overlapping;
-            }
-
-            // คำนวณยอดรายการเดิมทั้งหมดที่จะถูกแทนที่ (นับรายการ active เดิมที่ถูกทับ)
-            foreach (var active in existingActive)
-            {
-                var isOverlapped = previewRows.Any(p =>
-                    p.IsValid && p.EmployeeId == active.EmployeeId &&
-                    active.DateFrom <= DateOnly.Parse(p.DateTo) && active.DateTo >= DateOnly.Parse(p.DateFrom));
-                if (isOverlapped)
+                pItem.ExistingOverlappingEntries = overlappingEntries.Count;
+                if (overlappingEntries.Count > 0)
                 {
-                    replacedEntriesCount++;
+                    overlappingEmpIdsSet.Add(pItem.EmployeeId.Value);
+                    overlappingCount += overlappingEntries.Count;
+                    foreach (var ov in overlappingEntries)
+                    {
+                        var intersectStart = dFrom > ov.DateFrom ? dFrom : ov.DateFrom;
+                        var intersectEnd = dTo < ov.DateTo ? dTo : ov.DateTo;
+                        var curr = intersectStart;
+                        while (curr <= intersectEnd)
+                        {
+                            overlappingDatesSet.Add(curr);
+                            curr = curr.AddDays(1);
+                        }
+                    }
                 }
             }
+
+            overlappingDatesList = overlappingDatesSet
+                .OrderBy(d => d)
+                .Select(d => d.ToString("yyyy-MM-dd"))
+                .ToList();
+            overlappingEmployeesCount = overlappingEmpIdsSet.Count;
+            replacedEntriesCount = overlappingCount;
         }
 
         // ตรวจสอบการล็อกงวดเงินเดือน (PAID)
@@ -326,6 +344,10 @@ public class CommissionService : ICommissionService
             TotalSalesAmount = totalSales,
             TotalCommissionAmount = totalComm,
             ReplacedEntriesCount = replacedEntriesCount,
+            HasOverlappingEntries = overlappingDatesList.Count > 0,
+            OverlappingDates = overlappingDatesList,
+            OverlappingCount = overlappingCount,
+            OverlappingEmployeesCount = overlappingEmployeesCount,
             IsLockedPeriod = isLocked,
             LockReason = lockReason,
             Warnings = warnings.Distinct().ToList(),
@@ -343,9 +365,11 @@ public class CommissionService : ICommissionService
         Stream fileStream,
         string fileName,
         long? userId = null,
+        string overlapResolutionMode = "USE_NEW",
         CancellationToken cancellationToken = default)
     {
         if (defaultRate <= 0) defaultRate = 3.00m;
+        var mode = (overlapResolutionMode ?? "USE_NEW").Trim().ToUpperInvariant();
 
         using var ms = new MemoryStream();
         await fileStream.CopyToAsync(ms, cancellationToken);
@@ -429,31 +453,75 @@ public class CommissionService : ICommissionService
         _context.CommissionImportBatches.Add(batch);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 2. ปรับสถานะรายการเดิมที่ทับซ้อนเป็น SUPERSEDED
+        // 2. จัดการรายการเดิมและเตรียมรายการใหม่ตาม overlapResolutionMode
         var empIds = validRows.Select(v => v.Emp.Id).Distinct().ToList();
         var existingActiveEntries = await _context.EmployeeCommissionEntries
             .Where(e => empIds.Contains(e.EmployeeId) && e.Status == "ACTIVE")
             .ToListAsync(cancellationToken);
 
         int replacedCount = 0;
-        foreach (var active in existingActiveEntries)
-        {
-            var isOverlapped = validRows.Any(v =>
-                v.Emp.Id == active.EmployeeId &&
-                active.DateFrom <= v.Row.DateTo && active.DateTo >= v.Row.DateFrom);
+        var rowsToInsert = new List<(Employee Emp, ParsedCommissionRow Row)>();
 
-            if (isOverlapped)
+        if (mode == "USE_NEW")
+        {
+            // ใช้ข้อมูลจากไฟล์ใหม่ล่าสุด:
+            // หากรายการเดิมมีวันที่ทับซ้อนกับไฟล์ใหม่ -> ให้ Supersede รายการเดิมเฉพาะวันที่ทับซ้อน
+            foreach (var active in existingActiveEntries)
             {
-                active.Status = "SUPERSEDED";
-                active.SupersededByBatchId = batch.Id;
-                replacedCount++;
+                var isOverlapped = validRows.Any(v =>
+                    v.Emp.Id == active.EmployeeId &&
+                    (
+                        // กรณีตรงกันเป๊ะ (วันเดียวกัน หรือช่วงวันเดียวกัน)
+                        (active.DateFrom == v.Row.DateFrom && active.DateTo == v.Row.DateTo) ||
+                        // ช่วงวันใหม่ครอบคลุมช่วงวันเดิมทั้งหมด
+                        (v.Row.DateFrom <= active.DateFrom && v.Row.DateTo >= active.DateTo) ||
+                        // รายการเดิมเป็นรายวัน (DateFrom == DateTo) และวันนั้นอยู่ในช่วงของไฟล์ใหม่
+                        (active.DateFrom == active.DateTo && v.Row.DateFrom <= active.DateFrom && v.Row.DateTo >= active.DateFrom)
+                    ));
+
+                if (isOverlapped)
+                {
+                    active.Status = "SUPERSEDED";
+                    active.SupersededByBatchId = batch.Id;
+                    replacedCount++;
+                }
             }
+            rowsToInsert.AddRange(validRows);
+        }
+        else if (mode == "USE_OLD")
+        {
+            // คงข้อมูลเดิมไว้: ไม่ supersede รายการเดิมใดๆ
+            // แต่สำหรับไฟล์ใหม่ หากแถวใดมีวันที่ทับซ้อนกับ active เดิม -> ให้ข้าม (Skip)
+            foreach (var (emp, row) in validRows)
+            {
+                var isOverlappedWithActive = existingActiveEntries.Any(e =>
+                    e.EmployeeId == emp.Id &&
+                    (
+                        (e.DateFrom == row.DateFrom && e.DateTo == row.DateTo) ||
+                        (row.DateFrom <= e.DateFrom && row.DateTo >= e.DateTo) ||
+                        (row.DateFrom == row.DateTo && e.DateFrom <= row.DateFrom && e.DateTo >= row.DateFrom)
+                    ));
+
+                if (isOverlappedWithActive)
+                {
+                    replacedCount++; // นับเป็นรายการที่ถูกข้ามเพื่อคงยอดเดิม
+                }
+                else
+                {
+                    rowsToInsert.Add((emp, row));
+                }
+            }
+        }
+        else // COMBINE_ALL
+        {
+            // รวมยอดทั้งหมด: ไม่ supersede และไม่ข้าม นำเข้าทุกรายการสะสมเพิ่ม
+            rowsToInsert.AddRange(validRows);
         }
 
         batch.ReplacedEntries = replacedCount;
 
         // 3. เพิ่มรายการใหม่ใน employee_commission_entry
-        foreach (var (emp, row) in validRows)
+        foreach (var (emp, row) in rowsToInsert)
         {
             var entry = new EmployeeCommissionEntry
             {
@@ -878,23 +946,127 @@ public class CommissionService : ICommissionService
 
         if (records.Any(r => r.Status == "PAID"))
         {
-            throw new BusinessRuleException("ไม่สามารถรีเซ็ตได้เนื่องจากมีบางรายการถูกจ่ายเงินไปแล้ว");
+            throw new BusinessRuleException("ไม่สามารถปลดล็อกได้เนื่องจากมีบางรายการถูกจ่ายเงินในงวดเงินเดือนไปแล้ว (สถานะ PAID)");
+        }
+
+        // ตรวจสอบว่ารอบเงินเดือนของงวดนี้เดินทางไปถึงขั้นตอนของฝ่ายการเงินหรือยัง
+        var payrollPeriod = await _context.PayrollPeriods
+            .FirstOrDefaultAsync(p => p.Year == year && p.Month == month, cancellationToken);
+
+        if (payrollPeriod != null && payrollPeriod.Status != "DRAFT" && payrollPeriod.Status != "REVIEW")
+        {
+            throw new BusinessRuleException(
+                $"ไม่สามารถปลดล็อกแก้ไขค่าคอมมิชชั่นได้ เนื่องจากรอบเงินเดือนประจำงวดนี้กำลังอยู่ในขั้นตอนของฝ่ายการเงิน/รออนุมัติ (สถานะ: '{payrollPeriod.Status}') " +
+                "หากต้องการแก้ไข กรุณาประสานงานให้ฝ่ายการเงินทำการส่งกลับรอบเงินเดือน (Return to Review) มายังฝ่ายบุคคลก่อน");
+        }
+
+        // ปลดล็อกสถานะกลับเป็น DRAFT เพื่อให้สามารถแก้ไขข้อมูล/นำเข้าเพิ่มเติมได้โดยข้อมูลเดิมไม่สูญหาย
+        foreach (var r in records)
+        {
+            if (r.Status != "PAID")
+            {
+                r.Status = "DRAFT";
+                r.ConfirmedAt = null;
+                r.ConfirmedByEmployeeId = null;
+                r.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        // หากมีรอบเงินเดือนในงวดนี้ที่ยังอยู่ในขั้นร่างหรือตรวจทาน (DRAFT/REVIEW)
+        // ให้ลบรายการค่าคอมมิชชั่นเดิมที่เคยดึงเข้าเงินเดือนออกทันที
+        // เพื่อไม่ให้มียอดคอมมิชชั่นค้าง และเมื่อทำการแก้ไขยืนยันใหม่จะไม่เกิดยอดขึ้นเบิ้ล
+        if (payrollPeriod != null && (payrollPeriod.Status == "DRAFT" || payrollPeriod.Status == "REVIEW"))
+        {
+            var commissionItem = await _context.PayrollItems
+                .FirstOrDefaultAsync(i => i.ItemCode == "INC_COMMISSION", cancellationToken);
+            if (commissionItem != null)
+            {
+                var payrollsInPeriod = await _context.Payrolls
+                    .Include(p => p.Details)
+                    .Where(p => p.PeriodId == payrollPeriod.Id)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var p in payrollsInPeriod)
+                {
+                    var commDetailsToRemove = p.Details
+                        .Where(d => d.PayrollItemId == commissionItem.Id && IsAutoCommissionDetail(d.CalculationSource))
+                        .ToList();
+
+                    if (commDetailsToRemove.Count > 0)
+                    {
+                        _context.PayrollDetails.RemoveRange(commDetailsToRemove);
+                        foreach (var cd in commDetailsToRemove)
+                        {
+                            p.Details.Remove(cd);
+                        }
+
+                        decimal totalGross = p.Details.Where(d => d.PayrollItemId != commissionItem.Id && d.Amount > 0).Sum(d => d.Amount);
+                        decimal totalDed = p.Details.Where(d => d.Amount < 0).Sum(d => Math.Abs(d.Amount));
+                        p.TotalGrossIncome = totalGross;
+                        p.TotalDeductionAmount = totalDed;
+                        p.NetPayableSalary = Math.Max(0, totalGross - totalDed);
+                    }
+                }
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetCommissionPeriodAsync(year, month, cancellationToken);
+    }
+
+    private static bool IsAutoCommissionDetail(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return false;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != System.Text.Json.JsonValueKind.Object) return false;
+            string? source = root.TryGetProperty("source", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.String ? s.GetString() : null;
+            bool hasCommId = root.TryGetProperty("commissionId", out var cId) && cId.ValueKind == System.Text.Json.JsonValueKind.Number;
+            return source == "COMMISSION" || hasCommId;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public async Task<CommissionPeriodSummaryDto> RecalculatePeriodWithRateAsync(int year, int month, decimal newRate, CancellationToken cancellationToken = default)
+    {
+        if (newRate <= 0) newRate = 3.00m;
+
+        // 1. ตรวจสอบว่ารอบถูกล็อก (PAID) หรือไม่
+        var isLocked = await _context.PayrollPeriods
+            .AnyAsync(p => p.Year == year && p.Month == month && p.Status == "PAID", cancellationToken);
+        if (isLocked)
+        {
+            throw new BusinessRuleException("งวดนี้มีสถานะจ่ายเงินแล้ว (PAID) ในระบบเงินเดือน ไม่สามารถคำนวณใหม่ได้");
         }
 
         var startOfMonth = new DateOnly(year, month, 1);
         var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
 
+        // 2. ดึง active entries ทั้งหมดของเดือนนี้
         var entries = await _context.EmployeeCommissionEntries
             .Where(e => e.Status == "ACTIVE" && e.DateFrom <= endOfMonth && e.DateTo >= startOfMonth)
             .ToListAsync(cancellationToken);
 
-        foreach (var e in entries)
+        foreach (var entry in entries)
         {
-            e.Status = "REMOVED";
+            entry.CommissionRate = newRate;
+            entry.CommissionAmount = Math.Round(entry.SalesAmount * (newRate / 100m), 2, MidpointRounding.AwayFromZero);
+            entry.TotalAmount = entry.CommissionAmount + entry.SpecialAmount;
         }
 
-        _context.EmployeeCommissions.RemoveRange(records);
-        await _context.SaveChangesAsync(cancellationToken);
+        // 3. ปรับปรุงยอดสรุปใน employee_commission
+        var empIds = entries.Select(e => e.EmployeeId).Distinct().ToList();
+        if (empIds.Any())
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            await RecalculateMonthlyCommissionsAsync(empIds, new[] { (year, month) }, newRate, cancellationToken);
+        }
+
         return await GetCommissionPeriodAsync(year, month, cancellationToken);
     }
 
@@ -1143,21 +1315,9 @@ public class CommissionService : ICommissionService
                 var effectiveRate = g.FirstOrDefault(x => x.Rate.HasValue)?.Rate;
                 var notes = g.Where(x => !string.IsNullOrWhiteSpace(x.Note)).Select(x => x.Note!).Distinct().ToList();
 
-                decimal commAmount;
-                decimal calcRate;
-
-                if (mergedDirectComm.HasValue && mergedDirectComm.Value > 0)
-                {
-                    commAmount = Math.Round(mergedDirectComm.Value, 2, MidpointRounding.AwayFromZero);
-                    if (effectiveRate.HasValue) calcRate = effectiveRate.Value;
-                    else if (totalSales > 0) calcRate = Math.Round((commAmount / totalSales) * 100m, 2);
-                    else calcRate = defaultRate;
-                }
-                else
-                {
-                    calcRate = effectiveRate ?? defaultRate;
-                    commAmount = Math.Round(totalSales * (calcRate / 100m), 2, MidpointRounding.AwayFromZero);
-                }
+                // ใช้อัตราตามระบบเท่านั้น (defaultRate) ไม่นำอัตราในไฟล์มาคิด
+                decimal calcRate = defaultRate > 0 ? defaultRate : 3.00m;
+                decimal commAmount = Math.Round(totalSales * (calcRate / 100m), 2, MidpointRounding.AwayFromZero);
 
                 return new ParsedCommissionRow
                 {
@@ -1165,8 +1325,8 @@ public class CommissionService : ICommissionService
                     DateFrom = g.Key.DateFrom,
                     DateTo = g.Key.DateTo,
                     SalesAmount = totalSales,
-                    DirectCommission = mergedDirectComm,
-                    Rate = effectiveRate,
+                    DirectCommission = null,
+                    Rate = calcRate,
                     SpecialAmount = totalSpecial,
                     CommissionRate = calcRate,
                     CommissionAmount = commAmount,
@@ -1497,15 +1657,9 @@ public class CommissionService : ICommissionService
         var str = val.ToString()?.Trim();
         if (string.IsNullOrWhiteSpace(str)) return null;
 
-        if (DateTime.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDt))
-        {
-            var y = parsedDt.Year > 2400 ? parsedDt.Year - 543 : parsedDt.Year;
-            return new DateOnly(y, parsedDt.Month, parsedDt.Day);
-        }
-
         var formats = new[] { 
-            "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "yyyy/MM/dd", "d-M-yyyy", "dd-MM-yyyy", 
-            "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm", "dd/MM/yyyy HH:mm",
+            "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "d-M-yyyy", "dd-MM-yyyy", "yyyy/MM/dd", 
+            "dd/MM/yyyy HH:mm:ss", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy HH:mm", "yyyy-MM-dd HH:mm", 
             "d/M/yy", "dd/MM/yy"
         };
         if (DateTime.TryParseExact(str, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dtExact))
@@ -1519,6 +1673,12 @@ public class CommissionService : ICommissionService
         {
             var y = dtThai.Year > 2400 ? dtThai.Year - 543 : dtThai.Year;
             return new DateOnly(y, dtThai.Month, dtThai.Day);
+        }
+
+        if (DateTime.TryParse(str, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDt))
+        {
+            var y = parsedDt.Year > 2400 ? parsedDt.Year - 543 : parsedDt.Year;
+            return new DateOnly(y, parsedDt.Month, parsedDt.Day);
         }
 
         return null;

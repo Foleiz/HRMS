@@ -282,7 +282,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
 
 const ManualBadge: React.FC<{ source?: string | null }> = ({ source }) => (
   <span className="ml-1.5 inline-block px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-medium align-middle dark:bg-amber-900/20 dark:text-amber-400">
-    {source === 'BONUS' ? 'โบนัส' : 'ระบุเอง'}
+    {source === 'BONUS' ? 'โบนัส' : source === 'COMMISSION' ? 'ค่าคอมฯ' : 'ระบุเอง'}
   </span>
 );
 

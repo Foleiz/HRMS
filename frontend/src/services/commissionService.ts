@@ -68,19 +68,21 @@ export const commissionService = {
     file: File,
     year: number,
     month: number,
-    defaultRate: number = 3.0
+    defaultRate: number = 3.0,
+    overlapResolutionMode: 'USE_NEW' | 'USE_OLD' | 'COMBINE_ALL' = 'USE_NEW'
   ): Promise<ImportCommissionResult> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('year', String(year));
     formData.append('month', String(month));
     formData.append('defaultRate', String(defaultRate));
+    formData.append('overlapResolutionMode', overlapResolutionMode);
 
     const res = await apiClient.post<ApiResponse<ImportCommissionResult>>(
       '/salary/commission/import',
       formData,
       {
-        params: { year, month, defaultRate },
+        params: { year, month, defaultRate, overlapResolutionMode },
         headers: { 'Content-Type': 'multipart/form-data' },
       }
     );
@@ -164,6 +166,15 @@ export const commissionService = {
     const res = await apiClient.post<ApiResponse<CommissionPeriodSummary>>(
       '/salary/commission/reset',
       { year, month }
+    );
+    return res.data.data;
+  },
+
+  async recalculatePeriod(year: number, month: number, rate: number): Promise<CommissionPeriodSummary> {
+    const res = await apiClient.post<ApiResponse<CommissionPeriodSummary>>(
+      '/salary/commission/recalculate',
+      null,
+      { params: { year, month, rate } }
     );
     return res.data.data;
   },

@@ -26,7 +26,9 @@ export interface CommissionPeriodSummary {
   status: 'DRAFT' | 'CONFIRMED' | 'PAID' | string;
   totalEmployees: number;
   totalSales: number;
+  totalSalesAmount?: number;
   totalCommission: number;
+  totalCommissionAmount?: number;
   confirmedAt?: string | null;
   confirmedByName?: string | null;
   records: CommissionRecord[];
@@ -86,6 +88,8 @@ export interface CommissionPreviewItem {
   errorMessage?: string | null;
 }
 
+export type OverlapResolutionMode = 'USE_NEW' | 'USE_OLD' | 'COMBINE_ALL';
+
 export interface CommissionPreviewResult {
   fileName: string;
   fileHash: string;
@@ -102,6 +106,10 @@ export interface CommissionPreviewResult {
   totalSalesAmount: number;
   totalCommissionAmount: number;
   replacedEntriesCount: number;
+  hasOverlappingEntries?: boolean;
+  overlappingDates?: string[];
+  overlappingCount?: number;
+  overlappingEmployeesCount?: number;
   isLockedPeriod: boolean;
   lockReason?: string | null;
   warnings: string[];

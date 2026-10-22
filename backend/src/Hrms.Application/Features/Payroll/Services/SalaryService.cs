@@ -1574,8 +1574,34 @@ public class SalaryService : ISalaryService
             .Where(d => d.PayrollId == payrollId)
             .OrderBy(d => d.PayrollItem != null ? d.PayrollItem.ItemType : "")
             .ThenBy(d => d.Id)
-            .AsNoTracking()
             .ToListAsync(cancellationToken);
+
+        // ตรวจจับและทำความสะอาดรายการ auto-commission ที่ตกค้างซ้ำซ้อนในฐานข้อมูลทันที
+        var autoCommDetails = details
+            .Where(d => d.PayrollItem?.ItemCode == "INC_COMMISSION" && ReadDetailSource(d.CalculationSource).Source == "COMMISSION")
+            .ToList();
+
+        if (autoCommDetails.Count > 1)
+        {
+            var duplicatesToRemove = autoCommDetails.Skip(1).ToList();
+            _context.PayrollDetails.RemoveRange(duplicatesToRemove);
+            foreach (var dup in duplicatesToRemove)
+            {
+                details.Remove(dup);
+            }
+
+            var payroll = await _context.Payrolls.FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
+            if (payroll != null)
+            {
+                decimal totalGross = details.Where(d => d.PayrollItem?.ItemType == "EARNING").Sum(d => d.Amount);
+                decimal totalDed = details.Where(d => d.PayrollItem?.ItemType == "DEDUCTION").Sum(d => d.Amount);
+                payroll.TotalGrossIncome = totalGross;
+                payroll.TotalDeductionAmount = totalDed;
+                payroll.NetPayableSalary = Math.Max(0, totalGross - totalDed);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
         return details.Select(d =>
         {
@@ -1941,6 +1967,11 @@ public class SalaryService : ISalaryService
         }
 
         period.Status = normalized;
+        if (normalized == "REVIEW")
+        {
+            period.FinanceVerifiedAt = null;
+            period.FinanceVerifiedBy = null;
+        }
         if (normalized == "PAID")
         {
             if (period.PaymentConfirmedAt == null) period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
@@ -2492,11 +2523,36 @@ public class SalaryService : ISalaryService
                 if (item.Id == commissionItem.Id)
                 {
                     var source = ReadDetailSource(d.CalculationSource);
-                    // หากรายการคอมมิชชั่นนี้มาจากการดึงคอมมิชชั่นอัตโนมัติ
-                    // ให้ข้ามของเดิม เพื่ออัปเดตยอดคอมมิชชั่นล่าสุดจาก eligiblePeriodCommissions ด้านล่างเสมอ
+                    // รายการคอมมิชชั่นที่ดึงมาจากระบบคอมมิชชั่นอัตโนมัติ (source == "COMMISSION")
                     if (source.Source == "COMMISSION" || source.CommissionId.HasValue)
                     {
-                        continue;
+                        var hasEligibleComm = eligiblePeriodCommissions.TryGetValue(emp.Id, out var linkedComm);
+                        // ถ้าคอมมิชชั่นถูกปลดล็อก/ยกเลิก/ลบ/ยอดเป็น 0 หรือมีรายการคอมมิชชั่นในรอบนี้แล้ว (กันซ้ำ) ให้ลบรายการเดิมนี้ออกทันที
+                        if (!hasEligibleComm || linkedComm == null || linkedComm.TotalCommission <= 0 || hasCommissionInManual)
+                        {
+                            _context.PayrollDetails.Remove(d);
+                            payroll.Details.Remove(d);
+                            continue;
+                        }
+
+                        // อัปเดตข้อมูลและยอดล่าสุดตาม EmployeeCommission ที่ยืนยันแล้ว
+                        var commSubtext = $"คอมมิชชั่นรอบ {linkedComm.Month}/{linkedComm.Year + 543} (ยอดขาย {linkedComm.SalesAmount:N2} @ {linkedComm.CommissionRate:0.##}%)" +
+                            (linkedComm.SpecialAmount > 0 ? $" + พิเศษ {linkedComm.SpecialAmount:N2}" : string.Empty);
+
+                        d.Amount = linkedComm.TotalCommission;
+                        d.Quantity = linkedComm.SalesAmount > 0 ? linkedComm.SalesAmount : null;
+                        d.Rate = linkedComm.CommissionRate > 0 ? linkedComm.CommissionRate : null;
+                        d.CalculationSource = System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            manual = true,
+                            source = "COMMISSION",
+                            commissionId = linkedComm.Id,
+                            year = linkedComm.Year,
+                            month = linkedComm.Month,
+                            salesAmount = linkedComm.SalesAmount,
+                            commissionRate = linkedComm.CommissionRate,
+                            subtext = commSubtext
+                        });
                     }
                     hasCommissionInManual = true;
                 }
@@ -3136,7 +3192,7 @@ public class SalaryService : ISalaryService
 
     #endregion
 
-    public async Task DeletePayrollPeriodAsync(long periodId, CancellationToken cancellationToken = default)
+    public async Task DeletePayrollPeriodAsync(long periodId, bool force = false, CancellationToken cancellationToken = default)
     {
         var period = await _context.PayrollPeriods
             .Include(p => p.Payrolls)
@@ -3144,8 +3200,8 @@ public class SalaryService : ISalaryService
             .FirstOrDefaultAsync(p => p.Id == periodId, cancellationToken)
             ?? throw new NotFoundException("ไม่พบข้อมูลรอบเงินเดือน");
 
-        // Allow deletion ONLY in DRAFT or REVIEW status
-        if (period.Status != "DRAFT" && period.Status != "REVIEW")
+        // Allow deletion ONLY in DRAFT or REVIEW status (unless force is explicitly requested)
+        if (!force && period.Status != "DRAFT" && period.Status != "REVIEW")
         {
             throw new BusinessRuleException(
                 $"ไม่สามารถลบรอบเงินเดือนในสถานะ '{period.Status}' ได้ " +
@@ -3158,6 +3214,22 @@ public class SalaryService : ISalaryService
             .ExecuteUpdateAsync(s => s
                 .SetProperty(c => c.PaymentStatus, BenefitPayCode.PaymentUnpaid)
                 .SetProperty(c => c.PayrollPeriodId, (long?)null), cancellationToken);
+
+        // ปลดล็อกค่าคอมมิชชั่นที่ผูกกับรอบนี้ ให้กลับเป็นสถานะ CONFIRMED เพื่อให้นำไปคำนวณใหม่ได้
+        await _context.EmployeeCommissions
+            .Where(c => c.PaidPeriodId == period.Id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(c => c.Status, "CONFIRMED")
+                .SetProperty(c => c.PaidPeriodId, (long?)null), cancellationToken);
+
+        var payrollIds = period.Payrolls.Select(p => p.Id).ToList();
+        if (payrollIds.Any())
+        {
+            // ลบ Payslips ที่อ้างอิง Payroll ก่อนเพื่อไม่ให้ติด FK Constraint ใน PostgreSQL
+            await _context.Payslips
+                .Where(ps => payrollIds.Contains(ps.PayrollId))
+                .ExecuteDeleteAsync(cancellationToken);
+        }
 
         // Clean up payroll details and payroll records
         foreach (var pr in period.Payrolls)

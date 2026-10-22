@@ -193,8 +193,8 @@ export const salaryService = {
     return res.data.data;
   },
 
-  async deletePayrollPeriod(periodId: number): Promise<void> {
-    await apiClient.delete(`/salary/periods/${periodId}`);
+  async deletePayrollPeriod(periodId: number, force: boolean = false): Promise<void> {
+    await apiClient.delete(`/salary/periods/${periodId}`, { params: { force } });
   },
 
   /** เพิ่มรายการรายได้/รายหักแบบระบุเองให้พนักงานรายบุคคล (ระบบคำนวณใหม่ทั้งรอบ) */

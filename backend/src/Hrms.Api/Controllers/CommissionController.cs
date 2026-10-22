@@ -116,9 +116,11 @@ public class CommissionController : ControllerBase
         [FromForm] int? year,
         [FromForm] int? month,
         [FromForm] decimal? defaultRate,
+        [FromForm] string? overlapResolutionMode,
         [FromQuery(Name = "year")] int? yearQuery,
         [FromQuery(Name = "month")] int? monthQuery,
         [FromQuery(Name = "defaultRate")] decimal? defaultRateQuery,
+        [FromQuery(Name = "overlapResolutionMode")] string? overlapResolutionModeQuery,
         IFormFile file,
         CancellationToken cancellationToken)
     {
@@ -132,11 +134,12 @@ public class CommissionController : ControllerBase
         var y = year ?? yearQuery ?? DateTime.Today.Year;
         var m = month ?? monthQuery ?? DateTime.Today.Month;
         var rate = defaultRate ?? defaultRateQuery ?? 3.00m;
+        var mode = overlapResolutionMode ?? overlapResolutionModeQuery ?? "USE_NEW";
         var userId = _currentUser.UserId;
 
         using var stream = file.OpenReadStream();
-        var result = await _commissionService.ImportCommissionFileAsync(y, m, rate, stream, file.FileName, userId, cancellationToken);
-        var msg = $"นำเข้าค่าคอมมิชชั่น ({result.DetectedTypeLabel}) สำเร็จ {result.TotalImported} รายการ (แทนที่รายการเดิม {result.ReplacedCount} รายการ)";
+        var result = await _commissionService.ImportCommissionFileAsync(y, m, rate, stream, file.FileName, userId, mode, cancellationToken);
+        var msg = $"นำเข้าค่าคอมมิชชั่น ({result.DetectedTypeLabel}) สำเร็จ {result.TotalImported} รายการ (แทนที่/จัดการรายการเดิม {result.ReplacedCount} รายการ)";
         return Ok(ApiResponse<ImportCommissionResultDto>.Ok(result, msg));
     }
 
@@ -272,6 +275,22 @@ public class CommissionController : ControllerBase
         PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_MANAGE"), "รีเซ็ตค่าคอมมิชชั่น");
         var result = await _commissionService.ResetCommissionPeriodAsync(request.Year, request.Month, cancellationToken);
         return Ok(ApiResponse<CommissionPeriodSummaryDto>.Ok(result, "รีเซ็ตข้อมูลค่าคอมมิชชั่นประจำงวดเรียบร้อยแล้ว"));
+    }
+
+    /// <summary>
+    /// คำนวณค่าคอมมิชชั่นทั้งงวดใหม่ตามอัตราของระบบที่ระบุ
+    /// </summary>
+    [HttpPost("recalculate")]
+    [ProducesResponseType(typeof(ApiResponse<CommissionPeriodSummaryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<CommissionPeriodSummaryDto>>> RecalculatePeriod(
+        [FromQuery] int year,
+        [FromQuery] int month,
+        [FromQuery] decimal rate = 3.00m,
+        CancellationToken cancellationToken = default)
+    {
+        PayrollAccess.Ensure(PayrollAccess.CanManage(_currentUser, "PAYROLL_MANAGE"), "คำนวณค่าคอมมิชชั่นใหม่");
+        var result = await _commissionService.RecalculatePeriodWithRateAsync(year, month, rate, cancellationToken);
+        return Ok(ApiResponse<CommissionPeriodSummaryDto>.Ok(result, $"คำนวณค่าคอมมิชชั่นงวด {month}/{year} ใหม่ด้วยอัตรา {rate}% สำเร็จ"));
     }
 
     /// <summary>

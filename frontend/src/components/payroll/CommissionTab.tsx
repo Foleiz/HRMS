@@ -43,6 +43,7 @@ import {
   CommissionMonthlyPeriod,
   UpdateCommissionItemPayload,
   AddManualCommissionPayload,
+  OverlapResolutionMode,
 } from '@/types/commission';
 import { EmployeeSalaryOverview } from '@/types/payroll';
 import { useToast } from '@/context/ToastContext';
@@ -93,6 +94,7 @@ export default function CommissionTab() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isExecutingImport, setIsExecutingImport] = useState<boolean>(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState<boolean>(false);
+  const [isRecalculatingRate, setIsRecalculatingRate] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Batch History State
@@ -132,6 +134,11 @@ export default function CommissionTab() {
   const [selectedEmployeePeriodInfo, setSelectedEmployeePeriodInfo] = useState<{ year: number; month: number } | null>(null);
   const [employeeEntries, setEmployeeEntries] = useState<CommissionBatchEntry[]>([]);
   const [isLoadingEmployeeEntries, setIsLoadingEmployeeEntries] = useState<boolean>(false);
+
+  // Overlap Resolution Modal State
+  const [showOverlapModal, setShowOverlapModal] = useState<boolean>(false);
+  const [pendingOverlapPreview, setPendingOverlapPreview] = useState<CommissionPreviewResult | null>(null);
+  const [overlapMode, setOverlapMode] = useState<OverlapResolutionMode>('USE_NEW');
 
   // Modals State
   const [isGuideOpen, setIsGuideOpen] = useState<boolean>(false);
@@ -176,6 +183,22 @@ export default function CommissionTab() {
       error(err?.response?.data?.message || 'ไม่สามารถโหลดข้อมูลค่าคอมมิชชั่นได้');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Recalculate Period with Current Default Rate
+  const handleApplyDefaultRate = async () => {
+    if (isPeriodConfirmed) return;
+    try {
+      setIsRecalculatingRate(true);
+      const res = await commissionService.recalculatePeriod(selectedYear, selectedMonth, defaultRate);
+      setSummary(res);
+      success(`คำนวณยอดค่าคอมมิชชั่นทั้งงวดใหม่ด้วยอัตรา ${defaultRate}% สำเร็จ`);
+      await loadMonthlyPeriods(selectedYear);
+    } catch (err: any) {
+      error(err?.response?.data?.message || 'คำนวณใหม่ไม่สำเร็จ');
+    } finally {
+      setIsRecalculatingRate(false);
     }
   };
 
@@ -364,7 +387,56 @@ export default function CommissionTab() {
     }
   };
 
-  // Confirm Final Import (with Option 1 Overlap Warning Guard)
+  // Execute Actual Import with Overlap Resolution Mode
+  const executeImport = async (mode: OverlapResolutionMode = 'USE_NEW') => {
+    if (!selectedFile) return;
+
+    try {
+      setIsExecutingImport(true);
+      setShowOverlapModal(false);
+
+      const res = await commissionService.importCommissionFile(
+        selectedFile,
+        selectedYear,
+        selectedMonth,
+        defaultRate,
+        mode
+      );
+
+      setSummary(res.summary);
+
+      let msg = `นำเข้าสำเร็จ (${res.detectedTypeLabel}): ${res.totalImported} รายการ`;
+      if (mode === 'USE_NEW' && res.replacedCount > 0) {
+        msg += ` (แทนที่ข้อมูลเดิม ${res.replacedCount} รายการ)`;
+      } else if (mode === 'USE_OLD' && res.skippedCount > 0) {
+        msg += ` (ข้ามข้อมูลวันที่ซ้ำเดิม ${res.skippedCount} รายการ)`;
+      } else if (mode === 'COMBINE_ALL') {
+        msg += ` (สะสมยอดรวมทั้งหมด)`;
+      }
+      success(msg);
+
+      if (res.warnings && res.warnings.length > 0) {
+        info(`พบคำเตือน ${res.warnings.length} รายการ: ${res.warnings.slice(0, 2).join('; ')}`);
+      }
+
+      setIsPreviewModalOpen(false);
+      setSelectedFile(null);
+      setPreviewData(null);
+      setPendingOverlapPreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+
+      // Reload Data and Batch History
+      await loadCommissionData(selectedYear, selectedMonth);
+      await loadMonthlyPeriods(selectedYear);
+      await loadBatches(1);
+    } catch (err: any) {
+      error(err?.response?.data?.message || 'การนำเข้าไฟล์ล้มเหลว กรุณาตรวจสอบไฟล์');
+    } finally {
+      setIsExecutingImport(false);
+    }
+  };
+
+  // Confirm Final Import (Checks for Overlapping Dates first)
   const handleConfirmImport = async () => {
     if (!selectedFile) return;
 
@@ -381,7 +453,6 @@ export default function CommissionTab() {
           defaultRate
         );
       } catch (err: any) {
-        // If preview failed due to parse error, let import handle or show error
         error(err?.response?.data?.message || 'ไม่สามารถตรวจสอบไฟล์ได้ กรุณาตรวจสอบรูปแบบไฟล์');
         setIsExecutingImport(false);
         return;
@@ -397,92 +468,19 @@ export default function CommissionTab() {
         return;
       }
 
-      // 2. Option 1: Warning Guard when date overlap replaces existing data
-      if (preview.replacedEntriesCount > 0) {
-        setIsExecutingImport(false); // Stop loading spinner while user decides
-
-        const overlappingRows = preview.previewRows.filter((r) => r.existingOverlappingEntries > 0);
-        const overlapList = overlappingRows
-          .slice(0, 5)
-          .map((r) => `${r.employeeCode} - ${r.employeeName} (${r.dateFrom}${r.dateFrom !== r.dateTo ? ` ถึง ${r.dateTo}` : ''})`);
-        const moreCount = overlappingRows.length - overlapList.length;
-
-        const confirmRes = await hrmsSwal.fire({
-          title: '⚠️ ตรวจพบข้อมูลวันที่ซ้อนทับกัน!',
-          html: `
-            <div class="text-left text-xs space-y-3 text-slate-700 dark:text-slate-300">
-              <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200">
-                <p class="font-bold text-sm">การนำเข้าไฟล์นี้จะทำให้ข้อมูลเดิมถูกแทนที่ ${preview.replacedEntriesCount} รายการ!</p>
-                <p class="mt-1 text-[11px] leading-relaxed">
-                  ตรวจพบว่าช่วงวันที่ในไฟล์ใหม่ <b>(${preview.dateFrom || ''} ถึง ${preview.dateTo || ''})</b> ไปทับซ้อนกับข้อมูลเดิมที่เคยนำเข้าไว้ในระบบ
-                </p>
-              </div>
-
-              <div>
-                <p class="font-semibold text-slate-800 dark:text-slate-100">ตัวอย่างพนักงานที่ช่วงวันซ้ำกับข้อมูลเดิม:</p>
-                <div class="mt-1.5 p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800/80 font-mono text-[11px] text-slate-700 dark:text-slate-300 max-h-32 overflow-y-auto space-y-1">
-                  ${overlapList.map((item) => `<div>• ${item}</div>`).join('')}
-                  ${moreCount > 0 ? `<div class="text-slate-500 italic">...และอีก ${moreCount} รายการ</div>` : ''}
-                </div>
-              </div>
-
-              <div class="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-[11px]">
-                <b>❗ คำเตือน:</b> หากคุณต้องการรวมยอดทั้งเดือนโดยไม่ได้ตั้งใจแทนที่ (เช่น พิมพ์วันซ้ำกับไฟล์แรก) แนะนำให้กด <b>"ยกเลิกไปแก้ไฟล์"</b> แล้วปรับวันที่ไม่ให้ชนกัน (เช่น 1-15 และ 16-31)
-              </div>
-            </div>
-          `,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'ยืนยันแทนที่ข้อมูลเดิม',
-          cancelButtonText: 'ยกเลิกไปแก้ไฟล์',
-          reverseButtons: true,
-          focusCancel: true,
-          customClass: {
-            popup: 'rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 p-6 bg-white dark:bg-slate-900',
-            title: 'text-lg font-bold text-slate-800 dark:text-white pt-2',
-            htmlContainer: 'text-sm text-slate-600 dark:text-slate-300 mt-2 text-left leading-relaxed',
-            confirmButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:scale-95 transition-all shadow-sm shadow-rose-200 cursor-pointer',
-            cancelButton: 'inline-flex items-center justify-center px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 active:scale-95 transition-all mr-3 border border-slate-300 dark:border-slate-700 cursor-pointer',
-            actions: 'gap-3 mt-5 flex justify-center items-center',
-          },
-        });
-
-        if (!confirmRes.isConfirmed) {
-          return; // Abort import, user chose to cancel and fix file
-        }
-
-        setIsExecutingImport(true); // User confirmed, proceed with import
+      // 2. If overlapping dates detected, prompt user to choose resolution mode
+      if (preview.hasOverlappingEntries || (preview.overlappingCount ?? 0) > 0 || preview.replacedEntriesCount > 0) {
+        setIsExecutingImport(false);
+        setPendingOverlapPreview(preview);
+        setOverlapMode('USE_NEW');
+        setShowOverlapModal(true);
+        return;
       }
 
-      // 3. Execute actual import
-      const res = await commissionService.importCommissionFile(
-        selectedFile,
-        selectedYear,
-        selectedMonth,
-        defaultRate
-      );
-
-      setSummary(res.summary);
-      success(
-        `นำเข้าสำเร็จ (${res.detectedTypeLabel}): ${res.totalImported} รายการ ${res.replacedCount > 0 ? `(แทนที่รายการเดิม ${res.replacedCount} รายการ)` : ''}`
-      );
-
-      if (res.warnings && res.warnings.length > 0) {
-        info(`พบคำเตือน ${res.warnings.length} รายการ: ${res.warnings.slice(0, 2).join('; ')}`);
-      }
-
-      setIsPreviewModalOpen(false);
-      setSelectedFile(null);
-      setPreviewData(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-
-      // Reload Data and Batch History
-      await loadCommissionData(selectedYear, selectedMonth);
-      await loadMonthlyPeriods(selectedYear);
-      await loadBatches(1);
+      // 3. No overlap -> proceed directly with default USE_NEW
+      await executeImport('USE_NEW');
     } catch (err: any) {
       error(err?.response?.data?.message || 'การนำเข้าไฟล์ล้มเหลว กรุณาตรวจสอบไฟล์');
-    } finally {
       setIsExecutingImport(false);
     }
   };
@@ -857,6 +855,17 @@ export default function CommissionTab() {
               />
               <span className="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
             </div>
+            {!isPeriodConfirmed && summary && summary.records && summary.records.length > 0 && (
+              <button
+                type="button"
+                onClick={handleApplyDefaultRate}
+                disabled={isRecalculatingRate}
+                title={`นำอัตรา ${defaultRate}% ไปคำนวณใหม่กับทุกรายการในงวดนี้`}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition active:scale-95 disabled:opacity-50 cursor-pointer shadow-2xs ml-1"
+              >
+                {isRecalculatingRate ? <Loader2 className="w-3 h-3 animate-spin" /> : <span>คำนวณใหม่</span>}
+              </button>
+            )}
           </div>
 
           {/* Refresh Button */}
@@ -960,7 +969,7 @@ export default function CommissionTab() {
             </span>
             <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               ฿
-              {(summary?.totalSales ?? 0).toLocaleString(undefined, {
+              {(summary?.totalSalesAmount ?? summary?.totalSales ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -982,7 +991,7 @@ export default function CommissionTab() {
             </span>
             <div className="text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">
               ฿
-              {(summary?.totalCommission ?? 0).toLocaleString(undefined, {
+              {(summary?.totalCommissionAmount ?? summary?.totalCommission ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
@@ -2648,6 +2657,207 @@ export default function CommissionTab() {
                   ปิดหน้าต่าง
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8.9. Overlap Resolution Choice Modal */}
+      {showOverlapModal && pendingOverlapPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-amber-50/70 dark:bg-amber-950/30">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 shadow-xs">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                    ตรวจพบข้อมูลวันที่ซ้ำกันในระบบ
+                  </h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                    ไฟล์ใหม่มีช่วงวันที่ซ้ำกับข้อมูลที่มีอยู่แล้วในระบบ กรุณาเลือกวิธีจัดการข้อมูลในวันที่ซ้ำ
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOverlapModal(false);
+                  setPendingOverlapPreview(null);
+                }}
+                className="h-8 w-8 rounded-lg hover:bg-slate-200/80 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Overlap Info Badge */}
+            <div className="p-5 space-y-4">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-xs space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">วันที่ซ้ำกัน:</span>
+                  <span className="font-mono font-bold text-amber-700 dark:text-amber-400">
+                    {pendingOverlapPreview.overlappingDates && pendingOverlapPreview.overlappingDates.length > 0
+                      ? pendingOverlapPreview.overlappingDates.join(', ')
+                      : 'พบช่วงวันซ้ำ'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">พนักงานที่ได้รับผลกระทบ:</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {pendingOverlapPreview.overlappingEmployeesCount ?? 0} คน ({pendingOverlapPreview.overlappingCount ?? pendingOverlapPreview.replacedEntriesCount} รายการ)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400">ไฟล์ที่กำลังนำเข้า:</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300 truncate max-w-[220px]">
+                    {selectedFile?.name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Radio Options */}
+              <div className="space-y-2.5">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  เลือกวิธีจัดการข้อมูลวันที่ซ้ำ:
+                </p>
+
+                {/* Option 1: USE_NEW */}
+                <label
+                  onClick={() => setOverlapMode('USE_NEW')}
+                  className={`block p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    overlapMode === 'USE_NEW'
+                      ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="overlapMode"
+                      value="USE_NEW"
+                      checked={overlapMode === 'USE_NEW'}
+                      onChange={() => setOverlapMode('USE_NEW')}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          1. ใช้ข้อมูลจากไฟล์ใหม่ล่าสุด (แนะนำ)
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          แทนที่เฉพาะวันซ้ำ
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                        นำเข้าข้อมูลวันใหม่ทั้งหมด และในวันที่ซ้ำจะใช้ยอดจากไฟล์ใหม่นี้แทนที่ข้อมูลเดิม (วันอื่นๆ ที่ไม่ซ้ำจากไฟล์เดิมยังคงอยู่ครบและสะสมยอดต่อ)
+                      </p>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 2: USE_OLD */}
+                <label
+                  onClick={() => setOverlapMode('USE_OLD')}
+                  className={`block p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    overlapMode === 'USE_OLD'
+                      ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="overlapMode"
+                      value="USE_OLD"
+                      checked={overlapMode === 'USE_OLD'}
+                      onChange={() => setOverlapMode('USE_OLD')}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          2. คงข้อมูลจากไฟล์เดิมไว้
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                          ข้ามวันซ้ำในไฟล์ใหม่
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                        คงยอดเดิมที่มีอยู่แล้วในระบบ และนำเข้าเฉพาะข้อมูลวันที่ใหม่ที่ยังไม่เคยมีในระบบเท่านั้น
+                      </p>
+                    </div>
+                  </div>
+                </label>
+
+                {/* Option 3: COMBINE_ALL */}
+                <label
+                  onClick={() => setOverlapMode('COMBINE_ALL')}
+                  className={`block p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    overlapMode === 'COMBINE_ALL'
+                      ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="overlapMode"
+                      value="COMBINE_ALL"
+                      checked={overlapMode === 'COMBINE_ALL'}
+                      onChange={() => setOverlapMode('COMBINE_ALL')}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                          3. รวมยอดทั้งสองไฟล์เข้าด้วยกัน
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                          สะสมยอดทั้งหมด
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                        นำเข้าข้อมูลทั้งหมดและรวมยอดเข้าด้วยกัน โดยไม่ตัดหรือแทนที่ข้อมูลใดออก
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5 bg-slate-50/70 dark:bg-slate-900/60">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOverlapModal(false);
+                  setPendingOverlapPreview(null);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={isExecutingImport}
+                onClick={() => executeImport(overlapMode)}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#0B2046] hover:bg-[#133066] dark:bg-blue-600 dark:hover:bg-blue-500 shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {isExecutingImport ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>กำลังนำเข้า...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>ยืนยันการนำเข้า</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
