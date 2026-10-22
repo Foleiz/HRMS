@@ -25,8 +25,11 @@ public class ShiftService : IShiftService
 
     private static (double workHours, double netWorkHours) CalculateHours(TimeOnly start, TimeOnly end, bool isCrossDay, int breakMinutes)
     {
+        // ข้ามเที่ยงคืนจริงเมื่อเวลาเลิก <= เวลาเข้า เท่านั้น
+        // (กะ 00:00-06:00 ที่ติ๊ก "ข้ามวัน" ไว้ ต้องได้ 6 ชม. ไม่ใช่ 30 ชม.)
+        _ = isCrossDay;
         double totalMinutes;
-        if (isCrossDay || end < start)
+        if (end <= start)
         {
             totalMinutes = (24 * 60 - (start.Hour * 60 + start.Minute)) + (end.Hour * 60 + end.Minute);
         }
