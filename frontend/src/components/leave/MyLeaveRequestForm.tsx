@@ -7,6 +7,7 @@ import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button } from '@/components/ui';
 
 interface EmployeeProfileSummary {
   fullName: string;
@@ -543,8 +544,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 <button
                   type="button"
                   onClick={() => setLeaveFormat('FULL_DAY')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    leaveFormat === 'FULL_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    leaveFormat === 'FULL_DAY' ? 'bg-primary text-white shadow-xs' : 'text-gray-500 dark:text-slate-400'
                   }`}
                 >
                   <Sun className="w-3.5 h-3.5" /> เต็มวัน
@@ -552,8 +553,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 <button
                   type="button"
                   onClick={() => setLeaveFormat('HALF_DAY')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                    leaveFormat === 'HALF_DAY' ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 dark:text-slate-400'
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                    leaveFormat === 'HALF_DAY' ? 'bg-primary text-white shadow-xs' : 'text-gray-500 dark:text-slate-400'
                   }`}
                 >
                   <Clock3 className="w-3.5 h-3.5" /> ครึ่งวัน
@@ -676,32 +677,30 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
       {/* ─── Actions ─────────────────────────────────── */}
       <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-slate-700/60">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={() => setShowPreview(true)}
           disabled={loading || savingDraft}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
+          icon={<FileText className="w-3.5 h-3.5" />}
         >
-          <FileText className="w-3.5 h-3.5" />
           ดูตัวอย่างเอกสาร
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="secondary"
           onClick={handleSaveDraft}
           disabled={loading || savingDraft}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40 rounded-xl transition-colors"
+          loading={savingDraft}
+          icon={savingDraft ? undefined : <Save className="w-3.5 h-3.5" />}
         >
-          {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
           บันทึกแบบร่าง
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
+          loading={loading}
           disabled={loading || savingDraft || validationErrors.length > 0}
-          className="px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors flex items-center gap-2 shadow-sm"
         >
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
           ยื่นคำขอลา
-        </button>
+        </Button>
       </div>
 
       <LeavePreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} data={showPreview ? previewData : null} />

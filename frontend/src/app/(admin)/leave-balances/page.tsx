@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -9,6 +9,7 @@ import { MyLeaveSummary, LeaveTypeCard } from '@/types/leave';
 import { Calendar, Download, Loader2 } from 'lucide-react';
 import { resolveLeaveColor, leaveColorVars } from '@/lib/leaveColors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button } from '@/components/ui';
 
 export default function LeaveBalancesPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -142,19 +143,16 @@ export default function LeaveBalancesPage() {
           </div>
         </div>
 
-        {/* Export Report Button (Mockup Navy button) */}
-        <button
+        {/* Export Report Button */}
+        <Button
           onClick={handleExport}
-          disabled={isExporting || isLoading}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-medium shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+          disabled={isLoading}
+          loading={isExporting}
+          icon={isExporting ? undefined : <Download className="w-3.5 h-3.5" />}
+          size="sm"
         >
-          {isExporting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Download className="w-3.5 h-3.5" />
-          )}
-          <span>ส่งออกรายงาน (Export)</span>
-        </button>
+          ส่งออกรายงาน (Export)
+        </Button>
       </div>
 
       {/* ========================================================= */}

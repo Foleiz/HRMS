@@ -1,8 +1,9 @@
-﻿'use client';
+'use client';
 
 import React, { useState } from 'react';
-import { X, Loader2, ArrowRightLeft } from 'lucide-react';
+import { ArrowRightLeft } from 'lucide-react';
 import { LeaveBalance, LeaveBalanceAdjustmentPayload } from '@/types/leave';
+import { Modal, ModalFooter, inputClass } from '@/components/ui';
 
 interface AdjustBalanceModalProps {
   isOpen: boolean;
@@ -62,133 +63,122 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ArrowRightLeft className="w-5 h-5 text-blue-600" />
-            <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">ปรับยอดวันลาพนักงาน</h3>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <span className="flex items-center justify-center gap-2">
+          <ArrowRightLeft className="w-5 h-5 text-primary" />
+          <span>ปรับยอดวันลาพนักงาน</span>
+        </span>
+      }
+      onSubmit={handleSubmit}
+      size="sm"
+      footer={
+        <ModalFooter
+          onCancel={onClose}
+          submitText="ยืนยันการปรับยอด"
+          cancelText="ยกเลิก"
+          loading={loading}
+        />
+      }
+    >
+      <div className="space-y-4 text-xs">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl dark:bg-red-900/20 dark:text-red-400">
+            {error}
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        )}
+
+        {/* Employee & Leave Info Card */}
+        <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-xl space-y-1.5 border border-slate-100 dark:border-slate-700/60">
+          <div className="flex justify-between">
+            <span className="text-slate-500 dark:text-slate-400">พนักงาน:</span>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">
+              {balance.employeeName} ({balance.employeeCode})
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500 dark:text-slate-400">ประเภทการลา:</span>
+            <span className="font-medium text-slate-800 dark:text-slate-200">{balance.leaveTypeName}</span>
+          </div>
+          <div className="flex justify-between pt-1.5 border-t border-slate-200/60 dark:border-slate-700">
+            <span className="text-slate-500 dark:text-slate-400">คงเหลือปัจจุบัน:</span>
+            <span className="font-bold text-primary dark:text-blue-300">{currentRemaining} วัน</span>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl dark:bg-red-900/20 dark:text-red-400">
-              {error}
-            </div>
-          )}
-
-          {/* Employee & Leave Info Card */}
-          <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl space-y-1.5 border border-slate-100 dark:border-slate-700/60 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-500 dark:text-slate-400">พนักงาน:</span>
-              <span className="font-semibold text-gray-800 dark:text-slate-200">{balance.employeeName} ({balance.employeeCode})</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500 dark:text-slate-400">ประเภทการลา:</span>
-              <span className="font-medium text-gray-800 dark:text-slate-200">{balance.leaveTypeName}</span>
-            </div>
-            <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
-              <span className="text-gray-500 dark:text-slate-400">คงเหลือปัจจุบัน:</span>
-              <span className="font-bold text-blue-600">{currentRemaining} วัน</span>
-            </div>
-          </div>
-
-          {/* Type of Adjustment: Add or Deduct */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">ประเภทการปรับยอด</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setIsDeduct(false)}
-                className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                  !isDeduct
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40'
-                }`}
-              >
-                + เพิ่มสิทธิ์วันลา
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsDeduct(true)}
-                className={`py-2 text-xs font-semibold rounded-xl border transition-all ${
-                  isDeduct
-                    ? 'bg-rose-50 text-rose-700 border-rose-300'
-                    : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800/40'
-                }`}
-              >
-                - ลดสิทธิ์วันลา
-              </button>
-            </div>
-          </div>
-
-          {/* Amount */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-              จำนวนวัน {isDeduct ? '(ลดลง)' : '(เพิ่มขึ้น)'}
-            </label>
-            <input
-              type="number"
-              step="0.5"
-              min="0.5"
-              placeholder="เช่น 1 หรือ 2.5"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          {/* Preview */}
-          {numAmount > 0 && (
-            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 flex items-center justify-between text-xs text-blue-800 font-medium">
-              <span>ยอดใหม่หลังปรับ:</span>
-              <span className="font-bold text-sm">{previewRemaining} วัน</span>
-            </div>
-          )}
-
-          {/* Reason */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
-              เหตุผลการปรับยอด (หมายเหตุ)
-            </label>
-            <textarea
-              rows={2}
-              placeholder="เช่น ได้รับโควตาพิเศษจากโครงการ, แก้ไขข้อผิดพลาดปีก่อน"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+        {/* Type of Adjustment: Add or Deduct */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            ประเภทการปรับยอด
+          </label>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 rounded-xl transition-colors"
+              onClick={() => setIsDeduct(false)}
+              className={`py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                !isDeduct
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+              }`}
             >
-              ยกเลิก
+              + เพิ่มสิทธิ์วันลา
             </button>
             <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition-colors flex items-center gap-2"
+              type="button"
+              onClick={() => setIsDeduct(true)}
+              className={`py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                isDeduct
+                  ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50'
+              }`}
             >
-              {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              ยืนยันการปรับยอด
+              - ลดสิทธิ์วันลา
             </button>
           </div>
-        </form>
+        </div>
+
+        {/* Amount */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            จำนวนวัน {isDeduct ? '(ลดลง)' : '(เพิ่มขึ้น)'}
+          </label>
+          <input
+            type="number"
+            step="0.5"
+            min="0.5"
+            placeholder="เช่น 1 หรือ 2.5"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
+            className={inputClass}
+            required
+          />
+        </div>
+
+        {/* Preview */}
+        {numAmount > 0 && (
+          <div className="p-3 bg-primary-soft/60 rounded-xl border border-primary/20 flex items-center justify-between text-xs text-primary font-medium">
+            <span>ยอดใหม่หลังปรับ:</span>
+            <span className="font-bold text-sm tabular-nums">{previewRemaining} วัน</span>
+          </div>
+        )}
+
+        {/* Reason */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            เหตุผลการปรับยอด (หมายเหตุ)
+          </label>
+          <textarea
+            rows={2}
+            placeholder="เช่น ได้รับโควตาพิเศษจากโครงการ, แก้ไขข้อผิดพลาดปีก่อน"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className={inputClass}
+            required
+          />
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 };

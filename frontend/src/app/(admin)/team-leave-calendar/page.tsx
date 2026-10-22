@@ -217,7 +217,7 @@ export default function TeamLeaveCalendarPage() {
       <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <CalendarDays className="w-5 h-5 text-[#0B2046]" />
+            <CalendarDays className="w-5 h-5 text-primary" />
             <h1 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิทินการลาของทีม</h1>
           </div>
           {scope && (
@@ -268,7 +268,7 @@ export default function TeamLeaveCalendarPage() {
                   setSelectedDay(null);
                 }}
                 className={`px-3 py-1 text-xs font-medium rounded-lg ${
-                  view === m ? 'bg-white dark:bg-slate-700 shadow-sm text-[#0B2046] dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'
+                  view === m ? 'bg-white dark:bg-slate-700 shadow-sm text-primary dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 {m === 'month' ? 'รายเดือน' : 'รายสัปดาห์'}
@@ -356,7 +356,7 @@ export default function TeamLeaveCalendarPage() {
                     >
                       <span
                         className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
-                          key === todayKey ? 'bg-[#0B2046] text-white' : outside ? 'text-slate-300' : 'text-slate-600'
+                          key === todayKey ? 'bg-primary text-white' : outside ? 'text-slate-300' : 'text-slate-600'
                         }`}
                       >
                         {d.getDate()}
