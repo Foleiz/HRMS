@@ -1480,7 +1480,7 @@ export default function LeaveRequestsApprovalPage() {
                 onClick={submitApprove}
                 loading={isSubmittingApprove}
                 icon={<CheckCircle2 className="w-4 h-4" />}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                variant="success"
               >
                 ยืนยันการอนุมัติ
               </Button>
@@ -1624,7 +1624,7 @@ export default function LeaveRequestsApprovalPage() {
                 onClick={submitCertApprove}
                 loading={isSubmittingCertApprove}
                 icon={<CheckCircle2 className="w-4 h-4" />}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                variant="success"
               >
                 ยืนยันการอนุมัติ
               </Button>
@@ -1789,7 +1789,7 @@ export default function LeaveRequestsApprovalPage() {
                 onClick={submitResignApprove}
                 loading={isSubmittingResignApprove}
                 icon={<CheckCircle2 className="w-4 h-4" />}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                variant="success"
               >
                 ยืนยันการอนุมัติ
               </Button>
@@ -1969,7 +1969,7 @@ export default function LeaveRequestsApprovalPage() {
                 onClick={submitGeneralApprove}
                 loading={isSubmittingGeneralApprove}
                 icon={<CheckCircle2 className="w-4 h-4" />}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                variant="success"
               >
                 ยืนยันการอนุมัติ
               </Button>
