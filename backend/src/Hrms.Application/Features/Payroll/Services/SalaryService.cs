@@ -1450,11 +1450,14 @@ public class SalaryService : ISalaryService
 
         var employeeIds = payrolls.Select(p => p.EmployeeId).Distinct().ToList();
 
-        // ใช้เฉพาะเงินเดือนที่มีผลภายในรอบนี้ (ให้ตรงกับตอนคำนวณ) — เดิมดูเงินเดือนล่าสุด ทำให้ขึ้น "ครบแล้ว" แต่คำนวณได้ 0
+        // ใช้เงินเดือนที่มีผลภายในรอบนี้ก่อน หากไม่มี (เช่น รอบเดือนก่อนวันที่บันทึกเงินเดือนเรคคอร์ดแรก) ให้ใช้เรคคอร์ดแรกของพนักงานแทน (เหมือนหน้าฐานเงินเดือนและหน้าโบนัส)
         var salaryCutoff = period?.EndDate;
         var allSalaries = await _context.EmployeeSalaries
-            .Where(s => employeeIds.Contains(s.EmployeeId) && (salaryCutoff == null || s.EffectiveFrom <= salaryCutoff))
-            .OrderByDescending(s => s.EffectiveFrom)
+            .Where(s => employeeIds.Contains(s.EmployeeId))
+            .OrderBy(s => salaryCutoff == null || s.EffectiveFrom <= salaryCutoff ? 0 : 1)
+            .ThenByDescending(s => salaryCutoff == null || s.EffectiveFrom <= salaryCutoff ? s.EffectiveFrom : DateOnly.MinValue)
+            .ThenBy(s => s.EffectiveFrom)
+            .ThenByDescending(s => s.Id)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -2079,11 +2082,12 @@ public class SalaryService : ISalaryService
             .OrderByDescending(st => st.EffectiveFrom)
             .ToListAsync(cancellationToken);
 
-        // ใช้เฉพาะเงินเดือนที่มีผลภายในรอบนี้แล้ว (ไม่ดึงรายการที่มีผลในอนาคต)
+        // ใช้เงินเดือนที่มีผลภายในรอบนี้ก่อน หากไม่มี (เช่น รอบเดือนก่อนวันที่บันทึกเงินเดือนเรคคอร์ดแรก) ให้ใช้เรคคอร์ดแรกของพนักงานแทน
         var periodEnd = period.EndDate;
         var allSalaries = await _context.EmployeeSalaries
-            .Where(s => s.EffectiveFrom <= periodEnd)
-            .OrderByDescending(s => s.EffectiveFrom)
+            .OrderBy(s => s.EffectiveFrom <= periodEnd ? 0 : 1)
+            .ThenByDescending(s => s.EffectiveFrom <= periodEnd ? s.EffectiveFrom : DateOnly.MinValue)
+            .ThenBy(s => s.EffectiveFrom)
             .ThenByDescending(s => s.Id)
             .AsNoTracking()
             .ToListAsync(cancellationToken);

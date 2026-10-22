@@ -2013,8 +2013,12 @@ export default function PayrollPage() {
       showToast(`ลบรอบเงินเดือน "${selectedPeriod.periodName}" เรียบร้อยแล้ว`);
       setDeletePeriodConfirmOpen(false);
 
-      const updatedPeriods = await salaryService.getPayrollPeriods();
+      const [updatedPeriods, updatedOverview] = await Promise.all([
+        salaryService.getPayrollPeriods(),
+        salaryService.getOverview().catch(() => null),
+      ]);
       setPeriods(updatedPeriods || []);
+      if (updatedOverview) setOverview(updatedOverview);
       if (updatedPeriods && updatedPeriods.length > 0) {
         const nextPeriod = updatedPeriods[0];
         setSelectedPeriod(nextPeriod);
@@ -2049,8 +2053,12 @@ export default function PayrollPage() {
       setIsCalculating(true);
       const { records: updatedPayrolls, message: calcMessage } = await salaryService.calculatePayrollPeriod(selectedPeriod.id);
       setPayrolls(updatedPayrolls || []);
-      const updatedPeriods = await salaryService.getPayrollPeriods();
+      const [updatedPeriods, updatedOverview] = await Promise.all([
+        salaryService.getPayrollPeriods(),
+        salaryService.getOverview().catch(() => null),
+      ]);
       setPeriods(updatedPeriods || []);
+      if (updatedOverview) setOverview(updatedOverview);
       const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
       if (current) setSelectedPeriod(current);
       const hasWarning = !!calcMessage && calcMessage.includes('ข้อควรตรวจสอบ');
@@ -2073,12 +2081,14 @@ export default function PayrollPage() {
   const refreshSelectedPeriodPayrolls = async () => {
     if (!selectedPeriod) return;
     try {
-      const [pRows, updatedPeriods] = await Promise.all([
+      const [pRows, updatedPeriods, updatedOverview] = await Promise.all([
         salaryService.getPayrollsByPeriod(selectedPeriod.id),
         salaryService.getPayrollPeriods(),
+        salaryService.getOverview().catch(() => null),
       ]);
       setPayrolls(pRows || []);
       setPeriods(updatedPeriods || []);
+      if (updatedOverview) setOverview(updatedOverview);
       const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
       if (current) setSelectedPeriod(current);
     } catch (err) {
@@ -2129,8 +2139,12 @@ export default function PayrollPage() {
       const created = await salaryService.createPayrollPeriod(newPeriodForm);
       showToast('สร้างรอบเงินเดือนใหม่สำเร็จแล้ว');
       setIsCreatePeriodModalOpen(false);
-      const updatedPeriods = await salaryService.getPayrollPeriods();
+      const [updatedPeriods, updatedOverview] = await Promise.all([
+        salaryService.getPayrollPeriods(),
+        salaryService.getOverview().catch(() => null),
+      ]);
       setPeriods(updatedPeriods || []);
+      if (updatedOverview) setOverview(updatedOverview);
       setSelectedPeriod(created);
       const pRows = await salaryService.getPayrollsByPeriod(created.id);
       setPayrolls(pRows || []);
@@ -2182,9 +2196,13 @@ export default function PayrollPage() {
       };
 
       const created = await salaryService.createPayrollPeriod(payload);
-      showToast(`สร้าง${computed.periodName} สำเร็จแล้ว`);
-      const updatedPeriods = await salaryService.getPayrollPeriods();
+      showToast(`สร้างรอบเดือน ${computed.periodName} สำเร็จแล้ว`);
+      const [updatedPeriods, updatedOverview] = await Promise.all([
+        salaryService.getPayrollPeriods(),
+        salaryService.getOverview().catch(() => null),
+      ]);
       setPeriods(updatedPeriods || []);
+      if (updatedOverview) setOverview(updatedOverview);
       setSelectedPeriod(created);
       setSelectedProcessMonth(null);
       const pRows = await salaryService.getPayrollsByPeriod(created.id);
@@ -3982,6 +4000,16 @@ export default function PayrollPage() {
                     <>
                       {processSubTab === 'HR' && (canAccessHrView || isAdmin) && (
                         <>
+                          <button
+                            type="button"
+                            onClick={handleCreatePeriodFromProcessTab}
+                            className="h-9 inline-flex items-center gap-1.5 px-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                            title="สร้างรอบเงินเดือนใหม่"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>สร้างรอบเงินเดือน</span>
+                          </button>
+
                           {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
                             <button
                               type="button"
@@ -6252,7 +6280,7 @@ export default function PayrollPage() {
                                     <span>เปิดดู</span>
                                   </button>
                                 )}
-                                {p.status !== 'CLOSED' && canAccessHrView && (
+                                {(p.status === 'DRAFT' || p.status === 'REVIEW') && canAccessHrView && (
                                   <button
                                     type="button"
                                     onClick={() => {

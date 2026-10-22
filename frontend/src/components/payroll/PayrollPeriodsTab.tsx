@@ -403,7 +403,7 @@ export default function PayrollPeriodsTab({
                               <span>เปิดดู</span>
                             </button>
                           )}
-                          {p.status !== 'CLOSED' && p.status !== 'PAID' && canAccessHrView && (
+                          {(p.status === 'DRAFT' || p.status === 'REVIEW') && canAccessHrView && (
                             <button
                               type="button"
                               onClick={() => onDeletePeriod(p)}
