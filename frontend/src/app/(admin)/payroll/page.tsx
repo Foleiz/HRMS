@@ -3033,16 +3033,6 @@ export default function PayrollPage() {
                       ))}
                     </CustomSelect>
                   </div>
-                  {canAccessHrView && (
-                    <button
-                      type="button"
-                      onClick={handleOpenCreatePeriodModal}
-                      className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>สร้างรอบเงินเดือน</span>
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -4377,10 +4367,10 @@ export default function PayrollPage() {
                       <button
                         type="button"
                         onClick={handleOpenCreatePeriodModal}
-                        className="h-9 inline-flex items-center gap-1.5 px-3.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
                       >
-                        <Plus className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        <span>สร้างรอบ</span>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>สร้างรอบเงินเดือน</span>
                       </button>
 
                       {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') && (
