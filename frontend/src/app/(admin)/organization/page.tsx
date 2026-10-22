@@ -72,6 +72,7 @@ import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { Modal, ModalFooter, Button, ActiveStatus, inputClass } from '@/components/ui';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
@@ -88,7 +89,7 @@ const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon:
 function CompanySectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">
-      <span className="w-7 h-7 rounded-lg bg-[#0B2046]/5 text-[#0B2046] dark:bg-blue-500/10 dark:text-blue-300 flex items-center justify-center">
+      <span className="w-7 h-7 rounded-lg bg-primary/5 text-primary dark:bg-blue-500/10 dark:text-blue-300 flex items-center justify-center">
         <Icon className="w-4 h-4" />
       </span>
       {title}
@@ -209,7 +210,7 @@ export default function OrganizationPage() {
     const initial = name.trim().charAt(0);
     return (
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-full bg-blue-100 text-[#0B2046] flex items-center justify-center text-[10px] font-bold ring-1 ring-blue-200 shrink-0">
+        <div className="w-6 h-6 rounded-full bg-blue-100 text-primary flex items-center justify-center text-[10px] font-bold ring-1 ring-blue-200 shrink-0">
           {initial}
         </div>
         <span className="font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">{name}</span>
@@ -1009,7 +1010,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'divisions'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1023,7 +1024,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('departments'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'departments'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1037,7 +1038,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('teams'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'teams'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1051,7 +1052,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('positions'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'positions'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1065,7 +1066,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('levels'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'levels'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1079,7 +1080,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'benefits'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1093,7 +1094,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('company'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'company'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1107,7 +1108,7 @@ export default function OrganizationPage() {
               onClick={() => { setActiveTab('bank-accounts'); setSearchQuery(''); }}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'bank-accounts'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1131,24 +1132,20 @@ export default function OrganizationPage() {
                   placeholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
               {canCreateStruct && (
-                <button
-                  onClick={() => handleOpenDivisionModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => handleOpenDivisionModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มฝ่าย
-                </button>
+                </Button>
               )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสฝ่าย</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อฝ่าย / สายงาน</th>
@@ -1164,7 +1161,7 @@ export default function OrganizationPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลฝ่าย...
                       </td>
                     </tr>
@@ -1188,20 +1185,7 @@ export default function OrganizationPage() {
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(div.createdAt)}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(div.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                              div.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600 dark:text-slate-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                div.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            ></span>
-                            {div.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
-                          </span>
+                          <ActiveStatus active={div.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditStruct ? (
@@ -1209,7 +1193,7 @@ export default function OrganizationPage() {
                               <button
                                 onClick={() => handleOpenDivisionModal(div)}
                                 title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -1247,7 +1231,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -1263,19 +1247,15 @@ export default function OrganizationPage() {
               </div>
 
               {canCreateStruct && (
-                <button
-                  onClick={() => handleOpenDeptModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => handleOpenDeptModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มแผนก
-                </button>
+                </Button>
               )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสแผนก</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อแผนก</th>
@@ -1292,7 +1272,7 @@ export default function OrganizationPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลแผนก...
                       </td>
                     </tr>
@@ -1317,20 +1297,7 @@ export default function OrganizationPage() {
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(dept.createdAt)}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(dept.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                              dept.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600 dark:text-slate-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                dept.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            ></span>
-                            {dept.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
-                          </span>
+                          <ActiveStatus active={dept.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditStruct ? (
@@ -1338,7 +1305,7 @@ export default function OrganizationPage() {
                               <button
                                 onClick={() => handleOpenDeptModal(dept)}
                                 title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -1376,7 +1343,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาชื่อทีม หรือรหัสทีม..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -1392,18 +1359,14 @@ export default function OrganizationPage() {
                 />
               </div>
 
-              <button
-                onClick={() => handleOpenTeamModal()}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto"
-              >
-                <Plus className="w-4 h-4" />
+              <Button onClick={() => handleOpenTeamModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                 เพิ่มทีม
-              </button>
+              </Button>
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสทีม</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อทีม</th>
@@ -1420,7 +1383,7 @@ export default function OrganizationPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลทีม...
                       </td>
                     </tr>
@@ -1459,27 +1422,14 @@ export default function OrganizationPage() {
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{formatThaiDate(team.createdAt)}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{formatThaiDate(team.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                              team.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400'
-                                : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                team.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            ></span>
-                            {team.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
-                          </span>
+                          <ActiveStatus active={team.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           <div className="inline-flex items-center gap-1">
                             <button
                               onClick={() => handleOpenTeamModal(team)}
                               title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:hover:bg-slate-800"
+                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:hover:bg-slate-800"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
@@ -1514,7 +1464,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -1531,19 +1481,15 @@ export default function OrganizationPage() {
               </div>
 
               {canCreatePos && (
-                <button
-                  onClick={() => handleOpenPosModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all self-start sm:self-auto cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => handleOpenPosModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มตำแหน่ง
-                </button>
+                </Button>
               )}
             </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสตำแหน่ง</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อตำแหน่งงาน</th>
@@ -1561,7 +1507,7 @@ export default function OrganizationPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={10} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลตำแหน่ง...
                       </td>
                     </tr>
@@ -1604,20 +1550,7 @@ export default function OrganizationPage() {
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(pos.createdAt)}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">{formatThaiDate(pos.updatedAt)}</td>
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                              pos.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600 dark:text-slate-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                pos.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            ></span>
-                            {pos.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
-                          </span>
+                          <ActiveStatus active={pos.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditPos ? (
@@ -1625,7 +1558,7 @@ export default function OrganizationPage() {
                               <button
                                 onClick={() => handleOpenPosModal(pos)}
                                 title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -1663,26 +1596,22 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
               </div>
 
               {canCreatePos && (
-                <button
-                  onClick={() => handleOpenLevelModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => handleOpenLevelModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มระดับพนักงาน
-                </button>
+                </Button>
               )}
             </div>
 
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสระดับ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อระดับพนักงาน</th>
@@ -1701,7 +1630,7 @@ export default function OrganizationPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={canViewSalaryBand ? 7 : 4} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลระดับพนักงาน...
                       </td>
                     </tr>
@@ -1737,20 +1666,7 @@ export default function OrganizationPage() {
                             );
                           })()}
                         <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                              lvl.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600 dark:text-slate-400'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                lvl.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                              }`}
-                            ></span>
-                            {lvl.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ไม่ได้ใช้งาน'}
-                          </span>
+                          <ActiveStatus active={lvl.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditPos ? (
@@ -1758,7 +1674,7 @@ export default function OrganizationPage() {
                               <button
                                 onClick={() => handleOpenLevelModal(lvl)}
                                 title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -1796,7 +1712,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -1816,20 +1732,16 @@ export default function OrganizationPage() {
               </div>
 
               {canCreateBenefit && (
-                <button
-                  onClick={() => handleOpenBenefitModal()}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all shrink-0 cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => handleOpenBenefitModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มสวัสดิการใหม่
-                </button>
+                </Button>
               )}
             </div>
 
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
@@ -1844,7 +1756,7 @@ export default function OrganizationPage() {
                   {loading ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลสวัสดิการ...
                       </td>
                     </tr>
@@ -1924,20 +1836,7 @@ export default function OrganizationPage() {
                             </div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
-                                ben.status === 'ACTIVE'
-                                  ? 'bg-emerald-50 text-emerald-700'
-                                  : 'bg-slate-100 text-slate-600 dark:text-slate-400'
-                              }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  ben.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'
-                                }`}
-                              ></span>
-                              {ben.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-                            </span>
+                            <ActiveStatus active={ben.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดใช้งาน" />
                           </td>
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             {canEditBenefit ? (
@@ -1945,7 +1844,7 @@ export default function OrganizationPage() {
                                 <button
                                   onClick={() => handleOpenBenefitModal(ben)}
                                   title="แก้ไข"
-                                  className="p-1.5 text-slate-400 hover:text-[#0B2046] hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
+                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
@@ -1975,7 +1874,7 @@ export default function OrganizationPage() {
         {/* TAB 6: COMPANY PROFILE */}
         {activeTab === 'company' && (() => {
           const inputCls =
-            'w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500';
+            'w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500';
           const labelCls = 'block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1';
           const ceo = employees.find((e) => e.id === companyForm.ceoEmployeeId);
           const activeEmployees = employees.filter((e) => !e.employmentStatus || e.employmentStatus === 'ACTIVE').length;
@@ -2035,7 +1934,7 @@ export default function OrganizationPage() {
                     { label: 'พนักงาน', value: activeEmployees },
                   ].map((s) => (
                     <div key={s.label} className="rounded-xl bg-slate-50 dark:bg-slate-900/60 py-2.5">
-                      <div className="text-lg font-bold text-[#0B2046] dark:text-blue-300">{s.value}</div>
+                      <div className="text-lg font-bold text-primary dark:text-blue-300">{s.value}</div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">{s.label}</div>
                     </div>
                   ))}
@@ -2137,12 +2036,7 @@ export default function OrganizationPage() {
 
                 {canEditCompany && (
                   <div className="flex justify-end">
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer"
-                    >
-                      บันทึกข้อมูลบริษัท
-                    </button>
+                    <Button type="submit">บันทึกข้อมูลบริษัท</Button>
                   </div>
                 )}
               </div>
@@ -2157,7 +2051,7 @@ export default function OrganizationPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-700/60">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-blue-50 text-[#0B2046]">
+                  <div className="p-2 rounded-xl bg-blue-50 text-primary">
                     <Landmark className="w-5 h-5" />
                   </div>
                   <div>
@@ -2166,14 +2060,9 @@ export default function OrganizationPage() {
                 </div>
               </div>
               {canCreateCompany && (
-                <button
-                  type="button"
-                  onClick={() => handleOpenBankAccountModal()}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
+                <Button onClick={() => handleOpenBankAccountModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มบัญชีธนาคาร
-                </button>
+                </Button>
               )}
             </div>
 
@@ -2186,7 +2075,7 @@ export default function OrganizationPage() {
                   placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
             </div>
@@ -2207,7 +2096,7 @@ export default function OrganizationPage() {
                   <button
                     type="button"
                     onClick={() => handleOpenBankAccountModal()}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold shadow-sm hover:bg-[#081836] transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary-hover transition-colors cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     เพิ่มบัญชีแรก
@@ -2232,7 +2121,7 @@ export default function OrganizationPage() {
                       <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[#0B2046] shrink-0 font-bold text-xs">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-primary shrink-0 font-bold text-xs">
                               {acc.bankCode || 'BK'}
                             </div>
                             <div>
@@ -2324,858 +2213,689 @@ export default function OrganizationPage() {
 
       {/* 5. Create / Edit Modal (Division) */}
       {modalOpen && activeTab === 'divisions' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                {modalMode === 'create' ? 'เพิ่มฝ่ายใหม่' : 'แก้ไขข้อมูลฝ่าย'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
-                <X className="w-5 h-5" />
-              </button>
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มฝ่ายใหม่' : 'แก้ไขข้อมูลฝ่าย'}
+          onSubmit={handleSaveDivision}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+        >
+            <CodeInput
+              type="division"
+              prefix="DIV"
+              digits={3}
+              existingCodes={divisions.map((x) => x.divisionCode)}
+              label="รหัสฝ่าย"
+              mode={modalMode}
+              value={divisionForm.divisionCode || ''}
+              onChange={(v) => setDivisionForm((f) => ({ ...f, divisionCode: v }))}
+            />
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อฝ่าย / สายงาน <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                required
+                value={divisionForm.divisionName}
+                onChange={(e) => setDivisionForm({ ...divisionForm, divisionName: e.target.value })}
+                className={inputClass}
+              />
             </div>
 
-            <form onSubmit={handleSaveDivision} className="space-y-4 pt-4">
-              <CodeInput
-                type="division"
-                prefix="DIV"
-                digits={3}
-                existingCodes={divisions.map((x) => x.divisionCode)}
-                label="รหัสฝ่าย"
-                mode={modalMode}
-                value={divisionForm.divisionCode || ''}
-                onChange={(v) => setDivisionForm((f) => ({ ...f, divisionCode: v }))}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าฝ่าย</label>
+              <EmployeeSelect
+                employees={
+                  modalMode === 'edit' &&
+                  divisionForm.id &&
+                  employees.some((e) => e.divisionId === divisionForm.id)
+                    ? employees.filter((e) => e.divisionId === divisionForm.id)
+                    : employees
+                }
+                value={divisionForm.headEmployeeId || ''}
+                onChange={(empId) =>
+                  setDivisionForm({
+                    ...divisionForm,
+                    headEmployeeId: empId === '' ? undefined : Number(empId),
+                  })
+                }
+                placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                emptyLabel="ไม่ระบุหัวหน้าฝ่าย"
+                required={false}
               />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อฝ่าย / สายงาน <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={divisionForm.divisionName}
-                  onChange={(e) => setDivisionForm({ ...divisionForm, divisionName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าฝ่าย</label>
-                <EmployeeSelect
-                  employees={
-                    modalMode === 'edit' &&
-                    divisionForm.id &&
-                    employees.some((e) => e.divisionId === divisionForm.id)
-                      ? employees.filter((e) => e.divisionId === divisionForm.id)
-                      : employees
-                  }
-                  value={divisionForm.headEmployeeId || ''}
-                  onChange={(empId) =>
-                    setDivisionForm({
-                      ...divisionForm,
-                      headEmployeeId: empId === '' ? undefined : Number(empId),
-                    })
-                  }
-                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
-                  emptyLabel="ไม่ระบุหัวหน้าฝ่าย"
-                  required={false}
-                />
-              </div>
-
-              {modalMode === 'edit' && (
-                <ActiveToggleRow label="เปิดใช้งาน" checked={divisionForm.status === 'ACTIVE'} onChange={(v) => setDivisionForm({ ...divisionForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
-                >
-                  บันทึกข้อมูล
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {modalMode === 'edit' && (
+              <ActiveToggleRow label="เปิดใช้งาน" checked={divisionForm.status === 'ACTIVE'} onChange={(v) => setDivisionForm({ ...divisionForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+            )}
+        </Modal>
       )}
 
       {/* 6. Create / Edit Modal (Department) */}
       {modalOpen && activeTab === 'departments' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                {modalMode === 'create' ? 'เพิ่มแผนกใหม่' : 'แก้ไขข้อมูลแผนก'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
-                <X className="w-5 h-5" />
-              </button>
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มแผนกใหม่' : 'แก้ไขข้อมูลแผนก'}
+          onSubmit={handleSaveDept}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+        >
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย <span className="text-rose-500">*</span></label>
+              <CustomSelect
+                required
+                value={deptForm.divisionId}
+                onChange={(e) => {
+                  const nextDivId = Number(e.target.value);
+                  const currentHead = employees.find((emp) => emp.id === deptForm.headEmployeeId);
+                  const shouldKeepHead =
+                    (modalMode === 'edit' && deptForm.id && currentHead?.departmentId === deptForm.id) ||
+                    (currentHead && currentHead.divisionId === nextDivId);
+                  setDeptForm({
+                    ...deptForm,
+                    divisionId: nextDivId,
+                    headEmployeeId: shouldKeepHead ? deptForm.headEmployeeId : undefined,
+                  });
+                }}
+                className={inputClass}
+              >
+                {divisions.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.divisionName}
+                  </option>
+                ))}
+              </CustomSelect>
             </div>
 
-            <form onSubmit={handleSaveDept} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดฝ่าย <span className="text-rose-500">*</span></label>
-                <CustomSelect
-                  required
-                  value={deptForm.divisionId}
-                  onChange={(e) => {
-                    const nextDivId = Number(e.target.value);
-                    const currentHead = employees.find((emp) => emp.id === deptForm.headEmployeeId);
-                    const shouldKeepHead =
-                      (modalMode === 'edit' && deptForm.id && currentHead?.departmentId === deptForm.id) ||
-                      (currentHead && currentHead.divisionId === nextDivId);
-                    setDeptForm({
-                      ...deptForm,
-                      divisionId: nextDivId,
-                      headEmployeeId: shouldKeepHead ? deptForm.headEmployeeId : undefined,
-                    });
-                  }}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  {divisions.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.divisionName}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
+            <CodeInput
+              type="department"
+              prefix="DEP"
+              digits={3}
+              existingCodes={departments.map((x) => x.departmentCode)}
+              label="รหัสแผนก"
+              mode={modalMode}
+              value={deptForm.departmentCode || ''}
+              onChange={(v) => setDeptForm((f) => ({ ...f, departmentCode: v }))}
+            />
 
-              <CodeInput
-                type="department"
-                prefix="DEP"
-                digits={3}
-                existingCodes={departments.map((x) => x.departmentCode)}
-                label="รหัสแผนก"
-                mode={modalMode}
-                value={deptForm.departmentCode || ''}
-                onChange={(v) => setDeptForm((f) => ({ ...f, departmentCode: v }))}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อแผนก <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                required
+                value={deptForm.departmentName}
+                onChange={(e) => setDeptForm({ ...deptForm, departmentName: e.target.value })}
+                className={inputClass}
               />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อแผนก <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={deptForm.departmentName}
-                  onChange={(e) => setDeptForm({ ...deptForm, departmentName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าแผนก</label>
+              <EmployeeSelect
+                employees={
+                  modalMode === 'edit' &&
+                  deptForm.id &&
+                  employees.some((e) => e.departmentId === deptForm.id)
+                    ? employees.filter((e) => e.departmentId === deptForm.id)
+                    : deptForm.divisionId
+                    ? employees.filter((e) => e.divisionId === deptForm.divisionId)
+                    : employees
+                }
+                value={deptForm.headEmployeeId || ''}
+                onChange={(empId) =>
+                  setDeptForm({
+                    ...deptForm,
+                    headEmployeeId: empId === '' ? undefined : Number(empId),
+                  })
+                }
+                placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+                emptyLabel="ไม่ระบุหัวหน้าแผนก"
+                required={false}
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">หัวหน้าแผนก</label>
-                <EmployeeSelect
-                  employees={
-                    modalMode === 'edit' &&
-                    deptForm.id &&
-                    employees.some((e) => e.departmentId === deptForm.id)
-                      ? employees.filter((e) => e.departmentId === deptForm.id)
-                      : deptForm.divisionId
-                      ? employees.filter((e) => e.divisionId === deptForm.divisionId)
-                      : employees
-                  }
-                  value={deptForm.headEmployeeId || ''}
-                  onChange={(empId) =>
-                    setDeptForm({
-                      ...deptForm,
-                      headEmployeeId: empId === '' ? undefined : Number(empId),
-                    })
-                  }
-                  placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
-                  emptyLabel="ไม่ระบุหัวหน้าแผนก"
-                  required={false}
-                />
-              </div>
-
-              {modalMode === 'edit' && (
-                <ActiveToggleRow label="เปิดใช้งาน" checked={deptForm.status === 'ACTIVE'} onChange={(v) => setDeptForm({ ...deptForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
-                >
-                  บันทึกข้อมูล
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {modalMode === 'edit' && (
+              <ActiveToggleRow label="เปิดใช้งาน" checked={deptForm.status === 'ACTIVE'} onChange={(v) => setDeptForm({ ...deptForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+            )}
+        </Modal>
       )}
 
       {/* Create / Edit Modal (Team) */}
       {modalOpen && activeTab === 'teams' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                {modalMode === 'create' ? 'เพิ่มทีมใหม่' : 'แก้ไขข้อมูลทีม'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500">
-                <X className="w-5 h-5" />
-              </button>
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มทีมใหม่' : 'แก้ไขข้อมูลทีม'}
+          onSubmit={handleSaveTeam}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+        >
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก <span className="text-rose-500">*</span></label>
+              <CustomSelect
+                required
+                value={teamForm.departmentId}
+                onChange={(e) => {
+                  const nextDeptId = Number(e.target.value);
+                  const currentLead = employees.find((emp) => emp.id === teamForm.leadEmployeeId);
+                  const shouldKeepLead = currentLead && currentLead.departmentId === nextDeptId;
+                  setTeamForm({
+                    ...teamForm,
+                    departmentId: nextDeptId,
+                    leadEmployeeId: shouldKeepLead ? teamForm.leadEmployeeId : null,
+                  });
+                }}
+                className={inputClass}
+              >
+                <option value={0} disabled>เลือกแผนก</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.departmentName}
+                  </option>
+                ))}
+              </CustomSelect>
             </div>
 
-            <form onSubmit={handleSaveTeam} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">สังกัดแผนก <span className="text-rose-500">*</span></label>
-                <CustomSelect
-                  required
-                  value={teamForm.departmentId}
-                  onChange={(e) => {
-                    const nextDeptId = Number(e.target.value);
-                    const currentLead = employees.find((emp) => emp.id === teamForm.leadEmployeeId);
-                    const shouldKeepLead = currentLead && currentLead.departmentId === nextDeptId;
-                    setTeamForm({
-                      ...teamForm,
-                      departmentId: nextDeptId,
-                      leadEmployeeId: shouldKeepLead ? teamForm.leadEmployeeId : null,
-                    });
-                  }}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
-                >
-                  <option value={0} disabled>เลือกแผนก</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.departmentName}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
+            <CodeInput
+              type="team"
+              prefix="TEAM"
+              digits={3}
+              existingCodes={teams.map((x) => x.teamCode)}
+              label="รหัสทีม"
+              mode={modalMode}
+              value={teamForm.teamCode || ''}
+              onChange={(v) => setTeamForm((f) => ({ ...f, teamCode: v }))}
+            />
 
-              <CodeInput
-                type="team"
-                prefix="TEAM"
-                digits={3}
-                existingCodes={teams.map((x) => x.teamCode)}
-                label="รหัสทีม"
-                mode={modalMode}
-                value={teamForm.teamCode || ''}
-                onChange={(v) => setTeamForm((f) => ({ ...f, teamCode: v }))}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อทีม <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                required
+                placeholder="เช่น ทีมพัฒนา Frontend, ทีมขาย B2B"
+                value={teamForm.teamName}
+                onChange={(e) => setTeamForm({ ...teamForm, teamName: e.target.value })}
+                className={inputClass}
               />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ชื่อทีม <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  placeholder="เช่น ทีมพัฒนา Frontend, ทีมขาย B2B"
-                  value={teamForm.teamName}
-                  onChange={(e) => setTeamForm({ ...teamForm, teamName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                หัวหน้าทีม
+              </label>
+              <EmployeeSelect
+                employees={
+                  teamForm.departmentId
+                    ? employees.filter((e) => e.departmentId === teamForm.departmentId)
+                    : []
+                }
+                value={teamForm.leadEmployeeId || ''}
+                onChange={(empId) =>
+                  setTeamForm({
+                    ...teamForm,
+                    leadEmployeeId: empId === '' ? null : Number(empId),
+                  })
+                }
+                disabled={!teamForm.departmentId}
+                placeholder={
+                  teamForm.departmentId
+                    ? 'เลือกพนักงาน หรือพิมพ์ค้นหา...'
+                    : 'กรุณาเลือกแผนกก่อน...'
+                }
+                emptyLabel="ไม่ระบุหัวหน้าทีม"
+                required={false}
+              />
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                เมื่อพนักงานสังกัดทีมนี้ ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมคนนี้โดยอัตโนมัติ
+              </p>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  หัวหน้าทีม
-                </label>
-                <EmployeeSelect
-                  employees={
-                    teamForm.departmentId
-                      ? employees.filter((e) => e.departmentId === teamForm.departmentId)
-                      : []
-                  }
-                  value={teamForm.leadEmployeeId || ''}
-                  onChange={(empId) =>
-                    setTeamForm({
-                      ...teamForm,
-                      leadEmployeeId: empId === '' ? null : Number(empId),
-                    })
-                  }
-                  disabled={!teamForm.departmentId}
-                  placeholder={
-                    teamForm.departmentId
-                      ? 'เลือกพนักงาน หรือพิมพ์ค้นหา...'
-                      : 'กรุณาเลือกแผนกก่อน...'
-                  }
-                  emptyLabel="ไม่ระบุหัวหน้าทีม"
-                  required={false}
-                />
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                  เมื่อพนักงานสังกัดทีมนี้ ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมคนนี้โดยอัตโนมัติ
-                </p>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">คำอธิบาย</label>
+              <textarea
+                rows={2}
+                placeholder="รายละเอียดหน้าที่ความรับผิดชอบของทีม..."
+                value={teamForm.description || ''}
+                onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
+                className={inputClass}
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">คำอธิบาย</label>
-                <textarea
-                  rows={2}
-                  placeholder="รายละเอียดหน้าที่ความรับผิดชอบของทีม..."
-                  value={teamForm.description || ''}
-                  onChange={(e) => setTeamForm({ ...teamForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              {modalMode === 'edit' && (
-                <ActiveToggleRow label="เปิดใช้งาน" checked={teamForm.status === 'ACTIVE'} onChange={(v) => setTeamForm({ ...teamForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
-                >
-                  บันทึกข้อมูล
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {modalMode === 'edit' && (
+              <ActiveToggleRow label="เปิดใช้งาน" checked={teamForm.status === 'ACTIVE'} onChange={(v) => setTeamForm({ ...teamForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+            )}
+        </Modal>
       )}
 
       {/* 7. Create / Edit Modal (Position) */}
       {modalOpen && activeTab === 'positions' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                {modalMode === 'create' ? 'เพิ่มตำแหน่งใหม่' : 'แก้ไขข้อมูลตำแหน่ง'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
-                <X className="w-5 h-5" />
-              </button>
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มตำแหน่งใหม่' : 'แก้ไขข้อมูลตำแหน่ง'}
+          onSubmit={handleSavePos}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+        >
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก <span className="text-rose-500">*</span></label>
+              <CustomSelect
+                required
+                value={posForm.departmentId}
+                onChange={(e) => setPosForm({ ...posForm, departmentId: Number(e.target.value) })}
+                className={inputClass}
+              >
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.departmentName} ({d.divisionName})
+                  </option>
+                ))}
+              </CustomSelect>
             </div>
 
-            <form onSubmit={handleSavePos} className="space-y-4 pt-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">สังกัดแผนก <span className="text-rose-500">*</span></label>
-                <CustomSelect
-                  required
-                  value={posForm.departmentId}
-                  onChange={(e) => setPosForm({ ...posForm, departmentId: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.departmentName} ({d.divisionName})
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ระดับตำแหน่ง</label>
+              <CustomSelect
+                value={posForm.employeeLevelId || ''}
+                onChange={(e) => setPosForm({ ...posForm, employeeLevelId: e.target.value ? Number(e.target.value) : undefined })}
+                className={inputClass}
+              >
+                <option value="">-- ไม่ระบุระดับ --</option>
+                {levels.map((lvl) => (
+                  <option key={lvl.id} value={lvl.id}>
+                    {lvl.levelName}
+                  </option>
+                ))}
+              </CustomSelect>
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ระดับตำแหน่ง</label>
-                <CustomSelect
-                  value={posForm.employeeLevelId || ''}
-                  onChange={(e) => setPosForm({ ...posForm, employeeLevelId: e.target.value ? Number(e.target.value) : undefined })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="">-- ไม่ระบุระดับ --</option>
-                  {levels.map((lvl) => (
-                    <option key={lvl.id} value={lvl.id}>
-                      {lvl.levelName}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
+            <CodeInput
+              type="position"
+              prefix="POS"
+              digits={3}
+              existingCodes={positions.map((x) => x.positionCode)}
+              label="รหัสตำแหน่ง"
+              mode={modalMode}
+              value={posForm.positionCode || ''}
+              onChange={(v) => setPosForm((f) => ({ ...f, positionCode: v }))}
+            />
 
-              <CodeInput
-                type="position"
-                prefix="POS"
-                digits={3}
-                existingCodes={positions.map((x) => x.positionCode)}
-                label="รหัสตำแหน่ง"
-                mode={modalMode}
-                value={posForm.positionCode || ''}
-                onChange={(v) => setPosForm((f) => ({ ...f, positionCode: v }))}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อตำแหน่งงาน <span className="text-rose-500">*</span></label>
+              <input
+                type="text"
+                required
+                value={posForm.positionName}
+                onChange={(e) => setPosForm({ ...posForm, positionName: e.target.value })}
+                className={inputClass}
               />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อตำแหน่งงาน <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  value={posForm.positionName}
-                  onChange={(e) => setPosForm({ ...posForm, positionName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">อัตรากำลัง (คน)</label>
+              <input
+                type="number"
+                min={0}
+                value={posForm.headcountPlan ?? ''}
+                onChange={(e) =>
+                  setPosForm({ ...posForm, headcountPlan: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })
+                }
+                placeholder="เว้นว่าง = ไม่กำหนด"
+                className={inputClass}
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">อัตรากำลัง (คน)</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={posForm.headcountPlan ?? ''}
-                  onChange={(e) =>
-                    setPosForm({ ...posForm, headcountPlan: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })
-                  }
-                  placeholder="เว้นว่าง = ไม่กำหนด"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              {modalMode === 'edit' && (
-                <ActiveToggleRow label="เปิดใช้งาน" checked={posForm.status === 'ACTIVE'} onChange={(v) => setPosForm({ ...posForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
-                >
-                  บันทึกข้อมูล
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            {modalMode === 'edit' && (
+              <ActiveToggleRow label="เปิดใช้งาน" checked={posForm.status === 'ACTIVE'} onChange={(v) => setPosForm({ ...posForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+            )}
+        </Modal>
       )}
 
       {/* 7. Create / Edit Modal (Benefit) */}
       {modalOpen && activeTab === 'benefits' && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden my-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 shrink-0 bg-slate-50/70 dark:bg-slate-900/50">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2">
-                <Gift className="w-4 h-4 text-[#0B2046] dark:text-cyan-400" />
-                {modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
+        <Modal
+          isOpen
+          size="md"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
+          onSubmit={handleSaveBenefit}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+        >
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              ชื่อสวัสดิการ / สิทธิประโยชน์ <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={benefitForm.benefitName}
+              onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
+              placeholder="เช่น รถรับส่งพนักงาน"
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ <span className="text-rose-500">*</span></label>
+            <CustomSelect
+              value={benefitForm.category}
+              onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
+              className={inputClass}
+            >
+              {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
+                <option key={key} value={key}>
+                  {item.label}
+                </option>
+              ))}
+            </CustomSelect>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
+            <textarea
+              rows={2}
+              value={benefitForm.description || ''}
+              onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
+              placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
+              className={`${inputClass} resize-none`}
+            />
+          </div>
+
+          {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
+            <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+              กำหนดโควตาวงเงินและรูปแบบการใช้สิทธิ์
             </div>
 
-            {/* Scrollable Form Body */}
-            <form onSubmit={handleSaveBenefit} className="flex flex-col flex-1 overflow-hidden min-h-0">
-              <div className="p-6 space-y-4 overflow-y-auto flex-1">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ชื่อสวัสดิการ / สิทธิประโยชน์ <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={benefitForm.benefitName}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
-                    placeholder="เช่น รถรับส่งพนักงาน"
-                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ <span className="text-rose-500">*</span></label>
-                  <CustomSelect
-                    value={benefitForm.category}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
-                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20"
-                  >
-                    {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
-                      <option key={key} value={key}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </CustomSelect>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
-                  <textarea
-                    rows={2}
-                    value={benefitForm.description || ''}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
-                    placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
-                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 resize-none"
-                  />
-                </div>
-
-                {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-                  <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                    กำหนดโควตาวงเงินและรูปแบบการใช้สิทธิ์
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      วิธีจ่าย <span className="text-rose-500">*</span>
-                    </label>
-                    <CustomSelect
-                      value={benefitForm.payoutType || 'REIMBURSEMENT'}
-                      onChange={(e) =>
-                        setBenefitForm({
-                          ...benefitForm,
-                          payoutType: e.target.value,
-                          isDocumentRequired: e.target.value === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
-                        })
-                      }
-                      className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
-                    >
-                      <option value="PAYROLL">จ่ายประจำในเงินเดือน (อัตโนมัติทุกงวด)</option>
-                      <option value="REIMBURSEMENT">เบิกตามจริง (ยื่นคำขอเบิก)</option>
-                      <option value="IN_KIND">ไม่ใช่ตัวเงิน (บริการ / สิทธิ์ตามระเบียบ)</option>
-                    </CustomSelect>
-                    <span className="text-[10px] text-slate-400 mt-1 block">
-                      {benefitForm.payoutType === 'PAYROLL'
-                        ? 'ระบบจ่ายยอดตามสิทธิ์ของประเภทพนักงานในสลิปทุกงวดให้อัตโนมัติ ไม่ต้องยื่นเบิก'
-                        : benefitForm.payoutType === 'IN_KIND'
-                        ? 'ไม่จ่ายเป็นเงิน (เช่น รถรับส่ง ประกันกลุ่ม) จึงไม่ต้องมีรายการในสลิป'
-                        : 'พนักงานยื่นคำขอเบิกพร้อมหลักฐาน เมื่ออนุมัติแล้วระบบจ่ายในงวดเงินเดือนถัดไป ไม่เกินวงเงิน'}
-                    </span>
-                  </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                วิธีจ่าย <span className="text-rose-500">*</span>
+              </label>
+              <CustomSelect
+                value={benefitForm.payoutType || 'REIMBURSEMENT'}
+                onChange={(e) =>
+                  setBenefitForm({
+                    ...benefitForm,
+                    payoutType: e.target.value,
+                    isDocumentRequired: e.target.value === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
+                  })
+                }
+                className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700"
+              >
+                <option value="PAYROLL">จ่ายประจำในเงินเดือน (อัตโนมัติทุกงวด)</option>
+                <option value="REIMBURSEMENT">เบิกตามจริง (ยื่นคำขอเบิก)</option>
+                <option value="IN_KIND">ไม่ใช่ตัวเงิน (บริการ / สิทธิ์ตามระเบียบ)</option>
+              </CustomSelect>
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                {benefitForm.payoutType === 'PAYROLL'
+                  ? 'ระบบจ่ายยอดตามสิทธิ์ของประเภทพนักงานในสลิปทุกงวดให้อัตโนมัติ ไม่ต้องยื่นเบิก'
+                  : benefitForm.payoutType === 'IN_KIND'
+                  ? 'ไม่จ่ายเป็นเงิน (เช่น รถรับส่ง ประกันกลุ่ม) จึงไม่ต้องมีรายการในสลิป'
+                  : 'พนักงานยื่นคำขอเบิกพร้อมหลักฐาน เมื่ออนุมัติแล้วระบบจ่ายในงวดเงินเดือนถัดไป ไม่เกินวงเงิน'}
+              </span>
+            </div>
 
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        วงเงินมาตรฐาน (บาท)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        step="any"
-                        value={benefitForm.defaultCoverageAmount ?? 0}
-                        onChange={(e) => setBenefitForm({ ...benefitForm, defaultCoverageAmount: Number(e.target.value) || 0 })}
-                        placeholder="0 = ไม่จำกัด/ตามระเบียบ"
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
-                      />
-                      <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                        รอบการให้สิทธิ์
-                      </label>
-                      <CustomSelect
-                        value={benefitForm.defaultFrequency || 'YEARLY'}
-                        onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
-                        className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:border-slate-700"
-                      >
-                        <option value="YEARLY">ต่อปี</option>
-                        <option value="MONTHLY">ต่อเดือน</option>
-                        <option value="DAILY">ต่อวัน</option>
-                        <option value="PER_OCCURRENCE">ต่อครั้ง</option>
-                      </CustomSelect>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-                  <input
-                    type="checkbox"
-                    id="isStatutory"
-                    checked={benefitForm.isStatutory}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
-                    className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
-                  />
-                  <label htmlFor="isStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                    เป็นสิทธิตามกฎหมายแรงงานบังคับ
-                  </label>
-                </div>
-
-                {benefitForm.payoutType !== 'PAYROLL' && (
-                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-                  <input
-                    type="checkbox"
-                    id="isDocumentRequired"
-                    checked={benefitForm.isDocumentRequired}
-                    onChange={(e) => setBenefitForm({ ...benefitForm, isDocumentRequired: e.target.checked })}
-                    className="w-4 h-4 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer"
-                  />
-                  <label htmlFor="isDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                    แนบเอกสารประกอบหรือใบรับรองแพทย์
-                  </label>
-                </div>
-                )}
-
-                {modalMode === 'edit' && (
-                  <ActiveToggleRow label="เปิดใช้งาน" checked={benefitForm.status === 'ACTIVE'} onChange={(v) => setBenefitForm({ ...benefitForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-                )}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  วงเงินมาตรฐาน (บาท)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={benefitForm.defaultCoverageAmount ?? 0}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, defaultCoverageAmount: Number(e.target.value) || 0 })}
+                  placeholder="0 = ไม่จำกัด/ตามระเบียบ"
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
               </div>
 
-              {/* Modal Footer */}
-              <div className="flex items-center justify-end gap-2 px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/60 shrink-0 bg-slate-50/70 dark:bg-slate-900/50">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium dark:border-slate-700 cursor-pointer transition-colors"
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  รอบการให้สิทธิ์
+                </label>
+                <CustomSelect
+                  value={benefitForm.defaultFrequency || 'YEARLY'}
+                  onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700"
                 >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 cursor-pointer transition-all"
-                >
-                  บันทึกข้อมูล
-                </button>
+                  <option value="YEARLY">ต่อปี</option>
+                  <option value="MONTHLY">ต่อเดือน</option>
+                  <option value="DAILY">ต่อวัน</option>
+                  <option value="PER_OCCURRENCE">ต่อครั้ง</option>
+                </CustomSelect>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
+
+          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
+            <input
+              type="checkbox"
+              id="isStatutory"
+              checked={benefitForm.isStatutory}
+              onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
+              className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+            />
+            <label htmlFor="isStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+              เป็นสิทธิตามกฎหมายแรงงานบังคับ
+            </label>
+          </div>
+
+          {benefitForm.payoutType !== 'PAYROLL' && (
+          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
+            <input
+              type="checkbox"
+              id="isDocumentRequired"
+              checked={benefitForm.isDocumentRequired}
+              onChange={(e) => setBenefitForm({ ...benefitForm, isDocumentRequired: e.target.checked })}
+              className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
+            />
+            <label htmlFor="isDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+              แนบเอกสารประกอบหรือใบรับรองแพทย์
+            </label>
+          </div>
+          )}
+
+          {modalMode === 'edit' && (
+            <ActiveToggleRow label="เปิดใช้งาน" checked={benefitForm.status === 'ACTIVE'} onChange={(v) => setBenefitForm({ ...benefitForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+          )}
+        </Modal>
       )}
 
       {/* 8. Create / Edit Modal (Employee Level) */}
       {modalOpen && activeTab === 'levels' && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                {modalMode === 'create' ? 'เพิ่มระดับพนักงานใหม่' : 'แก้ไขข้อมูลระดับพนักงาน'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
-                <X className="w-5 h-5" />
-              </button>
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setModalOpen(false)}
+          title={modalMode === 'create' ? 'เพิ่มระดับพนักงานใหม่' : 'แก้ไขข้อมูลระดับพนักงาน'}
+          onSubmit={handleSaveLevel}
+          footer={<ModalFooter onCancel={() => setModalOpen(false)} submitText="บันทึกข้อมูล" />}
+        >
+            <CodeInput
+              type="level"
+              prefix="LVL"
+              digits={2}
+              existingCodes={levels.map((x) => x.levelCode)}
+              label="รหัสระดับ"
+              mode={modalMode}
+              value={levelForm.levelCode || ''}
+              onChange={(v) => setLevelForm((f) => ({ ...f, levelCode: v }))}
+            />
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
+                ชื่อระดับพนักงาน <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={levelForm.levelName}
+                onChange={(e) => setLevelForm({ ...levelForm, levelName: e.target.value })}
+                placeholder="เช่น พนักงานปฏิบัติการ, ผู้จัดการฝ่าย"
+                className={inputClass}
+              />
             </div>
 
-            <form onSubmit={handleSaveLevel} className="space-y-4 pt-4">
-              <CodeInput
-                type="level"
-                prefix="LVL"
-                digits={2}
-                existingCodes={levels.map((x) => x.levelCode)}
-                label="รหัสระดับ"
-                mode={modalMode}
-                value={levelForm.levelCode || ''}
-                onChange={(v) => setLevelForm((f) => ({ ...f, levelCode: v }))}
-              />
+            {modalMode === 'edit' && (
+              <ActiveToggleRow label="เปิดใช้งาน" checked={levelForm.status === 'ACTIVE'} onChange={(v) => setLevelForm({ ...levelForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+            )}
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                  ชื่อระดับพนักงาน <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={levelForm.levelName}
-                  onChange={(e) => setLevelForm({ ...levelForm, levelName: e.target.value })}
-                  placeholder="เช่น พนักงานปฏิบัติการ, ผู้จัดการฝ่าย"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              {modalMode === 'edit' && (
-                <ActiveToggleRow label="เปิดใช้งาน" checked={levelForm.status === 'ACTIVE'} onChange={(v) => setLevelForm({ ...levelForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-              )}
-
-              {canEditSalaryBand && (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">กรอบเงินเดือน</p>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">ใช้ตรวจฐานเงินเดือนพนักงานในระดับนี้ และจ่ายค่าตำแหน่งทุกเดือน</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    {([
-                      ['minSalary', 'เงินเดือนขั้นต่ำ'],
-                      ['maxSalary', 'เงินเดือนขั้นสูง'],
-                    ] as const).map(([key, label]) => (
-                      <div key={key}>
-                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{label}</label>
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={bandForm[key]}
-                          onChange={(e) => setBandForm((f) => ({ ...f, [key]: e.target.value }))}
-                          placeholder="0.00"
-                          className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ค่าตำแหน่ง (ต่อเดือน)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={bandForm.positionAllowance}
-                      onChange={(e) => setBandForm((f) => ({ ...f, positionAllowance: e.target.value }))}
-                      placeholder="0.00"
-                      className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                    />
-                  </div>
+            {canEditSalaryBand && (
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+                <div>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">กรอบเงินเดือน</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">ใช้ตรวจฐานเงินเดือนพนักงานในระดับนี้ และจ่ายค่าตำแหน่งทุกเดือน</p>
                 </div>
-              )}
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20"
-                >
-                  บันทึกข้อมูล
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  {([
+                    ['minSalary', 'เงินเดือนขั้นต่ำ'],
+                    ['maxSalary', 'เงินเดือนขั้นสูง'],
+                  ] as const).map(([key, label]) => (
+                    <div key={key}>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{label}</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={bandForm[key]}
+                        onChange={(e) => setBandForm((f) => ({ ...f, [key]: e.target.value }))}
+                        placeholder="0.00"
+                        className={inputClass}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">ค่าตำแหน่ง (ต่อเดือน)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={bandForm.positionAllowance}
+                    onChange={(e) => setBandForm((f) => ({ ...f, positionAllowance: e.target.value }))}
+                    placeholder="0.00"
+                    className={inputClass}
+                  />
+                </div>
               </div>
-            </form>
-          </div>
-        </div>
+            )}
+        </Modal>
       )}
 
       {/* Modal: Create / Edit Company Bank Account */}
       {bankAccountModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-blue-50 text-[#0B2046]">
-                  <Landmark className="w-4 h-4" />
-                </div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                  {editingBankAccount ? 'แก้ไขบัญชีธนาคารบริษัท' : 'เพิ่มบัญชีธนาคารบริษัทใหม่'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setBankAccountModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 dark:text-slate-400 cursor-pointer dark:text-slate-500 dark:text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveBankAccount} className="space-y-4 pt-4">
-              {/* ธนาคาร */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ธนาคารพาณิชย์ <span className="text-rose-500">*</span></label>
-                <CustomSelect
-                  required
-                  value={bankAccountForm.bankId}
-                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankId: Number(e.target.value) })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                >
-                  <option value={0} disabled>-- เลือกธนาคาร --</option>
-                  {banks.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.bankName}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              {/* เลขที่บัญชี */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">เลขที่บัญชีธนาคาร <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  required
-                  placeholder="เช่น 789-0-12345-6"
-                  value={bankAccountForm.accountNumber}
-                  onFocus={() => {
-                    // เลขถูกปิดบางส่วน: เมื่อคลิกแก้ ให้ล้างช่องเพื่อกรอกเลขใหม่ทั้งหมด
-                    if (editingBankAccount?.isAccountNumberMasked && bankAccountForm.accountNumber === editingBankAccount.accountNumber) {
-                      setBankAccountForm({ ...bankAccountForm, accountNumber: '' });
-                    }
-                  }}
-                  onBlur={() => {
-                    if (editingBankAccount?.isAccountNumberMasked && !bankAccountForm.accountNumber.trim()) {
-                      setBankAccountForm({ ...bankAccountForm, accountNumber: editingBankAccount.accountNumber });
-                    }
-                  }}
-                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              {editingBankAccount?.isAccountNumberMasked && (
-                <p className="-mt-2 text-[11px] text-slate-500">
-                  เลขบัญชีแสดงแบบปิดบางส่วน — ถ้าไม่ต้องการเปลี่ยนเลข ปล่อยไว้ตามเดิม (เห็นเลขเต็มได้เฉพาะฝ่ายการเงิน/ผู้ดูแลระบบ)
-                </p>
-              )}
-
-              {/* ชื่อบัญชี */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อบัญชี (Account Name)</label>
-                <input
-                  type="text"
-                  placeholder="เช่น บจก. สยาม อินโนเวชั่น เทคโนโลยี"
-                  value={bankAccountForm.accountName}
-                  onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              {/* ตั้งเป็นบัญชีจ่ายเงินเดือนหลัก */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <input
-                  type="checkbox"
-                  id="isPrimaryPayrollAccount"
-                  checked={bankAccountForm.isPrimaryPayrollAccount}
-                  disabled={!!editingBankAccount?.isPrimaryPayrollAccount}
-                  onChange={(e) =>
-                    setBankAccountForm({
-                      ...bankAccountForm,
-                      isPrimaryPayrollAccount: e.target.checked,
-                      status: e.target.checked ? 'ACTIVE' : bankAccountForm.status,
-                    })
-                  }
-                  className="mt-0.5 rounded text-[#0B2046] focus:ring-[#0B2046] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                />
-                <label htmlFor="isPrimaryPayrollAccount" className="text-xs cursor-pointer select-none">
-                  <span className="font-semibold text-slate-800 dark:text-slate-200 block dark:text-slate-200">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 dark:text-slate-400">
-                    {editingBankAccount?.isPrimaryPayrollAccount
-                      ? 'บัญชีนี้เป็นบัญชีหลักอยู่ — ถ้าต้องการเปลี่ยน ให้กด "ตั้งเป็นบัญชีหลัก" ที่บัญชีอื่นแทน'
-                      : 'เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน'}
-                  </span>
-                </label>
-              </div>
-
-              {/* สถานะ (แสดงเฉพาะตอนแก้ไข) */}
-              {editingBankAccount && (
-                <ActiveToggleRow label="เปิดใช้งานบัญชีนี้" checked={bankAccountForm.status === 'ACTIVE'} onChange={(v) => setBankAccountForm({ ...bankAccountForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} disabled={bankAccountForm.isPrimaryPayrollAccount} title={bankAccountForm.isPrimaryPayrollAccount ? 'บัญชีหลักต้องเปิดใช้งานเสมอ' : undefined} />
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setBankAccountModalOpen(false)}
-                  disabled={savingBankAccount}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer dark:text-slate-400 dark:hover:bg-slate-800"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingBankAccount}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#081836] rounded-xl shadow-md shadow-[#0B2046]/20 transition-all cursor-pointer disabled:opacity-50"
-                >
-                  {savingBankAccount && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {editingBankAccount ? 'บันทึกการแก้ไข' : 'เพิ่มบัญชีธนาคาร'}
-                </button>
-              </div>
-            </form>
+        <Modal
+          isOpen
+          size="sm"
+          onClose={() => setBankAccountModalOpen(false)}
+          title={editingBankAccount ? 'แก้ไขบัญชีธนาคารบริษัท' : 'เพิ่มบัญชีธนาคารบริษัทใหม่'}
+          onSubmit={handleSaveBankAccount}
+          footer={
+            <ModalFooter
+              onCancel={() => setBankAccountModalOpen(false)}
+              loading={savingBankAccount}
+              submitText={editingBankAccount ? 'บันทึกการแก้ไข' : 'เพิ่มบัญชีธนาคาร'}
+            />
+          }
+        >
+          {/* ธนาคาร */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ธนาคารพาณิชย์ <span className="text-rose-500">*</span></label>
+            <CustomSelect
+              required
+              value={bankAccountForm.bankId}
+              onChange={(e) => setBankAccountForm({ ...bankAccountForm, bankId: Number(e.target.value) })}
+              className={inputClass}
+            >
+              <option value={0} disabled>-- เลือกธนาคาร --</option>
+              {banks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.bankName}
+                </option>
+              ))}
+            </CustomSelect>
           </div>
-        </div>
+
+          {/* เลขที่บัญชี */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">เลขที่บัญชีธนาคาร <span className="text-rose-500">*</span></label>
+            <input
+              type="text"
+              required
+              placeholder="เช่น 789-0-12345-6"
+              value={bankAccountForm.accountNumber}
+              onFocus={() => {
+                // เลขถูกปิดบางส่วน: เมื่อคลิกแก้ ให้ล้างช่องเพื่อกรอกเลขใหม่ทั้งหมด
+                if (editingBankAccount?.isAccountNumberMasked && bankAccountForm.accountNumber === editingBankAccount.accountNumber) {
+                  setBankAccountForm({ ...bankAccountForm, accountNumber: '' });
+                }
+              }}
+              onBlur={() => {
+                if (editingBankAccount?.isAccountNumberMasked && !bankAccountForm.accountNumber.trim()) {
+                  setBankAccountForm({ ...bankAccountForm, accountNumber: editingBankAccount.accountNumber });
+                }
+              }}
+              onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+
+          {editingBankAccount?.isAccountNumberMasked && (
+            <p className="-mt-2 text-[11px] text-slate-500">
+              เลขบัญชีแสดงแบบปิดบางส่วน — ถ้าไม่ต้องการเปลี่ยนเลข ปล่อยไว้ตามเดิม (เห็นเลขเต็มได้เฉพาะฝ่ายการเงิน/ผู้ดูแลระบบ)
+            </p>
+          )}
+
+          {/* ชื่อบัญชี */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อบัญชี (Account Name)</label>
+            <input
+              type="text"
+              placeholder="เช่น บจก. สยาม อินโนเวชั่น เทคโนโลยี"
+              value={bankAccountForm.accountName}
+              onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountName: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+
+          {/* ตั้งเป็นบัญชีจ่ายเงินเดือนหลัก */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+            <input
+              type="checkbox"
+              id="isPrimaryPayrollAccount"
+              checked={bankAccountForm.isPrimaryPayrollAccount}
+              disabled={!!editingBankAccount?.isPrimaryPayrollAccount}
+              onChange={(e) =>
+                setBankAccountForm({
+                  ...bankAccountForm,
+                  isPrimaryPayrollAccount: e.target.checked,
+                  status: e.target.checked ? 'ACTIVE' : bankAccountForm.status,
+                })
+              }
+              className="mt-0.5 rounded text-primary focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+            />
+            <label htmlFor="isPrimaryPayrollAccount" className="text-xs cursor-pointer select-none">
+              <span className="font-semibold text-slate-800 dark:text-slate-200 block dark:text-slate-200">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 dark:text-slate-400">
+                {editingBankAccount?.isPrimaryPayrollAccount
+                  ? 'บัญชีนี้เป็นบัญชีหลักอยู่ — ถ้าต้องการเปลี่ยน ให้กด "ตั้งเป็นบัญชีหลัก" ที่บัญชีอื่นแทน'
+                  : 'เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน'}
+              </span>
+            </label>
+          </div>
+
+          {/* สถานะ (แสดงเฉพาะตอนแก้ไข) */}
+          {editingBankAccount && (
+            <ActiveToggleRow label="เปิดใช้งานบัญชีนี้" checked={bankAccountForm.status === 'ACTIVE'} onChange={(v) => setBankAccountForm({ ...bankAccountForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} disabled={bankAccountForm.isPrimaryPayrollAccount} title={bankAccountForm.isPrimaryPayrollAccount ? 'บัญชีหลักต้องเปิดใช้งานเสมอ' : undefined} />
+          )}
+
+        </Modal>
       )}
 
       {/* 9. Delete Confirmation Modal */}
