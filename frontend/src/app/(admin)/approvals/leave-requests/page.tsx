@@ -36,6 +36,7 @@ import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
+import { Button } from '@/components/ui';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
@@ -881,7 +882,7 @@ export default function LeaveRequestsApprovalPage() {
                 placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-[#0B2046] transition-all"
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-primary transition-all"
               />
             </div>
 
@@ -939,7 +940,7 @@ export default function LeaveRequestsApprovalPage() {
         {loading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
-              <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
               กำลังโหลดรายการ...
             </div>
           </div>
@@ -993,7 +994,7 @@ export default function LeaveRequestsApprovalPage() {
                       }`}
                     >
                       {/* 1. เลขที่เอกสาร */}
-                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-[#0B2046]">
+                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-primary">
                         {item.requestNo}
                       </td>
 
@@ -1257,7 +1258,7 @@ export default function LeaveRequestsApprovalPage() {
                             เบิกสวัสดิการ
                           </span>
                         )}
-                        <span className="font-mono font-bold text-xs text-[#0B2046]">
+                        <span className="font-mono font-bold text-xs text-primary">
                           {item.requestNo}
                         </span>
                       </div>
@@ -1462,32 +1463,26 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedForApprove(null)}
                 disabled={isSubmittingApprove}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={submitApprove}
-                disabled={isSubmittingApprove}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                loading={isSubmittingApprove}
+                icon={<CheckCircle2 className="w-4 h-4" />}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                {isSubmittingApprove ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
                 ยืนยันการอนุมัติ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1553,27 +1548,22 @@ export default function LeaveRequestsApprovalPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedForReject(null)}
                 disabled={isSubmittingReject}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={submitReject}
+                loading={isSubmittingReject}
                 disabled={isSubmittingReject || !rejectReason.trim()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                icon={<XCircle className="w-4 h-4" />}
               >
-                {isSubmittingReject ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <XCircle className="w-4 h-4" />
-                )}
                 ยืนยันการปฏิเสธ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1617,32 +1607,26 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveCertComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedCertForApprove(null)}
                 disabled={isSubmittingCertApprove}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={submitCertApprove}
-                disabled={isSubmittingCertApprove}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                loading={isSubmittingCertApprove}
+                icon={<CheckCircle2 className="w-4 h-4" />}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                {isSubmittingCertApprove ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
                 ยืนยันการอนุมัติ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1703,27 +1687,22 @@ export default function LeaveRequestsApprovalPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedCertForReject(null)}
                 disabled={isSubmittingCertReject}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={submitCertReject}
+                loading={isSubmittingCertReject}
                 disabled={isSubmittingCertReject || !rejectCertReason.trim()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                icon={<XCircle className="w-4 h-4" />}
               >
-                {isSubmittingCertReject ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <XCircle className="w-4 h-4" />
-                )}
                 ยืนยันการปฏิเสธ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1793,32 +1772,26 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveResignComment(e.target.value)}
                 placeholder="ระบุข้อความหรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedResignForApprove(null)}
                 disabled={isSubmittingResignApprove}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={submitResignApprove}
-                disabled={isSubmittingResignApprove}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                loading={isSubmittingResignApprove}
+                icon={<CheckCircle2 className="w-4 h-4" />}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                {isSubmittingResignApprove ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
                 ยืนยันการอนุมัติ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1883,27 +1856,22 @@ export default function LeaveRequestsApprovalPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedResignForReject(null)}
                 disabled={isSubmittingResignReject}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={submitResignReject}
+                loading={isSubmittingResignReject}
                 disabled={isSubmittingResignReject || !rejectResignReason.trim()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                icon={<XCircle className="w-4 h-4" />}
               >
-                {isSubmittingResignReject ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <XCircle className="w-4 h-4" />
-                )}
                 ยืนยันการปฏิเสธ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1984,32 +1952,26 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={(e) => setApproveGeneralComment(e.target.value)}
                 placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
                 rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
+                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
               />
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedGeneralForApprove(null)}
                 disabled={isSubmittingGeneralApprove}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
                 onClick={submitGeneralApprove}
-                disabled={isSubmittingGeneralApprove}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                loading={isSubmittingGeneralApprove}
+                icon={<CheckCircle2 className="w-4 h-4" />}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
               >
-                {isSubmittingGeneralApprove ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
                 ยืนยันการอนุมัติ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -2070,27 +2032,22 @@ export default function LeaveRequestsApprovalPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedGeneralForReject(null)}
                 disabled={isSubmittingGeneralReject}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-all cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={submitGeneralReject}
+                loading={isSubmittingGeneralReject}
                 disabled={isSubmittingGeneralReject || !rejectGeneralReason.trim()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                icon={<XCircle className="w-4 h-4" />}
               >
-                {isSubmittingGeneralReject ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <XCircle className="w-4 h-4" />
-                )}
                 ยืนยันการปฏิเสธ
-              </button>
+              </Button>
             </div>
           </div>
         </div>
