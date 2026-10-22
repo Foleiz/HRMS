@@ -7,14 +7,18 @@ import {
   Eye,
   Trash2,
   Search,
+  Wallet,
+  Users,
+  Clock,
 } from 'lucide-react';
-import { PayrollPeriod } from '@/types/payroll';
+import { PayrollOverview, PayrollPeriod } from '@/types/payroll';
 import { THAI_MONTH_NAMES } from '@/services/payrollScheduleService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 
 interface PayrollPeriodsTabProps {
   periods: PayrollPeriod[];
+  overview?: PayrollOverview | null;
   selectedYear: number;
   onYearChange: (year: number) => void;
   selectedMonth?: number;
@@ -32,6 +36,7 @@ interface PayrollPeriodsTabProps {
 
 export default function PayrollPeriodsTab({
   periods,
+  overview,
   selectedYear,
   onYearChange,
   selectedMonth,
@@ -199,6 +204,106 @@ export default function PayrollPeriodsTab({
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">รีเฟรช</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* 4 Summary Stat Cards (Image 1) - ต่อจากแถบเครื่องมือ (Image 2) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <Wallet className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+            <span>{overview?.currentMonthPeriod || '-'}</span>
+          </div>
+        </div>
+
+        {/* Card 2: พนักงานที่คำนวณแล้ว */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-400 dark:text-slate-400">
+            <span>ความคืบหน้า</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+              คิดเป็น {overview?.calculatedPercentage ?? 0}%
+            </span>
+          </div>
+        </div>
+
+        {/* Card 3: รอตรวจสอบ/อนุมัติ */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {overview ? `${overview.pendingApprovalCount} คน` : '-'}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+            <span>ต้องดำเนินการก่อนปิดรอบ</span>
+          </div>
+        </div>
+
+        {/* Card 4: กำหนดปิดรอบถัดไป */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+          <div className="flex items-start justify-between gap-3">
+            <div className="space-y-1">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                {overview?.nextClosingDate || '-'}
+              </div>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
+            <span className="text-slate-400">
+              สถานะกำหนดการ
+              {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 font-semibold">
+                  ค้าง {overview!.overdueOpenPeriodCount} รอบ
+                </span>
+              )}
+            </span>
+            <span className={`font-semibold ${
+              overview?.remainingDays != null && overview.remainingDays < 0
+                ? 'text-rose-600 dark:text-rose-400'
+                : overview?.remainingDays === 0
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-slate-600 dark:text-slate-300'
+            }`}>
+              {overview?.remainingDays != null
+                ? overview.remainingDays < 0
+                  ? `เลยกำหนด ${Math.abs(overview.remainingDays)} วัน`
+                  : overview.remainingDays === 0
+                  ? 'ครบกำหนดวันนี้'
+                  : `เหลืออีก ${overview.remainingDays} วัน`
+                : '-'}
+            </span>
           </div>
         </div>
       </div>

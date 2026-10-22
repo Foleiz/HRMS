@@ -430,10 +430,10 @@ export default function PayrollPage() {
     if (tabParam === 'bank-transfer') {
       return 'process';
     }
-    if (tabParam && ['overview', 'periods', 'structures', 'items', 'bonus', 'commission', 'process', 'schedule-settings', 'tax-sso'].includes(tabParam)) {
+    if (tabParam && ['periods', 'structures', 'items', 'bonus', 'commission', 'process', 'schedule-settings', 'tax-sso'].includes(tabParam)) {
       return tabParam;
     }
-    return 'overview';
+    return 'periods';
   });
 
   const [viewMode, setViewMode] = useState<PayrollViewMode>('ALL');
@@ -451,7 +451,9 @@ export default function PayrollPage() {
       setActiveTab('process');
       setProcessSubTab('BANK');
       setViewMode('FINANCE');
-    } else if (tabParam && ['overview', 'periods', 'structures', 'items', 'bonus', 'commission', 'process', 'schedule-settings', 'tax-sso'].includes(tabParam)) {
+    } else if (tabParam === 'overview') {
+      setActiveTab('periods');
+    } else if (tabParam && ['periods', 'structures', 'items', 'bonus', 'commission', 'process', 'schedule-settings', 'tax-sso'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -2275,7 +2277,6 @@ export default function PayrollPage() {
 
   // Dynamic subNavTabs based on user permissions
   const visibleNavTabs: { id: ActiveTab; label: string }[] = [
-    ...(canViewOverview ? [{ id: 'overview' as ActiveTab, label: 'ภาพรวม' }] : []),
     ...(canViewPeriods ? [{ id: 'periods' as ActiveTab, label: 'รอบเงินเดือน' }] : []),
     ...(canViewStructures ? [{ id: 'structures' as ActiveTab, label: 'โครงสร้างเงินเดือน' }] : []),
     ...(canViewItems ? [{ id: 'items' as ActiveTab, label: 'รายได้และรายหัก' }] : []),
@@ -2359,186 +2360,7 @@ export default function PayrollPage() {
         </nav>
       </div>
 
-      {/* === TAB 1: ภาพรวม (Overview) - Matches uploaded screenshot exactly === */}
-      {activeTab === 'overview' && (
-        <div className="space-y-4">
-          {/* 4 Summary Stat Cards in Responsive Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Wallet className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
-                <span>{overview?.currentMonthPeriod || '-'}</span>
-              </div>
-            </div>
 
-            {/* Card 2: พนักงานที่คำนวณแล้ว */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
-                  <Users className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-400 dark:text-slate-400">
-                <span>ความคืบหน้า</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  คิดเป็น {overview?.calculatedPercentage ?? 0}%
-                </span>
-              </div>
-            </div>
-
-            {/* Card 3: รอตรวจสอบ/อนุมัติ */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    {overview ? `${overview.pendingApprovalCount} คน` : '-'}
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                  <Clock className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
-                <span>ต้องดำเนินการก่อนปิดรอบ</span>
-              </div>
-            </div>
-
-            {/* Card 4: กำหนดปิดรอบถัดไป */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
-                  <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                    {overview?.nextClosingDate || '-'}
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
-                  <Calendar className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
-                <span className="text-slate-400">
-                  สถานะกำหนดการ
-                  {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 font-semibold">
-                      ค้าง {overview!.overdueOpenPeriodCount} รอบ
-                    </span>
-                  )}
-                </span>
-                <span className={`font-semibold ${
-                  overview?.remainingDays != null && overview.remainingDays < 0
-                    ? 'text-rose-600 dark:text-rose-400'
-                    : overview?.remainingDays === 0
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-slate-600 dark:text-slate-300'
-                }`}>
-                  {overview?.remainingDays != null
-                    ? overview.remainingDays < 0
-                      ? `เลยกำหนด ${Math.abs(overview.remainingDays)} วัน`
-                      : overview.remainingDays === 0
-                      ? 'ครบกำหนดวันนี้'
-                      : `เหลืออีก ${overview.remainingDays} วัน`
-                    : '-'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Section: รอบเงินเดือนล่าสุด */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-base font-bold text-slate-900 dark:text-white">รอบเงินเดือนล่าสุด</h2>
-              {canViewPeriods && (
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('periods')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                >
-                  <span>ดูทั้งหมด</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {!overview ? (
-              <div className="py-8 text-center text-xs text-slate-400">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-slate-300" />
-                กำลังโหลดข้อมูล...
-              </div>
-            ) : (!overview.recentPeriods || overview.recentPeriods.length === 0) ? (
-              <div className="py-8 text-center">
-                <Calendar className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่มีรอบเงินเดือนในระบบ</p>
-              </div>
-            ) : (
-              <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                {overview.recentPeriods.map((p, idx) => {
-                  const targetPeriod = periods.find(x => p.periodName.includes(x.periodName) || x.periodName.includes(p.periodName));
-                  const canNavigate = canViewProcess || canViewPeriods;
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => {
-                        if (!canNavigate) return;
-                        if (canViewProcess && targetPeriod) {
-                          handlePeriodChange(targetPeriod.id);
-                          setActiveTab('process');
-                        } else if (canViewPeriods) {
-                          setIsAllPeriodsModalOpen(true);
-                        }
-                      }}
-                      className={`py-4 flex items-center justify-between text-sm px-2 rounded-xl transition-colors ${
-                        canNavigate ? 'hover:bg-slate-50/50 dark:hover:bg-slate-700/30 cursor-pointer group' : 'cursor-default'
-                      }`}
-                      title={canNavigate ? 'คลิกเพื่อเปิดดูรายละเอียดรอบนี้' : undefined}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`font-semibold text-slate-800 dark:text-slate-200 ${canNavigate ? 'group-hover:text-[#0B2046] dark:group-hover:text-blue-400 transition-colors' : ''}`}>
-                          {p.periodName}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-8">
-                        <span className="font-bold text-slate-900 dark:text-white font-mono">
-                          ฿{p.totalAmount.toLocaleString()}
-                        </span>
-                        <span
-                          className={`inline-flex items-center px-3.5 py-1 rounded-xl text-xs font-semibold min-w-[90px] justify-center ${
-                            p.status === 'PENDING_REVIEW' || p.status === 'REVIEW'
-                              ? 'bg-[#FEECE5] text-[#EA580C] border border-[#FDBA74]/40 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
-                              : p.status === 'CLOSED'
-                              ? 'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600'
-                              : 'bg-[#DCFCE7] text-[#16A34A] border border-[#86EFAC]/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
-                          }`}
-                        >
-                          {p.statusText}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* === TAB 2: โครงสร้างเงินเดือน (Salary Structure & Employees) === */}
       {activeTab === 'structures' && (
@@ -3052,6 +2874,7 @@ export default function PayrollPage() {
       {activeTab === 'periods' && (
         <PayrollPeriodsTab
           periods={periods}
+          overview={overview}
           selectedYear={periodsTabSelectedYear}
           onYearChange={setPeriodsTabSelectedYear}
           selectedMonth={periodsTabSelectedMonth}
