@@ -1233,6 +1233,10 @@ public class SalaryService : ISalaryService
         if (UndeletableItemCodes.Contains(entity.ItemCode))
             throw new BusinessRuleException($"รายการ '{entity.ItemName}' เป็นรายการหลักของระบบ ลบไม่ได้ (แก้ไขหรือปิดใช้งานได้)");
 
+        // รายการแบบสูตร/ของระบบ แก้ไขได้อย่างเดียว — ลบได้เฉพาะรายการแบบกำหนดเอง
+        if (entity.CalculationType == "FORMULA" || SystemItemCodes.Contains(entity.ItemCode))
+            throw new BusinessRuleException($"รายการ '{entity.ItemName}' เป็นรายการแบบสูตร/ดึงข้อมูลอัตโนมัติ แก้ไขได้แต่ลบไม่ได้");
+
         // รายการที่เคยอยู่ในสลิปเงินเดือนแล้ว ลบไม่ได้ เพื่อเก็บประวัติสลิปไว้ — ให้ปิดใช้งานแทน
         var usedCount = await _context.PayrollDetails.CountAsync(d => d.PayrollItemId == id, cancellationToken);
         if (usedCount > 0)

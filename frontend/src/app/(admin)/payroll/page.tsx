@@ -3021,7 +3021,8 @@ export default function PayrollPage() {
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
-                                {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && (
+                                {/* ลบได้เฉพาะแบบกำหนดเอง — ดึงข้อมูลอัตโนมัติ/สูตร แก้ไขได้อย่างเดียว */}
+                                {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && !isAutoPullModuleItem && item.calculationType !== 'FORMULA' && (
                                   <button
                                     onClick={() => {
                                       setItemToDelete(item);
