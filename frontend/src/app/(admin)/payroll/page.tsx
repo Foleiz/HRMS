@@ -4636,13 +4636,38 @@ export default function PayrollPage() {
                   {processSubTab === 'FINANCE' && (
                     <>
                       {selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' && (
-                        <button
-                          onClick={handleVerifyByFinance}
-                          className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span>การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsRejectModalOpen(true)}
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                            <span>ไม่อนุมัติ (ส่งคืน HR แก้ไข)</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleVerifyByFinance}
+                            className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {selectedPeriod?.status === 'FINANCE_VERIFIED' && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsRejectModalOpen(true)}
+                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-semibold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                            <span>ไม่อนุมัติ (ส่งคืน HR แก้ไข)</span>
+                          </button>
+                        </div>
                       )}
 
                       {selectedPeriod?.status === 'APPROVED' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED' ? (

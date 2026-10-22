@@ -1857,6 +1857,11 @@ public class SalaryService : ISalaryService
         }
 
         period.Status = normalized;
+        if (normalized == "REVIEW")
+        {
+            period.FinanceVerifiedAt = null;
+            period.FinanceVerifiedBy = null;
+        }
         if (normalized == "PAID")
         {
             if (period.PaymentConfirmedAt == null) period.PaymentConfirmedAt = DateTimeOffset.UtcNow;
