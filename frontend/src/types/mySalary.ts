@@ -8,6 +8,8 @@ export interface MySalaryOverview {
   deductionSubtext: string;
   bankAccountMasked: string;
   bankName: string;
+  /** คำใบ้รหัสเปิดไฟล์ PDF */
+  passwordHint?: string;
   history: MySalarySlipItem[];
   chartData: MySalaryChartData;
 }

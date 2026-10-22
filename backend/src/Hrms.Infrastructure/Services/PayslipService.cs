@@ -134,7 +134,7 @@ public class PayslipService : IPayslipService
         string companyAddress = company?.Address ?? string.Empty;
         string companyPhone = company?.Phone ?? string.Empty;
 
-        // 3. Query YTD totals (คำนวณจากงวดที่ผ่านการอนุมัติแล้วขึ้นไปเท่านั้น)
+        // 3. Query YTD totals: งวดที่อนุมัติแล้วขึ้นไป + งวดของสลิปนี้เสมอ (HR พรีวิวรอบ REVIEW ยอดสะสมต้องรวมเดือนนี้)
         var yearPayrolls = await _context.Payrolls
             .AsNoTracking()
             .Include(p => p.Period)
@@ -144,7 +144,8 @@ public class PayslipService : IPayslipService
                         p.Period != null &&
                         p.Period.Year == periodYear &&
                         p.Period.Month <= periodMonth &&
-                        PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status))
+                        (p.Id == payroll.Id ||
+                         PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status)))
             .ToListAsync(cancellationToken);
 
         decimal ytdGross = yearPayrolls.Sum(p => p.TotalGrossIncome);

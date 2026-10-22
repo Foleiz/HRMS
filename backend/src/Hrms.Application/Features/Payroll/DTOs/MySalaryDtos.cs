@@ -11,6 +11,8 @@ public class MySalaryOverviewDto
     public string DeductionSubtext { get; set; } = string.Empty;
     public string BankAccountMasked { get; set; } = string.Empty;
     public string BankName { get; set; } = string.Empty;
+    /// <summary>คำใบ้รหัสเปิดไฟล์ PDF (ใช้ตอนดาวน์โหลดจากหน้ารายการ)</summary>
+    public string PasswordHint { get; set; } = string.Empty;
     public List<MySalarySlipItemDto> History { get; set; } = new();
     public MySalaryChartDataDto ChartData { get; set; } = new();
 }

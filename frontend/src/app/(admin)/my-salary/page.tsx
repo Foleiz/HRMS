@@ -23,7 +23,8 @@ import {
   PieChart as PieChartIcon,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Button, StatusBadge, RowActionButton } from '@/components/ui';
+import { Button, StatusBadge, RowActions, RowActionButton, inputClass } from '@/components/ui';
+import { TablePagination } from '@/components/ui/TablePagination';
 
 export default function MySalaryPage() {
   return (
@@ -42,7 +43,7 @@ export default function MySalaryPage() {
 function MySalaryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthLoading } = useAuth() as any;
+  const { isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const { error, success } = useToast();
 
@@ -135,7 +136,7 @@ function MySalaryContent() {
     try {
       const fileName = `Payslip_${monthName ? monthName.replace(/\s+/g, '_') : payrollId}.pdf`;
       await mySalaryService.downloadSlipPdf(payrollId, fileName);
-      const hintText = hint || detailData?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย';
+      const hintText = hint || overview?.passwordHint || detailData?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย';
       success('ดาวน์โหลดสลิปเงินเดือน (PDF) สำเร็จ', `รหัสเปิดไฟล์คือ: ${hintText}`);
     } catch (err: any) {
       error('ไม่สามารถดาวน์โหลดสลิปเงินเดือนได้', err.message || 'เกิดข้อผิดพลาดในการดาวน์โหลด');
@@ -157,7 +158,6 @@ function MySalaryContent() {
     );
   }, [overview?.history, searchTerm]);
 
-  const totalPages = Math.ceil(filteredHistory.length / pageSize) || 1;
   const paginatedHistory = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredHistory.slice(start, start + pageSize);
@@ -192,10 +192,8 @@ function MySalaryContent() {
       );
     }
 
-    const isTransferred =
-      detailData?.paymentStatus === 'TRANSFERRED' ||
-      detailData?.status === 'PAID' ||
-      detailData?.status === 'CLOSED';
+    // backend ส่ง status เป็นข้อความไทยที่คำนวณแล้ว ("โอนแล้ว"/"รอโอน")
+    const isTransferred = detailData?.status === 'โอนแล้ว';
 
     return (
       <div className="space-y-6 font-sans animate-in fade-in duration-200">
@@ -223,7 +221,7 @@ function MySalaryContent() {
             {/* A3: Top Right Security Notice Pill with dynamic password hint */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium shadow-xs">
               <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>รหัสเปิดไฟล์: {detailData?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย'}</span>
+              <span>รหัสเปิดไฟล์: {detailData?.passwordHint || overview?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย'}</span>
             </div>
           </div>
         </div>
@@ -239,7 +237,7 @@ function MySalaryContent() {
                 {detailData?.periodMonthName}
               </h2>
               <StatusBadge tone={isTransferred ? 'success' : 'warning'}>
-                {detailData?.status || (isTransferred ? 'โอนแล้ว' : 'รอโอน')}
+                {detailData?.status || 'รอโอน'}
               </StatusBadge>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -545,13 +543,13 @@ function MySalaryContent() {
                     setCurrentPage(1);
                   }}
                   placeholder="ค้นหาเดือน / พ.ศ."
-                  className="w-full sm:w-56 h-8 pl-8 pr-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
+                  className={`${inputClass} sm:w-56 !py-1.5 pl-8`}
                 />
               </div>
             </div>
 
             {/* Desktop View: Slips History Table */}
-            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">
               <table className="table-standard w-full min-w-[700px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold bg-slate-50/50 dark:bg-slate-700/30 whitespace-nowrap">
@@ -588,34 +586,24 @@ function MySalaryContent() {
                           {row.paymentDateThai}
                         </td>
                         <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
-                          <StatusBadge tone={row.status === 'โอนแล้ว' || row.status === 'PAID' ? 'success' : 'neutral'}>
+                          <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : 'warning'}>
                             {row.status}
                           </StatusBadge>
                         </td>
                         <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
-                          <div className="flex items-center justify-center gap-1">
+                          <RowActions>
                             <RowActionButton
                               action="view"
                               onClick={() => handleSelectSlip(row.payrollId)}
                               title="ดูรายละเอียดสลิป"
                             />
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownloadPdf(row.payrollId, row.periodMonthName);
-                              }}
-                              disabled={downloadingId === row.payrollId}
+                            <RowActionButton
+                              action="download"
+                              onClick={() => handleDownloadPdf(row.payrollId, row.periodMonthName)}
+                              loading={downloadingId === row.payrollId}
                               title="ดาวน์โหลดสลิปเงินเดือน (PDF)"
-                              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 flex items-center justify-center transition-colors cursor-pointer disabled:opacity-50"
-                            >
-                              {downloadingId === row.payrollId ? (
-                                <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
-                              ) : (
-                                <Download className="w-4 h-4" />
-                              )}
-                            </button>
-                          </div>
+                            />
+                          </RowActions>
                         </td>
                       </tr>
                     ))
@@ -636,7 +624,7 @@ function MySalaryContent() {
                 paginatedHistory.map((row) => (
                   <div
                     key={row.payrollId}
-                    className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors"
+                    className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors cursor-pointer"
                     onClick={() => handleSelectSlip(row.payrollId)}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -648,7 +636,7 @@ function MySalaryContent() {
                           โอนเมื่อ: {row.paymentDateThai}
                         </span>
                       </div>
-                      <StatusBadge tone={row.status === 'โอนแล้ว' || row.status === 'PAID' ? 'success' : 'neutral'}>
+                      <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : 'warning'}>
                         {row.status}
                       </StatusBadge>
                     </div>
@@ -672,7 +660,7 @@ function MySalaryContent() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 pt-1">
+                    <div className="flex items-center justify-end gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="secondary"
@@ -701,60 +689,17 @@ function MySalaryContent() {
           </div>
 
           {/* Pagination & Page Size Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-6 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-700">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-slate-600 dark:text-slate-400">แสดงผล</span>
-              <CustomSelect
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="h-7 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs"
-              >
-                <option value={10}>10 รายการ / หน้า</option>
-                <option value={20}>20 รายการ / หน้า</option>
-                <option value={50}>50 รายการ / หน้า</option>
-                <option value={100}>100 รายการ / หน้า</option>
-                <option value={200}>200 รายการ / หน้า</option>
-              </CustomSelect>
-              <span className="text-slate-400">
-                (แสดง {paginatedHistory.length} จากทั้งหมด {filteredHistory.length} รายการ)
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                &lt;
-              </button>
-              {Array.from({ length: totalPages }).map((_, i) => {
-                const p = i + 1;
-                return (
-                  <button
-                    key={p}
-                    onClick={() => setCurrentPage(p)}
-                    className={`w-7 h-7 rounded text-xs font-semibold cursor-pointer ${
-                      currentPage === p
-                        ? 'bg-primary text-white'
-                        : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                );
-              })}
-              <button
-                disabled={currentPage >= totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-              >
-                &gt;
-              </button>
-            </div>
+          <div className="mt-6 border-t border-slate-100 dark:border-slate-700">
+            <TablePagination
+              total={filteredHistory.length}
+              page={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </div>
 
