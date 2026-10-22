@@ -2819,46 +2819,10 @@ export default function PayrollPage() {
                         ? 'สูตรคำนวณ'
                         : 'กำหนดเอง';
 
-                      const getTemplateBadge = (tplCode?: string | null) => {
-                        switch (tplCode) {
-                          case 'BASE_SALARY':
-                            return { label: 'ฐานเงินเดือน', color: 'bg-blue-50 text-blue-700 border-blue-200' };
-                          case 'POSITION_ALLOWANCE':
-                            return { label: 'ค่าตำแหน่งจากโครงสร้างเงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-
-                          case 'PERCENT_SALES':
-                            return { label: 'ดึงจากแท็บค่าคอมมิชชั่น', color: 'bg-teal-50 text-teal-800 border-teal-200' };
-                          case 'DILIGENT_ALLOWANCE':
-                            return { label: 'เบี้ยขยัน (เงื่อนไขขาด/สาย/ลา)', color: 'bg-teal-50 text-teal-800 border-teal-200' };
-                          case 'PRORATED_DAYS':
-                            return { label: 'สัดส่วนวันทำงานจริง', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
-                          case 'MANUAL_BONUS':
-                            return { label: 'ดึงจากแท็บโบนัส', color: 'bg-teal-50 text-teal-800 border-teal-200' };
-                          case 'SSO_STANDARD':
-                            return { label: 'ประกันสังคม % ของค่าจ้าง', color: 'bg-purple-50 text-purple-700 border-purple-200' };
-                          case 'OVERTIME':
-                            return { label: 'ชม. OT × อัตราต่อชั่วโมง × ตัวคูณ', color: 'bg-cyan-50 text-cyan-800 border-cyan-200' };
-                          case 'UNPAID_LEAVE':
-                            return { label: 'วันลาไม่รับค่าจ้าง × ค่าจ้างรายวัน', color: 'bg-orange-50 text-orange-800 border-orange-200' };
-                          case 'TAX_STANDARD':
-                            return { label: 'ภ.ง.ด.1 ขั้นบันได', color: 'bg-rose-50 text-rose-700 border-rose-200' };
-                          case 'LATE_ABSENT':
-                            return { label: 'หักตามเวลาสาย/ขาดจริง', color: 'bg-orange-50 text-orange-800 border-orange-200' };
-                          case 'PERCENT_SALARY':
-                            return { label: 'PVD / % เงินเดือน', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
-                          case 'STAFF_LOAN':
-                            return { label: 'หักเงินกู้ยืมสวัสดิการ', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200' };
-                          case 'CUSTOM_FORMULA':
-                            return { label: 'สูตรกำหนดเอง', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200' };
-                          default:
-                            return null;
-                        }
-                      };
                       const effectiveTpl = (
                         item.formulaTemplate ||
                         (item.itemCode === 'DED_UNPAID_LEAVE' ? 'UNPAID_LEAVE' : item.itemCode === 'INC_OT' ? 'OVERTIME' : '')
                       ).toUpperCase();
-                      const templateBadge = item.calculationType === 'FORMULA' ? getTemplateBadge(effectiveTpl || null) : null;
                       // ข้อความสูตรสร้างจากค่าตัวแปรจริง (ข้อความเดิมใน DB อาจเก่า/ไม่ครบ เช่น ไม่บอกเงื่อนไขลา หรือไม่มีตัวคูณ OT)
                       const formulaText = (() => {
                         if (effectiveTpl === 'SSO_STANDARD') {
@@ -2878,14 +2842,6 @@ export default function PayrollPage() {
                         }
                         return item.formulaValue || '-';
                       })();
-                      const freqText = (f?: string | null) =>
-                        f === 'DAILY' ? 'วัน' : f === 'MONTHLY' ? 'เดือน' : f === 'YEARLY' ? 'ปี' : 'ครั้ง';
-                      const linkedBenefits = (item.linkedBenefits ?? []).filter((b) => b.status === 'ACTIVE');
-
-                      const fixedNumber = item.calculationType === 'FIXED' && item.formulaValue && !isNaN(Number(item.formulaValue))
-                        ? Number(item.formulaValue)
-                        : null;
-
                       return (
                         <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                           <td className="py-3.5 px-5">
@@ -2917,67 +2873,19 @@ export default function PayrollPage() {
                           </td>
                           <td className="py-3.5 px-5">
                             {isAutoPullModuleItem ? (
-                              <div className="flex items-center">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-teal-50/80 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800">
-                                  <Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-                                  <span>ดึงจาก: {autoPull?.source}</span>
-                                </span>
-                              </div>
-                            ) : linkedBenefits.length > 0 ? (
-                              <div className="flex flex-col items-start gap-0.5 whitespace-normal">
-                                {linkedBenefits.map((b) => (
-                                  <span key={b.benefitName} className="text-xs text-slate-700 dark:text-slate-300">
-                                    {b.payoutType === 'PAYROLL' ? (
-                                      <>
-                                        <span className="font-semibold">
-                                          {b.defaultCoverageAmount > 0 ? `${b.defaultCoverageAmount.toLocaleString()} บาท/${freqText(b.defaultFrequency)}` : 'ตามสิทธิ์'}
-                                        </span>{' '}
-                                        <span className="text-[10px] text-slate-400">จ่ายประจำในเงินเดือน (ยอดตามประเภทพนักงาน)</span>
-                                      </>
-                                    ) : b.payoutType === 'IN_KIND' ? (
-                                      <span className="text-slate-400">ไม่ใช่ตัวเงิน — ไม่จ่ายในสลิป</span>
-                                    ) : (
-                                      <>
-                                        <span className="font-semibold">เบิกตามจริง</span>{' '}
-                                        <span className="text-[10px] text-slate-400">
-                                          จ่ายตามคำขอเบิกที่อนุมัติ{b.defaultCoverageAmount > 0 ? ` (วงเงิน ${b.defaultCoverageAmount.toLocaleString()} บาท/${freqText(b.defaultFrequency)})` : ''}
-                                        </span>
-                                      </>
-                                    )}
-                                  </span>
-                                ))}
-                              </div>
+                              <span className="text-xs text-slate-600 dark:text-slate-400">จาก {autoPull?.short}</span>
                             ) : item.calculationType === 'FORMULA' ? (
-                              <div className="flex flex-col items-start gap-1 whitespace-normal max-w-[360px]">
-                                {templateBadge && (
-                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium border ${templateBadge.color}`}>
-                                    {templateBadge.label}
-                                  </span>
-                                )}
-                                <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                  {formulaText}
+                              <span className="text-xs text-slate-700 dark:text-slate-300 whitespace-normal">{formulaText}</span>
+                            ) : (() => {
+                              const amt = (item.formulaValue || '').replace(/,/g, '').trim();
+                              return amt !== '' && !isNaN(Number(amt)) ? (
+                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                  ฿{Number(amt).toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                 </span>
-                              </div>
-                            ) : item.calculationType === 'FIXED' ? (
-                              <div className="flex items-center gap-1.5">
-                                {fixedNumber !== null ? (
-                                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100 font-mono">
-                                    ฿{fixedNumber.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
-                                  </span>
-                                ) : (
-                                  <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-                                    {item.formulaValue || '-'}
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-slate-400 font-normal">(ยอดคงที่)</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold">
-                                {item.formulaValue && !isNaN(Number(item.formulaValue.replace(/,/g, '')))
-                                  ? `฿${Number(item.formulaValue.replace(/,/g, '')).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
-                                  : item.formulaValue || '-'}
-                              </span>
-                            )}
+                              ) : (
+                                <span className="text-xs text-slate-400">ระบุตอนประมวลผล</span>
+                              );
+                            })()}
                           </td>
                           <td className="py-3.5 px-5 text-center">
                             {item.isTaxable ? (
