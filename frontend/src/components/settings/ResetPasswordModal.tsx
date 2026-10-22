@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
 import { X, KeyRound, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { UserAccount } from '@/types/settings';
@@ -50,7 +51,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <ModalShell className="z-50" innerClassName="items-center justify-center p-4">
       <div
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in"
         onClick={onClose}
@@ -126,6 +127,6 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 };

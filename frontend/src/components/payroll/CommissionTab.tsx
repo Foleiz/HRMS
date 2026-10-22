@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FileSpreadsheet,
@@ -1564,7 +1565,7 @@ export default function CommissionTab() {
 
       {/* 7. Edit Item Modal */}
       {editingRecord && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <ModalShell className="z-[70] bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               แก้ไขค่าคอมมิชชั่น: {editingRecord.employeeName}
@@ -1648,7 +1649,7 @@ export default function CommissionTab() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* 8. Add Manual Record Modal */}
@@ -1660,7 +1661,7 @@ export default function CommissionTab() {
         const thisJobTotal = thisJobCommissionAmount;
 
         return (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <ModalShell className="z-[70] bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
             <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 max-h-[92vh] overflow-y-auto">
               <div className="flex items-start justify-between">
                 <div>
@@ -1835,13 +1836,13 @@ export default function CommissionTab() {
                 </button>
               </div>
             </div>
-          </div>
+          </ModalShell>
         );
       })()}
 
       {/* 8. Batch Records Detail Popup Modal */}
       {selectedBatchForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <ModalShell className="z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden">
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
@@ -2063,12 +2064,12 @@ export default function CommissionTab() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* 8.5. Employee Sub-entries Breakdown Modal */}
       {selectedEmployeeForEntries && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <ModalShell className="z-[70] bg-black/70 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
@@ -2233,12 +2234,12 @@ export default function CommissionTab() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* 8.8. Monthly Period Details Popup Modal (รวมวันในเดือนนั้น & สรุปรายคน) */}
       {selectedPeriodForDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <ModalShell className="z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden">
             {/* Modal Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60">
@@ -2659,12 +2660,12 @@ export default function CommissionTab() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* 8.9. Overlap Resolution Choice Modal */}
       {showOverlapModal && pendingOverlapPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+        <ModalShell className="z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-amber-50/70 dark:bg-amber-950/30">
@@ -2860,7 +2861,7 @@ export default function CommissionTab() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* 9. Supported File Formats Guide Modal */}

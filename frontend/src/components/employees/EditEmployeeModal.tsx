@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -547,7 +548,7 @@ export default function EditEmployeeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-5 overflow-y-auto">
+    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-primary text-white shrink-0">
@@ -1524,6 +1525,6 @@ export default function EditEmployeeModal({
           </form>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 }

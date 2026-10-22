@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
 import {
   X,
@@ -219,7 +220,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-2xs p-3 sm:p-6 animate-in fade-in duration-150">
+    <ModalShell className="z-50 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-3 sm:p-6">
       <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0">
@@ -387,6 +388,6 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
           </Button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ChevronLeft,
@@ -736,7 +737,7 @@ export default function MyNewsCalendarPage() {
 
       {/* Reading Modal (Identical full details) */}
       {readingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
@@ -818,12 +819,12 @@ export default function MyNewsCalendarPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Modal แสดงรายการประกาศทั้งหมดในวันที่เลือก (เมื่อกด +N รายการเพิ่มเติม) */}
       {selectedDayModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
@@ -922,7 +923,7 @@ export default function MyNewsCalendarPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

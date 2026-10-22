@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, AlertCircle } from 'lucide-react';
 import { contractService } from '@/services/contractService';
@@ -46,7 +47,7 @@ export default function EmployeeTimelineModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+    <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header ตรงตาม Mockup: ไทม์ไลน์ตำแหน่งของ {ชื่อ} · {รหัส} */}
         <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-slate-700/60">
@@ -145,6 +146,6 @@ export default function EmployeeTimelineModal({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

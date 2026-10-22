@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -125,7 +126,7 @@ export default function AttachContractModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150 font-sans">
+    <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150 font-sans" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/80 shrink-0">
@@ -309,6 +310,6 @@ export default function AttachContractModal({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 }

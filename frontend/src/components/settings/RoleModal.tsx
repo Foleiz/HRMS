@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { X, Shield } from 'lucide-react';
 import { CodeInput } from '@/components/ui/CodeInput';
@@ -110,7 +111,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <ModalShell className="z-50" innerClassName="items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in"
@@ -203,6 +204,6 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 };

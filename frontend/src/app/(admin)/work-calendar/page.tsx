@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -806,7 +807,7 @@ export default function WorkCalendarPage() {
       {/* 4. Create / Edit Holiday Modal */}
       {/* ========================================================= */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+        <ModalShell className="bg-slate-900/40 backdrop-blur-sm z-50 animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
@@ -870,14 +871,14 @@ export default function WorkCalendarPage() {
               </div>
             </form>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ========================================================= */}
       {/* 5. Delete Confirmation Modal */}
       {/* ========================================================= */}
       {deleteModalOpen && itemToDelete && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+        <ModalShell className="bg-slate-900/40 backdrop-blur-sm z-50 animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center dark:bg-slate-800 dark:border-slate-700">
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-3">
               <Trash2 className="w-6 h-6" />
@@ -901,7 +902,7 @@ export default function WorkCalendarPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -2303,7 +2304,7 @@ function SchedulesContent() {
       {/* MODAL 2: Batch Assign Shift Modal */}
       {/* ============================================================= */}
       {batchModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-fade-in" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">มอบหมายกะแบบกลุ่ม</h3>
@@ -2676,7 +2677,7 @@ function SchedulesContent() {
               </Button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ============================================================= */}
@@ -2972,7 +2973,7 @@ function SchedulesContent() {
       {/* MODAL: Selected Calendar Day Details */}
       {/* ============================================================= */}
       {selectedCalendarDay && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-fade-in" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             {/* Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 dark:border-slate-700/60">
@@ -3078,14 +3079,14 @@ function SchedulesContent() {
               </Button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ============================================================= */}
       {/* MODAL 6: Shared Delete Confirmation Modal */}
       {/* ============================================================= */}
       {deleteConfirmOpen && itemToDelete && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-fade-in" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-md p-6 space-y-4 dark:bg-slate-800 dark:border-slate-700">
             <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
@@ -3120,7 +3121,7 @@ function SchedulesContent() {
               </Button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

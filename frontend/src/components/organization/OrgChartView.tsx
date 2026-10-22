@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -898,9 +899,9 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
 
       {/* ข้อมูลพนักงาน */}
       {opened && (
-        <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-          onClick={() => setOpened(null)}
+        <ModalShell
+          className="z-50 bg-slate-900/40 backdrop-blur-sm"
+          onBackdropClick={() => setOpened(null)}
         >
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="bg-[#0B2046] px-6 pt-6 pb-5 text-center text-white relative">
@@ -1023,7 +1024,7 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
               )}
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

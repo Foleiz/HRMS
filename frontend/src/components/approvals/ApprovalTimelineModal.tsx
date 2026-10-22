@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState } from 'react';
 import {
   X,
@@ -128,7 +129,7 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
   if (!isOpen || !effectiveRequest) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+    <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div
         className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 transition-all flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
@@ -457,6 +458,6 @@ export const ApprovalTimelineModal: React.FC<ApprovalTimelineModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

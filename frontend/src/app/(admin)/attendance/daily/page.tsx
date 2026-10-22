@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -2810,7 +2811,7 @@ function DailyAttendanceContent() {
 
       {/* Error Log Modal */}
       {selectedBatchForErrors && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] dark:bg-slate-800 dark:border-slate-700">
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 dark:border-slate-700">
               <div className="flex items-center gap-3">
@@ -2928,12 +2929,12 @@ function DailyAttendanceContent() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Time Review Modal (ตรวจเวลา) */}
       {selectedBatchForReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] dark:bg-slate-800 dark:border-slate-700">
             {/* Header */}
             <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/60 dark:border-slate-700">
@@ -3190,12 +3191,12 @@ function DailyAttendanceContent() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Revert / Delete Batch Confirmation Modal */}
       {revertModalOpen && batchToRevert && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
+        <ModalShell className="bg-slate-900/40 backdrop-blur-xs z-50 animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-150 dark:bg-slate-900 dark:border-slate-700/60">
             <div className="flex items-center gap-3 text-rose-600 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center shrink-0">
@@ -3265,7 +3266,7 @@ function DailyAttendanceContent() {
               </Button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ------------------------------------------------------------- */}

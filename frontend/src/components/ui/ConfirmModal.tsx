@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { ModalShell } from './ModalShell';
 import React from 'react';
 import { X, AlertTriangle, CheckCircle2, HelpCircle, Info, Trash2, Sparkles, Loader2 } from 'lucide-react';
 
@@ -81,7 +82,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const config = getIconConfig();
 
   return (
-    <div className={`fixed inset-0 ${zIndexClassName} flex items-center justify-center bg-black/45 backdrop-blur-sm p-4 animate-in fade-in duration-150`}>
+    <ModalShell className={`${zIndexClassName} bg-black/45 backdrop-blur-sm animate-in fade-in duration-150`}>
       <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-700 p-6 animate-in zoom-in-95 duration-200">
         {/* Close icon button */}
         <button
@@ -135,6 +136,6 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

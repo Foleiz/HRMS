@@ -7,6 +7,7 @@
 export * from './Button';
 export * from './Input';
 export * from './Modal';
+export * from './ModalShell';
 export * from './StatusBadge';
 export * from './ToggleSwitch';
 export * from './OptionCheckCard';

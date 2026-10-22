@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -3661,7 +3662,7 @@ export default function PayrollPage() {
                         });
 
                         return (
-                          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150">
+                          <ModalShell className="z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-3 sm:p-4">
                             <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] overflow-hidden">
                               {/* Modal Header */}
                               <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between bg-slate-50/70 dark:bg-slate-900/60 shrink-0">
@@ -3919,7 +3920,7 @@ export default function PayrollPage() {
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </ModalShell>
                         );
                       })()}
                     </div>
@@ -5790,7 +5791,7 @@ export default function PayrollPage() {
       {/* ── MODALS: Upload Slip & Confirm Payment (Available from Process Tab) ── */}
       {/* ── MODAL: Upload Slip + Mark Transferred ── */}
           {slipModalOpen && slipModalTarget && (
-            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <ModalShell className="z-50 bg-black/50 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -5899,12 +5900,12 @@ export default function PayrollPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </ModalShell>
           )}
 
           {/* ── MODAL: CEO Confirm Payment ── */}
           {confirmPaymentModalOpen && (
-            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+            <ModalShell className="z-50 bg-black/50 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-4">
                 <div className="text-center">
                   <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center mb-3">
@@ -5983,7 +5984,7 @@ export default function PayrollPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </ModalShell>
           )}
 
 
@@ -6200,7 +6201,7 @@ export default function PayrollPage() {
 
       {/* Modal: รายการรอบเงินเดือนทั้งหมด */}
       {isAllPeriodsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[85vh] flex flex-col border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/80">
@@ -6381,12 +6382,12 @@ export default function PayrollPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Modal: บันทึกโบนัสเข้าสู่งวดเงินเดือน (Apply Bonus to Payroll Period) */}
       {isApplyBonusModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 max-w-lg w-full p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
               <div className="flex items-center gap-2">
@@ -6482,7 +6483,7 @@ export default function PayrollPage() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

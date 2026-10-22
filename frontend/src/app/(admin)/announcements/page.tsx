@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Megaphone,
@@ -775,7 +776,7 @@ export default function AnnouncementsPage() {
       {/* READING MODAL (หน้าต่างอ่านประกาศฉบับเต็ม สำหรับพนักงาน)                    */}
       {/* ========================================================================= */}
       {readingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
@@ -863,14 +864,14 @@ export default function AnnouncementsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ========================================================================= */}
       {/* AUDIENCE AUDIT STATS MODAL (หน้าต่างตรวจสอบสถิติคนอ่าน สำหรับ Admin)        */}
       {/* ========================================================================= */}
       {statsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -1059,14 +1060,14 @@ export default function AnnouncementsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ========================================================================= */}
       {/* CREATE / EDIT FORM MODAL (สำหรับ Admin)                                   */}
       {/* ========================================================================= */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -1289,7 +1290,7 @@ export default function AnnouncementsPage() {
               </div>
             </form>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Confirmation Modal */}

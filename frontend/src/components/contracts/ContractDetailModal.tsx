@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -221,7 +222,7 @@ export default function ContractDetailModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
+      <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 font-sans" innerClassName="items-center justify-center p-4">
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
           {/* 1. Modern Header */}
           <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/60 bg-gradient-to-r from-slate-50 via-white to-blue-50/20 dark:from-slate-800 dark:to-slate-800/80 flex items-center justify-between shrink-0">
@@ -602,11 +603,11 @@ export default function ContractDetailModal({
             </button>
           </div>
         </div>
-      </div>
+      </ModalShell>
 
       {/* 4. Document Preview Modal (Embedded Lightbox) */}
       {isPreviewOpen && previewUrl && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150">
+        <ModalShell className="z-60 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Preview Header */}
             <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex items-center justify-between">
@@ -681,7 +682,7 @@ export default function ContractDetailModal({
               )}
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
     </>
   );

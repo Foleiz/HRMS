@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React from 'react';
 import { X } from 'lucide-react';
 import { Button } from './Button';
+import { ModalShell } from './ModalShell';
 
 const SIZES = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' } as const;
 
@@ -22,21 +22,7 @@ export const Modal: React.FC<{
   footer?: React.ReactNode;
   children: React.ReactNode;
 }> = ({ isOpen, onClose, title, subtitle, size = 'md', onSubmit, footer, children }) => {
-  // render ที่ document.body เสมอ — ไม่โดน parent ที่มี transform/overflow ตัด
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // ล็อกการเลื่อนหน้าหลังขณะเปิด popup
-  useEffect(() => {
-    if (!isOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [isOpen]);
-
-  if (!isOpen || !mounted) return null;
+  if (!isOpen) return null;
   const body = (
     <>
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">{children}</div>
@@ -45,10 +31,9 @@ export const Modal: React.FC<{
       )}
     </>
   );
-  return createPortal(
-    // จอเตี้ย/ซูม: popup สูงไม่เกิน 100dvh - ขอบ และถ้ายังล้น ตัว overlay เลื่อนได้ หัว/ปุ่มไม่โดนขอบจอบัง
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="flex min-h-full items-center justify-center p-4">
+  return (
+    // popup สูงไม่เกิน 100dvh - ขอบ — เนื้อหาเลื่อนภายใน หัว/ปุ่มไม่โดนขอบจอบัง
+    <ModalShell>
       <div
         className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${SIZES[size]} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200`}
       >
@@ -71,9 +56,7 @@ export const Modal: React.FC<{
           body
         )}
       </div>
-      </div>
-    </div>,
-    document.body,
+    </ModalShell>
   );
 };
 

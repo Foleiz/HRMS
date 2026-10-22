@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Paperclip } from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateMyLeaveRequestPayload } from '@/types/leave';
@@ -125,7 +126,7 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <ModalShell className="z-50 bg-black/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between shrink-0">
@@ -242,6 +243,6 @@ export const MyLeaveRequestModal: React.FC<MyLeaveRequestModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 };

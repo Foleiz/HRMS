@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -210,7 +211,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in" innerClassName="items-center justify-center p-4">
       <div className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl border border-slate-100 dark:border-slate-700/60 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
@@ -394,7 +395,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
 
       {/* Confirmation Modal for Save */}
       {showConfirmSave && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-2xs">
+        <ModalShell className="z-60 bg-slate-900/40 backdrop-blur-2xs" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700/60 space-y-4">
             <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center mx-auto dark:bg-blue-900/20 dark:text-blue-400">
               <ShieldAlert className="w-6 h-6" />
@@ -422,12 +423,12 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Confirmation Modal for Reset */}
       {showConfirmReset && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-2xs">
+        <ModalShell className="z-60 bg-slate-900/40 backdrop-blur-2xs" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700/60 space-y-4">
             <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center mx-auto dark:bg-amber-900/20 dark:text-amber-400">
               <RotateCcw className="w-6 h-6" />
@@ -455,8 +456,8 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
-    </div>
+    </ModalShell>
   );
 };

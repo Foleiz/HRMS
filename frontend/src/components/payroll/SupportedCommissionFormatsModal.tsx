@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
 import {
   X,
@@ -128,7 +129,7 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
       : TEMPLATE_SAMPLE;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+    <ModalShell className="z-50 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
       <div className="relative flex max-h-[92vh] w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
@@ -379,6 +380,6 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

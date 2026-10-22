@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Loader2, Lock, Search, X } from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
@@ -88,7 +89,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+    <ModalShell className="z-50 bg-black/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -243,6 +244,6 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
           )}
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
