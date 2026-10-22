@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -94,7 +95,7 @@ export default function ContractDocumentPreviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 font-sans">
+    <ModalShell className="z-60 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 font-sans" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header Toolbar */}
         <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex items-center justify-between shrink-0">
@@ -203,6 +204,6 @@ export default function ContractDocumentPreviewModal({
           )}
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }

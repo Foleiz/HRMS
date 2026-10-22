@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React from 'react';
 import { X } from 'lucide-react';
 
@@ -108,7 +109,7 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
   const isMaternity = !!leaveTypeName?.includes('คลอด');
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 flex items-start sm:items-center justify-center p-2 sm:p-4 overflow-y-auto">
+    <ModalShell className="z-50 bg-black/50" innerClassName="items-start sm:items-center justify-center p-2 sm:p-4" portal={false}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl my-4 sm:my-8">
         {/* Toolbar */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
@@ -195,6 +196,6 @@ export const LeaveRequestPaperPreview: React.FC<LeaveRequestPaperPreviewProps> =
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Loader2, Sparkles, FileCheck2 } from 'lucide-react';
 import {
@@ -310,7 +311,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 backdrop-blur-sm p-4">
+    <ModalShell className="z-50 bg-black/45 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-gray-100 dark:border-slate-700/60">
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div>
@@ -492,6 +493,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 };

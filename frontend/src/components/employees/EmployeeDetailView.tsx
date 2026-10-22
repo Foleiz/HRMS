@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -1181,7 +1182,7 @@ export default function EmployeeDetailView({
       {/* CHANGE PASSWORD MODAL                                        */}
       {/* ============================================================ */}
       {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalShell className="z-50 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
@@ -1299,7 +1300,7 @@ export default function EmployeeDetailView({
               </div>
             </form>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* Edit Employee Modal */}

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
 import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
@@ -185,7 +186,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/50">
@@ -496,6 +497,6 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 };

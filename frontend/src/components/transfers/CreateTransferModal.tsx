@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -191,7 +192,7 @@ export default function CreateTransferModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+    <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700/60 shrink-0">
@@ -442,6 +443,6 @@ export default function CreateTransferModal({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
@@ -794,7 +795,7 @@ export default function EssAttendancePage() {
           6. MODAL: Submit Adjustment
       ───────────────────────────────────────────────────────────── */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+        <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-150 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -885,7 +886,7 @@ export default function EssAttendancePage() {
               </div>
             </form>
           </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

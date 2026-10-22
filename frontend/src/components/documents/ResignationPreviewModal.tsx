@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, FileText } from 'lucide-react';
@@ -520,7 +521,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
 
   return (
     <>
-      <div className="resignation-modal no-print fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+      <ModalShell className="resignation-modal no-print z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-2 sm:p-4" portal={false}>
         <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
@@ -570,7 +571,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
             </button>
           </div>
         </div>
-      </div>
+      </ModalShell>
 
       {/* สำเนาสำหรับพิมพ์: แยกออกมาไว้ใต้ <body> โดยตรง เพื่อให้พิมพ์ได้เต็มหน้า A4 ไม่ติดกรอบ modal / sidebar */}
       {typeof document !== 'undefined' &&

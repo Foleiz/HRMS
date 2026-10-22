@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Calendar, History, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 import { salaryService } from '@/services/salaryService';
@@ -40,7 +41,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
   if (!isOpen || !employee) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" innerClassName="items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 shrink-0">
@@ -154,6 +155,6 @@ export const SalaryHistoryModal: React.FC<Props> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

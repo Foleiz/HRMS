@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X, Calendar, Loader2, AlertCircle, ExternalLink, Upload, Trash2, FileText } from 'lucide-react';
@@ -190,7 +191,7 @@ export default function CreateContractModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans">
+    <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
         <div className="pt-6 pb-2 text-center relative px-6 shrink-0">
@@ -369,6 +370,6 @@ export default function CreateContractModal({
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 }

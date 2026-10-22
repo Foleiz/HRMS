@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React from 'react';
 import { X, Printer, FileText, Paperclip } from 'lucide-react';
 
@@ -32,7 +33,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+    <ModalShell className="z-50" innerClassName="items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
@@ -159,7 +160,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 

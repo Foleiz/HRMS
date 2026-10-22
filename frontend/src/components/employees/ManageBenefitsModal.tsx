@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -212,7 +213,7 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700/60 my-8">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-primary text-white">
@@ -620,6 +621,6 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

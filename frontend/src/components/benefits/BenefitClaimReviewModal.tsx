@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
 import { BenefitClaimRequest } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
@@ -88,7 +89,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -248,6 +249,6 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
           )}
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

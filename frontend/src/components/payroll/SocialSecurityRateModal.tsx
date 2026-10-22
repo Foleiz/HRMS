@@ -1,5 +1,6 @@
 'use client';
 
+import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -147,7 +148,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
         <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
@@ -431,7 +432,7 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
 
       {/* Confirm Reset Defaults Modal */}
       {showConfirmReset && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-900/60 p-4">
+        <ModalShell className="z-60 bg-slate-900/60" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-4 border border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center gap-3 text-amber-600">
               <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
@@ -463,8 +464,8 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               </button>
             </div>
           </div>
-        </div>
+        </ModalShell>
       )}
-    </div>
+    </ModalShell>
   );
 };
