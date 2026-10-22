@@ -3999,30 +3999,58 @@ export default function PayrollPage() {
                     </span>
                   </div>
 
-                  {/* 1. ตัวเลือกรอบเดือน (เลือกเดือนก่อน) */}
+                  {/* 1. ตัวเลือกรอบเดือน (แสดงครบทั้ง 12 เดือน) */}
                   <div className="relative inline-block">
-                    {periodsInSelectedYear.length > 0 ? (
-                      <CustomSelect
-                        value={selectedPeriod?.id || periodsInSelectedYear[0].id}
-                        onChange={(e) => handlePeriodChange(Number(e.target.value))}
-                        numbered={false}
-                        size="sm"
-                        className="min-w-[130px] sm:min-w-[150px]"
-                        buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                        title="เลือกรอบเดือน"
-                      >
-                        {periodsInSelectedYear.map((p) => (
-                          <option key={p.id} value={p.id} className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">
-                            {THAI_MONTH_NAMES[p.month - 1] || p.periodName} {p.status === 'CLOSED' ? '(ปิดรอบแล้ว)' : ''}
+                    <CustomSelect
+                      value={selectedPeriod?.year === activeYear ? selectedPeriod.id : (periodsInSelectedYear[0]?.id || '')}
+                      onChange={(e) => {
+                        const val = String(e?.target?.value ?? e ?? '');
+                        if (val.startsWith('UNCREATED_')) {
+                          const monthNum = parseInt(val.replace('UNCREATED_', ''), 10);
+                          setPeriodsTabSelectedYear(activeYear);
+                          setPeriodsTabSelectedMonth(monthNum);
+                          handleCreatePeriodInstant(activeYear, monthNum);
+                        } else if (val) {
+                          handlePeriodChange(Number(val));
+                        }
+                      }}
+                      numbered={false}
+                      size="sm"
+                      className="min-w-[150px] sm:min-w-[180px]"
+                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      title="เลือกรอบเดือน"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const m = i + 1;
+                        const p = periodsInSelectedYear.find((x) => x.month === m);
+                        if (p) {
+                          const statusLabel =
+                            p.status === 'CLOSED'
+                              ? ' (ปิดรอบแล้ว)'
+                              : p.status === 'PAID'
+                              ? ' (จ่ายแล้ว)'
+                              : '';
+                          return (
+                            <option
+                              key={p.id}
+                              value={p.id}
+                              className="text-slate-900 dark:text-slate-100 dark:bg-slate-800"
+                            >
+                              {THAI_MONTH_NAMES[i]}{statusLabel}
+                            </option>
+                          );
+                        }
+                        return (
+                          <option
+                            key={`UNCREATED_${m}`}
+                            value={`UNCREATED_${m}`}
+                            className="text-slate-400 dark:text-slate-500 italic dark:bg-slate-800"
+                          >
+                            {THAI_MONTH_NAMES[i]} (ยังไม่มีรอบ)
                           </option>
-                        ))}
-                      </CustomSelect>
-                    ) : (
-                      <div className="px-3 py-1.5 text-xs text-slate-400 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                        <span>ไม่มีรอบในเดือนนี้</span>
-                      </div>
-                    )}
+                        );
+                      })}
+                    </CustomSelect>
                   </div>
 
                   {/* 2. ตัวเลือกปี พ.ศ. (เลือกปีตามหลัง) */}
