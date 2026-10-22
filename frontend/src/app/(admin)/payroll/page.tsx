@@ -6327,8 +6327,12 @@ export default function PayrollPage() {
                       ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400">
-                        {t.status}
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        (t.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
+                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                      }`}>
+                        {(t.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ได้ใช้งาน'}
                       </span>
                     </td>
                   </tr>
