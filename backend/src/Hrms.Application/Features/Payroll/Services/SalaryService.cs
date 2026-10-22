@@ -3057,20 +3057,43 @@ public class SalaryService : ISalaryService
     }
 
     /// <summary>เงินเดือนล่าสุดของพนักงานแต่ละคนที่มีผลภายในปีที่กำหนด (ใช้คำนวณโบนัส)</summary>
-    /// <summary>เงินเดือนที่มีผล ณ วันสิ้นเดือนของรอบโบนัส (ไม่ดึงเงินเดือนที่ขึ้นทีหลังเดือนนั้น)</summary>
+    /// <summary>เงินเดือนที่มีผล ณ วันสิ้นเดือนของรอบโบนัส (หากยังไม่ถึงวันมีผล ให้ Fallback ใช้ฐานเงินเดือนที่มีอยู่ เพื่อให้คำนวณโบนัสได้ทุกเดือน)</summary>
     private async Task<List<EmployeeSalary>> LoadLatestSalariesForYearAsync(int year, int month, CancellationToken cancellationToken)
     {
         var safeMonth = month is >= 1 and <= 12 ? month : 12;
         var asOf = new DateOnly(year, safeMonth, DateTime.DaysInMonth(year, safeMonth));
-        var salaries = await _context.EmployeeSalaries
-            .Where(s => s.EffectiveFrom <= asOf)
+        var allSalaries = await _context.EmployeeSalaries
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return salaries
-            .GroupBy(s => s.EmployeeId)
-            .Select(g => g.OrderByDescending(s => s.EffectiveFrom).ThenByDescending(s => s.Id).First())
-            .ToList();
+        var result = new List<EmployeeSalary>();
+        foreach (var group in allSalaries.GroupBy(s => s.EmployeeId))
+        {
+            var effectiveSalary = group
+                .Where(s => s.EffectiveFrom <= asOf)
+                .OrderByDescending(s => s.EffectiveFrom)
+                .ThenByDescending(s => s.Id)
+                .FirstOrDefault();
+
+            if (effectiveSalary != null)
+            {
+                result.Add(effectiveSalary);
+            }
+            else
+            {
+                // Fallback: หากยังไม่ถึงวันที่มีผลของเงินเดือน ให้ใช้เงินเดือนเรคคอร์ดที่มีอยู่
+                var fallback = group
+                    .OrderBy(s => s.EffectiveFrom)
+                    .ThenBy(s => s.Id)
+                    .FirstOrDefault();
+                if (fallback != null)
+                {
+                    result.Add(fallback);
+                }
+            }
+        }
+
+        return result;
     }
 
     /// <summary>ช่วงเวลาการจ้างงาน (วันเริ่มงาน / วันทำงานวันสุดท้าย) ใช้ตัดสินว่าพนักงานอยู่ในรอบเงินเดือนหรือไม่</summary>
