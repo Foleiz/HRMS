@@ -11,3 +11,4 @@ export * from './StatusBadge';
 export * from './ToggleSwitch';
 export * from './OptionCheckCard';
 export * from './SegmentedControl';
+export * from './RowActions';

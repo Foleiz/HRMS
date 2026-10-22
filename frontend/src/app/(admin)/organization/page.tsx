@@ -72,7 +72,7 @@ import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
-import { Modal, ModalFooter, Button, ActiveStatus, inputClass } from '@/components/ui';
+import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton } from '@/components/ui';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
@@ -1189,22 +1189,10 @@ export default function OrganizationPage() {
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditStruct ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleOpenDivisionModal(div)}
-                                title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')}
-                                title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <RowActions>
+                              <RowActionButton action="edit" onClick={() => handleOpenDivisionModal(div)} />
+                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(div.id, div.divisionName, 'division')} />
+                            </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
                           )}
@@ -1301,22 +1289,10 @@ export default function OrganizationPage() {
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditStruct ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleOpenDeptModal(dept)}
-                                title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')}
-                                title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <RowActions>
+                              <RowActionButton action="edit" onClick={() => handleOpenDeptModal(dept)} />
+                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(dept.id, dept.departmentName, 'department')} />
+                            </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
                           )}
@@ -1425,22 +1401,10 @@ export default function OrganizationPage() {
                           <ActiveStatus active={team.status === 'ACTIVE'} activeText="ใช้งานอยู่" inactiveText="ไม่ได้ใช้งาน" />
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenTeamModal(team)}
-                              title="แก้ไข"
-                              className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:hover:bg-slate-800"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleConfirmDelete(team.id, team.teamName, 'team')}
-                              title="ลบ"
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:hover:bg-rose-900/20"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <RowActions>
+                            <RowActionButton action="edit" onClick={() => handleOpenTeamModal(team)} />
+                            <RowActionButton action="delete" onClick={() => handleConfirmDelete(team.id, team.teamName, 'team')} />
+                          </RowActions>
                         </td>
                       </tr>
                     ))
@@ -1554,22 +1518,10 @@ export default function OrganizationPage() {
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditPos ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleOpenPosModal(pos)}
-                                title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')}
-                                title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <RowActions>
+                              <RowActionButton action="edit" onClick={() => handleOpenPosModal(pos)} />
+                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(pos.id, pos.positionName, 'position')} />
+                            </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
                           )}
@@ -1670,22 +1622,10 @@ export default function OrganizationPage() {
                         </td>
                         <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditPos ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                onClick={() => handleOpenLevelModal(lvl)}
-                                title="แก้ไข"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')}
-                                title="ลบ"
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            <RowActions>
+                              <RowActionButton action="edit" onClick={() => handleOpenLevelModal(lvl)} />
+                              <RowActionButton action="delete" onClick={() => handleConfirmDelete(lvl.id, lvl.levelName, 'level')} />
+                            </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
                           )}
@@ -1841,20 +1781,8 @@ export default function OrganizationPage() {
                           <td className="py-3 px-4 text-right whitespace-nowrap">
                             {canEditBenefit ? (
                               <div className="flex items-center justify-end gap-1">
-                                <button
-                                  onClick={() => handleOpenBenefitModal(ben)}
-                                  title="แก้ไข"
-                                  className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800 cursor-pointer"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
-                                  title="ลบ"
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors dark:text-slate-500 dark:text-slate-400 cursor-pointer"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                <RowActionButton action="edit" onClick={() => handleOpenBenefitModal(ben)} />
+                                <RowActionButton action="delete" onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')} />
                               </div>
                             ) : (
                               <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>

@@ -87,7 +87,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
-import { Button, ActiveStatus } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
@@ -2945,28 +2945,19 @@ export default function PayrollPage() {
                           </td>
                           <td className="py-3.5 px-5 text-center">
                             {canEditItem ? (
-                              <div className="inline-flex items-center gap-1">
-                                <button
-                                  onClick={() => handleOpenEditItem(item)}
-                                  title="แก้ไข"
-                                  className="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                {/* ลบได้เฉพาะแบบกำหนดเอง — ดึงข้อมูลอัตโนมัติ/สูตร แก้ไขได้อย่างเดียว */}
+                              <RowActions>
+                                <RowActionButton action="edit" onClick={() => handleOpenEditItem(item)} />
+                                {/* ลบได้เฉพาะแบบกำหนดเอง — ดึงข้อมูลจากระบบ/สูตร แก้ไขได้อย่างเดียว */}
                                 {!UNDELETABLE_ITEM_CODES.includes(item.itemCode) && !isAutoPullModuleItem && item.calculationType !== 'FORMULA' && (
-                                  <button
+                                  <RowActionButton
+                                    action="delete"
                                     onClick={() => {
                                       setItemToDelete(item);
                                       setDeleteItemConfirmOpen(true);
                                     }}
-                                    title="ลบ"
-                                    className="p-1.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
+                                  />
                                 )}
-                              </div>
+                              </RowActions>
                             ) : (
                               <span className="text-slate-400 text-xs">-</span>
                             )}
