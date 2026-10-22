@@ -393,6 +393,12 @@ export const PayrollItemModal: React.FC<Props> = ({
   };
 
   const isEarning = itemType === 'EARNING';
+  /** รายได้ของระบบ: ค่าภาษี/ประกันสังคมกำหนดตามกฎหมาย แก้ไม่ได้ */
+  const flagsLocked = !!item && (isAutoPullModuleItem || isSystemFormula);
+  /** รายการหักที่เป็นค่าลดหย่อน (ประกันสังคม / กองทุนสำรองเลี้ยงชีพ) */
+  const isAllowanceItem =
+    !isEarning &&
+    (itemCode === 'DED_SSO' || /PVD|PROVIDENT/i.test(itemCode) || itemName.includes('สำรองเลี้ยงชีพ'));
 
   // ===== ภาษี / ประกันสังคม (ตั้งค่าที่นี่แทนแท็บภาษี & ประกันสังคมเดิม) =====
   const pctOf = (v: number) => (v <= 1 ? v * 100 : v);
@@ -622,13 +628,43 @@ export const PayrollItemModal: React.FC<Props> = ({
             </div>
           ))}
 
-          {/* Checkboxes: คิดภาษี & คิดประกันสังคม (เฉพาะรายได้ — รายหักไม่ได้เป็นเงินได้) */}
-          {isEarning && (
-          <div className="space-y-2 pt-1">
-            <OptionCheckCard checked={isTaxable} onChange={setIsTaxable} {...TAX_OPTION_TEXT} />
-            <OptionCheckCard checked={isSocialSecurityCalculated} onChange={setIsSocialSecurityCalculated} {...SSO_OPTION_TEXT} />
-          </div>
-          )}
+          {/* ภาษี / ประกันสังคม
+              - รายได้ที่ HR เพิ่มเอง: เลือกได้
+              - รายได้ของระบบ (ดึงข้อมูลจากระบบ / สูตรของระบบ): แสดงแต่แก้ไม่ได้
+              - รายการหักแบบสูตร: แสดงผลต่อฐานภาษี/ประกันสังคม/ค่าลดหย่อน แต่แก้ไม่ได้
+              - รายการหักที่ HR เพิ่มเอง: ไม่ลดฐานเสมอ จึงไม่แสดง */}
+          {isEarning ? (
+            <div className="space-y-2 pt-1">
+              {flagsLocked && <p className="text-[11px] text-slate-400">ระบบกำหนดตามกฎหมาย แก้ไขไม่ได้</p>}
+              <OptionCheckCard checked={isTaxable} onChange={setIsTaxable} disabled={flagsLocked} {...TAX_OPTION_TEXT} />
+              <OptionCheckCard checked={isSocialSecurityCalculated} onChange={setIsSocialSecurityCalculated} disabled={flagsLocked} {...SSO_OPTION_TEXT} />
+            </div>
+          ) : calculationType === 'FORMULA' ? (
+            <div className="space-y-2 pt-1">
+              <p className="text-[11px] text-slate-400">ระบบกำหนดตามกฎหมาย แก้ไขไม่ได้</p>
+              <OptionCheckCard
+                checked={isTaxable && !isAllowanceItem}
+                onChange={() => {}}
+                disabled
+                title="ลดฐานภาษี"
+                description="นำยอดที่หักไปลดเงินได้ที่ต้องเสียภาษี (ค่าจ้างที่ไม่ได้รับจริง)"
+              />
+              <OptionCheckCard
+                checked={isSocialSecurityCalculated && !isAllowanceItem}
+                onChange={() => {}}
+                disabled
+                title="ลดฐานประกันสังคม"
+                description="นำยอดที่หักไปลดฐานค่าจ้างที่ใช้คิดเงินสมทบ"
+              />
+              <OptionCheckCard
+                checked={isAllowanceItem}
+                onChange={() => {}}
+                disabled
+                title="เป็นค่าลดหย่อน"
+                description="ใช้เป็นค่าลดหย่อนตอนคิดภาษีทั้งปี (ประกันสังคม / กองทุนสำรองเลี้ยงชีพ)"
+              />
+            </div>
+          ) : null}
 
           {/* เปิดการใช้งานรายการนี้ (Toggle Switch - แสดงเฉพาะตอนแก้ไข) */}
           {item && (!lockActive || wasInactive) && (

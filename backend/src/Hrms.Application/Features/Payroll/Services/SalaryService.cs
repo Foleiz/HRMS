@@ -1201,8 +1201,15 @@ public class SalaryService : ISalaryService
         entity.CalculationType = request.CalculationType.ToUpper();
         entity.FormulaTemplate = request.FormulaTemplate;
         entity.FormulaValue = request.FormulaValue;
-        entity.IsTaxable = request.IsTaxable;
-        entity.IsSocialSecurityCalculated = request.IsSocialSecurityCalculated;
+        // ภาษี/ประกันสังคมของรายการระบบและรายการหักแบบสูตร กำหนดตามกฎหมาย — ไม่รับค่าจากหน้าเว็บ
+        var flagsLocked = SystemItemCodes.Contains(entity.ItemCode)
+            || entity.ItemCode == "INC_COMMISSION"
+            || (entity.ItemType == "DEDUCTION" && entity.CalculationType == "FORMULA");
+        if (!flagsLocked)
+        {
+            entity.IsTaxable = request.IsTaxable;
+            entity.IsSocialSecurityCalculated = request.IsSocialSecurityCalculated;
+        }
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status;
 
         await _context.SaveChangesAsync(cancellationToken);
