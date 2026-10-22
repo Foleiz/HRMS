@@ -98,6 +98,10 @@ public class CommissionPreviewResultDto
     public decimal TotalSalesAmount { get; set; }
     public decimal TotalCommissionAmount { get; set; }
     public int ReplacedEntriesCount { get; set; }
+    public bool HasOverlappingEntries { get; set; }
+    public List<string> OverlappingDates { get; set; } = new();
+    public int OverlappingCount { get; set; }
+    public int OverlappingEmployeesCount { get; set; }
     public bool IsLockedPeriod { get; set; }
     public string? LockReason { get; set; }
     public List<string> Warnings { get; set; } = new();

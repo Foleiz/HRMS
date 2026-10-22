@@ -260,34 +260,52 @@ public class CommissionService : ICommissionService
 
         // ตรวจสอบการทับซ้อนกับรายการเดิม (Overlapping entries in employee_commission_entry)
         int replacedEntriesCount = 0;
+        var overlappingDatesList = new List<string>();
+        int overlappingEmployeesCount = 0;
+        int overlappingCount = 0;
+
         if (validEmpIds.Count > 0)
         {
             var existingActive = await _context.EmployeeCommissionEntries
                 .Where(e => validEmpIds.Contains(e.EmployeeId) && e.Status == "ACTIVE")
                 .ToListAsync(cancellationToken);
 
+            var overlappingDatesSet = new HashSet<DateOnly>();
+            var overlappingEmpIdsSet = new HashSet<long>();
+
             foreach (var pItem in previewRows.Where(p => p.IsValid && p.EmployeeId.HasValue))
             {
                 var dFrom = DateOnly.Parse(pItem.DateFrom);
                 var dTo = DateOnly.Parse(pItem.DateTo);
-                var overlapping = existingActive.Count(e =>
+                var overlappingEntries = existingActive.Where(e =>
                     e.EmployeeId == pItem.EmployeeId.Value &&
-                    e.DateFrom <= dTo && e.DateTo >= dFrom);
+                    e.DateFrom <= dTo && e.DateTo >= dFrom).ToList();
 
-                pItem.ExistingOverlappingEntries = overlapping;
-            }
-
-            // คำนวณยอดรายการเดิมทั้งหมดที่จะถูกแทนที่ (นับรายการ active เดิมที่ถูกทับ)
-            foreach (var active in existingActive)
-            {
-                var isOverlapped = previewRows.Any(p =>
-                    p.IsValid && p.EmployeeId == active.EmployeeId &&
-                    active.DateFrom <= DateOnly.Parse(p.DateTo) && active.DateTo >= DateOnly.Parse(p.DateFrom));
-                if (isOverlapped)
+                pItem.ExistingOverlappingEntries = overlappingEntries.Count;
+                if (overlappingEntries.Count > 0)
                 {
-                    replacedEntriesCount++;
+                    overlappingEmpIdsSet.Add(pItem.EmployeeId.Value);
+                    overlappingCount += overlappingEntries.Count;
+                    foreach (var ov in overlappingEntries)
+                    {
+                        var intersectStart = dFrom > ov.DateFrom ? dFrom : ov.DateFrom;
+                        var intersectEnd = dTo < ov.DateTo ? dTo : ov.DateTo;
+                        var curr = intersectStart;
+                        while (curr <= intersectEnd)
+                        {
+                            overlappingDatesSet.Add(curr);
+                            curr = curr.AddDays(1);
+                        }
+                    }
                 }
             }
+
+            overlappingDatesList = overlappingDatesSet
+                .OrderBy(d => d)
+                .Select(d => d.ToString("yyyy-MM-dd"))
+                .ToList();
+            overlappingEmployeesCount = overlappingEmpIdsSet.Count;
+            replacedEntriesCount = overlappingCount;
         }
 
         // ตรวจสอบการล็อกงวดเงินเดือน (PAID)
@@ -326,6 +344,10 @@ public class CommissionService : ICommissionService
             TotalSalesAmount = totalSales,
             TotalCommissionAmount = totalComm,
             ReplacedEntriesCount = replacedEntriesCount,
+            HasOverlappingEntries = overlappingDatesList.Count > 0,
+            OverlappingDates = overlappingDatesList,
+            OverlappingCount = overlappingCount,
+            OverlappingEmployeesCount = overlappingEmployeesCount,
             IsLockedPeriod = isLocked,
             LockReason = lockReason,
             Warnings = warnings.Distinct().ToList(),
@@ -343,9 +365,11 @@ public class CommissionService : ICommissionService
         Stream fileStream,
         string fileName,
         long? userId = null,
+        string overlapResolutionMode = "USE_NEW",
         CancellationToken cancellationToken = default)
     {
         if (defaultRate <= 0) defaultRate = 3.00m;
+        var mode = (overlapResolutionMode ?? "USE_NEW").Trim().ToUpperInvariant();
 
         using var ms = new MemoryStream();
         await fileStream.CopyToAsync(ms, cancellationToken);
@@ -429,31 +453,75 @@ public class CommissionService : ICommissionService
         _context.CommissionImportBatches.Add(batch);
         await _context.SaveChangesAsync(cancellationToken);
 
-        // 2. ปรับสถานะรายการเดิมที่ทับซ้อนเป็น SUPERSEDED
+        // 2. จัดการรายการเดิมและเตรียมรายการใหม่ตาม overlapResolutionMode
         var empIds = validRows.Select(v => v.Emp.Id).Distinct().ToList();
         var existingActiveEntries = await _context.EmployeeCommissionEntries
             .Where(e => empIds.Contains(e.EmployeeId) && e.Status == "ACTIVE")
             .ToListAsync(cancellationToken);
 
         int replacedCount = 0;
-        foreach (var active in existingActiveEntries)
-        {
-            var isOverlapped = validRows.Any(v =>
-                v.Emp.Id == active.EmployeeId &&
-                active.DateFrom <= v.Row.DateTo && active.DateTo >= v.Row.DateFrom);
+        var rowsToInsert = new List<(Employee Emp, ParsedCommissionRow Row)>();
 
-            if (isOverlapped)
+        if (mode == "USE_NEW")
+        {
+            // ใช้ข้อมูลจากไฟล์ใหม่ล่าสุด:
+            // หากรายการเดิมมีวันที่ทับซ้อนกับไฟล์ใหม่ -> ให้ Supersede รายการเดิมเฉพาะวันที่ทับซ้อน
+            foreach (var active in existingActiveEntries)
             {
-                active.Status = "SUPERSEDED";
-                active.SupersededByBatchId = batch.Id;
-                replacedCount++;
+                var isOverlapped = validRows.Any(v =>
+                    v.Emp.Id == active.EmployeeId &&
+                    (
+                        // กรณีตรงกันเป๊ะ (วันเดียวกัน หรือช่วงวันเดียวกัน)
+                        (active.DateFrom == v.Row.DateFrom && active.DateTo == v.Row.DateTo) ||
+                        // ช่วงวันใหม่ครอบคลุมช่วงวันเดิมทั้งหมด
+                        (v.Row.DateFrom <= active.DateFrom && v.Row.DateTo >= active.DateTo) ||
+                        // รายการเดิมเป็นรายวัน (DateFrom == DateTo) และวันนั้นอยู่ในช่วงของไฟล์ใหม่
+                        (active.DateFrom == active.DateTo && v.Row.DateFrom <= active.DateFrom && v.Row.DateTo >= active.DateFrom)
+                    ));
+
+                if (isOverlapped)
+                {
+                    active.Status = "SUPERSEDED";
+                    active.SupersededByBatchId = batch.Id;
+                    replacedCount++;
+                }
             }
+            rowsToInsert.AddRange(validRows);
+        }
+        else if (mode == "USE_OLD")
+        {
+            // คงข้อมูลเดิมไว้: ไม่ supersede รายการเดิมใดๆ
+            // แต่สำหรับไฟล์ใหม่ หากแถวใดมีวันที่ทับซ้อนกับ active เดิม -> ให้ข้าม (Skip)
+            foreach (var (emp, row) in validRows)
+            {
+                var isOverlappedWithActive = existingActiveEntries.Any(e =>
+                    e.EmployeeId == emp.Id &&
+                    (
+                        (e.DateFrom == row.DateFrom && e.DateTo == row.DateTo) ||
+                        (row.DateFrom <= e.DateFrom && row.DateTo >= e.DateTo) ||
+                        (row.DateFrom == row.DateTo && e.DateFrom <= row.DateFrom && e.DateTo >= row.DateFrom)
+                    ));
+
+                if (isOverlappedWithActive)
+                {
+                    replacedCount++; // นับเป็นรายการที่ถูกข้ามเพื่อคงยอดเดิม
+                }
+                else
+                {
+                    rowsToInsert.Add((emp, row));
+                }
+            }
+        }
+        else // COMBINE_ALL
+        {
+            // รวมยอดทั้งหมด: ไม่ supersede และไม่ข้าม นำเข้าทุกรายการสะสมเพิ่ม
+            rowsToInsert.AddRange(validRows);
         }
 
         batch.ReplacedEntries = replacedCount;
 
         // 3. เพิ่มรายการใหม่ใน employee_commission_entry
-        foreach (var (emp, row) in validRows)
+        foreach (var (emp, row) in rowsToInsert)
         {
             var entry = new EmployeeCommissionEntry
             {
