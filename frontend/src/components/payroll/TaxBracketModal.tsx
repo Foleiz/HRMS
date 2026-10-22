@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  Scale,
   AlertTriangle,
   RotateCcw,
-  CheckCircle2,
+  Plus,
+  Trash2,
   Save,
   HelpCircle,
   ShieldAlert,
@@ -152,6 +152,38 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
     });
   };
 
+  /** ตั้งชื่อขั้นใหม่ตามลำดับ/ช่วงเงินได้/อัตรา */
+  const renameAll = (list: EditableBracket[]) =>
+    list.map((item, i) => {
+      const fromStr = item.incomeFrom.toLocaleString();
+      const toStr = i === list.length - 1 || item.incomeTo == null ? 'ขึ้นไป' : item.incomeTo.toLocaleString();
+      const rateStr = item.taxRatePercent === 0 ? 'ยกเว้นภาษี' : `ภาษี ${item.taxRatePercent}%`;
+      return { ...item, incomeTo: i === list.length - 1 ? null : item.incomeTo, bracketName: `ขั้นที่ ${i + 1} (${fromStr} - ${toStr} บาท ${rateStr})` };
+    });
+
+  /** เพิ่มขั้นต่อท้าย: ขั้นสุดท้ายเดิมได้เพดาน แล้วขั้นใหม่เริ่มต่อจากเพดานนั้น */
+  const handleAddBracket = () => {
+    setLocalBrackets((prev) => {
+      if (prev.length === 0) return renameAll([{ bracketName: '', incomeFrom: 0, incomeTo: null, taxRatePercent: 0, baseTaxAmount: 0, status: 'ACTIVE' }]);
+      const last = prev[prev.length - 1];
+      const cap = Math.max(last.incomeFrom, 0) + 1000000;
+      const updated = [...prev.slice(0, -1), { ...last, incomeTo: cap }];
+      updated.push({ bracketName: '', incomeFrom: cap, incomeTo: null, taxRatePercent: last.taxRatePercent, baseTaxAmount: 0, status: 'ACTIVE' });
+      return renameAll(updated);
+    });
+  };
+
+  /** ลบขั้น: ขั้นถัดไปเริ่มต่อจากขั้นก่อนหน้าแทน (ขั้นแรกลบไม่ได้) */
+  const handleRemoveBracket = (index: number) => {
+    setLocalBrackets((prev) => {
+      if (index === 0 || prev.length <= 1) return prev;
+      const removed = prev[index];
+      const next = prev.filter((_, i) => i !== index);
+      if (index < next.length) next[index] = { ...next[index], incomeFrom: removed.incomeFrom };
+      return renameAll(next);
+    });
+  };
+
   const handleSaveSubmit = async () => {
     if (validationErrors.length > 0) return;
 
@@ -182,9 +214,6 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center border border-blue-100 shadow-2xs dark:bg-blue-900/20 dark:text-blue-400">
-              <Scale className="w-5 h-5" />
-            </div>
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <span>จัดการโครงสร้างอัตราภาษีเงินได้บุคคลธรรมดา (ภ.ง.ด.)</span>
@@ -204,21 +233,6 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
 
         {/* Body (Scrollable) */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
-          {/* Legal / Security Alert Banner */}
-          <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/70 flex items-start gap-3">
-            <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
-            <div className="text-xs text-amber-900 space-y-1">
-              <p className="font-bold">
-                ข้อควรระวังสำคัญตามประมวลรัษฎากร (กฎหมายสรรพากร)
-              </p>
-              <p className="text-amber-800 leading-relaxed">
-                การแก้ไขขั้นบันไดภาษีจะมีผลต่อการคำนวณเงินเดือนในรอบถัดไปทันที
-                ระบบมีระบบตรวจสอบความต่อเนื่องของช่วงเงินได้ (Continuity Validation) และคำนวณภาษีสะสมขั้นก่อนหน้าให้อัตโนมัติ
-                หากไม่มั่นใจ แนะนำให้ใช้ <strong>"ค่ามาตรฐานสรรพากร (8 ขั้น)"</strong>
-              </p>
-            </div>
-          </div>
-
           {/* Validation Errors List */}
           {validationErrors.length > 0 && (
             <div className="p-3.5 rounded-xl border border-rose-200 bg-rose-50/80 flex items-start gap-2.5">
@@ -246,6 +260,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                     <th className="py-3 px-3 text-right w-36">ถึงเงินได้สุทธิ (฿)</th>
                     <th className="py-3 px-3 text-center w-28">อัตราภาษี (%)</th>
                     <th className="py-3 px-3 text-right w-32">ภาษีสะสม (฿)</th>
+                    <th className="py-3 px-2 w-10"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -316,12 +331,32 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                         <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-700">
                           ฿{b.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
+                        <td className="py-2.5 px-2 text-center">
+                          {idx > 0 && (
+                            <button
+                              type="button"
+                              title="ลบขั้นนี้"
+                              onClick={() => handleRemoveBracket(idx)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+            <button
+              type="button"
+              onClick={handleAddBracket}
+              className="w-full py-2.5 border-t border-dashed border-slate-200 text-xs font-semibold text-primary dark:text-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer inline-flex items-center justify-center gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              เพิ่มขั้น
+            </button>
           </div>
 
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2">
