@@ -46,6 +46,7 @@ import { attendanceImportService } from '@/services/attendanceImportService';
 import { AttendanceFileFormatModal } from '@/components/attendance/AttendanceFileFormatModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { Button, Modal, ModalFooter, inputClass } from '@/components/ui';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { organizationService } from '@/services/organizationService';
 import { shiftService } from '@/services/shiftService';
@@ -1224,7 +1225,7 @@ function DailyAttendanceContent() {
               onClick={() => handleTabChange('daily')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'daily'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1238,7 +1239,7 @@ function DailyAttendanceContent() {
               onClick={() => handleTabChange('import')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'import'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1252,7 +1253,7 @@ function DailyAttendanceContent() {
               onClick={() => handleTabChange('adjustments')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'adjustments'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1271,7 +1272,7 @@ function DailyAttendanceContent() {
               onClick={() => handleTabChange('monthly')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'monthly'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -1288,21 +1289,19 @@ function DailyAttendanceContent() {
         <div className="space-y-6 animate-in fade-in duration-200">
           {hasAnyBatch === false ? (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-12 text-center flex flex-col items-center justify-center my-4 dark:bg-slate-800 dark:border-slate-700">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#0B2046] flex items-center justify-center mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary-soft text-primary flex items-center justify-center mb-4">
                 <FileSpreadsheet className="w-8 h-8 text-blue-600" />
               </div>
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1 dark:text-slate-200">ยังไม่มีข้อมูลบันทึกเวลาในระบบ</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mb-6 leading-relaxed dark:text-slate-400">
                 อัปโหลดไฟล์จากเครื่องสแกนเพื่อเริ่มตรวจเวลา
               </p>
-              <button
-                type="button"
+              <Button
+                icon={<UploadCloud className="w-4 h-4" />}
                 onClick={() => handleTabChange('import')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold rounded-xl shadow-sm transition cursor-pointer"
               >
-                <UploadCloud className="w-4 h-4" />
-                <span>ไปที่หน้านำเข้าไฟล์บันทึกเวลา</span>
-              </button>
+                ไปที่หน้านำเข้าไฟล์บันทึกเวลา
+              </Button>
             </div>
           ) : (
             <>
@@ -1321,7 +1320,7 @@ function DailyAttendanceContent() {
                     setSearchKeyword(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
                 />
               </div>
 
@@ -1354,7 +1353,7 @@ function DailyAttendanceContent() {
 
                 {allowedDateRange.min && allowedDateRange.max && (
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 font-medium dark:bg-slate-700 dark:text-slate-300 dark:text-slate-400 dark:border-slate-700">
-                    <Calendar className="w-3.5 h-3.5 text-[#0B2046]" />
+                    <Calendar className="w-3.5 h-3.5 text-primary" />
                     <span>ช่วงข้อมูลในไฟล์: {formatThaiDate(allowedDateRange.min)} - {formatThaiDate(allowedDateRange.max)}</span>
                   </span>
                 )}
@@ -1367,20 +1366,20 @@ function DailyAttendanceContent() {
                 className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="ประมวลผลคำนวณเวลาใหม่"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-[#0B2046]' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-primary' : ''}`} />
               </button>
             </div>
 
             {/* Right: Actions */}
             {canViewImport && (
               <div className="flex items-center gap-2 shrink-0">
-                <button
+                <Button
+                  size="sm"
+                  icon={<UploadCloud className="w-4 h-4" />}
                   onClick={() => handleTabChange('import')}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0B2046] hover:bg-[#15336c] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
                 >
-                  <UploadCloud className="w-4 h-4" />
-                  <span>นำเข้าไฟล์เวลา</span>
-                </button>
+                  นำเข้าไฟล์เวลา
+                </Button>
               </div>
             )}
           </div>
@@ -1613,7 +1612,7 @@ function DailyAttendanceContent() {
                     setDailyPageSize(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -1669,38 +1668,25 @@ function DailyAttendanceContent() {
                 </p>
               </div>
               <div className="flex items-center gap-2.5 shrink-0">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
                   onClick={() => setIsFormatModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-2xs transition-colors cursor-pointer"
                   title="ดูโครงสร้างหัวคอลัมน์และดาวน์โหลดไฟล์แม่แบบตัวอย่าง (.xlsx)"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span>รูปแบบไฟล์ที่รองรับ</span>
-                </button>
+                  รูปแบบไฟล์ที่รองรับ
+                </Button>
 
-                <button
-                  type="button"
-                  disabled={!selectedFile || isUploading}
+                <Button
+                  size="sm"
+                  icon={isUploading ? undefined : <UploadCloud className="w-3.5 h-3.5" />}
+                  disabled={!selectedFile}
+                  loading={isUploading}
                   onClick={handleUploadSubmit}
-                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
-                    !selectedFile || isUploading
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 active:scale-[0.98] cursor-pointer'
-                  }`}
                 >
-                  {isUploading ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>กำลังประมวลผล...</span>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="w-3.5 h-3.5" />
-                      <span>เริ่มประมวลผลนำเข้าไฟล์</span>
-                    </>
-                  )}
-                </button>
+                  {isUploading ? 'กำลังประมวลผล...' : 'เริ่มประมวลผลนำเข้าไฟล์'}
+                </Button>
               </div>
             </div>
 
@@ -2069,7 +2055,7 @@ function DailyAttendanceContent() {
                     setAdjustmentSearch(e.target.value);
                     setAdjustmentsPage(1);
                   }}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200"
                 />
               </div>
 
@@ -2100,7 +2086,7 @@ function DailyAttendanceContent() {
                 className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${adjustmentsLoading ? 'animate-spin text-[#0B2046]' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${adjustmentsLoading ? 'animate-spin text-primary' : ''}`} />
               </button>
             </div>
 
@@ -2137,7 +2123,7 @@ function DailyAttendanceContent() {
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <RefreshCw className="w-6 h-6 animate-spin text-[#0B2046]" />
+                          <RefreshCw className="w-6 h-6 animate-spin text-primary" />
                           <span>กำลังโหลดรายการคำขอ...</span>
                         </div>
                       </td>
@@ -2289,7 +2275,7 @@ function DailyAttendanceContent() {
                     setAdjustmentsPageSize(Number(e.target.value));
                     setAdjustmentsPage(1);
                   }}
-                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -2387,7 +2373,7 @@ function DailyAttendanceContent() {
                   placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
                   value={monthlySearch}
                   onChange={(e) => setMonthlySearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
+                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
                 />
               </div>
 
@@ -2398,44 +2384,32 @@ function DailyAttendanceContent() {
                 className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${monthlyLoading ? 'animate-spin text-[#0B2046]' : ''}`} />
+                <RefreshCw className={`w-3.5 h-3.5 ${monthlyLoading ? 'animate-spin text-primary' : ''}`} />
               </button>
             </div>
 
             {/* Right: Process & Export Action Buttons */}
             <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
-              <button
-                type="button"
-                onClick={handleExportMonthlyCsv}
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />}
                 disabled={monthlyExporting || !monthlyData || monthlyData.employees.length === 0}
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700"
+                loading={monthlyExporting}
+                onClick={handleExportMonthlyCsv}
               >
-                {monthlyExporting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600 dark:text-slate-400" />
-                ) : (
-                  <Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                )}
-                <span>ดาวน์โหลด CSV</span>
-              </button>
+                ดาวน์โหลด CSV
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                size="sm"
+                icon={monthlyProcessing ? undefined : <Zap className="w-3.5 h-3.5 text-amber-400" />}
+                loading={monthlyProcessing}
+                disabled={monthlyLoading}
                 onClick={handleProcessMonthlySummary}
-                disabled={monthlyProcessing || monthlyLoading}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#0B2046] hover:bg-[#15336C] rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50"
               >
-                {monthlyProcessing ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                    <span>กำลังประมวลผล...</span>
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-3.5 h-3.5 text-amber-400" />
-                    <span>ประมวลผลสรุปยอด</span>
-                  </>
-                )}
-              </button>
+                {monthlyProcessing ? 'กำลังประมวลผล...' : 'ประมวลผลสรุปยอด'}
+              </Button>
             </div>
           </div>
 
@@ -2530,7 +2504,7 @@ function DailyAttendanceContent() {
             <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50 dark:border-slate-700/60">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
-                  <BarChart3 className="w-4 h-4 text-[#0B2046]" />
+                  <BarChart3 className="w-4 h-4 text-primary" />
                   <span>สรุปเวลาทำงานประจำเดือน {THAI_MONTHS[monthlyMonth - 1]} {monthlyYear + 543}</span>
                 </h3>
                 <p className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
@@ -2546,7 +2520,7 @@ function DailyAttendanceContent() {
                 </p>
               </div>
               <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                จำนวนพนักงาน: <span className="font-bold text-[#0B2046]">{filteredMonthlyEmployees.length}</span> คน
+                จำนวนพนักงาน: <span className="font-bold text-primary">{filteredMonthlyEmployees.length}</span> คน
               </div>
             </div>
 
@@ -2573,7 +2547,7 @@ function DailyAttendanceContent() {
                     <tr>
                       <td colSpan={11} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
+                          <Loader2 className="w-6 h-6 animate-spin text-primary" />
                           <span className="text-xs">กำลังคำนวณและดึงข้อมูลสรุปประจำเดือน...</span>
                         </div>
                       </td>
@@ -2694,29 +2668,23 @@ function DailyAttendanceContent() {
 
       {/* Edit Record Modal */}
       {editModalOpen && editingRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col dark:bg-slate-800 dark:border-slate-700">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 dark:border-slate-700/60">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-                  <Edit2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">แก้ไขข้อมูลบันทึกเวลา</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                    {editingRecord.employeeCode} - {editingRecord.employeeName}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+        <Modal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          title="แก้ไขข้อมูลบันทึกเวลา"
+          subtitle={`${editingRecord.employeeCode} - ${editingRecord.employeeName}`}
+          onSubmit={handleSaveEdit}
+          footer={
+            <ModalFooter
+              onCancel={() => setEditModalOpen(false)}
+              cancelText="ยกเลิก"
+              submitText="บันทึกการแก้ไข"
+              loading={savingEdit}
+              loadingText="กำลังบันทึก..."
+              submit={true}
+            />
+          }
+        >
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
                   กะการทำงาน (Shift)
@@ -2787,55 +2755,29 @@ function DailyAttendanceContent() {
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setEditModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingEdit}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-xs disabled:opacity-50"
-                >
-                  {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  <span>บันทึกการแก้ไข</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Manual Punch Modal */}
       {clockModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col dark:bg-slate-800 dark:border-slate-700">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60 dark:border-slate-700/60">
-              <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-xl ${clockModalType === 'in' ? 'bg-emerald-50 text-emerald-600' : 'bg-purple-50 text-purple-600'}`}>
-                  {clockModalType === 'in' ? <LogIn className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                    บันทึกเวลา{clockModalType === 'in' ? 'เข้างาน' : 'ออกงาน'}ด้วยตนเอง
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                    วันที่ {formatThaiDate(selectedDate)}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setClockModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveQuickClock} className="p-6 space-y-4">
+        <Modal
+          isOpen={clockModalOpen}
+          onClose={() => setClockModalOpen(false)}
+          title={`บันทึกเวลา${clockModalType === 'in' ? 'เข้างาน' : 'ออกงาน'}ด้วยตนเอง`}
+          subtitle={`วันที่ ${formatThaiDate(selectedDate)}`}
+          onSubmit={handleSaveQuickClock}
+          size="sm"
+          footer={
+            <ModalFooter
+              onCancel={() => setClockModalOpen(false)}
+              cancelText="ยกเลิก"
+              submitText="ยืนยันบันทึกเวลา"
+              loading={savingClock}
+              loadingText="กำลังบันทึก..."
+              submit={true}
+            />
+          }
+        >
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
                   เลือกพนักงาน <span className="text-rose-500">*</span>
@@ -2863,26 +2805,7 @@ function DailyAttendanceContent() {
                 />
               </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => setClockModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={savingClock || clockEmpId <= 0}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-xs disabled:opacity-50"
-                >
-                  {savingClock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  <span>ยืนยันบันทึกเวลา</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Error Log Modal */}
@@ -2994,12 +2917,14 @@ function DailyAttendanceContent() {
                 >
                   ถัดไป
                 </button>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedBatchForErrors(null)}
-                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors ml-2"
+                  className="ml-2"
                 >
                   ปิด
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -3254,12 +3179,14 @@ function DailyAttendanceContent() {
                   ถัดไป
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setSelectedBatchForReview(null)}
-                  className="px-4 py-1.5 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors ml-2 cursor-pointer"
+                  className="ml-2"
                 >
                   ปิด
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -3318,35 +3245,24 @@ function DailyAttendanceContent() {
             </div>
 
             <div className="flex items-center justify-end gap-3">
-              <button
+              <Button
+                variant="secondary"
                 type="button"
-                disabled={isRevertingBatch}
                 onClick={() => {
                   setRevertModalOpen(false);
                   setBatchToRevert(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 type="button"
-                disabled={isRevertingBatch}
+                loading={isRevertingBatch}
                 onClick={handleConfirmRevertBatch}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
               >
-                {isRevertingBatch ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    กำลังยกเลิก...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" />
-                    ยืนยันยกเลิกชุดข้อมูล
-                  </>
-                )}
-              </button>
+                {isRevertingBatch ? 'กำลังยกเลิก...' : 'ยืนยันยกเลิกชุดข้อมูล'}
+              </Button>
             </div>
           </div>
         </div>
@@ -3356,31 +3272,29 @@ function DailyAttendanceContent() {
       {/* Modal: ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน (Attendance Adjustment) */}
       {/* ------------------------------------------------------------- */}
       {adjustmentModalOpen && targetRecordForAdjustment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 dark:bg-slate-900 dark:border-slate-700/60">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                  <ClipboardCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                    {targetRecordForAdjustment.employeeCode} - {targetRecordForAdjustment.employeeName}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setAdjustmentModalOpen(false);
-                  setTargetRecordForAdjustment(null);
-                }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        <Modal
+          isOpen={adjustmentModalOpen}
+          onClose={() => {
+            setAdjustmentModalOpen(false);
+            setTargetRecordForAdjustment(null);
+          }}
+          title="ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน"
+          subtitle={`${targetRecordForAdjustment.employeeCode} - ${targetRecordForAdjustment.employeeName}`}
+          onSubmit={handleCreateAdjustmentSubmit}
+          footer={
+            <ModalFooter
+              onCancel={() => {
+                setAdjustmentModalOpen(false);
+                setTargetRecordForAdjustment(null);
+              }}
+              cancelText="ยกเลิก"
+              submitText="ส่งคำขอปรับปรุงเวลา"
+              loading={isSubmittingAdjustment}
+              loadingText="กำลังส่งคำขอ..."
+              submit={true}
+            />
+          }
+        >
 
             {/* Context Info Box */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs dark:bg-slate-950 dark:border-slate-700/80">
@@ -3410,8 +3324,8 @@ function DailyAttendanceContent() {
               </div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleCreateAdjustmentSubmit} className="space-y-4">
+            {/* Form Content */}
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <ThaiTimePicker
                   label="เวลาเข้าที่ต้องการปรับ"
@@ -3435,7 +3349,7 @@ function DailyAttendanceContent() {
                   value={adjustmentReason}
                   onChange={(e) => setAdjustmentReason(e.target.value)}
                   placeholder="ระบุเหตุผล เช่น ลืมสแกนนิ้วมือ, เครื่องสแกนขัดข้อง, ไปปฏิบัติงานนอกสถานที่ ฯลฯ"
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
+                  className={inputClass}
                   required
                 />
               </div>
@@ -3447,85 +3361,49 @@ function DailyAttendanceContent() {
                 </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  disabled={isSubmittingAdjustment}
-                  onClick={() => {
-                    setAdjustmentModalOpen(false);
-                    setTargetRecordForAdjustment(null);
-                  }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-300 dark:hover:bg-slate-800"
-                >
-                  ยกเลิก
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingAdjustment || !adjustmentReason.trim()}
-                  className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-[#0B2046] hover:bg-[#15336C] rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer"
-                >
-                  {isSubmittingAdjustment ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      กำลังส่งคำขอ...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      ส่งคำขอปรับปรุงเวลา
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+        </Modal>
       )}
 
       {/* ------------------------------------------------------------- */}
       {/* Modal: พิจารณาคำขอปรับปรุงเวลา (Approve / Reject)             */}
       {/* ------------------------------------------------------------- */}
       {reviewModalOpen && selectedAdjustmentForReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 dark:bg-slate-900 dark:border-slate-700/60">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`p-2.5 rounded-xl border ${
-                    reviewAction === 'APPROVED'
-                      ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                      : 'bg-rose-50 text-rose-600 border-rose-100'
-                  }`}
-                >
-                  {reviewAction === 'APPROVED' ? (
-                    <ThumbsUp className="w-5 h-5" />
-                  ) : (
-                    <ThumbsDown className="w-5 h-5" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                    {reviewAction === 'APPROVED'
-                      ? 'ยืนยันอนุมัติคำขอปรับปรุงเวลา'
-                      : 'ยืนยันปฏิเสธคำขอปรับปรุงเวลา'}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                    คำขอ REQ-{selectedAdjustmentForReview.id.toString().padStart(5, '0')} • {selectedAdjustmentForReview.employeeName}
-                  </p>
-                </div>
-              </div>
-              <button
+        <Modal
+          isOpen={reviewModalOpen}
+          onClose={() => {
+            setReviewModalOpen(false);
+            setSelectedAdjustmentForReview(null);
+          }}
+          title={reviewAction === 'APPROVED' ? 'ยืนยันอนุมัติคำขอปรับปรุงเวลา' : 'ยืนยันปฏิเสธคำขอปรับปรุงเวลา'}
+          subtitle={`คำขอ REQ-${selectedAdjustmentForReview.id.toString().padStart(5, '0')} • ${selectedAdjustmentForReview.employeeName}`}
+          footer={
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                variant="secondary"
+                type="button"
                 onClick={() => {
                   setReviewModalOpen(false);
                   setSelectedAdjustmentForReview(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800"
               >
-                <X className="w-5 h-5" />
-              </button>
+                ยกเลิก
+              </Button>
+              <Button
+                variant={reviewAction === 'APPROVED' ? 'primary' : 'danger'}
+                type="button"
+                loading={isSubmittingReview}
+                onClick={handleReviewSubmit}
+              >
+                {isSubmittingReview
+                  ? 'กำลังบันทึก...'
+                  : reviewAction === 'APPROVED'
+                  ? 'ยืนยันอนุมัติคำขอ'
+                  : 'ยืนยันปฏิเสธคำขอ'}
+              </Button>
             </div>
+          }
+        >
 
             {/* Request Summary Box */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs dark:bg-slate-950 dark:border-slate-700/80">
@@ -3583,7 +3461,7 @@ function DailyAttendanceContent() {
                 value={reviewNote}
                 onChange={(e) => setReviewNote(e.target.value)}
                 placeholder="ระบุข้อความหรือบันทึกเพิ่มเติมประกอบการพิจารณา..."
-                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
+                className={inputClass}
               />
             </div>
 
@@ -3604,49 +3482,7 @@ function DailyAttendanceContent() {
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                disabled={isSubmittingReview}
-                onClick={() => {
-                  setReviewModalOpen(false);
-                  setSelectedAdjustmentForReview(null);
-                }}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl transition cursor-pointer dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                ยกเลิก
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingReview}
-                onClick={handleReviewSubmit}
-                className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-white rounded-xl transition shadow-xs disabled:opacity-50 cursor-pointer ${
-                  reviewAction === 'APPROVED'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-rose-600 hover:bg-rose-700'
-                }`}
-              >
-                {isSubmittingReview ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    กำลังบันทึก...
-                  </>
-                ) : reviewAction === 'APPROVED' ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    ยืนยันอนุมัติคำขอ
-                  </>
-                ) : (
-                  <>
-                    <X className="w-4 h-4" />
-                    ยืนยันปฏิเสธคำขอ
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Modal: รูปแบบไฟล์ต้นฉบับสำหรับนำเข้าข้อมูลบันทึกเวลา */}
@@ -3663,7 +3499,7 @@ export default function DailyAttendancePage() {
     <Suspense
       fallback={
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-3 dark:text-slate-500 dark:text-slate-400">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-sm">กำลังโหลดข้อมูลบันทึกเวลา...</p>
         </div>
       }
