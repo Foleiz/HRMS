@@ -6279,7 +6279,7 @@ export default function PayrollPage() {
                   <button
                     type="button"
                     onClick={() => setIsTaxModalOpen(true)}
-                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl border border-blue-200 dark:border-blue-800 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-950/40 hover:bg-blue-100/70 transition-all shadow-2xs cursor-pointer"
+                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>แก้ไขอัตราภาษี</span>
