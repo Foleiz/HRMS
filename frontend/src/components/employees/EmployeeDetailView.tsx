@@ -39,7 +39,6 @@ import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHisto
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 import { formatRoleName } from '@/lib/roleUtils';
 import EditEmployeeModal, { EditModalTab } from '@/components/employees/EditEmployeeModal';
-import { RowActionButton } from '@/components/ui';
 
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -693,7 +692,14 @@ export default function EmployeeDetailView({
 
             {/* ปุ่มแก้ไขข้อมูล: ตำแหน่งเดิม แต่มีเฉพาะ icon อย่างเดียว */}
             {canEditEmployee && (
-              <RowActionButton action="edit" onClick={() => handleEditClick()} title="แก้ไขข้อมูล" />
+              <button
+                type="button"
+                onClick={() => handleEditClick()}
+                className="w-8 h-8 rounded-lg bg-primary hover:bg-primary-hover text-white flex items-center justify-center transition-all shadow-2xs cursor-pointer shrink-0 active:scale-95"
+                title="แก้ไขข้อมูล"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
 
