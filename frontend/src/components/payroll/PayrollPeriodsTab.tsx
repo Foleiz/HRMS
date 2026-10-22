@@ -15,6 +15,7 @@ import { PayrollOverview, PayrollPeriod } from '@/types/payroll';
 import { THAI_MONTH_NAMES } from '@/services/payrollScheduleService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { PayrollPeriodDetailModal } from './PayrollPeriodDetailModal';
 
 interface PayrollPeriodsTabProps {
   periods: PayrollPeriod[];
@@ -55,6 +56,7 @@ export default function PayrollPeriodsTab({
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [selectedDetailPeriod, setSelectedDetailPeriod] = useState<PayrollPeriod | null>(null);
 
   // Available years from periods or current year
   const availableYears = useMemo(() => {
@@ -393,9 +395,9 @@ export default function PayrollPeriodsTab({
                           {canViewProcess && (
                             <button
                               type="button"
-                              onClick={() => onOpenPeriodInProcess(p.id)}
+                              onClick={() => setSelectedDetailPeriod(p)}
                               className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
-                              title="เปิดดูรอบนี้ในหน้าประมวลผล"
+                              title="เปิดดูรายละเอียดรอบเงินเดือน"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               <span>เปิดดู</span>
@@ -438,6 +440,18 @@ export default function PayrollPeriodsTab({
           </div>
         )}
       </div>
+
+      {/* Detail Modal (Popup) */}
+      <PayrollPeriodDetailModal
+        period={selectedDetailPeriod}
+        isOpen={!!selectedDetailPeriod}
+        onClose={() => setSelectedDetailPeriod(null)}
+        onGoToProcess={(periodId) => {
+          setSelectedDetailPeriod(null);
+          onOpenPeriodInProcess(periodId);
+        }}
+        canViewProcess={canViewProcess}
+      />
     </div>
   );
 }
