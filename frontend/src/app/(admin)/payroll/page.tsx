@@ -2800,8 +2800,20 @@ export default function PayrollPage() {
                     <th className="py-3.5 px-5">รายการ</th>
                     <th className="py-3.5 px-5">ประเภทการคำนวณ</th>
                     <th className="py-3.5 px-5">ค่า / สูตร</th>
-                    <th className="py-3.5 px-5 text-center">คิดภาษี</th>
-                    <th className="py-3.5 px-5 text-center">คิดประกันสังคม</th>
+                    {itemsSubTab === 'DEDUCTION' ? (
+                      <>
+                        {['ลดฐานภาษี', 'ลดฐานประกันสังคม', 'เป็นค่าลดหย่อน'].map((h) => (
+                          <th key={h} className="py-3.5 px-3 text-center">
+                            <span className="inline-block px-3 py-1 rounded-md bg-amber-400 text-[#0B2046] font-semibold">{h}</span>
+                          </th>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        <th className="py-3.5 px-5 text-center">คิดภาษี</th>
+                        <th className="py-3.5 px-5 text-center">คิดประกันสังคม</th>
+                      </>
+                    )}
                     <th className="py-3.5 px-5">สถานะ</th>
                     <th className="py-3.5 px-5 text-center">จัดการ</th>
                   </tr>
@@ -2866,6 +2878,7 @@ export default function PayrollPage() {
                                 : 'bg-amber-50 text-amber-800 border border-amber-200'
                             }`}>
                               <span>{calcTypeLabel}</span>
+                              {['DED_SSO', 'DED_TAX'].includes(item.itemCode) && <Lock className="w-3 h-3 text-purple-500" />}
                             </span>
                           </td>
                           <td className="py-3.5 px-5">
@@ -2884,6 +2897,33 @@ export default function PayrollPage() {
                               );
                             })()}
                           </td>
+                          {item.itemType === 'DEDUCTION' ? (
+                            (() => {
+                              // ค่าลดหย่อนตอนคิดภาษีทั้งปี: ประกันสังคม และกองทุนสำรองเลี้ยงชีพ (ระบบรู้จากรหัส/ชื่อรายการ)
+                              const isAllowance =
+                                item.itemCode === 'DED_SSO' ||
+                                /PVD|PROVIDENT/i.test(item.itemCode) ||
+                                (item.itemName || '').includes('สำรองเลี้ยงชีพ');
+                              const pill = (on: boolean, label: string, onCls: string) => (
+                                <td className="py-3.5 px-3 text-center">
+                                  {on ? (
+                                    <span className={`inline-block px-3 py-1 rounded-md text-[11px] font-semibold ${onCls}`}>{label}</span>
+                                  ) : (
+                                    <span className="inline-block px-3 py-1 rounded-md text-[11px] text-slate-400 bg-slate-100 dark:bg-slate-800">-</span>
+                                  )}
+                                </td>
+                              );
+                              const reduceCls = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300';
+                              return (
+                                <>
+                                  {pill(item.isTaxable && !isAllowance, 'ลดฐาน', reduceCls)}
+                                  {pill(item.isSocialSecurityCalculated && !isAllowance, 'ลดฐาน', reduceCls)}
+                                  {pill(isAllowance, 'ลดหย่อนได้', 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300')}
+                                </>
+                              );
+                            })()
+                          ) : (
+                            <>
                           <td className="py-3.5 px-5 text-center">
                             {item.isTaxable ? (
                               <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -2902,6 +2942,8 @@ export default function PayrollPage() {
                               <span className="text-slate-400 text-sm">-</span>
                             )}
                           </td>
+                            </>
+                          )}
                           <td className="py-3.5 px-5">
                             {isItemActive ? (
                               <span className="inline-flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
