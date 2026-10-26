@@ -5,17 +5,24 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircle } from 'lucide-react';
 
-/** บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา ไม่แสดงบน production) — ใส่เฉพาะบัญชีที่มีอยู่จริงในฐานข้อมูล */
-const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = [
-  { label: 'ผู้ดูแลระบบสูงสุด', username: 'admin', password: 'Admin#2026!Sec' },
-  { label: 'ผู้บริหารสูงสุด (CEO)', username: 'ceo', password: 'Ceo@Executive2026!' },
-  { label: 'ฝ่ายทรัพยากรบุคคล', username: 'hr', password: 'Hr@2026!Pass' },
-  { label: 'การเงิน / เงินเดือน', username: 'test.finance', password: 'Test#Fin2026' },
-  { label: 'หัวหน้าทีม (ผู้อนุมัติ)', username: 'test.lead', password: 'Test#Lead2026' },
-  { label: 'พนักงานทั่วไป', username: 'test.employee', password: 'Test#Emp2026' },
-];
+/**
+ * บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา) — อ่านจาก NEXT_PUBLIC_DEMO_ACCOUNTS ใน frontend/.env.local (ไม่อยู่ใน git)
+ * รูปแบบ JSON: [{"label":"พนักงานทั่วไป","username":"...","password":"..."}]
+ * ห้ามใส่รหัสผ่านไว้ในซอร์สโค้ด
+ */
+const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = (() => {
+  try {
+    const raw = process.env.NEXT_PUBLIC_DEMO_ACCOUNTS;
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((a) => a && typeof a.username === 'string' && typeof a.password === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+})();
 
-const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV !== 'production';
+const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV !== 'production' && DEMO_ACCOUNTS.length > 0;
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -188,7 +195,7 @@ export default function LoginPage() {
                       key={acc.username}
                       type="button"
                       onClick={() => handleQuickLogin(acc.username, acc.password)}
-                      title={`${acc.username} / ${acc.password}`}
+                      title={acc.username}
                       className={`h-14 px-2 rounded-xl border bg-[#FFFFFF] text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
                         username === acc.username ? 'border-[#0B2046]/40 ring-2 ring-[#0B2046]/10' : 'border-[#E2E8F0]'
                       }`}

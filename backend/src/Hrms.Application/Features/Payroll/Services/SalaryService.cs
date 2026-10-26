@@ -4261,9 +4261,10 @@ public class SalaryService : ISalaryService
             throw new BusinessRuleException("รอบเงินเดือนนี้ไม่ได้ใช้วิธีการจ่ายผ่านธนาคาร");
         }
 
+        // ต้องดาวน์โหลดไฟล์ธนาคารก่อน จึงยืนยันว่าธนาคารโอนแล้วได้ (ไฟล์คือสิ่งที่ส่งให้ธนาคารจริง)
         if (period.BankFileGeneratedAt == null)
         {
-            period.BankFileGeneratedAt = DateTimeOffset.UtcNow;
+            throw new BusinessRuleException("กรุณาดาวน์โหลดไฟล์ธนาคารและส่งให้ธนาคารก่อน จึงจะยืนยันการโอนได้");
         }
 
         // Mark all individual payrolls as transferred (bank did it)

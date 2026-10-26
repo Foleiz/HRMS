@@ -160,6 +160,13 @@ export default function EssAttendancePage() {
   // ─────────────────────────────────────────────────────────────
   // Adjustment Modal Actions
   // ─────────────────────────────────────────────────────────────
+  // วันนี้ตามเวลาเครื่อง (toISOString เป็น UTC → ก่อน 07:00 จะได้เมื่อวาน)
+  const todayLocalStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+  const isFutureDate = (dateStr?: string) => !!dateStr && dateStr.slice(0, 10) > todayLocalStr;
+
   const openAdjustmentModal = (record?: AttendanceDaily) => {
     if (record) {
       setFormData({
@@ -170,7 +177,7 @@ export default function EssAttendancePage() {
         reason: '',
       });
     } else {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = todayLocalStr;
       const matched = historyList.find((h) => h.workDate === todayStr);
       setFormData({
         attendanceId: matched && matched.id > 0 ? matched.id : undefined,
@@ -204,6 +211,11 @@ export default function EssAttendancePage() {
 
       if (!targetAttendanceId && !formData.workDate) {
         toast.warning('กรุณาระบุวันที่ทำงานที่ต้องการปรับปรุงเวลา');
+        return;
+      }
+
+      if (isFutureDate(formData.workDate)) {
+        toast.warning('ขอปรับเวลาได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว');
         return;
       }
 
@@ -580,6 +592,9 @@ export default function EssAttendancePage() {
                             {renderStatusBadge(rec.status, rec.isAbsent)}
                           </td>
                           <td className="py-3 px-4 text-center">
+                            {isFutureDate(rec.workDate) ? (
+                              <span className="text-xs text-slate-300">-</span>
+                            ) : (
                             <button
                               onClick={() => openAdjustmentModal(rec)}
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
@@ -588,6 +603,7 @@ export default function EssAttendancePage() {
                               <FileEdit className="w-3.5 h-3.5" />
                               ขอปรับเวลา
                             </button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -640,6 +656,9 @@ export default function EssAttendancePage() {
                         <span className="text-slate-500 truncate max-w-[180px]">
                           {rec.shiftName || 'กะปกติ'} ({rec.shiftTimeWindow || '-'})
                         </span>
+                        {isFutureDate(rec.workDate) ? (
+                          <span className="text-xs text-slate-300">-</span>
+                        ) : (
                         <button
                           onClick={() => openAdjustmentModal(rec)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 active:scale-95 transition-all"
@@ -647,6 +666,7 @@ export default function EssAttendancePage() {
                           <FileEdit className="w-3.5 h-3.5" />
                           ขอปรับเวลา
                         </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -827,6 +847,7 @@ export default function EssAttendancePage() {
                       adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : (prev.adjustedClockOut || '17:30'),
                     }));
                   }}
+                  maxDate={todayLocalStr}
                   placeholder="เลือกวันที่ทำงานที่ต้องการปรับ"
                   className="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

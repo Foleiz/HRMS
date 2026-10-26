@@ -161,6 +161,11 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
 
         if (daily == null && !string.IsNullOrWhiteSpace(request.WorkDate) && DateOnly.TryParse(request.WorkDate, out var workDate))
         {
+            if (workDate > DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
+            {
+                throw new ValidationException("ขอปรับเวลาได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว");
+            }
+
             if (empId > 0)
             {
                 daily = await _context.AttendanceDailies
@@ -182,6 +187,13 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
         if (daily == null)
         {
             throw new KeyNotFoundException($"ไม่พบข้อมูลบันทึกเวลาประจำวันสำหรับวันที่ระบุ");
+        }
+
+        // ห้ามขอปรับเวลาของวันที่ยังมาไม่ถึง (เวลาไทย UTC+7 ไม่มี DST)
+        var todayTh = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        if (daily.WorkDate > todayTh)
+        {
+            throw new ValidationException("ขอปรับเวลาได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว");
         }
 
         if (empId == 0)
@@ -237,6 +249,12 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
         if (adjustment.Status != "PENDING")
         {
             throw new ValidationException($"คำขอนี้ได้รับการพิจารณาไปแล้ว (สถานะปัจจุบัน: {adjustment.Status})");
+        }
+
+        // ห้ามพิจารณาคำขอของตนเอง
+        if (reviewedByEmployeeId > 0 && adjustment.RequestedByEmployeeId == reviewedByEmployeeId)
+        {
+            throw new ValidationException("ไม่สามารถพิจารณาคำขอปรับเวลาของตนเองได้");
         }
 
         var statusUpper = request.Status.Trim().ToUpperInvariant();
