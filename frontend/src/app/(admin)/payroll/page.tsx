@@ -1,5 +1,6 @@
 'use client';
 
+import { YearPicker } from '@/components/ui/YearPicker';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1882,8 +1883,10 @@ export default function PayrollPage() {
       const target = inYear.find((p) => p.status !== 'CLOSED') || inYear[inYear.length - 1];
       handlePeriodChange(target.id);
     } else {
+      // ปีที่ยังไม่มีรอบ (เลือกได้จากตารางปี) — เลือกเดือนปัจจุบันไว้ให้สร้างรอบได้ทันที
       setSelectedPeriod(null);
       setPayrolls([]);
+      setSelectedProcessMonth(new Date().getMonth() + 1);
     }
   };
 
@@ -3871,19 +3874,16 @@ export default function PayrollPage() {
                         const m = i + 1;
                         const p = periodsInSelectedYear.find((x) => x.month === m);
                         if (p) {
-                          const statusLabel =
-                            p.status === 'CLOSED'
-                              ? ' (ปิดรอบแล้ว)'
-                              : p.status === 'PAID'
-                              ? ' (จ่ายแล้ว)'
-                              : '';
+                          const statusHint =
+                            p.status === 'CLOSED' ? 'ปิดรอบแล้ว' : p.status === 'PAID' ? 'จ่ายแล้ว' : undefined;
                           return (
                             <option
                               key={p.id}
                               value={p.id}
+                              data-hint={statusHint}
                               className="text-slate-900 dark:text-slate-100 dark:bg-slate-800"
                             >
-                              {THAI_MONTH_NAMES[i]}{statusLabel}
+                              {THAI_MONTH_NAMES[i]}
                             </option>
                           );
                         }
@@ -3891,9 +3891,10 @@ export default function PayrollPage() {
                           <option
                             key={`UNCREATED_${m}`}
                             value={`UNCREATED_${m}`}
+                            data-hint="ยังไม่มีรอบ"
                             className="text-slate-400 dark:text-slate-500 italic dark:bg-slate-800"
                           >
-                            {THAI_MONTH_NAMES[i]} (ยังไม่มีรอบ)
+                            {THAI_MONTH_NAMES[i]}
                           </option>
                         );
                       })}
@@ -3902,21 +3903,13 @@ export default function PayrollPage() {
 
                   {/* 2. ตัวเลือกปี พ.ศ. (เลือกปีตามหลัง) */}
                   <div className="relative inline-block">
-                    <CustomSelect
+                    <YearPicker
                       value={activeYear}
-                      onChange={(e) => handleYearFilterChange(Number(e.target.value))}
-                      numbered={false}
-                      size="sm"
+                      onChange={(y) => handleYearFilterChange(y)}
                       className="w-28 sm:w-32"
-                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
                       title="เลือกปีรอบเงินเดือน"
-                    >
-                      {availableYears.map((y) => (
-                        <option key={y} value={y} className="text-slate-900 dark:text-slate-100 dark:bg-slate-800">
-                          ปี {y + 543}
-                        </option>
-                      ))}
-                    </CustomSelect>
+                    />
                   </div>
 
                   {/* สถานะรอบ */}
