@@ -48,7 +48,7 @@ public class PayslipService : IPayslipService
             .Include(p => p.Period)
             .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
 
-        if (payroll == null || payroll.Period == null || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
+        if (payroll == null || payroll.Period == null || payroll.Status == "DRAFT" || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
         {
             throw new NotFoundException($"ไม่พบข้อมูลสลิปเงินเดือนรหัส #{payrollId}");
         }

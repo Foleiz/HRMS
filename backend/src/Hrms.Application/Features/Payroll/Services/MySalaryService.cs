@@ -59,6 +59,7 @@ public class MySalaryService : IMySalaryService
         var payrollQuery = _context.Payrolls
             .Include(p => p.Period)
             .Where(p => p.EmployeeId == employeeId &&
+                        p.Status != "DRAFT" && // DRAFT = ไม่ได้คำนวณ (เช่น ไม่มีฐานเงินเดือน) → ไม่มีสลิป
                         p.Period != null &&
                         PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status));
 
@@ -127,7 +128,7 @@ public class MySalaryService : IMySalaryService
                 NetPayableSalary = p.NetPayableSalary,
                 PaymentDate = payDate,
                 PaymentDateThai = payDate.HasValue ? FormatThaiDate(payDate.Value) : "-",
-                Status = p.PaymentStatus == "TRANSFERRED" || p.Period?.Status == "PAID" || p.Period?.Status == "CLOSED" || p.Status == "CLOSED" ? "โอนแล้ว" : "รอโอน"
+                Status = PaymentStatusText(p)
             };
         }).ToList();
 
@@ -185,7 +186,7 @@ public class MySalaryService : IMySalaryService
             .Include(p => p.Employee)
             .FirstOrDefaultAsync(p => p.Id == payrollId, cancellationToken);
 
-        if (payroll == null || payroll.Period == null || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
+        if (payroll == null || payroll.Period == null || payroll.Status == "DRAFT" || !PayslipHelper.AllowedPeriodStatuses.Contains(payroll.Period.Status))
         {
             throw new NotFoundException("Payroll", payrollId);
         }
@@ -260,6 +261,7 @@ public class MySalaryService : IMySalaryService
                         p.Period != null &&
                         p.Period.Year == pYear &&
                         p.Period.Month <= pMonth &&
+                        p.Status != "DRAFT" &&
                         PayslipHelper.AllowedPeriodStatuses.Contains(p.Period.Status))
             .ToListAsync(cancellationToken);
 
@@ -279,11 +281,7 @@ public class MySalaryService : IMySalaryService
             _encryptionService);
 
         // Payment status & transfer status (B7)
-        bool isTransferred = payroll.PaymentStatus == "TRANSFERRED" ||
-                             payroll.Period.Status == "PAID" ||
-                             payroll.Period.Status == "CLOSED" ||
-                             payroll.Status == "CLOSED";
-        string statusText = isTransferred ? "โอนแล้ว" : "รอโอน";
+        string statusText = PaymentStatusText(payroll);
 
         return new MySalaryDetailDto
         {
@@ -329,5 +327,17 @@ public class MySalaryService : IMySalaryService
     {
         int thaiYear = date.Year < 2400 ? date.Year + 543 : date.Year;
         return $"{date.Day} {GetThaiShortMonth(date.Month)} {thaiYear}";
+    }
+
+    /// <summary>
+    /// สถานะการโอนของสลิป — คนที่ไม่มียอดสุทธิ = "ไม่มียอดโอน" (เดิมขึ้น "โอนแล้ว" ตามสถานะงวด)
+    /// </summary>
+    private static string PaymentStatusText(Domain.Entities.Payroll p)
+    {
+        if (p.NetPayableSalary <= 0) return "ไม่มียอดโอน";
+        // ข้อมูลเก่าก่อนมี PaymentStatus: งวดที่ PAID/CLOSED ถือว่าโอนครบทุกคนที่มียอด
+        bool transferred = p.PaymentStatus == "TRANSFERRED"
+            || p.Period?.Status == "PAID" || p.Period?.Status == "CLOSED";
+        return transferred ? "โอนแล้ว" : "รอโอน";
     }
 }

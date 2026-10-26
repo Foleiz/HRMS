@@ -236,7 +236,7 @@ function MySalaryContent() {
               <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">
                 {detailData?.periodMonthName}
               </h2>
-              <StatusBadge tone={isTransferred ? 'success' : 'warning'}>
+              <StatusBadge tone={isTransferred ? 'success' : detailData?.status === 'ไม่มียอดโอน' ? 'neutral' : 'warning'}>
                 {detailData?.status || 'รอโอน'}
               </StatusBadge>
             </div>
@@ -586,7 +586,7 @@ function MySalaryContent() {
                           {row.paymentDateThai}
                         </td>
                         <td className="py-3.5 px-3.5 text-center whitespace-nowrap">
-                          <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : 'warning'}>
+                          <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : row.status === 'ไม่มียอดโอน' ? 'neutral' : 'warning'}>
                             {row.status}
                           </StatusBadge>
                         </td>
@@ -636,7 +636,7 @@ function MySalaryContent() {
                           โอนเมื่อ: {row.paymentDateThai}
                         </span>
                       </div>
-                      <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : 'warning'}>
+                      <StatusBadge tone={row.status === 'โอนแล้ว' ? 'success' : row.status === 'ไม่มียอดโอน' ? 'neutral' : 'warning'}>
                         {row.status}
                       </StatusBadge>
                     </div>
@@ -712,46 +712,49 @@ function MySalaryContent() {
               สัดส่วนเงินเดือนงวดล่าสุด
             </h3>
 
-            {/* SVG Pie Chart */}
-            <div className="relative flex items-center justify-center py-2">
-              <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
-                {/* Background base circle */}
-                <circle cx="50" cy="50" r="38" fill="#F8FAFC" />
-                {/* Green slice: Base Salary */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="30"
-                  fill="transparent"
-                  stroke="#10B981"
-                  strokeWidth="20"
-                  strokeDasharray="140 188"
-                  strokeDashoffset="0"
-                />
-                {/* Yellow slice: OT / Allowances */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="30"
-                  fill="transparent"
-                  stroke="#F59E0B"
-                  strokeWidth="20"
-                  strokeDasharray="30 188"
-                  strokeDashoffset="-140"
-                />
-                {/* Blue slice: Net Pay */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="30"
-                  fill="transparent"
-                  stroke="#3B82F6"
-                  strokeWidth="20"
-                  strokeDasharray="20 188"
-                  strokeDashoffset="-170"
-                />
-              </svg>
-            </div>
+            {/* SVG Donut Chart — สัดส่วนจากข้อมูลจริงของงวดล่าสุด (เดิมวาดค่าคงที่) */}
+            {(() => {
+              const C = 2 * Math.PI * 30;
+              const parts = [
+                { v: overview?.chartData?.baseSalaryAmount || 0, color: '#10B981' },
+                { v: (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0), color: '#F59E0B' },
+                { v: overview?.chartData?.deductionsAmount || 0, color: '#3B82F6' },
+              ];
+              const total = parts.reduce((sum, x) => sum + Math.max(0, x.v), 0);
+              if (total <= 0) {
+                return (
+                  <div className="h-36 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+                    ไม่มีข้อมูลงวดล่าสุด
+                  </div>
+                );
+              }
+              let offset = 0;
+              return (
+                <div className="relative flex items-center justify-center py-2">
+                  <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90" role="img" aria-label="สัดส่วนเงินเดือนงวดล่าสุด">
+                    <circle cx="50" cy="50" r="38" fill="#F8FAFC" />
+                    {parts.map((x, i) => {
+                      const len = (Math.max(0, x.v) / total) * C;
+                      const el = (
+                        <circle
+                          key={i}
+                          cx="50"
+                          cy="50"
+                          r="30"
+                          fill="transparent"
+                          stroke={x.color}
+                          strokeWidth="20"
+                          strokeDasharray={`${len} ${C}`}
+                          strokeDashoffset={-offset}
+                        />
+                      );
+                      offset += len;
+                      return el;
+                    })}
+                  </svg>
+                </div>
+              );
+            })()}
 
             {/* Chart Legend */}
             <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-700">
