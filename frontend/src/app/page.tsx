@@ -124,12 +124,7 @@ export default function HomePage() {
         <main className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-5 w-full">
           {!hasDataModulePermission ? (
             <div className="flex flex-col gap-4">
-              <GreetingBanner
-                displayName={displayName}
-                activeRole={activeRole}
-                allowedRoles={allowedDashboards}
-                onRoleChange={setActiveRole}
-              />
+              <GreetingBanner displayName={displayName} />
               {/* กล่องแจ้งเตือนเมื่อติ๊กเฉพาะแดชบอร์ด แต่ไม่ได้เลือกหัวข้อข้อมูลอื่นใด */}
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-8 sm:p-14 text-center shadow-xs flex flex-col items-center justify-center my-2">
                 <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-5 shadow-xs">
@@ -149,12 +144,7 @@ export default function HomePage() {
               {/* Top Row: Left (GreetingBanner + 6 Stat Cards + UpcomingEvents) aligned at bottom with Right (CalendarWidget) */}
               <div className="flex flex-col lg:flex-row gap-4 items-stretch shrink-0">
                 <div className="flex-1 w-full flex flex-col gap-4 min-w-0">
-                  <GreetingBanner
-                    displayName={displayName}
-                    activeRole={activeRole}
-                    allowedRoles={allowedDashboards}
-                    onRoleChange={setActiveRole}
-                  />
+                  <GreetingBanner displayName={displayName} />
 
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch flex-1">
                     {/* 6 Stat Cards: spans 2 cols on xl */}
