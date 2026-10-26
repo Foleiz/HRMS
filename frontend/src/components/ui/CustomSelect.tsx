@@ -7,6 +7,8 @@ export interface SelectOption {
   value: string | number;
   label: string;
   disabled?: boolean;
+  /** ข้อความรองชิดขวาในรายการ เช่น "ยังไม่มีรอบ" — ใส่ผ่าน <option data-hint="..."> ก็ได้ */
+  hint?: string;
 }
 
 export interface CustomSelectProps {
@@ -165,7 +167,12 @@ function extractOptions(children: React.ReactNode): SelectOption[] {
   React.Children.forEach(children, (child) => {
     if (!child || !React.isValidElement(child)) return;
     if (child.type === 'option') {
-      const props = child.props as { value?: string | number; children?: React.ReactNode; disabled?: boolean };
+      const props = child.props as {
+        value?: string | number;
+        children?: React.ReactNode;
+        disabled?: boolean;
+        'data-hint'?: string;
+      };
       const val = props.value !== undefined ? props.value : (props.children as any);
       let label = props.children;
       if (Array.isArray(label)) {
@@ -179,6 +186,7 @@ function extractOptions(children: React.ReactNode): SelectOption[] {
         value: val,
         label: String(label).trim(),
         disabled: props.disabled,
+        hint: props['data-hint'] || undefined,
       });
     } else if ((child.props as any)?.children) {
       options.push(...extractOptions((child.props as any).children));
@@ -429,6 +437,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                 } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 <span className="truncate">{opt.label}</span>
+                {opt.hint && (
+                  <span
+                    className={`ml-auto pl-4 shrink-0 text-[11px] font-normal ${
+                      isSelected ? 'text-primary/70 dark:text-blue-300/80' : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    {opt.hint}
+                  </span>
+                )}
                 {isSelected && (
                   <Check className="w-3.5 h-3.5 text-[#0B2046] dark:text-blue-400 shrink-0 ml-2" />
                 )}
