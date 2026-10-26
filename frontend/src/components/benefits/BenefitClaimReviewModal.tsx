@@ -16,6 +16,14 @@ interface BenefitClaimReviewModalProps {
   onDone: (message: string) => void;
 }
 
+// 'YYYY-MM-DD' → '26 ต.ค. 2569' (parse แบบ local เพื่อไม่ให้วันเลื่อนตาม timezone)
+const thaiDate = (d?: string | null) => {
+  if (!d) return '-';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  const dt = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+};
 const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -116,7 +124,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
           <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
             <Row label="สวัสดิการ" value={claim.benefitName} />
             <Row label="จำนวนเงินที่ขอเบิก" value={<span className="font-mono font-bold">{money(claim.amount)} บ.</span>} />
-            <Row label="วันที่ใช้สิทธิ์" value={claim.claimDate} />
+            <Row label="วันที่ใช้สิทธิ์" value={thaiDate(claim.claimDate)} />
             <Row label="ผู้ให้บริการ / สถานพยาบาล" value={claim.serviceProvider} />
             <Row label="เลขที่ใบเสร็จ" value={claim.receiptNumber} />
             <Row label="รายละเอียด" value={claim.remarks} />

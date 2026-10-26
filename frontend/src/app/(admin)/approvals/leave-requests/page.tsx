@@ -21,7 +21,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
-import { LeaveRequest, LeaveStats } from '@/types/leave';
+import { LeaveRequest } from '@/types/leave';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { certificateService } from '@/services/certificateService';
 import { CertificateRequest } from '@/types/certificates';
@@ -33,6 +33,8 @@ import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { benefitService } from '@/services/benefitService';
+import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
+import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
 import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
@@ -57,6 +59,13 @@ import {
 
 // ─── ฟังก์ชันช่วย & โครงสร้างข้อมูล ──────────────────────────────
 
+const formatTime = (d?: string | null) => {
+  if (!d) return '-';
+  const t = new Date(d);
+  if (isNaN(t.getTime())) return d;
+  return t.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 const formatDate = (d?: string | null) => {
   if (!d) return '-';
   try {
@@ -80,7 +89,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 export interface UnifiedApprovalItem {
   id: string;
   rawId: number | string;
-  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT';
+  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT' | 'TIME_ADJUST';
   docTypeName: string;
   requestNo: string;
   employeeId: number;
@@ -106,6 +115,7 @@ export interface UnifiedApprovalItem {
   resignationRaw?: ResignationRequest;
   generalRaw?: GeneralDocumentRequest;
   benefitRaw?: BenefitClaimRequest;
+  timeAdjustRaw?: AttendanceAdjustment;
 }
 
 /**
@@ -123,14 +133,17 @@ export function cleanApproverDisplay(text?: string | null): string {
 
 export default function LeaveRequestsApprovalPage() {
   const { setBreadcrumb } = useBreadcrumb();
-  const { hasPermission, hasRole } = useAuth();
+  const { user, hasPermission, hasRole } = useAuth();
   // ยกเลิกใบลาของคนอื่นได้เฉพาะฝ่ายบุคคล/ผู้ดูแล (ผู้อนุมัติสายงานยกเลิกไม่ได้) — ตรงกับ backend
   const canHrCancelLeave =
     hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('APPROVAL_LEAVE_APPROVE') || hasPermission('LEAVE_BALANCE_EDIT');
+  // คำขอปรับเวลา: สิทธิ์ตรงกับ AttendanceAdjustmentController
+  const isSuperUser = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canViewTimeAdjust = isSuperUser || hasPermission('TIME_DAILY_VIEW') || hasPermission('APPROVAL_TIME_VIEW');
+  const canReviewTimeAdjust = isSuperUser || hasPermission('TIME_DAILY_EDIT') || hasPermission('APPROVAL_TIME_APPROVE');
 
   // Leave Requests State
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [leaveStats, setLeaveStats] = useState<LeaveStats | null>(null);
 
   // Certificate Requests State
   const [certificateRequests, setCertificateRequests] = useState<CertificateRequest[]>([]);
@@ -143,6 +156,9 @@ export default function LeaveRequestsApprovalPage() {
 
   // คำขอเบิกสวัสดิการ
   const [benefitRequests, setBenefitRequests] = useState<BenefitClaimRequest[]>([]);
+  const [timeAdjustRequests, setTimeAdjustRequests] = useState<AttendanceAdjustment[]>([]);
+  const [timeAdjustReview, setTimeAdjustReview] = useState<{ adj: AttendanceAdjustment; mode: 'view' | 'approve' | 'reject' } | null>(null);
+  const [isSubmittingTimeAdjust, setIsSubmittingTimeAdjust] = useState(false);
   const [benefitReview, setBenefitReview] = useState<{ claim: BenefitClaimRequest; mode: BenefitClaimReviewMode } | null>(null);
 
   const [loading, setLoading] = useState(true);
@@ -155,7 +171,7 @@ export default function LeaveRequestsApprovalPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');
-  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT'>('ALL');
+  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | UnifiedApprovalItem['docType']>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Leave Approval Modals State
@@ -248,38 +264,47 @@ export default function LeaveRequestsApprovalPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [reqData, statsData, certData, resignData, genData, benefitData] = await Promise.all([
-        leaveService.getLeaveRequests({ status: statusFilter || undefined, pageSize: 200 }),
-        leaveService.getLeaveStats(),
-        certificateService.getAllRequests(statusFilter || undefined).catch((err) => {
+      // ดึงทุกสถานะ แล้วกรองสถานะฝั่งหน้าเว็บ — การ์ดสรุปจะนับครบทุกประเภทและอัปเดตทันทีหลังอนุมัติ/ปฏิเสธ
+      const [reqData, certData, resignData, genData, benefitData, timeAdjData] = await Promise.all([
+        leaveService.getLeaveRequests({ pageSize: 500 }),
+        certificateService.getAllRequests().catch((err) => {
           console.error('Failed to fetch certificate requests', err);
           return [] as CertificateRequest[];
         }),
-        resignationService.getAllRequests(statusFilter || undefined).catch((err) => {
+        resignationService.getAllRequests().catch((err) => {
           console.error('Failed to fetch resignation requests', err);
           return [] as ResignationRequest[];
         }),
-        generalDocumentService.getAllRequests(statusFilter || undefined).catch((err) => {
+        generalDocumentService.getAllRequests().catch((err) => {
           console.error('Failed to fetch general requests', err);
           return [] as GeneralDocumentRequest[];
         }),
-        benefitService.getClaimRequests(statusFilter || undefined).catch((err) => {
+        benefitService.getClaimRequests().catch((err) => {
           console.error('Failed to fetch benefit claim requests', err);
           return [] as BenefitClaimRequest[];
         }),
+        canViewTimeAdjust
+          ? attendanceAdjustmentService
+              .getAdjustments({ status: 'ALL', pageSize: 500 })
+              .then((r) => r.items ?? [])
+              .catch((err) => {
+                console.error('Failed to fetch time adjustment requests', err);
+                return [] as AttendanceAdjustment[];
+              })
+          : Promise.resolve([] as AttendanceAdjustment[]),
       ]);
       setLeaveRequests(reqData);
-      setLeaveStats(statsData);
       setCertificateRequests(certData);
       setResignationRequests(resignData);
       setGeneralRequests(genData);
       setBenefitRequests(benefitData);
+      setTimeAdjustRequests(timeAdjData);
     } catch (err) {
       console.error('Failed to fetch leave/cert/resign/gen requests', err);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [canViewTimeAdjust]);
 
   useEffect(() => {
     fetchData();
@@ -446,6 +471,35 @@ export default function LeaveRequestsApprovalPage() {
       });
     });
 
+    // 6. คำขอปรับเวลาเข้า-ออก (อนุมัติขั้นเดียวโดยผู้มีสิทธิ์ดูแลเวลาทำงาน)
+    timeAdjustRequests.forEach((adj) => {
+      const isPending = adj.status === 'PENDING';
+      const isOwn = !!user?.employeeId && adj.employeeId === user.employeeId;
+      list.push({
+        id: `TA-${adj.id}`,
+        rawId: adj.id,
+        docType: 'TIME_ADJUST',
+        docTypeName: 'ปรับเวลาเข้า-ออก',
+        requestNo: `TA-${adj.id}`,
+        employeeId: adj.employeeId,
+        employeeCode: adj.employeeCode,
+        employeeName: adj.employeeName,
+        departmentName: adj.departmentName || '-',
+        positionName: adj.positionName || '-',
+        subType: 'ปรับเวลา',
+        details: `${formatDate(adj.workDate)} • เข้า ${formatTime(adj.adjustedClockIn)} ออก ${formatTime(adj.adjustedClockOut)}${adj.reason ? ` • ${adj.reason}` : ''}`,
+        submittedAt: adj.createdAt || null,
+        status: adj.status,
+        currentApproverDisplay: isPending ? 'ผู้ดูแลเวลาทำงาน' : null,
+        isMyTurnToApprove: isPending && canReviewTimeAdjust && !isOwn,
+        hasAlreadyApproved: false,
+        approvedByName: adj.reviewedByEmployeeName,
+        approvedAt: adj.reviewedAt,
+        canCancel: false,
+        timeAdjustRaw: adj,
+      });
+    });
+
     // เรียงลำดับ: รายการที่ถึงคิวเราอนุมัติขึ้นก่อน จากนั้นเรียงตามวันที่ยื่นล่าสุด
     return list.sort((a, b) => {
       if (a.isMyTurnToApprove && !b.isMyTurnToApprove) return -1;
@@ -457,11 +511,14 @@ export default function LeaveRequestsApprovalPage() {
       const rawB = typeof b.rawId === 'number' ? b.rawId : 0;
       return rawB - rawA;
     });
-  }, [leaveRequests, certificateRequests, resignationRequests, generalRequests, benefitRequests, canHrCancelLeave]);
+  }, [leaveRequests, certificateRequests, resignationRequests, generalRequests, benefitRequests, timeAdjustRequests, canHrCancelLeave, canReviewTimeAdjust, user?.employeeId]);
 
   const filteredRequests = useMemo(() => {
     return unifiedRequests.filter((item) => {
       if (docTypeFilter !== 'ALL' && item.docType !== docTypeFilter) {
+        return false;
+      }
+      if (statusFilter && item.status !== statusFilter && !(statusFilter === 'APPROVED' && item.status === 'ISSUED')) {
         return false;
       }
       if (!searchTerm.trim()) return true;
@@ -476,7 +533,7 @@ export default function LeaveRequestsApprovalPage() {
         item.departmentName?.toLowerCase().includes(q)
       );
     });
-  }, [unifiedRequests, docTypeFilter, searchTerm]);
+  }, [unifiedRequests, docTypeFilter, statusFilter, searchTerm]);
 
   // ─── Actions: Leave ─────────────────────────────────────────
 
@@ -830,31 +887,31 @@ export default function LeaveRequestsApprovalPage() {
     });
   };
 
+  // ─── Actions: คำขอปรับเวลา ─────────────────────────────────
+
+  const submitTimeAdjustReview = async (status: 'APPROVED' | 'REJECTED') => {
+    if (!timeAdjustReview) return;
+    setIsSubmittingTimeAdjust(true);
+    try {
+      await attendanceAdjustmentService.reviewAdjustment(timeAdjustReview.adj.id, { status });
+      setTimeAdjustReview(null);
+      showToast(status === 'APPROVED' ? 'อนุมัติคำขอปรับเวลาสำเร็จ — ระบบคำนวณเวลาวันนั้นใหม่แล้ว' : 'ปฏิเสธคำขอปรับเวลาแล้ว');
+      fetchData();
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการพิจารณาคำขอปรับเวลา', 'error');
+    } finally {
+      setIsSubmittingTimeAdjust(false);
+    }
+  };
+
   // ─── Render ──────────────────────────────────────────────────
 
-  const totalPending =
-    (leaveStats?.pendingCount ?? leaveStats?.pendingRequestsCount ?? leaveRequests.filter((r) => r.status === 'PENDING').length) +
-    certificateRequests.filter((r) => r.status === 'PENDING').length +
-    resignationRequests.filter((r) => r.status === 'PENDING').length +
-    generalRequests.filter((r) => r.status === 'PENDING').length;
-
-  const totalApproved =
-    (leaveStats?.approvedCount ?? leaveStats?.approvedThisMonthCount ?? leaveRequests.filter((r) => r.status === 'APPROVED').length) +
-    certificateRequests.filter((r) => r.status === 'APPROVED' || r.status === 'ISSUED').length +
-    resignationRequests.filter((r) => r.status === 'APPROVED').length +
-    generalRequests.filter((r) => r.status === 'APPROVED').length;
-
-  const totalRejected =
-    (leaveStats?.rejectedCount ?? leaveStats?.rejectedThisMonthCount ?? leaveRequests.filter((r) => r.status === 'REJECTED').length) +
-    certificateRequests.filter((r) => r.status === 'REJECTED').length +
-    resignationRequests.filter((r) => r.status === 'REJECTED').length +
-    generalRequests.filter((r) => r.status === 'REJECTED').length;
-
-  const totalCancelled =
-    (leaveStats?.cancelledCount ?? leaveRequests.filter((r) => r.status === 'CANCELLED').length) +
-    certificateRequests.filter((r) => r.status === 'CANCELLED').length +
-    resignationRequests.filter((r) => r.status === 'CANCELLED').length +
-    generalRequests.filter((r) => r.status === 'CANCELLED').length;
+  // นับจากทุกประเภทคำขอ (ข้อมูลชุดเดียวกับตาราง) — ไม่ขึ้นกับตัวกรองสถานะ
+  const countStatus = (...statuses: string[]) => unifiedRequests.filter((r) => statuses.includes(r.status)).length;
+  const totalPending = countStatus('PENDING');
+  const totalApproved = countStatus('APPROVED', 'ISSUED');
+  const totalRejected = countStatus('REJECTED');
+  const totalCancelled = countStatus('CANCELLED');
 
   return (
     <div className="space-y-6 pb-12">
@@ -904,6 +961,7 @@ export default function LeaveRequestsApprovalPage() {
                 { value: 'RESIGNATION', label: 'คำขอลาออก' },
                 { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
                 { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
+                { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
               ]}
             />
 
@@ -980,7 +1038,7 @@ export default function LeaveRequestsApprovalPage() {
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     สถานะ
                   </th>
-                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                  <th className="sticky right-0 z-10 bg-gray-50 dark:bg-slate-800 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     ดำเนินการ
                   </th>
                 </tr>
@@ -1034,6 +1092,12 @@ export default function LeaveRequestsApprovalPage() {
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
                             <FileText className="w-3.5 h-3.5 text-teal-500" />
                             เบิกสวัสดิการ
+                          </span>
+                        )}
+                        {item.docType === 'TIME_ADJUST' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-100">
+                            <Clock className="w-3.5 h-3.5 text-sky-500" />
+                            ปรับเวลา
                           </span>
                         )}
                       </td>
@@ -1090,8 +1154,8 @@ export default function LeaveRequestsApprovalPage() {
                         </span>
                       </td>
 
-                      {/* 7. ดำเนินการ */}
-                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                      {/* 7. ดำเนินการ — ตรึงไว้ขวาสุด ไม่ต้องเลื่อนตารางเพื่อกดอนุมัติ */}
+                      <td className="sticky right-0 z-[1] bg-white dark:bg-slate-800 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           {/* 1. กรณีเป็นคิวของผู้ใช้นี้ในการพิจารณา */}
                           {isPending && item.isMyTurnToApprove && (
@@ -1106,6 +1170,8 @@ export default function LeaveRequestsApprovalPage() {
                                     openApproveResignDialog(item.resignationRaw!);
                                   } else if (item.docType === 'GENERAL') {
                                     openApproveGeneralDialog(item.generalRaw!);
+                                  } else if (item.docType === 'TIME_ADJUST') {
+                                    setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
                                   } else if (item.docType === 'BENEFIT') {
                                     setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
                                   }
@@ -1126,6 +1192,8 @@ export default function LeaveRequestsApprovalPage() {
                                     openRejectResignDialog(item.resignationRaw!);
                                   } else if (item.docType === 'GENERAL') {
                                     openRejectGeneralDialog(item.generalRaw!);
+                                  } else if (item.docType === 'TIME_ADJUST') {
+                                    setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
                                   } else if (item.docType === 'BENEFIT') {
                                     setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
                                   }
@@ -1175,6 +1243,8 @@ export default function LeaveRequestsApprovalPage() {
                                 setIsResignPreviewOpen(true);
                               } else if (item.docType === 'GENERAL') {
                                 setSelectedGeneralForPreview(item.generalRaw!);
+                              } else if (item.docType === 'TIME_ADJUST') {
+                                setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'view' });
                               } else if (item.docType === 'BENEFIT') {
                                 setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
                                 setIsGeneralPreviewOpen(true);
@@ -1188,7 +1258,7 @@ export default function LeaveRequestsApprovalPage() {
                           </button>
 
                           {/* 5. ยกเลิกคำขอ — จะขึ้นก็ต่อเมื่อกดอนุมัติไปแล้ว */}
-                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && (
+                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
                             <button
                               onClick={() => {
                                 if (item.docType === 'LEAVE') {
@@ -1264,6 +1334,12 @@ export default function LeaveRequestsApprovalPage() {
                             เบิกสวัสดิการ
                           </span>
                         )}
+                        {item.docType === 'TIME_ADJUST' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-2xs font-semibold bg-sky-50 text-sky-700 border border-sky-100">
+                            <Clock className="w-3 h-3 text-sky-500" />
+                            ปรับเวลา
+                          </span>
+                        )}
                         <span className="font-mono font-bold text-xs text-primary dark:text-blue-300">
                           {item.requestNo}
                         </span>
@@ -1335,6 +1411,8 @@ export default function LeaveRequestsApprovalPage() {
                               openApproveResignDialog(item.resignationRaw!);
                             } else if (item.docType === 'GENERAL') {
                               openApproveGeneralDialog(item.generalRaw!);
+                            } else if (item.docType === 'TIME_ADJUST') {
+                              setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
                             } else if (item.docType === 'BENEFIT') {
                               setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
                             }
@@ -1354,6 +1432,8 @@ export default function LeaveRequestsApprovalPage() {
                               openRejectResignDialog(item.resignationRaw!);
                             } else if (item.docType === 'GENERAL') {
                               openRejectGeneralDialog(item.generalRaw!);
+                            } else if (item.docType === 'TIME_ADJUST') {
+                              setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
                             } else if (item.docType === 'BENEFIT') {
                               setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
                             }
@@ -1396,6 +1476,8 @@ export default function LeaveRequestsApprovalPage() {
                             setIsResignPreviewOpen(true);
                           } else if (item.docType === 'GENERAL') {
                             setSelectedGeneralForPreview(item.generalRaw!);
+                          } else if (item.docType === 'TIME_ADJUST') {
+                            setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'view' });
                           } else if (item.docType === 'BENEFIT') {
                             setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
                             setIsGeneralPreviewOpen(true);
@@ -1407,7 +1489,7 @@ export default function LeaveRequestsApprovalPage() {
                         ดูตัวอย่างเอกสาร
                       </button>
 
-                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && (
+                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
                         <button
                           onClick={() => {
                             if (item.docType === 'LEAVE') {
@@ -2091,6 +2173,91 @@ export default function LeaveRequestsApprovalPage() {
           fetchData();
         }}
       />
+
+      {/* ─── Modal คำขอปรับเวลาเข้า-ออก (ดู / อนุมัติ / ปฏิเสธ) ─── */}
+      {timeAdjustReview && (() => {
+        const adj = timeAdjustReview.adj;
+        const mode = timeAdjustReview.mode;
+        const canAct = mode !== 'view' && adj.status === 'PENDING';
+        return (
+          <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
+            <div
+              className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'reject' ? 'bg-rose-50 text-rose-600' : mode === 'approve' ? 'bg-emerald-50 text-emerald-600' : 'bg-sky-50 text-sky-600'}`}>
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                    {mode === 'approve' ? 'ยืนยันการอนุมัติคำขอปรับเวลา' : mode === 'reject' ? 'ยืนยันการปฏิเสธคำขอปรับเวลา' : 'คำขอปรับเวลาเข้า-ออก'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    TA-{adj.id} • {adj.employeeName}{adj.departmentName ? ` • ${adj.departmentName}` : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 text-xs">
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-slate-500 dark:text-slate-400">วันที่ทำงาน</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">{formatDate(adj.workDate)}{adj.shiftName ? ` • ${adj.shiftName}` : ''}</span>
+                </div>
+                <div className="grid grid-cols-3 px-4 py-2.5 gap-2">
+                  <span className="text-slate-500 dark:text-slate-400"></span>
+                  <span className="text-slate-500 dark:text-slate-400 text-center">เวลาเดิม</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-center">ขอปรับเป็น</span>
+                </div>
+                <div className="grid grid-cols-3 px-4 py-2.5 gap-2">
+                  <span className="text-slate-500 dark:text-slate-400">เข้างาน</span>
+                  <span className="text-center font-mono text-slate-600 dark:text-slate-300">{formatTime(adj.originalClockIn)}</span>
+                  <span className="text-center font-mono font-bold text-sky-700 dark:text-sky-300">{formatTime(adj.adjustedClockIn)}</span>
+                </div>
+                <div className="grid grid-cols-3 px-4 py-2.5 gap-2">
+                  <span className="text-slate-500 dark:text-slate-400">ออกงาน</span>
+                  <span className="text-center font-mono text-slate-600 dark:text-slate-300">{formatTime(adj.originalClockOut)}</span>
+                  <span className="text-center font-mono font-bold text-sky-700 dark:text-sky-300">{formatTime(adj.adjustedClockOut)}</span>
+                </div>
+                <div className="px-4 py-2.5">
+                  <div className="text-slate-500 dark:text-slate-400 mb-1">เหตุผล</div>
+                  <div className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{adj.reason || '-'}</div>
+                </div>
+                <div className="flex justify-between px-4 py-2.5">
+                  <span className="text-slate-500 dark:text-slate-400">ยื่นเมื่อ</span>
+                  <span className="text-slate-700 dark:text-slate-300">{formatDate(adj.createdAt)} {formatTime(adj.createdAt)} น.</span>
+                </div>
+                {adj.reviewedAt && (
+                  <div className="flex justify-between px-4 py-2.5">
+                    <span className="text-slate-500 dark:text-slate-400">พิจารณาโดย</span>
+                    <span className="text-slate-700 dark:text-slate-300">{adj.reviewedByEmployeeName || '-'} • {formatDate(adj.reviewedAt)}</span>
+                  </div>
+                )}
+              </div>
+
+              {mode === 'approve' && canAct && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">เมื่ออนุมัติ ระบบจะแทนที่เวลาเข้า-ออกของวันนั้นและคำนวณสาย/ออกก่อนใหม่ทันที</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-1">
+                <Button variant="secondary" onClick={() => setTimeAdjustReview(null)} disabled={isSubmittingTimeAdjust}>
+                  {canAct ? 'ยกเลิก' : 'ปิด'}
+                </Button>
+                {canAct && (
+                  <Button
+                    variant={mode === 'reject' ? 'danger' : 'success'}
+                    onClick={() => submitTimeAdjustReview(mode === 'reject' ? 'REJECTED' : 'APPROVED')}
+                    disabled={isSubmittingTimeAdjust}
+                  >
+                    {isSubmittingTimeAdjust && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
+                    {mode === 'reject' ? 'ยืนยันปฏิเสธ' : 'ยืนยันอนุมัติ'}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </ModalShell>
+        );
+      })()}
 
       {/* Confirm Modal ทั่วไป */}
       <ConfirmModal

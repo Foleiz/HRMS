@@ -276,14 +276,17 @@ export default function ThaiTimePicker({
 
   const minuteInputRef = useRef<HTMLInputElement>(null);
 
+  // ช่องที่ผู้ใช้กำลังพิมพ์อยู่ — ห้ามเขียนทับค่าในช่องนั้นจากค่าภายนอก
+  const typingRef = useRef<'hour' | 'minute' | null>(null);
+
   useEffect(() => {
     if (valHour && valHour !== selectedHour) {
       setSelectedHour(valHour);
-      setInputHour(valHour);
+      if (typingRef.current !== 'hour') setInputHour(valHour);
     }
     if (valMinute && valMinute !== selectedMinute) {
       setSelectedMinute(valMinute);
-      setInputMinute(valMinute);
+      if (typingRef.current !== 'minute') setInputMinute(valMinute);
     }
   }, [valHour, valMinute, selectedHour, selectedMinute]);
 
@@ -305,24 +308,24 @@ export default function ThaiTimePicker({
     const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
     setInputHour(raw);
 
-    if (raw.length > 0) {
-      const num = parseInt(raw, 10);
-      if (num >= 0 && num <= 23) {
-        const formatted = raw.length === 2 ? raw : String(num).padStart(2, '0');
-        setSelectedHour(formatted);
-        onChange(`${formatted}:${selectedMinute}`);
-
-        // Auto-advance to minute input when 2 digits typed
-        if (raw.length === 2) {
-          minuteInputRef.current?.focus();
-          minuteInputRef.current?.select();
-        }
-      }
-    }
+    if (raw.length === 0) return;
+    const num = parseInt(raw, 10);
+    // เลขตัวแรก 0–2 อาจเป็นหลักสิบ (เช่น 1 → 10–19) → รอเลขตัวที่ 2 ก่อน ยังไม่ส่งค่าออก
+    if (raw.length === 1 && num <= 2) return;
+    if (num < 0 || num > 23) return;
+    const formatted = String(num).padStart(2, '0');
+    setInputHour(formatted);
+    setSelectedHour(formatted);
+    onChange(`${formatted}:${selectedMinute}`);
+    // ครบชั่วโมงแล้ว → ไปช่องนาที
+    minuteInputRef.current?.focus();
+    minuteInputRef.current?.select();
   };
 
-  const handleHourInputBlur = () => {
-    const num = parseInt(inputHour, 10);
+  // อ่านจากช่องโดยตรง: ตอนย้ายโฟกัสอัตโนมัติ state inputHour ยังเป็นค่าเก่า (เคยทำให้ 13 กลายเป็น 01)
+  const handleHourInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    typingRef.current = null;
+    const num = parseInt(e.target.value.replace(/\D/g, ''), 10);
     const valid = isNaN(num) ? 8 : Math.max(0, Math.min(23, num));
     const formatted = String(valid).padStart(2, '0');
     setInputHour(formatted);
@@ -335,18 +338,21 @@ export default function ThaiTimePicker({
     const raw = e.target.value.replace(/\D/g, '').slice(0, 2);
     setInputMinute(raw);
 
-    if (raw.length > 0) {
-      const num = parseInt(raw, 10);
-      if (num >= 0 && num <= 59) {
-        const formatted = raw.length === 2 ? raw : String(num).padStart(2, '0');
-        setSelectedMinute(formatted);
-        onChange(`${selectedHour}:${formatted}`);
-      }
-    }
+    if (raw.length === 0) return;
+    const num = parseInt(raw, 10);
+    // เลขตัวแรก 0–5 อาจเป็นหลักสิบ → รอเลขตัวที่ 2 (หรือ blur)
+    if (raw.length === 1 && num <= 5) return;
+    if (num < 0 || num > 59) return;
+    const formatted = String(num).padStart(2, '0');
+    setInputMinute(formatted);
+    setSelectedMinute(formatted);
+    onChange(`${selectedHour}:${formatted}`);
   };
 
-  const handleMinuteInputBlur = () => {
-    const num = parseInt(inputMinute, 10);
+  // อ่านจากช่องโดยตรง: ตอนย้ายโฟกัสอัตโนมัติ state inputMinute ยังเป็นค่าเก่า (เคยทำให้ 13 กลายเป็น 01)
+  const handleMinuteInputBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    typingRef.current = null;
+    const num = parseInt(e.target.value.replace(/\D/g, ''), 10);
     const valid = isNaN(num) ? 0 : Math.max(0, Math.min(59, num));
     const formatted = String(valid).padStart(2, '0');
     setInputMinute(formatted);
@@ -399,7 +405,7 @@ export default function ThaiTimePicker({
             value={inputHour}
             onChange={handleHourInputChange}
             onBlur={handleHourInputBlur}
-            onFocus={(e) => e.target.select()}
+            onFocus={(e) => { typingRef.current = 'hour'; e.target.select(); }}
             onClick={(e) => e.stopPropagation()}
             title="พิมพ์ชั่วโมง (00-23)"
             className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all cursor-text"
@@ -416,7 +422,7 @@ export default function ThaiTimePicker({
             value={inputMinute}
             onChange={handleMinuteInputChange}
             onBlur={handleMinuteInputBlur}
-            onFocus={(e) => e.target.select()}
+            onFocus={(e) => { typingRef.current = 'minute'; e.target.select(); }}
             onClick={(e) => e.stopPropagation()}
             title="พิมพ์นาที (00-59)"
             className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0B2046]/30 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all cursor-text"

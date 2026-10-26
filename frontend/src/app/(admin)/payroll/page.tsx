@@ -5149,7 +5149,7 @@ export default function PayrollPage() {
                           step: '1',
                           title: 'ดาวน์โหลดไฟล์',
                           desc: 'ผู้อนุมัติตรวจสอบและดาวน์โหลดไฟล์ .CSV สำหรับส่งธนาคาร',
-                          done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING' || selectedPeriod?.status === 'PROCESSING_BANK' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED',
+                          done: !!selectedPeriod?.bankFileGeneratedAt || selectedPeriod?.status === 'PROCESSING_BANK' || selectedPeriod?.status === 'PAID' || selectedPeriod?.status === 'CLOSED',
                         },
                         {
                           step: '2',
@@ -5209,14 +5209,21 @@ export default function PayrollPage() {
                               1. นำไฟล์ .CSV ที่ดาวน์โหลดไปอัปโหลดเข้าระบบธนาคาร (Corporate iBanking)<br />
                               2. เมื่อธนาคารโอนเงินให้พนักงานเสร็จเรียบร้อยแล้ว ให้กดปุ่ม <strong>"ยืนยันว่าธนาคารโอนเงินแล้ว"</strong> ด้านล่างนี้เพื่อบันทึกสถานะและส่งต่อให้ฝ่ายการเงินตรวจสลิป
                             </p>
-                            <div className="pt-2">
+                            <div className="pt-2 space-y-1.5">
+                              {/* ต้องดาวน์โหลดไฟล์ธนาคารก่อน (backend ตรวจซ้ำ) */}
                               <button
                                 onClick={() => setConfirmPaymentModalOpen(true)}
-                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-102"
+                                disabled={!selectedPeriod?.bankFileGeneratedAt}
+                                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer hover:scale-102 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:bg-emerald-600"
                               >
                                 <CheckCircle className="w-4 h-4" />
                                 <span>ยืนยันว่าธนาคารโอนเงินแล้ว</span>
                               </button>
+                              {!selectedPeriod?.bankFileGeneratedAt && (
+                                <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                                  ต้องกด &quot;ดาวน์โหลดไฟล์ธนาคาร&quot; ด้านล่างก่อน จึงจะยืนยันการโอนได้
+                                </p>
+                              )}
                             </div>
                           </div>
                         )}
@@ -5271,15 +5278,20 @@ export default function PayrollPage() {
                               className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-2 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
                             />
                             {bankReceiptFile ? (
-                              <div className="pt-2 flex justify-end">
+                              <div className="pt-2 flex flex-wrap justify-end">
                                 <button
                                   onClick={() => handleUploadBankReceiptSubmit(true)}
                                   disabled={isUploadingBankReceipt}
                                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-md"
                                 >
                                   {isUploadingBankReceipt ? <Loader2 className="w-3.5 h-3.5 animate-spin text-white" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                                  <span>บันทึกสลิปธนาคาร & ยืนยันการจ่ายเงิน (โอนสำเร็จ)</span>
+                                  <span>{isUploadingBankReceipt ? 'กำลังบันทึกและยืนยันการจ่ายเงิน...' : 'บันทึกสลิปธนาคาร & ยืนยันการจ่ายเงิน (โอนสำเร็จ)'}</span>
                                 </button>
+                              {isUploadingBankReceipt && (
+                                <p role="status" className="w-full text-right text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                                  กำลังปิดรอบและสร้างสลิปเงินเดือนของพนักงานทุกคน อาจใช้เวลาราว 30–60 วินาที — กรุณาอย่าปิดหน้านี้
+                                </p>
+                              )}
                               </div>
                             ) : !selectedPeriod?.hasBankReceipt && (
                               <div className="pt-2 flex justify-end">
@@ -5304,8 +5316,13 @@ export default function PayrollPage() {
                                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer transition-all"
                                 >
                                   {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                                  <span>ยืนยันการจ่ายเงิน (เปลี่ยนสถานะเป็นโอนสำเร็จ)</span>
+                                  <span>{isConfirmingPayment ? 'กำลังยืนยันการจ่ายเงิน...' : 'ยืนยันการจ่ายเงิน (เปลี่ยนสถานะเป็นโอนสำเร็จ)'}</span>
                                 </button>
+                              {isConfirmingPayment && (
+                                <p role="status" className="w-full text-right text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                                  กำลังปิดรอบและสร้างสลิปเงินเดือนของพนักงานทุกคน อาจใช้เวลาราว 30–60 วินาที — กรุณาอย่าปิดหน้านี้
+                                </p>
+                              )}
                               </div>
                             )}
                           </div>
