@@ -31,6 +31,7 @@ public class AttendanceImportService : IAttendanceImportService
         long? importedByUserId = null,
         DateOnly? customDateFrom = null,
         DateOnly? customDateTo = null,
+        bool overwriteExistingPeriod = false,
         CancellationToken cancellationToken = default)
     {
         // 1. Read Stream and Compute SHA-256 Hash
@@ -162,6 +163,94 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
+        // 4.1 ตรวจสอบขอบเขตวันที่ของไฟล์ (Date Range Discovery)
+        DateOnly? detectedDateFrom = customDateFrom ?? metadataDateFrom;
+        DateOnly? detectedDateTo = customDateTo ?? metadataDateTo;
+
+        if (detectedDateFrom == null || detectedDateTo == null)
+        {
+            foreach (var (_, scanRow) in rawRows)
+            {
+                var d = GetValue(scanRow, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา")
+                    ?? GetValue(scanRow, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
+                if (d == null) continue;
+
+                DateOnly? parsed = ParseDate(d);
+                if (parsed == null && ParseDateTime(d) is DateTime pdt)
+                {
+                    var y = pdt.Year > 2400 ? pdt.Year - 543 : pdt.Year;
+                    parsed = new DateOnly(y, pdt.Month, pdt.Day);
+                }
+                if (parsed == null) continue;
+
+                if (detectedDateFrom == null || parsed < detectedDateFrom) detectedDateFrom = parsed;
+                if (detectedDateTo == null || parsed > detectedDateTo) detectedDateTo = parsed;
+            }
+        }
+
+        // 4.2 ตรวจสอบช่วงเดือน/ปีที่ทับซ้อนกับ Batch ที่มีอยู่แล้ว (Date Range / Month Overlap Check)
+        if (detectedDateFrom.HasValue && detectedDateTo.HasValue)
+        {
+            var overlappingBatch = await _context.AttendanceImportBatches
+                .Include(b => b.ImportedByUser)
+                .Where(b => b.Status != RevertedStatus && b.Status != "FAILED" && b.DateFrom != null && b.DateTo != null)
+                .Where(b => (b.DateFrom <= detectedDateTo.Value && b.DateTo >= detectedDateFrom.Value))
+                .OrderByDescending(b => b.ImportedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (overlappingBatch != null)
+            {
+                if (!overwriteExistingPeriod)
+                {
+                    var uName = overlappingBatch.ImportedByUser?.Username ?? "ผู้ดูแลระบบ";
+                    return new AttendanceImportResultDto
+                    {
+                        BatchId = 0,
+                        FileName = fileName,
+                        FileHash = fileHash,
+                        Source = source ?? "EXCEL",
+                        DateFrom = detectedDateFrom.Value.ToString("yyyy-MM-dd"),
+                        DateTo = detectedDateTo.Value.ToString("yyyy-MM-dd"),
+                        IsPeriodOverlap = true,
+                        ExistingBatchId = overlappingBatch.Id,
+                        ExistingBatchFileName = overlappingBatch.FileName,
+                        ExistingBatchImportedAt = overlappingBatch.ImportedAt,
+                        ExistingBatchImportedBy = uName,
+                        Status = "OVERLAP_CONFIRMATION_REQUIRED",
+                        Errors = new List<AttendanceImportErrorDto>
+                        {
+                            new AttendanceImportErrorDto
+                            {
+                                RowNumber = 0,
+                                ErrorMessage = $"พบข้อมูลการลงเวลาของช่วงวันที่ {detectedDateFrom:dd/MM/yyyy} ถึง {detectedDateTo:dd/MM/yyyy} ในระบบแล้ว (ไฟล์เดิม: {overlappingBatch.FileName} นำเข้าโดย {uName})",
+                                ErrorCode = "PERIOD_OVERLAP"
+                            }
+                        }
+                    };
+                }
+                else
+                {
+                    // ผู้ใช้ยืนยันเลือก "ใช้ไฟล์ใหม่ (เขียนทับ)" -> ยกเลิก (Revert) ชุดข้อมูลเดิมก่อน
+                    var allOverlappingBatches = await _context.AttendanceImportBatches
+                        .Where(b => b.Status != RevertedStatus && b.Status != "FAILED" && b.DateFrom != null && b.DateTo != null)
+                        .Where(b => (b.DateFrom <= detectedDateTo.Value && b.DateTo >= detectedDateFrom.Value))
+                        .ToListAsync(cancellationToken);
+
+                    foreach (var oldBatch in allOverlappingBatches)
+                    {
+                        try
+                        {
+                            await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
+                        }
+                        catch
+                        {
+                            // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                        }
+                    }
+                }
+            }
+        }
+
         // 5. Create Batch Entity
         var resolvedSource = !string.IsNullOrWhiteSpace(source) 
             ? source.Trim() 
@@ -175,8 +264,8 @@ public class AttendanceImportService : IAttendanceImportService
             Source = resolvedSource,
             DeviceName = !string.IsNullOrWhiteSpace(deviceName) ? deviceName.Trim() : extractedUnit,
             UnitName = extractedUnit,
-            DateFrom = customDateFrom ?? metadataDateFrom,
-            DateTo = customDateTo ?? metadataDateTo,
+            DateFrom = detectedDateFrom,
+            DateTo = detectedDateTo,
             ExportedAt = metadataExportedAt,
             ImportedByUserId = importedByUserId,
             ImportedAt = DateTime.UtcNow,

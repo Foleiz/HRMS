@@ -222,6 +222,10 @@ function DailyAttendanceContent() {
   const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null);
   const [isFormatModalOpen, setIsFormatModalOpen] = useState<boolean>(false);
 
+  // Period Overlap Confirmation Modal State
+  const [overlapModalOpen, setOverlapModalOpen] = useState<boolean>(false);
+  const [overlapData, setOverlapData] = useState<AttendanceImportResult | null>(null);
+
   // Batches Table State
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
   const [isLoadingBatches, setIsLoadingBatches] = useState<boolean>(false);
@@ -684,7 +688,7 @@ function DailyAttendanceContent() {
     }
   };
 
-  const handleUploadSubmit = async () => {
+  const handleUploadSubmit = async (overwrite: boolean = false) => {
     if (!selectedFile) return;
 
     try {
@@ -698,11 +702,26 @@ function DailyAttendanceContent() {
         fileExt,
         undefined,
         false,
-        (percent) => setUploadProgress(percent)
+        (percent) => setUploadProgress(percent),
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        overwrite
       );
+
+      // กรณีพบว่าช่วงเดือน/ปีของไฟล์ซ้ำกับที่มีอยู่แล้วในระบบ และยังไม่ได้กดเลือกเขียนทับ
+      if (res.data?.isPeriodOverlap && !overwrite) {
+        setOverlapData(res.data);
+        setOverlapModalOpen(true);
+        setIsUploading(false);
+        return;
+      }
 
       if (res.success && res.data) {
         setSelectedFile(null);
+        setOverlapModalOpen(false);
+        setOverlapData(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
 
         let periodLabel = '';
@@ -720,8 +739,11 @@ function DailyAttendanceContent() {
             periodLabel || 'พบรายการที่รหัสพนักงานไม่ตรงกับข้อมูลในระบบ'
           );
         } else {
+          const successNotice = overwrite 
+            ? `นำเข้าข้อมูลไฟล์ใหม่สำเร็จและเขียนทับข้อมูลเดิมเรียบร้อย (${res.data.successRecords.toLocaleString()} รายการ)`
+            : `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords.toLocaleString()} รายการ)`;
           toast.success(
-            `นำเข้าข้อมูลสำเร็จครบถ้วน (${res.data.successRecords.toLocaleString()} รายการ)`,
+            successNotice,
             periodLabel ? `${periodLabel} • ข้อมูลพร้อมใช้คำนวณเงินเดือนทันที` : 'ข้อมูลบันทึกเวลาพร้อมใช้งานทันที'
           );
         }
@@ -1682,7 +1704,7 @@ function DailyAttendanceContent() {
                 <button
                   type="button"
                   disabled={!selectedFile || isUploading}
-                  onClick={handleUploadSubmit}
+                  onClick={() => handleUploadSubmit(false)}
                   className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
                     !selectedFile || isUploading
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
@@ -3641,6 +3663,113 @@ function DailyAttendanceContent() {
                   <>
                     <X className="w-4 h-4" />
                     ยืนยันปฏิเสธคำขอ
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: ยืนยันการนำเข้าไฟล์เดือน/ปีที่ซ้ำซ้อน (เลือกใช้ไฟล์ใหม่หรือไฟล์เก่า) */}
+      {overlapModalOpen && overlapData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                  ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  ช่วงเวลาในไฟล์ที่กำลังนำเข้าทับซ้อนกับข้อมูลที่มีอยู่แล้ว คุณต้องการใช้ไฟล์ใหม่นี้เขียนทับข้อมูลเดิม หรือต้องการใช้ไฟล์เก่าต่อไป?
+                </p>
+              </div>
+            </div>
+
+            {/* Comparison Cards */}
+            <div className="space-y-3">
+              {/* Existing File Info */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                    <span>ไฟล์เดิมในระบบ</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    Batch #{overlapData.existingBatchId}
+                  </span>
+                </div>
+                <div className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+                  {overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>นำเข้าโดย: <strong className="text-slate-700 dark:text-slate-300">{overlapData.existingBatchImportedBy || 'ผู้ดูแลระบบ'}</strong></span>
+                  {overlapData.existingBatchImportedAt && (
+                    <span>เมื่อ: {new Date(overlapData.existingBatchImportedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} น.</span>
+                  )}
+                </div>
+              </div>
+
+              {/* New Uploading File Info */}
+              <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-800/50 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold text-blue-800 dark:text-blue-300">
+                  <span className="flex items-center gap-1.5">
+                    <UploadCloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>ไฟล์ใหม่ที่กำลังนำเข้า</span>
+                  </span>
+                  <span className="text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded-full">
+                    ไฟล์ใหม่
+                  </span>
+                </div>
+                <div className="text-sm font-bold text-blue-950 dark:text-blue-100 truncate">
+                  {selectedFile?.name || overlapData.fileName}
+                </div>
+                <div className="text-[11px] text-blue-700 dark:text-blue-300">
+                  ช่วงวันที่: {overlapData.dateFrom && formatDateThai(overlapData.dateFrom)} ถึง {overlapData.dateTo && formatDateThai(overlapData.dateTo)}
+                </div>
+              </div>
+            </div>
+
+            {/* Warning Note */}
+            <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+              * หากเลือก <strong>&ldquo;ใช้ไฟล์ใหม่&rdquo;</strong> ข้อมูลเวลาทำงานเดิมของช่วงวันที่นี้จะถูกแทนที่ด้วยข้อมูลจากไฟล์ใหม่ทันที
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={() => {
+                  setOverlapModalOpen(false);
+                  setOverlapData(null);
+                  setSelectedFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                  toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold transition cursor-pointer"
+              >
+                ใช้ไฟล์เก่า (ยกเลิกการอัปโหลด)
+              </button>
+              <button
+                type="button"
+                disabled={isUploading}
+                onClick={() => handleUploadSubmit(true)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>กำลังเขียนทับข้อมูล...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>ใช้ไฟล์ใหม่ (เขียนทับข้อมูลเดิม)</span>
                   </>
                 )}
               </button>

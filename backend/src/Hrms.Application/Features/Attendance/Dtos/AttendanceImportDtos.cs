@@ -50,6 +50,11 @@ public class AttendanceImportResultDto
     public string? DateFrom { get; set; }
     public string? DateTo { get; set; }
     public bool IsDuplicate { get; set; }
+    public bool IsPeriodOverlap { get; set; }
+    public long? ExistingBatchId { get; set; }
+    public string? ExistingBatchFileName { get; set; }
+    public DateTime? ExistingBatchImportedAt { get; set; }
+    public string? ExistingBatchImportedBy { get; set; }
     public List<AttendanceImportErrorDto> Errors { get; set; } = new();
 }
 
