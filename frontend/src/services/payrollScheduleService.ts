@@ -95,17 +95,18 @@ export const calculatePeriodDatesFromSettings = (
   }
   const paymentDateStr = `${safeYear}-${String(safeMonth).padStart(2, '0')}-${String(payDay).padStart(2, '0')}`;
 
-  // 4. วันตัดรอบเงินเบิกสวัสดิการ
+  // 4. วันตัดรอบเงินเบิกสวัสดิการ (ต้องไม่เกินวันกำหนดจ่ายเงิน แม้เลื่อนเสาร์-อาทิตย์เข้ามา)
   let claimCutoffStr = paymentDateStr;
   if (settings.claimCutoffType === 'CUSTOM_DAY') {
-    const cutoffDay = Math.min(Math.max(1, settings.claimCutoffDay), daysInMonth);
+    const rawCutoffDay = Math.min(Math.max(1, settings.claimCutoffDay), daysInMonth);
+    const cutoffDay = Math.min(rawCutoffDay, payDay);
     claimCutoffStr = `${safeYear}-${String(safeMonth).padStart(2, '0')}-${String(cutoffDay).padStart(2, '0')}`;
   }
 
   return {
     year: safeYear,
     month: safeMonth,
-    periodName: `รอบเดือน${thaiMonthName} ${thaiYear}`,
+    periodName: `${thaiMonthName} ${thaiYear}`,
     thaiMonthName,
     thaiYear,
     startDate: startDateStr,

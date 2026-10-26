@@ -5,11 +5,8 @@ import {
   CalendarClock,
   Save,
   CheckCircle2,
-  Calendar,
   Sparkles,
   Info,
-  ArrowRight,
-  ShieldAlert,
   Clock,
   RotateCcw
 } from 'lucide-react';
@@ -18,28 +15,18 @@ import {
   DEFAULT_PAYROLL_SCHEDULE_SETTINGS,
   getPayrollScheduleSettings,
   savePayrollScheduleSettings,
-  calculatePeriodDatesFromSettings,
-  THAI_MONTH_NAMES,
 } from '@/services/payrollScheduleService';
-import { PayrollPeriod } from '@/types/payroll';
 import { useToast } from '@/context/ToastContext';
 
 interface PayrollScheduleTabProps {
-  periods: PayrollPeriod[];
-  onOpenPeriodInProcess?: (periodId: number) => void;
-  onCreatePeriodForMonth?: (year: number, month: number) => void;
   canEdit?: boolean;
 }
 
 export default function PayrollScheduleTab({
-  periods,
-  onOpenPeriodInProcess,
-  onCreatePeriodForMonth,
   canEdit = true,
 }: PayrollScheduleTabProps) {
   const toast = useToast();
   const [settings, setSettings] = useState<PayrollScheduleSettings>(DEFAULT_PAYROLL_SCHEDULE_SETTINGS);
-  const [selectedPreviewYear, setSelectedPreviewYear] = useState<number>(() => new Date().getFullYear());
   const [isSavedRecently, setIsSavedRecently] = useState<boolean>(false);
 
   useEffect(() => {
@@ -58,19 +45,6 @@ export default function PayrollScheduleTab({
     savePayrollScheduleSettings(DEFAULT_PAYROLL_SCHEDULE_SETTINGS);
     toast.success('รีเซ็ตการตั้งค่าเป็นค่าเริ่มต้นของระบบแล้ว');
   };
-
-  // Generate 12 months preview for the selected year
-  const previewRows = Array.from({ length: 12 }, (_, i) => {
-    const month = i + 1;
-    const computed = calculatePeriodDatesFromSettings(selectedPreviewYear, month, settings);
-    const existing = periods.find((p) => p.year === selectedPreviewYear && p.month === month);
-    return {
-      month,
-      thaiMonth: THAI_MONTH_NAMES[i],
-      computed,
-      existing,
-    };
-  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -358,131 +332,6 @@ export default function PayrollScheduleTab({
             <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <span>คำขอเบิกสวัสดิการที่อนุมัติหลังวันตัดรอบนี้ จะถูกยกยอดไปจ่ายในรอบเงินเดือนถัดไปโดยอัตโนมัติ</span>
           </div>
-        </div>
-      </div>
-
-      {/* Annual Simulation Table (พรีวิวตารางรอบเงินเดือน 12 เดือนของปี) */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
-        <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center font-bold">
-              <Calendar className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                ตัวอย่างจำลองรอบเงินเดือนประจำปี พ.ศ. {selectedPreviewYear + 543} (ทั้ง 12 เดือน)
-              </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                ตารางแสดงวันที่ที่ระบบจะใช้สร้างรอบเงินเดือนของแต่ละเดือนตามกฎที่กำหนดไว้ข้างต้น
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">ดูตัวอย่างของปี:</span>
-            <select
-              value={selectedPreviewYear}
-              onChange={(e) => setSelectedPreviewYear(Number(e.target.value))}
-              className="px-3 py-1.5 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-none"
-            >
-              {[selectedPreviewYear - 1, selectedPreviewYear, selectedPreviewYear + 1, selectedPreviewYear + 2].map((y) => (
-                <option key={y} value={y}>
-                  ปี {y + 543}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="table-standard w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-500 dark:text-slate-400">
-                <th className="py-3 px-4 w-12 text-center">เดือน</th>
-                <th className="py-3 px-4">ชื่อรอบเงินเดือน</th>
-                <th className="py-3 px-4">วันเริ่มคำนวณ</th>
-                <th className="py-3 px-4">วันสิ้นสุดคำนวณ</th>
-                <th className="py-3 px-4">วันกำหนดจ่ายเงิน</th>
-                <th className="py-3 px-4">วันตัดรอบเงินเบิกสวัสดิการ</th>
-                <th className="py-3 px-4 text-center">สถานะในระบบ</th>
-                <th className="py-3 px-4 text-center">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
-              {previewRows.map((row) => {
-                const [sy, sm, sd] = row.computed.startDate.split('-');
-                const [ey, em, ed] = row.computed.endDate.split('-');
-                const [py, pm, pd] = row.computed.paymentDate.split('-');
-                const [cy, cm, cd] = row.computed.claimCutoffDate.split('-');
-
-                const hasCreated = !!row.existing;
-
-                return (
-                  <tr
-                    key={row.month}
-                    className={`hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors ${
-                      hasCreated ? 'bg-blue-50/30 dark:bg-blue-950/15' : ''
-                    }`}
-                  >
-                    <td className="py-3 px-4 text-center font-bold text-slate-400 font-mono">
-                      {String(row.month).padStart(2, '0')}
-                    </td>
-                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
-                      {row.computed.periodName}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                      {sd}/{sm}/{Number(sy) + 543}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-                      {ed}/{em}/{Number(ey) + 543}
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px]">
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                        {pd}/{pm}/{Number(py) + 543}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                      {cd}/{cm}/{Number(cy) + 543}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {hasCreated ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                          <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                          <span>สร้างแล้ว ({row.existing?.statusText || row.existing?.status})</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
-                          ยังไม่มีรอบ
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {hasCreated ? (
-                        <button
-                          type="button"
-                          onClick={() => onOpenPeriodInProcess?.(row.existing!.id)}
-                          className="px-2.5 py-1 text-xs font-semibold text-[#0B2046] dark:text-blue-400 hover:underline cursor-pointer inline-flex items-center gap-1"
-                        >
-                          <span>เปิดดู</span>
-                          <ArrowRight className="w-3 h-3" />
-                        </button>
-                      ) : (
-                        canEdit && (
-                          <button
-                            type="button"
-                            onClick={() => onCreatePeriodForMonth?.(selectedPreviewYear, row.month)}
-                            className="px-2.5 py-1 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-[11px] font-semibold transition-all cursor-pointer shadow-2xs inline-flex items-center gap-1"
-                          >
-                            <span>สร้างรอบนี้</span>
-                          </button>
-                        )
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
