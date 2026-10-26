@@ -230,6 +230,7 @@ function DailyAttendanceContent() {
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
   const [isLoadingBatches, setIsLoadingBatches] = useState<boolean>(false);
   const [batchPage, setBatchPage] = useState<number>(1);
+  const [batchPageSize, setBatchPageSize] = useState<number>(10);
   const [batchTotalPages, setBatchTotalPages] = useState<number>(1);
   const [batchTotalCount, setBatchTotalCount] = useState<number>(0);
   const [filterSource, setFilterSource] = useState<string>('ALL');
@@ -435,7 +436,7 @@ function DailyAttendanceContent() {
       setIsLoadingBatches(true);
       const res = await attendanceImportService.getBatches({
         page: batchPage,
-        pageSize: 10,
+        pageSize: batchPageSize,
         source: filterSource,
         status: filterBatchStatus,
         search: batchSearchQuery || undefined,
@@ -460,7 +461,7 @@ function DailyAttendanceContent() {
     if (activeTab === 'import') {
       loadBatches();
     }
-  }, [activeTab, batchPage, filterSource, filterBatchStatus]);
+  }, [activeTab, batchPage, batchPageSize, filterSource, filterBatchStatus]);
 
   // Fetch initial batch info on mount to restrict calendar to document date range
   useEffect(() => {
@@ -2025,20 +2026,45 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
-              <div className="flex items-center gap-3">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <CustomSelect
+                    value={batchPageSize}
+                    onChange={(e) => {
+                      setBatchPageSize(Number(e.target.value));
+                      setBatchPage(1);
+                    }}
+                    className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </CustomSelect>
+                  <span>แถวต่อหน้า</span>
+                </div>
+
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+
                 <div>
                   แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{batchPage}</span> จาก{' '}
                   <span className="font-bold text-slate-800 dark:text-slate-200">{batchTotalPages || 1}</span> หน้า
+                  {batchTotalCount > 0 && (
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
+                      (ทั้งหมด {batchTotalCount.toLocaleString()} รายการ)
+                    </span>
+                  )}
                 </div>
+
                 {batchTotalPages > 1 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="text-slate-300">|</span>
-                    <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">ไปที่หน้า:</span>
+                    <span className="text-slate-300 dark:text-slate-600">|</span>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">ไปที่หน้า:</span>
                     <CustomSelect
                       value={batchPage}
                       onChange={(e) => setBatchPage(Number(e.target.value))}
-                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700"
                     >
                       {Array.from({ length: batchTotalPages }, (_, i) => i + 1).map((p) => (
                         <option key={p} value={p}>
@@ -2054,14 +2080,16 @@ function DailyAttendanceContent() {
                 <button
                   disabled={batchPage <= 1}
                   onClick={() => setBatchPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 cursor-pointer"
+                  title="หน้าก่อนหน้า"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   disabled={batchPage >= batchTotalPages}
                   onClick={() => setBatchPage((p) => Math.min(batchTotalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
+                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 cursor-pointer"
+                  title="หน้าถัดไป"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
