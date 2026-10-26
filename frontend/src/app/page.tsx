@@ -62,10 +62,15 @@ export default function HomePage() {
   }, [user, hasPermission]);
 
   const [activeRole, setActiveRole] = useState<DashboardRole>('EMPLOYEE');
+  const initializedForUserRef = React.useRef<string | number | null>(null);
 
   useEffect(() => {
     if (user && allowedDashboards.length > 0) {
-      if (!allowedDashboards.includes(activeRole)) {
+      const uid = user.id || user.username || 'current';
+      if (initializedForUserRef.current !== uid) {
+        initializedForUserRef.current = uid;
+        setActiveRole(allowedDashboards[0]);
+      } else if (!allowedDashboards.includes(activeRole)) {
         setActiveRole(allowedDashboards[0]);
       }
     }
@@ -116,35 +121,34 @@ export default function HomePage() {
         <Navbar />
 
         {/* Dashboard Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 w-full max-w-[1500px] mx-auto">
-          {/* Main 2-Column Responsive Layout */}
-          <div className="flex flex-col lg:flex-row gap-5 items-stretch">
-            
-            {/* Left / Center Main Content (flex-1) */}
-            <div className="flex-1 w-full flex flex-col gap-4 min-w-0">
-              {/* Greeting Banner */}
+        <main className="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-5 w-full">
+          {!hasDataModulePermission ? (
+            <div className="flex flex-col gap-4">
               <GreetingBanner displayName={displayName} />
-
-              {!hasDataModulePermission ? (
-                /* กล่องแจ้งเตือนเมื่อติ๊กเฉพาะแดชบอร์ด แต่ไม่ได้เลือกหัวข้อข้อมูลอื่นใด */
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-8 sm:p-14 text-center shadow-xs flex flex-col items-center justify-center my-2">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-5 shadow-xs">
-                    <ShieldAlert className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2.5">
-                    คุณไม่มีสิทธิ์การเข้าถึงข้อมูล
-                  </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-lg leading-relaxed mb-6">
-                    บทบาทของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงข้อมูลสถิติหรือโมดูลใดๆ ในระบบ 
-                    หากต้องการดูข้อมูลสรุป กรุณาติดต่อผู้ดูแลระบบ (Admin) หรือฝ่ายทรัพยากรบุคคลเพื่อขอเปิดสิทธิ์ในโมดูลที่ต้องการใช้งาน
-                  </p>
+              {/* กล่องแจ้งเตือนเมื่อติ๊กเฉพาะแดชบอร์ด แต่ไม่ได้เลือกหัวข้อข้อมูลอื่นใด */}
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-8 sm:p-14 text-center shadow-xs flex flex-col items-center justify-center my-2">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 flex items-center justify-center text-amber-600 mb-5 shadow-xs">
+                  <ShieldAlert className="w-8 h-8" />
                 </div>
-              ) : (
-                <>
-                  {/* Middle Row: 6 Stat Cards (Left) + Upcoming Events Box (Right) */}
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2.5">
+                  คุณไม่มีสิทธิ์การเข้าถึงข้อมูล
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-lg leading-relaxed mb-6">
+                  บทบาทของคุณยังไม่ได้รับการกำหนดสิทธิ์ในการเข้าถึงข้อมูลสถิติหรือโมดูลใดๆ ในระบบ 
+                  หากต้องการดูข้อมูลสรุป กรุณาติดต่อผู้ดูแลระบบ (Admin) หรือฝ่ายทรัพยากรบุคคลเพื่อขอเปิดสิทธิ์ในโมดูลที่ต้องการใช้งาน
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 min-h-full">
+              {/* Top Row: Left (GreetingBanner + 6 Stat Cards + UpcomingEvents) aligned at bottom with Right (CalendarWidget) */}
+              <div className="flex flex-col lg:flex-row gap-4 items-stretch shrink-0">
+                <div className="flex-1 w-full flex flex-col gap-4 min-w-0">
+                  <GreetingBanner displayName={displayName} />
+
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch flex-1">
                     {/* 6 Stat Cards: spans 2 cols on xl */}
-                    <div className="xl:col-span-2">
+                    <div className="xl:col-span-2 h-full">
                       {activeRole === 'EMPLOYEE' ? (
                         <EmployeeStatCards />
                       ) : (
@@ -153,45 +157,30 @@ export default function HomePage() {
                     </div>
 
                     {/* Upcoming Events Widget: spans 1 col on xl */}
-                    <div className="xl:col-span-1">
+                    <div className="xl:col-span-1 h-full">
                       <UpcomingEventsWidget />
                     </div>
                   </div>
+                </div>
 
-                  {/* Bottom Row: Personal Recent Transactions Table (Self Only) */}
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <RecentTransactionsTable />
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Right Column: Widgets Stack (แสดงเฉพาะเมื่อมีสิทธิ์ในโมดูลข้อมูล) */}
-            {hasDataModulePermission && (
-              <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
-                {activeRole === 'EMPLOYEE' ? (
-                  <>
-                    <div className="shrink-0">
-                      <CalendarWidget />
-                    </div>
-                    <div className="flex-1 flex flex-col min-h-0">
-                      <NewsWidget />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="shrink-0">
-                      <NotificationsWidget role={activeRole} />
-                    </div>
-                    <div className="flex-1 flex flex-col min-h-0">
-                      <AttendancePieChart role={activeRole} />
-                    </div>
-                  </>
-                )}
+                {/* Right Top: Calendar Widget */}
+                <div className="w-full lg:w-80 shrink-0 flex flex-col">
+                  <CalendarWidget />
+                </div>
               </div>
-            )}
 
-          </div>
+              {/* Bottom Row: Left (RecentTransactionsTable) aligned at top with Right (NewsWidget) */}
+              <div className="flex flex-col lg:flex-row gap-4 items-stretch flex-1 min-h-0">
+                <div className="flex-1 w-full flex flex-col min-h-0 min-w-0">
+                  <RecentTransactionsTable />
+                </div>
+
+                <div className="w-full lg:w-80 shrink-0 flex flex-col min-h-0">
+                  <NewsWidget />
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -23,13 +23,15 @@ export const attendanceImportService = {
     dateFrom?: string,
     dateTo?: string,
     targetYear?: number,
-    targetMonth?: number
+    targetMonth?: number,
+    overwriteExistingPeriod: boolean = false
   ): Promise<ApiResponse<AttendanceImportResult>> {
     const formData = new FormData();
     formData.append('file', file);
     if (source) formData.append('source', source);
     if (deviceName) formData.append('deviceName', deviceName);
     formData.append('allowDuplicate', String(allowDuplicate));
+    formData.append('overwriteExistingPeriod', String(overwriteExistingPeriod));
     if (dateFrom) formData.append('dateFrom', dateFrom);
     if (dateTo) formData.append('dateTo', dateTo);
     if (targetYear) formData.append('targetYear', String(targetYear));

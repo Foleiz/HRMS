@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { UserProfile } from '@/types/auth';
@@ -59,7 +59,7 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
 
 export const GreetingBanner: React.FC<{ displayName: string }> = ({ displayName }) => {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] p-7 text-white shadow-md flex items-center min-h-[90px]">
+    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] p-7 text-white shadow-md flex items-center min-h-[96px] shrink-0">
       <div className="relative z-10">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
           สวัสดี <span className="underline decoration-2 underline-offset-4">{displayName}</span>, หวังว่าจะเป็นวันที่ดี !

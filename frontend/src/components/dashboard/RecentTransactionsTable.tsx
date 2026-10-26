@@ -386,14 +386,14 @@ export const RecentTransactionsTable: React.FC = () => {
 
       {/* Table Content */}
       <div className="overflow-x-auto flex-1 min-h-0">
-        <table className="table-standard w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+        <table className="table-standard md:table-fixed w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
           <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0 whitespace-nowrap">
             <tr>
-              <th className="py-3 px-5 whitespace-nowrap">รหัสเอกสาร</th>
-              <th className="py-3 px-5 whitespace-nowrap">วันที่กรอกเอกสาร</th>
-              <th className="py-3 px-5 whitespace-nowrap">ระยะเวลาในการลา</th>
-              <th className="py-3 px-5 whitespace-nowrap">ประเภทเอกสาร</th>
-              <th className="py-3 px-5 whitespace-nowrap">สถานะเอกสาร</th>
+              <th className="py-3 px-5 w-[18%] whitespace-nowrap">รหัสเอกสาร</th>
+              <th className="py-3 px-5 w-[18%] whitespace-nowrap">วันที่กรอกเอกสาร</th>
+              <th className="py-3 px-5 w-[28%] whitespace-nowrap">ระยะเวลาในการลา</th>
+              <th className="py-3 px-5 w-[20%] whitespace-nowrap">ประเภทเอกสาร</th>
+              <th className="py-3 px-5 w-[16%] text-center whitespace-nowrap">สถานะเอกสาร</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -419,19 +419,19 @@ export const RecentTransactionsTable: React.FC = () => {
             ) : (
               paginatedItems.map((item) => (
                 <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                  <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400">
+                  <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400 truncate">
                     {item.documentCode}
                   </td>
-                  <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400">
+                  <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400 truncate">
                     {item.createdDate}
                   </td>
-                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300">
+                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 truncate">
                     {item.duration}
                   </td>
-                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300">
+                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 truncate">
                     {item.documentType}
                   </td>
-                  <td className="py-3.5 px-5">
+                  <td className="py-3.5 px-5 text-center">
                     {renderStatusBadge(item.status)}
                   </td>
                 </tr>

@@ -6,6 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import { reportService } from '@/services/reportService';
 import { leaveService } from '@/services/leaveService';
 import { employeeService } from '@/services/employeeService';
+import { contractService } from '@/services/contractService';
+import { certificateService } from '@/services/certificateService';
+import { salaryService } from '@/services/salaryService';
+import { commissionService } from '@/services/commissionService';
+import { attendanceService } from '@/services/attendanceService';
 import { DailyHeadcountSummary } from '@/types/reports';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
 
@@ -15,10 +20,21 @@ interface ManagerStatCardsProps {
 
 interface StatConfig {
   title: string;
-  value: number;
+  value: string | number;
   unit: string;
   bgClass: string;
   borderClass: string;
+}
+
+function formatCompactCurrency(amount: number): string {
+  if (!amount || amount <= 0) return '0';
+  if (amount >= 1_000_000) {
+    return `${(amount / 1_000_000).toFixed(2).replace(/\.00$/, '')}M`;
+  }
+  if (amount >= 10_000) {
+    return `${(amount / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  }
+  return amount.toLocaleString('th-TH');
 }
 
 export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
@@ -26,11 +42,19 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState({
     headcount: 0,
-    present: 0,
-    onLeave: 0,
-    pending: 0,
+    permanentCount: 0,
+    probationCount: 0,
+    onLeaveToday: 0,
+    approvedThisMonth: 0,
+    pendingDocs: 0,
     submittedToday: 0,
-    approved: 0,
+    probationExpiring7Days: 0,
+    contractExpiring30Days: 0,
+    latestPayrollStatus: 'รอคำนวณ',
+    latestPayrollTotal: 0,
+    commissionAndOtTotal: 0,
+    joinedThisMonth: 0,
+    resignedThisMonth: 0,
   });
 
   useEffect(() => {
@@ -40,14 +64,36 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
       setLoading(true);
       try {
         const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1;
+        const todayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
-        // 1. ดึงข้อมูลจาก backend พร้อมกัน
-        const [headcountRes, leaveStatsRes, leaveRequestsRes, empProfileRes] = await Promise.allSettled([
+        // ดึงข้อมูลจริงจาก backend พร้อมกัน (ไม่ต้องพึ่งการสแกนนิ้ว Real-time รายวัน)
+        const [
+          headcountRes,
+          leaveStatsRes,
+          leaveRequestsRes,
+          empProfileRes,
+          contractStatsRes,
+          activeContractsRes,
+          certRequestsRes,
+          payrollOverviewRes,
+          payrollPeriodsRes,
+          commissionRes,
+          turnoverRes,
+        ] = await Promise.allSettled([
           reportService.getDailyHeadcount(),
           leaveService.getLeaveStats(),
           leaveService.getLeaveRequests({ pageSize: 100 }),
           user?.employeeId ? employeeService.getById(user.employeeId) : Promise.resolve(null),
+          contractService.getStats(),
+          contractService.getAll({ status: 'ACTIVE' }),
+          certificateService.getAllRequests('PENDING'),
+          salaryService.getOverview(),
+          salaryService.getPayrollPeriods(),
+          commissionService.getCommissionPeriod(currentYear, currentMonth),
+          reportService.getMonthlyTurnover(currentYear, currentMonth),
         ]);
 
         const headcount: DailyHeadcountSummary | null =
@@ -60,20 +106,31 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             : [];
         const empProfile =
           empProfileRes.status === 'fulfilled' ? empProfileRes.value : null;
+        const contractStats =
+          contractStatsRes.status === 'fulfilled' ? contractStatsRes.value : null;
+        const activeContracts =
+          activeContractsRes.status === 'fulfilled' && Array.isArray(activeContractsRes.value)
+            ? activeContractsRes.value
+            : [];
+        const pendingCerts =
+          certRequestsRes.status === 'fulfilled' && Array.isArray(certRequestsRes.value)
+            ? certRequestsRes.value
+            : [];
+        const payrollOverview =
+          payrollOverviewRes.status === 'fulfilled' ? payrollOverviewRes.value : null;
+        const payrollPeriods =
+          payrollPeriodsRes.status === 'fulfilled' && Array.isArray(payrollPeriodsRes.value)
+            ? payrollPeriodsRes.value
+            : [];
+        const commissionSummary =
+          commissionRes.status === 'fulfilled' ? commissionRes.value : null;
+        const turnoverSummary =
+          turnoverRes.status === 'fulfilled' ? turnoverRes.value : null;
 
-        // ระบุสังกัดของ User
         const userDeptName = empProfile?.departmentName || '';
         const userDivName = empProfile?.divisionName || '';
 
-        // 2. คำนวณตาม Scope ของแต่ละ Role
-        let targetHeadcount = 0;
-        let targetPresent = 0;
-        let targetOnLeave = 0;
-        let targetPending = 0;
-        let targetSubmittedToday = 0;
-        let targetApproved = 0;
-
-        // กรองคำร้องขอลา
+        // กรองคำร้องขอลาที่อนุมัติแล้วซึ่งครอบคลุมวันนี้
         const activeLeavesToday = allRequests.filter((r) => {
           if (r.status !== 'APPROVED') return false;
           const start = r.startDatetime ? r.startDatetime.substring(0, 10) : '';
@@ -81,49 +138,79 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           return todayStr >= start && todayStr <= end;
         });
 
+        const approvedThisMonthRequests = allRequests.filter((r) => {
+          if (r.status !== 'APPROVED') return false;
+          const start = r.startDatetime ? r.startDatetime.substring(0, 7) : '';
+          return start === monthPrefix;
+        });
+
         const submittedTodayRequests = allRequests.filter((r) => {
           const subDate = (r.submittedAt || (r as any).createdAt || '').substring(0, 10);
           return subDate === todayStr;
         });
 
-        const approvedRequests = allRequests.filter((r) => r.status === 'APPROVED');
         const pendingRequests = allRequests.filter((r) => r.status === 'PENDING');
 
+        // สัญญาจ้างใกล้หมดใน 30 วัน & ทดลองงานใกล้ครบใน 7 วัน
+        const in30Days = new Date();
+        in30Days.setDate(today.getDate() + 30);
+        const in7Days = new Date();
+        in7Days.setDate(today.getDate() + 7);
+
+        let targetHeadcount = 0;
+        let targetOnLeaveToday = 0;
+        let targetApprovedMonth = 0;
+        let targetPendingDocs = 0;
+        let targetSubmittedToday = 0;
+        let targetProbation7Days = contractStats?.probationExpiring7DaysCount ?? 0;
+
+        const expiringContracts30 = activeContracts.filter((c) => {
+          if (!c.contractEndDate) return false;
+          const end = new Date(c.contractEndDate);
+          return end >= today && end <= in30Days;
+        });
+
         if (role === 'DEPT_MGR') {
-          // --- ระดับแผนก (Department Head) ---
-          const dept = headcount?.departments?.find(
-            (d) =>
-              (userDeptName && d.departmentName.includes(userDeptName)) ||
-              d.departmentCode === 'DEPT_SW' ||
-              d.totalHeadcount > 0
-          ) || headcount?.departments?.[0];
+          const dept =
+            headcount?.departments?.find(
+              (d) =>
+                (userDeptName && d.departmentName.includes(userDeptName)) ||
+                d.departmentCode === 'DEPT_SW' ||
+                d.totalHeadcount > 0
+            ) || headcount?.departments?.[0];
 
           targetHeadcount = dept?.totalHeadcount ?? 0;
-          targetPresent = dept?.presentCount ?? 0;
 
-          // คำขอลาของแผนก
           const deptLeaveToday = activeLeavesToday.filter(
             (r) => !dept || r.departmentName?.includes(dept.departmentName)
           );
-          targetOnLeave = deptLeaveToday.length;
+          targetOnLeaveToday = deptLeaveToday.length;
+
+          const deptAppMonth = approvedThisMonthRequests.filter(
+            (r) => !dept || r.departmentName?.includes(dept.departmentName)
+          );
+          targetApprovedMonth = deptAppMonth.length;
 
           const deptPending = pendingRequests.filter(
             (r) => !dept || r.departmentName?.includes(dept.departmentName)
           );
-          targetPending = deptPending.length;
+          targetPendingDocs = deptPending.length;
 
           const deptSubToday = submittedTodayRequests.filter(
             (r) => !dept || r.departmentName?.includes(dept.departmentName)
           );
           targetSubmittedToday = deptSubToday.length;
 
-          const deptApp = approvedRequests.filter(
-            (r) => !dept || r.departmentName?.includes(dept.departmentName)
-          );
-          targetApproved = deptApp.length;
-
+          const deptProbation = activeContracts.filter((c) => {
+            if (!c.probationEndDate) return false;
+            if (dept && c.departmentName && !c.departmentName.includes(dept.departmentName)) {
+              return false;
+            }
+            const pEnd = new Date(c.probationEndDate);
+            return pEnd >= today && pEnd <= in7Days;
+          });
+          targetProbation7Days = deptProbation.length;
         } else if (role === 'DIV_MGR') {
-          // --- ระดับฝ่าย (Division Head) ---
           const divDepts = (headcount?.departments || []).filter(
             (d) =>
               !userDivName ||
@@ -131,48 +218,91 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
               d.divisionName.includes('เทคโนโลยี')
           );
 
-          targetHeadcount = divDepts.reduce((acc, d) => acc + d.totalHeadcount, 0) || headcount?.totalEmployees || 0;
-          targetPresent = divDepts.reduce((acc, d) => acc + d.presentCount, 0) || headcount?.totalPresent || 0;
+          targetHeadcount =
+            divDepts.reduce((acc, d) => acc + d.totalHeadcount, 0) ||
+            headcount?.totalEmployees ||
+            0;
 
           const divDeptNames = divDepts.map((d) => d.departmentName);
           const divLeaveToday = activeLeavesToday.filter(
-            (r) => divDeptNames.length === 0 || divDeptNames.some((dn) => r.departmentName?.includes(dn))
+            (r) =>
+              divDeptNames.length === 0 ||
+              divDeptNames.some((dn) => r.departmentName?.includes(dn))
           );
-          targetOnLeave = divLeaveToday.length;
+          targetOnLeaveToday = divLeaveToday.length;
+
+          const divAppMonth = approvedThisMonthRequests.filter(
+            (r) =>
+              divDeptNames.length === 0 ||
+              divDeptNames.some((dn) => r.departmentName?.includes(dn))
+          );
+          targetApprovedMonth = divAppMonth.length;
 
           const divPending = pendingRequests.filter(
-            (r) => divDeptNames.length === 0 || divDeptNames.some((dn) => r.departmentName?.includes(dn))
+            (r) =>
+              divDeptNames.length === 0 ||
+              divDeptNames.some((dn) => r.departmentName?.includes(dn))
           );
-          targetPending = divPending.length;
+          targetPendingDocs = divPending.length;
 
           const divSubToday = submittedTodayRequests.filter(
-            (r) => divDeptNames.length === 0 || divDeptNames.some((dn) => r.departmentName?.includes(dn))
+            (r) =>
+              divDeptNames.length === 0 ||
+              divDeptNames.some((dn) => r.departmentName?.includes(dn))
           );
           targetSubmittedToday = divSubToday.length;
-
-          const divApp = approvedRequests.filter(
-            (r) => divDeptNames.length === 0 || divDeptNames.some((dn) => r.departmentName?.includes(dn))
-          );
-          targetApproved = divApp.length;
-
         } else {
-          // --- ระดับองค์กร (CEO / ADMIN) ---
-          targetHeadcount = headcount?.totalEmployees ?? 0;
-          targetPresent = headcount?.totalPresent ?? 0;
-          targetOnLeave = activeLeavesToday.length;
-          targetPending = leaveStats?.pendingRequestsCount ?? pendingRequests.length;
+          // ระดับองค์กร (ADMIN / CEO)
+          targetHeadcount = headcount?.totalEmployees ?? contractStats?.totalActiveCount ?? 0;
+          targetOnLeaveToday = activeLeavesToday.length;
+          targetApprovedMonth =
+            leaveStats?.approvedThisMonthCount ?? approvedThisMonthRequests.length;
+          targetPendingDocs =
+            (leaveStats?.pendingRequestsCount ?? pendingRequests.length) +
+            pendingCerts.length;
           targetSubmittedToday = submittedTodayRequests.length;
-          targetApproved = leaveStats?.approvedThisMonthCount ?? approvedRequests.length;
         }
+
+        // ข้อมูลงวดเงินเดือนล่าสุด & คอมมิชชั่น (สำหรับ ADMIN / CEO)
+        const latestPeriod = payrollPeriods[0];
+        let latestStatusLabel = 'ยังไม่มีงวด';
+        let latestPayrollTotal = payrollOverview?.currentMonthTotal ?? 0;
+
+        if (latestPeriod) {
+          if (latestPeriod.totalNetSalary > 0) {
+            latestPayrollTotal = latestPeriod.totalNetSalary;
+          }
+          const st = (latestPeriod.status || '').toUpperCase();
+          if (st === 'PAID' || st === 'CLOSED') latestStatusLabel = 'จ่ายแล้ว';
+          else if (st === 'APPROVED') latestStatusLabel = 'อนุมัติแล้ว';
+          else if (st === 'DRAFT' || st === 'REVIEW') latestStatusLabel = 'รอปิดงวด';
+          else latestStatusLabel = latestPeriod.statusText || latestPeriod.status;
+        }
+
+        const totalComm =
+          commissionSummary?.totalCommissionAmount ??
+          commissionSummary?.totalCommission ??
+          0;
+
+        const joinedCount = turnoverSummary?.totalJoinedCount ?? 0;
+        const resignedCount = turnoverSummary?.totalResignedCount ?? 0;
 
         if (isMounted) {
           setStatsData({
             headcount: targetHeadcount,
-            present: targetPresent,
-            onLeave: targetOnLeave,
-            pending: targetPending,
+            permanentCount: contractStats?.permanentCount ?? Math.max(0, targetHeadcount - (contractStats?.probationCount ?? 0)),
+            probationCount: contractStats?.probationCount ?? 0,
+            onLeaveToday: targetOnLeaveToday,
+            approvedThisMonth: targetApprovedMonth,
+            pendingDocs: targetPendingDocs,
             submittedToday: targetSubmittedToday,
-            approved: targetApproved,
+            probationExpiring7Days: targetProbation7Days,
+            contractExpiring30Days: expiringContracts30.length,
+            latestPayrollStatus: latestStatusLabel,
+            latestPayrollTotal,
+            commissionAndOtTotal: totalComm,
+            joinedThisMonth: joinedCount,
+            resignedThisMonth: resignedCount,
           });
         }
       } catch (err) {
@@ -191,50 +321,51 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
     };
   }, [role, user?.employeeId]);
 
-  // กำหนดชื่อหัวข้อและหน่วยตาม Role
+  const show = (val: string | number) => (loading ? '–' : val);
+
   const getCardsConfig = (): StatConfig[] => {
     switch (role) {
       case 'DEPT_MGR':
         return [
           {
             title: 'จำนวนพนักงานในแผนก',
-            value: statsData.headcount,
+            value: show(statsData.headcount),
             unit: 'คน',
             bgClass: 'bg-[#FEF6D8]',
             borderClass: 'border-[#F6E5A6]',
           },
           {
-            title: 'พนักงานในแผนกที่มาวันนี้',
-            value: statsData.present,
+            title: 'คนในแผนกลาวันนี้',
+            value: show(statsData.onLeaveToday),
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'พนักงานที่ลาวันนี้',
-            value: statsData.onLeave,
-            unit: 'คน',
+            title: 'ใบลาอนุมัติแล้วเดือนนี้',
+            value: show(statsData.approvedThisMonth),
+            unit: 'เอกสาร',
             bgClass: 'bg-[#D8F3DC]',
             borderClass: 'border-[#B7E4C7]',
           },
           {
-            title: 'เอกสารที่รออนุมัติ',
-            value: statsData.pending,
+            title: 'ใบลาในแผนกรออนุมัติ',
+            value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
             bgClass: 'bg-[#D9EAFD]',
             borderClass: 'border-[#BFDBFE]',
           },
           {
-            title: 'เอกสารที่พนักงานยื่นวันนี้',
-            value: statsData.submittedToday,
+            title: 'เอกสารยื่นใหม่วันนี้',
+            value: show(statsData.submittedToday),
             unit: 'เอกสาร',
             bgClass: 'bg-[#D7F9D9]',
             borderClass: 'border-[#BCE7BF]',
           },
           {
-            title: 'เอกสารที่อนุมัติแล้ว',
-            value: statsData.approved,
-            unit: 'เอกสาร',
+            title: 'ลูกทีมใกล้พ้นทดลองงาน',
+            value: show(statsData.probationExpiring7Days),
+            unit: 'คน',
             bgClass: 'bg-[#FFE5D9]',
             borderClass: 'border-[#FCD2BE]',
           },
@@ -244,91 +375,140 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         return [
           {
             title: 'จำนวนพนักงานในฝ่ายทั้งหมด',
-            value: statsData.headcount,
+            value: show(statsData.headcount),
             unit: 'คน',
             bgClass: 'bg-[#FEF6D8]',
             borderClass: 'border-[#F6E5A6]',
           },
           {
-            title: 'พนักงานในฝ่ายที่มาวันนี้',
-            value: statsData.present,
+            title: 'คนในฝ่ายลาวันนี้',
+            value: show(statsData.onLeaveToday),
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'พนักงานที่ลาวันนี้',
-            value: statsData.onLeave,
-            unit: 'คน',
+            title: 'ใบลาอนุมัติแล้วเดือนนี้',
+            value: show(statsData.approvedThisMonth),
+            unit: 'เอกสาร',
             bgClass: 'bg-[#D8F3DC]',
             borderClass: 'border-[#B7E4C7]',
           },
           {
-            title: 'เอกสารที่รออนุมัติ',
-            value: statsData.pending,
+            title: 'ใบลาในฝ่ายรออนุมัติ',
+            value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
             bgClass: 'bg-[#D9EAFD]',
             borderClass: 'border-[#BFDBFE]',
           },
           {
-            title: 'เอกสารที่พนักงานยื่นวันนี้',
-            value: statsData.submittedToday,
+            title: 'เอกสารยื่นใหม่วันนี้',
+            value: show(statsData.submittedToday),
             unit: 'เอกสาร',
             bgClass: 'bg-[#D7F9D9]',
             borderClass: 'border-[#BCE7BF]',
           },
           {
-            title: 'เอกสารที่อนุมัติแล้ว',
-            value: statsData.approved,
-            unit: 'เอกสาร',
+            title: 'ใกล้ครบกำหนดทดลองงาน',
+            value: show(statsData.probationExpiring7Days),
+            unit: 'คน',
             bgClass: 'bg-[#FFE5D9]',
             borderClass: 'border-[#FCD2BE]',
           },
         ];
 
       case 'CEO':
-      case 'ADMIN':
-      default:
         return [
           {
-            title: 'จำนวนพนักงานทั้งหมด',
-            value: statsData.headcount,
+            title: 'พนักงานทั้งหมดในองค์กร',
+            value: show(statsData.headcount),
             unit: 'คน',
             bgClass: 'bg-[#FEF6D8]',
             borderClass: 'border-[#F6E5A6]',
           },
           {
-            title: 'พนักงานที่มาวันนี้',
-            value: statsData.present,
+            title: 'พนักงานประจำ / ทดลองงาน',
+            value: loading
+              ? '–'
+              : `${statsData.permanentCount} / ${statsData.probationCount}`,
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'พนักงานที่ลาวันนี้',
-            value: statsData.onLeave,
-            unit: 'คน',
+            title: 'ยอดเงินเดือนงวดล่าสุด',
+            value: loading ? '–' : formatCompactCurrency(statsData.latestPayrollTotal),
+            unit: 'บาท',
             bgClass: 'bg-[#D8F3DC]',
             borderClass: 'border-[#B7E4C7]',
           },
           {
-            title: 'เอกสารที่รออนุมัติ',
-            value: statsData.pending,
-            unit: 'เอกสาร',
+            title: 'ยอดคอมมิชชั่นเดือนนี้',
+            value: loading ? '–' : formatCompactCurrency(statsData.commissionAndOtTotal),
+            unit: 'บาท',
             bgClass: 'bg-[#D9EAFD]',
             borderClass: 'border-[#BFDBFE]',
           },
           {
-            title: 'เอกสารที่พนักงานยื่นวันนี้',
-            value: statsData.submittedToday,
-            unit: 'เอกสาร',
+            title: 'เข้าใหม่ / ลาออกเดือนนี้',
+            value: loading
+              ? '–'
+              : `+${statsData.joinedThisMonth} / -${statsData.resignedThisMonth}`,
+            unit: 'คน',
             bgClass: 'bg-[#D7F9D9]',
             borderClass: 'border-[#BCE7BF]',
           },
           {
-            title: 'เอกสารที่อนุมัติแล้ว',
-            value: statsData.approved,
+            title: 'เอกสารรออนุมัติทั้งหมด',
+            value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
+            bgClass: 'bg-[#FFE5D9]',
+            borderClass: 'border-[#FCD2BE]',
+          },
+        ];
+
+      case 'ADMIN':
+      default:
+        return [
+          {
+            title: 'พนักงานทั้งหมดในองค์กร',
+            value: show(statsData.headcount),
+            unit: 'คน',
+            bgClass: 'bg-[#FEF6D8]',
+            borderClass: 'border-[#F6E5A6]',
+          },
+          {
+            title: 'พนักงานที่ลาวันนี้',
+            value: show(statsData.onLeaveToday),
+            unit: 'คน',
+            bgClass: 'bg-[#FDE2E4]',
+            borderClass: 'border-[#F9C3C8]',
+          },
+          {
+            title: 'ใบลาและรับรองรออนุมัติ',
+            value: show(statsData.pendingDocs),
+            unit: 'เอกสาร',
+            bgClass: 'bg-[#D8F3DC]',
+            borderClass: 'border-[#B7E4C7]',
+          },
+          {
+            title: 'สัญญาจ้างใกล้หมด (30 วัน)',
+            value: show(statsData.contractExpiring30Days),
+            unit: 'สัญญา',
+            bgClass: 'bg-[#D9EAFD]',
+            borderClass: 'border-[#BFDBFE]',
+          },
+          {
+            title: 'ครบกำหนดทดลองงาน (7 วัน)',
+            value: show(statsData.probationExpiring7Days),
+            unit: 'คน',
+            bgClass: 'bg-[#D7F9D9]',
+            borderClass: 'border-[#BCE7BF]',
+          },
+          {
+            title: 'สถานะงวดเงินเดือนล่าสุด',
+            value: show(statsData.latestPayrollStatus),
+            unit: '',
             bgClass: 'bg-[#FFE5D9]',
             borderClass: 'border-[#FCD2BE]',
           },
@@ -339,21 +519,32 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
   const cards = getCardsConfig();
 
   return (
-    <div data-stat-card className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-3.5">
+    <div
+      data-stat-card
+      className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 h-full auto-rows-fr"
+    >
       {cards.map((card, idx) => (
         <div
           key={idx}
-          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs min-h-[85px] sm:min-h-[90px] transition-all`}
+          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[90px] h-full transition-all`}
         >
-          <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">{card.title}</span>
+          <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">
+            {card.title}
+          </span>
           <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
             <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {loading ? '-' : card.value}
+              {card.value}
             </span>
-            <span className="text-[11px] sm:text-xs font-semibold text-slate-600">{card.unit}</span>
+            {card.unit && (
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-600">
+                {card.unit}
+              </span>
+            )}
           </div>
         </div>
       ))}
     </div>
   );
 };
+
+

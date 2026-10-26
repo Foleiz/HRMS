@@ -46,6 +46,11 @@ export interface AttendanceImportResult {
   dateFrom: string | null;
   dateTo: string | null;
   isDuplicate: boolean;
+  isPeriodOverlap?: boolean;
+  existingBatchId?: number | null;
+  existingBatchFileName?: string | null;
+  existingBatchImportedAt?: string | null;
+  existingBatchImportedBy?: string | null;
   errors: AttendanceImportError[];
 }
 

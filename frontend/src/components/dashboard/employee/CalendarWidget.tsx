@@ -165,9 +165,9 @@ export const CalendarWidget: React.FC = () => {
   const weekHeaders = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden transition-all">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden transition-all h-full flex flex-col">
       {/* Calendar Header: Deep Red */}
-      <div className="bg-[#94292B] text-white px-4 py-3 flex items-center justify-between">
+      <div className="bg-[#94292B] text-white px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-1.5">
           <h3 className="text-sm font-bold tracking-wide">ปฏิทิน</h3>
           {!isCurrentMonth && (
@@ -205,7 +205,7 @@ export const CalendarWidget: React.FC = () => {
       </div>
 
       {/* Calendar Grid */}
-      <div className="p-3">
+      <div className="p-3 flex-1 flex flex-col justify-between">
         {/* Day Headers */}
         <div className="grid grid-cols-7 text-center mb-1.5">
           {weekHeaders.map((w, idx) => (

@@ -35,6 +35,7 @@ public class AttendanceImportController : ControllerBase
         [FromForm] string? source,
         [FromForm] string? deviceName,
         [FromForm] bool allowDuplicate = false,
+        [FromForm] bool overwriteExistingPeriod = false,
         [FromForm] string? dateFrom = null,
         [FromForm] string? dateTo = null,
         [FromForm] int? targetYear = null,
@@ -94,7 +95,18 @@ public class AttendanceImportController : ControllerBase
             userId,
             parsedDateFrom,
             parsedDateTo,
+            overwriteExistingPeriod,
             cancellationToken);
+
+        if (result.IsPeriodOverlap)
+        {
+            return Ok(new ApiResponse<AttendanceImportResultDto>
+            {
+                Success = false,
+                Message = result.Errors.FirstOrDefault()?.ErrorMessage ?? "ตรวจพบข้อมูลช่วงเวลาซ้ำในระบบ",
+                Data = result
+            });
+        }
 
         if (result.IsDuplicate)
         {

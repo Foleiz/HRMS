@@ -13,6 +13,7 @@ public interface IAttendanceImportService
         long? importedByUserId = null, 
         DateOnly? customDateFrom = null,
         DateOnly? customDateTo = null,
+        bool overwriteExistingPeriod = false,
         CancellationToken cancellationToken = default);
 
     /// <summary>จับคู่แถวที่เคยหาพนักงานไม่เจอ (จากไฟล์ที่นำเข้าไว้แล้ว) กับพนักงานคนนี้ใหม่ — คืนจำนวนแถวที่บันทึกเวลาได้</summary>
