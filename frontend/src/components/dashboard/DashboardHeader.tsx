@@ -64,9 +64,9 @@ export const GreetingBanner: React.FC<{
   onRoleChange?: (role: DashboardRole) => void;
 }> = ({ displayName, activeRole, allowedRoles, onRoleChange }) => {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] px-6 py-5 sm:px-7 sm:py-6 text-white shadow-md flex flex-wrap items-center justify-between gap-4 min-h-[88px]">
+    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] p-7 text-white shadow-md flex flex-wrap items-center justify-between gap-4 min-h-[96px] shrink-0">
       <div className="relative z-10">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
           สวัสดี <span className="underline decoration-2 underline-offset-4">{displayName}</span>, หวังว่าจะเป็นวันที่ดี !
         </h1>
       </div>
