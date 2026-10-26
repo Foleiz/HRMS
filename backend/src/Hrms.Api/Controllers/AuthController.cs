@@ -94,16 +94,4 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<bool>.Ok(success, "เปลี่ยนรหัสผ่านสำเร็จแล้ว"));
     }
 
-    /// <summary>
-    /// Utility สำหรับตั้งค่ารหัสผ่านเริ่มต้นสำหรับบัญชีทดสอบทั้งหมดในระบบ (Development Only)
-    /// รหัสผ่านเริ่มต้นคือ "Admin@123456"
-    /// </summary>
-    [HttpPost("seed-passwords")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(ApiResponse<SeedPasswordsResultDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> SeedPasswords([FromQuery] string password = "Admin@123456", CancellationToken cancellationToken = default)
-    {
-        var result = await _authService.SeedDefaultPasswordsAsync(password, cancellationToken);
-        return Ok(ApiResponse<SeedPasswordsResultDto>.Ok(result, "ตั้งค่ารหัสผ่านเริ่มต้นสำหรับบัญชีทดสอบเรียบร้อยแล้ว"));
-    }
 }

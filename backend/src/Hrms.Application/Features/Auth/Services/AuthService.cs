@@ -18,27 +18,6 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly ICurrentUserService _currentUserService;
 
-    public static readonly Dictionary<string, string> DefaultAccountPasswords = new(StringComparer.OrdinalIgnoreCase)
-    {
-        { "admin", "Admin#2026!Sec" },
-        { "hr", "Hr@2026!Pass" },
-        { "pimjai.k", "Pimjai@Hr2026" },
-        { "somchai.w", "Somchai@Dept2026" },
-        { "worameth.r", "Worameth@Staff26" },
-        { "ceo", "Ceo@Executive2026!" },
-        { "job", "Admin@123456" },
-        { "accounting", "Account@Pay2026" },
-        { "finance", "Finance@Money2026" },
-        { "approver", "Approver@Flow2026" },
-        { "kanya.j", "Kanya@Staff2026" },
-        { "Test001", "Test001@User2026" },
-        { "Test002", "Test002@User2026" },
-        { "test.finance", "Test#Fin2026" },
-        { "test.lead", "Test#Lead2026" },
-        { "test.employee", "Test#Emp2026" },
-        { "test.employee2", "Test#Emp2026b" },
-    };
-
     public AuthService(
         IHrmsDbContext dbContext,
         IPasswordHasher passwordHasher,
@@ -92,18 +71,6 @@ public class AuthService : IAuthService
         catch
         {
             passwordValid = false;
-        }
-
-        // Fallback อำนวยความสะดวกช่วง dev: หากกรอกรหัสเริ่มต้น "123456", "Admin@123456" หรือรหัสเฉพาะของบัญชีนั้นๆ จะทำการ update hash ให้อัตโนมัติ
-        if (!passwordValid && (
-            request.Password == "123456" || 
-            request.Password == "Admin@123456" || 
-            (DefaultAccountPasswords.TryGetValue(user.Username, out var expectedPass) && request.Password == expectedPass) ||
-            (targetUsername == "ceo" && DefaultAccountPasswords.TryGetValue("ceo", out var ceoPass) && request.Password == ceoPass)
-        ))
-        {
-            passwordValid = true;
-            user.PasswordHash = _passwordHasher.HashPassword(request.Password);
         }
 
         if (!passwordValid)
@@ -164,32 +131,6 @@ public class AuthService : IAuthService
     public async Task<UserInfoDto> GetCurrentUserProfileAsync(long userId, CancellationToken cancellationToken = default)
     {
         return await BuildUserInfoDtoAsync(userId, cancellationToken);
-    }
-
-    public async Task<SeedPasswordsResultDto> SeedDefaultPasswordsAsync(string defaultPassword, CancellationToken cancellationToken = default)
-    {
-        var users = await _dbContext.UserAccounts.ToListAsync(cancellationToken);
-
-        var updatedUsernames = new List<string>();
-        foreach (var u in users)
-        {
-            string passToHash = DefaultAccountPasswords.TryGetValue(u.Username, out var customPass)
-                ? customPass
-                : defaultPassword;
-
-            u.PasswordHash = _passwordHasher.HashPassword(passToHash);
-            u.UpdatedAt = DateTime.UtcNow;
-            updatedUsernames.Add($"{u.Username} -> {passToHash}");
-        }
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return new SeedPasswordsResultDto
-        {
-            UpdatedCount = users.Count,
-            DefaultPassword = "แต่ละบัญชีมีรหัสผ่านเฉพาะแยกกัน (Individual Passwords)",
-            UsersUpdated = updatedUsernames
-        };
     }
 
     public async Task<bool> ChangePasswordAsync(long userId, ChangePasswordRequestDto request, CancellationToken cancellationToken = default)
