@@ -1,5 +1,6 @@
 'use client';
 
+import { MoneyInput } from '@/components/ui/MoneyInput';
 import { YearPicker } from '@/components/ui/YearPicker';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useRef } from 'react';
@@ -3217,7 +3218,7 @@ export default function PayrollPage() {
                                 <td
                                   className={`py-3 px-3.5 text-right font-mono font-medium whitespace-nowrap transition-colors ${
                                     bonusInputMode === 'AMOUNT'
-                                      ? 'bg-slate-100/80 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500'
+                                      ? 'text-slate-400 dark:text-slate-500'
                                       : 'text-slate-800 dark:text-slate-200'
                                   }`}
                                   title={bonusInputMode === 'AMOUNT' ? 'โหมดกำหนดยอดโบนัส: ไม่ใช้ฐานเงินเดือนในการคำนวณ' : undefined}
@@ -3247,17 +3248,12 @@ export default function PayrollPage() {
                                 {/* Bonus Amount */}
                                 <td className="py-2 px-3 text-right whitespace-nowrap">
                                   {canEditBonus && b.status !== 'PAID' && bonusInputMode === 'AMOUNT' ? (
-                                    <div className="inline-flex items-center justify-end gap-1">
-                                      <span className="text-slate-400 text-xs">฿</span>
-                                      <input
-                                        type="number"
-                                        step="100"
-                                        min="0"
-                                        value={b.bonusAmount}
-                                        onChange={(e) => handleBonusAmountChange(b.employeeId, parseFloat(e.target.value))}
-                                        className="w-28 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs disabled:bg-slate-100 disabled:text-slate-400 disabled:border-slate-200 disabled:cursor-not-allowed dark:disabled:bg-slate-900/60 dark:disabled:text-slate-500"
-                                      />
-                                    </div>
+                                    // แสดงแบบเดียวกับโหมดตัวคูณ (฿53,250.00) — คลิกแล้วแก้เป็นตัวเลขล้วน
+                                    <MoneyInput
+                                      value={b.bonusAmount}
+                                      onChange={(n) => handleBonusAmountChange(b.employeeId, n)}
+                                      className="w-32 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs"
+                                    />
                                   ) : (
                                     <span className="font-mono font-bold text-amber-900 dark:text-amber-400">
                                       ฿{bonusDisplayAmount(b).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
