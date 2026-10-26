@@ -7,17 +7,19 @@ import { Loader2 } from 'lucide-react';
  * ปุ่มมาตรฐานของระบบ — แก้หน้าตาปุ่มทั้งระบบที่ไฟล์นี้ไฟล์เดียว
  *  primary   ปุ่มหลัก (บันทึก / ยืนยัน / เพิ่ม)
  *  secondary ปุ่มรอง (ยกเลิก / ปิด)
- *  danger    ลบ / ยืนยันการลบ
+ *  success   อนุมัติ / ยืนยันผลเชิงบวก (สีเขียว)
+ *  danger    ลบ / ยืนยันการลบ / ปฏิเสธ
  *  soft-*    ปุ่มในแถว/การ์ด (แก้ไข / ลบ) พื้นอ่อน
  *  ghost     ปุ่มตัวอักษรอย่างเดียว
  */
-export type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'soft-warning' | 'soft-danger' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'soft-warning' | 'soft-danger' | 'ghost';
 export type ButtonSize = 'sm' | 'md';
 
 const VARIANT: Record<ButtonVariant, string> = {
   primary: 'bg-primary hover:bg-primary-hover text-white shadow-xs',
   secondary:
     'bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600',
+  success: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs',
   danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs',
   'soft-warning': 'bg-amber-50 hover:bg-amber-100 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400',
   'soft-danger': 'bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400',
