@@ -42,13 +42,12 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState({
     headcount: 0,
-    present: 0,
-    onLeave: 0,
-    lateOrAbsent: 0,
-    attendanceRate: 0,
+    permanentCount: 0,
+    probationCount: 0,
+    onLeaveToday: 0,
+    approvedThisMonth: 0,
     pendingDocs: 0,
     submittedToday: 0,
-    otHoursMonth: 0,
     probationExpiring7Days: 0,
     contractExpiring30Days: 0,
     latestPayrollStatus: 'รอคำนวณ',
@@ -68,8 +67,9 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         const currentYear = today.getFullYear();
         const currentMonth = today.getMonth() + 1;
         const todayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
-        // ดึงข้อมูลจริงจาก backend พร้อมกัน
+        // ดึงข้อมูลจริงจาก backend พร้อมกัน (ไม่ต้องพึ่งการสแกนนิ้ว Real-time รายวัน)
         const [
           headcountRes,
           leaveStatsRes,
@@ -82,7 +82,6 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           payrollPeriodsRes,
           commissionRes,
           turnoverRes,
-          monthlyAttRes,
         ] = await Promise.allSettled([
           reportService.getDailyHeadcount(),
           leaveService.getLeaveStats(),
@@ -95,7 +94,6 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           salaryService.getPayrollPeriods(),
           commissionService.getCommissionPeriod(currentYear, currentMonth),
           reportService.getMonthlyTurnover(currentYear, currentMonth),
-          attendanceService.getMonthlyAttendanceSummary(currentYear, currentMonth),
         ]);
 
         const headcount: DailyHeadcountSummary | null =
@@ -128,18 +126,22 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           commissionRes.status === 'fulfilled' ? commissionRes.value : null;
         const turnoverSummary =
           turnoverRes.status === 'fulfilled' ? turnoverRes.value : null;
-        const monthlyAtt =
-          monthlyAttRes.status === 'fulfilled' ? monthlyAttRes.value : null;
 
         const userDeptName = empProfile?.departmentName || '';
         const userDivName = empProfile?.divisionName || '';
 
-        // กรองคำร้องขอลาวันนี้
+        // กรองคำร้องขอลาที่อนุมัติแล้วซึ่งครอบคลุมวันนี้
         const activeLeavesToday = allRequests.filter((r) => {
           if (r.status !== 'APPROVED') return false;
           const start = r.startDatetime ? r.startDatetime.substring(0, 10) : '';
           const end = r.endDatetime ? r.endDatetime.substring(0, 10) : '';
           return todayStr >= start && todayStr <= end;
+        });
+
+        const approvedThisMonthRequests = allRequests.filter((r) => {
+          if (r.status !== 'APPROVED') return false;
+          const start = r.startDatetime ? r.startDatetime.substring(0, 7) : '';
+          return start === monthPrefix;
         });
 
         const submittedTodayRequests = allRequests.filter((r) => {
@@ -156,13 +158,10 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         in7Days.setDate(today.getDate() + 7);
 
         let targetHeadcount = 0;
-        let targetPresent = 0;
-        let targetOnLeave = 0;
-        let targetLateOrAbsent = 0;
-        let targetAttendanceRate = 0;
+        let targetOnLeaveToday = 0;
+        let targetApprovedMonth = 0;
         let targetPendingDocs = 0;
         let targetSubmittedToday = 0;
-        let targetOtHours = 0;
         let targetProbation7Days = contractStats?.probationExpiring7DaysCount ?? 0;
 
         const expiringContracts30 = activeContracts.filter((c) => {
@@ -181,13 +180,16 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             ) || headcount?.departments?.[0];
 
           targetHeadcount = dept?.totalHeadcount ?? 0;
-          targetPresent = dept?.presentCount ?? 0;
-          targetLateOrAbsent = (dept?.lateCount ?? 0) + (dept?.absentCount ?? 0);
 
           const deptLeaveToday = activeLeavesToday.filter(
             (r) => !dept || r.departmentName?.includes(dept.departmentName)
           );
-          targetOnLeave = dept?.leaveCount ?? deptLeaveToday.length;
+          targetOnLeaveToday = deptLeaveToday.length;
+
+          const deptAppMonth = approvedThisMonthRequests.filter(
+            (r) => !dept || r.departmentName?.includes(dept.departmentName)
+          );
+          targetApprovedMonth = deptAppMonth.length;
 
           const deptPending = pendingRequests.filter(
             (r) => !dept || r.departmentName?.includes(dept.departmentName)
@@ -199,7 +201,6 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           );
           targetSubmittedToday = deptSubToday.length;
 
-          // ลูกทีมใกล้พ้นทดลองงานในแผนก
           const deptProbation = activeContracts.filter((c) => {
             if (!c.probationEndDate) return false;
             if (dept && c.departmentName && !c.departmentName.includes(dept.departmentName)) {
@@ -209,14 +210,6 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             return pEnd >= today && pEnd <= in7Days;
           });
           targetProbation7Days = deptProbation.length;
-
-          // คำนวณชั่วโมงทำงานพิเศษ/จำนวนวันทำงานของแผนก
-          if (monthlyAtt && Array.isArray(monthlyAtt.employees)) {
-            const deptEmps = monthlyAtt.employees.filter(
-              (e) => !dept || e.departmentName?.includes(dept.departmentName)
-            );
-            targetOtHours = deptEmps.reduce((sum, e) => sum + (e.actualWorkDays || 0), 0);
-          }
         } else if (role === 'DIV_MGR') {
           const divDepts = (headcount?.departments || []).filter(
             (d) =>
@@ -229,14 +222,6 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             divDepts.reduce((acc, d) => acc + d.totalHeadcount, 0) ||
             headcount?.totalEmployees ||
             0;
-          targetPresent =
-            divDepts.reduce((acc, d) => acc + d.presentCount, 0) ||
-            headcount?.totalPresent ||
-            0;
-          targetLateOrAbsent = divDepts.reduce(
-            (acc, d) => acc + (d.lateCount || 0) + (d.absentCount || 0),
-            0
-          );
 
           const divDeptNames = divDepts.map((d) => d.departmentName);
           const divLeaveToday = activeLeavesToday.filter(
@@ -244,7 +229,14 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
               divDeptNames.length === 0 ||
               divDeptNames.some((dn) => r.departmentName?.includes(dn))
           );
-          targetOnLeave = divLeaveToday.length;
+          targetOnLeaveToday = divLeaveToday.length;
+
+          const divAppMonth = approvedThisMonthRequests.filter(
+            (r) =>
+              divDeptNames.length === 0 ||
+              divDeptNames.some((dn) => r.departmentName?.includes(dn))
+          );
+          targetApprovedMonth = divAppMonth.length;
 
           const divPending = pendingRequests.filter(
             (r) =>
@@ -261,15 +253,10 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           targetSubmittedToday = divSubToday.length;
         } else {
           // ระดับองค์กร (ADMIN / CEO)
-          targetHeadcount = headcount?.totalEmployees ?? 0;
-          targetPresent = headcount?.totalPresent ?? 0;
-          targetOnLeave = headcount?.totalLeave ?? activeLeavesToday.length;
-          targetLateOrAbsent = (headcount?.totalLate ?? 0) + (headcount?.totalAbsent ?? 0);
-          targetAttendanceRate =
-            headcount?.overallAttendanceRate ??
-            (targetHeadcount > 0
-              ? Math.round((targetPresent / targetHeadcount) * 1000) / 10
-              : 0);
+          targetHeadcount = headcount?.totalEmployees ?? contractStats?.totalActiveCount ?? 0;
+          targetOnLeaveToday = activeLeavesToday.length;
+          targetApprovedMonth =
+            leaveStats?.approvedThisMonthCount ?? approvedThisMonthRequests.length;
           targetPendingDocs =
             (leaveStats?.pendingRequestsCount ?? pendingRequests.length) +
             pendingCerts.length;
@@ -303,13 +290,12 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         if (isMounted) {
           setStatsData({
             headcount: targetHeadcount,
-            present: targetPresent,
-            onLeave: targetOnLeave,
-            lateOrAbsent: targetLateOrAbsent,
-            attendanceRate: targetAttendanceRate,
+            permanentCount: contractStats?.permanentCount ?? Math.max(0, targetHeadcount - (contractStats?.probationCount ?? 0)),
+            probationCount: contractStats?.probationCount ?? 0,
+            onLeaveToday: targetOnLeaveToday,
+            approvedThisMonth: targetApprovedMonth,
             pendingDocs: targetPendingDocs,
             submittedToday: targetSubmittedToday,
-            otHoursMonth: targetOtHours,
             probationExpiring7Days: targetProbation7Days,
             contractExpiring30Days: expiringContracts30.length,
             latestPayrollStatus: latestStatusLabel,
@@ -342,23 +328,23 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
       case 'DEPT_MGR':
         return [
           {
-            title: 'พนักงานในแผนกมาวันนี้',
-            value: `${show(statsData.present)}/${show(statsData.headcount)}`,
+            title: 'จำนวนพนักงานในแผนก',
+            value: show(statsData.headcount),
             unit: 'คน',
             bgClass: 'bg-[#FEF6D8]',
             borderClass: 'border-[#F6E5A6]',
           },
           {
             title: 'คนในแผนกลาวันนี้',
-            value: show(statsData.onLeave),
+            value: show(statsData.onLeaveToday),
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'มาสาย / ขาดงานวันนี้',
-            value: show(statsData.lateOrAbsent),
-            unit: 'คน',
+            title: 'ใบลาอนุมัติแล้วเดือนนี้',
+            value: show(statsData.approvedThisMonth),
+            unit: 'เอกสาร',
             bgClass: 'bg-[#D8F3DC]',
             borderClass: 'border-[#B7E4C7]',
           },
@@ -388,23 +374,23 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
       case 'DIV_MGR':
         return [
           {
-            title: 'พนักงานในฝ่ายมาวันนี้',
-            value: `${show(statsData.present)}/${show(statsData.headcount)}`,
+            title: 'จำนวนพนักงานในฝ่ายทั้งหมด',
+            value: show(statsData.headcount),
             unit: 'คน',
             bgClass: 'bg-[#FEF6D8]',
             borderClass: 'border-[#F6E5A6]',
           },
           {
             title: 'คนในฝ่ายลาวันนี้',
-            value: show(statsData.onLeave),
+            value: show(statsData.onLeaveToday),
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'มาสาย / ขาดงานวันนี้',
-            value: show(statsData.lateOrAbsent),
-            unit: 'คน',
+            title: 'ใบลาอนุมัติแล้วเดือนนี้',
+            value: show(statsData.approvedThisMonth),
+            unit: 'เอกสาร',
             bgClass: 'bg-[#D8F3DC]',
             borderClass: 'border-[#B7E4C7]',
           },
@@ -441,9 +427,11 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             borderClass: 'border-[#F6E5A6]',
           },
           {
-            title: 'อัตราการมาทำงานวันนี้',
-            value: show(statsData.attendanceRate),
-            unit: '%',
+            title: 'พนักงานประจำ / ทดลองงาน',
+            value: loading
+              ? '–'
+              : `${statsData.permanentCount} / ${statsData.probationCount}`,
+            unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
@@ -483,15 +471,15 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
       default:
         return [
           {
-            title: 'พนักงานมาทำงานวันนี้',
-            value: `${show(statsData.present)}/${show(statsData.headcount)}`,
+            title: 'พนักงานทั้งหมดในองค์กร',
+            value: show(statsData.headcount),
             unit: 'คน',
             bgClass: 'bg-[#FEF6D8]',
             borderClass: 'border-[#F6E5A6]',
           },
           {
-            title: 'พนักงานลา / มาสายวันนี้',
-            value: show(statsData.onLeave + statsData.lateOrAbsent),
+            title: 'พนักงานที่ลาวันนี้',
+            value: show(statsData.onLeaveToday),
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
@@ -558,4 +546,5 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
     </div>
   );
 };
+
 

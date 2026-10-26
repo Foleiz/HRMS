@@ -8,26 +8,28 @@ import { certificateService } from '@/services/certificateService';
 import { LeaveBalance } from '@/types/leave';
 
 interface EmployeeDashboardStats {
-  presentDays: number;
-  totalWorkDays: number;
-  lateCount: number;
-  otHours: number;
   vacationRemaining: number;
   vacationQuota: number;
   sickRemaining: number;
   sickQuota: number;
+  businessRemaining: number;
+  businessQuota: number;
+  specialRemaining: number;
+  specialQuota: number;
+  totalLeaveUsed: number;
   pendingRequestsCount: number;
 }
 
 const INITIAL_STATS: EmployeeDashboardStats = {
-  presentDays: 0,
-  totalWorkDays: 22,
-  lateCount: 0,
-  otHours: 0,
   vacationRemaining: 6,
   vacationQuota: 6,
   sickRemaining: 30,
   sickQuota: 30,
+  businessRemaining: 3,
+  businessQuota: 3,
+  specialRemaining: 10,
+  specialQuota: 10,
+  totalLeaveUsed: 0,
   pendingRequestsCount: 0,
 };
 
@@ -41,22 +43,16 @@ export const EmployeeStatCards: React.FC = () => {
 
     const fetchEmployeeStats = async () => {
       setLoading(true);
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
+      const currentYear = new Date().getFullYear();
 
       try {
         const [
-          attSummaryRes,
-          attHistoryRes,
           leaveSummaryRes,
           leaveBalancesRes,
           myLeavesRes,
           myCertsRes,
           myAdjustmentsRes,
         ] = await Promise.allSettled([
-          essAttendanceService.getMySummary(currentYear, currentMonth),
-          essAttendanceService.getMyHistory(currentYear, currentMonth),
           leaveService.getMyLeaveSummary({ year: currentYear, employeeId: user?.employeeId }),
           leaveService.getLeaveBalances({ employeeId: user?.employeeId, year: currentYear }),
           leaveService.getMyLeaveRequests({ pageSize: 100 }),
@@ -64,35 +60,11 @@ export const EmployeeStatCards: React.FC = () => {
           essAttendanceService.getMyAdjustments(1, 50),
         ]);
 
-        // 1. เวลาทำงานและมาสายเดือนนี้
-        let presentDays = 0;
-        let totalWorkDays = 22;
-        let lateCount = 0;
-        let otHours = 0;
-
-        if (attSummaryRes.status === 'fulfilled' && attSummaryRes.value) {
-          const s = attSummaryRes.value;
-          presentDays = Number(s.presentCount ?? 0);
-          totalWorkDays = Number(s.totalWorkDays ?? 22) || 22;
-          lateCount = Number(s.lateCount ?? 0);
-        }
-
-        // คำนวณชั่วโมงทำงานล่วงเวลา (OT) จากประวัติลงเวลารายวัน (เกิน 8 ชม./วัน)
-        if (attHistoryRes.status === 'fulfilled' && Array.isArray(attHistoryRes.value)) {
-          let extraMinutes = 0;
-          attHistoryRes.value.forEach((rec) => {
-            if (rec.workedMinutes && rec.workedMinutes > 480) {
-              extraMinutes += rec.workedMinutes - 480;
-            }
-          });
-          otHours = Math.round((extraMinutes / 60) * 10) / 10;
-        }
-
-        // 2. สิทธิ์ลาพักร้อนและลาป่วยคงเหลือ
-        let vacUsed = 0;
-        let vacQuota = 6;
-        let sickUsed = 0;
-        let sickQuota = 30;
+        let vacUsed = 0, vacQuota = 6;
+        let sickUsed = 0, sickQuota = 30;
+        let bizUsed = 0, bizQuota = 3;
+        let specUsed = 0, specQuota = 10;
+        let totalUsed = 0;
 
         if (leaveSummaryRes.status === 'fulfilled' && leaveSummaryRes.value) {
           const ls = leaveSummaryRes.value;
@@ -100,6 +72,16 @@ export const EmployeeStatCards: React.FC = () => {
           vacQuota = Number(ls.annualLeave?.quotaDays ?? 6);
           sickUsed = Number(ls.sickLeave?.usedDays ?? 0);
           sickQuota = Number(ls.sickLeave?.quotaDays ?? 30);
+          bizUsed = Number(ls.personalLeave?.usedDays ?? 0);
+          bizQuota = Number(ls.personalLeave?.quotaDays ?? 3);
+          specUsed = Number(ls.specialLeave?.usedDays ?? 0);
+          specQuota = Number(ls.specialLeave?.quotaDays ?? 10);
+
+          if (Array.isArray(ls.allBalances) && ls.allBalances.length > 0) {
+            totalUsed = ls.allBalances.reduce((acc, b) => acc + (Number(b.usedDays) || 0), 0);
+          } else {
+            totalUsed = vacUsed + sickUsed + bizUsed + specUsed;
+          }
         } else if (
           leaveBalancesRes.status === 'fulfilled' &&
           Array.isArray(leaveBalancesRes.value) &&
@@ -110,6 +92,7 @@ export const EmployeeStatCards: React.FC = () => {
             const name = b.leaveTypeName || '';
             const used = Number(b.usedDays) || 0;
             const quota = Number(b.annualQuotaDays) || 0;
+            totalUsed += used;
 
             if (code.includes('ANNUAL') || code.includes('VACATION') || name.includes('พักร้อน')) {
               vacUsed = used;
@@ -117,14 +100,17 @@ export const EmployeeStatCards: React.FC = () => {
             } else if (code.includes('SICK') || name.includes('ป่วย')) {
               sickUsed = used;
               if (quota > 0) sickQuota = quota;
+            } else if (code.includes('PERSONAL') || code.includes('BUSINESS') || name.includes('กิจ')) {
+              bizUsed = used;
+              if (quota > 0) bizQuota = quota;
+            } else if (code.includes('SPECIAL') || code.includes('TRAVEL') || name.includes('พิเศษ')) {
+              specUsed = used;
+              if (quota > 0) specQuota = quota;
             }
           });
         }
 
-        const vacationRemaining = Math.max(0, Math.round((vacQuota - vacUsed) * 10) / 10);
-        const sickRemaining = Math.max(0, Math.round((sickQuota - sickUsed) * 10) / 10);
-
-        // 3. เอกสารของฉันที่รออนุมัติ (ใบลา + หนังสือรับรอง + ปรับปรุงเวลา)
+        // เอกสารของฉันที่รออนุมัติ (ใบลา + หนังสือรับรอง + ปรับปรุงเวลา)
         let pendingCount = 0;
         if (myLeavesRes.status === 'fulfilled' && Array.isArray(myLeavesRes.value)) {
           pendingCount += myLeavesRes.value.filter(
@@ -148,14 +134,15 @@ export const EmployeeStatCards: React.FC = () => {
 
         if (isMounted) {
           setStats({
-            presentDays,
-            totalWorkDays,
-            lateCount,
-            otHours,
-            vacationRemaining,
+            vacationRemaining: Math.max(0, Math.round((vacQuota - vacUsed) * 10) / 10),
             vacationQuota: vacQuota,
-            sickRemaining,
+            sickRemaining: Math.max(0, Math.round((sickQuota - sickUsed) * 10) / 10),
             sickQuota,
+            businessRemaining: Math.max(0, Math.round((bizQuota - bizUsed) * 10) / 10),
+            businessQuota: bizQuota,
+            specialRemaining: Math.max(0, Math.round((specQuota - specUsed) * 10) / 10),
+            specialQuota: specQuota,
+            totalLeaveUsed: Math.round(totalUsed * 10) / 10,
             pendingRequestsCount: pendingCount,
           });
         }
@@ -179,36 +166,36 @@ export const EmployeeStatCards: React.FC = () => {
 
   const cards = [
     {
-      title: 'มาทำงานเดือนนี้',
-      value: `${show(stats.presentDays)}/${show(stats.totalWorkDays)}`,
+      title: 'สิทธิ์ลาพักร้อนคงเหลือ',
+      value: `${show(stats.vacationRemaining)}/${show(stats.vacationQuota)}`,
       unit: 'วัน',
       bgClass: 'bg-[#FEF6D8]',
       borderClass: 'border-[#F6E5A6]',
     },
     {
-      title: 'มาสายเดือนนี้',
-      value: show(stats.lateCount),
-      unit: 'ครั้ง',
+      title: 'สิทธิ์ลาป่วยคงเหลือ',
+      value: `${show(stats.sickRemaining)}/${show(stats.sickQuota)}`,
+      unit: 'วัน',
       bgClass: 'bg-[#FDE2E4]',
       borderClass: 'border-[#F9C3C8]',
     },
     {
-      title: 'ชั่วโมง OT เดือนนี้',
-      value: show(stats.otHours),
-      unit: 'ชม.',
+      title: 'สิทธิ์ลากิจคงเหลือ',
+      value: `${show(stats.businessRemaining)}/${show(stats.businessQuota)}`,
+      unit: 'วัน',
       bgClass: 'bg-[#D8F3DC]',
       borderClass: 'border-[#B7E4C7]',
     },
     {
-      title: 'สิทธิ์ลาพักร้อนคงเหลือ',
-      value: `${show(stats.vacationRemaining)}/${show(stats.vacationQuota)}`,
+      title: 'สิทธิ์ลาพิเศษคงเหลือ',
+      value: `${show(stats.specialRemaining)}/${show(stats.specialQuota)}`,
       unit: 'วัน',
       bgClass: 'bg-[#D9EAFD]',
       borderClass: 'border-[#BFDBFE]',
     },
     {
-      title: 'สิทธิ์ลาป่วยคงเหลือ',
-      value: `${show(stats.sickRemaining)}/${show(stats.sickQuota)}`,
+      title: 'วันลาที่ใช้ไปปีนี้',
+      value: show(stats.totalLeaveUsed),
       unit: 'วัน',
       bgClass: 'bg-[#D7F9D9]',
       borderClass: 'border-[#BCE7BF]',
@@ -250,4 +237,5 @@ export const EmployeeStatCards: React.FC = () => {
     </div>
   );
 };
+
 
