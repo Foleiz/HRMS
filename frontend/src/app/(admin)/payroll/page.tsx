@@ -2988,8 +2988,9 @@ export default function PayrollPage() {
                       onClick={handleSaveBonuses}
                       disabled={bonuses.length === 0 || isSavingBonus}
                       title="คำนวณยอดโบนัสตามโหมดที่เลือก และบันทึก"
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-500/40 hover:bg-blue-50 dark:hover:bg-blue-500/10 disabled:opacity-50 text-blue-700 dark:text-blue-300 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
                     >
+                      {/* ขั้นที่ 1 (คำนวณ) = ปุ่มขอบ — แยกจากขั้นสุดท้าย "บันทึกเข้างวด" ที่เป็นปุ่มทึบสีเขียว */}
                       {isSavingBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Calculator className="w-3.5 h-3.5" />}
                       <span>คำนวณ</span>
                     </button>
@@ -3000,9 +3001,9 @@ export default function PayrollPage() {
                       type="button"
                       onClick={handleOpenApplyBonusModal}
                       disabled={bonuses.length === 0}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
                     >
-                      <ArrowDownToLine className="w-3.5 h-3.5 text-blue-200" />
+                      <ArrowDownToLine className="w-3.5 h-3.5" />
                       <span>บันทึกเข้างวด</span>
                     </button>
                   )}
