@@ -2337,6 +2337,17 @@ public class SalaryService : ISalaryService
 
             if (fullSalary <= 0)
             {
+                // ไม่มีฐานเงินเดือน = ไม่คำนวณอะไรเลย (ไม่มีสลิป ไม่มียอดโอน)
+                // - สวัสดิการที่อนุมัติแล้ว: ไม่ถูกผูกกับงวดนี้ → คงสถานะยังไม่จ่าย และเข้างวดแรกที่มีฐานเงินเดือน
+                // - โบนัส/คอมมิชชั่นที่ผูกไว้: ปลดออก เพื่อไม่ให้ถูกนับว่า "จ่ายในงวดนี้แล้ว" (ระบบกันจ่ายซ้ำดูจากรายการนี้)
+                var linkedPayouts = payroll.Details
+                    .Where(d => d.PayrollItemId == bonusItem.Id || d.PayrollItemId == commissionItem.Id)
+                    .ToList();
+                if (linkedPayouts.Any())
+                {
+                    _context.PayrollDetails.RemoveRange(linkedPayouts);
+                    foreach (var d in linkedPayouts) payroll.Details.Remove(d);
+                }
                 payroll.TotalGrossIncome = 0;
                 payroll.TotalDeductionAmount = 0;
                 payroll.NetPayableSalary = 0;

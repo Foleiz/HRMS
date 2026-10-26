@@ -978,6 +978,21 @@ export default function PayrollPage() {
 
   const handleSubmitToFinance = async () => {
     if (!selectedPeriod) return;
+    // ยืนยันก่อนส่ง — แจ้งจำนวนคนที่ไม่มีฐานเงินเดือน (ไม่ได้คำนวณ = ไม่ได้รับเงินรอบนี้)
+    const noSalaryCount = payrolls.filter((p) => p.inputStatus === 'PENDING_SALARY').length;
+    const totalNet = (selectedPeriod.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+    const isConfirmed = await confirmAction({
+      title: 'ส่งให้ฝ่ายการเงินตรวจสอบ?',
+      text:
+        `รอบเงินเดือน: ${selectedPeriod.periodName}\nยอดสุทธิรวม: ฿${totalNet}` +
+        (noSalaryCount > 0
+          ? `\n\n⚠ มีพนักงาน ${noSalaryCount} คนที่ยังไม่มีฐานเงินเดือน จะไม่ได้รับเงินในรอบนี้`
+          : '') +
+        '\n\nหลังส่งแล้ว HR จะคำนวณใหม่ไม่ได้ จนกว่าการเงินจะส่งคืน',
+      confirmButtonText: 'ส่งให้การเงิน',
+      cancelButtonText: 'ยกเลิก',
+    });
+    if (!isConfirmed) return;
     try {
       const updated = await salaryService.submitToFinance(selectedPeriod.id);
       setSelectedPeriod(updated);
