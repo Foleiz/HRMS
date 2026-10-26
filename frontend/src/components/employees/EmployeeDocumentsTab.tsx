@@ -1,5 +1,6 @@
 'use client';
 
+import { createZip, saveBlob } from '@/lib/zip';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
@@ -235,6 +236,29 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
     }
   };
 
+  /** ดาวน์โหลดทุกไฟล์ของเอกสารประเภทนี้ — 1 ไฟล์โหลดตรง, หลายไฟล์รวมเป็น .zip */
+  const [downloadingRowId, setDownloadingRowId] = useState<number | null>(null);
+  const handleDownloadAll = async (rowId: number, rowName: string, docs: EmployeeDocument[]) => {
+    const withFile = docs.filter((d) => d.hasFile);
+    if (withFile.length === 0) return;
+    if (withFile.length === 1) return handleDownload(withFile[0]);
+    setDownloadingRowId(rowId);
+    try {
+      const files = await Promise.all(
+        withFile.map(async (d) => ({
+          name: d.fileName || `${d.documentTypeName}-${d.id}`,
+          data: await employeeDocumentService.download(d.id),
+        })),
+      );
+      const zip = await createZip(files);
+      saveBlob(zip, `${rowName.replace(/[\\/:*?"<>|]/g, '_')}.zip`);
+    } catch {
+      toast.error('ไม่สามารถดาวน์โหลดเอกสารได้');
+    } finally {
+      setDownloadingRowId(null);
+    }
+  };
+
   /** ข้อความใต้วันหมดอายุ: อีก N วัน / หมดอายุแล้ว N วัน */
   const expiryHint = (doc: EmployeeDocument) => {
     if (doc.daysToExpiry == null) return null;
@@ -393,17 +417,21 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                       </td>
                       <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          {latest?.hasFile && (
-                            <button
-                              type="button"
-                              title="ดาวน์โหลดไฟล์ล่าสุด"
-                              onClick={() => handleDownload(latest)}
-                              disabled={downloadingId === latest.id}
-                              className="p-1.5 rounded-lg text-slate-600 hover:bg-white/70 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
-                            >
-                              {downloadingId === latest.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            </button>
-                          )}
+                          {row.docs.some((d) => d.hasFile) && (() => {
+                            const fileCount = row.docs.filter((d) => d.hasFile).length;
+                            const busy = downloadingRowId === row.id || (fileCount === 1 && downloadingId === latest?.id);
+                            return (
+                              <button
+                                type="button"
+                                title={fileCount > 1 ? `ดาวน์โหลดทั้งหมด ${fileCount} ไฟล์ (.zip)` : 'ดาวน์โหลดไฟล์'}
+                                onClick={() => handleDownloadAll(row.id, row.name, row.docs)}
+                                disabled={busy}
+                                className="p-1.5 rounded-lg text-slate-600 hover:bg-white/70 dark:hover:bg-slate-800 cursor-pointer disabled:opacity-50"
+                              >
+                                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                              </button>
+                            );
+                          })()}
                           <button
                             type="button"
                             title={isOpen ? 'ปิด' : 'เปิด'}
