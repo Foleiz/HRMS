@@ -31,13 +31,6 @@ export const authService = {
   },
 
   /**
-   * รีเซ็ตรหัสผ่านบัญชีทดสอบในระบบเป็นค่าเริ่มต้น (Development Utility)
-   */
-  async seedPasswords(password = 'Admin@123456'): Promise<void> {
-    await apiClient.post(`/auth/seed-passwords?password=${encodeURIComponent(password)}`);
-  },
-
-  /**
    * เปลี่ยนรหัสผ่านสำหรับผู้ใช้งานปัจจุบัน
    */
   async changePassword(payload: { currentPassword: string; newPassword: string; confirmPassword: string }): Promise<boolean> {
