@@ -744,7 +744,6 @@ export default function PayrollPage() {
   const [isApplyBonusModalOpen, setIsApplyBonusModalOpen] = useState<boolean>(false);
   const [selectedTargetPeriodId, setSelectedTargetPeriodId] = useState<number | null>(null);
   const [isApplyingBonus, setIsApplyingBonus] = useState<boolean>(false);
-  const [isSavingExpandedBonus, setIsSavingExpandedBonus] = useState<boolean>(false);
 
   useEffect(() => {
     if (canViewPayroll) {
@@ -1688,92 +1687,6 @@ export default function PayrollPage() {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลโบนัส');
     } finally {
       setIsSavingBonus(false);
-    }
-  };
-
-  const handleExpandedBonusMultiplierChange = (employeeId: number, newMultiplier: number) => {
-    setExpandedBonuses((prev) =>
-      prev.map((b) => {
-        if (b.employeeId === employeeId) {
-          const safeMult = isNaN(newMultiplier) ? 0 : Math.max(0, newMultiplier);
-          const newBonusAmount = Math.round((b.baseSalary || 0) * safeMult * 100) / 100;
-          return {
-            ...b,
-            multiplier: safeMult,
-            bonusAmount: newBonusAmount,
-            calculationMode: 'MULTIPLIER',
-          };
-        }
-        return b;
-      })
-    );
-  };
-
-  const handleExpandedBonusAmountChange = (employeeId: number, newAmount: number) => {
-    setExpandedBonuses((prev) =>
-      prev.map((b) => {
-        if (b.employeeId === employeeId) {
-          const safeAmount = isNaN(newAmount) ? 0 : Math.max(0, newAmount);
-          const newMultiplier = (b.baseSalary || 0) > 0 ? Math.round((safeAmount / b.baseSalary) * 100) / 100 : 0;
-          return {
-            ...b,
-            bonusAmount: safeAmount,
-            multiplier: newMultiplier,
-            calculationMode: 'MANUAL',
-          };
-        }
-        return b;
-      })
-    );
-  };
-
-  const handleExpandedBonusNoteChange = (employeeId: number, note: string) => {
-    setExpandedBonuses((prev) =>
-      prev.map((b) => (b.employeeId === employeeId ? { ...b, note } : b))
-    );
-  };
-
-  const handleSaveExpandedBonuses = async (year: number, month: number) => {
-    if (expandedBonuses.length === 0) return;
-    try {
-      setIsSavingExpandedBonus(true);
-      const payload: SaveEmployeeBonusesPayload = {
-        year,
-        month,
-        calculationMode: 'MANUAL',
-        items: expandedBonuses.map((b) => ({
-          employeeId: b.employeeId,
-          bonusAmount: b.bonusAmount,
-          multiplier: b.multiplier,
-          note: b.note || undefined,
-        })),
-      };
-      await salaryService.saveEmployeeBonuses(payload);
-      await loadBonusPeriods();
-      const refreshed = await salaryService.getEmployeeBonuses(year, month, true);
-      setExpandedBonuses(refreshed || []);
-      if (bonusYear === year && bonusMonth === month) {
-        loadBonuses(year, month);
-      }
-      setSelectedBonusPeriodModal((prev) => {
-        if (!prev || prev.year !== year || prev.month !== month) return prev;
-        const totalAmount = (refreshed || []).reduce((sum, b) => sum + (b.bonusAmount || 0), 0);
-        const avgMult = (refreshed || []).length > 0
-          ? Math.round(((refreshed || []).reduce((sum, b) => sum + (b.multiplier || 0), 0) / (refreshed || []).length) * 100) / 100
-          : 0;
-        return {
-          ...prev,
-          totalBonusAmount: totalAmount,
-          averageMultiplier: avgMult,
-        };
-      });
-      const totalAmount = expandedBonuses.reduce((sum, b) => sum + (b.bonusAmount || 0), 0);
-      showToast(`บันทึกการแก้ไขโบนัสรอบ ${THAI_MONTH_NAMES[month - 1] || month} ${year + 543} สำเร็จ (ยอดรวม ฿${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`);
-    } catch (err: any) {
-      console.error('Failed to save expanded bonuses:', err);
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกโบนัส');
-    } finally {
-      setIsSavingExpandedBonus(false);
     }
   };
 
@@ -3477,7 +3390,6 @@ export default function PayrollPage() {
                         const currentExpandedAvgMult = expandedBonuses.length > 0
                           ? Math.round((expandedBonuses.reduce((sum, b) => sum + (b.multiplier || 0), 0) / expandedBonuses.length) * 100) / 100
                           : 0;
-                        const hasEditableInExpanded = expandedBonuses.some((b) => b.status !== 'PAID');
                         const inPayrollCountInExpanded = expandedBonuses.filter((b) => b.status === 'IN_PAYROLL' || b.status === 'PAID').length;
 
                         const filteredBonuses = expandedBonuses.filter((b) => {
@@ -3576,36 +3488,6 @@ export default function PayrollPage() {
                                     />
                                   </div>
 
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setBonusYear(selectedBonusPeriodModal.year);
-                                        setBonusMonth(selectedBonusPeriodModal.month);
-                                        loadBonuses(selectedBonusPeriodModal.year, selectedBonusPeriodModal.month);
-                                        handleCloseBonusPeriodModal();
-                                        setBonusSubTab('CALCULATE');
-                                      }}
-                                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                                      title="ไปที่หน้าคำนวณและปรับแก้โบนัสรอบนี้"
-                                    >
-                                      <span>ไปที่หน้าคำนวณรอบนี้</span>
-                                      <ArrowRight className="w-3.5 h-3.5" />
-                                    </button>
-
-                                    {canEditBonus && hasEditableInExpanded && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSaveExpandedBonuses(selectedBonusPeriodModal.year, selectedBonusPeriodModal.month)}
-                                        disabled={isSavingExpandedBonus}
-                                        className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                        title="บันทึกยอดโบนัสที่แก้ไข"
-                                      >
-                                        {isSavingExpandedBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                        <span>{isSavingExpandedBonus ? 'กำลังบันทึก...' : '💾 บันทึกการแก้ไข'}</span>
-                                      </button>
-                                    )}
-                                  </div>
                                 </div>
 
                                 {/* Table */}
@@ -3639,8 +3521,6 @@ export default function PayrollPage() {
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-slate-700 dark:text-slate-200">
                                           {filteredBonuses.map((b) => {
-                                            const isRowEditable = canEditBonus && b.status !== 'PAID';
-
                                             return (
                                               <tr key={b.employeeId} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
                                                 <td className="py-2.5 px-4 whitespace-nowrap">
@@ -3656,42 +3536,13 @@ export default function PayrollPage() {
                                                 </td>
                                                 {/* Multiplier */}
                                                 <td className="py-2 px-3 text-center whitespace-nowrap">
-                                                  {isRowEditable ? (
-                                                    <div className="inline-flex items-center justify-center gap-1">
-                                                      <input
-                                                        type="number"
-                                                        step="0.05"
-                                                        min="0"
-                                                        max="100"
-                                                        value={b.multiplier}
-                                                        onChange={(e) => handleExpandedBonusMultiplierChange(b.employeeId, parseFloat(e.target.value))}
-                                                        className="w-16 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-blue-500 rounded-lg text-center font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs"
-                                                      />
-                                                      <span className="text-[11px] text-slate-400 font-semibold">x</span>
-                                                    </div>
-                                                  ) : (
-                                                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{b.multiplier}x</span>
-                                                  )}
+                                                  <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{b.multiplier}x</span>
                                                 </td>
                                                 {/* Bonus Amount */}
                                                 <td className="py-2 px-3 text-right whitespace-nowrap">
-                                                  {isRowEditable ? (
-                                                    <div className="inline-flex items-center justify-end gap-1">
-                                                      <span className="text-slate-400 text-xs">฿</span>
-                                                      <input
-                                                        type="number"
-                                                        step="100"
-                                                        min="0"
-                                                        value={b.bonusAmount}
-                                                        onChange={(e) => handleExpandedBonusAmountChange(b.employeeId, parseFloat(e.target.value))}
-                                                        className="w-28 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-amber-500 rounded-lg text-right font-mono font-bold text-amber-900 dark:text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 text-xs"
-                                                      />
-                                                    </div>
-                                                  ) : (
-                                                    <span className="font-mono font-bold text-amber-900 dark:text-amber-400">
+                                                  <span className="font-mono font-bold text-amber-900 dark:text-amber-400">
                                                       ฿{(b.bonusAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                     </span>
-                                                  )}
                                                 </td>
                                                 {/* Status */}
                                                 <td className="py-2.5 px-4 text-center whitespace-nowrap">
@@ -3699,19 +3550,9 @@ export default function PayrollPage() {
                                                 </td>
                                                 {/* Note */}
                                                 <td className="py-2 px-3 whitespace-nowrap">
-                                                  {isRowEditable ? (
-                                                    <input
-                                                      type="text"
-                                                      placeholder="หมายเหตุ..."
-                                                      value={b.note || ''}
-                                                      onChange={(e) => handleExpandedBonusNoteChange(b.employeeId, e.target.value)}
-                                                      className="w-36 px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                    />
-                                                  ) : (
-                                                    <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap text-[11px]">
+                                                  <span className="text-slate-500 dark:text-slate-400 whitespace-nowrap text-[11px]">
                                                       {b.note || '-'}
                                                     </span>
-                                                  )}
                                                 </td>
                                               </tr>
                                             );
@@ -3729,17 +3570,6 @@ export default function PayrollPage() {
                                   แสดง {filteredBonuses.length} จาก {expandedBonuses.length} รายการ
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  {canEditBonus && hasEditableInExpanded && (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleSaveExpandedBonuses(selectedBonusPeriodModal.year, selectedBonusPeriodModal.month)}
-                                      disabled={isSavingExpandedBonus}
-                                      className="h-9 inline-flex items-center gap-1.5 px-4 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
-                                    >
-                                      {isSavingExpandedBonus ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                                      <span>{isSavingExpandedBonus ? 'กำลังบันทึก...' : '💾 บันทึกการแก้ไข'}</span>
-                                    </button>
-                                  )}
                                   <button
                                     type="button"
                                     onClick={handleCloseBonusPeriodModal}
