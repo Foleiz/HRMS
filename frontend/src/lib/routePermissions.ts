@@ -92,7 +92,6 @@ export const ROUTE_RULES: RouteRule[] = [
       'PAYROLL_BONUS_VIEW',
       'PAYROLL_BANK_VIEW',
       'PAYROLL_TAX_VIEW',
-      'PAYROLL_SLIP_VIEW',
     ],
   },
   {
@@ -133,7 +132,8 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/announcements',
     title: 'จัดการประกาศ',
-    requiredPermissions: ['ANNOUNCEMENTS_VIEW'],
+    // ดูข่าวสารใช้ /my-news — เมนูจัดการต้องมีสิทธิ์สร้าง/แก้ไขประกาศ
+    requiredPermissions: ['ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
   },
   {
     matchPrefix: '/master',

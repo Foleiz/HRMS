@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -17,6 +18,8 @@ namespace Hrms.Api.Controllers;
 [Route("api/salary/commission")]
 [Route("api/commission")]
 [Authorize]
+// ค่าคอมมิชชั่นเป็นข้อมูลเงินเดือน — ต้องมีสิทธิ์ฝั่งเงินเดือน
+[RequirePermission("PAYROLL_VIEW|PAYROLL_PERIOD_VIEW|PAYROLL_HR_VIEW|PAYROLL_FINANCE_VIEW|PAYROLL_ADMIN_VIEW|PAYROLL_CALC_VIEW|PAYROLL_STRUCTURE_VIEW|PAYROLL_ITEMS_VIEW|PAYROLL_BONUS_VIEW|PAYROLL_BANK_VIEW|PAYROLL_TAX_VIEW")]
 public class CommissionController : ControllerBase
 {
     private readonly ICommissionService _commissionService;
@@ -77,6 +80,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// พรีวิวไฟล์ค่าคอมมิชชั่น ตรวจจับรูปแบบอัตโนมัติ (ทั้งเดือน / วันเดียว / ช่วงวัน) และคำนวณผลกระทบก่อนนำเข้าจริง
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("preview")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<CommissionPreviewResultDto>), StatusCodes.Status200OK)]
@@ -109,6 +113,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// นำเข้าไฟล์ Excel / CSV ค่าคอมมิชชั่น (ตรวจจับรูปแบบและทับข้อมูลเดิมในช่วงวันที่ซ้ำให้อัตโนมัติ)
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("import")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<ImportCommissionResultDto>), StatusCodes.Status200OK)]
@@ -193,6 +198,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// ยกเลิกชุดการนำเข้า (Revert Batch) และกู้คืนรายการก่อนหน้า
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("batches/{batchId:long}/revert")]
     [ProducesResponseType(typeof(ApiResponse<RevertCommissionBatchResultDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<RevertCommissionBatchResultDto>>> RevertBatch(
@@ -208,6 +214,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// แก้ไขตัวเลขค่าคอมมิชชั่นของพนักงานรายบุคคล
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPut("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<CommissionRecordDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CommissionRecordDto>>> UpdateCommissionRecord(
@@ -223,6 +230,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// เพิ่มข้อมูลค่าคอมมิชชั่นด้วยตนเอง
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("manual")]
     [ProducesResponseType(typeof(ApiResponse<CommissionRecordDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CommissionRecordDto>>> AddManualCommissionRecord(
@@ -237,6 +245,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// ลบรายการค่าคอมมิชชั่นของพนักงาน
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> DeleteCommissionRecord(
@@ -251,6 +260,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// ยืนยันยอดค่าคอมมิชชั่นทั้งงวด
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("confirm")]
     [ProducesResponseType(typeof(ApiResponse<CommissionPeriodSummaryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CommissionPeriodSummaryDto>>> ConfirmCommissionPeriod(
@@ -266,6 +276,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// ล้างข้อมูลค่าคอมมิชชั่นทั้งงวด (Reset)
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("reset")]
     [ProducesResponseType(typeof(ApiResponse<CommissionPeriodSummaryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CommissionPeriodSummaryDto>>> ResetCommissionPeriod(
@@ -280,6 +291,7 @@ public class CommissionController : ControllerBase
     /// <summary>
     /// คำนวณค่าคอมมิชชั่นทั้งงวดใหม่ตามอัตราของระบบที่ระบุ
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("recalculate")]
     [ProducesResponseType(typeof(ApiResponse<CommissionPeriodSummaryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<CommissionPeriodSummaryDto>>> RecalculatePeriod(

@@ -42,6 +42,7 @@ import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   useLeaveDecisionData,
   LeaveDecisionInsightsPanel,
@@ -122,6 +123,10 @@ export function cleanApproverDisplay(text?: string | null): string {
 
 export default function LeaveRequestsApprovalPage() {
   const { setBreadcrumb } = useBreadcrumb();
+  const { hasPermission, hasRole } = useAuth();
+  // ยกเลิกใบลาของคนอื่นได้เฉพาะฝ่ายบุคคล/ผู้ดูแล (ผู้อนุมัติสายงานยกเลิกไม่ได้) — ตรงกับ backend
+  const canHrCancelLeave =
+    hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('APPROVAL_LEAVE_APPROVE') || hasPermission('LEAVE_BALANCE_EDIT');
 
   // Leave Requests State
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
@@ -314,7 +319,7 @@ export default function LeaveRequestsApprovalPage() {
         hasAlreadyApproved: !!req.hasAlreadyApproved,
         approvedByName: req.approvedByName,
         approvedAt: req.approvedAt,
-        canCancel: req.status === 'APPROVED' || !!req.hasAlreadyApproved,
+        canCancel: canHrCancelLeave && (req.status === 'APPROVED' || !!req.hasAlreadyApproved),
         documents: req.documents,
         leaveRaw: req,
       });
@@ -452,7 +457,7 @@ export default function LeaveRequestsApprovalPage() {
       const rawB = typeof b.rawId === 'number' ? b.rawId : 0;
       return rawB - rawA;
     });
-  }, [leaveRequests, certificateRequests, resignationRequests, generalRequests, benefitRequests]);
+  }, [leaveRequests, certificateRequests, resignationRequests, generalRequests, benefitRequests, canHrCancelLeave]);
 
   const filteredRequests = useMemo(() => {
     return unifiedRequests.filter((item) => {
