@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { UserProfile } from '@/types/auth';
@@ -57,14 +57,41 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
   );
 };
 
-export const GreetingBanner: React.FC<{ displayName: string }> = ({ displayName }) => {
+export const GreetingBanner: React.FC<{
+  displayName: string;
+  activeRole?: DashboardRole;
+  allowedRoles?: DashboardRole[];
+  onRoleChange?: (role: DashboardRole) => void;
+}> = ({ displayName, activeRole, allowedRoles, onRoleChange }) => {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] p-7 text-white shadow-md flex items-center min-h-[90px]">
+    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] px-6 py-5 sm:px-7 sm:py-6 text-white shadow-md flex flex-wrap items-center justify-between gap-4 min-h-[88px]">
       <div className="relative z-10">
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
           สวัสดี <span className="underline decoration-2 underline-offset-4">{displayName}</span>, หวังว่าจะเป็นวันที่ดี !
         </h1>
       </div>
+
+      {allowedRoles && allowedRoles.length > 1 && activeRole && onRoleChange && (
+        <div className="relative z-10 flex items-center gap-1 bg-white/10 backdrop-blur-xs p-1 rounded-xl border border-white/15 text-xs">
+          {allowedRoles.map((role) => {
+            const isActive = activeRole === role;
+            return (
+              <button
+                key={role}
+                type="button"
+                onClick={() => onRoleChange(role)}
+                className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-white text-[#0B2046] shadow-xs font-bold'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {ROLE_LABELS[role].title}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
