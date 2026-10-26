@@ -44,36 +44,55 @@ public class AttendanceImportService : IAttendanceImportService
 
         // 2. Check Duplicate File Hash
         var existingBatch = await _context.AttendanceImportBatches
-            .AsNoTracking()
             .Include(b => b.ImportedByUser)
             .FirstOrDefaultAsync(b => b.FileHash == fileHash && b.Status != RevertedStatus, cancellationToken);
 
         if (existingBatch != null && !allowDuplicate)
         {
-            var uName = existingBatch.ImportedByUser?.Username ?? "ผู้ดูแลระบบ";
-            return new AttendanceImportResultDto
+            if (!overwriteExistingPeriod)
             {
-                BatchId = existingBatch.Id,
-                FileName = fileName,
-                FileHash = fileHash,
-                Source = existingBatch.Source ?? source ?? "EXCEL",
-                TotalRecords = existingBatch.TotalRecords ?? 0,
-                SuccessRecords = existingBatch.SuccessRecords ?? 0,
-                FailedRecords = existingBatch.FailedRecords ?? 0,
-                Status = existingBatch.Status,
-                DateFrom = existingBatch.DateFrom?.ToString("yyyy-MM-dd"),
-                DateTo = existingBatch.DateTo?.ToString("yyyy-MM-dd"),
-                IsDuplicate = true,
-                Errors = new List<AttendanceImportErrorDto>
+                var uName = existingBatch.ImportedByUser?.Username ?? "ผู้ดูแลระบบ";
+                return new AttendanceImportResultDto
                 {
-                    new AttendanceImportErrorDto
+                    BatchId = existingBatch.Id,
+                    FileName = fileName,
+                    FileHash = fileHash,
+                    Source = existingBatch.Source ?? source ?? "EXCEL",
+                    TotalRecords = existingBatch.TotalRecords ?? 0,
+                    SuccessRecords = existingBatch.SuccessRecords ?? 0,
+                    FailedRecords = existingBatch.FailedRecords ?? 0,
+                    Status = "OVERLAP_CONFIRMATION_REQUIRED",
+                    DateFrom = existingBatch.DateFrom?.ToString("yyyy-MM-dd"),
+                    DateTo = existingBatch.DateTo?.ToString("yyyy-MM-dd"),
+                    IsDuplicate = true,
+                    IsPeriodOverlap = true,
+                    ExistingBatchId = existingBatch.Id,
+                    ExistingBatchFileName = existingBatch.FileName,
+                    ExistingBatchImportedAt = existingBatch.ImportedAt,
+                    ExistingBatchImportedBy = uName,
+                    Errors = new List<AttendanceImportErrorDto>
                     {
-                        RowNumber = 0,
-                        ErrorMessage = $"ไฟล์นี้เคยถูกนำเข้าแล้วเมื่อ {existingBatch.ImportedAt:dd/MM/yyyy HH:mm} น. โดย {uName} (Batch #{existingBatch.Id}) หากต้องการนำเข้าใหม่ กรุณากด 'ยกเลิกชุดข้อมูล' ในตารางประวัติด้านล่างก่อน",
-                        ErrorCode = "DUPLICATE_FILE"
+                        new AttendanceImportErrorDto
+                        {
+                            RowNumber = 0,
+                            ErrorMessage = $"ตรวจพบไฟล์นี้ในระบบแล้วเมื่อ {existingBatch.ImportedAt:dd/MM/yyyy HH:mm} น. โดย {uName} (Batch #{existingBatch.Id})",
+                            ErrorCode = "PERIOD_OVERLAP"
+                        }
                     }
+                };
+            }
+            else
+            {
+                // ผู้ใช้ยืนยันเลือก "ใช้ไฟล์ใหม่ (เขียนทับ)" -> ยกเลิก (Revert) ชุดข้อมูลเดิมก่อน
+                try
+                {
+                    await RevertBatchAsync(existingBatch.Id, importedByUserId, cancellationToken);
                 }
-            };
+                catch
+                {
+                    // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                }
+            }
         }
 
         // 3. Read All Rows Dynamically with ExcelDataReader (supports .xls, .xlsx, .csv)
