@@ -243,6 +243,18 @@ public class LeaveRequestsController : ControllerBase
             var empIdStr = User.FindFirstValue("employee_id") ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
             long.TryParse(empIdStr, out var cancelledBy);
 
+            // ยกเลิกได้เฉพาะเจ้าของคำขอ หรือฝ่ายบุคคล/ผู้ดูแล (เดิมไม่ตรวจ — ใครล็อกอินก็ยกเลิกใบลาคนอื่นได้)
+            var existing = await _requestService.GetByIdAsync(id, cancellationToken: cancellationToken);
+            if (existing == null)
+                return NotFound(ApiResponse<LeaveRequestDto>.Fail($"ไม่พบคำร้องขอลาหยุดงานรหัส ID {id}"));
+            bool isOwner = _currentUser.EmployeeId.HasValue && existing.EmployeeId == _currentUser.EmployeeId.Value;
+            bool isHr = IsAdmin
+                || _currentUser.HasPermission("APPROVAL_LEAVE_APPROVE")
+                || _currentUser.HasPermission("LEAVE_BALANCE_EDIT");
+            if (!isOwner && !isHr)
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    ApiResponse<LeaveRequestDto>.Fail("ยกเลิกได้เฉพาะคำขอของตนเอง หรือฝ่ายบุคคล"));
+
             var result = await _requestService.CancelAsync(id, model?.Reason, cancelledBy > 0 ? cancelledBy : null, cancellationToken: cancellationToken);
             return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "ยกเลิกคำร้องขอลาสำเร็จ"));
         }

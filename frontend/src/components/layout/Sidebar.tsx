@@ -148,7 +148,6 @@ const menuGroups: MenuGroup[] = [
           'PAYROLL_BONUS_VIEW',
           'PAYROLL_BANK_VIEW',
           'PAYROLL_TAX_VIEW',
-          'PAYROLL_SLIP_VIEW',
         ],
       },
       {
@@ -202,7 +201,7 @@ const menuGroups: MenuGroup[] = [
         href: '/announcements',
         matchPrefix: '/announcements',
         icon: Megaphone,
-        requiredPermissions: ['ANNOUNCEMENTS_VIEW'],
+        requiredPermissions: ['ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
       },
     ],
   },

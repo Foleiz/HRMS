@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Payroll;
@@ -12,6 +13,8 @@ namespace Hrms.Api.Controllers;
 [ApiController]
 [Route("api/salary")]
 [Authorize]
+// ต้องมีสิทธิ์ฝั่งเงินเดือนอย่างน้อย 1 อย่าง — สลิปของตัวเองใช้ /api/my-salary (ไม่ผ่าน controller นี้)
+[RequirePermission("PAYROLL_VIEW|PAYROLL_PERIOD_VIEW|PAYROLL_HR_VIEW|PAYROLL_FINANCE_VIEW|PAYROLL_ADMIN_VIEW|PAYROLL_CALC_VIEW|PAYROLL_STRUCTURE_VIEW|PAYROLL_ITEMS_VIEW|PAYROLL_BONUS_VIEW|PAYROLL_BANK_VIEW|PAYROLL_TAX_VIEW")]
 public class SalaryController : ControllerBase
 {
     private readonly ISalaryService _salaryService;
@@ -60,6 +63,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// สร้างโครงสร้างกรอบเงินเดือนใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_STRUCTURE_CREATE|PAYROLL_STRUCTURE_EDIT")]
     [HttpPost("structures")]
     [ProducesResponseType(typeof(ApiResponse<SalaryStructureDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -75,6 +79,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// แก้ไขโครงสร้างกรอบเงินเดือน
     /// </summary>
+    [RequirePermission("PAYROLL_STRUCTURE_CREATE|PAYROLL_STRUCTURE_EDIT")]
     [HttpPut("structures/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<SalaryStructureDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -92,6 +97,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// ลบโครงสร้างกรอบเงินเดือน
     /// </summary>
+    [RequirePermission("PAYROLL_STRUCTURE_CREATE|PAYROLL_STRUCTURE_EDIT")]
     [HttpDelete("structures/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
@@ -123,6 +129,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// อัปเดตขั้นบันไดภาษีเงินได้บุคคลธรรมดา
     /// </summary>
+    [RequirePermission("PAYROLL_TAX_CREATE|PAYROLL_TAX_EDIT")]
     [HttpPut("tax-brackets/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<TaxBracketDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -140,6 +147,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// บันทึกโครงสร้างขั้นบันไดภาษีเงินได้บุคคลธรรมดาแบบชุด (Batch Update) พร้อมตรวจสอบความต่อเนื่อง
     /// </summary>
+    [RequirePermission("PAYROLL_TAX_CREATE|PAYROLL_TAX_EDIT")]
     [HttpPost("tax-brackets/batch-update")]
     [ProducesResponseType(typeof(ApiResponse<List<TaxBracketDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -155,6 +163,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// รีเซ็ตขั้นบันไดภาษีเป็นค่ามาตรฐานตามประมวลรัษฎากร (8 ขั้น)
     /// </summary>
+    [RequirePermission("PAYROLL_TAX_CREATE|PAYROLL_TAX_EDIT")]
     [HttpPost("tax-brackets/reset-defaults")]
     [ProducesResponseType(typeof(ApiResponse<List<TaxBracketDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<TaxBracketDto>>>> ResetTaxBracketsToDefault(
@@ -184,6 +193,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// เพิ่มเกณฑ์และอัตราเงินสมทบกองทุนประกันสังคมใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_TAX_CREATE|PAYROLL_TAX_EDIT")]
     [HttpPost("social-security")]
     [ProducesResponseType(typeof(ApiResponse<SocialSecurityRateDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -199,6 +209,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// อัปเดตอัตราเงินสมทบกองทุนประกันสังคม
     /// </summary>
+    [RequirePermission("PAYROLL_TAX_CREATE|PAYROLL_TAX_EDIT")]
     [HttpPut("social-security/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<SocialSecurityRateDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -216,6 +227,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// รีเซ็ตอัตราเงินสมทบประกันสังคมเป็นค่ามาตรฐานตามกฎหมาย (5% เพดาน 15,000 บาท ถึงปี 2568 / 17,500 บาท ตั้งแต่ปี 2569)
     /// </summary>
+    [RequirePermission("PAYROLL_TAX_CREATE|PAYROLL_TAX_EDIT")]
     [HttpPost("social-security/reset-defaults")]
     [ProducesResponseType(typeof(ApiResponse<List<SocialSecurityRateDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<SocialSecurityRateDto>>>> ResetSocialSecurityRatesToDefault(
@@ -263,6 +275,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// บันทึกปรับฐานเงินเดือนพนักงาน
     /// </summary>
+    [RequirePermission("PAYROLL_HR_CREATE|PAYROLL_HR_EDIT|PAYROLL_SALARY_EDIT")]
     [HttpPost("employees/{employeeId:long}/adjust")]
     [ProducesResponseType(typeof(ApiResponse<EmployeeSalaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -310,6 +323,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// สร้างรายการประเภทรายได้หรือรายหักใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_ITEMS_CREATE|PAYROLL_ITEMS_EDIT")]
     [HttpPost("items")]
     [ProducesResponseType(typeof(ApiResponse<PayrollItemDto>), StatusCodes.Status201Created)]
     public async Task<ActionResult<ApiResponse<PayrollItemDto>>> CreatePayrollItem(
@@ -324,6 +338,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// แก้ไขข้อมูลรายการประเภทรายได้หรือรายหัก
     /// </summary>
+    [RequirePermission("PAYROLL_ITEMS_CREATE|PAYROLL_ITEMS_EDIT")]
     [HttpPut("items/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<PayrollItemDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollItemDto>>> UpdatePayrollItem(
@@ -339,6 +354,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// ลบรายการประเภทรายได้หรือรายหัก
     /// </summary>
+    [RequirePermission("PAYROLL_ITEMS_CREATE|PAYROLL_ITEMS_EDIT")]
     [HttpDelete("items/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> DeletePayrollItem(
@@ -408,6 +424,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// สร้างรอบเงินเดือนใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("periods")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status201Created)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> CreatePayrollPeriod(
@@ -422,6 +439,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// ประมวลผลคำนวณเงินเดือนของพนักงานทุกคนในรอบ
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("periods/{id:long}/calculate")]
     [ProducesResponseType(typeof(ApiResponse<List<PayrollRecordDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollRecordDto>>>> CalculatePayroll(
@@ -440,6 +458,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// อัปเดตสถานะของรอบเงินเดือน (ส่งอนุมัติ, บันทึกว่าจ่ายแล้ว, ปิดรอบ)
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT|PAYROLL_CALC_APPROVE|PAYROLL_APPROVE|PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPut("periods/{id:long}/status")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> UpdatePayrollPeriodStatus(
@@ -455,6 +474,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// เพิ่มรายการรายได้/รายหักแบบระบุเอง ให้พนักงานรายบุคคล (เฉพาะรอบ DRAFT/REVIEW) แล้วคำนวณใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("payrolls/{id:long}/adjustments")]
     [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> AddPayrollAdjustment(
@@ -470,6 +490,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// ลบรายการที่ HR เพิ่มเอง แล้วคำนวณใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpDelete("payrolls/{id:long}/adjustments/{detailId:long}")]
     [ProducesResponseType(typeof(ApiResponse<List<PayrollDetailItemDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<PayrollDetailItemDto>>>> DeletePayrollAdjustment(
@@ -485,6 +506,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// ดึงโบนัสที่อนุมัติแล้วของปีที่เลือก เข้ามาจ่ายพร้อมรอบเงินเดือนนี้ (ป้องกันการจ่ายซ้ำ)
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT|PAYROLL_BONUS_EDIT|PAYROLL_BONUS_APPROVE")]
     [HttpPost("periods/{id:long}/bonus-payout")]
     [ProducesResponseType(typeof(ApiResponse<BonusPayoutResultDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<BonusPayoutResultDto>>> AddBonusPayout(
@@ -500,6 +522,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// ลบรอบเงินเดือน (เฉพาะสถานะ DRAFT หรือ REVIEW หรือระบุ force=true สำหรับ Admin/HR)
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpDelete("periods/{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<object>>> DeletePayrollPeriod(
@@ -587,6 +610,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// สั่งคำนวณโบนัสประจำปี
     /// </summary>
+    [RequirePermission("PAYROLL_BONUS_CREATE|PAYROLL_BONUS_EDIT")]
     [HttpPost("bonuses/calculate")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> CalculateEmployeeBonuses(
@@ -601,6 +625,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// บันทึกการจัดสรรโบนัสพนักงาน (กำหนดเองรายบุคคล หรือแบบตัวคูณ)
     /// </summary>
+    [RequirePermission("PAYROLL_BONUS_CREATE|PAYROLL_BONUS_EDIT")]
     [HttpPost("bonuses/save")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> SaveEmployeeBonuses(
@@ -615,6 +640,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// อนุมัติการจัดสรรโบนัส (ทั้งรอบ หรือรายบุคคล)
     /// </summary>
+    [RequirePermission("PAYROLL_BONUS_EDIT|PAYROLL_BONUS_APPROVE|PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("bonuses/approve")]
     [ProducesResponseType(typeof(ApiResponse<List<EmployeeBonusDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<EmployeeBonusDto>>>> ApproveBonusPeriod(
@@ -631,6 +657,7 @@ public class SalaryController : ControllerBase
     /// <summary>
     /// กำหนดวันตัดรอบเงินเบิกสวัสดิการของรอบ (เฉพาะรอบที่ยังไม่อนุมัติ) — มีผลเมื่อกดคำนวณใหม่
     /// </summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPut("periods/{id:long}/claim-cutoff")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> UpdateClaimCutoff(
@@ -646,6 +673,7 @@ public class SalaryController : ControllerBase
     #region Payment Workflow
 
     /// <summary>ตั้งค่าวิธีการจ่ายเงิน (BANK_BATCH / DIRECT_TRANSFER)</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPut("periods/{id:long}/payment-method")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> SetPaymentMethod(
@@ -671,6 +699,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>Mark พนักงานรายบุคคลว่าโอนเงินแล้ว (DIRECT_TRANSFER)</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{periodId:long}/payrolls/{payrollId:long}/mark-transferred")]
     [ProducesResponseType(typeof(ApiResponse<PayrollTransferItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -686,6 +715,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>Mark พนักงานทุกคนว่าโอนเงินแล้วทั้งหมด (DIRECT_TRANSFER)</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{periodId:long}/mark-all-transferred")]
     [ProducesResponseType(typeof(ApiResponse<PayrollTransferListDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -699,6 +729,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>Confirm การจ่ายเงินทั้งหมด (DIRECT_TRANSFER) — การเงิน / CEO / Admin</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{id:long}/confirm-payment")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -729,6 +760,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>สร้างไฟล์ธนาคาร และ Mark Period ว่าส่งไฟล์แล้ว (BANK_BATCH)</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{id:long}/generate-bank-file")]
     public async Task<IActionResult> GenerateBankFile(
         long id,
@@ -742,6 +774,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>CEO Confirm ว่าธนาคารโอนเงินแล้ว (BANK_BATCH) — เฉพาะ CEO เท่านั้น</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{id:long}/confirm-bank-transfer")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
@@ -761,6 +794,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>HR ส่งเรื่องให้ฝ่ายการเงิน/บัญชี ตรวจสอบ</summary>
+    [RequirePermission("PAYROLL_CALC_CREATE|PAYROLL_CALC_EDIT|PAYROLL_PERIOD_CREATE|PAYROLL_PERIOD_EDIT|PAYROLL_HR_CREATE|PAYROLL_HR_EDIT")]
     [HttpPost("periods/{id:long}/submit-to-finance")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> SubmitToFinance(
@@ -773,6 +807,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>ฝ่ายการเงิน/บัญชี ตรวจสอบตัวเลขเรียบร้อยแล้ว ส่งเรื่องให้ผู้อนุมัติ</summary>
+    [RequirePermission("PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{id:long}/verify-finance")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> VerifyByFinance(
@@ -789,6 +824,7 @@ public class SalaryController : ControllerBase
     }
 
     /// <summary>ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร และเปลี่ยนสถานะเป็น PAID</summary>
+    [RequirePermission("PAYROLL_BANK_CREATE|PAYROLL_BANK_EDIT|PAYROLL_BANK_APPROVE|PAYROLL_FINANCE_EDIT|PAYROLL_FINANCE_APPROVE")]
     [HttpPost("periods/{id:long}/upload-bank-receipt")]
     [ProducesResponseType(typeof(ApiResponse<PayrollPeriodDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<PayrollPeriodDto>>> UploadBankReceipt(
