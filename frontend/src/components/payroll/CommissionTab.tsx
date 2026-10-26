@@ -51,6 +51,7 @@ import { useAuth } from '@/context/AuthContext';
 import { confirmAction, hrmsSwal, showError } from '@/lib/sweetalert';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { CustomSelect } from '@/components/ui/CustomSelect';
 import SupportedCommissionFormatsModal from './SupportedCommissionFormatsModal';
 
 const THAI_MONTHS = [
@@ -802,37 +803,41 @@ export default function CommissionTab() {
         {/* Left: Period & Rate Controls (Single line) */}
         <div className="flex items-center gap-2.5 shrink-0">
           {/* Year & Month Selector */}
-          <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 p-1 shadow-2xs">
-            <div className="flex items-center gap-1.5 pl-2.5">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">ปี:</span>
-              <select
+          <div className="flex items-center gap-2">
+            {/* Year Selector */}
+            <div className="w-28 sm:w-32">
+              <CustomSelect
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer py-1 pr-1"
+                numbered={false}
+                size="sm"
+                className="w-full text-xs font-bold"
+                title="เลือกปี พ.ศ."
               >
                 {[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map((y) => (
-                  <option key={y} value={y} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                    {y + 543}
+                  <option key={y} value={y}>
+                    ปี {y + 543}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
 
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
-
-            <div className="flex items-center gap-1.5 pr-2.5">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">เดือน:</span>
-              <select
+            {/* Month Selector */}
+            <div className="w-32 sm:w-36">
+              <CustomSelect
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer py-1 pr-1"
+                numbered={false}
+                size="sm"
+                className="w-full text-xs font-bold"
+                title="เลือกเดือน"
               >
                 {THAI_MONTHS.map((m, idx) => (
-                  <option key={idx + 1} value={idx + 1} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                  <option key={idx + 1} value={idx + 1}>
                     {m}
                   </option>
                 ))}
-              </select>
+              </CustomSelect>
             </div>
           </div>
 
@@ -1697,7 +1702,7 @@ export default function CommissionTab() {
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-8 pr-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
-                  <select
+                  <CustomSelect
                     value={addForm.employeeId}
                     onChange={(e) => {
                       const empId = Number(e.target.value);
@@ -1708,7 +1713,8 @@ export default function CommissionTab() {
                         commissionRate: existing?.commissionRate || defaultRate,
                       });
                     }}
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    numbered={false}
+                    className="w-full text-xs font-semibold"
                   >
                     <option value={0}>-- กรุณาเลือกพนักงาน --</option>
                     {employees
@@ -1723,7 +1729,7 @@ export default function CommissionTab() {
                           {e.employeeCode} - {e.employeeName} ({e.departmentName || 'ไม่มีแผนก'})
                         </option>
                       ))}
-                  </select>
+                  </CustomSelect>
 
                   {selectedEmpRecord && (
                     <div className="mt-2 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/50 p-2 text-[11px] text-blue-800 dark:text-blue-300">
