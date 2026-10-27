@@ -5,6 +5,8 @@ public class CertificateTypeDto
     public long Id { get; set; }
     public string CertificateCode { get; set; } = string.Empty;
     public string CertificateName { get; set; } = string.Empty;
+    /// <summary>อายุหนังสือ (เดือน) ตั้งค่าที่ข้อมูลหลัก</summary>
+    public int? ValidityMonths { get; set; }
 }
 
 public class CreateCertificateRequestDto
@@ -85,6 +87,9 @@ public class CertificateDocumentDto
     public string StartDateText { get; set; } = string.Empty;
     /// <summary>วันที่ออกหนังสือตามภาษาเอกสาร</summary>
     public string IssueDateText { get; set; } = string.Empty;
+    /// <summary>อายุหนังสือ (เดือน) และวันที่ใช้ได้ถึง — จากข้อมูลหลักประเภทหนังสือรับรอง</summary>
+    public int? ValidityMonths { get; set; }
+    public string? ExpiryDateText { get; set; }
     public string ServiceDurationText { get; set; } = string.Empty;
     public decimal? BaseSalary { get; set; }
     public string? SalaryText { get; set; }

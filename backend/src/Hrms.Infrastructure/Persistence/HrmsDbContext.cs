@@ -2133,6 +2133,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.CertificateCode).HasColumnName("certificate_code").HasMaxLength(50).IsRequired();
             entity.Property(e => e.CertificateName).HasColumnName("certificate_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.ValidityMonths).HasColumnName("validity_months");
         });
 
         // Configuration: CertificateRequest

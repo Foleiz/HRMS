@@ -39,7 +39,8 @@ public class CertificateService : ICertificateService
             {
                 Id = t.Id,
                 CertificateCode = t.CertificateCode,
-                CertificateName = t.CertificateName
+                CertificateName = t.CertificateName,
+                ValidityMonths = t.ValidityMonths
             })
             .ToListAsync(cancellationToken);
     }
@@ -663,6 +664,10 @@ public class CertificateService : ICertificateService
             StartDate = startDate.ToDateTime(TimeOnly.MinValue),
             StartDateText = language == "TH" ? ThaiDate(startDate) : EnglishDate(startDate),
             IssueDateText = language == "TH" ? ThaiDate(DateOnly.FromDateTime(issueDate)) : EnglishDate(DateOnly.FromDateTime(issueDate)),
+            ValidityMonths = certType?.ValidityMonths,
+            ExpiryDateText = certType?.ValidityMonths is int vm && vm > 0
+                ? (language == "TH" ? ThaiDate(DateOnly.FromDateTime(issueDate).AddMonths(vm)) : EnglishDate(DateOnly.FromDateTime(issueDate).AddMonths(vm)))
+                : null,
             ServiceDurationText = duration,
             BaseSalary = salary,
             SalaryText = salary.HasValue ? BahtText(salary.Value) : null,

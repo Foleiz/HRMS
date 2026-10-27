@@ -2,6 +2,8 @@ export interface CertificateType {
   id: number;
   certificateCode: string;
   certificateName: string;
+  /** อายุหนังสือ (เดือน) — ตั้งค่าที่ข้อมูลหลัก */
+  validityMonths?: number | null;
 }
 
 export interface CreateCertificateRequest {
@@ -52,6 +54,9 @@ export interface CertificateDocument {
   /** วันที่เริ่มงาน/วันที่ออกหนังสือ ตามภาษาเอกสาร */
   startDateText?: string;
   issueDateText?: string;
+  /** อายุหนังสือ (เดือน) และวันที่ใช้ได้ถึง */
+  validityMonths?: number | null;
+  expiryDateText?: string | null;
   companyName: string;
   companyAddress?: string;
   companyPhone?: string;

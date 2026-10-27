@@ -93,6 +93,8 @@ export default function MasterDataHubPage() {
   const [simpleNameInput, setSimpleNameInput] = useState('');
   // ฟอร์ม รหัส + ชื่อ (ใช้กับ เพศ / ประเภทหนังสือรับรอง) — รหัสแก้ไม่ได้หลังสร้าง
   const [codeNameForm, setCodeNameForm] = useState({ code: '', name: '' });
+  // อายุหนังสือรับรอง (เดือน) — เฉพาะแท็บประเภทหนังสือรับรอง
+  const [certValidity, setCertValidity] = useState<string>('3');
   const [bankForm, setBankForm] = useState<{
     bankCode: string;
     bankName: string;
@@ -196,6 +198,7 @@ export default function MasterDataHubPage() {
       setBankForm({ bankCode: '', bankName: '', shortName: '', accountDigits: '', status: 'ACTIVE' });
     } else if (activeTab === 'genders' || activeTab === 'certificate-types') {
       setCodeNameForm({ code: '', name: '' });
+      setCertValidity('3');
     } else {
       setSimpleNameInput('');
     }
@@ -225,6 +228,7 @@ export default function MasterDataHubPage() {
       setCodeNameForm({ code: item.genderCode, name: item.genderName });
     } else if (activeTab === 'certificate-types') {
       setCodeNameForm({ code: item.certificateCode, name: item.certificateName });
+      setCertValidity(item.validityMonths ? String(item.validityMonths) : '');
     } else if (activeTab === 'banks') {
       setBankForm({
         bankCode: item.bankCode,
@@ -293,10 +297,14 @@ export default function MasterDataHubPage() {
           await masterDataService.createCertificateType({
             certificateCode: codeNameForm.code.trim(),
             certificateName: codeNameForm.name.trim(),
+            validityMonths: certValidity ? Number(certValidity) : null,
           });
           toast.success('เพิ่มประเภทหนังสือรับรองสำเร็จ');
         } else if (currentId) {
-          await masterDataService.updateCertificateType(currentId, { certificateName: codeNameForm.name.trim() });
+          await masterDataService.updateCertificateType(currentId, {
+            certificateName: codeNameForm.name.trim(),
+            validityMonths: certValidity ? Number(certValidity) : null,
+          });
           toast.success('อัปเดตประเภทหนังสือรับรองสำเร็จ');
         }
       } else if (activeTab === 'banks') {
@@ -727,13 +735,14 @@ export default function MasterDataHubPage() {
                   <th className="py-3 px-4 w-20">ID</th>
                   <th className="py-3 px-4">รหัสประเภท</th>
                   <th className="py-3 px-4">ชื่อหนังสือรับรอง</th>
+                  <th className="py-3 px-4 text-center">อายุหนังสือ</th>
                   <th className="py-3 px-4 text-right">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredCertTypes.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
+                    <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                       ไม่พบข้อมูลประเภทหนังสือรับรอง
                     </td>
                   </tr>
@@ -747,6 +756,9 @@ export default function MasterDataHubPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.certificateName}</td>
+                      <td className="py-3.5 px-4 text-center text-slate-700 dark:text-slate-300">
+                        {item.validityMonths ? `${item.validityMonths} เดือน` : <span className="text-slate-400">ไม่กำหนด</span>}
+                      </td>
                       <td className="py-3.5 px-4 text-right">
                         {canEditMasterData ? (
                           <RowActions>
@@ -1029,6 +1041,26 @@ export default function MasterDataHubPage() {
                     className={inputClass}
                   />
                 </div>
+                {activeTab === 'certificate-types' && (
+                  <div>
+                    <label htmlFor="cert-validity" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      อายุหนังสือรับรอง (เดือน)
+                    </label>
+                    <input
+                      id="cert-validity"
+                      type="number"
+                      min={1}
+                      max={24}
+                      value={certValidity}
+                      onChange={(e) => setCertValidity(e.target.value)}
+                      placeholder="เว้นว่าง = ไม่กำหนดวันหมดอายุ"
+                      className={inputClass}
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1 dark:text-slate-400">
+                      นับจากวันที่ออกหนังสือ (วันที่อนุมัติ) และพิมพ์ "ใช้ได้ถึงวันที่" ในหนังสือให้อัตโนมัติ
+                    </p>
+                  </div>
+                )}
               </>
             )}
 
