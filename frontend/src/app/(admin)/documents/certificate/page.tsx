@@ -12,8 +12,7 @@ import {
   Loader2,
   CalendarCheck,
   Clock3,
-  Languages,
-  PenLine,
+  ListChecks,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
@@ -29,7 +28,6 @@ import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 
 const REASON_MAX_LENGTH = 160;
-const NOTES_MAX_LENGTH = 225;
 const TEXTAREA =
   'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
 const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
@@ -51,19 +49,17 @@ export default function CertificatePage() {
   const [types, setTypes] = useState<CertificateType[]>([]);
   const [selectedTypeId, setSelectedTypeId] = useState<number | ''>('');
   const [purpose, setPurpose] = useState('');
-  const [notes, setNotes] = useState('');
 
   // วันที่ออก = วันที่อนุมัติ, อายุหนังสือมาจากข้อมูลหลัก — ผู้ใช้ไม่ต้องกรอกเอง
   // ช่องข้อความยืด/หดตามเนื้อหา
   const purposeRef = useRef<HTMLTextAreaElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
-    [purposeRef.current, notesRef.current].forEach((el) => {
+    [purposeRef.current].forEach((el) => {
       if (!el) return;
       el.style.height = 'auto';
       el.style.height = `${el.scrollHeight + (el.offsetHeight - el.clientHeight)}px`;
     });
-  }, [purpose, notes]);
+  }, [purpose]);
 
   // State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,7 +81,6 @@ export default function CertificatePage() {
         const parsed = JSON.parse(savedDraft);
         if (parsed.purpose) setPurpose(parsed.purpose);
         if (parsed.selectedTypeId) setSelectedTypeId(parsed.selectedTypeId);
-        if (parsed.notes) setNotes(parsed.notes);
       }
     } catch {
       // Ignore
@@ -138,7 +133,6 @@ export default function CertificatePage() {
   // Reset form
   const handleResetForm = () => {
     setPurpose('');
-    setNotes('');
     if (types.length > 0) setSelectedTypeId(types[0].id);
     setFormError(null);
     localStorage.removeItem('hrms_cert_draft');
@@ -172,7 +166,6 @@ export default function CertificatePage() {
         JSON.stringify({
           purpose: purpose.trim(),
           selectedTypeId,
-          notes: notes.trim(),
           savedAt: new Date().toISOString(),
         })
       );
@@ -201,20 +194,17 @@ export default function CertificatePage() {
       setIsSubmitting(true);
       setFormError(null);
 
-      const remarks = notes.trim() ? `หมายเหตุ: ${notes.trim()}` : '';
 
       await certificateService.createRequest({
         certificateTypeId: Number(selectedTypeId),
         purpose: purpose.trim(),
         language: 'TH',
-        notes: remarks || undefined,
       });
 
       // Clear draft
       localStorage.removeItem('hrms_cert_draft');
       setPurpose('');
-      setNotes('');
-      toast.success('ยื่นขอหนังสือรับรองสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+        toast.success('ยื่นขอหนังสือรับรองสำเร็จ ติดตามสถานะได้ที่หน้านี้');
       router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting certificate request:', err);
@@ -281,13 +271,7 @@ export default function CertificatePage() {
                 })}
                 placeholder="เลือกประเภทหนังสือรับรอง"
                 emptyText="ยังไม่มีประเภทหนังสือรับรอง"
-                aria-describedby="cert-type-help"
               />
-              <p id="cert-type-help" className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                {selectedType
-                  ? `ชื่อ ตำแหน่ง วันที่เริ่มงาน อายุงาน${includeSalary ? ' และเงินเดือน' : ''} ดึงจากระบบอัตโนมัติ`
-                  : 'เลือกแล้วจะเห็นว่าเอกสารแสดงข้อมูลอะไรบ้าง'}
-              </p>
             </div>
 
             <div>
@@ -314,54 +298,44 @@ export default function CertificatePage() {
               </p>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="cert-notes" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  หมายเหตุถึงฝ่ายบุคคล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-                </label>
-                <span className="text-xs text-slate-400">{notes.length}/{NOTES_MAX_LENGTH}</span>
-              </div>
-              <textarea
-                id="cert-notes"
-                value={notes}
-                maxLength={NOTES_MAX_LENGTH}
-                ref={notesRef}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                placeholder="เช่น ต้องการ 2 ฉบับ"
-                className={`${TEXTAREA} block overflow-hidden`}
-              />
-            </div>
           </div>
 
-          {/* ขวา: ข้อมูลเอกสารที่ระบบกำหนดให้ (ไม่ต้องกรอก) */}
+          {/* ขวา: สิ่งที่ผู้ขอควรรู้ก่อนยื่น — ข้อมูลที่ระบบใส่ให้ และหนังสือใช้ได้ถึงเมื่อไร */}
           <div className="min-w-0">
             <span className={LABEL}>รายละเอียดเอกสาร</span>
-            <dl className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
-              {[
-                { icon: Languages, k: 'ภาษา', v: 'ภาษาไทย' },
-                { icon: CalendarCheck, k: 'วันที่ออก', v: 'วันที่ได้รับอนุมัติ' },
-                {
-                  icon: Clock3,
-                  k: 'อายุหนังสือ',
-                  v: !selectedType
-                    ? 'เลือกประเภทหนังสือรับรองก่อน'
-                    : validityMonths
-                      ? `${validityMonths} เดือน นับจากวันที่ออก`
-                      : 'ไม่กำหนดวันหมดอายุ',
-                },
-                { icon: PenLine, k: 'ผู้ลงนาม', v: 'ผู้อนุมัติขั้นสุดท้าย พร้อมลายเซ็นดิจิทัล' },
-              ].map(({ icon: Icon, k, v }) => (
-                <div key={k} className="flex items-start gap-3 px-4 py-3">
-                  <Icon className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-                  <dt className="w-24 shrink-0 text-slate-500 dark:text-slate-400">{k}</dt>
-                  <dd className="font-medium text-slate-800 dark:text-slate-200">{v}</dd>
+            {!selectedType ? (
+              <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                เลือกประเภทหนังสือรับรองเพื่อดูรายละเอียด
+              </div>
+            ) : (
+              <dl className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <ListChecks className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
+                  <dt className="w-28 shrink-0 text-slate-500 dark:text-slate-400">ข้อมูลในหนังสือ</dt>
+                  <dd className="text-slate-800 dark:text-slate-200">
+                    <span className="font-medium">
+                      ชื่อ-นามสกุล ตำแหน่ง แผนก ประเภทการจ้างงาน วันที่เริ่มงาน อายุงาน
+                      {includeSalary ? ' เงินเดือนและค่าตำแหน่ง' : ''}
+                    </span>
+                    <span className="block mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      ดึงจากระบบอัตโนมัติ ถ้าข้อมูลไม่ถูกต้องให้แจ้งฝ่ายบุคคลก่อนยื่น
+                    </span>
+                  </dd>
                 </div>
-              ))}
-            </dl>
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-              อายุหนังสือกำหนดโดยฝ่ายบุคคลที่เมนูข้อมูลหลัก &gt; ประเภทหนังสือรับรอง
-            </p>
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <CalendarCheck className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
+                  <dt className="w-28 shrink-0 text-slate-500 dark:text-slate-400">วันที่ออก</dt>
+                  <dd className="font-medium text-slate-800 dark:text-slate-200">วันที่ได้รับอนุมัติ</dd>
+                </div>
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <Clock3 className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
+                  <dt className="w-28 shrink-0 text-slate-500 dark:text-slate-400">อายุหนังสือ</dt>
+                  <dd className="font-medium text-slate-800 dark:text-slate-200">
+                    {validityMonths ? `${validityMonths} เดือน นับจากวันที่ออก` : 'ไม่กำหนดวันหมดอายุ'}
+                  </dd>
+                </div>
+              </dl>
+            )}
           </div>
         </div>
 
