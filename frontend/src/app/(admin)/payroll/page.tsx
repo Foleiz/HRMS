@@ -5276,17 +5276,17 @@ export default function PayrollPage() {
                     </div>
                   ) : (
                     <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                      <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
-                        <thead>
-                          <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
-                            <th className="py-3 px-4">พนักงาน</th>
-                            <th className="py-3 px-4">ธนาคาร / เลขบัญชี</th>
-                            <th className="py-3 px-4 text-right">ยอดโอน</th>
-                            <th className="py-3 px-4 text-center">Ref No.</th>
-                            <th className="py-3 px-4 text-center">สลิป</th>
-                            <th className="py-3 px-4 text-center">สถานะ</th>
+                      <table className="table-standard w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
+                        <thead className="bg-[#0B2046] text-white font-semibold">
+                          <tr className="whitespace-nowrap">
+                            <th className="py-3 px-4 font-semibold">พนักงาน</th>
+                            <th className="py-3 px-4 font-semibold">ธนาคาร / เลขบัญชี</th>
+                            <th className="py-3 px-4 text-right font-semibold">ยอดโอน</th>
+                            <th className="py-3 px-4 text-center font-semibold">Ref No.</th>
+                            <th className="py-3 px-4 text-center font-semibold">สลิป</th>
+                            <th className="py-3 px-4 text-center font-semibold">สถานะ</th>
                             {selectedPeriod?.status !== 'PAID' && (isCEO || isFinance || isAdmin) && (
-                              <th className="py-3 px-4 text-center">การดำเนินการ</th>
+                              <th className="py-3 px-4 text-center font-semibold">การดำเนินการ</th>
                             )}
                           </tr>
                         </thead>
