@@ -271,9 +271,16 @@ public class CertificateService : ICertificateService
                 };
             }
 
-            if (currentEmpId.HasValue)
+            if (currentEmpId.HasValue && r.EmployeeId != currentEmpId.Value)
             {
-                isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+                if (IsAdmin)
+                {
+                    isMyTurn = true;
+                }
+                else
+                {
+                    isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+                }
             }
         }
         else if (instance == null && effectiveStatus == "PENDING" && isHrOrAdmin)

@@ -64,6 +64,7 @@ public class CertificatesController : ControllerBase
     /// ยื่นคำขอหนังสือรับรองใหม่
     /// </summary>
     [HttpPost("requests")]
+    [RequirePermission("ESS_DOCS_CREATE,EMP_DOC_CREATE")]
     public async Task<ActionResult<ApiResponse<CertificateRequestDto>>> CreateRequest(
         [FromBody] CreateCertificateRequestDto dto,
         CancellationToken cancellationToken)

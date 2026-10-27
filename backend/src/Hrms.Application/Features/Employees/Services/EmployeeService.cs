@@ -560,7 +560,7 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> UpdateAsync(long id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS)
+        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS ที่มี ESS_PROFILE_EDIT)
         bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
         bool hasManagePermission = isSuper ||
                                    _currentUserService.HasPermission("EMP_MANAGE") ||
@@ -569,10 +569,21 @@ public class EmployeeService : IEmployeeService
 
         long? currentEmpId = _currentUserService.EmployeeId;
         bool isSelfUpdate = currentEmpId.HasValue && currentEmpId.Value == id;
+        bool hasSelfEditPermission = _currentUserService.HasPermission("ESS_PROFILE_EDIT");
 
-        if (!hasManagePermission && !isSelfUpdate)
+        if (isSelfUpdate)
         {
-            throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
+            if (!isSuper && !hasManagePermission && !hasSelfEditPermission)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลโปรไฟล์ของตนเอง");
+            }
+        }
+        else
+        {
+            if (!hasManagePermission)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
+            }
         }
 
         if (!isSelfUpdate && !isSuper)
@@ -1080,18 +1091,26 @@ public class EmployeeService : IEmployeeService
         long length,
         CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์ (ADMIN, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเอง)
-        bool canManageAvatar = _currentUserService.HasRole("ADMIN") ||
+        // 1. ตรวจสอบสิทธิ์ (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเองที่ต้องมี ESS_PROFILE_EDIT)
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageAvatar = isSuper ||
                                _currentUserService.HasPermission("EMP_MANAGE") ||
-                               _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                               _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                               _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageAvatar)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageAvatar && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์ของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์");
             }
+        }
+        else if (!canManageAvatar)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์ของพนักงานท่านอื่น");
         }
 
         // 2. Validate content type
@@ -1170,17 +1189,25 @@ public class EmployeeService : IEmployeeService
         long id,
         CancellationToken cancellationToken = default)
     {
-        bool canManageAvatar = _currentUserService.HasRole("ADMIN") ||
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageAvatar = isSuper ||
                                _currentUserService.HasPermission("EMP_MANAGE") ||
-                               _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                               _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                               _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageAvatar)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageAvatar && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์ของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์");
             }
+        }
+        else if (!canManageAvatar)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์ของพนักงานท่านอื่น");
         }
 
         var avatar = await _dbContext.EmployeeAvatars.FindAsync(new object[] { id }, cancellationToken);
@@ -1209,18 +1236,26 @@ public class EmployeeService : IEmployeeService
         long length,
         CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์ (ADMIN, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเอง)
-        bool canManageSig = _currentUserService.HasRole("ADMIN") ||
+        // 1. ตรวจสอบสิทธิ์ (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเองที่ต้องมี ESS_PROFILE_EDIT)
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageSig = isSuper ||
                             _currentUserService.HasPermission("EMP_MANAGE") ||
-                            _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                            _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                            _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageSig)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageSig && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็นของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็น");
             }
+        }
+        else if (!canManageSig)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็นของพนักงานท่านอื่น");
         }
 
         var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
@@ -1299,17 +1334,25 @@ public class EmployeeService : IEmployeeService
 
     public async Task<bool> DeleteSignatureAsync(long id, CancellationToken cancellationToken = default)
     {
-        bool canManageSig = _currentUserService.HasRole("ADMIN") ||
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageSig = isSuper ||
                             _currentUserService.HasPermission("EMP_MANAGE") ||
-                            _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                            _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                            _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageSig)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageSig && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็นของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็น");
             }
+        }
+        else if (!canManageSig)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็นของพนักงานท่านอื่น");
         }
 
         var signature = await _dbContext.EmployeeSignatures

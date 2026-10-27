@@ -297,40 +297,40 @@ public class RoleService : IRoleService
             {
                 View = HasScope(viewCode, "SELF"),
                 Create = HasScope(createCode, "SELF"),
-                Edit = HasScope(editCode, "SELF"),
-                Approve = HasScope(approveCode, "SELF")
+                Edit = HasScope(editCode, "SELF") || HasScope(approveCode, "SELF"),
+                Approve = HasScope(approveCode, "SELF") || HasScope(editCode, "SELF")
             };
 
             var teamPerms = new ScopeActionPermissionsDto
             {
                 View = HasScope(viewCode, "TEAM"),
                 Create = HasScope(createCode, "TEAM"),
-                Edit = HasScope(editCode, "TEAM"),
-                Approve = HasScope(approveCode, "TEAM")
+                Edit = HasScope(editCode, "TEAM") || HasScope(approveCode, "TEAM"),
+                Approve = HasScope(approveCode, "TEAM") || HasScope(editCode, "TEAM")
             };
 
             var deptPerms = new ScopeActionPermissionsDto
             {
                 View = HasScope(viewCode, "DEPARTMENT"),
                 Create = HasScope(createCode, "DEPARTMENT"),
-                Edit = HasScope(editCode, "DEPARTMENT"),
-                Approve = HasScope(approveCode, "DEPARTMENT")
+                Edit = HasScope(editCode, "DEPARTMENT") || HasScope(approveCode, "DEPARTMENT"),
+                Approve = HasScope(approveCode, "DEPARTMENT") || HasScope(editCode, "DEPARTMENT")
             };
 
             var divPerms = new ScopeActionPermissionsDto
             {
                 View = HasScope(viewCode, "DIVISION"),
                 Create = HasScope(createCode, "DIVISION"),
-                Edit = HasScope(editCode, "DIVISION"),
-                Approve = HasScope(approveCode, "DIVISION")
+                Edit = HasScope(editCode, "DIVISION") || HasScope(approveCode, "DIVISION"),
+                Approve = HasScope(approveCode, "DIVISION") || HasScope(editCode, "DIVISION")
             };
 
             var orgPerms = new ScopeActionPermissionsDto
             {
                 View = HasScope(viewCode, "ORGANIZATION"),
                 Create = HasScope(createCode, "ORGANIZATION"),
-                Edit = HasScope(editCode, "ORGANIZATION"),
-                Approve = HasScope(approveCode, "ORGANIZATION")
+                Edit = HasScope(editCode, "ORGANIZATION") || HasScope(approveCode, "ORGANIZATION"),
+                Approve = HasScope(approveCode, "ORGANIZATION") || HasScope(editCode, "ORGANIZATION")
             };
 
             // Legacy Fallback: หากใน role_permission มีสิทธิ์รหัสนี้โดยตรงอยู่แล้ว แต่ใน role_data_scope ยังไม่มีบันทึก scope ใดๆ เลย
@@ -614,13 +614,10 @@ public class RoleService : IRoleService
                     AddPerm(createCode);
                     AddDataScope(createCode, scopeName);
                 }
-                if (perms.Edit)
+                if (perms.Edit || perms.Approve)
                 {
                     AddPerm(editCode);
                     AddDataScope(editCode, scopeName);
-                }
-                if (perms.Approve)
-                {
                     AddPerm(approveCode);
                     AddDataScope(approveCode, scopeName);
                 }
