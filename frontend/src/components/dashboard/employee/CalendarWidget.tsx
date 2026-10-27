@@ -248,8 +248,8 @@ export const CalendarWidget: React.FC = () => {
                     : isToday
                     ? 'text-[#94292B] font-bold ring-1.5 ring-[#94292B]/60'
                     : isWeekend
-                    ? 'text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-800'
+                    ? 'text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60'
                 }`}
               >
                 <span className="leading-none text-[11.5px]">{d}</span>
@@ -287,57 +287,66 @@ export const CalendarWidget: React.FC = () => {
           )}
         </div>
 
-        {/* Event Details Section */}
+        {/* Event Details Section: Fixed height to prevent expanding/stretching the dashboard cards */}
         {selectedEvents.length > 0 ? (
-          <div className="mt-1.5 bg-slate-50/90 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-2 space-y-1 max-h-28 overflow-y-auto">
+          <div
+            className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-1.5 rounded-xl bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden"
+            title={selectedEvents.map((e) => `${e.typeLabel}: ${e.title}`).join('\n')}
+          >
             <div className="flex items-center justify-between">
               <span className="text-[10.5px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-[#94292B]" />
+                <Calendar className="w-2.5 h-2.5 text-[#94292B]" />
                 {selectedDay} {monthName} {yearThai}
               </span>
-              <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[#94292B]/10 text-[#94292B]">
+              <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-[#94292B]/10 text-[#94292B] dark:bg-[#94292B]/30 dark:text-rose-300">
                 {selectedEvents.length} รายการ
               </span>
             </div>
-            {selectedEvents.map((evt) => (
-              <div
-                key={evt.id}
-                className="flex items-start gap-1.5 bg-white dark:bg-slate-800 p-1.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 shadow-xs"
+            <div className="mt-0.5 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center gap-1.5 text-[10px]">
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${selectedEvents[0].dotColor}`} />
+              <span
+                className={`text-[8.5px] font-medium px-1 py-0.2 rounded border shrink-0 ${selectedEvents[0].badgeColor}`}
               >
-                <span className={`w-1.5 h-1.5 rounded-full mt-1 shrink-0 ${evt.dotColor}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span
-                      className={`text-[8.5px] font-medium px-1 py-0.2 rounded border ${evt.badgeColor}`}
-                    >
-                      {evt.typeLabel}
-                    </span>
-                  </div>
-                  <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 mt-0.5 leading-snug truncate" title={evt.title}>
-                    {evt.title}
-                  </p>
-                </div>
-              </div>
-            ))}
+                {selectedEvents[0].typeLabel}
+              </span>
+              <span
+                className="font-semibold text-slate-800 dark:text-slate-200 truncate flex-1 min-w-0"
+                title={selectedEvents[0].title}
+              >
+                {selectedEvents[0].title}
+              </span>
+              {selectedEvents.length > 1 && (
+                <span className="text-[9px] text-slate-400 shrink-0 font-medium">
+                  +{selectedEvents.length - 1}
+                </span>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="mt-1.5 p-1.5 rounded-xl bg-slate-50/70 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px]">
+          <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-1.5 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden">
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1 font-medium text-slate-600 dark:text-slate-400">
-                <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <Calendar className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
                 {selectedDay ? `${selectedDay} ${monthName}` : 'ไม่มีวันที่เลือก'}
               </span>
-              <span className="text-[9.5px] text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีวันหยุด/กิจกรรม</span>
+              <span className="text-[9.5px] text-slate-400 dark:text-slate-500">ไม่มีวันหยุด/กิจกรรม</span>
             </div>
-            {nextUpcomingEventThisMonth && (
-              <div className="mt-1 pt-1 border-t border-slate-200/50 flex items-center gap-1 text-[10px]">
+            {nextUpcomingEventThisMonth ? (
+              <div className="mt-0.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1 text-[10px]">
                 <Sparkles className="w-2.5 h-2.5 text-amber-500 shrink-0" />
                 <span className="text-slate-500 dark:text-slate-400 shrink-0">
                   ถัดไป ({nextUpcomingEventThisMonth.day} {monthName}):
                 </span>
-                <span className="font-semibold text-slate-700 dark:text-slate-300 truncate" title={nextUpcomingEventThisMonth.title}>
+                <span
+                  className="font-semibold text-slate-700 dark:text-slate-300 truncate flex-1 min-w-0"
+                  title={nextUpcomingEventThisMonth.title}
+                >
                   {nextUpcomingEventThisMonth.title}
                 </span>
+              </div>
+            ) : (
+              <div className="mt-0.5 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-400 dark:text-slate-500">
+                ไม่มีกิจกรรมที่เหลือในเดือนนี้
               </div>
             )}
           </div>
