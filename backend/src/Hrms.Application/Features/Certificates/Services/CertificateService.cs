@@ -676,6 +676,9 @@ public class CertificateService : ICertificateService
             CompanyPhone = company?.Phone,
             CompanyEmail = company?.Email,
             CompanyLogoBase64 = companyLogoBase64,
+            CompanySealBase64 = company?.SealData != null && company.SealData.Length > 0
+                ? $"data:image/png;base64,{Convert.ToBase64String(company.SealData)}"
+                : null,
             EmployeeId = employeeId,
             EmployeeCode = employee.EmployeeCode,
             FullName = fullName,

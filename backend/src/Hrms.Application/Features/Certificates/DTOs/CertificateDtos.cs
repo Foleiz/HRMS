@@ -74,6 +74,8 @@ public class CertificateDocumentDto
     public string? CompanyPhone { get; set; }
     public string? CompanyEmail { get; set; }
     public string? CompanyLogoBase64 { get; set; }
+    /// <summary>ตราประทับบริษัท (ตั้งค่าที่ข้อมูลบริษัท)</summary>
+    public string? CompanySealBase64 { get; set; }
 
     // Employee Details
     public long EmployeeId { get; set; }

@@ -62,6 +62,8 @@ export interface CertificateDocument {
   companyPhone?: string;
   companyEmail?: string;
   companyLogoBase64?: string;
+  /** ตราประทับบริษัท */
+  companySealBase64?: string | null;
   employeeId: number;
   employeeCode: string;
   fullName: string;

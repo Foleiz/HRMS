@@ -544,6 +544,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.Property(e => e.LogoData).HasColumnName("logo_data");
+            entity.Property(e => e.SealData).HasColumnName("seal_data");
             entity.Property(e => e.CeoEmployeeId).HasColumnName("ceo_employee_id");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");

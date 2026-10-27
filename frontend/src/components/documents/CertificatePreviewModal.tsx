@@ -39,6 +39,7 @@ const CertificatePaper: React.FC<{
   companyAddress: string;
 }> = ({ doc, companyLogo, companyAddress }) => {
   const [signatureFailed, setSignatureFailed] = useState(false);
+  const [sealFailed, setSealFailed] = useState(false);
   const includeSalary = doc.includeSalary ?? doc.baseSalary != null;
   const purpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
   const salary = doc.baseSalary ?? null;
@@ -182,30 +183,40 @@ const CertificatePaper: React.FC<{
 
       {/* ===== ผู้มีอำนาจลงนาม (ชิดขวา) ===== */}
       <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '6mm', whiteSpace: 'nowrap' }}>
-        {/* ที่ประทับตราบริษัท (ประทับจริงหลังพิมพ์) */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            left: '-80mm',
-            top: '6mm',
-            width: '30mm',
-            height: '30mm',
-            borderRadius: '50%',
-            border: '1px dashed #9ca3af',
-            color: '#9ca3af',
-            fontSize: '9pt',
-            lineHeight: 1.3,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-          }}
-        >
-          ตราประทับ
-          <br />
-          บริษัท
-        </div>
+        {/* ตราประทับบริษัท — รูปจากข้อมูลบริษัท หรือวงกลมเว้นไว้ประทับตราจริงหลังพิมพ์ */}
+        {doc.companySealBase64 && !sealFailed ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={doc.companySealBase64}
+            alt="ตราประทับบริษัท"
+            onError={() => setSealFailed(true)}
+            style={{ position: 'absolute', left: '-84mm', top: '2mm', width: '40mm', height: '40mm', objectFit: 'contain' }}
+          />
+        ) : (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              left: '-82mm',
+              top: '4mm',
+              width: '36mm',
+              height: '36mm',
+              borderRadius: '50%',
+              border: '1px dashed #9ca3af',
+              color: '#9ca3af',
+              fontSize: '10pt',
+              lineHeight: 1.3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+            }}
+          >
+            ตราประทับ
+            <br />
+            บริษัท
+          </div>
+        )}
         <div>ขอแสดงความนับถือ</div>
         <div style={{ marginTop: '12mm' }}>
           <SignatureLine
@@ -243,10 +254,6 @@ const CertificatePaper: React.FC<{
           ตรวจสอบความถูกต้องโดยอ้างอิงเลขที่หนังสือ ได้ที่ฝ่ายบุคคล
           {doc.companyPhone ? <> โทร. <span style={{ whiteSpace: 'nowrap' }}>{doc.companyPhone}</span></> : null}
           {doc.companyEmail ? <> อีเมล <span style={{ whiteSpace: 'nowrap' }}>{doc.companyEmail}</span></> : null}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6b7280', fontSize: '9pt', marginTop: '1mm' }}>
-          <span>เอกสารฉบับนี้ออกโดยระบบ HR</span>
-          <span>หน้า 1 / 1</span>
         </div>
       </div>
 
