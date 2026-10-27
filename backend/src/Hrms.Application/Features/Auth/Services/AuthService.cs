@@ -200,6 +200,18 @@ public class AuthService : IAuthService
             select p.PermissionCode
         ).Distinct().ToListAsync(cancellationToken);
 
+        // หน้าตั้งค่าบทบาทและสิทธิ์ (RolesTab) ใช้ปุ่ม 3 การกระทำ (ดูข้อมูล / สร้าง / แก้ไข)
+        // ดังนั้นสิทธิ์ระดับ *_EDIT จึงครอบคลุมการอนุมัติ (*_APPROVE) ในโมดูลเดียวกันโดยอัตโนมัติ
+        var derivedApprovePerms = permissions
+            .Where(c => c.EndsWith("_EDIT", StringComparison.OrdinalIgnoreCase))
+            .Select(c => $"{c[..^5]}_APPROVE")
+            .Where(ap => !permissions.Contains(ap, StringComparer.OrdinalIgnoreCase))
+            .ToList();
+        if (derivedApprovePerms.Count > 0)
+        {
+            permissions.AddRange(derivedApprovePerms);
+        }
+
         var dataScopes = await (
             from rds in _dbContext.RoleDataScopes
             join r in _dbContext.Roles on rds.RoleId equals r.Id
@@ -212,6 +224,24 @@ public class AuthService : IAuthService
                 DataVisibilityScope = rds.DataVisibilityScope ?? "SELF"
             }
         ).Distinct().ToListAsync(cancellationToken);
+
+        var derivedApproveScopes = dataScopes
+            .Where(s => s.PermissionCode.EndsWith("_EDIT", StringComparison.OrdinalIgnoreCase))
+            .Select(s => new RoleScopeDto
+            {
+                RoleCode = s.RoleCode,
+                PermissionCode = $"{s.PermissionCode[..^5]}_APPROVE",
+                DataVisibilityScope = s.DataVisibilityScope
+            })
+            .Where(ds => !dataScopes.Any(existing =>
+                string.Equals(existing.RoleCode, ds.RoleCode, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(existing.PermissionCode, ds.PermissionCode, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(existing.DataVisibilityScope, ds.DataVisibilityScope, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        if (derivedApproveScopes.Count > 0)
+        {
+            dataScopes.AddRange(derivedApproveScopes);
+        }
 
         // ดึงแผนก ฝ่าย และทีมปัจจุบันของพนักงาน เพื่อใช้จำกัดขอบเขตการมองเห็นข้อมูล (Data Scoping)
         long? departmentId = null;

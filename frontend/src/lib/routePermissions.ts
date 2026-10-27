@@ -9,9 +9,38 @@ export interface RouteRule {
 
 export const ROUTE_RULES: RouteRule[] = [
   {
+    matchPrefix: '/employees/contracts',
+    title: 'สัญญาจ้างงาน',
+    requiredPermissions: ['EMP_CONTRACT_VIEW', 'EMP_MANAGE'],
+  },
+  {
+    matchPrefix: '/employees/transfers',
+    title: 'การโอนย้าย / ปรับตำแหน่ง',
+    requiredPermissions: ['EMP_TRANSFER_VIEW', 'EMP_MANAGE'],
+  },
+  {
+    matchPrefix: '/employees/types',
+    title: 'ประเภทพนักงาน',
+    requiredPermissions: ['EMP_TYPE_VIEW', 'EMP_MANAGE'],
+  },
+  {
+    matchPrefix: '/employees/documents',
+    title: 'แฟ้มเอกสารพนักงาน',
+    requiredPermissions: ['EMP_DOC_VIEW', 'EMP_MANAGE'],
+  },
+  {
     matchPrefix: '/employees',
     title: 'พนักงาน',
-    requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE', 'EMP_PROFILE_VIEW', 'EMP_DOC_VIEW', 'EMP_HISTORY_VIEW'],
+    requiredPermissions: [
+      'EMP_VIEW',
+      'EMP_MANAGE',
+      'EMP_PROFILE_VIEW',
+      'EMP_CONTRACT_VIEW',
+      'EMP_TRANSFER_VIEW',
+      'EMP_TYPE_VIEW',
+      'EMP_DOC_VIEW',
+      'EMP_HISTORY_VIEW',
+    ],
   },
   {
     matchPrefix: '/my-salary',
@@ -39,6 +68,26 @@ export const ROUTE_RULES: RouteRule[] = [
     requiredPermissions: ['ESS_NEWS_VIEW'],
   },
   {
+    matchPrefix: '/documents/leave',
+    title: 'ยื่นคำขอลา',
+    requiredPermissions: ['ESS_DOCS_CREATE'],
+  },
+  {
+    matchPrefix: '/documents/resignation',
+    title: 'ยื่นคำขอลาออก',
+    requiredPermissions: ['ESS_DOCS_CREATE'],
+  },
+  {
+    matchPrefix: '/documents/general',
+    title: 'ยื่นคำขอเอกสารทั่วไป',
+    requiredPermissions: ['ESS_DOCS_CREATE'],
+  },
+  {
+    matchPrefix: '/documents/certificate',
+    title: 'ขอหนังสือรับรอง',
+    requiredPermissions: ['ESS_DOCS_CREATE'],
+  },
+  {
     matchPrefix: '/documents',
     title: 'ยื่นเอกสาร',
     requiredPermissions: ['ESS_DOCS_VIEW'],
@@ -46,17 +95,17 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/ess/attendance',
     title: 'บันทึกเวลาของฉัน (ESS)',
-    requiredPermissions: ['ESS_TIME_VIEW', 'TIME_DAILY_VIEW', 'TIME_VIEW'],
+    requiredPermissions: ['ESS_TIME_VIEW'],
   },
   {
     matchPrefix: '/ess/benefits',
     title: 'สวัสดิการของฉัน (ESS)',
-    requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_PROFILE_VIEW'],
+    requiredPermissions: ['ESS_BENEFIT_VIEW'],
   },
   {
     matchPrefix: '/benefits/balances',
     title: 'ยอดสวัสดิการพนักงาน',
-    requiredPermissions: ['BENEFIT_BALANCE_VIEW', 'ORG_BENEFIT_VIEW', 'EMP_PROFILE_VIEW', 'EMP_VIEW'],
+    requiredPermissions: ['BENEFIT_BALANCE_VIEW'],
   },
 
   {
@@ -83,6 +132,7 @@ export const ROUTE_RULES: RouteRule[] = [
     matchPrefix: '/payroll',
     title: 'เงินเดือน',
     requiredPermissions: [
+      'PAYROLL_PERIOD_VIEW',
       'PAYROLL_HR_VIEW',
       'PAYROLL_FINANCE_VIEW',
       'PAYROLL_ADMIN_VIEW',
@@ -92,6 +142,7 @@ export const ROUTE_RULES: RouteRule[] = [
       'PAYROLL_BONUS_VIEW',
       'PAYROLL_BANK_VIEW',
       'PAYROLL_TAX_VIEW',
+      'PAYROLL_SLIP_VIEW',
     ],
   },
   {
@@ -112,7 +163,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/org-chart',
     title: 'แผนผังองค์กร',
-    requiredPermissions: ['ORG_CHART_VIEW', 'ORG_STRUCT_VIEW', 'ORG_VIEW'],
+    requiredPermissions: ['ORG_CHART_VIEW'],
   },
   {
     matchPrefix: '/organization',
@@ -132,8 +183,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/announcements',
     title: 'จัดการประกาศ',
-    // ดูข่าวสารใช้ /my-news — เมนูจัดการต้องมีสิทธิ์สร้าง/แก้ไขประกาศ
-    requiredPermissions: ['ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
+    requiredPermissions: ['ANNOUNCEMENTS_VIEW', 'ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
   },
   {
     matchPrefix: '/master',

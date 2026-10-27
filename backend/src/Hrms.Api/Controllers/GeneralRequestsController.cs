@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.GeneralRequests.DTOs;
 using Hrms.Application.Features.GeneralRequests.Services;
@@ -39,6 +40,7 @@ public class GeneralRequestsController : ControllerBase
 
     /// <summary>ยื่นคำขอใหม่</summary>
     [HttpPost]
+    [RequirePermission("ESS_DOCS_CREATE")]
     [RequestSizeLimit(8 * 1024 * 1024)]
     public async Task<ActionResult<ApiResponse<GeneralRequestDto>>> Create([FromBody] CreateGeneralRequestDto dto, CancellationToken cancellationToken)
     {
