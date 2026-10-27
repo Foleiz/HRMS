@@ -1063,7 +1063,15 @@ export default function PayrollPage() {
             showToast('อัปโหลดสลิป/ใบเสร็จธนาคารเรียบร้อยแล้ว');
           }
         } catch (err: any) {
-          showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอัปโหลดสลิปธนาคาร');
+          if (!err?.response && (await recoverIfReachedStatus(selectedPeriod.id, markAsPaid ? ['PAID', 'CLOSED'] : [selectedPeriod.status]))) {
+            setConfirmPaymentModalOpen(false);
+            setBankReceiptFile(null);
+            showToast(markAsPaid
+              ? 'อัปโหลดสลิปธนาคารและยืนยันรอบเงินเดือนเป็นโอนสำเร็จ (PAID) เรียบร้อยแล้ว'
+              : 'อัปโหลดสลิป/ใบเสร็จธนาคารเรียบร้อยแล้ว');
+          } else {
+            showToast(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการอัปโหลดสลิปธนาคาร');
+          }
         } finally {
           setIsUploadingBankReceipt(false);
         }
@@ -1073,6 +1081,21 @@ export default function PayrollPage() {
       showToast('เกิดข้อผิดพลาดในการอ่านไฟล์');
       setIsUploadingBankReceipt(false);
     }
+  };
+
+  // ถ้าคำขอหมดเวลา/หลุด (ไม่มี response) แต่ backend ทำต่อจนเสร็จ → เช็คสถานะงวดจริงก่อนแจ้งผิดพลาด
+  const recoverIfReachedStatus = async (periodId: number, statuses: string[]): Promise<boolean> => {
+    try {
+      const fresh = await salaryService.getPayrollPeriodById(periodId);
+      if (fresh && statuses.includes(fresh.status)) {
+        setSelectedPeriod(fresh);
+        setPeriods(prev => prev.map(p => (p.id === fresh.id ? fresh : p)));
+        return true;
+      }
+    } catch {
+      /* ignore — แจ้งข้อผิดพลาดเดิม */
+    }
+    return false;
   };
 
   const handleMarkPaid = async () => {
@@ -1109,7 +1132,11 @@ export default function PayrollPage() {
       setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
       showToast('ยืนยันรอบเงินเดือนเข้าสู่สถานะโอนสำเร็จ (PAID) เรียบร้อยแล้ว');
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะเป็นโอนสำเร็จ (PAID)');
+      if (!err?.response && (await recoverIfReachedStatus(selectedPeriod.id, ['PAID', 'CLOSED']))) {
+        showToast('ยืนยันรอบเงินเดือนเข้าสู่สถานะโอนสำเร็จ (PAID) เรียบร้อยแล้ว');
+      } else {
+        showToast(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะเป็นโอนสำเร็จ (PAID)');
+      }
     } finally {
       setIsConfirmingPayment(false);
     }
