@@ -174,7 +174,11 @@ const ResignationPaper: React.FC<{
   signatureSrc: string | null;
   onSignatureError?: () => void;
   approvalSlots: ApprovalSlot[];
-}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError, approvalSlots }) => {
+  /** ค่าย่อตารางผลการพิจารณาที่วัดได้จากฉบับบนจอ — ฉบับพิมพ์ (ซ่อนอยู่ วัดขนาดไม่ได้) ใช้ค่านี้ */
+  fixedApprovalZoom?: number;
+  /** ฉบับบนจอแจ้งค่าย่อที่วัดได้ */
+  onApprovalZoom?: (zoom: number) => void;
+}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError, approvalSlots, fixedApprovalZoom, onApprovalZoom }) => {
   const submissionParts = parseThaiDateParts(data.submissionDate);
   const lastWorkingParts = parseThaiDateParts(data.requestedLastWorkingDate);
   const { prefix, displayName } = extractPrefixAndName(data.employeeName, data.titlePrefix);
@@ -195,6 +199,10 @@ const ResignationPaper: React.FC<{
     const paper = paperRef.current;
     const box = approvalRef.current;
     if (!paper || !box) return;
+    if (fixedApprovalZoom !== undefined) {
+      box.style.zoom = String(fixedApprovalZoom);
+      return;
+    }
     const fit = () => {
       box.style.zoom = '1';
       const pr = paper.getBoundingClientRect();
@@ -205,12 +213,14 @@ const ResignationPaper: React.FC<{
       const available = limit - br.top;
       const z = br.height > available && available > 0 ? Math.max(0.55, available / br.height) : 1;
       box.style.zoom = String(z);
+      onApprovalZoom?.(z);
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(box.firstElementChild ?? box);
     return () => ro.disconnect();
-  }, [approvalSlots, data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvalSlots, data, fixedApprovalZoom]);
 
   const strike = (p: 'นาย' | 'นาง' | 'นางสาว') =>
     prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
@@ -398,6 +408,8 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
   const [companyAddress, setCompanyAddress] = useState<string | null>(data?.companyAddress || null);
   const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
+  // ค่าย่อตารางผลการพิจารณา (วัดจากฉบับบนจอ ส่งให้ฉบับพิมพ์ — ให้ตอนพิมพ์ตรงกับตอนดูตัวอย่าง)
+  const [approvalZoom, setApprovalZoom] = useState<number>(1);
   const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(null);
 
   // ช่องลงนามตามสายการอนุมัติ:
@@ -586,6 +598,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                 signatureSrc={signatureSrc}
                 onSignatureError={() => setSignatureSrc(null)}
                 approvalSlots={approvalSlots}
+                onApprovalZoom={setApprovalZoom}
               />
             </div>
           </div>
@@ -622,6 +635,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                 signatureSrc={signatureSrc}
                 onSignatureError={() => setSignatureSrc(null)}
                 approvalSlots={approvalSlots}
+                fixedApprovalZoom={approvalZoom}
               />
           </div>,
           document.body
