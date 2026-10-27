@@ -5316,7 +5316,7 @@ export default function PayrollPage() {
                                 </button>
                               {isUploadingBankReceipt && (
                                 <p role="status" className="w-full text-right text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
-                                  กำลังปิดรอบและสร้างสลิปเงินเดือนของพนักงานทุกคน อาจใช้เวลาราว 30–60 วินาที — กรุณาอย่าปิดหน้านี้
+                                  กำลังบันทึกการจ่ายเงิน กรุณาอย่าปิดหน้านี้ (สลิปเงินเดือนจะทยอยสร้างเบื้องหลังภายในไม่กี่นาที)
                                 </p>
                               )}
                               </div>
@@ -5347,7 +5347,7 @@ export default function PayrollPage() {
                                 </button>
                               {isConfirmingPayment && (
                                 <p role="status" className="w-full text-right text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
-                                  กำลังปิดรอบและสร้างสลิปเงินเดือนของพนักงานทุกคน อาจใช้เวลาราว 30–60 วินาที — กรุณาอย่าปิดหน้านี้
+                                  กำลังบันทึกการจ่ายเงิน กรุณาอย่าปิดหน้านี้ (สลิปเงินเดือนจะทยอยสร้างเบื้องหลังภายในไม่กี่นาที)
                                 </p>
                               )}
                               </div>
