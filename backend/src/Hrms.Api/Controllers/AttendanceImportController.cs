@@ -31,7 +31,7 @@ public class AttendanceImportController : ControllerBase
     [Consumes("multipart/form-data")]
     [RequirePermission("TIME_IMPORT_CREATE")]
     public async Task<IActionResult> UploadFile(
-        [FromForm] IFormFile file,
+        IFormFile file,
         [FromForm] string? source,
         [FromForm] string? deviceName,
         [FromForm] bool allowDuplicate = false,

@@ -176,8 +176,9 @@ public partial class LeaveRequestService
         CancellationToken cancellationToken)
     {
         // กรองช่วงกว้างใน DB ก่อน แล้วค่อยเทียบปีตามเวลาไทยในหน่วยความจำ
-        var from = new DateTime(year - 1, 12, 31, 0, 0, 0, DateTimeKind.Utc);
-        var to = new DateTime(year + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var safeYear = Math.Max(year, 2);
+        var from = new DateTime(safeYear - 1, 12, 31, 0, 0, 0, DateTimeKind.Utc);
+        var to = new DateTime(safeYear + 1, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var pending = await _context.LeaveRequests
             .AsNoTracking()
             .Where(r => r.EmployeeId == employeeId

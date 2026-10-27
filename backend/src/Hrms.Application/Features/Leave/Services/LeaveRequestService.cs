@@ -182,6 +182,15 @@ public partial class LeaveRequestService : ILeaveRequestService
 
     public async Task<LeaveRequestDto> CreateAsync(CreateLeaveRequestDto request, CancellationToken cancellationToken = default)
     {
+        if (request.StartDatetime == default || request.EndDatetime == default || request.StartDatetime.Year < 2000 || request.EndDatetime.Year < 2000)
+        {
+            throw new InvalidOperationException("กรุณาระบุวันและเวลาเริ่มต้น-สิ้นสุดการลาให้ถูกต้อง");
+        }
+        if (request.EndDatetime < request.StartDatetime)
+        {
+            throw new InvalidOperationException("วันสิ้นสุดการลาต้องไม่น้อยกว่าวันเริ่มต้นการลา");
+        }
+
         var leaveType = await _context.LeaveTypes.FindAsync([request.LeaveTypeId], cancellationToken);
         if (leaveType == null)
         {
