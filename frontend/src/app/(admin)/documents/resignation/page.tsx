@@ -31,7 +31,7 @@ import { RichSelect } from '@/components/ui/RichSelect';
 import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 
-const REASON_MAX_LENGTH = 160;
+const REASON_MAX_LENGTH = 190;
 const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
 const INPUT =
   'w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]';
@@ -79,6 +79,8 @@ export default function ResignationPage() {
   // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
   // คำนำหน้า: ดึงจากข้อมูลพนักงาน — เลือกเองได้เฉพาะเมื่อข้อมูลพนักงานยังไม่มีคำนำหน้า
   const [prefixFromProfile, setPrefixFromProfile] = useState(false);
+  // ยังไม่รู้ว่าข้อมูลพนักงานมีคำนำหน้าไหม → ยังไม่แสดงตัวเลือก (กันกระพริบโผล่แล้วหาย)
+  const [prefixChecked, setPrefixChecked] = useState(false);
   const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>(() => {
     const fn = user?.fullName || '';
     if (fn.startsWith('นางสาว')) return 'นางสาว';
@@ -167,9 +169,12 @@ export default function ResignationPage() {
           setTitlePrefix(mapped);
           setPrefixFromProfile(true);
         }
+        setPrefixChecked(true);
       }
     } catch (err) {
       console.error('Error loading employee profile:', err);
+    } finally {
+      setPrefixChecked(true);
     }
   }, [user?.employeeId, user?.fullName, user?.employeeCode]);
 
@@ -379,7 +384,7 @@ export default function ResignationPage() {
                 required
               />
             </div>
-            {!prefixFromProfile && (
+            {prefixChecked && !prefixFromProfile && (
               <fieldset>
                 <legend className={LABEL}>คำนำหน้าในหนังสือ</legend>
                 <div role="radiogroup" aria-label="คำนำหน้า" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
