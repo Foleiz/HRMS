@@ -28,10 +28,19 @@ import { DocumentTypeItem } from '@/types/master';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { toast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
-import { CustomSelect } from '@/components/ui/CustomSelect';
+import { RichSelect } from '@/components/ui/RichSelect';
+import { RequesterSummary } from '@/components/documents/RequesterSummary';
+import { FormActionBar } from '@/components/documents/FormActionBar';
+import { FileDropzone } from '@/components/ui/FileDropzone';
 
 const REASON_MAX_LENGTH = 160;
 const NOTES_MAX_LENGTH = 200;
+const CUSTOM_TYPE = '__CUSTOM__';
+const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
+const INPUT =
+  'w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]';
+const TEXTAREA =
+  'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -353,23 +362,8 @@ export default function GeneralDocumentPage() {
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" คงรูปแบบเดียวกับระบบทั้งหมด */}
       <DocumentsSubNav />
 
-      {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารทั่วไป</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-            ยื่นคำขอถึงฝ่ายบุคคล เช่น ขอแก้ไขข้อมูล ขอบัตรพนักงาน หรือส่งเอกสาร — คำขอจะผ่านสายการอนุมัติที่ตั้งไว้
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4" />
-          ล้างฟอร์ม
-        </button>
-      </div>
+      {/* หัวข้ออยู่ใน breadcrumb แล้ว — เก็บ h1 ไว้ให้โปรแกรมอ่านหน้าจอ */}
+      <h1 className="sr-only">ยื่นคำขอเอกสารทั่วไป</h1>
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -379,96 +373,92 @@ export default function GeneralDocumentPage() {
         </div>
       )}
 
-      {/* Main Form (ออกแบบตาม Figma เป๊ะๆ: ข้อมูลทั่วไป + แนบเอกสารสีเหลืองอ่อนทางซ้าย, รายละเอียดทางขวา) */}
-      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      {/* ฟอร์มกระชับ — รูปแบบเดียวกับหน้ายื่นคำขอลา */}
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <RequesterSummary
+          fullName={profile.fullName || '-'}
+          positionTitle={profile.positionTitle}
+          departmentName={profile.departmentName}
+          action={
+            <Button variant="secondary" type="button" onClick={handleResetForm} icon={<RotateCcw className="w-4 h-4" />}>
+              ล้างฟอร์ม
+            </Button>
+          }
+        />
+
         {formError && (
-          <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
+          <div role="alert" className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{formError}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป & กล่องแนบเอกสาร (ตาม Figma) ─── */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-5">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลทั่วไป</h3>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+          {/* ซ้าย: ประเภท + วันที่ + ใช้สำหรับ */}
+          <div className="space-y-6 min-w-0">
+            <div>
+              <label htmlFor="gen-type" className={LABEL}>
+                ประเภทเอกสาร <span className="text-rose-600">*</span>
+              </label>
+              {!isCustomType ? (
+                <RichSelect<string>
+                  id="gen-type"
+                  value={documentType}
+                  onChange={(v) => {
+                    if (v === CUSTOM_TYPE) {
+                      setIsCustomType(true);
+                    } else {
+                      setDocumentType(v);
+                    }
+                  }}
+                  options={[
+                    ...typeOptions.map((name) => {
+                      const m = masterTypes.find((t) => t.documentName === name);
+                      const notes = [
+                        m?.validityMonths ? `อายุ ${m.validityMonths} เดือน` : null,
+                        m?.isExpiryRequired ? 'ต้องระบุวันหมดอายุ' : null,
+                        isAttachmentMandatory(name) ? 'ต้องแนบไฟล์' : null,
+                      ].filter(Boolean);
+                      return { value: name, label: name, description: notes.join(' · ') || undefined };
+                    }),
+                    { value: CUSTOM_TYPE, label: '+ ระบุประเภทอื่นเอง', description: 'ไม่มีในรายการ' },
+                  ]}
+                  placeholder={typesLoaded ? 'เลือกประเภทเอกสาร' : 'กำลังโหลดประเภทเอกสาร...'}
+                />
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    id="gen-type"
+                    type="text"
+                    value={customDocumentType}
+                    onChange={(e) => setCustomDocumentType(e.target.value)}
+                    placeholder="เช่น สำเนาบัตรประชาชน"
+                    className={INPUT}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomType(false)}
+                    aria-label="กลับไปเลือกจากรายการ"
+                    className="h-11 w-11 shrink-0 inline-flex items-center justify-center text-slate-500 hover:text-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer"
+                  >
+                    <X className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* ชื่อพนักงาน * (กรอกอัตโนมัติตาม Figma) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อพนักงาน <span className="text-rose-500">*</span></label>
-                <input
-                  type="text"
-                  readOnly
-                  value={profile.fullName}
-                  placeholder="กรอกอัตโนมัติ"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed font-medium"
-                />
+                <span className={LABEL}>วันที่ออก</span>
+                <LeaveDateRangePicker mode="single" className="w-full" startDate={issueDate} endDate={issueDate} onChange={(d) => setIssueDate(d)} />
               </div>
-
-              {/* วันที่ออก (ใช้ปฏิทิน LeaveDateRangePicker ตามคำสั่งผู้ใช้) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ออก</label>
-                <LeaveDateRangePicker
-                  mode="single"
-                  className="w-full"
-                  startDate={issueDate}
-                  endDate={issueDate}
-                  onChange={(d) => setIssueDate(d)}
-                />
-              </div>
-
-              {/* ประเภทเอกสาร (เช่น สำเนาบัตรประชาชน ตาม Figma) */}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ประเภทเอกสาร <span className="text-rose-500">*</span></label>
-                {!isCustomType ? (
-                  <CustomSelect
-                    value={documentType}
-                    onChange={(e) => {
-                      if (e.target.value === 'CUSTOM') {
-                        setIsCustomType(true);
-                      } else {
-                        setDocumentType(e.target.value);
-                      }
-                    }}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
-                  >
-                    {!typesLoaded && <option value="">กำลังโหลดประเภทเอกสาร...</option>}
-                    {typesLoaded && typeOptions.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                    <option value="CUSTOM">+ ระบุประเภทอื่น ๆ ด้วยตนเอง</option>
-                  </CustomSelect>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={customDocumentType}
-                      onChange={(e) => setCustomDocumentType(e.target.value)}
-                      placeholder="เช่น สำเนาบัตรประชาชน"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomType(false)}
-                      className="px-2.5 py-2.5 text-xs text-gray-400 hover:text-gray-700 dark:text-slate-300 border border-gray-200 rounded-xl"
-                      title="เลือกจากรายการเดิม"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* วันหมดอายุ */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400">
-                    วันหมดอายุ{expiryRequired ? <> <span className="text-rose-500">*</span></> : ' (ถ้ามี)'}
-                  </label>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    วันหมดอายุ{' '}
+                    {expiryRequired ? <span className="text-rose-600">*</span> : <span className="font-normal text-slate-500 dark:text-slate-400">(ถ้ามี)</span>}
+                  </span>
                   {effectiveExpiry && (
                     <button
                       type="button"
@@ -476,7 +466,7 @@ export default function GeneralDocumentPage() {
                         setExpiryDate('');
                         setExpiryTouched(true);
                       }}
-                      className="text-[11px] text-gray-400 hover:text-gray-700 dark:text-slate-300"
+                      className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
                     >
                       ล้างวันที่
                     </button>
@@ -492,163 +482,104 @@ export default function GeneralDocumentPage() {
                     setExpiryTouched(true);
                   }}
                 />
-                {!expiryTouched && validityMonths ? (
-                  <p className="text-[11px] text-gray-400 mt-1">คำนวณจากอายุเอกสาร {validityMonths} เดือนนับจากวันที่ออก</p>
-                ) : null}
               </div>
             </div>
+            {!expiryTouched && validityMonths ? (
+              <p className="-mt-3 text-xs text-slate-500 dark:text-slate-400">วันหมดอายุคำนวณจากอายุเอกสาร {validityMonths} เดือน</p>
+            ) : null}
 
-            {/* กล่องแนบเอกสาร (สีเหลืองอ่อนพาสเทลตาม Figma: bg-amber-50 / bg-[#FEF9C3]) */}
-            <div className={`rounded-2xl p-5 space-y-3 border transition-colors ${
-              isFileRequired && !selectedFile
-                ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/20'
-                : 'bg-[#FEF9C3]/80 dark:bg-amber-950/20 border-[#FDE047] dark:border-amber-700/50'
-            }`}>
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <span>แนบเอกสาร</span>
-                  {isFileRequired ? (
-                    <span className="text-rose-500 font-bold text-xs">* (จำเป็นสำหรับเอกสารประเภทนี้)</span>
-                  ) : (
-                    <span className="text-slate-400 font-normal text-xs">(ไม่บังคับ)</span>
-                  )}
-                </h4>
-                <p className="text-xs text-gray-600 dark:text-slate-400 mt-0.5">
-                  {isFileRequired ? 'เอกสารประเภทนี้กำหนดให้ต้องแนบไฟล์เอกสารประกอบคำขอ' : 'กรุณาแนบเอกสารด้านล่างนี้ (ถ้ามี)'}
-                </p>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="gen-purpose" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  เอกสารนี้ใช้สำหรับ <span className="text-rose-600">*</span>
+                </label>
+                <span className="text-xs text-slate-400">{purpose.length}/{REASON_MAX_LENGTH}</span>
               </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 bg-white dark:bg-slate-900 p-2 rounded-xl border border-amber-200">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:text-slate-300 text-xs font-medium rounded-lg transition-colors cursor-pointer shrink-0"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  เลือกไฟล์
-                </button>
-                <div className="flex-1 px-2 py-1 text-xs text-gray-500 dark:text-slate-400 truncate flex items-center justify-between">
-                  <span className="truncate">
-                    {selectedFile ? (
-                      <span className="text-gray-800 dark:text-slate-200 font-medium flex items-center gap-1.5">
-                        <Paperclip className="w-3.5 h-3.5 text-blue-500" />
-                        {selectedFile.name} ({(selectedFile.size / 1024).toFixed(0)} KB)
-                      </span>
-                    ) : (
-                      'ยังไม่มีไฟล์ที่ถูกเลือก'
-                    )}
-                  </span>
-                  {selectedFile && (
-                    <button
-                      type="button"
-                      onClick={handleClearFile}
-                      className="p-1 text-gray-400 hover:text-rose-500 rounded-md"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              <p className="text-2xs text-gray-500 dark:text-slate-400">รองรับไฟล์ PDF, JPG, PNG ขนาดไม่เกิน 5MB</p>
+              <textarea
+                id="gen-purpose"
+                value={purpose}
+                maxLength={REASON_MAX_LENGTH}
+                onChange={(e) => setPurpose(e.target.value)}
+                rows={4}
+                placeholder="เช่น ขอเปลี่ยนที่อยู่เป็น... / ขอสลิปเงินเดือนเดือน..."
+                className={TEXTAREA}
+                required
+              />
             </div>
           </div>
 
-          {/* ─── ฝั่งขวา: รายละเอียดของเอกสาร (ตาม Figma) ─── */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4 flex flex-col justify-between">
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">รายละเอียดของเอกสาร</h3>
-
-              {/* เอกสารนี้ใช้สำหรับ * (Textarea ตาม Figma พร้อม counter 0/160) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                    เอกสารนี้ใช้สำหรับ <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-2xs text-gray-400 font-mono">
-                    {purpose.length}/{REASON_MAX_LENGTH}
-                  </span>
-                </div>
-                <textarea
-                  value={purpose}
-                  maxLength={REASON_MAX_LENGTH}
-                  onChange={(e) => setPurpose(e.target.value)}
-                  rows={5}
-                  placeholder="อธิบายสิ่งที่ต้องการ เช่น ขอเปลี่ยนที่อยู่เป็น... / ขอสลิปเงินเดือนเดือน..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
-                  required
-                />
+          {/* ขวา: หมายเหตุ + ไฟล์แนบ */}
+          <div className="flex flex-col gap-6 min-w-0">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="gen-notes" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  หมายเหตุถึงฝ่ายบุคคล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                </label>
+                <span className="text-xs text-slate-400">{notes.length}/{NOTES_MAX_LENGTH}</span>
               </div>
+              <input
+                id="gen-notes"
+                value={notes}
+                maxLength={NOTES_MAX_LENGTH}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+                className={INPUT}
+              />
+            </div>
 
-              {/* หมายเหตุเพิ่มเติม */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400">
-                    หมายเหตุเพิ่มเติม (ถ้ามี)
-                  </label>
-                  <span className="text-2xs text-gray-400 font-mono">
-                    {notes.length}/{NOTES_MAX_LENGTH}
-                  </span>
-                </div>
-                <textarea
-                  value={notes}
-                  maxLength={NOTES_MAX_LENGTH}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  placeholder="ระบุข้อมูลเพิ่มเติมถึงเจ้าหน้าที่ฝ่ายบุคคล..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
-                />
-              </div>
+            <div className="flex-1 flex flex-col">
+              <span id="gen-attachment-label" className={`${LABEL} flex items-center gap-1`}>
+                ไฟล์แนบ{' '}
+                {isFileRequired ? (
+                  <span className="text-rose-600">*</span>
+                ) : (
+                  <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                )}
+              </span>
+              <FileDropzone
+                className="flex-1"
+                file={selectedFile}
+                onChange={(f) => {
+                  setSelectedFile(f);
+                  setFormError(null);
+                }}
+                accept={['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']}
+                required={isFileRequired}
+                aria-labelledby="gen-attachment-label"
+              />
+              {isFileRequired && (
+                <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">เอกสารประเภทนี้ต้องแนบไฟล์ประกอบคำขอ</p>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Error alert at bottom if validation fails */}
-        {formError && (
-          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm rounded-xl flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-            <span>{formError}</span>
-          </div>
-        )}
-
-        {/* ─── แถบปุ่มสั่งการด้านล่าง (ตาม Figma และตามสไตล์เมนูอื่นๆ: ดูตัวอย่าง / บันทึกแบบร่าง / ถัดไป-ยื่นคำขอ) ─── */}
-        <div className="flex items-center justify-center sm:justify-end gap-3 pt-6 border-t border-gray-200 dark:border-slate-700">
-          <button
+        <FormActionBar>
+          <Button
+            variant="secondary"
             type="button"
             onClick={() => {
               setFormError(null);
               setIsPreviewOpen(true);
             }}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
+            icon={<Eye className="w-3.5 h-3.5" />}
           >
-            <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
-            ดูตัวอย่าง
-          </button>
+            ดูตัวอย่างเอกสาร
+          </Button>
           <Button
             variant="secondary"
             type="button"
             onClick={handleSaveDraft}
             loading={savingDraft}
             disabled={isSubmitting}
-            icon={<Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
+            icon={<Save className="w-3.5 h-3.5" />}
           >
             บันทึกแบบร่าง
           </Button>
-          <Button
-            type="submit"
-            loading={isSubmitting}
-            disabled={savingDraft}
-            icon={<Send className="w-4 h-4" />}
-          >
+          <Button type="submit" loading={isSubmitting} disabled={savingDraft}>
             ยื่นคำขอ
           </Button>
-        </div>
+        </FormActionBar>
       </form>
 
       {/* Success Modal */}

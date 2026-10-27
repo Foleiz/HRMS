@@ -9,6 +9,7 @@ import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents
 import { RichSelect, type RichSelectOption } from '@/components/ui/RichSelect';
 import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FileDropzone } from '@/components/ui/FileDropzone';
+import { FormActionBar } from '@/components/documents/FormActionBar';
 import { Button } from '@/components/ui';
 
 interface EmployeeProfileSummary {
@@ -663,30 +664,28 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       </div>
 
       {/* แถบปุ่มติดขอบล่าง — ปุ่มหลักอยู่ที่เดิมเสมอ */}
-      <div className="sticky bottom-0 z-20 -mx-1 px-1">
-        <div className="flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)]">
+      <FormActionBar>
           <Button
-            variant="secondary"
-            onClick={() => setShowPreview(true)}
-            disabled={loading || savingDraft}
-            icon={<FileText className="w-3.5 h-3.5" />}
-          >
-            ดูตัวอย่างใบลา
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={handleSaveDraft}
-            disabled={loading || savingDraft}
-            loading={savingDraft}
-            icon={savingDraft ? undefined : <Save className="w-3.5 h-3.5" />}
-          >
-            บันทึกแบบร่าง
-          </Button>
-          <Button type="submit" loading={loading} disabled={loading || savingDraft || validationErrors.length > 0}>
-            ยื่นคำขอลา
-          </Button>
-        </div>
-      </div>
+          variant="secondary"
+          onClick={() => setShowPreview(true)}
+          disabled={loading || savingDraft}
+          icon={<FileText className="w-3.5 h-3.5" />}
+        >
+          ดูตัวอย่างใบลา
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={handleSaveDraft}
+          disabled={loading || savingDraft}
+          loading={savingDraft}
+          icon={savingDraft ? undefined : <Save className="w-3.5 h-3.5" />}
+        >
+          บันทึกแบบร่าง
+        </Button>
+        <Button type="submit" loading={loading} disabled={loading || savingDraft || validationErrors.length > 0}>
+          ยื่นคำขอลา
+        </Button>
+      </FormActionBar>
 
       <LeavePreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} data={showPreview ? previewData : null} />
     </form>

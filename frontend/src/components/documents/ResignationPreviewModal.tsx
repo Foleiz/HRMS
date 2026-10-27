@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, FileText } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
@@ -174,7 +174,11 @@ const ResignationPaper: React.FC<{
   signatureSrc: string | null;
   onSignatureError?: () => void;
   approvalSlots: ApprovalSlot[];
-}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError, approvalSlots }) => {
+  /** ค่าย่อตารางผลการพิจารณาที่วัดได้จากฉบับบนจอ — ฉบับพิมพ์ (ซ่อนอยู่ วัดขนาดไม่ได้) ใช้ค่านี้ */
+  fixedApprovalZoom?: number;
+  /** ฉบับบนจอแจ้งค่าย่อที่วัดได้ */
+  onApprovalZoom?: (zoom: number) => void;
+}> = ({ data, companyLogo, companyAddress, signatureSrc, onSignatureError, approvalSlots, fixedApprovalZoom, onApprovalZoom }) => {
   const submissionParts = parseThaiDateParts(data.submissionDate);
   const lastWorkingParts = parseThaiDateParts(data.requestedLastWorkingDate);
   const { prefix, displayName } = extractPrefixAndName(data.employeeName, data.titlePrefix);
@@ -188,11 +192,42 @@ const ResignationPaper: React.FC<{
     return label || 'ความจำเป็นส่วนบุคคล';
   };
 
+  // ตารางผลการพิจารณาต้องจบก่อนเส้นท้ายกระดาษ (284 มม.) — ถ้าสายอนุมัติหลายขั้นหรือเหตุผลยาวจนล้น ให้ย่อตารางลงพอดีพื้นที่
+  const paperRef = useRef<HTMLDivElement>(null);
+  const approvalRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const paper = paperRef.current;
+    const box = approvalRef.current;
+    if (!paper || !box) return;
+    if (fixedApprovalZoom !== undefined) {
+      box.style.zoom = String(fixedApprovalZoom);
+      return;
+    }
+    const fit = () => {
+      box.style.zoom = '1';
+      const pr = paper.getBoundingClientRect();
+      if (pr.height === 0) return;
+      const pxPerMm = pr.height / 297;
+      const limit = pr.top + 281 * pxPerMm; // เว้น 3 มม. เหนือเส้นท้ายกระดาษ
+      const br = box.getBoundingClientRect();
+      const available = limit - br.top;
+      const z = br.height > available && available > 0 ? Math.max(0.55, available / br.height) : 1;
+      box.style.zoom = String(z);
+      onApprovalZoom?.(z);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(box.firstElementChild ?? box);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [approvalSlots, data, fixedApprovalZoom]);
+
   const strike = (p: 'นาย' | 'นาง' | 'นางสาว') =>
     prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
 
   return (
     <div
+      ref={paperRef}
       className={`resignation-paper theme-light ${sarabun.className}`}
       style={{
         position: 'relative',
@@ -270,7 +305,19 @@ const ResignationPaper: React.FC<{
           </>
         ) : null}{' '}
         ของบริษัท ไซอโคว จำกัด มีความประสงค์ขอลาออกจากการเป็นพนักงาน ของบริษัทฯ เนื่องด้วยเหตุผล
-        <Fill value={getReasonText()} minWidth="40mm" align="left" />
+        {/* เหตุผลยาวได้หลายบรรทัด — ขีดเส้นประใต้ทุกบรรทัด (เดิมเป็นกล่อง inline-block มีเส้นแค่บรรทัดสุดท้าย) */}
+        <span
+          style={{
+            textDecorationLine: 'underline',
+            textDecorationStyle: 'dotted',
+            textDecorationThickness: '1px',
+            textUnderlineOffset: '4px',
+            padding: '0 1.5mm',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {getReasonText()}
+        </span>
       </p>
       <p style={{ textIndent: '12.5mm', margin: 0 }}>
         จึงขอสิ้นสุดการทำงานตั้งแต่วันที่<Fill value={has(lastWorkingParts.day) ? lastWorkingParts.day : ''} minWidth="14mm" />
@@ -314,7 +361,7 @@ const ResignationPaper: React.FC<{
       <div style={{ textAlign: 'center', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px', marginTop: '6mm' }}>
         ผลการพิจารณา
       </div>
-      <div className="overflow-x-auto">
+      <div ref={approvalRef} className="overflow-x-auto">
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
           <tbody>
             {(() => {
@@ -361,6 +408,8 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
   const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
   const [companyAddress, setCompanyAddress] = useState<string | null>(data?.companyAddress || null);
   const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
+  // ค่าย่อตารางผลการพิจารณา (วัดจากฉบับบนจอ ส่งให้ฉบับพิมพ์ — ให้ตอนพิมพ์ตรงกับตอนดูตัวอย่าง)
+  const [approvalZoom, setApprovalZoom] = useState<number>(1);
   const [simulatedSlots, setSimulatedSlots] = useState<ApprovalSlot[] | null>(null);
 
   // ช่องลงนามตามสายการอนุมัติ:
@@ -549,6 +598,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                 signatureSrc={signatureSrc}
                 onSignatureError={() => setSignatureSrc(null)}
                 approvalSlots={approvalSlots}
+                onApprovalZoom={setApprovalZoom}
               />
             </div>
           </div>
@@ -585,6 +635,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
                 signatureSrc={signatureSrc}
                 onSignatureError={() => setSignatureSrc(null)}
                 approvalSlots={approvalSlots}
+                fixedApprovalZoom={approvalZoom}
               />
           </div>,
           document.body
