@@ -102,7 +102,7 @@ export default function DocumentsHubPage() {
                   </div>
                 ))}
               </div>
-              <span className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0B2046] group-hover:bg-[#081836] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/20 transition-colors">
+              <span className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary group-hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors">
                 ถัดไป
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </span>

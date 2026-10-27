@@ -40,6 +40,7 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
+import { Button } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 
@@ -670,18 +671,22 @@ export default function DocumentHistoryPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-        <button
-          onClick={handleExport}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-xs font-medium transition-all"
-        >
-          <Download className="w-3.5 h-3.5" /> ส่งออก
-        </button>
-        <button
-          onClick={fetchData}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-xs font-medium transition-all"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> รีเฟรช
-        </button>
+        <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExport}
+            icon={<Download className="w-3.5 h-3.5" />}
+          >
+            ส่งออก
+          </Button>
+        <Button
+            variant="secondary"
+            size="sm"
+            onClick={fetchData}
+            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+          >
+            รีเฟรช
+          </Button>
         </div>
       </div>
 
@@ -736,7 +741,7 @@ export default function DocumentHistoryPage() {
                           <button
                             type="button"
                             onClick={() => handleOpenDocumentPreview(doc)}
-                            className="text-[#0B2046] hover:text-blue-600 hover:underline font-semibold transition-colors cursor-pointer text-left"
+                            className="text-primary dark:text-blue-300 hover:text-primary-hover hover:underline font-semibold transition-colors cursor-pointer text-left"
                             title="คลิกเพื่อดูตัวอย่างเอกสาร"
                           >
                             {doc.code}
@@ -841,7 +846,7 @@ export default function DocumentHistoryPage() {
                         <button
                           type="button"
                           onClick={() => handleOpenDocumentPreview(doc)}
-                          className="text-[#0B2046] hover:text-blue-600 font-bold text-sm text-left flex items-center gap-1.5"
+                          className="text-primary dark:text-blue-300 hover:text-primary-hover font-bold text-sm text-left flex items-center gap-1.5"
                         >
                           <span>{doc.code}</span>
                           <Eye className="w-3.5 h-3.5 text-slate-400" />
@@ -967,7 +972,7 @@ export default function DocumentHistoryPage() {
                     setPageSize(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="px-2 py-1 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-2 py-1 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   {PAGE_SIZE_OPTIONS.map((n) => (
                     <option key={n} value={n}>{n}</option>
@@ -988,7 +993,7 @@ export default function DocumentHistoryPage() {
                     key={p}
                     onClick={() => setPage(p)}
                     className={`w-7 h-7 rounded-lg text-xs font-medium transition-all ${
-                      p === page ? 'bg-[#0B2046] text-white' : 'text-gray-500 dark:text-slate-400 hover:bg-gray-100'
+                      p === page ? 'bg-primary text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
                     }`}
                   >
                     {p}

@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -526,7 +527,7 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-              <FileText className="w-5 h-5 text-[#0B2046]" />
+              <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มใบลาออก (ต้นฉบับ PDF)</h3>
             </div>
             <button
@@ -562,13 +563,13 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
               <Printer className="w-4 h-4" />
               พิมพ์เอกสาร
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-            >
-              ปิดหน้าต่าง
-            </button>
+            <Button
+                variant="secondary"
+                type="button"
+                onClick={onClose}
+              >
+                ปิดหน้าต่าง
+              </Button>
           </div>
         </div>
       </ModalShell>

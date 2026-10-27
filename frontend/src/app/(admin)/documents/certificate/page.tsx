@@ -20,6 +20,7 @@ import { CertificatePreviewModal } from '@/components/documents/CertificatePrevi
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { toast } from '@/context/ToastContext';
+import { Button } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const REASON_MAX_LENGTH = 160;
@@ -28,7 +29,7 @@ const CARD = 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark
 const READONLY_INPUT =
   'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-50 dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed';
 const TEXTAREA =
-  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden';
+  'w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden';
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -329,7 +330,7 @@ export default function CertificatePage() {
                 <CustomSelect
                   value={selectedTypeId}
                   onChange={(e) => setSelectedTypeId(e.target.value ? Number(e.target.value) : '')}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   required
                 >
                   <option value="">-- เลือกประเภทหนังสือรับรอง --</option>
@@ -392,7 +393,7 @@ export default function CertificatePage() {
                       type="button"
                       onClick={() => setSelectedLanguage(l)}
                       className={`flex-1 inline-flex items-center justify-center px-4 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                        selectedLanguage === l ? 'bg-[#0B2046] text-white shadow-sm' : 'text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100'
+                        selectedLanguage === l ? 'bg-primary text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                       }`}
                     >
                       {l === 'TH' ? 'ภาษาไทย' : 'ฉบับสากล (EN)'}
@@ -466,23 +467,23 @@ export default function CertificatePage() {
             <Eye className="w-3.5 h-3.5" />
             ดูตัวอย่าง
           </button>
-          <button
+          <Button
+            variant="secondary"
             type="button"
             onClick={handleSaveDraft}
-            disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-600 dark:text-slate-400 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+            loading={savingDraft}
+            disabled={isSubmitting}
+            icon={<Save className="w-3.5 h-3.5" />}
           >
-            {savingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             บันทึกแบบร่าง
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            disabled={isSubmitting || savingDraft}
-            className="px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+            loading={isSubmitting}
+            disabled={savingDraft}
           >
-            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             ยื่นขอหนังสือรับรอง
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -505,23 +506,22 @@ export default function CertificatePage() {
               ติดตามสถานะและพิมพ์เอกสารได้ที่เมนู ประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                fullWidth
                 onClick={() => {
                   setShowSuccessModal(false);
                   router.push('/documents/history');
                 }}
-                className="flex-1 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 ไปที่ประวัติเอกสาร
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
