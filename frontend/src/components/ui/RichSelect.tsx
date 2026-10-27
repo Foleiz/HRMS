@@ -31,6 +31,8 @@ interface RichSelectProps<V extends string | number> {
   disabled?: boolean;
   'aria-describedby'?: string;
   emptyText?: string;
+  /** ทิศที่เปิดรายการ — auto: เปิดขึ้นบนเมื่อพื้นที่ด้านล่างไม่พอ (เช่นติดแถบปุ่มล่างของฟอร์ม) */
+  placement?: 'auto' | 'bottom' | 'top';
 }
 
 const TONE: Record<RichSelectTone, string> = {
@@ -56,6 +58,7 @@ export function RichSelect<V extends string | number>({
   invalid,
   disabled,
   emptyText = 'ไม่มีตัวเลือก',
+  placement = 'auto',
   ...rest
 }: RichSelectProps<V>) {
   const autoId = useId();
@@ -63,6 +66,7 @@ export function RichSelect<V extends string | number>({
   const listId = `${buttonId}-list`;
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
+  const [openUp, setOpenUp] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -89,6 +93,17 @@ export function RichSelect<V extends string | number>({
     if (disabled) return;
     const idx = enabled.findIndex((o) => o.value === value);
     setActive(idx >= 0 ? idx : 0);
+    if (placement === 'top') setOpenUp(true);
+    else if (placement === 'bottom') setOpenUp(false);
+    else {
+      const r = rootRef.current?.getBoundingClientRect();
+      if (r) {
+        const wanted = Math.min(320, 52 * (options.length + 1));
+        const below = window.innerHeight - r.bottom - 96; // เผื่อแถบปุ่มติดขอบล่าง
+        const above = r.top - 16;
+        setOpenUp(below < wanted && above > below);
+      }
+    }
     setOpen(true);
   };
 
@@ -201,7 +216,7 @@ export function RichSelect<V extends string | number>({
           id={listId}
           role="listbox"
           aria-labelledby={buttonId}
-          className="absolute z-40 mt-1.5 w-full max-h-80 overflow-y-auto rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5"
+          className={`absolute z-40 w-full max-h-80 overflow-y-auto ${openUp ? 'bottom-full mb-1.5' : 'top-full mt-1.5'} rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-1.5`}
         >
           {enabled.length === 0 && blocked.length === 0 && (
             <li className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">{emptyText}</li>

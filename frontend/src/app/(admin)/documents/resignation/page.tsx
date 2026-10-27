@@ -345,6 +345,7 @@ export default function ResignationPage() {
                 onChange={(v) => setReasonCategory(v)}
                 options={RESIGNATION_REASON_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
                 placeholder="เลือกสาเหตุ"
+                placement="top"
               />
             </div>
 
