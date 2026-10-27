@@ -342,7 +342,19 @@ export default function ResignationPage() {
               <RichSelect<string>
                 id="res-category"
                 value={reasonCategory}
-                onChange={(v) => setReasonCategory(v)}
+                onChange={(v) => {
+                  setReasonCategory(v);
+                  // เลือกหมวดแล้วเติมลงช่องเหตุผลให้ (แก้ต่อได้) — ไม่ทับข้อความที่พิมพ์เอง
+                  const label = RESIGNATION_REASON_CATEGORIES.find((c) => c.value === v)?.label ?? '';
+                  const isAuto = !reasonDetail.trim() || RESIGNATION_REASON_CATEGORIES.some((c) => c.label === reasonDetail.trim());
+                  if (!isAuto) return;
+                  if (/อื่น/.test(label)) {
+                    setReasonDetail('');
+                    setTimeout(() => document.getElementById('res-reason')?.focus(), 0);
+                  } else {
+                    setReasonDetail(label.slice(0, REASON_MAX_LENGTH));
+                  }
+                }}
                 options={RESIGNATION_REASON_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
                 placeholder="เลือกสาเหตุ"
                 placement="top"
@@ -380,7 +392,7 @@ export default function ResignationPage() {
                 maxLength={REASON_MAX_LENGTH}
                 onChange={(e) => setReasonDetail(e.target.value)}
                 rows={4}
-                placeholder="ระบุเหตุผลการลาออก"
+                placeholder="เลือกสาเหตุด้านซ้าย หรือพิมพ์เหตุผลเอง"
                 className={TEXTAREA}
                 required
               />
