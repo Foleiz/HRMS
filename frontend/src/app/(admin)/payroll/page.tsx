@@ -5630,48 +5630,48 @@ export default function PayrollPage() {
             </p>
           </div>
 
-          {/* 4 Summary Stat Cards */}
+          {/* 4 Summary Stat Cards (Distinct Harmonious Theme Colors) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: จำนวนขั้นภาษี */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-xs flex flex-col justify-between">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">จำนวนขั้นภาษี</span>
+            {/* Card 1: จำนวนขั้นภาษี (Blue Theme) */}
+            <div className="bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/50 shadow-xs flex flex-col justify-between">
+              <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">จำนวนขั้นภาษี</span>
               <div className="mt-3 flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                   {taxBrackets.length || 8}
                 </span>
-                <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">ขั้น</span>
+                <span className="text-sm text-blue-700/80 dark:text-blue-300/80 font-medium">ขั้น</span>
               </div>
             </div>
 
-            {/* Card 2: เงินได้สุทธิที่ยกเว้นภาษี */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-xs flex flex-col justify-between">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">เงินได้สุทธิที่ยกเว้นภาษี</span>
+            {/* Card 2: เงินได้สุทธิที่ยกเว้นภาษี (Emerald Theme - สิทธิประโยชน์/ยกเว้น) */}
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/50 shadow-xs flex flex-col justify-between">
+              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">เงินได้สุทธิที่ยกเว้นภาษี</span>
               <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight font-mono">
+                <span className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 tracking-tight font-mono">
                   {(taxBrackets.find((b) => b.taxRate === 0)?.incomeTo ?? 150000).toLocaleString()}
                 </span>
-                <span className="text-sm text-slate-600 dark:text-slate-400 font-medium">บาท</span>
+                <span className="text-sm text-emerald-700/80 dark:text-emerald-300/80 font-medium">บาท</span>
               </div>
             </div>
 
-            {/* Card 3: อัตราสูงสุด */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-700 shadow-xs flex flex-col justify-between">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">อัตราสูงสุด</span>
+            {/* Card 3: อัตราสูงสุด (Amber Theme - เพดานภาษีสูงสุด) */}
+            <div className="bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl p-5 border border-amber-100 dark:border-amber-900/50 shadow-xs flex flex-col justify-between">
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">อัตราสูงสุด</span>
               <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400 tracking-tight font-mono">
+                <span className="text-3xl font-bold text-amber-600 dark:text-amber-400 tracking-tight font-mono">
                   {(Math.max(...taxBrackets.map((b) => b.taxRate), 0.35) * 100).toFixed(0)}%
                 </span>
               </div>
             </div>
 
-            {/* Card 4: สถานะการใช้งาน (Dark Navy Card) */}
-            <div className="bg-[#10192e] dark:bg-slate-900 text-white rounded-2xl p-5 shadow-xs border border-slate-800/80 flex flex-col justify-between">
-              <span className="text-xs text-slate-300 dark:text-slate-400 font-medium">สถานะการใช้งาน</span>
+            {/* Card 4: สถานะการใช้งาน (Signature Dark Navy Theme #0B2046) */}
+            <div className="bg-[#0B2046] dark:bg-slate-900 text-white rounded-2xl p-5 shadow-xs border border-[#0B2046] dark:border-slate-800 flex flex-col justify-between">
+              <span className="text-xs text-blue-200 dark:text-slate-400 font-medium">สถานะการใช้งาน</span>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-bold tracking-tight text-white font-mono">
                   {taxBrackets.filter((b) => (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length} / {taxBrackets.length || 8}
                 </span>
-                <span className="text-xs text-slate-300 dark:text-slate-400 font-medium">ขั้นใช้งาน</span>
+                <span className="text-xs text-blue-200/90 dark:text-slate-400 font-medium">ขั้นใช้งาน</span>
               </div>
             </div>
           </div>
