@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
+import { Loader2, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { RichSelect, type RichSelectOption } from '@/components/ui/RichSelect';
 import { RequesterSummary } from '@/components/documents/RequesterSummary';
+import { FileDropzone } from '@/components/ui/FileDropzone';
 import { Button } from '@/components/ui';
 
 interface EmployeeProfileSummary {
@@ -562,9 +563,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           </fieldset>
         </div>
 
-        </div>
-
-        <div className="space-y-6 min-w-0">
         {/* 3 เหตุผล */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -583,9 +581,10 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
           />
         </div>
+        </div>
 
-        {/* 4 ไม่บังคับ — ไว้ท้ายฟอร์ม (ไฟล์แนบกลายเป็นบังคับเมื่อเงื่อนไขกำหนด) */}
-        <div className="space-y-6">
+        {/* ขวา: ติดต่อระหว่างลา + ไฟล์แนบ (กล่องลากวางยืดเต็มความสูงคอลัมน์) */}
+        <div className="flex flex-col gap-6 min-w-0">
           <div>
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="leave-contact" className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -603,8 +602,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               className={inputCls}
             />
           </div>
-          <div>
-            <span className={`${labelCls} flex items-center gap-1`}>
+          <div className="flex-1 flex flex-col">
+            <span id="leave-attachment-label" className={`${labelCls} flex items-center gap-1`}>
               ไฟล์แนบ{' '}
               {isDocumentRecommended ? (
                 <span className="text-rose-600">*</span>
@@ -612,28 +611,17 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
               )}
             </span>
-            <label
-              className={`flex items-center gap-2 w-full h-11 px-3.5 rounded-xl border border-dashed text-sm cursor-pointer transition-colors ${
-                isDocumentRecommended && !attachment
-                  ? 'border-amber-400 bg-amber-50/60 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
-                  : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900'
-              }`}
-            >
-              <Paperclip className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span className="truncate">{attachment ? attachment.name : 'แนบไฟล์ (PDF, JPG, PNG)'}</span>
-              <input
-                type="file"
-                className="sr-only"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => setForm((f) => ({ ...f, attachment: e.target.files?.[0] || null }))}
-              />
-            </label>
+            <FileDropzone
+              className="flex-1"
+              file={attachment}
+              onChange={(file) => setForm((f) => ({ ...f, attachment: file }))}
+              required={isDocumentRecommended}
+              aria-labelledby="leave-attachment-label"
+            />
             {isDocumentRecommended && (
               <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">การลาประเภทนี้ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)</p>
             )}
           </div>
-        </div>
-
         </div>
 
         {validationErrors.length > 0 && (
