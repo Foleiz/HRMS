@@ -15,12 +15,9 @@ import {
   DEFAULT_COMPANY_ADDRESS,
   Fill,
   type ApprovalSlot,
-  getSlotHeading,
   DEFAULT_SLOTS,
-  getSlotPositions,
   toThaiShortDate,
-  SignatureCell,
-  EmptyCell,
+  ApprovalSignatureTable,
   SignatureLine,
   extractPrefixAndName,
   type ExtractedPrefixInfo,
@@ -321,25 +318,8 @@ const GeneralPaper: React.FC<{
       <div style={{ textAlign: 'center', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px', marginTop: '6mm' }}>
         ผลการพิจารณา
       </div>
-      <div ref={approvalRef} className="overflow-x-auto">
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
-          <tbody>
-            {(() => {
-              const positions = getSlotPositions(approvalSlots.length);
-              const rowCount = Math.max(...positions.map(([r]) => r)) + 1;
-              return Array.from({ length: rowCount }, (_, row) => (
-                <tr key={row}>
-                  {[0, 1].map((col) => {
-                    const idx = positions.findIndex(([r, c]) => r === row && c === col);
-                    if (idx < 0) return <EmptyCell key={col} />;
-                    const slot = approvalSlots[idx];
-                    return <SignatureCell key={col} slot={slot} heading={getSlotHeading(slot)} />;
-                  })}
-                </tr>
-              ));
-            })()}
-          </tbody>
-        </table>
+      <div ref={approvalRef}>
+        <ApprovalSignatureTable slots={approvalSlots} />
       </div>
 
       {/* ===== ท้ายกระดาษ: เส้นคั่น + ที่อยู่บริษัท ===== */}
