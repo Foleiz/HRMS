@@ -21,6 +21,7 @@ import { useAuth } from '@/context/AuthContext';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { leaveService } from '@/services/leaveService';
+import { employeeService } from '@/services/employeeService';
 import { resignationService } from '@/services/resignationService';
 import { RESIGNATION_REASON_CATEGORIES } from '@/types/resignation';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
@@ -69,12 +70,15 @@ export default function ResignationPage() {
   });
 
   // วันที่ยื่นคำขอ (วันนี้)
-  const [submissionDate, setSubmissionDate] = useState(() => toInputDate(new Date()));
+  // วันที่ในหนังสือ = วันที่กดยื่นจริง (ระยะแจ้งล่วงหน้านับจากวันนี้) — ไม่ให้เลือกเอง
+  const submissionDate = toInputDate(new Date());
 
   // ช่อง "เรียน" ตาม Figma
   const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
 
   // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
+  // คำนำหน้า: ดึงจากข้อมูลพนักงาน — เลือกเองได้เฉพาะเมื่อข้อมูลพนักงานยังไม่มีคำนำหน้า
+  const [prefixFromProfile, setPrefixFromProfile] = useState(false);
   const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>(() => {
     const fn = user?.fullName || '';
     if (fn.startsWith('นางสาว')) return 'นางสาว';
@@ -122,7 +126,6 @@ export default function ResignationPage() {
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
         if (parsed.addressedTo) setAddressedTo(parsed.addressedTo);
-        if (parsed.titlePrefix) setTitlePrefix(parsed.titlePrefix);
         if (parsed.reasonCategory) setReasonCategory(parsed.reasonCategory);
         if (parsed.reasonDetail) setReasonDetail(parsed.reasonDetail);
         if (parsed.requestedLastWorkingDate) setRequestedLastWorkingDate(parsed.requestedLastWorkingDate);
@@ -138,17 +141,31 @@ export default function ResignationPage() {
   const loadInitialData = useCallback(async () => {
     try {
       if (user?.employeeId) {
-        const balances = await leaveService.getLeaveBalances({
-          employeeId: user.employeeId,
-          year: new Date().getFullYear(),
-        });
+        const [balRes, empRes] = await Promise.allSettled([
+          leaveService.getLeaveBalances({ employeeId: user.employeeId, year: new Date().getFullYear() }),
+          employeeService.getById(user.employeeId),
+        ]);
+        const balances = balRes.status === 'fulfilled' ? balRes.value : [];
         if (balances && balances.length > 0) {
           setProfile({
             fullName: user?.fullName || '',
             employeeCode: user?.employeeCode || '',
-            positionTitle: balances[0]?.positionTitle || 'วิศวกรซอฟต์แวร์อาวุโส',
-            departmentName: balances[0]?.departmentName || 'แผนกพัฒนาซอฟต์แวร์',
+            positionTitle: balances[0]?.positionTitle || '',
+            departmentName: balances[0]?.departmentName || '',
           });
+        }
+        const rawPrefix = empRes.status === 'fulfilled' ? (empRes.value?.prefix || '').trim() : '';
+        const mapped =
+          rawPrefix === 'นางสาว' || /^(miss|ms)\.?$/i.test(rawPrefix)
+            ? 'นางสาว'
+            : rawPrefix === 'นาง' || /^mrs\.?$/i.test(rawPrefix)
+              ? 'นาง'
+              : rawPrefix === 'นาย' || /^mr\.?$/i.test(rawPrefix)
+                ? 'นาย'
+                : null;
+        if (mapped) {
+          setTitlePrefix(mapped);
+          setPrefixFromProfile(true);
         }
       }
     } catch (err) {
@@ -171,7 +188,6 @@ export default function ResignationPage() {
   // ล้างฟอร์ม
   const handleResetForm = () => {
     setAddressedTo('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
-    setTitlePrefix('นาย');
     setReasonCategory(RESIGNATION_REASON_CATEGORIES[0].value);
     setReasonDetail('');
     const d = new Date();
@@ -194,7 +210,6 @@ export default function ResignationPage() {
         'hrms_resignation_draft',
         JSON.stringify({
           addressedTo,
-          titlePrefix,
           reasonCategory,
           reasonDetail: reasonDetail.trim(),
           requestedLastWorkingDate,
@@ -292,7 +307,7 @@ export default function ResignationPage() {
         )}
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-          {/* ซ้าย: วันสุดท้าย + สาเหตุ + เหตุผล */}
+          {/* ซ้าย: วันสุดท้าย + สาเหตุ */}
           <div className="space-y-6 min-w-0">
             <div>
               <span className={LABEL}>
@@ -328,6 +343,24 @@ export default function ResignationPage() {
               />
             </div>
 
+          </div>
+
+          {/* ขวา: ผู้รับหนังสือ + เหตุผล (วันที่และคำนำหน้าระบบใส่ให้ในหนังสือ) */}
+          <div className="space-y-6 min-w-0">
+            <div>
+              <label htmlFor="res-to" className={LABEL}>
+                เรียน
+              </label>
+              <input
+                id="res-to"
+                type="text"
+                value={addressedTo}
+                onChange={(e) => setAddressedTo(e.target.value)}
+                placeholder="เช่น กรรมการผู้จัดการ"
+                className={INPUT}
+              />
+            </div>
+
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="res-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -346,60 +379,29 @@ export default function ResignationPage() {
                 required
               />
             </div>
-          </div>
-
-          {/* ขวา: ข้อมูลบนหนังสือลาออก */}
-          <div className="space-y-6 min-w-0">
-            <div>
-              <span className={LABEL}>
-                วันที่ในหนังสือ <span className="text-rose-600">*</span>
-              </span>
-              <div className="max-w-sm">
-                <LeaveDateRangePicker
-                  mode="single"
-                  className="w-full"
-                  startDate={submissionDate}
-                  endDate={submissionDate}
-                  onChange={(d) => setSubmissionDate(d)}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="res-to" className={LABEL}>
-                เรียน
-              </label>
-              <input
-                id="res-to"
-                type="text"
-                value={addressedTo}
-                onChange={(e) => setAddressedTo(e.target.value)}
-                placeholder="เช่น กรรมการผู้จัดการ"
-                className={INPUT}
-              />
-            </div>
-
-            <fieldset>
-              <legend className={LABEL}>คำนำหน้าในหนังสือ</legend>
-              <div role="radiogroup" aria-label="คำนำหน้า" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
-                {(['นาย', 'นาง', 'นางสาว'] as const).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    role="radio"
-                    aria-checked={titlePrefix === p}
-                    onClick={() => setTitlePrefix(p)}
-                    className={`h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
-                      titlePrefix === p
-                        ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 font-medium'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+            {!prefixFromProfile && (
+              <fieldset>
+                <legend className={LABEL}>คำนำหน้าในหนังสือ</legend>
+                <div role="radiogroup" aria-label="คำนำหน้า" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
+                  {(['นาย', 'นาง', 'นางสาว'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      role="radio"
+                      aria-checked={titlePrefix === p}
+                      onClick={() => setTitlePrefix(p)}
+                      className={`h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
+                        titlePrefix === p
+                          ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 font-medium'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
           </div>
         </div>
 
