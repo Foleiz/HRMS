@@ -73,6 +73,8 @@ public class PayrollRecordDto
     public string? AdjustmentsSummary { get; set; }
     public string InputStatus { get; set; } = "COMPLETE";
     public string InputStatusText { get; set; } = "ครบแล้ว";
+    /// <summary>รายการข้อมูลที่ขาดหรือรอ HR ตรวจสอบ เช่น "ยังไม่ได้ตรวจเอกสารการลา", "ยังไม่ตรวจสวัสดิการ"</summary>
+    public string? PendingDetails { get; set; }
 
     // Finance & Banking Fields
     public string? BankCode { get; set; }
