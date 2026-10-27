@@ -22,7 +22,7 @@ import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { leaveService } from '@/services/leaveService';
 import { generalDocumentService } from '@/services/generalDocumentService';
-import { COMMON_DOCUMENT_TYPES } from '@/types/generalDocument';
+import { GENERAL_REQUEST_TYPES } from '@/types/generalDocument';
 import { masterDataService } from '@/services/masterDataService';
 import { DocumentTypeItem } from '@/types/master';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
@@ -99,10 +99,8 @@ export default function GeneralDocumentPage() {
   // ประเภทเอกสารจาก Master (ตั้งค่า > ข้อมูลหลัก > ประเภทเอกสาร) — โหลดไม่ได้จะใช้รายการสำรองเดิม
   const [masterTypes, setMasterTypes] = useState<DocumentTypeItem[]>([]);
   const [typesLoaded, setTypesLoaded] = useState(false);
-  const typeOptions = useMemo<string[]>(
-    () => (masterTypes.length > 0 ? masterTypes.map((t) => t.documentName) : [...COMMON_DOCUMENT_TYPES]),
-    [masterTypes],
-  );
+  // ประเภทคำร้อง (ไม่ใช่ประเภทเอกสารจาก Master — เอกสารพนักงานอัปโหลดเองที่โปรไฟล์ › เอกสาร)
+  const typeOptions = useMemo<string[]>(() => GENERAL_REQUEST_TYPES.map((t) => t.label), []);
   const selectedMasterType = masterTypes.find((t) => t.documentName === documentType);
   const [customDocumentType, setCustomDocumentType] = useState('');
   const [isCustomType, setIsCustomType] = useState(false);
@@ -117,6 +115,8 @@ export default function GeneralDocumentPage() {
   const expiryRequired = !isCustomType && !!selectedMasterType?.isExpiryRequired;
 
   const [purpose, setPurpose] = useState('');
+  const DEFAULT_ADDRESSEE = 'ผู้จัดการฝ่ายทรัพยากรบุคคล';
+  const [addressedTo, setAddressedTo] = useState(DEFAULT_ADDRESSEE);
   const [notes, setNotes] = useState('');
 
   // ไฟล์แนบ (แนบเอกสาร ตามกล่องสีเหลืองใน Figma)
@@ -132,7 +132,7 @@ export default function GeneralDocumentPage() {
 
   // Sync breadcrumb & Load saved draft
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'เอกสารทั่วไป' });
+    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ยื่นคำร้องทั่วไป' });
 
     try {
       const savedDraft = localStorage.getItem('hrms_general_doc_draft');
@@ -142,6 +142,7 @@ export default function GeneralDocumentPage() {
         if (parsed.documentType) setDocumentType(parsed.documentType);
         if (parsed.purpose) setPurpose(parsed.purpose);
         if (parsed.notes) setNotes(parsed.notes);
+        if (parsed.addressedTo) setAddressedTo(parsed.addressedTo);
         if (parsed.issueDate) setIssueDate(parsed.issueDate);
         if (parsed.expiryDate) {
           setExpiryDate(parsed.expiryDate);
@@ -155,32 +156,16 @@ export default function GeneralDocumentPage() {
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  // โหลดประเภทเอกสารจาก Master
-  useEffect(() => {
-    let cancelled = false;
-    masterDataService
-      .getDocumentTypes('ACTIVE')
-      .then((items) => {
-        if (!cancelled) setMasterTypes(items.filter((t) => t.status === 'ACTIVE'));
-      })
-      .catch((err) => console.error('Error loading document types:', err))
-      .finally(() => {
-        if (!cancelled) setTypesLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // ประเภทคำร้องเป็นรายการคงที่ — ไม่ต้องโหลดจาก Master
+  useEffect(() => setTypesLoaded(true), []);
 
   // เลือกค่าเริ่มต้น / แบบร่างที่ไม่อยู่ในรายการ → โหมดระบุประเภทเอง
   useEffect(() => {
     if (!typesLoaded || isCustomType) return;
-    if (!documentType) {
-      setDocumentType(typeOptions[0] ?? '');
-    } else if (!typeOptions.includes(documentType)) {
+    if (documentType && !typeOptions.includes(documentType)) {
       setIsCustomType(true);
       setCustomDocumentType(documentType);
-      setDocumentType(typeOptions[0] ?? '');
+      setDocumentType('');
     }
   }, [typesLoaded, typeOptions, documentType, isCustomType]);
 
@@ -241,11 +226,12 @@ export default function GeneralDocumentPage() {
 
   // ล้างฟอร์ม
   const handleResetForm = () => {
-    setDocumentType(typeOptions[0] ?? '');
+    setDocumentType('');
     setCustomDocumentType('');
     setIsCustomType(false);
     setPurpose('');
     setNotes('');
+    setAddressedTo(DEFAULT_ADDRESSEE);
     setIssueDate(toInputDate(new Date()));
     setExpiryDate('');
     setExpiryTouched(false);
@@ -271,6 +257,7 @@ export default function GeneralDocumentPage() {
           documentType: finalDocType,
           purpose: purpose.trim(),
           notes: notes.trim(),
+          addressedTo: addressedTo.trim(),
           issueDate,
           expiryDate: effectiveExpiry,
           savedAt: new Date().toISOString(),
@@ -285,15 +272,22 @@ export default function GeneralDocumentPage() {
     }
   };
 
-  const isFileRequired = isAttachmentMandatory(isCustomType ? customDocumentType : documentType);
+  // ไฟล์แนบตามประเภทคำร้อง (แบบเดียวกับหน้ายื่นลา): ยังไม่เลือก/ไม่ต้องแนบ → ปิดใช้งาน, ระบุเรื่องเอง → แนบได้
+  const attachmentMode: 'required' | 'optional' | 'none' | 'unselected' = isCustomType
+    ? 'optional'
+    : !documentType
+      ? 'unselected'
+      : GENERAL_REQUEST_TYPES.find((t) => t.label === documentType)?.attachment ?? 'optional';
+  const isFileRequired = attachmentMode === 'required';
+  const attachmentEnabled = attachmentMode === 'required' || attachmentMode === 'optional' || !!selectedFile;
 
   // ยื่นคำร้องเอกสารทั่วไป
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const finalDocType = isCustomType ? customDocumentType.trim() : documentType;
     if (!finalDocType) {
-      setFormError('กรุณาระบุประเภทเอกสาร');
-      toast.error('กรุณาระบุประเภทเอกสาร');
+      setFormError('กรุณาเลือกประเภทคำร้อง');
+      toast.error('กรุณาเลือกประเภทคำร้อง');
       return;
     }
     if (!purpose.trim()) {
@@ -307,7 +301,7 @@ export default function GeneralDocumentPage() {
       return;
     }
     if (isFileRequired && !selectedFile) {
-      const msg = `เอกสารประเภท "${finalDocType}" จำเป็นต้องแนบไฟล์เอกสารประกอบ`;
+      const msg = `คำร้อง "${finalDocType}" ต้องแนบเอกสารยืนยัน`;
       setFormError(msg);
       toast.error(msg);
       return;
@@ -343,7 +337,7 @@ export default function GeneralDocumentPage() {
       setPurpose('');
       setNotes('');
       setSelectedFile(null);
-      toast.success('ยื่นคำร้องเอกสารทั่วไปสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+      toast.success('ยื่นคำร้องสำเร็จ ติดตามสถานะได้ที่หน้าประวัติเอกสาร');
       router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting general document request:', err);
@@ -363,7 +357,7 @@ export default function GeneralDocumentPage() {
       <DocumentsSubNav />
 
       {/* หัวข้ออยู่ใน breadcrumb แล้ว — เก็บ h1 ไว้ให้โปรแกรมอ่านหน้าจอ */}
-      <h1 className="sr-only">ยื่นคำขอเอกสารทั่วไป</h1>
+      <h1 className="sr-only">ยื่นคำร้องทั่วไป</h1>
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -394,11 +388,11 @@ export default function GeneralDocumentPage() {
         )}
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-          {/* ซ้าย: ประเภท + วันที่ + ใช้สำหรับ */}
+          {/* ซ้าย: ประเภท + เรียน + รายละเอียด */}
           <div className="space-y-6 min-w-0">
             <div>
               <label htmlFor="gen-type" className={LABEL}>
-                ประเภทเอกสาร <span className="text-rose-600">*</span>
+                ประเภทคำร้อง <span className="text-rose-600">*</span>
               </label>
               {!isCustomType ? (
                 <RichSelect<string>
@@ -409,21 +403,18 @@ export default function GeneralDocumentPage() {
                       setIsCustomType(true);
                     } else {
                       setDocumentType(v);
+                      if (GENERAL_REQUEST_TYPES.find((t) => t.label === v)?.attachment === 'none') setSelectedFile(null);
                     }
                   }}
                   options={[
-                    ...typeOptions.map((name) => {
-                      const m = masterTypes.find((t) => t.documentName === name);
-                      const notes = [
-                        m?.validityMonths ? `อายุ ${m.validityMonths} เดือน` : null,
-                        m?.isExpiryRequired ? 'ต้องระบุวันหมดอายุ' : null,
-                        isAttachmentMandatory(name) ? 'ต้องแนบไฟล์' : null,
-                      ].filter(Boolean);
-                      return { value: name, label: name, description: notes.join(' · ') || undefined };
-                    }),
-                    { value: CUSTOM_TYPE, label: '+ ระบุประเภทอื่นเอง', description: 'ไม่มีในรายการ' },
+                    ...GENERAL_REQUEST_TYPES.map((t) => ({
+                      value: t.label,
+                      label: t.label,
+                      description: t.attachment === 'required' ? `${t.description} · ต้องแนบเอกสารยืนยัน` : t.description,
+                    })),
+                    { value: CUSTOM_TYPE, label: '+ ระบุเรื่องอื่นเอง', description: 'เรื่องที่ไม่มีในรายการ' },
                   ]}
-                  placeholder={typesLoaded ? 'เลือกประเภทเอกสาร' : 'กำลังโหลดประเภทเอกสาร...'}
+                  placeholder="เลือกประเภทคำร้อง"
                 />
               ) : (
                 <div className="flex items-center gap-2">
@@ -432,7 +423,7 @@ export default function GeneralDocumentPage() {
                     type="text"
                     value={customDocumentType}
                     onChange={(e) => setCustomDocumentType(e.target.value)}
-                    placeholder="เช่น สำเนาบัตรประชาชน"
+                    placeholder="ระบุเรื่องที่ต้องการยื่น"
                     className={INPUT}
                     required
                   />
@@ -448,50 +439,24 @@ export default function GeneralDocumentPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <span className={LABEL}>วันที่ออก</span>
-                <LeaveDateRangePicker mode="single" className="w-full" startDate={issueDate} endDate={issueDate} onChange={(d) => setIssueDate(d)} />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    วันหมดอายุ{' '}
-                    {expiryRequired ? <span className="text-rose-600">*</span> : <span className="font-normal text-slate-500 dark:text-slate-400">(ถ้ามี)</span>}
-                  </span>
-                  {effectiveExpiry && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setExpiryDate('');
-                        setExpiryTouched(true);
-                      }}
-                      className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer"
-                    >
-                      ล้างวันที่
-                    </button>
-                  )}
-                </div>
-                <LeaveDateRangePicker
-                  mode="single"
-                  className="w-full"
-                  startDate={effectiveExpiry}
-                  endDate={effectiveExpiry}
-                  onChange={(d) => {
-                    setExpiryDate(d);
-                    setExpiryTouched(true);
-                  }}
-                />
-              </div>
+            <div>
+              <label htmlFor="gen-to" className={LABEL}>
+                เรียน
+              </label>
+              <input
+                id="gen-to"
+                type="text"
+                value={addressedTo}
+                onChange={(e) => setAddressedTo(e.target.value)}
+                placeholder="เช่น ผู้จัดการฝ่ายทรัพยากรบุคคล"
+                className={INPUT}
+              />
             </div>
-            {!expiryTouched && validityMonths ? (
-              <p className="-mt-3 text-xs text-slate-500 dark:text-slate-400">วันหมดอายุคำนวณจากอายุเอกสาร {validityMonths} เดือน</p>
-            ) : null}
 
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="gen-purpose" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  เอกสารนี้ใช้สำหรับ <span className="text-rose-600">*</span>
+                  รายละเอียดคำร้อง <span className="text-rose-600">*</span>
                 </label>
                 <span className="text-xs text-slate-400">{purpose.length}/{REASON_MAX_LENGTH}</span>
               </div>
@@ -501,14 +466,14 @@ export default function GeneralDocumentPage() {
                 maxLength={REASON_MAX_LENGTH}
                 onChange={(e) => setPurpose(e.target.value)}
                 rows={4}
-                placeholder="เช่น ขอเปลี่ยนที่อยู่เป็น... / ขอสลิปเงินเดือนเดือน..."
-                className={TEXTAREA}
+                placeholder="อธิบายสิ่งที่ต้องการให้ฝ่ายบุคคลดำเนินการ"
+                className={`${TEXTAREA} block`}
                 required
               />
             </div>
           </div>
 
-          {/* ขวา: หมายเหตุ + ไฟล์แนบ */}
+          {/* ขวา: หมายเหตุ + ไฟล์แนบ (ยืดให้สูงเท่าฝั่งซ้าย) */}
           <div className="flex flex-col gap-6 min-w-0">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -532,9 +497,9 @@ export default function GeneralDocumentPage() {
                 ไฟล์แนบ{' '}
                 {isFileRequired ? (
                   <span className="text-rose-600">*</span>
-                ) : (
+                ) : attachmentMode === 'optional' ? (
                   <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-                )}
+                ) : null}
               </span>
               <FileDropzone
                 className="flex-1"
@@ -545,10 +510,12 @@ export default function GeneralDocumentPage() {
                 }}
                 accept={['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']}
                 required={isFileRequired}
+                disabled={!attachmentEnabled}
+                disabledText={attachmentMode === 'unselected' ? 'เลือกประเภทคำร้องก่อน' : 'คำร้องประเภทนี้ไม่ต้องแนบเอกสาร'}
                 aria-labelledby="gen-attachment-label"
               />
               {isFileRequired && (
-                <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">เอกสารประเภทนี้ต้องแนบไฟล์ประกอบคำขอ</p>
+                <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">คำร้องประเภทนี้ต้องแนบเอกสารยืนยัน</p>
               )}
             </div>
           </div>
@@ -598,7 +565,7 @@ export default function GeneralDocumentPage() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-              ยื่นคำร้องเอกสารทั่วไปสำเร็จ!
+              ยื่นคำร้องสำเร็จ!
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
               ติดตามสถานะได้ที่เมนู ประวัติเอกสาร
@@ -637,6 +604,8 @@ export default function GeneralDocumentPage() {
           setIsPreviewOpen(false);
         }}
         data={{
+          employeeId: user?.employeeId,
+          addressedTo: addressedTo.trim() || DEFAULT_ADDRESSEE,
           employeeName: profile.fullName,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,

@@ -87,15 +87,14 @@ export const DEFAULT_SLOTS: ApprovalSlot[] = [
 ];
 
 /**
- * ตำแหน่งช่องในตาราง 2 x 2 (แถว, คอลัมน์) ตามจำนวนขั้นตอน
- * - 3 ขั้นตอน: ซ้ายบน, ซ้ายล่าง, ขวาล่าง (ขวาบนว่าง) — ตามต้นฉบับ
- * - 4 ขั้นตอน: ซ้ายบน, ขวาบน, ซ้ายล่าง, ขวาล่าง
+ * ตำแหน่งช่องลงนาม (แถว, คอลัมน์) ตามจำนวนขั้นตอน — ใช้กับเอกสารทุกประเภท
+ * - 1 คน: ขวาสุด ไม่มีกรอบ
+ * - 2 คน: [1][2] แถวเดียว
+ * - 3 คน: [1][2] / [3][ ]
+ * - 4 คน: [1][2] / [3][4]
  */
 export const getSlotPositions = (count: number): Array<[number, number]> => {
-  if (count <= 1) return [[0, 0]];
-  // 2 ช่องวางคู่กันแถวเดียว — เดิมซ้อนลงล่างจนช่องลงนามล้นทับท้ายกระดาษ A4
-  if (count === 2) return [[0, 0], [0, 1]];
-  if (count === 3) return [[0, 0], [1, 0], [1, 1]];
+  if (count <= 1) return [[0, 1]];
   return Array.from({ length: count }, (_, i) => [Math.floor(i / 2), i % 2] as [number, number]);
 };
 
@@ -153,13 +152,17 @@ export const ApproverSignatureImg: React.FC<{ employeeId: number; onError: () =>
 };
 
 /** กล่องลงนามในตารางผลการพิจารณา */
-export const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = ({ slot, heading }) => {
+export const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string; bordered?: boolean }> = ({
+  slot,
+  heading,
+  bordered = true,
+}) => {
   // มีรูปลายเซ็น → แสดงรูปบนเส้น, ไม่มีรูป → แสดงชื่อผู้อนุมัติแทน
   const [signatureFailed, setSignatureFailed] = useState(false);
   const showSignature = !!slot.signedEmployeeId && !signatureFailed;
   return (
-  <td style={{ width: '50%', border: '1px solid #000', verticalAlign: 'top', padding: 0 }}>
-    <div style={{ textAlign: 'center', borderBottom: '1px solid #000', padding: '0.8mm 0' }}>{heading}</div>
+  <td style={{ width: '50%', border: bordered ? '1px solid #000' : 'none', verticalAlign: 'top', padding: 0 }}>
+    <div style={{ textAlign: 'center', borderBottom: bordered ? '1px solid #000' : 'none', padding: '0.8mm 0' }}>{heading}</div>
     {/* เว้นระยะด้านบนให้พอสำหรับรูปลายเซ็น ไม่ให้ชนเส้นหัวตาราง */}
     <div style={{ padding: '7.5mm 2mm 1mm 2mm' }}>
       <div>
@@ -198,10 +201,11 @@ export const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string }> = 
 /** ช่องว่างในตาราง (ไม่มีเส้นขอบ ตามต้นฉบับ) */
 export const EmptyCell: React.FC = () => <td style={{ width: '50%', border: 'none', padding: 0 }} />;
 
-/** ตาราง "ผลการพิจารณา" 2 x 2 ตามจำนวนขั้นตอนของสายการอนุมัติ */
+/** ตาราง "ผลการพิจารณา" — จัดช่องตาม getSlotPositions; คนเดียวไม่มีกรอบ */
 export const ApprovalSignatureTable: React.FC<{ slots: ApprovalSlot[] }> = ({ slots }) => {
   const positions = getSlotPositions(slots.length);
   const rowCount = Math.max(...positions.map(([r]) => r)) + 1;
+  const bordered = slots.length > 1;
   return (
     <div className="overflow-x-auto">
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10pt', lineHeight: 1.55, tableLayout: 'fixed' }}>
@@ -212,7 +216,7 @@ export const ApprovalSignatureTable: React.FC<{ slots: ApprovalSlot[] }> = ({ sl
                 const idx = positions.findIndex(([r, c]) => r === row && c === col);
                 if (idx < 0) return <EmptyCell key={col} />;
                 const slot = slots[idx];
-                return <SignatureCell key={col} slot={slot} heading={getSlotHeading(slot)} />;
+                return <SignatureCell key={col} slot={slot} heading={getSlotHeading(slot)} bordered={bordered} />;
               })}
             </tr>
           ))}
@@ -222,7 +226,6 @@ export const ApprovalSignatureTable: React.FC<{ slots: ApprovalSlot[] }> = ({ sl
   );
 };
 
-/** หัวกระดาษ: โลโก้บริษัทกึ่งกลาง + เส้นคั่นซ้าย/ขวา (ไม่แสดงโลโก้เก่า Syaco ระหว่างโหลดเด็ดขาด) */
 export const DocumentLogoHeader: React.FC<{ companyLogo: string | null; top?: string }> = ({ companyLogo, top = '6mm' }) => (
   <div style={{ position: 'absolute', top, left: '6mm', right: '5mm', height: '15mm', display: 'flex', alignItems: 'flex-end' }}>
     <div style={{ flex: 1, borderTop: '1px solid #000', marginBottom: '3.3mm' }} />

@@ -749,6 +749,10 @@ export default function ApprovalHistoryPage() {
           setSelectedGeneralForPreview(null);
         }}
         data={selectedGeneralForPreview ? {
+          id: selectedGeneralForPreview.id,
+          requestNo: selectedGeneralForPreview.requestNo,
+          employeeId: selectedGeneralForPreview.employeeId,
+          canApproveCurrentStep: !!(selectedGeneralForPreview.canApprove || selectedGeneralForPreview.isMyTurnToApprove),
           employeeName: selectedGeneralForPreview.employeeName,
           employeeCode: selectedGeneralForPreview.employeeCode,
           positionTitle: selectedGeneralForPreview.positionName,

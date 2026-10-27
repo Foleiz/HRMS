@@ -1065,6 +1065,10 @@ export default function DocumentHistoryPage() {
           setSelectedGeneralForPreview(null);
         }}
         data={selectedGeneralForPreview ? {
+          id: selectedGeneralForPreview.id,
+          requestNo: selectedGeneralForPreview.requestNo,
+          employeeId: selectedGeneralForPreview.employeeId,
+          canApproveCurrentStep: !!(selectedGeneralForPreview.canApprove || selectedGeneralForPreview.isMyTurnToApprove),
           employeeName: selectedGeneralForPreview.employeeName || user?.fullName || '',
           employeeCode: selectedGeneralForPreview.employeeCode || '',
           positionTitle: selectedGeneralForPreview.positionName || '',
