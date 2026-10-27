@@ -3252,11 +3252,11 @@ export default function PayrollPage() {
                         </tbody>
                         {filteredBonuses.length > 0 && (
                           <tfoot>
-                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 text-xs">
-                              <td colSpan={5} className="py-3 px-3.5 font-semibold text-slate-600 dark:text-slate-300">
+                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t-2 border-slate-200 dark:border-slate-700 text-xs">
+                              <td colSpan={5} className="py-3 px-3.5 font-bold text-slate-900 dark:text-slate-100">
                                 รวม {filteredBonuses.length} คน
                               </td>
-                              <td className="py-3 px-3 text-right whitespace-nowrap font-mono font-bold text-amber-900 dark:text-amber-400">
+                              <td className="py-3 px-3 text-right whitespace-nowrap font-mono font-bold text-slate-900 dark:text-white">
                                 ฿{filteredBonuses.reduce((sum, x) => sum + bonusDisplayAmount(x), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td colSpan={2} />
@@ -3610,6 +3610,19 @@ export default function PayrollPage() {
                                             );
                                           })}
                                         </tbody>
+                                        {filteredBonuses.length > 0 && (
+                                          <tfoot>
+                                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t-2 border-slate-200 dark:border-slate-700 text-xs">
+                                              <td colSpan={4} className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
+                                                รวม {filteredBonuses.length} คน
+                                              </td>
+                                              <td className="py-3 px-4 text-right whitespace-nowrap font-mono font-bold text-slate-900 dark:text-white">
+                                                ฿{filteredBonuses.reduce((sum, x) => sum + (x.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              </td>
+                                              <td colSpan={2} />
+                                            </tr>
+                                          </tfoot>
+                                        )}
                                       </table>
                                     </div>
                                   )}
