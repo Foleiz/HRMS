@@ -5688,7 +5688,7 @@ export default function PayrollPage() {
                   <button
                     type="button"
                     onClick={() => setIsTaxModalOpen(true)}
-                    className="h-9 inline-flex items-center gap-2 px-4 py-2 bg-[#1d4ed8] hover:bg-[#1e40af] text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                    className="h-9 inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>แก้ไขอัตราภาษี</span>
@@ -5703,15 +5703,15 @@ export default function PayrollPage() {
             </div>
 
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-              <table className="w-full min-w-[860px] text-left border-collapse text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                    <th className="py-3 px-4">ขั้นเงินได้</th>
-                    <th className="py-3 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
-                    <th className="py-3 px-4 text-right">ถึงเงินได้สุทธิ</th>
-                    <th className="py-3 px-4 text-left pl-6">อัตราภาษี</th>
-                    <th className="py-3 px-4 text-right">ภาษีสะสมขั้นก่อนหน้า</th>
-                    <th className="py-3 px-4 text-center">สถานะ</th>
+              <table className="table-standard w-full min-w-[860px] text-left border-collapse text-xs whitespace-nowrap">
+                <thead className="bg-[#0B2046] text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3 px-4 font-semibold">ขั้นเงินได้</th>
+                    <th className="py-3 px-4 text-right font-semibold">เงินได้สุทธิตั้งแต่</th>
+                    <th className="py-3 px-4 text-right font-semibold">ถึงเงินได้สุทธิ</th>
+                    <th className="py-3 px-4 text-left pl-6 font-semibold">อัตราภาษี</th>
+                    <th className="py-3 px-4 text-right font-semibold">ภาษีสะสมขั้นก่อนหน้า</th>
+                    <th className="py-3 px-4 text-center font-semibold">สถานะ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
