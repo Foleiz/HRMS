@@ -208,6 +208,8 @@ const GeneralPaper: React.FC<{
     padding: '0 1.5mm',
     overflowWrap: 'break-word', // ตัดบรรทัดตามคำ (เดิม anywhere ทำให้คำขาดกลางคำ)
   };
+  /** ย่อหน้าเนื้อความ — จัดชิดขอบทั้งสองด้านให้ต้น/ท้ายบรรทัดตรงกัน */
+  const bodyPara: React.CSSProperties = { textIndent: '12.5mm', textAlign: 'justify', margin: 0 };
   const strike = (p: 'นาย' | 'นาง' | 'นางสาว') =>
     prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
   /** บรรทัดเส้นประว่างเต็มความกว้าง (เว้นที่ให้เขียนเพิ่มเมื่อรายละเอียดสั้น) */
@@ -269,7 +271,8 @@ const GeneralPaper: React.FC<{
       </div>
 
       {/* ===== เนื้อความ ===== */}
-      <p style={{ textIndent: '12.5mm', margin: 0 }}>
+      {/* เนื้อความ + รายละเอียดอยู่ย่อหน้าเดียวกัน จัดชิดขอบซ้าย-ขวา (เหมือนหนังสือลาออก) */}
+      <p style={bodyPara}>
         ข้าพเจ้า <span style={strike('นาย')}>นาย</span>/ <span style={strike('นาง')}>นาง</span>/{' '}
         <span style={strike('นางสาว')}>นางสาว</span>
         <Fill value={displayName} minWidth="40mm" /> รหัสพนักงาน<Fill value={data.employeeCode} minWidth="18mm" />
@@ -281,15 +284,18 @@ const GeneralPaper: React.FC<{
         ) : null}{' '}
         มีความประสงค์ยื่นคำร้องเรื่อง{' '}
         <span style={{ ...underline, whiteSpace: 'nowrap' }}>{data.documentType || '-'}</span> โดยมีรายละเอียดดังนี้
+        {detail ? (
+          <>
+            {' '}
+            <span style={underline}>{detail}</span>
+          </>
+        ) : null}
       </p>
-      <div style={{ textIndent: '12.5mm', marginTop: '1mm' }}>
-        {detail ? <span style={underline}>{detail}</span> : null}
-      </div>
       {detail.length < 90 ? <BlankLine /> : null}
       {!detail ? <BlankLine /> : null}
 
       {data.notes?.trim() ? (
-        <p style={{ textIndent: '12.5mm', margin: '2mm 0 0 0' }}>
+        <p style={{ ...bodyPara, margin: '2mm 0 0 0' }}>
           หมายเหตุ <span style={underline}>{data.notes.trim()}</span>
         </p>
       ) : null}
