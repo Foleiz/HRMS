@@ -188,7 +188,7 @@ flowchart TD
 
 ```powershell
 # ตัวอย่างสคริปต์ scratch/test_api.ps1
-# รหัสผ่านอยู่ใน backend/scripts/qa_test_accounts.md (ไม่อยู่ใน git) — ตั้งเป็นตัวแปรก่อนรัน: $env:HRMS_ADMIN_PASSWORD = '...'
+# รหัสผ่านอยู่ใน frontend/.env.local → NEXT_PUBLIC_DEMO_ACCOUNTS (ไม่อยู่ใน git) — ตั้งเป็นตัวแปรก่อนรัน: $env:HRMS_ADMIN_PASSWORD = '...'
 $loginBody = @{ username = 'admin'; password = $env:HRMS_ADMIN_PASSWORD } | ConvertTo-Json
 $loginRes = Invoke-RestMethod -Uri 'http://localhost:5229/api/auth/login' -Method Post -Body $loginBody -ContentType 'application/json'
 $token = $loginRes.data.token
