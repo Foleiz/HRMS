@@ -355,7 +355,7 @@ export default function ResignationPage() {
                     setReasonDetail(label.slice(0, REASON_MAX_LENGTH));
                   }
                 }}
-                options={RESIGNATION_REASON_CATEGORIES.map((c) => ({ value: c.value, label: c.label }))}
+                options={RESIGNATION_REASON_CATEGORIES.map((c) => ({ value: c.value, label: c.label, description: c.description }))}
                 placeholder="เลือกสาเหตุ"
                 placement="top"
               />

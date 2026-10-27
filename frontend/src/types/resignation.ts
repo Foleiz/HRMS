@@ -53,11 +53,11 @@ export interface CancelResignationRequestPayload {
 }
 
 export const RESIGNATION_REASON_CATEGORIES = [
-  { value: 'NEW_JOB', label: 'ได้งานใหม่ที่ตรงสายอาชีพ / ก้าวหน้าทางวิชาชีพ' },
-  { value: 'EDUCATION', label: 'ศึกษาต่อระดับสูง / ศึกษาต่อต่างประเทศ' },
-  { value: 'HEALTH', label: 'ปัญหาสุขภาพ / ต้องการพักฟื้นร่างกาย' },
-  { value: 'FAMILY_RELOCATION', label: 'ย้ายถิ่นฐาน / ย้ายที่อยู่ / ดูแลคนในครอบครัว' },
-  { value: 'BUSINESS', label: 'ประกอบธุรกิจส่วนตัว / อาชีพอิสระ' },
-  { value: 'RETIREMENT', label: 'เกษียณอายุการทำงาน' },
-  { value: 'OTHER', label: 'เหตุผลส่วนตัวอื่น ๆ' },
+  { value: 'NEW_JOB', label: 'ได้งานใหม่ที่ตรงสายอาชีพ / ก้าวหน้าทางวิชาชีพ', description: 'ย้ายไปทำงานที่ใหม่ หรือได้ตำแหน่งที่สูงขึ้น' },
+  { value: 'EDUCATION', label: 'ศึกษาต่อระดับสูง / ศึกษาต่อต่างประเทศ', description: 'เรียนต่อปริญญาโท / เอก หรือหลักสูตรระยะยาว' },
+  { value: 'HEALTH', label: 'ปัญหาสุขภาพ / ต้องการพักฟื้นร่างกาย', description: 'ต้องรักษาตัวหรือพักฟื้นเป็นเวลานาน' },
+  { value: 'FAMILY_RELOCATION', label: 'ย้ายถิ่นฐาน / ย้ายที่อยู่ / ดูแลคนในครอบครัว', description: 'ย้ายภูมิลำเนา หรือต้องดูแลพ่อแม่ / บุตร' },
+  { value: 'BUSINESS', label: 'ประกอบธุรกิจส่วนตัว / อาชีพอิสระ', description: 'เปิดกิจการของตัวเอง หรือรับงานอิสระ' },
+  { value: 'RETIREMENT', label: 'เกษียณอายุการทำงาน', description: 'ครบอายุเกษียณ หรือเกษียณก่อนกำหนด' },
+  { value: 'OTHER', label: 'เหตุผลส่วนตัวอื่น ๆ', description: 'พิมพ์เหตุผลเองในช่องเหตุผลการลาออก' },
 ] as const;
