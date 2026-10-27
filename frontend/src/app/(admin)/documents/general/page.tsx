@@ -115,6 +115,8 @@ export default function GeneralDocumentPage() {
   const expiryRequired = !isCustomType && !!selectedMasterType?.isExpiryRequired;
 
   const [purpose, setPurpose] = useState('');
+  const DEFAULT_ADDRESSEE = 'ผู้จัดการฝ่ายทรัพยากรบุคคล';
+  const [addressedTo, setAddressedTo] = useState(DEFAULT_ADDRESSEE);
   const [notes, setNotes] = useState('');
 
   // ไฟล์แนบ (แนบเอกสาร ตามกล่องสีเหลืองใน Figma)
@@ -140,6 +142,7 @@ export default function GeneralDocumentPage() {
         if (parsed.documentType) setDocumentType(parsed.documentType);
         if (parsed.purpose) setPurpose(parsed.purpose);
         if (parsed.notes) setNotes(parsed.notes);
+        if (parsed.addressedTo) setAddressedTo(parsed.addressedTo);
         if (parsed.issueDate) setIssueDate(parsed.issueDate);
         if (parsed.expiryDate) {
           setExpiryDate(parsed.expiryDate);
@@ -228,6 +231,7 @@ export default function GeneralDocumentPage() {
     setIsCustomType(false);
     setPurpose('');
     setNotes('');
+    setAddressedTo(DEFAULT_ADDRESSEE);
     setIssueDate(toInputDate(new Date()));
     setExpiryDate('');
     setExpiryTouched(false);
@@ -253,6 +257,7 @@ export default function GeneralDocumentPage() {
           documentType: finalDocType,
           purpose: purpose.trim(),
           notes: notes.trim(),
+          addressedTo: addressedTo.trim(),
           issueDate,
           expiryDate: effectiveExpiry,
           savedAt: new Date().toISOString(),
@@ -383,7 +388,7 @@ export default function GeneralDocumentPage() {
         )}
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-          {/* ซ้าย: ประเภท + วันที่ + ใช้สำหรับ */}
+          {/* ซ้าย: ประเภท + เรียน + รายละเอียด */}
           <div className="space-y-6 min-w-0">
             <div>
               <label htmlFor="gen-type" className={LABEL}>
@@ -434,6 +439,19 @@ export default function GeneralDocumentPage() {
               )}
             </div>
 
+            <div>
+              <label htmlFor="gen-to" className={LABEL}>
+                เรียน
+              </label>
+              <input
+                id="gen-to"
+                type="text"
+                value={addressedTo}
+                onChange={(e) => setAddressedTo(e.target.value)}
+                placeholder="เช่น ผู้จัดการฝ่ายทรัพยากรบุคคล"
+                className={INPUT}
+              />
+            </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -449,13 +467,13 @@ export default function GeneralDocumentPage() {
                 onChange={(e) => setPurpose(e.target.value)}
                 rows={4}
                 placeholder="อธิบายสิ่งที่ต้องการให้ฝ่ายบุคคลดำเนินการ"
-                className={TEXTAREA}
+                className={`${TEXTAREA} block`}
                 required
               />
             </div>
           </div>
 
-          {/* ขวา: หมายเหตุ + ไฟล์แนบ */}
+          {/* ขวา: หมายเหตุ + ไฟล์แนบ (ยืดให้สูงเท่าฝั่งซ้าย) */}
           <div className="flex flex-col gap-6 min-w-0">
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -587,6 +605,7 @@ export default function GeneralDocumentPage() {
         }}
         data={{
           employeeId: user?.employeeId,
+          addressedTo: addressedTo.trim() || DEFAULT_ADDRESSEE,
           employeeName: profile.fullName,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,

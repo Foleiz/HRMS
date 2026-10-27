@@ -209,8 +209,10 @@ const GeneralPaper: React.FC<{
     textDecorationThickness: '1px',
     textUnderlineOffset: '4px',
     padding: '0 1.5mm',
-    overflowWrap: 'anywhere',
+    overflowWrap: 'break-word', // ตัดบรรทัดตามคำ (เดิม anywhere ทำให้คำขาดกลางคำ)
   };
+  const strike = (p: 'นาย' | 'นาง' | 'นางสาว') =>
+    prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
   /** บรรทัดเส้นประว่างเต็มความกว้าง (เว้นที่ให้เขียนเพิ่มเมื่อรายละเอียดสั้น) */
   const BlankLine = () => <div style={{ borderBottom: '1px dotted #000', height: '1.68em' }} />;
 
@@ -271,14 +273,17 @@ const GeneralPaper: React.FC<{
 
       {/* ===== เนื้อความ ===== */}
       <p style={{ textIndent: '12.5mm', margin: 0 }}>
-        ข้าพเจ้า<Fill value={fullName} minWidth="48mm" /> รหัสพนักงาน<Fill value={data.employeeCode} minWidth="20mm" />
-        {' '}ตำแหน่ง<Fill value={data.positionTitle} minWidth="36mm" />
+        ข้าพเจ้า <span style={strike('นาย')}>นาย</span>/ <span style={strike('นาง')}>นาง</span>/{' '}
+        <span style={strike('นางสาว')}>นางสาว</span>
+        <Fill value={displayName} minWidth="40mm" /> รหัสพนักงาน<Fill value={data.employeeCode} minWidth="18mm" />
+        {' '}ตำแหน่ง<Fill value={data.positionTitle} minWidth="30mm" />
         {data.departmentName ? (
           <>
-            {' '}สังกัด<Fill value={data.departmentName} minWidth="30mm" />
+            {' '}สังกัด<Fill value={data.departmentName} minWidth="20mm" />
           </>
         ) : null}{' '}
-        มีความประสงค์ยื่นคำร้องเรื่อง <span style={underline}>{data.documentType || '-'}</span> โดยมีรายละเอียดดังนี้
+        มีความประสงค์ยื่นคำร้องเรื่อง{' '}
+        <span style={{ ...underline, whiteSpace: 'nowrap' }}>{data.documentType || '-'}</span> โดยมีรายละเอียดดังนี้
       </p>
       <div style={{ textIndent: '12.5mm', marginTop: '1mm' }}>
         {detail ? <span style={underline}>{detail}</span> : null}
@@ -291,10 +296,6 @@ const GeneralPaper: React.FC<{
           หมายเหตุ <span style={underline}>{data.notes.trim()}</span>
         </p>
       ) : null}
-
-      <p style={{ textIndent: '12.5mm', margin: '2mm 0 0 0' }}>
-        เอกสารแนบ<Fill value={data.fileName || 'ไม่มี'} minWidth="70mm" align="left" />
-      </p>
 
       <p style={{ textIndent: '12.5mm', margin: '3mm 0 0 0' }}>จึงเรียนมาเพื่อโปรดพิจารณา</p>
 
