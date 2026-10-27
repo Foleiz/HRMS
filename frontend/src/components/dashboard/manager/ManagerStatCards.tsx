@@ -69,7 +69,11 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         const todayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         const monthPrefix = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
 
-        // ดึงข้อมูลจริงจาก backend พร้อมกัน (ไม่ต้องพึ่งการสแกนนิ้ว Real-time รายวัน)
+        const isManagerScope = role === 'DEPT_MGR' || role === 'DIV_MGR';
+        const isCeo = role === 'CEO';
+        const isAdmin = role === 'ADMIN';
+
+        // ดึงเฉพาะ API ที่จำเป็นตามบทบาท (Role) เพื่อลดจำนวน HTTP requests และภาระ Database
         const [
           headcountRes,
           leaveStatsRes,
@@ -84,16 +88,16 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           turnoverRes,
         ] = await Promise.allSettled([
           reportService.getDailyHeadcount(),
-          leaveService.getLeaveStats(),
-          leaveService.getLeaveRequests({ pageSize: 100 }),
-          user?.employeeId ? employeeService.getById(user.employeeId) : Promise.resolve(null),
+          isAdmin || isCeo ? leaveService.getLeaveStats() : Promise.resolve(null),
+          isAdmin || isManagerScope ? leaveService.getLeaveRequests({ pageSize: 100 }) : Promise.resolve([]),
+          isManagerScope && user?.employeeId ? employeeService.getById(user.employeeId) : Promise.resolve(null),
           contractService.getStats(),
-          contractService.getAll({ status: 'ACTIVE' }),
-          certificateService.getAllRequests('PENDING'),
-          salaryService.getOverview(),
-          salaryService.getPayrollPeriods(),
-          commissionService.getCommissionPeriod(currentYear, currentMonth),
-          reportService.getMonthlyTurnover(currentYear, currentMonth),
+          role === 'DEPT_MGR' ? contractService.getAll({ status: 'ACTIVE' }) : Promise.resolve([]),
+          isAdmin || isCeo ? certificateService.getAllRequests('PENDING') : Promise.resolve([]),
+          isCeo ? salaryService.getOverview() : Promise.resolve(null),
+          isAdmin || isCeo ? salaryService.getPayrollPeriods() : Promise.resolve([]),
+          isCeo ? commissionService.getCommissionPeriod(currentYear, currentMonth) : Promise.resolve(null),
+          isCeo ? reportService.getMonthlyTurnover(currentYear, currentMonth) : Promise.resolve(null),
         ]);
 
         const headcount: DailyHeadcountSummary | null =
@@ -164,11 +168,14 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         let targetSubmittedToday = 0;
         let targetProbation7Days = contractStats?.probationExpiring7DaysCount ?? 0;
 
-        const expiringContracts30 = activeContracts.filter((c) => {
-          if (!c.contractEndDate) return false;
-          const end = new Date(c.contractEndDate);
-          return end >= today && end <= in30Days;
-        });
+        const expiringContracts30Count =
+          typeof contractStats?.contractExpiring30DaysCount === 'number'
+            ? contractStats.contractExpiring30DaysCount
+            : activeContracts.filter((c) => {
+                if (!c.contractEndDate) return false;
+                const end = new Date(c.contractEndDate);
+                return end >= today && end <= in30Days;
+              }).length;
 
         if (role === 'DEPT_MGR') {
           const dept =
@@ -297,7 +304,7 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             pendingDocs: targetPendingDocs,
             submittedToday: targetSubmittedToday,
             probationExpiring7Days: targetProbation7Days,
-            contractExpiring30Days: expiringContracts30.length,
+            contractExpiring30Days: expiringContracts30Count,
             latestPayrollStatus: latestStatusLabel,
             latestPayrollTotal,
             commissionAndOtTotal: totalComm,

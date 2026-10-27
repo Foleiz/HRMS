@@ -113,6 +113,7 @@ export const leaveService = {
 
   async createLeaveRequest(data: CreateLeaveRequestPayload): Promise<LeaveRequest> {
     const res = await apiClient.post<ApiResponse<LeaveRequest>>('/leave-requests', data);
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
@@ -133,6 +134,7 @@ export const leaveService = {
 
   async approveLeaveRequest(id: number, comment?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/approve`, { comment });
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
@@ -151,11 +153,13 @@ export const leaveService = {
 
   async rejectLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/reject`, { reason });
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
   async cancelLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/${id}/cancel`, { reason });
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
@@ -185,30 +189,66 @@ export const leaveService = {
 
   /** [ESS] ดึงรายการคำขอลาของตนเอง */
   async getMyLeaveRequests(params?: { status?: string; page?: number; pageSize?: number }): Promise<LeaveRequest[]> {
-    const res = await apiClient.get<ApiResponse<LeaveRequest[]>>('/leave-requests/my', { params });
-    return res.data.data;
+    const cacheKey = `${params?.status || 'all'}_${params?.page || 1}_${params?.pageSize || 'default'}`;
+    const now = Date.now();
+    const cached = myLeaveRequestsCache.get(cacheKey);
+    if (cached && cached.expiresAt > now) {
+      return cached.data;
+    }
+
+    const existingPromise = myLeaveRequestsInFlight.get(cacheKey);
+    if (existingPromise) {
+      return existingPromise;
+    }
+
+    const promise = apiClient
+      .get<ApiResponse<LeaveRequest[]>>('/leave-requests/my', { params })
+      .then((res) => {
+        const data = res.data.data || [];
+        myLeaveRequestsCache.set(cacheKey, { data, expiresAt: Date.now() + MY_LEAVE_CACHE_TTL_MS });
+        return data;
+      })
+      .finally(() => {
+        myLeaveRequestsInFlight.delete(cacheKey);
+      });
+
+    myLeaveRequestsInFlight.set(cacheKey, promise);
+    return promise;
   },
 
   /** [ESS] ยื่นคำขอลาใหม่ด้วยตนเอง (หรือบันทึกเป็นแบบร่างถ้า data.saveAsDraft = true) */
   async createMyLeaveRequest(data: CreateMyLeaveRequestPayload): Promise<LeaveRequest> {
     const res = await apiClient.post<ApiResponse<LeaveRequest>>('/leave-requests/my', data);
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
   /** [ESS] แก้ไขคำขอลาที่ยังเป็นแบบร่างของตนเอง (บันทึกแบบร่างซ้ำ หรือยื่นจริงจากแบบร่างเดิม) */
   async updateMyLeaveRequest(id: number, data: CreateMyLeaveRequestPayload): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/my/${id}`, data);
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
   /** [ESS] ยกเลิกคำขอลาของตนเอง (เฉพาะที่เป็นเจ้าของคำขอ) */
   async cancelMyLeaveRequest(id: number, reason?: string): Promise<LeaveRequest> {
     const res = await apiClient.put<ApiResponse<LeaveRequest>>(`/leave-requests/my/${id}/cancel`, { reason });
+    clearMyLeaveRequestsCache();
     return res.data.data;
   },
 
   /** [ESS] ลบคำขอลาที่ยังเป็นแบบร่างของตนเองแบบถาวร (เฉพาะที่เป็นเจ้าของและยังเป็น DRAFT เท่านั้น) */
   async deleteMyLeaveRequest(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<object>>(`/leave-requests/my/${id}`);
+    clearMyLeaveRequestsCache();
   },
 };
+
+const myLeaveRequestsCache = new Map<string, { data: LeaveRequest[]; expiresAt: number }>();
+const myLeaveRequestsInFlight = new Map<string, Promise<LeaveRequest[]>>();
+const MY_LEAVE_CACHE_TTL_MS = 15_000;
+
+function clearMyLeaveRequestsCache() {
+  myLeaveRequestsCache.clear();
+  myLeaveRequestsInFlight.clear();
+}
