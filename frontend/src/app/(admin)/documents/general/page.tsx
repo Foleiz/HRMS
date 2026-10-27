@@ -586,6 +586,7 @@ export default function GeneralDocumentPage() {
           setIsPreviewOpen(false);
         }}
         data={{
+          employeeId: user?.employeeId,
           employeeName: profile.fullName,
           employeeCode: profile.employeeCode,
           positionTitle: profile.positionTitle,
