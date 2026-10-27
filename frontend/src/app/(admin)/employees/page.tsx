@@ -376,6 +376,7 @@ export default function EmployeesPage() {
     }
     setCommentModalEmp(null);
     setCommentInput('');
+    toast.success(text.trim() ? 'บันทึกคอมเมนต์พนักงานเรียบร้อยแล้ว' : 'ลบคอมเมนต์เรียบร้อยแล้ว');
   };
 
 
@@ -802,35 +803,90 @@ export default function EmployeesPage() {
                           </button>
                         </div>
 
-                        {/* Avatar Photo Box */}
-                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shadow-2xs relative flex items-center justify-center group-hover:scale-105 transition-transform">
-                          {emp.avatarUrl ? (
-                            <img
-                              src={getAvatarUrl(emp.avatarUrl) || ''}
-                              alt={emp.fullName}
-                              className="w-full h-full object-cover rounded-2xl"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : null}
-                          <div
-                            className={`w-full h-full ${
-                              emp.avatarUrl ? 'absolute inset-0 -z-10' : ''
-                            } flex items-center justify-center font-bold text-xl ${avatarColor}`}
-                          >
-                            {emp.firstName ? emp.firstName.charAt(0) : 'E'}
+                        {/* Avatar Photo Box Wrapper */}
+                        <div className="relative group/avatar">
+                          <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shadow-2xs relative flex items-center justify-center group-hover/avatar:scale-105 transition-transform">
+                            {emp.avatarUrl ? (
+                              <img
+                                src={getAvatarUrl(emp.avatarUrl) || ''}
+                                alt={emp.fullName}
+                                className="w-full h-full object-cover rounded-2xl"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className={`w-full h-full ${
+                                emp.avatarUrl ? 'absolute inset-0 -z-10' : ''
+                              } flex items-center justify-center font-bold text-xl ${avatarColor}`}
+                            >
+                              {emp.firstName ? emp.firstName.charAt(0) : 'E'}
+                            </div>
                           </div>
 
-                          {/* Comment Indicator */}
-                          {hasComment && (
-                            <div
-                              className="absolute top-1 left-1 z-20 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white shadow-xs"
-                              title={commentText}
-                            >
-                              !
-                            </div>
-                          )}
+                          {/* Comment Indicator Button & Pill Tooltip (ตรงตามภาพ Image 1 & 2) */}
+                          <div className="absolute -top-1 -left-1 z-30 group/comment">
+                            {hasComment ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="w-6 h-6 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                title="คลิกเพื่อแก้ไขคอมเมนต์"
+                              >
+                                !
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput('');
+                                }}
+                                className="w-6 h-6 rounded-full bg-[#0b2046]/75 hover:bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md opacity-0 group-hover/avatar:opacity-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                title="คลิกเพื่อเพิ่มคอมเมนต์"
+                              >
+                                !
+                              </button>
+                            )}
+
+                            {/* Hover Pill Tooltip matching Image 2 */}
+                            {hasComment ? (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-2 bg-[#0b2046] text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <div className="w-4 h-4 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  !
+                                </div>
+                                <span className="font-medium text-white">** {commentText}</span>
+                              </div>
+                            ) : (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput('');
+                                }}
+                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0b2046] text-white text-xs px-3 py-1 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <span>คลิกเพื่อใส่คอมเมนต์</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Employee Name */}
@@ -1102,11 +1158,12 @@ export default function EmployeesPage() {
                             {hasComment && (
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="absolute -top-1 -right-1 z-20 w-3.5 h-3.5 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-bold ring-1.5 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
                                 title="คลิกเพื่อแก้ไขคอมเมนต์"
                               >
                                 !
@@ -1115,15 +1172,29 @@ export default function EmployeesPage() {
 
                             {/* Tooltip เมื่อเอา mouse ไป hold (hover) เหนือ avatar หรือ badge */}
                             {hasComment ? (
-                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-primary text-white text-[11px] px-3 py-1 rounded-full shadow-xl border border-white/20 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-                                <div className="w-3.5 h-3.5 rounded-full bg-white/25 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-2 bg-[#0b2046] text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <div className="w-4 h-4 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                                   !
                                 </div>
-                                <span className="font-normal">** {commentText}</span>
+                                <span className="font-medium text-white">** {commentText}</span>
                               </div>
                             ) : (
                               /* หากยังไม่มีคอมเมนต์ เมื่อ hover แสดง tooltip แจ้งให้คลิกเพื่อกรอก */
-                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1 bg-slate-800 text-white text-[11px] px-2.5 py-1 rounded-full shadow-lg pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput('');
+                                }}
+                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0b2046] text-white text-xs px-3 py-1 rounded-full shadow-lg border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
                                 <span>คลิกเพื่อใส่คอมเมนต์</span>
                               </div>
                             )}
@@ -1342,7 +1413,7 @@ export default function EmployeesPage() {
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-6 h-6 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white/60">
                   !
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -1365,8 +1436,15 @@ export default function EmployeesPage() {
                 rows={3}
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
-                placeholder="พิมพ์คอมเมนต์ตรงนี้..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    handleSaveComment(commentModalEmp.id, commentInput);
+                  }
+                }}
+                placeholder="พิมพ์คอมเมนต์ตรงนี้... (กด Ctrl+Enter เพื่อบันทึก)"
                 className={inputClass}
+                autoFocus
               />
             </div>
 
