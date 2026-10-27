@@ -50,14 +50,25 @@ const CertificatePaper: React.FC<{
     if (fixedZoom != null) return;
     const body = bodyRef.current;
     const note = noteRef.current;
-    if (!body || !note || !body.offsetHeight) return;
-    const available = note.offsetTop - body.offsetTop - 8; // เว้นช่องไฟ ~2 มม.
-    body.style.zoom = '1'; // วัดขนาดจริงก่อนย่อ
-    const needed = body.scrollHeight;
-    const z = needed > available ? Math.max(0.8, available / needed) : 1;
-    body.style.zoom = String(z); // React ไม่เขียน style ซ้ำถ้าค่าเท่าเดิม
-    setZoom(z);
-    onZoom?.(z);
+    if (!body || !note) return;
+    const fit = () => {
+      body.style.zoom = '1'; // วัดขนาดจริงก่อนย่อ
+      const bodyRect = body.getBoundingClientRect();
+      const noteTop = note.getBoundingClientRect().top;
+      if (!bodyRect.height) return;
+      const mm = bodyRect.width / 162; // ความกว้างเนื้อหา 162 มม. → px ต่อ มม. (รองรับกรณีหน้าจอย่อขนาดกระดาษ)
+      const available = noteTop - bodyRect.top - 3 * mm; // เว้นช่องไฟเหนือหมายเหตุ 3 มม.
+      const z = bodyRect.height > available ? Math.max(0.75, Math.floor((available / bodyRect.height) * 1000) / 1000) : 1;
+      body.style.zoom = String(z); // React ไม่เขียน style ซ้ำถ้าค่าเท่าเดิม
+      setZoom(z);
+      onZoom?.(z);
+    };
+    fit();
+    // วัดใหม่เมื่อฟอนต์/รูปโหลดเสร็จหรือขนาดเปลี่ยน (ฟอนต์สำรองทำให้ตัดบรรทัดต่างจากฟอนต์จริง)
+    document.fonts?.ready.then(fit).catch(() => undefined);
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(body);
+    return () => ro.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, fixedZoom]);
   const appliedZoom = fixedZoom ?? zoom;
@@ -77,12 +88,12 @@ const CertificatePaper: React.FC<{
     width: '140mm',
     margin: '0 auto',
     borderCollapse: 'collapse',
-    fontSize: '11pt',
-    lineHeight: 1.45,
+    fontSize: '10.5pt',
+    lineHeight: 1.35,
     borderTop: '1px solid #000',
     borderBottom: '1px solid #000',
   };
-  const cell: React.CSSProperties = { padding: '0.6mm 2mm', verticalAlign: 'top' };
+  const cell: React.CSSProperties = { padding: '0.4mm 2mm', verticalAlign: 'top' };
   const rowLine: React.CSSProperties = { borderBottom: '1px solid #e5e7eb' };
   const workRows: [string, React.ReactNode][] = [
     ['รหัสพนักงาน', doc.employeeCode || '-'],
@@ -107,7 +118,7 @@ const CertificatePaper: React.FC<{
         background: '#fff',
         color: '#000',
         fontSize: '12pt',
-        lineHeight: 1.7,
+        lineHeight: 1.6,
       }}
     >
       <DocumentLogoHeader companyLogo={doc.companyLogoBase64 || companyLogo} />
@@ -133,7 +144,7 @@ const CertificatePaper: React.FC<{
 
       <div ref={bodyRef} style={{ zoom: appliedZoom }}>
       {/* ===== ชื่อหนังสือ ===== */}
-      <div style={{ textAlign: 'center', marginBottom: '6mm' }}>
+      <div style={{ textAlign: 'center', marginBottom: '4mm' }}>
         <div style={{ fontSize: '16pt', fontWeight: 700, lineHeight: 1.4 }}>{doc.certificateTitle || 'หนังสือรับรอง'}</div>
         <div style={{ fontSize: '8.5pt', letterSpacing: '0.3em', color: '#4b5563', fontFamily: 'Arial, Helvetica, sans-serif' }}>
           {includeSalary ? 'SALARY CERTIFICATE' : 'EMPLOYMENT CERTIFICATE'}
@@ -141,7 +152,7 @@ const CertificatePaper: React.FC<{
       </div>
 
       {/* ===== ที่ (ซ้าย) / วันที่ (ขวา) ===== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5mm' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3mm' }}>
         <div>
           เลขที่ <span style={b}>{doc.documentNumber}</span>
         </div>
@@ -149,7 +160,7 @@ const CertificatePaper: React.FC<{
       </div>
 
       {/* ===== เรื่อง / เรียน ===== */}
-      <div style={{ marginBottom: '4mm' }}>
+      <div style={{ marginBottom: '3mm' }}>
         <div style={{ display: 'flex' }}>
           <span style={{ width: '13mm', flexShrink: 0 }}>เรื่อง</span>
           <span>{includeSalary ? 'รับรองการทำงานและเงินเดือน' : 'รับรองการทำงาน'}</span>
@@ -214,7 +225,6 @@ const CertificatePaper: React.FC<{
           </table>
           <div style={{ textAlign: 'center', margin: '1mm 0 3mm', lineHeight: 1.5 }}>
             <span style={b}>( {doc.totalIncomeText || doc.salaryText} )</span>
-            <span style={{ fontSize: '9.5pt', color: '#374151' }}> ไม่รวมค่าล่วงเวลา ค่าคอมมิชชัน และสวัสดิการอื่น</span>
           </div>
         </>
       )}
@@ -227,7 +237,7 @@ const CertificatePaper: React.FC<{
       <p style={para}>ให้ไว้ ณ วันที่ {doc.issueDateText}</p>
 
       {/* ===== ผู้มีอำนาจลงนาม (ชิดขวา) ===== */}
-      <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '6mm', whiteSpace: 'nowrap' }}>
+      <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '3mm', whiteSpace: 'nowrap' }}>
         {/* ตราประทับบริษัท — รูปจากข้อมูลบริษัท หรือวงกลมเว้นไว้ประทับตราจริงหลังพิมพ์ */}
         {doc.companySealBase64 && !sealFailed ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -263,7 +273,7 @@ const CertificatePaper: React.FC<{
           </div>
         )}
         <div>ขอแสดงความนับถือ</div>
-        <div style={{ marginTop: '9mm' }}>
+        <div style={{ marginTop: '7mm' }}>
           <SignatureLine
             src={signatureFailed ? null : doc.signatureBase64 || null}
             onError={() => setSignatureFailed(true)}
