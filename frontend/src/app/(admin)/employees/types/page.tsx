@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect, useTransition, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import {
   Search,
@@ -26,12 +27,39 @@ import {
   CreateEmployeeTypePayload,
   UpdateEmployeeTypePayload,
 } from '@/types/employeeType';
+import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { ActiveStatus } from '@/components/ui';
+
+const CATEGORY_META: Record<string, { label: string }> = {
+  STATUTORY: { label: 'สิทธิตามกฎหมาย' },
+  HEALTH: { label: 'สุขภาพและประกัน' },
+  ALLOWANCE: { label: 'เบี้ยเลี้ยงและการช่วยเหลือ' },
+  FINANCIAL: { label: 'การเงินและกองทุน' },
+  WELLNESS: { label: 'การเรียนรู้และสุขภาพกาย' },
+  OTHER: { label: 'สิทธิประโยชน์อื่นๆ' },
+};
+
+function getBadgeColor(category?: string): string {
+  switch (category) {
+    case 'STATUTORY':
+      return 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60';
+    case 'HEALTH':
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60';
+    case 'ALLOWANCE':
+      return 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60';
+    case 'FINANCIAL':
+      return 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60';
+    case 'WELLNESS':
+      return 'bg-pink-50 text-pink-700 border-pink-200/80 dark:bg-pink-950/50 dark:text-pink-300 dark:border-pink-800/60';
+    default:
+      return 'bg-slate-50 text-slate-700 border-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+  }
+}
 
 export default function EmployeeTypesPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -61,6 +89,74 @@ export default function EmployeeTypesPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Benefits Popover state
+  const [mounted, setMounted] = useState(false);
+  const [popoverData, setPopoverData] = useState<{
+    typeName: string;
+    typeCode: string;
+    benefits: BenefitItem[];
+    anchorRect: DOMRect;
+  } | null>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!popoverData) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setPopoverData(null);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPopoverData(null);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [popoverData]);
+
+  const groupedPopoverBenefits = useMemo(() => {
+    if (!popoverData?.benefits) return {};
+    const groups: Record<string, BenefitItem[]> = {};
+    for (const b of popoverData.benefits) {
+      const cat = b.category || 'OTHER';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(b);
+    }
+    return groups;
+  }, [popoverData]);
+
+  const getPopoverPosition = (rect: DOMRect) => {
+    const popoverWidth = 380;
+    const padding = 16;
+    let left = rect.left;
+    if (typeof window !== 'undefined') {
+      if (left + popoverWidth > window.innerWidth - padding) {
+        left = window.innerWidth - popoverWidth - padding;
+      }
+      if (left < padding) left = padding;
+    }
+
+    let top = rect.bottom + 8;
+    const estimatedHeight = 340;
+    if (typeof window !== 'undefined') {
+      if (top + estimatedHeight > window.innerHeight - padding && rect.top > estimatedHeight) {
+        top = Math.max(padding, rect.top - estimatedHeight - 8);
+      }
+    }
+
+    return { top, left };
+  };
 
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
@@ -373,67 +469,83 @@ export default function EmployeeTypesPage() {
                       </td>
 
                       {/* สิทธิประโยชน์ */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-wrap items-center gap-1.5 max-w-sm">
+                      <td className="py-3 px-4">
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-md">
                           {item.benefits && item.benefits.length > 0 ? (
-                            item.benefits.map((b) => {
-                              let badgeColor = 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200/80';
-                              if (b.category === 'STATUTORY') {
-                                badgeColor = 'bg-blue-50 text-blue-700 border-blue-200/80';
-                              } else if (b.category === 'HEALTH') {
-                                badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
-                              } else if (b.category === 'ALLOWANCE') {
-                                badgeColor = 'bg-amber-50 text-amber-700 border-amber-200/80';
-                              } else if (b.category === 'FINANCIAL') {
-                                badgeColor = 'bg-purple-50 text-purple-700 border-purple-200/80';
-                              } else if (b.category === 'WELLNESS') {
-                                badgeColor = 'bg-pink-50 text-pink-700 border-pink-200/80';
-                              }
-                              const amt = Number(b.coverageAmount) || 0;
-                              const freqLabel = b.frequency === 'DAILY' ? 'บ./วัน' : b.frequency === 'YEARLY' ? 'บ./ปี' : 'บ./ด.';
-                              return (
-                                <span
-                                  key={b.id}
-                                  title={b.description || b.benefitName}
-                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium ${badgeColor}`}
+                            <>
+                              {item.benefits.slice(0, 3).map((b) => {
+                                const badgeColor = getBadgeColor(b.category);
+                                const amt = Number(b.coverageAmount) || 0;
+                                const freqLabel =
+                                  b.frequency === 'DAILY'
+                                    ? 'บ./วัน'
+                                    : b.frequency === 'YEARLY'
+                                    ? 'บ./ปี'
+                                    : 'บ./ด.';
+                                return (
+                                  <span
+                                    key={b.id}
+                                    title={b.description || b.benefitName}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium ${badgeColor}`}
+                                  >
+                                    <span>{b.benefitName}</span>
+                                    {amt > 0 && (
+                                      <span className="font-mono font-semibold opacity-85">
+                                        ({amt.toLocaleString()} {freqLabel})
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })}
+
+                              {item.benefits.length > 3 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const rect = e.currentTarget.getBoundingClientRect();
+                                    setPopoverData({
+                                      typeName: item.typeName,
+                                      typeCode: item.typeCode,
+                                      benefits: item.benefits || [],
+                                      anchorRect: rect,
+                                    });
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 cursor-pointer transition-all shadow-2xs hover:scale-105"
+                                  title="คลิกเพื่อดูสิทธิประโยชน์ทั้งหมด"
                                 >
-                                  {b.benefitName}
-                                  {amt > 0 && (
-                                    <span className="font-mono font-bold opacity-85">
-                                      ({amt.toLocaleString()} {freqLabel})
-                                    </span>
-                                  )}
-                                </span>
-                              );
-                            })
+                                  +{item.benefits.length - 3} รายการ
+                                </button>
+                              )}
+                            </>
                           ) : item.hasSocialSecurity ||
                             item.hasLeaveEntitlement ||
                             item.hasOvertime ||
                             item.hasProvidentFund ? (
                             <>
                               {item.hasSocialSecurity && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200/80 text-[10px]">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 text-[10px]">
                                   ประกันสังคม
                                 </span>
                               )}
                               {item.hasLeaveEntitlement && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[10px]">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px]">
                                   สิทธิ์วันลา
                                 </span>
                               )}
                               {item.hasOvertime && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/80 text-[10px]">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-[10px]">
                                   คิดโอที (OT)
                                 </span>
                               )}
                               {item.hasProvidentFund && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200/80 text-[10px]">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 text-[10px]">
                                   กองทุนสำรองฯ
                                 </span>
                               )}
                             </>
                           ) : (
-                            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">- ไม่มี -</span>
+                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">- ไม่มี -</span>
                           )}
                         </div>
                       </td>
@@ -553,6 +665,95 @@ export default function EmployeeTypesPage() {
         initialData={selectedTypeForEdit}
         existingCodes={types.map((t) => t.typeCode)}
       />
+
+      {/* 7. Popover แสดงสิทธิประโยชน์ทั้งหมดแยกหมวดหมู่ */}
+      {mounted &&
+        popoverData &&
+        createPortal(
+          (() => {
+            const pos = getPopoverPosition(popoverData.anchorRect);
+            return (
+              <div
+                ref={popoverRef}
+                style={{ top: `${pos.top}px`, left: `${pos.left}px` }}
+                className="fixed z-50 w-96 max-w-[95vw] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                      {popoverData.typeCode}
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        {popoverData.typeName}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                        สิทธิประโยชน์และสวัสดิการทั้งหมด
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
+                      {popoverData.benefits.length} รายการ
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPopoverData(null)}
+                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Categorized List */}
+                <div className="mt-3 space-y-3 max-h-[360px] overflow-y-auto pr-1">
+                  {Object.entries(groupedPopoverBenefits).map(([category, list]) => {
+                    const meta = CATEGORY_META[category] || { label: 'สิทธิประโยชน์อื่นๆ' };
+                    return (
+                      <div key={category} className="space-y-1.5">
+                        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                          <span>{meta.label}</span>
+                          <span className="text-[10px] font-normal text-slate-400">
+                            {list.length} รายการ
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {list.map((b) => {
+                            const badgeColor = getBadgeColor(b.category);
+                            const amt = Number(b.coverageAmount) || 0;
+                            const freqLabel =
+                              b.frequency === 'DAILY'
+                                ? 'บ./วัน'
+                                : b.frequency === 'YEARLY'
+                                ? 'บ./ปี'
+                                : 'บ./ด.';
+                            return (
+                              <span
+                                key={b.id}
+                                title={b.description || b.benefitName}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium ${badgeColor}`}
+                              >
+                                <span>{b.benefitName}</span>
+                                {amt > 0 && (
+                                  <span className="font-mono font-bold opacity-85 text-[10px]">
+                                    ({amt.toLocaleString()} {freqLabel})
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })(),
+          document.body
+        )}
     </div>
   );
 }
