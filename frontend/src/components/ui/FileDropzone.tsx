@@ -11,6 +11,9 @@ interface FileDropzoneProps {
   maxSizeMB?: number;
   /** เน้นสีเตือนเมื่อจำเป็นต้องแนบแต่ยังไม่ได้แนบ */
   required?: boolean;
+  /** ปิดใช้งาน — แสดงพื้นเทา กดหรือลากวางไม่ได้ พร้อมข้อความบอกเหตุผล */
+  disabled?: boolean;
+  disabledText?: string;
   className?: string;
   'aria-labelledby'?: string;
 }
@@ -28,6 +31,8 @@ export function FileDropzone({
   accept = ['.pdf', '.jpg', '.jpeg', '.png'],
   maxSizeMB = 5,
   required,
+  disabled,
+  disabledText = 'ไม่ต้องแนบไฟล์',
   className = '',
   ...rest
 }: FileDropzoneProps) {
@@ -52,6 +57,22 @@ export function FileDropzone({
     setError(null);
     onChange(f);
   };
+
+  if (disabled) {
+    return (
+      <div className={`flex flex-col ${className}`}>
+        <div
+          aria-disabled="true"
+          className="flex-1 min-h-[150px] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/60 px-4 py-6 text-center cursor-not-allowed select-none"
+        >
+          <span className="w-12 h-12 rounded-xl bg-slate-200/70 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+            <UploadCloud className="w-6 h-6" aria-hidden="true" />
+          </span>
+          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{disabledText}</span>
+        </div>
+      </div>
+    );
+  }
 
   if (file) {
     return (

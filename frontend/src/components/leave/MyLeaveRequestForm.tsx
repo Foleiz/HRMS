@@ -466,6 +466,12 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     return { text, tone: withinQuota ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400' };
   })();
 
+  // ไฟล์แนบ: แสดงเฉพาะประเภทที่ตั้งค่าให้แนบเอกสาร (หรือมีไฟล์ค้างอยู่แล้ว เช่นแบบร่าง)
+  const typeUsesDocument = !!applicablePolicy?.isDocumentRequired;
+  // แสดงกล่องตลอด แต่ปิดใช้งาน (พื้นเทา) เมื่อยังไม่เลือกประเภท หรือประเภทนั้นไม่ต้องแนบเอกสาร
+  const attachmentEnabled = typeUsesDocument || isDocumentRecommended || !!attachment;
+  const docAfterDays = applicablePolicy?.documentRequiredAfterDays ?? null;
+
   const inputCls =
     'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:focus:border-blue-500 outline-none';
   const labelCls = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
@@ -498,7 +504,10 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           <RichSelect<number>
             id="leave-type"
             value={leaveTypeId}
-            onChange={(v) => setForm((f) => ({ ...f, leaveTypeId: v }))}
+            onChange={(v) => {
+              const p = leavePolicies.find((x) => x.leaveTypeId === v);
+              setForm((f) => ({ ...f, leaveTypeId: v, attachment: p?.isDocumentRequired ? f.attachment : null }));
+            }}
             options={typeOptions}
             placeholder="เลือกประเภทการลา"
             enabledGroupLabel="ใช้ได้"
@@ -617,7 +626,13 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               {isDocumentRecommended ? (
                 <span className="text-rose-600">*</span>
               ) : (
-                <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                <span className="font-normal text-slate-500 dark:text-slate-400">
+                  {!attachmentEnabled
+                  ? ''
+                  : docAfterDays
+                    ? `(ต้องแนบเมื่อลาเกิน ${docAfterDays} วัน)`
+                    : '(ไม่บังคับ)'}
+                </span>
               )}
             </span>
             <FileDropzone
@@ -625,6 +640,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               file={attachment}
               onChange={(file) => setForm((f) => ({ ...f, attachment: file }))}
               required={isDocumentRecommended}
+              disabled={!attachmentEnabled}
+              disabledText={hasSelectedType ? 'การลาประเภทนี้ไม่ต้องแนบเอกสาร' : 'เลือกประเภทการลาก่อน'}
               aria-labelledby="leave-attachment-label"
             />
             {isDocumentRecommended && (
