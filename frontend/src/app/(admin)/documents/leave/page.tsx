@@ -153,8 +153,8 @@ function MyLeaveRequestPageContent() {
       {/* คงรูปแบบเดียวกันไว้ทุกหน้าในหมวด "ยื่นเอกสาร" รวมถึงหน้าฟอร์มย่อยนี้ด้วย ไม่ใช้ breadcrumb แบบเดิมซ้อนแยกต่างหาก */}
       <DocumentsSubNav />
 
-      {/* ฟอร์มกว้างพอดีอ่าน (ไม่ยืดเต็มจอ) — หัวข้อกับฟอร์มอยู่ในคอลัมน์เดียวกัน */}
-      <div className="max-w-6xl mx-auto w-full space-y-5">
+      {/* หัวข้อกับฟอร์มกว้างเท่าแถบเมนูย่อยด้านบน */}
+      <div className="w-full space-y-5">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
