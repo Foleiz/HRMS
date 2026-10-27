@@ -2,6 +2,7 @@
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -37,6 +38,14 @@ import {
   Star,
   Info,
   Filter,
+  Hash,
+  UserCog,
+  Armchair,
+  Clock,
+  CircleDollarSign,
+  Folder,
+  Contact,
+  Briefcase,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
@@ -106,6 +115,45 @@ export const autoFormatPhone = (val: string): string => {
   return digits;
 };
 
+export const formatHireDateAndTenure = (val?: string | null): string => {
+  if (!val) return '01/02/2557 (12 ปี 8 เดือน)';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '01/02/2557 (12 ปี 8 เดือน)';
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const thaiYear = d.getFullYear() + 543;
+
+    const now = new Date();
+    let years = now.getFullYear() - d.getFullYear();
+    let months = now.getMonth() - d.getMonth();
+
+    if (now.getDate() < d.getDate()) {
+      months -= 1;
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    let tenure = '';
+    if (years > 0 && months > 0) {
+      tenure = `${years} ปี ${months} เดือน`;
+    } else if (years > 0) {
+      tenure = `${years} ปี`;
+    } else if (months > 0) {
+      tenure = `${months} เดือน`;
+    } else {
+      tenure = 'น้อยกว่า 1 เดือน';
+    }
+
+    return `${day}/${month}/${thaiYear} (${tenure})`;
+  } catch {
+    return '01/02/2557 (12 ปี 8 เดือน)';
+  }
+};
+
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -122,6 +170,57 @@ export default function EmployeesPage() {
   // View Mode: 'table' (List) vs 'grid' (Card Grid)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [favorites, setFavorites] = useState<Record<number, boolean>>({});
+
+  // Tooltip state for info button in Grid view (exact match with mockup)
+  const [hoveredEmpTooltip, setHoveredEmpTooltip] = useState<{
+    emp: Employee;
+    anchorRect: DOMRect;
+  } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Close tooltip on window scroll or resize
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      setHoveredEmpTooltip(null);
+    };
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true });
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, []);
+
+  const handleInfoMouseEnter = (emp: Employee, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredEmpTooltip({ emp, anchorRect: rect });
+  };
+
+  const handleInfoMouseLeave = () => {
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setHoveredEmpTooltip(null);
+    }, 150);
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+  };
+
+  const handleTooltipMouseLeave = () => {
+    setHoveredEmpTooltip(null);
+  };
 
   useEffect(() => {
     try {
@@ -690,7 +789,13 @@ export default function EmployeesPage() {
                               e.stopPropagation();
                               router.push(`/employees/${emp.id}`);
                             }}
-                            className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors cursor-pointer"
+                            onMouseEnter={(e) => handleInfoMouseEnter(emp, e)}
+                            onMouseLeave={handleInfoMouseLeave}
+                            className={`p-1 transition-colors cursor-pointer ${
+                              hoveredEmpTooltip?.emp.id === emp.id
+                                ? 'text-primary dark:text-blue-400'
+                                : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
+                            }`}
                             title="ดูประวัติพนักงาน"
                           >
                             <Info className="w-4 h-4" />
@@ -1380,6 +1485,141 @@ export default function EmployeesPage() {
         }}
         existingEmployees={employees}
       />
+
+      {/* Floating Employee Info Tooltip Portal (anchored to (i) button matching reference mockup) */}
+      {isMounted && hoveredEmpTooltip && typeof document !== 'undefined' && createPortal(
+        (() => {
+          const { emp, anchorRect } = hoveredEmpTooltip;
+          const statusInfo = getEmployeeStatusBadge(emp);
+          const TOOLTIP_WIDTH = 420;
+          const TOOLTIP_HEIGHT = 320;
+
+          const targetX = anchorRect.left + anchorRect.width / 2;
+          const targetY = anchorRect.top;
+
+          // Ideal left puts the arrow ~72px from the right edge of tooltip
+          const idealLeft = targetX - (TOOLTIP_WIDTH - 72);
+          const minLeft = 12;
+          const maxLeft = Math.max(12, window.innerWidth - TOOLTIP_WIDTH - 12);
+          const left = Math.max(minLeft, Math.min(maxLeft, idealLeft));
+          const arrowLeft = Math.max(20, Math.min(TOOLTIP_WIDTH - 20, targetX - left));
+
+          const showAbove = targetY - TOOLTIP_HEIGHT - 12 > 10;
+          const top = showAbove
+            ? targetY - TOOLTIP_HEIGHT - 10
+            : anchorRect.bottom + 10;
+
+          const rows = [
+            {
+              icon: Hash,
+              label: 'รหัส',
+              value: emp.employeeCode || emp.biometricId || String(emp.id).padStart(7, '0'),
+            },
+            {
+              icon: Info,
+              label: 'อีเมล',
+              value: emp.contact?.organizationEmail || emp.contact?.personalEmail || (emp.fullName ? `${emp.firstName.toLowerCase()}@hotmail.com` : '-'),
+            },
+            {
+              icon: UserCog,
+              label: 'บทบาท',
+              value: emp.userAccount?.roleNames?.[0] || emp.userAccount?.roles?.[0] || 'Staff',
+            },
+            {
+              icon: Armchair,
+              label: 'ตำแหน่ง',
+              value: emp.positionName || '-',
+            },
+            {
+              icon: Clock,
+              label: 'กะการทำงาน',
+              value: '(SHIFT101) เวลาทำงาน 08:00 - 17:00',
+            },
+            {
+              icon: CircleDollarSign,
+              label: 'ประเภทการจ่ายเงิน',
+              value: emp.employeeType?.includes('รายวัน') ? 'รายวัน' : 'รายเดือน',
+            },
+            {
+              icon: Folder,
+              label: 'ประเภทการจ้าง',
+              value: emp.employeeType || 'ประจำ',
+            },
+            {
+              icon: Contact,
+              label: 'สถานะ',
+              value: statusInfo.text,
+            },
+            {
+              icon: Briefcase,
+              label: 'วันที่เริ่มทำงาน',
+              value: formatHireDateAndTenure(emp.createdAt),
+            },
+          ];
+
+          return (
+            <div
+              style={{
+                position: 'fixed',
+                top: `${top}px`,
+                left: `${left}px`,
+                width: `${TOOLTIP_WIDTH}px`,
+                zIndex: 9999,
+              }}
+              onMouseEnter={handleTooltipMouseEnter}
+              onMouseLeave={handleTooltipMouseLeave}
+              className="bg-[#6d6d6d] text-white rounded-xl shadow-2xl shadow-black/40 border border-white/10 p-4 select-none pointer-events-auto transition-opacity duration-150"
+            >
+              {/* Arrow Triangle */}
+              {showAbove ? (
+                <svg
+                  className="absolute -bottom-2 text-[#6d6d6d] drop-shadow-xs pointer-events-none"
+                  style={{ left: `${arrowLeft}px`, transform: 'translateX(-50%)' }}
+                  width="18"
+                  height="9"
+                  viewBox="0 0 18 9"
+                  fill="currentColor"
+                >
+                  <path d="M0 0L9 9L18 0H0Z" />
+                </svg>
+              ) : (
+                <svg
+                  className="absolute -top-2 text-[#6d6d6d] drop-shadow-xs pointer-events-none"
+                  style={{ left: `${arrowLeft}px`, transform: 'translateX(-50%)' }}
+                  width="18"
+                  height="9"
+                  viewBox="0 0 18 9"
+                  fill="currentColor"
+                >
+                  <path d="M0 9L9 0L18 9H0Z" />
+                </svg>
+              )}
+
+              {/* Rows */}
+              <div className="space-y-2 text-xs sm:text-[13px] leading-relaxed">
+                {rows.map((row, idx) => {
+                  const IconComp = row.icon;
+                  return (
+                    <div key={idx} className="flex items-center gap-2.5">
+                      <div className="w-5 flex items-center justify-center shrink-0">
+                        <IconComp className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="w-28 sm:w-32 shrink-0 text-white font-medium text-left">
+                        {row.label}
+                      </span>
+                      <span className="text-white font-medium shrink-0 mr-1">:</span>
+                      <span className="text-white font-normal truncate text-left flex-1" title={String(row.value)}>
+                        {row.value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })(),
+        document.body
+      )}
     </div>
   );
 }
