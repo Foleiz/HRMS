@@ -225,7 +225,6 @@ const CertificatePaper: React.FC<{
           </table>
           <div style={{ textAlign: 'center', margin: '1mm 0 3mm', lineHeight: 1.5 }}>
             <span style={b}>( {doc.totalIncomeText || doc.salaryText} )</span>
-            <span style={{ fontSize: '9.5pt', color: '#374151' }}> ไม่รวมค่าล่วงเวลา ค่าคอมมิชชัน และสวัสดิการอื่น</span>
           </div>
         </>
       )}
