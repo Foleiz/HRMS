@@ -92,7 +92,8 @@ export const DEFAULT_SLOTS: ApprovalSlot[] = [
  * - 4 ขั้นตอน: ซ้ายบน, ขวาบน, ซ้ายล่าง, ขวาล่าง
  */
 export const getSlotPositions = (count: number): Array<[number, number]> => {
-  if (count <= 1) return [[0, 0]];
+  // ผู้อนุมัติคนเดียว — วางช่องลงนามฝั่งขวา (ตำแหน่งลงนามผู้มีอำนาจตามธรรมเนียมหนังสือราชการ/บริษัท)
+  if (count <= 1) return [[0, 1]];
   // 2 ช่องวางคู่กันแถวเดียว — เดิมซ้อนลงล่างจนช่องลงนามล้นทับท้ายกระดาษ A4
   if (count === 2) return [[0, 0], [0, 1]];
   if (count === 3) return [[0, 0], [1, 0], [1, 1]];
