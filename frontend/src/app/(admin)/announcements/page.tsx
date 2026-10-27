@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { Button } from '@/components/ui/Button';
+import { RowActions, RowActionButton } from '@/components/ui/RowActions';
 import { announcementService } from '@/services/announcementService';
 import { organizationService } from '@/services/organizationService';
 import { useAuth } from '@/context/AuthContext';
@@ -412,10 +414,10 @@ export default function AnnouncementsPage() {
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] flex items-center justify-center">
-            <Megaphone className="w-5 h-5 text-[#0B2046]" />
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <Megaphone className="w-5 h-5 text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">จัดการประกาศองค์กร</h1>
@@ -424,14 +426,12 @@ export default function AnnouncementsPage() {
 
         {canManage && (
           <div className="flex items-center gap-2">
-            <button
-              type="button"
+            <Button
               onClick={handleOpenCreate}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0B2046] text-white rounded-xl text-sm font-semibold hover:bg-[#0B2046]/90 transition-all shadow-sm hover:shadow-md cursor-pointer"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>สร้างประกาศใหม่</span>
-            </button>
+              สร้างประกาศใหม่
+            </Button>
           </div>
         )}
       </div>
@@ -492,7 +492,7 @@ export default function AnnouncementsPage() {
                   placeholder="ค้นหาหัวข้อประกาศ หรือเนื้อหา..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
 
@@ -565,7 +565,7 @@ export default function AnnouncementsPage() {
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-6 h-6 text-[#0B2046] animate-spin" />
+                          <Loader2 className="w-6 h-6 text-primary animate-spin" />
                           <span>กำลังโหลดข้อมูลประกาศ...</span>
                         </div>
                       </td>
@@ -619,7 +619,7 @@ export default function AnnouncementsPage() {
                               <button
                                 type="button"
                                 onClick={() => handleOpenReading(a)}
-                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-blue-600 transition-colors text-left cursor-pointer truncate max-w-xs block"
+                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-blue-300 transition-colors text-left cursor-pointer truncate max-w-xs block"
                                 title="คลิกเพื่อดูตัวอย่างประกาศฉบับเต็ม"
                               >
                                 {a.title}
@@ -700,24 +700,18 @@ export default function AnnouncementsPage() {
 
                           {/* Actions */}
                           <td className="py-3 px-4 text-center">
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEdit(a)}
+                            <RowActions>
+                              <RowActionButton
+                                action="edit"
                                 title="แก้ไขประกาศ"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(a)}
+                                onClick={() => handleOpenEdit(a)}
+                              />
+                              <RowActionButton
+                                action="delete"
                                 title="ลบ/จัดเก็บประกาศ"
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                                onClick={() => handleDelete(a)}
+                              />
+                            </RowActions>
                           </td>
                         </tr>
                       );
@@ -737,7 +731,7 @@ export default function AnnouncementsPage() {
                     setPageSize(Number(e.target.value));
                     setPage(1);
                   }}
-                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -781,7 +775,7 @@ export default function AnnouncementsPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-cyan-400 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
                   <Megaphone className="w-5 h-5" />
                 </div>
                 <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -855,13 +849,12 @@ export default function AnnouncementsPage() {
 
             {/* Modal Footer */}
             <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setReadingItem(null)}
-                className="px-6 py-2 rounded-xl bg-[#0B2046] dark:bg-blue-600 hover:bg-[#153468] dark:hover:bg-blue-500 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -895,7 +888,7 @@ export default function AnnouncementsPage() {
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
               {loadingStats ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
                   <span className="text-xs">กำลังคำนวณสถิติการเปิดอ่าน...</span>
                 </div>
               ) : !readStats ? (
@@ -921,7 +914,7 @@ export default function AnnouncementsPage() {
                   {/* Progress Bar */}
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-[#0B2046] h-2 rounded-full transition-all duration-500"
+                      className="bg-primary h-2 rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(readStats.readPercentage, 100)}%` }}
                     />
                   </div>
@@ -1016,7 +1009,7 @@ export default function AnnouncementsPage() {
                                         onClick={() => setStatsPage(p)}
                                         className={`min-w-7 h-7 px-1.5 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                           statsPage === p
-                                            ? 'bg-[#0B2046] text-white shadow-xs'
+                                            ? 'bg-primary text-white shadow-xs'
                                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
                                         }`}
                                       >
@@ -1050,14 +1043,13 @@ export default function AnnouncementsPage() {
               )}
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-              <button
-                type="button"
+            <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+              <Button
+                variant="secondary"
                 onClick={() => setStatsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -1071,7 +1063,7 @@ export default function AnnouncementsPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between p-5 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0B2046] flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                   <Megaphone className="w-4 h-4" />
                 </div>
                 <div>
@@ -1101,7 +1093,7 @@ export default function AnnouncementsPage() {
                   placeholder="เช่น ประกาศวันหยุดตามประเพณีประจำปี 2026..."
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-medium"
                 />
               </div>
 
@@ -1147,7 +1139,7 @@ export default function AnnouncementsPage() {
                     value={formPublishedAt}
                     onChange={setFormPublishedAt}
                     placeholder="เลือกวันที่เผยแพร่"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">
                     กำหนดวันที่ประกาศจะแสดงผลบนปฏิทินข่าวสาร
@@ -1163,7 +1155,7 @@ export default function AnnouncementsPage() {
                     value={formExpireAt}
                     onChange={setFormExpireAt}
                     placeholder="เลือกวันที่สิ้นสุด"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 cursor-pointer"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
                   />
                   <span className="text-[11px] text-slate-400 mt-0.5 block">
                     จัดเก็บประกาศอัตโนมัติเมื่อพ้นกำหนด
@@ -1182,7 +1174,7 @@ export default function AnnouncementsPage() {
                   placeholder="ระบุข้อความรายละเอียด คำชี้แจง หรือแนวทางปฏิบัติต่างๆ..."
                   value={formContent}
                   onChange={(e) => setFormContent(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-sans"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-sans"
                 />
               </div>
 
@@ -1196,7 +1188,7 @@ export default function AnnouncementsPage() {
                       name="targetType"
                       checked={formTargetType === 'ALL'}
                       onChange={() => setFormTargetType('ALL')}
-                      className="accent-[#0B2046]"
+                      className="accent-primary"
                     />
                     <span>พนักงานทุกคนในองค์กร</span>
                   </label>
@@ -1206,7 +1198,7 @@ export default function AnnouncementsPage() {
                       name="targetType"
                       checked={formTargetType === 'DEPARTMENT'}
                       onChange={() => setFormTargetType('DEPARTMENT')}
-                      className="accent-[#0B2046]"
+                      className="accent-primary"
                     />
                     <span>เฉพาะบางแผนกที่กำหนด</span>
                   </label>
@@ -1230,7 +1222,7 @@ export default function AnnouncementsPage() {
                                   setFormSelectedDeptIds(formSelectedDeptIds.filter((id) => id !== dept.id));
                                 }
                               }}
-                              className="accent-[#0B2046]"
+                              className="accent-primary"
                             />
                             <span className="truncate">{dept.departmentName}</span>
                           </label>
@@ -1243,12 +1235,12 @@ export default function AnnouncementsPage() {
 
               {/* Pin & Status Settings */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <label className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer">
+                <label className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formIsPinned}
                     onChange={(e) => setFormIsPinned(e.target.checked)}
-                    className="accent-[#0B2046] w-4 h-4"
+                    className="accent-primary w-4 h-4"
                   />
                   <div>
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">ปักหมุดประกาศนี้</span>
@@ -1270,23 +1262,21 @@ export default function AnnouncementsPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-end gap-2">
+                <Button
                   type="button"
+                  variant="secondary"
                   disabled={isSaving}
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={isSaving}
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#0B2046]/90 text-white font-semibold text-xs transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  loading={isSaving}
                 >
-                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{editingAnnouncement ? 'บันทึกการแก้ไข' : 'สร้างและบันทึกประกาศ'}</span>
-                </button>
+                  {editingAnnouncement ? 'บันทึกการแก้ไข' : 'สร้างและบันทึกประกาศ'}
+                </Button>
               </div>
             </form>
           </div>

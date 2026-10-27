@@ -1,6 +1,7 @@
 'use client';
 
 import { ModalShell } from '@/components/ui/ModalShell';
+import { Button } from '@/components/ui/Button';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ChevronLeft,
@@ -357,7 +358,7 @@ export default function MyNewsCalendarPage() {
             onClick={handleGoToday}
             className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
               viewMode === 'DAY'
-                ? 'bg-[#2563EB] text-white shadow-xs font-bold'
+                ? 'bg-primary text-white shadow-xs font-bold'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-white/80'
             }`}
           >
@@ -368,7 +369,7 @@ export default function MyNewsCalendarPage() {
             onClick={() => setViewMode('WEEK')}
             className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
               viewMode === 'WEEK'
-                ? 'bg-[#2563EB] text-white shadow-xs font-bold'
+                ? 'bg-primary text-white shadow-xs font-bold'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-white/80'
             }`}
           >
@@ -379,7 +380,7 @@ export default function MyNewsCalendarPage() {
             onClick={() => setViewMode('MONTH')}
             className={`px-4 py-1.5 rounded-lg transition-all cursor-pointer ${
               viewMode === 'MONTH'
-                ? 'bg-[#2563EB] text-white shadow-xs font-bold'
+                ? 'bg-primary text-white shadow-xs font-bold'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-white/80'
             }`}
           >
@@ -408,7 +409,7 @@ export default function MyNewsCalendarPage() {
             {/* Day Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#0B2046] flex flex-col items-center justify-center font-bold border border-blue-100 shadow-2xs">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex flex-col items-center justify-center font-bold border border-primary/20 shadow-2xs">
                   <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 uppercase leading-none">
                     {WEEKDAYS[currentDate.getDay()]?.label}
                   </span>
@@ -436,13 +437,14 @@ export default function MyNewsCalendarPage() {
               </div>
 
               {!isToday(currentDate) && (
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setCurrentDate(new Date())}
-                  className="self-start sm:self-auto px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                  className="self-start sm:self-auto"
                 >
                   กลับไปวันปัจจุบัน
-                </button>
+                </Button>
               )}
             </div>
 
@@ -511,7 +513,7 @@ export default function MyNewsCalendarPage() {
                           </span>
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-[#0B2046] transition-colors leading-snug">
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary dark:group-hover:text-blue-300 transition-colors leading-snug">
                           {idx + 1}. {item.title}
                         </h4>
 
@@ -742,7 +744,7 @@ export default function MyNewsCalendarPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-cyan-400 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
                   <Megaphone className="w-5 h-5" />
                 </div>
                 <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -810,13 +812,12 @@ export default function MyNewsCalendarPage() {
 
             {/* Modal Footer */}
             <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setReadingItem(null)}
-                className="px-6 py-2 rounded-xl bg-[#0B2046] dark:bg-blue-600 hover:bg-[#153468] dark:hover:bg-blue-500 text-white font-semibold text-xs transition-all cursor-pointer shadow-xs"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -829,7 +830,7 @@ export default function MyNewsCalendarPage() {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#0B2046]/5 text-[#0B2046] border border-[#0B2046]/10 flex flex-col items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-primary/5 text-primary border border-primary/10 flex flex-col items-center justify-center">
                   <span className="text-[10px] font-medium leading-none text-slate-400">วันที่</span>
                   <span className="text-base font-extrabold leading-none">{selectedDayModal.date.getDate()}</span>
                 </div>
@@ -895,7 +896,7 @@ export default function MyNewsCalendarPage() {
                       </span>
                     </div>
 
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#0B2046] transition-colors leading-snug">
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary dark:group-hover:text-blue-300 transition-colors leading-snug">
                       {idx + 1}. {item.title}
                     </h4>
 
@@ -914,13 +915,12 @@ export default function MyNewsCalendarPage() {
               <span className="text-xs text-slate-400">
                 คลิกรายการเพื่อเปิดอ่านเนื้อหาฉบับเต็ม
               </span>
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => setSelectedDayModal(null)}
-                className="px-4 py-2 rounded-xl bg-slate-200 text-slate-700 dark:text-slate-300 font-semibold text-xs hover:bg-slate-300 transition-all cursor-pointer"
               >
                 ปิด
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>

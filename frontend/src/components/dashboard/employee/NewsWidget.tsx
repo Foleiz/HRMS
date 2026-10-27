@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -129,7 +129,7 @@ export const NewsWidget: React.FC = () => {
         {/* Read More Link */}
         <Link
           href="/my-news"
-          className="pt-2 text-xs font-semibold text-[#0B2046] hover:text-blue-700 dark:text-blue-400 flex items-center justify-end gap-1 transition-colors cursor-pointer mt-auto border-t border-slate-100 dark:border-slate-700/60 shrink-0"
+          className="pt-2 text-xs font-semibold text-primary hover:text-primary-hover dark:text-blue-300 flex items-center justify-end gap-1 transition-colors cursor-pointer mt-auto border-t border-slate-100 dark:border-slate-700/60 shrink-0"
         >
           <span>อ่านทั้งหมด</span>
           <ArrowRight className="w-3.5 h-3.5" />
