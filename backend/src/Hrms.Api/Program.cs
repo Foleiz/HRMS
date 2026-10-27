@@ -98,6 +98,10 @@ builder.Services.AddScoped<ISalaryService, SalaryService>();
 builder.Services.AddScoped<ICommissionService, CommissionService>();
 builder.Services.AddScoped<IMySalaryService, MySalaryService>();
 builder.Services.AddScoped<IPayslipService, PayslipService>();
+// ล็อกสลิปของรอบที่จ่าย/ปิดแล้วแบบเบื้องหลัง (ปุ่มจ่าย/ปิดรอบไม่ต้องรอสร้าง PDF)
+builder.Services.AddSingleton<Hrms.Api.BackgroundJobs.PayslipFreezeQueue>();
+builder.Services.AddSingleton<Hrms.Application.Features.Payroll.Services.IPayslipFreezeQueue>(sp => sp.GetRequiredService<Hrms.Api.BackgroundJobs.PayslipFreezeQueue>());
+builder.Services.AddHostedService<Hrms.Api.BackgroundJobs.PayslipFreezeWorker>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();

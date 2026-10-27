@@ -69,8 +69,9 @@ public class PayslipService : IPayslipService
 
     public async Task FreezePeriodPayslipsAsync(long periodId, CancellationToken cancellationToken = default)
     {
+        // ข้ามคนที่ไม่ได้คำนวณ (DRAFT = ไม่มีฐานเงินเดือน → ไม่มีสลิปอยู่แล้ว)
         var payrollIds = await _context.Payrolls.AsNoTracking()
-            .Where(p => p.PeriodId == periodId)
+            .Where(p => p.PeriodId == periodId && p.Status != "DRAFT")
             .Select(p => p.Id)
             .ToListAsync(cancellationToken);
         var existing = await _context.Payslips.AsNoTracking()
@@ -78,7 +79,21 @@ public class PayslipService : IPayslipService
             .Select(s => s.PayrollId)
             .ToListAsync(cancellationToken);
         foreach (var id in payrollIds.Except(existing))
-            await GenerateOrRetrievePayslipPdfAsync(id, cancellationToken);
+        {
+            try
+            {
+                await GenerateOrRetrievePayslipPdfAsync(id, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // คนนี้ไม่สำเร็จ ไม่ให้ทั้งรอบล้ม — จะสร้างตอนดาวน์โหลดครั้งแรก
+                (_context as Microsoft.EntityFrameworkCore.DbContext)?.ChangeTracker.Clear();
+            }
+        }
     }
 
     private async Task<(byte[] FileBytes, string FileName)> GenerateOrRetrievePayslipPdfAsync(long payrollId, CancellationToken cancellationToken)

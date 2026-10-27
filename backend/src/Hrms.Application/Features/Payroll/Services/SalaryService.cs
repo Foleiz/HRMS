@@ -10,16 +10,16 @@ namespace Hrms.Application.Features.Payroll.Services;
 
 public class SalaryService : ISalaryService
 {
-    private readonly IPayslipService _payslipService;
+    private readonly IPayslipFreezeQueue _payslipFreezeQueue;
     private readonly IHrmsDbContext _context;
     private readonly IAttendanceDailyService _attendanceDailyService;
     private readonly ICurrentUserService _currentUser;
     private readonly IAesEncryptionService _crypto;
 
     public SalaryService(IHrmsDbContext context, IAttendanceDailyService attendanceDailyService,
-        ICurrentUserService currentUser, IAesEncryptionService crypto, IPayslipService payslipService)
+        ICurrentUserService currentUser, IAesEncryptionService crypto, IPayslipFreezeQueue payslipFreezeQueue)
     {
-        _payslipService = payslipService;
+        _payslipFreezeQueue = payslipFreezeQueue;
         _context = context;
         _attendanceDailyService = attendanceDailyService;
         _currentUser = currentUser;
@@ -2735,20 +2735,15 @@ public class SalaryService : ISalaryService
     }
 
     /// <summary>
-    /// จ่ายเงิน/ปิดรอบแล้ว → สร้างสลิปเก็บไว้ทันที (ล็อกข้อมูลบัญชีธนาคาร/บริษัท ณ ตอนจ่าย)
+    /// จ่ายเงิน/ปิดรอบแล้ว → ส่งเข้าคิวสร้างสลิปเก็บไว้ (ล็อกข้อมูลบัญชีธนาคาร/บริษัท ณ ตอนจ่าย)
     /// สร้างไม่สำเร็จไม่ขัดการจ่ายเงิน — จะสร้างตอนดาวน์โหลดครั้งแรกแทน
     /// </summary>
-    private async Task FreezePayslipsIfPaidAsync(PayrollPeriod period, CancellationToken cancellationToken)
+    private Task FreezePayslipsIfPaidAsync(PayrollPeriod period, CancellationToken cancellationToken)
     {
-        if (period.Status != "PAID" && period.Status != "CLOSED") return;
-        try
-        {
-            await _payslipService.FreezePeriodPayslipsAsync(period.Id, cancellationToken);
-        }
-        catch
-        {
-            // ignore
-        }
+        // ทำเบื้องหลัง (PayslipFreezeWorker) — เดิมสร้าง PDF ทุกคนก่อนตอบกลับ ทำให้ปุ่มจ่าย/ปิดรอบรอ 30–60 วินาที
+        if (period.Status == "PAID" || period.Status == "CLOSED")
+            _payslipFreezeQueue.Enqueue(period.Id);
+        return Task.CompletedTask;
     }
 
     /// <summary>คำเตือนจากการคำนวณรอบล่าสุดใน request นี้ (service เป็น scoped)</summary>

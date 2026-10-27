@@ -178,7 +178,8 @@ export const salaryService = {
   },
 
   async updatePayrollPeriodStatus(periodId: number, status: string): Promise<PayrollPeriod> {
-    const res = await apiClient.put<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/status`, { status });
+    // PAID/CLOSED สร้างสลิปของพนักงานทุกคน ใช้เวลานาน → ให้รอได้ถึง 3 นาที
+    const res = await apiClient.put<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/status`, { status }, { timeout: 180000 });
     return res.data.data;
   },
 
@@ -361,7 +362,8 @@ export const salaryService = {
 
   /** ฝ่ายการเงินอัปโหลดสลิป/ใบเสร็จโอนเงินรวมของธนาคาร */
   async uploadBankReceipt(periodId: number, payload: { base64Data: string; fileName: string; contentType: string; note?: string; markAsPaid?: boolean }): Promise<PayrollPeriod> {
-    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/upload-bank-receipt`, payload);
+    // markAsPaid จะปิดรอบเป็น PAID และสร้างสลิปทุกคน → ให้รอได้ถึง 3 นาที
+    const res = await apiClient.post<ApiResponse<PayrollPeriod>>(`/salary/periods/${periodId}/upload-bank-receipt`, payload, { timeout: 180000 });
     return res.data.data;
   },
 
