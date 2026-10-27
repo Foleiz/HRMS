@@ -4525,7 +4525,6 @@ export default function PayrollPage() {
                           <th className="py-3.5 px-5">แผนก</th>
                           <th className="py-3.5 px-5">วันลา</th>
                           <th className="py-3.5 px-5">สถานะข้อมูล</th>
-                          <th className="py-3.5 px-5">ข้อมูลที่ขาด / รอตรวจสอบ</th>
                           <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
                         </tr>
                       </thead>
@@ -4552,47 +4551,20 @@ export default function PayrollPage() {
                               </td>
                               <td className="py-4 px-5">
                                 {pr.inputStatus === 'COMPLETE' ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                     <span>ครบแล้ว</span>
                                   </span>
                                 ) : pr.inputStatus === 'PENDING_SALARY' ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800" title="ยังไม่ระบุฐานเงินเดือนในระบบ">
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="ยังไม่ระบุฐานเงินเดือนในระบบ">
                                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                     <span>ยังไม่ระบุฐานเงินเดือน</span>
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                     <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                     <span>รอ HR ตรวจสอบ</span>
                                   </span>
-                                )}
-                              </td>
-                              <td className="py-4 px-5">
-                                {pr.pendingDetails ? (
-                                  <div className="flex flex-wrap items-center gap-1.5">
-                                    {pr.pendingDetails.split(', ').map((reason, rIdx) => {
-                                      const isLeave = reason.includes('ลา');
-                                      const isBenefit = reason.includes('สวัสดิการ');
-                                      const isSalary = reason.includes('เงินเดือน');
-                                      return (
-                                        <span
-                                          key={rIdx}
-                                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                                            isSalary
-                                              ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                                              : isBenefit
-                                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800'
-                                              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
-                                          }`}
-                                        >
-                                          {reason}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400 font-mono">-</span>
                                 )}
                               </td>
                               <td className="py-4 px-5 text-center">

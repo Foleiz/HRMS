@@ -1486,14 +1486,6 @@ public class SalaryService : ISalaryService
                 .ToListAsync(cancellationToken)
             : new List<Domain.Entities.LeaveRequest>();
 
-        var pendingBenefitClaims = (period != null && employeeIds.Any())
-            ? await _context.EmployeeBenefitClaims
-                .Include(c => c.BenefitItem)
-                .Where(c => employeeIds.Contains(c.EmployeeId) && c.Status == "PENDING" && c.ClaimDate <= period.EndDate)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken)
-            : new List<Domain.Entities.EmployeeBenefitClaim>();
-
         return payrolls.Select(p =>
         {
             var empSalary = allSalaries.FirstOrDefault(s => s.EmployeeId == p.EmployeeId);
@@ -1505,7 +1497,6 @@ public class SalaryService : ISalaryService
             var empLeaves = leaveRequests.Where(l => l.EmployeeId == p.EmployeeId).ToList();
             var totalLeaveDays = empLeaves.Where(l => l.Status == "APPROVED").Sum(l => l.LeaveDays);
             var pendingLeaves = empLeaves.Where(l => l.Status == "PENDING").ToList();
-            var empPendingBenefits = pendingBenefitClaims.Where(b => b.EmployeeId == p.EmployeeId).ToList();
 
             string? leaveSummary = null;
             var approvedLeaves = empLeaves.Where(l => l.Status == "APPROVED").ToList();
@@ -1528,39 +1519,19 @@ public class SalaryService : ISalaryService
             decimal ssoAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_SSO").Sum(d => d.Amount);
             decimal taxAmount = p.Details.Where(d => d.PayrollItem?.ItemCode == "DED_TAX").Sum(d => d.Amount);
 
-            var pendingReasons = new List<string>();
-            if (!hasSalary)
-            {
-                pendingReasons.Add("ยังไม่มีฐานเงินเดือน");
-            }
-            if (pendingLeaves.Any())
-            {
-                pendingReasons.Add(pendingLeaves.Count == 1 ? "ยังไม่ได้ตรวจเอกสารการลา" : $"ยังไม่ได้ตรวจเอกสารการลา ({pendingLeaves.Count} รายการ)");
-            }
-            if (empPendingBenefits.Any())
-            {
-                pendingReasons.Add(empPendingBenefits.Count == 1 ? "ยังไม่ตรวจสวัสดิการ" : $"ยังไม่ตรวจสวัสดิการ ({empPendingBenefits.Count} รายการ)");
-            }
-
             string inputStatus;
             string inputStatusText;
             if (!hasSalary)
             {
                 inputStatus = "PENDING_SALARY";
-                inputStatusText = "ยังไม่ระบุฐานเงินเดือน";
-            }
-            else if (pendingReasons.Any())
-            {
-                inputStatus = "PENDING_CHECK";
-                inputStatusText = "รอ HR ตรวจสอบ";
+                inputStatusText = "ยังไม่มีฐานเงินเดือนที่มีผลในรอบนี้";
             }
             else
             {
-                inputStatus = "COMPLETE";
-                inputStatusText = "ครบแล้ว";
+                var isComplete = pendingLeaves.Count == 0;
+                inputStatus = isComplete ? "COMPLETE" : "PENDING_CHECK";
+                inputStatusText = isComplete ? "ครบแล้ว" : "รอ HR ตรวจสอบ";
             }
-
-            string? pendingDetails = pendingReasons.Any() ? string.Join(", ", pendingReasons) : null;
 
             return new PayrollRecordDto
             {
@@ -1591,7 +1562,6 @@ public class SalaryService : ISalaryService
                 AdjustmentsSummary = adjustmentsSummary,
                 InputStatus = inputStatus,
                 InputStatusText = inputStatusText,
-                PendingDetails = pendingDetails,
 
                 // Finance
                 // ไม่มีบัญชี = ว่าง (หน้าจอแสดง "ยังไม่มีบัญชี") ห้ามเดาธนาคาร

@@ -234,9 +234,8 @@ export interface PayrollRecord {
   leaveDays?: number;
   leaveSummary?: string | null;
   adjustmentsSummary?: string | null;
-  inputStatus?: 'COMPLETE' | 'PENDING_CHECK' | 'PENDING_SALARY' | string;
+  inputStatus?: 'COMPLETE' | 'PENDING_CHECK' | string;
   inputStatusText?: string;
-  pendingDetails?: string | null;
   // Finance & Banking Fields
   bankCode?: string | null;
   bankName?: string | null;
