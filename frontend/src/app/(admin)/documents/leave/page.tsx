@@ -153,12 +153,13 @@ function MyLeaveRequestPageContent() {
       {/* คงรูปแบบเดียวกันไว้ทุกหน้าในหมวด "ยื่นเอกสาร" รวมถึงหน้าฟอร์มย่อยนี้ด้วย ไม่ใช้ breadcrumb แบบเดิมซ้อนแยกต่างหาก */}
       <DocumentsSubNav />
 
+      {/* ฟอร์มกว้างพอดีอ่าน (ไม่ยืดเต็มจอ) — หัวข้อกับฟอร์มอยู่ในคอลัมน์เดียวกัน */}
+      <div className="max-w-3xl mx-auto w-full space-y-5">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารการลา</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">กรอกแบบฟอร์มยื่นคำขอลา ติดตามสถานะได้ที่หน้าประวัติเอกสาร</p>
-        </div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">ยื่นคำขอลา</h1>
+                  </div>
         <Button
           variant="secondary"
           type="button"
@@ -198,6 +199,7 @@ function MyLeaveRequestPageContent() {
           onSaveDraft={handleSaveDraft}
         />
       )}
+      </div>
     </div>
   );
 }
