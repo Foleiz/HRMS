@@ -169,7 +169,7 @@ export default function EmployeesPage() {
 
   // View Mode: 'table' (List) vs 'grid' (Card Grid)
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [favorites, setFavorites] = useState<Record<number, boolean>>({});
+  const [favorites, setFavorites] = useState<Record<number, boolean | number>>({});
 
   // Tooltip state for info button in Grid view (exact match with mockup)
   const [hoveredEmpTooltip, setHoveredEmpTooltip] = useState<{
@@ -246,9 +246,24 @@ export default function EmployeesPage() {
     }
   };
 
-  const toggleFavorite = (empId: number) => {
+  const toggleFavorite = (empId: number, empName?: string) => {
     setFavorites((prev) => {
-      const next = { ...prev, [empId]: !prev[empId] };
+      const isFav = Boolean(prev[empId]);
+      const next = { ...prev };
+      if (isFav) {
+        delete next[empId];
+        if (empName) {
+          toast.info(`ยกเลิกติดดาว ${empName}`);
+        }
+      } else {
+        // บันทึก timestamp เพื่อให้คนที่กดล่าสุดขึ้นมาอยู่อันดับแรกสุดเสมอ
+        next[empId] = Date.now();
+        // นำผู้ใช้กลับไปหน้า 1 เพื่อให้เห็นพนักงานคนนั้นขึ้นมาอยู่คนแรกทันที
+        setCurrentPage(1);
+        if (empName) {
+          toast.success(`ติดดาว ${empName} แล้ว (ย้ายไปอยู่อันดับแรก)`);
+        }
+      }
       try {
         localStorage.setItem('hrms_emp_favorites', JSON.stringify(next));
       } catch {
@@ -449,6 +464,18 @@ export default function EmployeesPage() {
 
     // 3. Sorting
     return [...filtered].sort((a, b) => {
+      // ดันคนที่ติดดาว (Favorite) ขึ้นมาไว้บนสุด โดยคนที่เพิ่งกดล่าสุดจะขึ้นมาอยู่คนแรกสุด
+      const aFav = favorites[a.id];
+      const bFav = favorites[b.id];
+      const aTime = typeof aFav === 'number' ? aFav : (aFav ? 1 : 0);
+      const bTime = typeof bFav === 'number' ? bFav : (bFav ? 1 : 0);
+
+      if (aTime !== bTime) {
+        if (aTime && !bTime) return -1;
+        if (!aTime && bTime) return 1;
+        return bTime - aTime; // timestamp มากกว่า (กดล่าสุด) อยู่ลำดับแรก
+      }
+
       let aVal = '';
       let bVal = '';
 
@@ -506,7 +533,7 @@ export default function EmployeesPage() {
       const comparison = String(aVal).localeCompare(String(bVal), 'th', { numeric: true });
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [employees, searchTerm, selectedDepartment, departments, sortField, sortDirection]);
+  }, [employees, searchTerm, selectedDepartment, departments, sortField, sortDirection, favorites]);
 
   // Pagination slice
   const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
@@ -773,10 +800,10 @@ export default function EmployeesPage() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleFavorite(emp.id);
+                              toggleFavorite(emp.id, emp.fullName);
                             }}
                             className="p-1 text-slate-300 hover:text-amber-400 dark:text-slate-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
-                            title={favorites[emp.id] ? 'ยกเลิกการติดดาว' : 'ติดดาวพนักงาน'}
+                            title={favorites[emp.id] ? 'ยกเลิกการติดดาว' : 'ติดดาวพนักงาน (ย้ายขึ้นอันดับแรก)'}
                           >
                             <Star
                               className={`w-4 h-4 transition-all ${
@@ -1114,15 +1141,34 @@ export default function EmployeesPage() {
                       key={emp.id}
                       className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group text-slate-700 dark:text-slate-300"
                     >
-                      {/* 1. รหัสพนักงาน */}
+                      {/* 1. รหัสพนักงาน + ติดดาว */}
                       <td className="py-3 px-3.5 whitespace-nowrap">
-                        <div className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{emp.employeeCode}</div>
-                        {emp.biometricId && (
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
-                            <span className="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 font-sans font-medium">สแกน:</span>
-                            <span className="font-semibold text-slate-600 dark:text-slate-400">{emp.biometricId}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(emp.id, emp.fullName);
+                            }}
+                            className="p-0.5 text-slate-300 hover:text-amber-400 dark:text-slate-600 dark:hover:text-amber-400 transition-colors cursor-pointer shrink-0"
+                            title={favorites[emp.id] ? 'ยกเลิกการติดดาว' : 'ติดดาวพนักงาน (ย้ายขึ้นอันดับแรก)'}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 transition-all ${
+                                favorites[emp.id] ? 'fill-amber-400 text-amber-400 scale-110' : ''
+                              }`}
+                            />
+                          </button>
+                          <div>
+                            <div className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{emp.employeeCode}</div>
+                            {emp.biometricId && (
+                              <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
+                                <span className="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 font-sans font-medium">สแกน:</span>
+                                <span className="font-semibold text-slate-600 dark:text-slate-400">{emp.biometricId}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </td>
 
                       {/* 2. ชื่อ-นามสกุล + โปรไฟล์ + เครื่องหมาย ! คอมเมนต์ */}
