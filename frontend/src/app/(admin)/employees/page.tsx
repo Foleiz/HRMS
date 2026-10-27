@@ -731,31 +731,33 @@ export default function EmployeesPage() {
 
         {/* Right Side: View Switcher (List vs Grid) + เพิ่มพนักงาน Button */}
         <div className="w-full sm:w-auto flex items-center justify-end gap-3">
-          {/* View Mode Switcher Pill matching example */}
-          <div className="inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs overflow-hidden">
-            <button
-              type="button"
-              onClick={() => handleSetViewMode('table')}
-              className={`p-1.5 transition-all cursor-pointer flex items-center justify-center ${
-                viewMode === 'table'
-                  ? 'bg-sky-50 dark:bg-sky-950/80 text-sky-500 dark:text-sky-300 border-r border-sky-300 dark:border-sky-500'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-              }`}
-              title="มุมมองรายการ (List View)"
-            >
-              <List className="w-4 h-4" />
-            </button>
+          {/* View Mode Switcher Pill matching user mockup */}
+          <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
             <button
               type="button"
               onClick={() => handleSetViewMode('grid')}
-              className={`p-1.5 transition-all cursor-pointer flex items-center justify-center ${
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
                 viewMode === 'grid'
-                  ? 'bg-sky-50 dark:bg-sky-950/80 text-sky-500 dark:text-sky-300 border-l border-sky-300 dark:border-sky-500'
-                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  ? 'bg-white dark:bg-slate-700 text-[#0b2046] dark:text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
               }`}
-              title="มุมมองการ์ด (Grid View)"
+              title="มุมมองการ์ด (Card View)"
             >
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span>การ์ด</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('table')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                viewMode === 'table'
+                  ? 'bg-white dark:bg-slate-700 text-[#0b2046] dark:text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+              }`}
+              title="มุมมองตาราง (Table View)"
+            >
+              <List className="w-4 h-4 shrink-0" />
+              <span>ตาราง</span>
             </button>
           </div>
 
