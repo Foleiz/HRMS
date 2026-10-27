@@ -154,7 +154,7 @@ function MyLeaveRequestPageContent() {
       <DocumentsSubNav />
 
       {/* ฟอร์มกว้างพอดีอ่าน (ไม่ยืดเต็มจอ) — หัวข้อกับฟอร์มอยู่ในคอลัมน์เดียวกัน */}
-      <div className="max-w-3xl mx-auto w-full space-y-5">
+      <div className="max-w-6xl mx-auto w-full space-y-5">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>

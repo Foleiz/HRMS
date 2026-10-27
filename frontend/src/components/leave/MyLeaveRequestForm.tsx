@@ -477,9 +477,11 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>
       )}
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 space-y-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+        {/* ซ้าย: สิ่งที่ต้องเลือก / ขวา: รายละเอียด — จอเล็กเรียงต่อกันเป็นคอลัมน์เดียว */}
+        <div className="space-y-6 min-w-0">
         {/* 1 ประเภทการลา — ขึ้นก่อน เพราะเป็นตัวกำหนดโควตาและเงื่อนไข */}
-        <div className="max-w-md">
+        <div>
           <label htmlFor="leave-type" className={labelCls}>
             ประเภทการลา <span className="text-rose-600">*</span>
           </label>
@@ -560,6 +562,9 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           </fieldset>
         </div>
 
+        </div>
+
+        <div className="space-y-6 min-w-0">
         {/* 3 เหตุผล */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -573,14 +578,14 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             value={reason}
             maxLength={REASON_MAX_LENGTH}
             onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-            rows={3}
+            rows={4}
             placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
             className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
           />
         </div>
 
         {/* 4 ไม่บังคับ — ไว้ท้ายฟอร์ม (ไฟล์แนบกลายเป็นบังคับเมื่อเงื่อนไขกำหนด) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="space-y-6">
           <div>
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="leave-contact" className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -629,8 +634,10 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           </div>
         </div>
 
+        </div>
+
         {validationErrors.length > 0 && (
-          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
+          <div role="alert" className="lg:col-span-2 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
             <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1.5">ยังยื่นคำขอนี้ไม่ได้</p>
             <ul className="list-disc pl-5 space-y-0.5 text-xs text-red-700 dark:text-red-400">
               {validationErrors.map((msg) => (
