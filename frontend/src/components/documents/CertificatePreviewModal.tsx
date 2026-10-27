@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -236,7 +237,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
         <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-              <FileText className="w-5 h-5 text-[#0B2046]" />
+              <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างหนังสือรับรอง</h3>
             </div>
             <button
@@ -251,7 +252,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
           <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
             {loading ? (
               <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
-                <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+                <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-400" />
                 <p className="text-xs">กำลังจัดเตรียมหนังสือรับรอง...</p>
               </div>
             ) : error ? (
@@ -271,7 +272,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
                   type="button"
                   onClick={() => setLang(l)}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                    lang === l ? 'bg-white text-[#0B2046] shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
+                    lang === l ? 'bg-white text-primary dark:text-blue-300 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
                   }`}
                 >
                   {l === 'TH' ? 'ภาษาไทย' : 'English'}
@@ -280,22 +281,21 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
             </div>
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="secondary"
                 type="button"
                 onClick={() => window.print()}
-                disabled={!doc || loading}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+                icon={<Printer className="w-4 h-4" />}
               >
-                <Printer className="w-4 h-4" />
                 พิมพ์เอกสาร
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </div>

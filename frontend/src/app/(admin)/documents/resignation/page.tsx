@@ -25,6 +25,7 @@ import { resignationService } from '@/services/resignationService';
 import { RESIGNATION_REASON_CATEGORIES } from '@/types/resignation';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
 import { toast } from '@/context/ToastContext';
+import { Button } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const REASON_MAX_LENGTH = 160;
@@ -312,7 +313,7 @@ export default function ResignationPage() {
                     value={addressedTo}
                     onChange={(e) => setAddressedTo(e.target.value)}
                     placeholder="เช่น กรรมการผู้จัดการบริษัท ไซอโคว จำกัด"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   />
                 </div>
               </div>
@@ -327,7 +328,7 @@ export default function ResignationPage() {
                   <CustomSelect
                     value={titlePrefix}
                     onChange={(e) => setTitlePrefix(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   >
                     <option value="นาย">นาย</option>
                     <option value="นาง">นาง</option>
@@ -411,7 +412,7 @@ export default function ResignationPage() {
                 <CustomSelect
                   value={reasonCategory}
                   onChange={(e) => setReasonCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
                 >
                   {RESIGNATION_REASON_CATEGORIES.map((cat) => (
                     <option key={cat.value} value={cat.value}>
@@ -438,7 +439,7 @@ export default function ResignationPage() {
                   onChange={(e) => setReasonDetail(e.target.value)}
                   rows={4}
                   placeholder="ระบุเหตุผลการลาออก และสถานที่หรือเบอร์ติดต่อระหว่างลา..."
-                  className="flex-1 min-h-[104px] w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  className="flex-1 min-h-[104px] w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
                   required
                 />
               </div>
@@ -457,23 +458,24 @@ export default function ResignationPage() {
             <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
             ดูตัวอย่าง
           </button>
-          <button
+          <Button
+            variant="secondary"
             type="button"
             onClick={handleSaveDraft}
-            disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            loading={savingDraft}
+            disabled={isSubmitting}
+            icon={<Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
           >
-            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
             บันทึกแบบร่าง
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            disabled={isSubmitting || savingDraft}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+            loading={isSubmitting}
+            disabled={savingDraft}
+            icon={<Send className="w-4 h-4" />}
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             ถัดไป (ยื่นคำขอลาออก)
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -496,23 +498,22 @@ export default function ResignationPage() {
               ติดตามสถานะได้ที่เมนู ประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                fullWidth
                 onClick={() => {
                   setShowSuccessModal(false);
                   router.push('/documents/history');
                 }}
-                className="flex-1 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 ไปที่ประวัติเอกสาร
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
                 onClick={() => setShowSuccessModal(false)}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>

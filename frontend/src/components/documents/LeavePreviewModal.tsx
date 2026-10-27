@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
@@ -380,7 +381,7 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
         <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-              <FileText className="w-5 h-5 text-[#0B2046]" />
+              <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มใบลา</h3>
             </div>
             <button
@@ -438,13 +439,13 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
                 <Printer className="w-4 h-4" />
                 พิมพ์เอกสาร
               </button>
-              <button
+              <Button
+                variant="secondary"
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </div>

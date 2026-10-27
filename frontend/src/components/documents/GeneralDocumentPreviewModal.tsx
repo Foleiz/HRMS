@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React from 'react';
 import { X, Printer, FileText, Paperclip } from 'lucide-react';
@@ -45,7 +46,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
         {/* Header Actions */}
         <div className="flex items-center justify-between pb-4 mb-6 border-b border-gray-100">
           <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
-            <FileText className="w-5 h-5 text-[#0B2046]" />
+            <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
             <h3 className="text-base font-bold">ตัวอย่างคำร้องขอเอกสารทั่วไป</h3>
           </div>
           <button
@@ -151,13 +152,13 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
             <Printer className="w-4 h-4" />
             พิมพ์เอกสาร
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          >
-            ปิดหน้าต่าง
-          </button>
+          <Button
+                variant="secondary"
+                type="button"
+                onClick={onClose}
+              >
+                ปิดหน้าต่าง
+              </Button>
         </div>
       </div>
     </ModalShell>

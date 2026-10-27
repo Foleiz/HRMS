@@ -8,6 +8,7 @@ import { leaveService } from '@/services/leaveService';
 import { employeeService } from '@/services/employeeService';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
+import { Button } from '@/components/ui';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { prefetchCompanyDocumentInfo } from '@/components/documents/documentFormParts';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -158,14 +159,14 @@ function MyLeaveRequestPageContent() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารการลา</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">กรอกแบบฟอร์มยื่นคำขอลา ติดตามสถานะได้ที่หน้าประวัติเอกสาร</p>
         </div>
-        <button
+        <Button
+          variant="secondary"
           type="button"
           onClick={() => formRef.current?.reset()}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-xl text-sm font-medium transition-all shrink-0"
+          icon={<RotateCcw className="w-4 h-4" />}
         >
-          <RotateCcw className="w-4 h-4" />
           ล้างฟอร์ม
-        </button>
+        </Button>
       </div>
 
 

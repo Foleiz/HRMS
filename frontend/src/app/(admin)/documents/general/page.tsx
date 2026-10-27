@@ -27,6 +27,7 @@ import { masterDataService } from '@/services/masterDataService';
 import { DocumentTypeItem } from '@/types/master';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { toast } from '@/context/ToastContext';
+import { Button } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
 const REASON_MAX_LENGTH = 160;
@@ -430,7 +431,7 @@ export default function GeneralDocumentPage() {
                         setDocumentType(e.target.value);
                       }
                     }}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
                   >
                     {!typesLoaded && <option value="">กำลังโหลดประเภทเอกสาร...</option>}
                     {typesLoaded && typeOptions.map((t) => (
@@ -447,7 +448,7 @@ export default function GeneralDocumentPage() {
                       value={customDocumentType}
                       onChange={(e) => setCustomDocumentType(e.target.value)}
                       placeholder="เช่น สำเนาบัตรประชาชน"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white dark:bg-slate-800"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
                       required
                     />
                     <button
@@ -580,7 +581,7 @@ export default function GeneralDocumentPage() {
                   onChange={(e) => setPurpose(e.target.value)}
                   rows={5}
                   placeholder="อธิบายสิ่งที่ต้องการ เช่น ขอเปลี่ยนที่อยู่เป็น... / ขอสลิปเงินเดือนเดือน..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
                   required
                 />
               </div>
@@ -601,7 +602,7 @@ export default function GeneralDocumentPage() {
                   onChange={(e) => setNotes(e.target.value)}
                   rows={2}
                   placeholder="ระบุข้อมูลเพิ่มเติมถึงเจ้าหน้าที่ฝ่ายบุคคล..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
                 />
               </div>
             </div>
@@ -629,23 +630,24 @@ export default function GeneralDocumentPage() {
             <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
             ดูตัวอย่าง
           </button>
-          <button
+          <Button
+            variant="secondary"
             type="button"
             onClick={handleSaveDraft}
-            disabled={savingDraft || isSubmitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+            loading={savingDraft}
+            disabled={isSubmitting}
+            icon={<Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
           >
-            {savingDraft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
             บันทึกแบบร่าง
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
-            disabled={isSubmitting || savingDraft}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+            loading={isSubmitting}
+            disabled={savingDraft}
+            icon={<Send className="w-4 h-4" />}
           >
-            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             ยื่นคำขอ
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -671,27 +673,26 @@ export default function GeneralDocumentPage() {
               ติดตามสถานะได้ที่เมนู ประวัติเอกสาร
             </p>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <Button
+                fullWidth
                 onClick={() => {
                   setFormError(null);
                   setShowSuccessModal(false);
                   router.push('/documents/history');
                 }}
-                className="flex-1 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors cursor-pointer"
               >
                 ไปที่ประวัติเอกสาร
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                fullWidth
                 onClick={() => {
                   setFormError(null);
                   setShowSuccessModal(false);
                 }}
-                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
