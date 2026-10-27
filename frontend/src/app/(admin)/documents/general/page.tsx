@@ -33,8 +33,8 @@ import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 
-const REASON_MAX_LENGTH = 160;
-const NOTES_MAX_LENGTH = 200;
+const REASON_MAX_LENGTH = 200;
+const NOTES_MAX_LENGTH = 240;
 const CUSTOM_TYPE = '__CUSTOM__';
 const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
 const INPUT =
