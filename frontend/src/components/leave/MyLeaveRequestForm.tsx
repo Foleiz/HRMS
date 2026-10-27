@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
+import { Loader2, Sun, Clock3, Phone, Save, FileText, RotateCcw } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
@@ -472,7 +472,16 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <RequesterSummary fullName={profile.fullName} positionTitle={profile.positionTitle} departmentName={profile.departmentName} />
+      <RequesterSummary
+        fullName={profile.fullName}
+        positionTitle={profile.positionTitle}
+        departmentName={profile.departmentName}
+        action={
+          <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
+            ล้างฟอร์ม
+          </Button>
+        }
+      />
 
       {error && (
         <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>
