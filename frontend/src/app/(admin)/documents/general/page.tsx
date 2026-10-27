@@ -33,8 +33,8 @@ import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 
-const REASON_MAX_LENGTH = 160;
-const NOTES_MAX_LENGTH = 200;
+const REASON_MAX_LENGTH = 200;
+const NOTES_MAX_LENGTH = 240;
 const CUSTOM_TYPE = '__CUSTOM__';
 const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
 const INPUT =
@@ -131,6 +131,17 @@ export default function GeneralDocumentPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Sync breadcrumb & Load saved draft
+  // ช่องข้อความยืด/หดตามเนื้อหา — กรอบสูงพอดีกับข้อความเสมอ (ไม่มีที่ว่างเกิน)
+  const purposeRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    [purposeRef.current, notesRef.current].forEach((el) => {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight + (el.offsetHeight - el.clientHeight)}px`;
+    });
+  }, [purpose, notes]);
+
   useEffect(() => {
     setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ยื่นคำร้องทั่วไป' });
 
@@ -388,7 +399,7 @@ export default function GeneralDocumentPage() {
         )}
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-          {/* ซ้าย: ประเภท + เรียน + รายละเอียด */}
+          {/* ซ้าย: ประเภท + รายละเอียด + หมายเหตุ */}
           <div className="space-y-6 min-w-0">
             <div>
               <label htmlFor="gen-type" className={LABEL}>
@@ -440,20 +451,6 @@ export default function GeneralDocumentPage() {
             </div>
 
             <div>
-              <label htmlFor="gen-to" className={LABEL}>
-                เรียน
-              </label>
-              <input
-                id="gen-to"
-                type="text"
-                value={addressedTo}
-                onChange={(e) => setAddressedTo(e.target.value)}
-                placeholder="เช่น ผู้จัดการฝ่ายทรัพยากรบุคคล"
-                className={INPUT}
-              />
-            </div>
-
-            <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="gen-purpose" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   รายละเอียดคำร้อง <span className="text-rose-600">*</span>
@@ -464,17 +461,14 @@ export default function GeneralDocumentPage() {
                 id="gen-purpose"
                 value={purpose}
                 maxLength={REASON_MAX_LENGTH}
+                ref={purposeRef}
                 onChange={(e) => setPurpose(e.target.value)}
-                rows={4}
+                rows={2}
                 placeholder="อธิบายสิ่งที่ต้องการให้ฝ่ายบุคคลดำเนินการ"
-                className={`${TEXTAREA} block`}
+                className={`${TEXTAREA} block overflow-hidden`}
                 required
               />
             </div>
-          </div>
-
-          {/* ขวา: หมายเหตุ + ไฟล์แนบ (ยืดให้สูงเท่าฝั่งซ้าย) */}
-          <div className="flex flex-col gap-6 min-w-0">
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label htmlFor="gen-notes" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -482,12 +476,31 @@ export default function GeneralDocumentPage() {
                 </label>
                 <span className="text-xs text-slate-400">{notes.length}/{NOTES_MAX_LENGTH}</span>
               </div>
-              <input
+              <textarea
                 id="gen-notes"
+                ref={notesRef}
                 value={notes}
                 maxLength={NOTES_MAX_LENGTH}
                 onChange={(e) => setNotes(e.target.value)}
+                rows={2}
                 placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+                className={`${TEXTAREA} block overflow-hidden`}
+              />
+            </div>
+          </div>
+
+          {/* ขวา: เรียน + ไฟล์แนบ (ยืดให้สูงเท่าฝั่งซ้าย) */}
+          <div className="flex flex-col gap-6 min-w-0">
+            <div>
+              <label htmlFor="gen-to" className={LABEL}>
+                เรียน
+              </label>
+              <input
+                id="gen-to"
+                type="text"
+                value={addressedTo}
+                onChange={(e) => setAddressedTo(e.target.value)}
+                placeholder="เช่น ผู้จัดการฝ่ายทรัพยากรบุคคล"
                 className={INPUT}
               />
             </div>
