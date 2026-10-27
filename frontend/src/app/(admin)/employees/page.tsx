@@ -32,6 +32,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  List,
+  LayoutGrid,
+  Star,
+  Info,
+  Filter,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
@@ -113,6 +118,77 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // View Mode: 'table' (List) vs 'grid' (Card Grid)
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [favorites, setFavorites] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const savedMode = localStorage.getItem('hrms_emp_view_mode');
+      if (savedMode === 'table' || savedMode === 'grid') {
+        setViewMode(savedMode);
+      }
+      const savedFav = localStorage.getItem('hrms_emp_favorites');
+      if (savedFav) {
+        setFavorites(JSON.parse(savedFav));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleSetViewMode = (mode: 'table' | 'grid') => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('hrms_emp_view_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleFavorite = (empId: number) => {
+    setFavorites((prev) => {
+      const next = { ...prev, [empId]: !prev[empId] };
+      try {
+        localStorage.setItem('hrms_emp_favorites', JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const getEmployeeStatusBadge = (emp: Employee) => {
+    const type = (emp.employeeType || '').toLowerCase();
+    const status = (emp.employmentStatus || '').toUpperCase();
+
+    if (status === 'INACTIVE' || status === 'RESIGNED' || status === 'TERMINATED') {
+      return {
+        text: 'พ้นสภาพ',
+        badgeClass: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60',
+      };
+    }
+
+    if (type.includes('ทดลอง') || type.includes('probation')) {
+      return {
+        text: 'ทดลองงาน',
+        badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60',
+      };
+    }
+
+    if (type.includes('สัญญา') || type.includes('contract')) {
+      return {
+        text: 'สัญญาจ้าง',
+        badgeClass: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60',
+      };
+    }
+
+    return {
+      text: 'บรรจุ',
+      badgeClass: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60',
+    };
+  };
 
   // ซ่อน Dropdown ตัวกรองแผนกสำหรับ Role หัวหน้าแผนก (DEPT_MGR) เนื่องจากเห็นเฉพาะแผนกของตนเองอยู่แล้ว
   const isDeptManager = useMemo(() => {
@@ -502,8 +578,36 @@ export default function EmployeesPage() {
           )}
         </div>
 
-        {/* Right Side: + เพิ่มพนักงาน Button */}
-        <div className="w-full sm:w-auto flex justify-end">
+        {/* Right Side: View Switcher (List vs Grid) + เพิ่มพนักงาน Button */}
+        <div className="w-full sm:w-auto flex items-center justify-end gap-3">
+          {/* View Mode Switcher Pill matching example */}
+          <div className="inline-flex items-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs overflow-hidden">
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('table')}
+              className={`p-1.5 transition-all cursor-pointer flex items-center justify-center ${
+                viewMode === 'table'
+                  ? 'bg-sky-50 dark:bg-sky-950/80 text-sky-500 dark:text-sky-300 border-r border-sky-300 dark:border-sky-500'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              }`}
+              title="มุมมองรายการ (List View)"
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('grid')}
+              className={`p-1.5 transition-all cursor-pointer flex items-center justify-center ${
+                viewMode === 'grid'
+                  ? 'bg-sky-50 dark:bg-sky-950/80 text-sky-500 dark:text-sky-300 border-l border-sky-300 dark:border-sky-500'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              }`}
+              title="มุมมองการ์ด (Grid View)"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
+
           {canCreateEmp && (
             <button
               onClick={() => setIsCreateModalOpen(true)}
@@ -516,10 +620,153 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      {/* 4. Figma 1:1 Data Table */}
+      {/* 4. Employee Data Display (Table or Grid View) */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
-        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
-          <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
+        {viewMode === 'grid' ? (
+          <div>
+            {/* Grid Header Info Bar */}
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 text-xs">
+              <div className="font-medium text-slate-600 dark:text-slate-400">
+                พนักงาน{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {paginatedEmployees.length} / {filteredEmployees.length}
+                </span>{' '}
+                คน
+              </div>
+              <div className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <span>สถานะการจ้าง:</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  ทำงานอยู่
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 text-xs">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+                  <span>กำลังโหลดข้อมูลพนักงาน...</span>
+                </div>
+              ) : paginatedEmployees.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500 text-xs">
+                  <p className="font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลพนักงาน</p>
+                  <p className="mt-1">ลองเปลี่ยนคำค้นหา หรือเลือกแผนกอื่น</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {paginatedEmployees.map((emp) => {
+                    const statusInfo = getEmployeeStatusBadge(emp);
+                    const hasComment = Boolean(comments[emp.id]);
+                    const commentText = comments[emp.id] || '';
+                    const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
+
+                    return (
+                      <div
+                        key={emp.id}
+                        onClick={() => router.push(`/employees/${emp.id}`)}
+                        className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-4 shadow-2xs hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500 transition-all flex flex-col items-center text-center relative group cursor-pointer"
+                      >
+                        {/* Top Action Icons: Star & Info */}
+                        <div className="absolute top-2.5 right-2.5 flex flex-col items-center gap-1 z-10">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(emp.id);
+                            }}
+                            className="p-1 text-slate-300 hover:text-amber-400 dark:text-slate-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
+                            title={favorites[emp.id] ? 'ยกเลิกการติดดาว' : 'ติดดาวพนักงาน'}
+                          >
+                            <Star
+                              className={`w-4 h-4 transition-all ${
+                                favorites[emp.id] ? 'fill-amber-400 text-amber-400 scale-110' : ''
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/employees/${emp.id}`);
+                            }}
+                            className="p-1 text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors cursor-pointer"
+                            title="ดูประวัติพนักงาน"
+                          >
+                            <Info className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Avatar Photo Box */}
+                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shadow-2xs relative flex items-center justify-center group-hover:scale-105 transition-transform">
+                          {emp.avatarUrl ? (
+                            <img
+                              src={getAvatarUrl(emp.avatarUrl) || ''}
+                              alt={emp.fullName}
+                              className="w-full h-full object-cover rounded-2xl"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = 'none';
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className={`w-full h-full ${
+                              emp.avatarUrl ? 'absolute inset-0 -z-10' : ''
+                            } flex items-center justify-center font-bold text-xl ${avatarColor}`}
+                          >
+                            {emp.firstName ? emp.firstName.charAt(0) : 'E'}
+                          </div>
+
+                          {/* Comment Indicator */}
+                          {hasComment && (
+                            <div
+                              className="absolute top-1 left-1 z-20 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white shadow-xs"
+                              title={commentText}
+                            >
+                              !
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Employee Name */}
+                        <h4
+                          className="mt-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors truncate w-full"
+                          title={emp.fullName}
+                        >
+                          {emp.prefix ? `${emp.prefix} ` : ''}
+                          {emp.firstName} {emp.lastName}
+                        </h4>
+
+                        {/* Department or Division */}
+                        <p
+                          className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 truncate w-full"
+                          title={emp.departmentName || emp.divisionName || emp.positionName || '-'}
+                        >
+                          {emp.departmentName
+                            ? `แผนก ${emp.departmentName}`
+                            : emp.divisionName
+                            ? `ฝ่าย ${emp.divisionName}`
+                            : emp.positionName || '-'}
+                        </p>
+
+                        {/* Status Badge */}
+                        <div className="mt-3">
+                          <span
+                            className={`inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-medium border ${statusInfo.badgeClass}`}
+                          >
+                            {statusInfo.text}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
+            <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
               <tr className="bg-primary text-white font-medium text-xs whitespace-nowrap">
@@ -917,6 +1164,7 @@ export default function EmployeesPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* 5. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
         <div className="py-3 px-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
