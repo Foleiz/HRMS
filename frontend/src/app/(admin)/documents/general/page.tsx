@@ -267,7 +267,14 @@ export default function GeneralDocumentPage() {
     }
   };
 
-  const isFileRequired = !isCustomType && GENERAL_REQUEST_TYPES.find((t) => t.label === documentType)?.attachment === 'required';
+  // ไฟล์แนบตามประเภทคำร้อง (แบบเดียวกับหน้ายื่นลา): ยังไม่เลือก/ไม่ต้องแนบ → ปิดใช้งาน, ระบุเรื่องเอง → แนบได้
+  const attachmentMode: 'required' | 'optional' | 'none' | 'unselected' = isCustomType
+    ? 'optional'
+    : !documentType
+      ? 'unselected'
+      : GENERAL_REQUEST_TYPES.find((t) => t.label === documentType)?.attachment ?? 'optional';
+  const isFileRequired = attachmentMode === 'required';
+  const attachmentEnabled = attachmentMode === 'required' || attachmentMode === 'optional' || !!selectedFile;
 
   // ยื่นคำร้องเอกสารทั่วไป
   const handleSubmit = async (e: React.FormEvent) => {
@@ -391,6 +398,7 @@ export default function GeneralDocumentPage() {
                       setIsCustomType(true);
                     } else {
                       setDocumentType(v);
+                      if (GENERAL_REQUEST_TYPES.find((t) => t.label === v)?.attachment === 'none') setSelectedFile(null);
                     }
                   }}
                   options={[
@@ -471,9 +479,9 @@ export default function GeneralDocumentPage() {
                 ไฟล์แนบ{' '}
                 {isFileRequired ? (
                   <span className="text-rose-600">*</span>
-                ) : (
+                ) : attachmentMode === 'optional' ? (
                   <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-                )}
+                ) : null}
               </span>
               <FileDropzone
                 className="flex-1"
@@ -484,6 +492,8 @@ export default function GeneralDocumentPage() {
                 }}
                 accept={['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx']}
                 required={isFileRequired}
+                disabled={!attachmentEnabled}
+                disabledText={attachmentMode === 'unselected' ? 'เลือกประเภทคำร้องก่อน' : 'คำร้องประเภทนี้ไม่ต้องแนบเอกสาร'}
                 aria-labelledby="gen-attachment-label"
               />
               {isFileRequired && (
