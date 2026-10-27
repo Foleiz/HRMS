@@ -72,6 +72,10 @@ export interface CertificateDocument {
   serviceDurationText: string;
   baseSalary?: number;
   salaryText?: string;
+  /** ค่าตำแหน่งรายเดือน และรวมรายได้ต่อเดือน (หนังสือรับรองเงินเดือน) */
+  positionAllowance?: number | null;
+  totalIncome?: number | null;
+  totalIncomeText?: string | null;
   purpose: string;
   certificationBodyTh: string;
   certificationBodyEn: string;

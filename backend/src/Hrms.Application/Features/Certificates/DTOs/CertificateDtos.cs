@@ -93,6 +93,11 @@ public class CertificateDocumentDto
     public string ServiceDurationText { get; set; } = string.Empty;
     public decimal? BaseSalary { get; set; }
     public string? SalaryText { get; set; }
+    /// <summary>ค่าตำแหน่งรายเดือนตามโครงสร้างเงินเดือน (ถ้ามี)</summary>
+    public decimal? PositionAllowance { get; set; }
+    /// <summary>รวมรายได้ต่อเดือน (เงินเดือน + ค่าตำแหน่ง) และคำอ่านภาษาไทย</summary>
+    public decimal? TotalIncome { get; set; }
+    public string? TotalIncomeText { get; set; }
 
     // Purpose & Certification Body
     public string Purpose { get; set; } = string.Empty;

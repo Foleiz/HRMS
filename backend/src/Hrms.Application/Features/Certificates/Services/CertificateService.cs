@@ -618,6 +618,27 @@ public class CertificateService : ICertificateService
         var includeSalary = certCode.Contains("SALARY", StringComparison.OrdinalIgnoreCase);
         var salary = includeSalary ? salaryRecord?.BaseSalary : null;
 
+        // ค่าตำแหน่งตามโครงสร้างเงินเดือน (ตำแหน่ง/ระดับ) — ใช้หลักเดียวกับการคำนวณเงินเดือน
+        decimal? positionAllowance = null;
+        if (salary.HasValue && assignment != null)
+        {
+            var positionItemActive = await _context.PayrollItems.AsNoTracking()
+                .AnyAsync(i => i.ItemCode == "INC_POSITION" && i.Status == "ACTIVE", cancellationToken);
+            if (positionItemActive)
+            {
+                var structures = await _context.SalaryStructures.AsNoTracking()
+                    .Where(st => st.Status == "ACTIVE" && st.PositionId == assignment.PositionId
+                                 && st.EffectiveFrom <= todayTh && (st.EffectiveTo == null || st.EffectiveTo >= todayTh))
+                    .OrderByDescending(st => st.EffectiveFrom)
+                    .ToListAsync(cancellationToken);
+                var levelId = assignment.EmployeeLevelId ?? assignment.Position?.EmployeeLevelId;
+                var structure = (levelId.HasValue ? structures.FirstOrDefault(st => st.EmployeeLevelId == levelId.Value) : null)
+                                ?? structures.FirstOrDefault();
+                if (structure != null && structure.PositionAllowance > 0) positionAllowance = structure.PositionAllowance;
+            }
+        }
+        var totalIncome = salary.HasValue ? salary.Value + (positionAllowance ?? 0) : (decimal?)null;
+
         var fullName = employee.FullName;
         // ชื่อตำแหน่งบางรายการขึ้นต้นด้วย "ตำแหน่ง" อยู่แล้ว — ตัดออกเพื่อไม่ให้เป็น "ตำแหน่ง ตำแหน่ง..."
         var position = System.Text.RegularExpressions.Regex.Replace(assignment?.Position?.PositionName ?? "-", @"^ตำแหน่ง\s*", "");
@@ -644,7 +665,7 @@ public class CertificateService : ICertificateService
         {
             RequestId = requestId,
             IsPreview = requestId == 0,
-            DocumentNumber = requestId == 0 ? "(ออกเลขเมื่ออนุมัติ)" : $"HR {requestId:D4}/{issueDate.Year + 543}",
+            DocumentNumber = requestId == 0 ? "(ออกเลขเมื่ออนุมัติ)" : $"HR/{issueDate.Year + 543}/{requestId:D4}",
             IssueDate = issueDate,
             Language = language,
             CertificateCode = certCode,
@@ -671,6 +692,9 @@ public class CertificateService : ICertificateService
             ServiceDurationText = duration,
             BaseSalary = salary,
             SalaryText = salary.HasValue ? BahtText(salary.Value) : null,
+            PositionAllowance = positionAllowance,
+            TotalIncome = totalIncome,
+            TotalIncomeText = totalIncome.HasValue ? BahtText(totalIncome.Value) : null,
             Purpose = purposeText,
             CertificationBodyTh = bodyTh,
             CertificationBodyEn = bodyEn,

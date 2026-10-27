@@ -88,13 +88,18 @@ const CertificatePaper: React.FC<{
       )}
 
       {/* ===== ชื่อหนังสือ ===== */}
-      <div style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 700, marginBottom: '6mm' }}>
-        {doc.certificateTitle || 'หนังสือรับรอง'}
+      <div style={{ textAlign: 'center', marginBottom: '6mm' }}>
+        <div style={{ fontSize: '16pt', fontWeight: 700, lineHeight: 1.4 }}>{doc.certificateTitle || 'หนังสือรับรอง'}</div>
+        <div style={{ fontSize: '8.5pt', letterSpacing: '0.3em', color: '#4b5563', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+          {includeSalary ? 'SALARY CERTIFICATE' : 'EMPLOYMENT CERTIFICATE'}
+        </div>
       </div>
 
       {/* ===== ที่ (ซ้าย) / วันที่ (ขวา) ===== */}
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5mm' }}>
-        <div>ที่ {doc.documentNumber}</div>
+        <div>
+          เลขที่ <span style={b}>{doc.documentNumber}</span>
+        </div>
         <div>วันที่ {doc.issueDateText || doc.issueDate}</div>
       </div>
 
@@ -115,29 +120,92 @@ const CertificatePaper: React.FC<{
         หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า <span style={b}>{doc.fullName}</span>
         {doc.citizenIdMasked ? (
           <>
-            {' '}เลขประจำตัวประชาชน <span style={{ whiteSpace: 'nowrap' }}>{doc.citizenIdMasked}</span>
+            {' '}เลขประจำตัวประชาชน {doc.citizenIdMasked}
           </>
         ) : null} รหัสพนักงาน {doc.employeeCode}{' '}
         เป็นพนักงานประจำของ{doc.companyName} โดยเริ่มปฏิบัติงานตั้งแต่วันที่ {doc.startDateText} จนถึงปัจจุบัน
-        รวมอายุงาน {doc.serviceDurationText} ปัจจุบันดำรงตำแหน่ง {position} สังกัด{department}
+        รวมอายุงาน {doc.serviceDurationText} ปัจจุบันดำรงตำแหน่ง <span style={b}>{position}</span> สังกัด{department}
       </p>
 
       {includeSalary && salary != null && (
-        <p style={para}>
-          ปัจจุบันได้รับเงินเดือนในอัตราเดือนละ <span style={b}>{fmtMoney(salary)}</span> บาท ({doc.salaryText})
-          ทั้งนี้ไม่รวมค่าตอบแทน ค่าล่วงเวลา และสวัสดิการอื่น
-        </p>
+        <>
+          <p style={{ ...para, marginBottom: '2mm' }}>ปัจจุบันได้รับค่าตอบแทนเป็นรายเดือน ดังนี้</p>
+          <table
+            style={{
+              width: '140mm',
+              margin: '0 auto',
+              borderCollapse: 'collapse',
+              fontSize: '11pt',
+              lineHeight: 1.5,
+              borderTop: '1px solid #000',
+              borderBottom: '1px solid #000',
+            }}
+          >
+            <thead>
+              <tr style={{ borderBottom: '1px solid #9ca3af', fontSize: '9.5pt', color: '#374151' }}>
+                <th style={{ textAlign: 'left', fontWeight: 400, padding: '1mm 2mm' }}>รายการ</th>
+                <th style={{ textAlign: 'right', fontWeight: 400, padding: '1mm 2mm' }}>จำนวนเงิน (บาท)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '1mm 2mm' }}>เงินเดือนประจำ</td>
+                <td style={{ padding: '1mm 2mm', textAlign: 'right' }}>{fmtMoney(salary)}</td>
+              </tr>
+              {doc.positionAllowance ? (
+                <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '1mm 2mm' }}>ค่าตำแหน่ง</td>
+                  <td style={{ padding: '1mm 2mm', textAlign: 'right' }}>{fmtMoney(doc.positionAllowance)}</td>
+                </tr>
+              ) : null}
+              <tr style={{ background: '#f3f4f6', fontWeight: 700 }}>
+                <td style={{ padding: '1mm 2mm' }}>รวมรายได้ต่อเดือน</td>
+                <td style={{ padding: '1mm 2mm', textAlign: 'right' }}>{fmtMoney(doc.totalIncome ?? salary)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style={{ textAlign: 'center', fontWeight: 700, margin: '1.5mm 0 1mm' }}>
+            ( {doc.totalIncomeText || doc.salaryText} )
+          </div>
+          <div style={{ textAlign: 'center', fontSize: '9.5pt', color: '#374151', marginBottom: '3mm' }}>
+            ไม่รวมค่าล่วงเวลา ค่าคอมมิชชัน และสวัสดิการอื่น
+          </div>
+        </>
       )}
 
       <p style={para}>
         หนังสือรับรองฉบับนี้ออกให้เพื่อ{purpose || 'เป็นหลักฐานแสดงการเป็นพนักงาน'}เท่านั้น
-        บริษัทฯ ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ
+        และไม่มีผลผูกพันต่อบริษัทในทางอื่นใด บริษัทฯ ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ
       </p>
 
       <p style={para}>ให้ไว้ ณ วันที่ {doc.issueDateText}</p>
 
       {/* ===== ผู้มีอำนาจลงนาม (ชิดขวา) ===== */}
-      <div style={{ marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '8mm', whiteSpace: 'nowrap' }}>
+      <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '6mm', whiteSpace: 'nowrap' }}>
+        {/* ที่ประทับตราบริษัท (ประทับจริงหลังพิมพ์) */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            left: '-80mm',
+            top: '6mm',
+            width: '30mm',
+            height: '30mm',
+            borderRadius: '50%',
+            border: '1px dashed #9ca3af',
+            color: '#9ca3af',
+            fontSize: '9pt',
+            lineHeight: 1.3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+          }}
+        >
+          ตราประทับ
+          <br />
+          บริษัท
+        </div>
         <div>ขอแสดงความนับถือ</div>
         <div style={{ marginTop: '12mm' }}>
           <SignatureLine
@@ -148,8 +216,8 @@ const CertificatePaper: React.FC<{
           />
         </div>
         <div>({doc.signatoryName || ' '.repeat(40)})</div>
-        <div>{doc.signatoryPosition}</div>
-        <div>{doc.companyName}</div>
+        <div style={b}>{doc.signatoryPosition}</div>
+        <div style={{ fontSize: '10pt', color: '#374151' }}>ผู้มีอำนาจลงนาม</div>
       </div>
 
       {/* ===== หมายเหตุท้ายหนังสือ: อายุหนังสือ + ติดต่อตรวจสอบ ===== */}
@@ -172,9 +240,13 @@ const CertificatePaper: React.FC<{
             : 'หนังสือรับรองฉบับนี้รับรองข้อมูล ณ วันที่ออกหนังสือ'}
         </div>
         <div>
-          ตรวจสอบความถูกต้องได้ที่ฝ่ายทรัพยากรบุคคล
+          ตรวจสอบความถูกต้องโดยอ้างอิงเลขที่หนังสือ ได้ที่ฝ่ายบุคคล
           {doc.companyPhone ? <> โทร. <span style={{ whiteSpace: 'nowrap' }}>{doc.companyPhone}</span></> : null}
-          {doc.companyEmail ? <> อีเมล <span style={{ whiteSpace: 'nowrap' }}>{doc.companyEmail}</span></> : null} (อ้างอิงเลขที่หนังสือ)
+          {doc.companyEmail ? <> อีเมล <span style={{ whiteSpace: 'nowrap' }}>{doc.companyEmail}</span></> : null}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#6b7280', fontSize: '9pt', marginTop: '1mm' }}>
+          <span>เอกสารฉบับนี้ออกโดยระบบ HR</span>
+          <span>หน้า 1 / 1</span>
         </div>
       </div>
 
