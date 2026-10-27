@@ -270,7 +270,19 @@ const ResignationPaper: React.FC<{
           </>
         ) : null}{' '}
         ของบริษัท ไซอโคว จำกัด มีความประสงค์ขอลาออกจากการเป็นพนักงาน ของบริษัทฯ เนื่องด้วยเหตุผล
-        <Fill value={getReasonText()} minWidth="40mm" align="left" />
+        {/* เหตุผลยาวได้หลายบรรทัด — ขีดเส้นประใต้ทุกบรรทัด (เดิมเป็นกล่อง inline-block มีเส้นแค่บรรทัดสุดท้าย) */}
+        <span
+          style={{
+            textDecorationLine: 'underline',
+            textDecorationStyle: 'dotted',
+            textDecorationThickness: '1px',
+            textUnderlineOffset: '4px',
+            padding: '0 1.5mm',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {getReasonText()}
+        </span>
       </p>
       <p style={{ textIndent: '12.5mm', margin: 0 }}>
         จึงขอสิ้นสุดการทำงานตั้งแต่วันที่<Fill value={has(lastWorkingParts.day) ? lastWorkingParts.day : ''} minWidth="14mm" />

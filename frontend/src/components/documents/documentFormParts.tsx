@@ -93,7 +93,8 @@ export const DEFAULT_SLOTS: ApprovalSlot[] = [
  */
 export const getSlotPositions = (count: number): Array<[number, number]> => {
   if (count <= 1) return [[0, 0]];
-  if (count === 2) return [[0, 0], [1, 0]];
+  // 2 ช่องวางคู่กันแถวเดียว — เดิมซ้อนลงล่างจนช่องลงนามล้นทับท้ายกระดาษ A4
+  if (count === 2) return [[0, 0], [0, 1]];
   if (count === 3) return [[0, 0], [1, 0], [1, 1]];
   return Array.from({ length: count }, (_, i) => [Math.floor(i / 2), i % 2] as [number, number]);
 };
