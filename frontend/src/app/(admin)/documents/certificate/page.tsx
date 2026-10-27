@@ -1,7 +1,7 @@
 'use client';
 
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle2,
@@ -10,6 +10,10 @@ import {
   Save,
   Eye,
   Loader2,
+  CalendarCheck,
+  Clock3,
+  Languages,
+  PenLine,
 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
@@ -18,7 +22,6 @@ import { certificateService } from '@/services/certificateService';
 import { leaveService } from '@/services/leaveService';
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
-import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { toast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
 import { RichSelect } from '@/components/ui/RichSelect';
@@ -31,23 +34,6 @@ const TEXTAREA =
   'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
 const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
 
-// แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
-const toInputDate = (d: Date): string => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
-
-// แปลง 'YYYY-MM-DD' -> แสดงผล 'dd/mm/yyyy' (พ.ศ.)
-const formatThaiShort = (s: string): string => {
-  if (!s) return '-';
-  const parts = s.split('-');
-  if (parts.length !== 3) return s;
-  const [y, m, d] = parts.map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
-};
 
 export default function CertificatePage() {
   const router = useRouter();
@@ -66,15 +52,18 @@ export default function CertificatePage() {
   const [selectedTypeId, setSelectedTypeId] = useState<number | ''>('');
   const [purpose, setPurpose] = useState('');
   const [notes, setNotes] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState<'TH' | 'EN'>('TH');
 
-  // Dates in 'YYYY-MM-DD' format (compatible with LeaveDateRangePicker)
-  const [issueDate, setIssueDate] = useState(() => toInputDate(new Date()));
-  const [expiryDate, setExpiryDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 90);
-    return toInputDate(d);
-  });
+  // วันที่ออก = วันที่อนุมัติ, อายุหนังสือมาจากข้อมูลหลัก — ผู้ใช้ไม่ต้องกรอกเอง
+  // ช่องข้อความยืด/หดตามเนื้อหา
+  const purposeRef = useRef<HTMLTextAreaElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    [purposeRef.current, notesRef.current].forEach((el) => {
+      if (!el) return;
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight + (el.offsetHeight - el.clientHeight)}px`;
+    });
+  }, [purpose, notes]);
 
   // State
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -97,9 +86,6 @@ export default function CertificatePage() {
         if (parsed.purpose) setPurpose(parsed.purpose);
         if (parsed.selectedTypeId) setSelectedTypeId(parsed.selectedTypeId);
         if (parsed.notes) setNotes(parsed.notes);
-        if (parsed.language) setSelectedLanguage(parsed.language);
-        if (parsed.issueDate) setIssueDate(parsed.issueDate);
-        if (parsed.expiryDate) setExpiryDate(parsed.expiryDate);
       }
     } catch {
       // Ignore
@@ -154,11 +140,6 @@ export default function CertificatePage() {
     setPurpose('');
     setNotes('');
     if (types.length > 0) setSelectedTypeId(types[0].id);
-    setSelectedLanguage('TH');
-    setIssueDate(toInputDate(new Date()));
-    const d = new Date();
-    d.setDate(d.getDate() + 90);
-    setExpiryDate(toInputDate(d));
     setFormError(null);
     localStorage.removeItem('hrms_cert_draft');
     showToast('ล้างข้อมูลในแบบฟอร์มเรียบร้อยแล้ว');
@@ -166,11 +147,7 @@ export default function CertificatePage() {
 
   const selectedType = types.find((t) => t.id === Number(selectedTypeId));
   const includeSalary = !!selectedType?.certificateCode?.toUpperCase().includes('SALARY');
-  const validDays = (() => {
-    if (!issueDate || !expiryDate) return null;
-    const diff = Math.round((new Date(expiryDate).getTime() - new Date(issueDate).getTime()) / 86400000);
-    return diff >= 0 ? diff : null;
-  })();
+  const validityMonths = selectedType?.validityMonths ?? null;
 
   // Action 1: ดูตัวอย่าง (Preview) — ดึงหนังสือรับรองจริงของผู้ใช้จาก API (ยังไม่บันทึกลงระบบ)
   const handlePreview = () => {
@@ -196,9 +173,6 @@ export default function CertificatePage() {
           purpose: purpose.trim(),
           selectedTypeId,
           notes: notes.trim(),
-          language: selectedLanguage,
-          issueDate,
-          expiryDate,
           savedAt: new Date().toISOString(),
         })
       );
@@ -227,15 +201,12 @@ export default function CertificatePage() {
       setIsSubmitting(true);
       setFormError(null);
 
-      const remarks = [
-        notes.trim() ? `หมายเหตุ: ${notes.trim()}` : null,
-        `วันหมดอายุเอกสาร: ${formatThaiShort(expiryDate)}`,
-      ].filter(Boolean).join(' | ');
+      const remarks = notes.trim() ? `หมายเหตุ: ${notes.trim()}` : '';
 
       await certificateService.createRequest({
         certificateTypeId: Number(selectedTypeId),
         purpose: purpose.trim(),
-        language: selectedLanguage,
+        language: 'TH',
         notes: remarks || undefined,
       });
 
@@ -330,10 +301,11 @@ export default function CertificatePage() {
                 id="cert-purpose"
                 value={purpose}
                 maxLength={REASON_MAX_LENGTH}
+                ref={purposeRef}
                 onChange={(e) => setPurpose(e.target.value)}
-                rows={3}
+                rows={2}
                 placeholder="เช่น เพื่อใช้ประกอบการขอสินเชื่อที่อยู่อาศัย"
-                className={TEXTAREA}
+                className={`${TEXTAREA} block overflow-hidden`}
                 required
                 aria-describedby="cert-purpose-help"
               />
@@ -353,74 +325,43 @@ export default function CertificatePage() {
                 id="cert-notes"
                 value={notes}
                 maxLength={NOTES_MAX_LENGTH}
+                ref={notesRef}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={2}
                 placeholder="เช่น ต้องการ 2 ฉบับ"
-                className={TEXTAREA}
+                className={`${TEXTAREA} block overflow-hidden`}
               />
             </div>
           </div>
 
-          {/* ขวา: รูปแบบเอกสาร */}
-          <div className="space-y-6 min-w-0">
-            <fieldset>
-              <legend className={LABEL}>ภาษา</legend>
-              <div role="radiogroup" aria-label="ภาษาของเอกสาร" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
-                {(['TH', 'EN'] as const).map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    role="radio"
-                    aria-checked={selectedLanguage === l}
-                    onClick={() => setSelectedLanguage(l)}
-                    className={`h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
-                      selectedLanguage === l
-                        ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
-                        : 'text-slate-600 dark:text-slate-400 font-medium'
-                    }`}
-                  >
-                    {l === 'TH' ? 'ภาษาไทย' : 'ภาษาอังกฤษ'}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <span className={LABEL}>
-                  วันที่ออก <span className="text-rose-600">*</span>
-                </span>
-                <LeaveDateRangePicker
-                  mode="single"
-                  className="w-full"
-                  startDate={issueDate}
-                  endDate={issueDate}
-                  onChange={(d) => {
-                    setIssueDate(d);
-                    if (d) {
-                      const [y, m, day] = d.split('-').map(Number);
-                      const nextExp = new Date(y, m - 1, day + 90);
-                      setExpiryDate(toInputDate(nextExp));
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <span className={LABEL}>วันหมดอายุ</span>
-                <LeaveDateRangePicker
-                  mode="single"
-                  className="w-full"
-                  startDate={expiryDate}
-                  endDate={expiryDate}
-                  onChange={(d) => setExpiryDate(d)}
-                />
-              </div>
-            </div>
-            {validDays != null && (
-              <p className="-mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
-                เอกสารมีอายุ {validDays} วัน
-              </p>
-            )}
+          {/* ขวา: ข้อมูลเอกสารที่ระบบกำหนดให้ (ไม่ต้องกรอก) */}
+          <div className="min-w-0">
+            <span className={LABEL}>รายละเอียดเอกสาร</span>
+            <dl className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
+              {[
+                { icon: Languages, k: 'ภาษา', v: 'ภาษาไทย' },
+                { icon: CalendarCheck, k: 'วันที่ออก', v: 'วันที่ได้รับอนุมัติ' },
+                {
+                  icon: Clock3,
+                  k: 'อายุหนังสือ',
+                  v: !selectedType
+                    ? 'เลือกประเภทหนังสือรับรองก่อน'
+                    : validityMonths
+                      ? `${validityMonths} เดือน นับจากวันที่ออก`
+                      : 'ไม่กำหนดวันหมดอายุ',
+                },
+                { icon: PenLine, k: 'ผู้ลงนาม', v: 'ผู้อนุมัติขั้นสุดท้าย พร้อมลายเซ็นดิจิทัล' },
+              ].map(({ icon: Icon, k, v }) => (
+                <div key={k} className="flex items-start gap-3 px-4 py-3">
+                  <Icon className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
+                  <dt className="w-24 shrink-0 text-slate-500 dark:text-slate-400">{k}</dt>
+                  <dd className="font-medium text-slate-800 dark:text-slate-200">{v}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              อายุหนังสือกำหนดโดยฝ่ายบุคคลที่เมนูข้อมูลหลัก &gt; ประเภทหนังสือรับรอง
+            </p>
           </div>
         </div>
 
@@ -489,7 +430,6 @@ export default function CertificatePage() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         previewParams={selectedTypeId ? { certificateTypeId: Number(selectedTypeId), purpose: purpose.trim() } : null}
-        initialLang={selectedLanguage}
       />
     </div>
   );

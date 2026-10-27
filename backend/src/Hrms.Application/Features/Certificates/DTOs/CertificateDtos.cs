@@ -5,6 +5,8 @@ public class CertificateTypeDto
     public long Id { get; set; }
     public string CertificateCode { get; set; } = string.Empty;
     public string CertificateName { get; set; } = string.Empty;
+    /// <summary>อายุหนังสือ (เดือน) ตั้งค่าที่ข้อมูลหลัก</summary>
+    public int? ValidityMonths { get; set; }
 }
 
 public class CreateCertificateRequestDto
@@ -72,6 +74,8 @@ public class CertificateDocumentDto
     public string? CompanyPhone { get; set; }
     public string? CompanyEmail { get; set; }
     public string? CompanyLogoBase64 { get; set; }
+    /// <summary>ตราประทับบริษัท (ตั้งค่าที่ข้อมูลบริษัท)</summary>
+    public string? CompanySealBase64 { get; set; }
 
     // Employee Details
     public long EmployeeId { get; set; }
@@ -80,14 +84,26 @@ public class CertificateDocumentDto
     public string? CitizenIdMasked { get; set; }
     public string PositionName { get; set; } = string.Empty;
     public string DepartmentName { get; set; } = string.Empty;
+    /// <summary>ประเภทการจ้างงาน (จากสัญญาจ้างที่มีผลล่าสุด หรือข้อมูลตำแหน่งงาน)</summary>
+    public string EmploymentTypeName { get; set; } = "-";
+    /// <summary>สถานะการเป็นพนักงาน เช่น "ปฏิบัติงานอยู่ในปัจจุบัน", "ทดลองงาน"</summary>
+    public string EmploymentStatusText { get; set; } = "-";
     public DateTime StartDate { get; set; }
     /// <summary>วันที่เริ่มงานตามภาษาเอกสาร เช่น "16 มกราคม พ.ศ. 2566"</summary>
     public string StartDateText { get; set; } = string.Empty;
     /// <summary>วันที่ออกหนังสือตามภาษาเอกสาร</summary>
     public string IssueDateText { get; set; } = string.Empty;
+    /// <summary>อายุหนังสือ (เดือน) และวันที่ใช้ได้ถึง — จากข้อมูลหลักประเภทหนังสือรับรอง</summary>
+    public int? ValidityMonths { get; set; }
+    public string? ExpiryDateText { get; set; }
     public string ServiceDurationText { get; set; } = string.Empty;
     public decimal? BaseSalary { get; set; }
     public string? SalaryText { get; set; }
+    /// <summary>ค่าตำแหน่งรายเดือนตามโครงสร้างเงินเดือน (ถ้ามี)</summary>
+    public decimal? PositionAllowance { get; set; }
+    /// <summary>รวมรายได้ต่อเดือน (เงินเดือน + ค่าตำแหน่ง) และคำอ่านภาษาไทย</summary>
+    public decimal? TotalIncome { get; set; }
+    public string? TotalIncomeText { get; set; }
 
     // Purpose & Certification Body
     public string Purpose { get; set; } = string.Empty;

@@ -130,12 +130,12 @@ export const masterDataService = {
     return res.data.data;
   },
 
-  async createCertificateType(data: { certificateCode: string; certificateName: string }): Promise<CertificateTypeItem> {
+  async createCertificateType(data: { certificateCode: string; certificateName: string; validityMonths?: number | null }): Promise<CertificateTypeItem> {
     const res = await apiClient.post<ApiResponse<CertificateTypeItem>>('/lookups/certificate-types', data);
     return res.data.data;
   },
 
-  async updateCertificateType(id: number, data: { certificateName: string }): Promise<CertificateTypeItem> {
+  async updateCertificateType(id: number, data: { certificateName: string; validityMonths?: number | null }): Promise<CertificateTypeItem> {
     const res = await apiClient.put<ApiResponse<CertificateTypeItem>>(`/lookups/certificate-types/${id}`, data);
     return res.data.data;
   },

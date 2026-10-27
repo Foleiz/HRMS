@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   Phone,
   MapPin,
+  Stamp,
 } from 'lucide-react';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
@@ -298,6 +299,7 @@ export default function OrganizationPage() {
     email: '',
     status: 'ACTIVE',
     logoData: null,
+    sealData: null,
     ceoEmployeeId: null,
   });
 
@@ -361,6 +363,7 @@ export default function OrganizationPage() {
           email: comp.email || '',
           status: comp.status,
           logoData: comp.logoData || null,
+          sealData: comp.sealData || null,
           ceoEmployeeId: comp.ceoEmployeeId || null,
         });
       }
@@ -788,6 +791,20 @@ export default function OrganizationPage() {
       const base64String = reader.result as string;
       setCompanyForm((prev) => ({ ...prev, logoData: base64String }));
     };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  // ตราประทับบริษัท — ใช้ในหนังสือรับรอง (แนะนำ PNG พื้นหลังโปร่งใส)
+  const handleSealUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('ขนาดไฟล์ภาพต้องไม่เกิน 2MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => setCompanyForm((prev) => ({ ...prev, sealData: reader.result as string }));
     reader.readAsDataURL(file);
     e.target.value = '';
   };
@@ -1961,6 +1978,42 @@ export default function OrganizationPage() {
                     onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
                     className={inputCls}
                   />
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+                  <CompanySectionTitle icon={Stamp} title="ตราประทับบริษัท" />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="w-32 h-32 shrink-0 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+                      {companyForm.sealData ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={companyForm.sealData} alt="ตราประทับบริษัท" className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <Stamp className="w-10 h-10 text-slate-400" aria-hidden="true" />
+                      )}
+                    </div>
+                    <div className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                      <p>แสดงในหนังสือรับรองข้างลายเซ็นผู้มีอำนาจลงนาม ถ้าไม่อัปโหลดจะเว้นวงกลมไว้ให้ประทับตราจริงหลังพิมพ์</p>
+                      <p className="text-slate-400">แนะนำไฟล์ PNG พื้นหลังโปร่งใส ไม่เกิน 2MB</p>
+                      {canEditCompany && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer shadow-sm transition-colors">
+                            <Upload className="w-3.5 h-3.5 text-slate-500" />
+                            {companyForm.sealData ? 'เปลี่ยนตราประทับ' : 'อัปโหลดตราประทับ'}
+                            <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleSealUpload} className="hidden" />
+                          </label>
+                          {companyForm.sealData && (
+                            <button
+                              type="button"
+                              onClick={() => setCompanyForm({ ...companyForm, sealData: '' })}
+                              className="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors cursor-pointer"
+                            >
+                              นำรูปออก
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 {canEditCompany && (

@@ -15,6 +15,8 @@ public class Company : BaseEntity
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
     public byte[]? LogoData { get; set; }
+    /// <summary>รูปตราประทับบริษัท (ใช้ในหนังสือรับรอง)</summary>
+    public byte[]? SealData { get; set; }
     public long? CeoEmployeeId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

@@ -11,6 +11,8 @@ public class CompanyDto
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE";
     public string? LogoData { get; set; }
+    /// <summary>รูปตราประทับบริษัท (data URL)</summary>
+    public string? SealData { get; set; }
     public long? CeoEmployeeId { get; set; }
     public string? CeoEmployeeName { get; set; }
     public string? CeoEmployeeCode { get; set; }
@@ -26,6 +28,8 @@ public class UpdateCompanyDto
     public string? Email { get; set; }
     public string Status { get; set; } = "ACTIVE";
     public string? LogoData { get; set; }
+    /// <summary>null = ไม่เปลี่ยน, "" = นำออก, data URL/base64 = อัปโหลดใหม่</summary>
+    public string? SealData { get; set; }
     public long? CeoEmployeeId { get; set; }
 }
 #endregion
