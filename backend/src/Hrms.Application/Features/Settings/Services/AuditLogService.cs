@@ -176,8 +176,16 @@ public class AuditLogService : IAuditLogService
     }
 
     /// <summary>ตารางในสคีมา hrms ที่มีคอลัมน์ employee_id (ใช้เป็น whitelist ตอนค้นเจ้าของข้อมูล)</summary>
-    private static HashSet<string>? _employeeTables;
-
+    private static readonly HashSet<string> _employeeTables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "employee", "employee_assignment", "employment_contract", "employee_bank_account",
+        "employee_contact", "employee_address", "employee_education", "employee_work_experience",
+        "employee_social_security", "employee_tax_deduction", "employee_document", "employee_avatar",
+        "employee_change_history", "employee_transfer", "leave_balance", "leave_request",
+        "attendance_record", "attendance_daily_log", "attendance_adjustment", "payroll",
+        "benefit_claim", "resignation_request", "certificate_request", "general_request",
+        "notification", "user_account"
+    };
     /// <summary>
     /// หาเจ้าของข้อมูล (พนักงาน) ของแต่ละ log: ตาราง employee ใช้รหัสข้อมูล, ค่าใน log ที่มี EmployeeId,
     /// หรือค้น employee_id จากแถวจริง (กรณีแก้ไขที่ log เก็บแค่ฟิลด์ที่เปลี่ยน)
@@ -215,11 +223,6 @@ public class AuditLogService : IAuditLogService
         {
             try
             {
-                _employeeTables ??= (await _dbContext.Database
-                        .SqlQueryRaw<string>("select table_name as \"Value\" from information_schema.columns where table_schema = 'hrms' and column_name = 'employee_id'")
-                        .ToListAsync(cancellationToken))
-                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
                 foreach (var (table, rows) in lookups)
                 try
                 {

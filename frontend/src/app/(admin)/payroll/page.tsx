@@ -3376,9 +3376,6 @@ export default function PayrollPage() {
                                         </span>
                                       )}
                                     </div>
-                                    <span className="text-[11px] text-slate-400 font-mono">
-                                      ปี พ.ศ. {bp.year + 543} / เดือน {THAI_MONTH_NAMES[bp.month - 1] || bp.month}
-                                    </span>
                                   </td>
                                   <td className="py-3.5 px-4 text-center font-mono font-semibold whitespace-nowrap">
                                     {bp.averageMultiplier}x
@@ -3485,7 +3482,7 @@ export default function PayrollPage() {
                                       </span>
                                     </div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                      ปี พ.ศ. {selectedBonusPeriodModal.year + 543} / เดือน {THAI_MONTH_NAMES[selectedBonusPeriodModal.month - 1] || selectedBonusPeriodModal.month} • พนักงานทั้งหมด {expandedBonuses.length} คน
+                                      พนักงานทั้งหมด {expandedBonuses.length} คน
                                     </p>
                                   </div>
                                 </div>
