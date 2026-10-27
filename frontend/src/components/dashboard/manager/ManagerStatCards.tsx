@@ -20,6 +20,7 @@ interface ManagerStatCardsProps {
 
 interface StatConfig {
   title: string;
+  subtitle?: string;
   value: string | number;
   unit: string;
   bgClass: string;
@@ -371,6 +372,7 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           },
           {
             title: 'ลูกทีมใกล้พ้นทดลองงาน',
+            subtitle: '(7 วัน)',
             value: show(statsData.probationExpiring7Days),
             unit: 'คน',
             bgClass: 'bg-[#FFE5D9]',
@@ -417,6 +419,7 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           },
           {
             title: 'ใกล้ครบกำหนดทดลองงาน',
+            subtitle: '(7 วัน)',
             value: show(statsData.probationExpiring7Days),
             unit: 'คน',
             bgClass: 'bg-[#FFE5D9]',
@@ -499,14 +502,16 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             borderClass: 'border-[#B7E4C7]',
           },
           {
-            title: 'สัญญาจ้างใกล้หมด (30 วัน)',
+            title: 'สัญญาจ้างใกล้หมด',
+            subtitle: '(30 วัน)',
             value: show(statsData.contractExpiring30Days),
             unit: 'สัญญา',
             bgClass: 'bg-[#D9EAFD]',
             borderClass: 'border-[#BFDBFE]',
           },
           {
-            title: 'ครบกำหนดทดลองงาน (7 วัน)',
+            title: 'ครบกำหนดทดลองงาน',
+            subtitle: '(7 วัน)',
             value: show(statsData.probationExpiring7Days),
             unit: 'คน',
             bgClass: 'bg-[#D7F9D9]',
@@ -530,26 +535,42 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
       data-stat-card
       className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 h-full auto-rows-fr"
     >
-      {cards.map((card, idx) => (
-        <div
-          key={idx}
-          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[90px] h-full transition-all`}
-        >
-          <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">
-            {card.title}
-          </span>
-          <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
-            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {card.value}
-            </span>
-            {card.unit && (
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-600">
-                {card.unit}
+      {cards.map((card, idx) => {
+        const isTextValue = typeof card.value === 'string' && /[ก-๙]/.test(card.value);
+        return (
+          <div
+            key={idx}
+            className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[96px] h-full transition-all`}
+          >
+            <div className="min-h-[38px] sm:min-h-[42px] flex flex-col justify-start">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight">
+                {card.title}
               </span>
-            )}
+              {card.subtitle && (
+                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight mt-0.5 whitespace-nowrap">
+                  {card.subtitle}
+                </span>
+              )}
+            </div>
+            <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[32px] sm:min-h-[36px] mt-auto">
+              <span
+                className={
+                  isTextValue
+                    ? 'text-base sm:text-lg font-bold text-slate-800 tracking-tight'
+                    : 'text-xl sm:text-2xl font-black text-slate-900 tracking-tight'
+                }
+              >
+                {card.value}
+              </span>
+              {card.unit && (
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-600">
+                  {card.unit}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

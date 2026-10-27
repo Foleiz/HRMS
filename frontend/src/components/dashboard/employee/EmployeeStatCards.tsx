@@ -219,12 +219,14 @@ export const EmployeeStatCards: React.FC = () => {
       {cards.map((card, idx) => (
         <div
           key={idx}
-          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[90px] h-full transition-all`}
+          className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[96px] h-full transition-all`}
         >
-          <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-snug">
-            {card.title}
-          </span>
-          <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 my-1">
+          <div className="min-h-[38px] sm:min-h-[42px] flex flex-col justify-start">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight">
+              {card.title}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[32px] sm:min-h-[36px] mt-auto">
             <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               {card.value}
             </span>
