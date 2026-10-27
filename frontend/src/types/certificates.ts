@@ -70,6 +70,9 @@ export interface CertificateDocument {
   citizenIdMasked?: string;
   positionName: string;
   departmentName: string;
+  /** ประเภทการจ้างงาน และสถานะการเป็นพนักงาน */
+  employmentTypeName?: string;
+  employmentStatusText?: string;
   startDate: string;
   serviceDurationText: string;
   baseSalary?: number;

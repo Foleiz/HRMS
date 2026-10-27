@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, FileText, Loader2 } from 'lucide-react';
 import { CertificateDocument } from '@/types/certificates';
@@ -37,8 +37,30 @@ const CertificatePaper: React.FC<{
   doc: CertificateDocument;
   companyLogo: string | null;
   companyAddress: string;
-}> = ({ doc, companyLogo, companyAddress }) => {
+  /** ฉบับพิมพ์ (ซ่อนอยู่ วัดขนาดไม่ได้) ใช้ค่าย่อที่วัดจากฉบับบนจอ */
+  fixedZoom?: number;
+  onZoom?: (z: number) => void;
+}> = ({ doc, companyLogo, companyAddress, fixedZoom, onZoom }) => {
   const [signatureFailed, setSignatureFailed] = useState(false);
+  // เนื้อหาต้องจบก่อนหมายเหตุท้ายหน้า — ถ้าล้น (เช่น หนังสือเงินเดือนที่มีค่าตำแหน่ง) ย่อเนื้อหาลงพอดีหน้า
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const noteRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  useLayoutEffect(() => {
+    if (fixedZoom != null) return;
+    const body = bodyRef.current;
+    const note = noteRef.current;
+    if (!body || !note || !body.offsetHeight) return;
+    const available = note.offsetTop - body.offsetTop - 8; // เว้นช่องไฟ ~2 มม.
+    body.style.zoom = '1'; // วัดขนาดจริงก่อนย่อ
+    const needed = body.scrollHeight;
+    const z = needed > available ? Math.max(0.8, available / needed) : 1;
+    body.style.zoom = String(z); // React ไม่เขียน style ซ้ำถ้าค่าเท่าเดิม
+    setZoom(z);
+    onZoom?.(z);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, fixedZoom]);
+  const appliedZoom = fixedZoom ?? zoom;
   const [sealFailed, setSealFailed] = useState(false);
   const includeSalary = doc.includeSalary ?? doc.baseSalary != null;
   const purpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
@@ -48,8 +70,29 @@ const CertificatePaper: React.FC<{
   const footer = [doc.companyAddress?.trim() || companyAddress, doc.companyPhone && `Tel. ${doc.companyPhone}`, doc.companyEmail]
     .filter(Boolean)
     .join('  ');
-  const para: React.CSSProperties = { margin: '0 0 3mm', textIndent: '12.5mm', textAlign: 'justify' };
+  const para: React.CSSProperties = { margin: '0 0 2.5mm', textIndent: '12.5mm', textAlign: 'justify' };
   const b: React.CSSProperties = { fontWeight: 700 };
+  // ตารางในหนังสือ (รายละเอียดการทำงาน / รายได้) — ขนาดและเส้นแบบเดียวกัน
+  const table: React.CSSProperties = {
+    width: '140mm',
+    margin: '0 auto',
+    borderCollapse: 'collapse',
+    fontSize: '11pt',
+    lineHeight: 1.45,
+    borderTop: '1px solid #000',
+    borderBottom: '1px solid #000',
+  };
+  const cell: React.CSSProperties = { padding: '0.6mm 2mm', verticalAlign: 'top' };
+  const rowLine: React.CSSProperties = { borderBottom: '1px solid #e5e7eb' };
+  const workRows: [string, React.ReactNode][] = [
+    ['รหัสพนักงาน', doc.employeeCode || '-'],
+    ['ตำแหน่ง', <span key="p" style={b}>{position}</span>],
+    ['แผนก', department],
+    ['ประเภทการจ้างงาน', doc.employmentTypeName || '-'],
+    ['วันที่เริ่มงาน', doc.startDateText || '-'],
+    ['อายุงาน', doc.serviceDurationText ? `${doc.serviceDurationText} (นับถึงวันที่ออกหนังสือ)` : '-'],
+    ['สถานะ', <span key="s" style={b}>{doc.employmentStatusText || '-'}</span>],
+  ];
 
   return (
     <div
@@ -88,6 +131,7 @@ const CertificatePaper: React.FC<{
         </div>
       )}
 
+      <div ref={bodyRef} style={{ zoom: appliedZoom }}>
       {/* ===== ชื่อหนังสือ ===== */}
       <div style={{ textAlign: 'center', marginBottom: '6mm' }}>
         <div style={{ fontSize: '16pt', fontWeight: 700, lineHeight: 1.4 }}>{doc.certificateTitle || 'หนังสือรับรอง'}</div>
@@ -123,53 +167,54 @@ const CertificatePaper: React.FC<{
           <>
             {' '}เลขประจำตัวประชาชน {doc.citizenIdMasked}
           </>
-        ) : null} รหัสพนักงาน {doc.employeeCode}{' '}
-        เป็นพนักงานประจำของ{doc.companyName} โดยเริ่มปฏิบัติงานตั้งแต่วันที่ {doc.startDateText} จนถึงปัจจุบัน
-        รวมอายุงาน {doc.serviceDurationText} ปัจจุบันดำรงตำแหน่ง <span style={b}>{position}</span> สังกัด{department}
+        ) : null}{' '}
+        เป็นพนักงานของ{doc.companyName} โดยมีรายละเอียดการทำงาน ดังนี้
       </p>
+
+      {/* ===== ตารางรายละเอียดการทำงาน (ทุกประเภทหนังสือ) ===== */}
+      <table style={{ ...table, marginBottom: '3mm' }}>
+        <tbody>
+          {workRows.map(([label, value], i) => (
+            // แถวสุดท้าย (สถานะ) เน้นพื้นเทา แบบเดียวกับแถวรวมของตารางรายได้
+            <tr key={label} style={i < workRows.length - 1 ? rowLine : { background: '#f3f4f6' }}>
+              <td style={{ ...cell, width: '42mm', color: '#374151' }}>{label}</td>
+              <td style={cell}>{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
       {includeSalary && salary != null && (
         <>
-          <p style={{ ...para, marginBottom: '2mm' }}>ปัจจุบันได้รับค่าตอบแทนเป็นรายเดือน ดังนี้</p>
-          <table
-            style={{
-              width: '140mm',
-              margin: '0 auto',
-              borderCollapse: 'collapse',
-              fontSize: '11pt',
-              lineHeight: 1.5,
-              borderTop: '1px solid #000',
-              borderBottom: '1px solid #000',
-            }}
-          >
+          <p style={{ ...para, marginBottom: '2mm' }}>และปัจจุบันได้รับค่าตอบแทนเป็นรายเดือน ดังนี้</p>
+          {/* ===== ตารางรายได้ (เฉพาะหนังสือรับรองเงินเดือน) ===== */}
+          <table style={table}>
             <thead>
               <tr style={{ borderBottom: '1px solid #9ca3af', fontSize: '9.5pt', color: '#374151' }}>
-                <th style={{ textAlign: 'left', fontWeight: 400, padding: '1mm 2mm' }}>รายการ</th>
-                <th style={{ textAlign: 'right', fontWeight: 400, padding: '1mm 2mm' }}>จำนวนเงิน (บาท)</th>
+                <th style={{ ...cell, textAlign: 'left', fontWeight: 400 }}>รายการ</th>
+                <th style={{ ...cell, textAlign: 'right', fontWeight: 400 }}>จำนวนเงิน (บาท)</th>
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                <td style={{ padding: '1mm 2mm' }}>เงินเดือนประจำ</td>
-                <td style={{ padding: '1mm 2mm', textAlign: 'right' }}>{fmtMoney(salary)}</td>
+              <tr style={rowLine}>
+                <td style={cell}>เงินเดือนประจำ</td>
+                <td style={{ ...cell, textAlign: 'right' }}>{fmtMoney(salary)}</td>
               </tr>
               {doc.positionAllowance ? (
-                <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '1mm 2mm' }}>ค่าตำแหน่ง</td>
-                  <td style={{ padding: '1mm 2mm', textAlign: 'right' }}>{fmtMoney(doc.positionAllowance)}</td>
+                <tr style={rowLine}>
+                  <td style={cell}>ค่าตำแหน่ง</td>
+                  <td style={{ ...cell, textAlign: 'right' }}>{fmtMoney(doc.positionAllowance)}</td>
                 </tr>
               ) : null}
               <tr style={{ background: '#f3f4f6', fontWeight: 700 }}>
-                <td style={{ padding: '1mm 2mm' }}>รวมรายได้ต่อเดือน</td>
-                <td style={{ padding: '1mm 2mm', textAlign: 'right' }}>{fmtMoney(doc.totalIncome ?? salary)}</td>
+                <td style={cell}>รวมรายได้ต่อเดือน</td>
+                <td style={{ ...cell, textAlign: 'right' }}>{fmtMoney(doc.totalIncome ?? salary)}</td>
               </tr>
             </tbody>
           </table>
-          <div style={{ textAlign: 'center', fontWeight: 700, margin: '1.5mm 0 1mm' }}>
-            ( {doc.totalIncomeText || doc.salaryText} )
-          </div>
-          <div style={{ textAlign: 'center', fontSize: '9.5pt', color: '#374151', marginBottom: '3mm' }}>
-            ไม่รวมค่าล่วงเวลา ค่าคอมมิชชัน และสวัสดิการอื่น
+          <div style={{ textAlign: 'center', margin: '1mm 0 3mm', lineHeight: 1.5 }}>
+            <span style={b}>( {doc.totalIncomeText || doc.salaryText} )</span>
+            <span style={{ fontSize: '9.5pt', color: '#374151' }}> ไม่รวมค่าล่วงเวลา ค่าคอมมิชชัน และสวัสดิการอื่น</span>
           </div>
         </>
       )}
@@ -218,7 +263,7 @@ const CertificatePaper: React.FC<{
           </div>
         )}
         <div>ขอแสดงความนับถือ</div>
-        <div style={{ marginTop: '12mm' }}>
+        <div style={{ marginTop: '9mm' }}>
           <SignatureLine
             src={signatureFailed ? null : doc.signatureBase64 || null}
             onError={() => setSignatureFailed(true)}
@@ -230,14 +275,16 @@ const CertificatePaper: React.FC<{
         <div style={b}>{doc.signatoryPosition}</div>
         <div style={{ fontSize: '10pt', color: '#374151' }}>ผู้มีอำนาจลงนาม</div>
       </div>
+      </div>
 
       {/* ===== หมายเหตุท้ายหนังสือ: อายุหนังสือ + ติดต่อตรวจสอบ ===== */}
       <div
+        ref={noteRef}
         style={{
           position: 'absolute',
           left: '25mm',
           right: '23mm',
-          bottom: '20mm',
+          bottom: '16mm',
           fontSize: '10pt',
           lineHeight: 1.5,
           borderTop: '1px dotted #6b7280',
@@ -273,6 +320,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
   const { companyLogo, companyAddress } = useCompanyDocumentInfo(isOpen);
   const [doc, setDoc] = useState<CertificateDocument | null>(null);
   const [loading, setLoading] = useState(false);
+  const [paperZoom, setPaperZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
   const previewTypeId = previewParams?.certificateTypeId;
@@ -307,7 +355,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
   if (!isOpen) return null;
 
   const paper = doc ? (
-    <CertificatePaper doc={doc} companyLogo={companyLogo} companyAddress={companyAddress} />
+    <CertificatePaper doc={doc} companyLogo={companyLogo} companyAddress={companyAddress} onZoom={setPaperZoom} />
   ) : null;
 
   return (
@@ -366,7 +414,12 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
       </ModalShell>
 
       {/* สำเนาสำหรับพิมพ์ใต้ <body> โดยตรง เพื่อให้พิมพ์ได้เต็มหน้า A4 */}
-      {paper && typeof document !== 'undefined' && createPortal(<div className="cert-print-root">{paper}</div>, document.body)}
+      {paper && typeof document !== 'undefined' && createPortal(
+          <div className="cert-print-root">
+            <CertificatePaper doc={doc!} companyLogo={companyLogo} companyAddress={companyAddress} fixedZoom={paperZoom} />
+          </div>,
+          document.body
+        )}
 
       <style jsx global>{`
         .cert-print-root {

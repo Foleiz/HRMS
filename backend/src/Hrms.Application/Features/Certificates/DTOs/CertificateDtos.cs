@@ -84,6 +84,10 @@ public class CertificateDocumentDto
     public string? CitizenIdMasked { get; set; }
     public string PositionName { get; set; } = string.Empty;
     public string DepartmentName { get; set; } = string.Empty;
+    /// <summary>ประเภทการจ้างงาน (จากสัญญาจ้างที่มีผลล่าสุด หรือข้อมูลตำแหน่งงาน)</summary>
+    public string EmploymentTypeName { get; set; } = "-";
+    /// <summary>สถานะการเป็นพนักงาน เช่น "ปฏิบัติงานอยู่ในปัจจุบัน", "ทดลองงาน"</summary>
+    public string EmploymentStatusText { get; set; } = "-";
     public DateTime StartDate { get; set; }
     /// <summary>วันที่เริ่มงานตามภาษาเอกสาร เช่น "16 มกราคม พ.ศ. 2566"</summary>
     public string StartDateText { get; set; } = string.Empty;

@@ -532,6 +532,26 @@ public class CertificateService : ICertificateService
             ?? assignment?.EffectiveFrom
             ?? DateOnly.FromDateTime(employee.CreatedAt.AddHours(7));
 
+        // ประเภทการจ้างงาน: สัญญาจ้างที่มีผลล่าสุด (เหมือนการคิดสิทธิ์การลา) ถ้าไม่มีใช้ค่าในข้อมูลตำแหน่งงาน
+        var currentContract = await _context.EmploymentContracts.AsNoTracking()
+            .Include(c => c.EmployeeType)
+            .Where(c => c.EmployeeId == employeeId && c.Status == "ACTIVE" && c.StartDate <= todayTh)
+            .OrderByDescending(c => c.StartDate)
+            .FirstOrDefaultAsync(cancellationToken);
+        var employmentTypeName = currentContract?.EmployeeType?.TypeName;
+        if (string.IsNullOrWhiteSpace(employmentTypeName))
+        {
+            var typeId = currentContract?.EmployeeTypeId ?? assignment?.EmployeeTypeId;
+            if (typeId.HasValue)
+            {
+                employmentTypeName = await _context.EmployeeTypes.AsNoTracking()
+                    .Where(t => t.Id == typeId.Value)
+                    .Select(t => t.TypeName)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+        }
+        var employmentStatusText = EmploymentStatusText(employee.EmploymentStatus, currentContract, todayTh);
+
         var salaryRecord = await _context.EmployeeSalaries.AsNoTracking()
             .Where(s => s.EmployeeId == employeeId && s.EffectiveFrom <= todayTh
                         && (s.EffectiveTo == null || s.EffectiveTo >= todayTh))
@@ -685,6 +705,8 @@ public class CertificateService : ICertificateService
             CitizenIdMasked = employee.CitizenIdMasked,
             PositionName = position,
             DepartmentName = department,
+            EmploymentTypeName = string.IsNullOrWhiteSpace(employmentTypeName) ? "-" : employmentTypeName.Trim(),
+            EmploymentStatusText = employmentStatusText,
             StartDate = startDate.ToDateTime(TimeOnly.MinValue),
             StartDateText = language == "TH" ? ThaiDate(startDate) : EnglishDate(startDate),
             IssueDateText = language == "TH" ? ThaiDate(DateOnly.FromDateTime(issueDate)) : EnglishDate(DateOnly.FromDateTime(issueDate)),
@@ -712,6 +734,19 @@ public class CertificateService : ICertificateService
         "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
         "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
     };
+
+    /// <summary>สถานะการเป็นพนักงานสำหรับหนังสือรับรอง</summary>
+    private static string EmploymentStatusText(string? employmentStatus, EmploymentContract? contract, DateOnly today)
+    {
+        var status = (employmentStatus ?? string.Empty).Trim().ToUpperInvariant();
+        if (status == "RESIGNED" || status == "TERMINATED") return "พ้นสภาพการเป็นพนักงาน";
+        if (status != "ACTIVE") return "ไม่ได้ปฏิบัติงาน";
+        var onProbation = contract != null
+                          && contract.ProbationPassedDate == null
+                          && contract.ProbationEndDate.HasValue
+                          && contract.ProbationEndDate.Value >= today;
+        return onProbation ? "อยู่ระหว่างทดลองงาน" : "ปฏิบัติงานอยู่ในปัจจุบัน";
+    }
 
     private static string ThaiDate(DateOnly d) => $"{d.Day} {ThaiMonths[d.Month - 1]} พ.ศ. {d.Year + 543}";
 
