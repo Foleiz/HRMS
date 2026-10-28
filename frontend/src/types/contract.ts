@@ -35,6 +35,7 @@ export interface ContractSummaryStats {
   probationCount: number;
   permanentCount: number;
   probationExpiring7DaysCount: number;
+  contractExpiring30DaysCount?: number;
   totalActiveCount: number;
 }
 

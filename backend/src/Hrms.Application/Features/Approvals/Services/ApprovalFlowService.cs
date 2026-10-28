@@ -401,10 +401,7 @@ public class ApprovalFlowService : IApprovalFlowService
                             break;
                         }
                     }
-                    if (currentAssignment?.ManagerEmployeeId.HasValue == true)
-                    {
-                        approver = await GetSimulatedApproverAsync(currentAssignment.ManagerEmployeeId.Value, cancellationToken);
-                    }
+                    // ระบบใช้หัวหน้าทีมอย่างเดียว (ไม่มีทีม → ใช้ทางสำรองที่ตั้งไว้ในขั้นตอนอนุมัติจริง)
                     break;
 
                 case "DEPARTMENT_HEAD":

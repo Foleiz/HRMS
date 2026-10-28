@@ -5,6 +5,7 @@ import { EmployeeBenefitUsageSummary, BenefitClaim, BenefitUsageItem } from '@/t
 import { benefitService } from '@/services/benefitService';
 import { RecordBenefitClaimModal } from './RecordBenefitClaimModal';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   Gift,
   ShieldCheck,
@@ -93,6 +94,14 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
 }) => {
   const isSelf = mode === 'self';
   const toast = useToast();
+  const { hasPermission, hasRole } = useAuth();
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canCreateClaim = isSelf
+    ? isSuper || hasPermission('ESS_BENEFIT_CREATE')
+    : isSuper || hasPermission('BENEFIT_BALANCE_CREATE') || hasPermission('BENEFIT_BALANCE_EDIT');
+  const canDeleteClaim = isSelf
+    ? isSuper || hasPermission('ESS_BENEFIT_EDIT') || hasPermission('ESS_BENEFIT_CREATE')
+    : isSuper || hasPermission('BENEFIT_BALANCE_EDIT');
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [loading, setLoading] = useState(true);
@@ -222,17 +231,19 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
           </div>
 
           {/* Record Claim Button */}
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedBenefitForClaim(null);
-              setIsModalOpen(true);
-            }}
-            className="px-3.5 py-1.5 rounded-xl bg-primary dark:bg-blue-600 hover:bg-primary-hover dark:hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>{isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์'}</span>
-          </button>
+          {canCreateClaim && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBenefitForClaim(null);
+                setIsModalOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-primary dark:bg-blue-600 hover:bg-primary-hover dark:hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์'}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -422,28 +433,30 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {b.lastClaimDate ? `ใช้ล่าสุดเมื่อ: ${formatThaiShortDate(b.lastClaimDate)}` : 'ยังไม่เคยใช้สิทธิ์ในปีนี้'}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedBenefitForClaim(b.benefitItemId);
-                          setIsModalOpen(true);
-                        }}
-                        disabled={b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)}
-                        className={`text-[11px] font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
-                          b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
-                            ? 'text-slate-400 bg-slate-100 dark:bg-slate-800 cursor-not-allowed'
-                            : 'text-primary dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <Plus className="w-3 h-3" />
-                        <span>
-                          {b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
-                            ? 'โควตาเต็ม'
-                            : isSelf
-                            ? 'ยื่นเบิก'
-                            : 'บันทึกเบิก'}
-                        </span>
-                      </button>
+                      {canCreateClaim && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedBenefitForClaim(b.benefitItemId);
+                            setIsModalOpen(true);
+                          }}
+                          disabled={b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)}
+                          className={`text-[11px] font-medium px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer ${
+                            b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
+                              ? 'text-slate-400 bg-slate-100 dark:bg-slate-800 cursor-not-allowed'
+                              : 'text-primary dark:text-cyan-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>
+                            {b.isMaxedOut || (hasQuota && b.remainingAmount <= 0)
+                              ? 'โควตาเต็ม'
+                              : isSelf
+                              ? 'ยื่นเบิก'
+                              : 'บันทึกเบิก'}
+                          </span>
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -561,7 +574,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                       </td>
                       <td className="py-3 px-4 text-center">
                         {isSelf ? (
-                          c.status === 'PENDING' ? (
+                          c.status === 'PENDING' && canDeleteClaim ? (
                             <button
                               type="button"
                               onClick={() => handleCancelRequest(c.id)}
@@ -574,20 +587,22 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                           ) : (
                             <span className="text-slate-300 dark:text-slate-600">-</span>
                           )
+                        ) : canDeleteClaim ? (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteClaim(c.id)}
+                            disabled={deletingClaimId === c.id}
+                            className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                            title="ยกเลิก/ลบรายการนี้"
+                          >
+                            {deletingClaimId === c.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteClaim(c.id)}
-                          disabled={deletingClaimId === c.id}
-                          className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                          title="ยกเลิก/ลบรายการนี้"
-                        >
-                          {deletingClaimId === c.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
+                          <span className="text-slate-300 dark:text-slate-600">-</span>
                         )}
                       </td>
                     </tr>

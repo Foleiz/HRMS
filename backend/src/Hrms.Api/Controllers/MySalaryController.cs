@@ -1,3 +1,4 @@
+using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Payroll.DTOs;
 using Hrms.Application.Features.Payroll.Services;
@@ -9,6 +10,7 @@ namespace Hrms.Api.Controllers;
 [ApiController]
 [Route("api/my-salary")]
 [Authorize]
+[RequirePermission("ESS_SALARY_VIEW,PAYROLL_SLIP_VIEW,PAYROLL_VIEW")]
 public class MySalaryController : ControllerBase
 {
     private readonly IMySalaryService _mySalaryService;

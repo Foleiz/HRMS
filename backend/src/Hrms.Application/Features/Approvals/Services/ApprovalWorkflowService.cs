@@ -364,9 +364,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                         return new HashSet<long> { teamLeadId.Value };
                     }
                 }
-                return requesterAssignment?.ManagerEmployeeId is { } managerId
-                    ? new HashSet<long> { managerId }
-                    : new HashSet<long>();
+                // ระบบใช้หัวหน้าทีมอย่างเดียว — ไม่มีทีม/ทีมไม่มีหัวหน้า → ว่าง แล้วใช้ทางสำรองที่ตั้งไว้ในขั้น (FallbackAction: HR ค่าเริ่มต้น / ESCALATE / SKIP / WAIT)
+                return new HashSet<long>();
             }
 
             case "DEPARTMENT_HEAD":
@@ -544,22 +543,9 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             return false;
         }
 
-        // 4. ป้องกันการอนุมัติติดกันโดยคนเดียวกัน (Consecutive Approval Prevention)
-        // หากคนเดิมเพิ่งอนุมัติขั้นตอนก่อนหน้า และในขั้นตอนนี้มีผู้อนุมัติคนอื่นอยู่ด้วย ให้ผู้อนุมัติท่านอื่นเป็นผู้พิจารณา
-        var prevAction = await _context.ApprovalActions
-            .AsNoTracking()
-            .Where(a => a.ApprovalInstanceId == instanceId && a.ActionDecision == "APPROVE")
-            .OrderByDescending(a => a.ActionAt)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (prevAction != null && prevAction.ApproverEmployeeId == employeeId)
-        {
-            var approvers = await ResolveApproverEmployeeIdsAsync(step, isLast, requesterEmployeeId, requesterAssignment, cancellationToken);
-            if (approvers.Count > 1)
-            {
-                return false;
-            }
-        }
+        // 4. คนเดียวกันอนุมัติขั้นติดกันได้ ถ้ามีสิทธิ์ในขั้นนั้นจริง
+        // (เดิมบล็อกไว้เมื่อขั้นนี้มีผู้อนุมัติหลายคน — ทำให้ HR ที่อนุมัติขั้น "หัวหน้า" แทน (ทางสำรอง) กดขั้น "ฝ่ายบุคคล" ต่อไม่ได้
+        //  ต้องรอ HR อีกคน ทั้งที่เป็นขั้นของตัวเอง) — ผู้ยื่นยังอนุมัติของตัวเองไม่ได้ตามเดิม (ResolveCleanAsync ตัดออก)
 
         return true;
     }

@@ -7,6 +7,8 @@ export interface Company {
   email?: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
   logoData?: string | null;
+  /** ตราประทับบริษัท (data URL) — ฟอร์มส่ง '' เพื่อนำออก */
+  sealData?: string | null;
   ceoEmployeeId?: number | null;
   ceoEmployeeCode?: string | null;
   ceoEmployeeName?: string | null;
@@ -21,6 +23,8 @@ export interface UpdateCompanyRequest {
   email?: string;
   status: string;
   logoData?: string | null;
+  /** ตราประทับบริษัท (data URL) — ฟอร์มส่ง '' เพื่อนำออก */
+  sealData?: string | null;
   ceoEmployeeId?: number | null;
 }
 

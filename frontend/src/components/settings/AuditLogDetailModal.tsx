@@ -40,6 +40,13 @@ interface DiffField {
 
 const FIELD_TRANSLATIONS: Record<string, string> = {
   id: 'รหัสข้อมูล',
+  bulk: 'บันทึกแบบสรุป',
+  total: 'จำนวนทั้งหมด',
+  inserted: 'เพิ่ม',
+  updated: 'แก้ไข',
+  deleted: 'ลบ',
+  changedcolumns: 'คอลัมน์ที่เปลี่ยน',
+  sampleids: 'ตัวอย่างรหัสข้อมูล',
   employee_id: 'ID พนักงาน',
   employeeid: 'ID พนักงาน',
   username: 'ชื่อผู้ใช้งาน',
@@ -553,7 +560,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
               <span className="text-slate-500">รหัสข้อมูล</span>
               <span className="font-mono text-slate-800">#{log.entityId || '-'}</span>
 
-              {log.fieldName && (
+              {log.fieldName && !log.fieldName.startsWith('BULK|') && (
                 <>
                   <span className="text-slate-500">ฟิลด์</span>
                   <span className="font-mono text-slate-800">{log.fieldName}</span>

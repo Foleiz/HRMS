@@ -97,6 +97,8 @@ function DailyAttendanceContent() {
   const canViewImport = hasPermission('TIME_IMPORT_VIEW') || isSuper;
   const canViewAnyTime = canViewDaily || canViewImport || isSuper;
   const canEditTime = hasPermission('TIME_DAILY_EDIT') || isSuper;
+  const canCreateImport = hasPermission('TIME_IMPORT_CREATE') || hasPermission('TIME_IMPORT_EDIT') || isSuper;
+  const canEditImport = hasPermission('TIME_IMPORT_EDIT') || isSuper;
 
   // Active Tab: 'daily' | 'import' | 'adjustments' | 'monthly'
   const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments' | 'monthly') || (canViewDaily ? 'daily' : 'import');
@@ -1680,6 +1682,7 @@ function DailyAttendanceContent() {
       {activeTab === 'import' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Upload Card */}
+          {canCreateImport && (
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 dark:border-slate-700/60">
               <div>
@@ -1807,6 +1810,7 @@ function DailyAttendanceContent() {
               )}
             </div>
           </div>
+          )}
 
           {/* Batch History Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
@@ -1993,14 +1997,16 @@ function DailyAttendanceContent() {
                               <Eye className="w-3.5 h-3.5 text-blue-600" />
                               ตรวจเวลา
                             </button>
-                            <button
-                              onClick={() => handleOpenRevertModal(batch)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer dark:bg-rose-900/20 dark:text-rose-400"
-                              title="ยกเลิกการนำเข้า: ล้างเวลาจากไฟล์นี้และคืนสถานะวันทำงาน"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                              ยกเลิกชุดข้อมูล
-                            </button>
+                            {canEditImport && (
+                              <button
+                                onClick={() => handleOpenRevertModal(batch)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer dark:bg-rose-900/20 dark:text-rose-400"
+                                title="ยกเลิกการนำเข้า: ล้างเวลาจากไฟล์นี้และคืนสถานะวันทำงาน"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                ยกเลิกชุดข้อมูล
+                              </button>
+                            )}
                             </>
                             )}
                           </div>

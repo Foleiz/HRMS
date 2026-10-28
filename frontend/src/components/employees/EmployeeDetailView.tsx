@@ -228,11 +228,11 @@ export default function EmployeeDetailView({
     hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('EMP_DOC_CREATE') || hasPermission('EMP_DOC_EDIT');
 
   const canEditEmployee =
-    isProfilePage ||
     hasRole('ADMIN') ||
     hasRole('SYSTEM_SUPER') ||
     hasPermission('EMP_PROFILE_EDIT') ||
-    hasPermission('EMP_EDIT');
+    hasPermission('EMP_EDIT') ||
+    (isProfilePage && hasPermission('ESS_PROFILE_EDIT'));
 
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
@@ -255,6 +255,7 @@ export default function EmployeeDetailView({
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
 
   const handleAvatarClick = () => {
+    if (!canEditEmployee) return;
     if (!isUploadingAvatar) {
       fileInputRef.current?.click();
     }
@@ -458,10 +459,14 @@ export default function EmployeeDetailView({
             <div className="relative mb-3 group/avatar">
               <button
                 type="button"
-                onClick={handleAvatarClick}
-                disabled={isUploadingAvatar}
-                className="relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 dark:ring-slate-700 shadow-md bg-primary flex items-center justify-center cursor-pointer transition-all duration-300 group-hover/avatar:ring-primary/40 group-hover/avatar:shadow-xl focus:outline-none block"
-                title="คลิกเพื่อแก้ไขรูปโปรไฟล์"
+                onClick={canEditEmployee ? handleAvatarClick : undefined}
+                disabled={isUploadingAvatar || !canEditEmployee}
+                className={`relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 dark:ring-slate-700 shadow-md bg-primary flex items-center justify-center transition-all duration-300 focus:outline-none block ${
+                  canEditEmployee
+                    ? 'cursor-pointer group-hover/avatar:ring-primary/40 group-hover/avatar:shadow-xl'
+                    : 'cursor-default'
+                }`}
+                title={canEditEmployee ? 'คลิกเพื่อแก้ไขรูปโปรไฟล์' : undefined}
               >
                 {isUploadingAvatar ? (
                   <div className="w-full h-full flex flex-col items-center justify-center bg-primary/80 text-white">
@@ -474,7 +479,9 @@ export default function EmployeeDetailView({
                       <img
                         src={avatarUrl}
                         alt={employee.fullName}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover/avatar:scale-105"
+                        className={`w-full h-full object-cover transition-transform duration-300 ${
+                          canEditEmployee ? 'group-hover/avatar:scale-105' : ''
+                        }`}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
@@ -485,25 +492,29 @@ export default function EmployeeDetailView({
                     </span>
 
                     {/* Overlay แสดงเมื่อโฮเวอร์ */}
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] opacity-0 group-hover/avatar:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
-                      <Camera className="w-6 h-6 mb-1 text-white drop-shadow animate-in zoom-in-75 duration-150" />
-                      <span className="text-[11px] font-medium text-white tracking-tight drop-shadow">
-                        แก้ไขรูปภาพ
-                      </span>
-                    </div>
+                    {canEditEmployee && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] opacity-0 group-hover/avatar:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
+                        <Camera className="w-6 h-6 mb-1 text-white drop-shadow animate-in zoom-in-75 duration-150" />
+                        <span className="text-[11px] font-medium text-white tracking-tight drop-shadow">
+                          แก้ไขรูปภาพ
+                        </span>
+                      </div>
+                    )}
                   </>
                 )}
               </button>
 
               {/* ปุ่มกล้องเล็กที่มุมล่างขวา */}
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
-                title="แก้ไขรูปโปรไฟล์"
-              >
-                <Camera className="w-3.5 h-3.5" />
-              </button>
+              {canEditEmployee && (
+                <button
+                  type="button"
+                  onClick={handleAvatarClick}
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
+                  title="แก้ไขรูปโปรไฟล์"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             {/* Badges: Employee Code & Status */}
@@ -626,19 +637,19 @@ export default function EmployeeDetailView({
                 </div>
               </div>
 
-              {/* หัวหน้างานโดยตรง */}
+              {/* หัวหน้าทีม (ผู้อนุมัติขั้นแรก) */}
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
                   ห
                 </div>
                 <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้างาน</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้าทีม</p>
                   {employee.managerEmployeeId ? (
                     <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-primary dark:text-blue-400 hover:underline">
                       {employee.managerName || '-'}
                     </Link>
                   ) : (
-                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">ยังไม่ได้กำหนด</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">ไม่มีทีม — ใช้ผู้อนุมัติสำรองตามสายอนุมัติ</p>
                   )}
                 </div>
               </div>
@@ -1126,37 +1137,39 @@ export default function EmployeeDetailView({
                   </div>
 
                   {/* Upload & Delete buttons */}
-                  <div className="space-y-2 text-center sm:text-left">
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                      <button
-                        type="button"
-                        onClick={() => sigFileInputRef.current?.click()}
-                        disabled={isUploadingSig}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
-                      >
-                        {isUploadingSig ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                        ) : (
-                          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        )}
-                        <span>{signatureUrl ? 'เปลี่ยนลายเซ็น' : 'อัปโหลดลายเซ็น'}</span>
-                      </button>
-
-                      {signatureUrl && (
+                  {canEditEmployee && (
+                    <div className="space-y-2 text-center sm:text-left">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                         <button
                           type="button"
-                          onClick={handleDeleteSignature}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                          onClick={() => sigFileInputRef.current?.click()}
+                          disabled={isUploadingSig}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>ลบ</span>
+                          {isUploadingSig ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                          ) : (
+                            <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                          )}
+                          <span>{signatureUrl ? 'เปลี่ยนลายเซ็น' : 'อัปโหลดลายเซ็น'}</span>
                         </button>
-                      )}
+
+                        {signatureUrl && (
+                          <button
+                            type="button"
+                            onClick={handleDeleteSignature}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>ลบ</span>
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
+                      </p>
                     </div>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                      รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
-                    </p>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>

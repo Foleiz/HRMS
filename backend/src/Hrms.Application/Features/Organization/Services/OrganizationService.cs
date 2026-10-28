@@ -55,6 +55,9 @@ public class OrganizationService : IOrganizationService
             Email = company.Email,
             Status = company.Status,
             LogoData = logoBase64,
+            SealData = company.SealData != null && company.SealData.Length > 0
+                ? $"data:image/png;base64,{Convert.ToBase64String(company.SealData)}"
+                : null,
             CeoEmployeeId = company.CeoEmployeeId,
             CeoEmployeeCode = company.CeoEmployee?.EmployeeCode,
             CeoEmployeeName = company.CeoEmployee != null
@@ -108,6 +111,31 @@ public class OrganizationService : IOrganizationService
             }
         }
 
+        // ตราประทับ: null = คงเดิม (หน้าอื่นที่ไม่ได้ส่งค่ามาจะไม่ลบตรา), "" = นำออก
+        if (request.SealData != null)
+        {
+            if (request.SealData.Length == 0)
+            {
+                company.SealData = null;
+            }
+            else
+            {
+                var rawSeal = request.SealData;
+                var sealComma = rawSeal.IndexOf(',');
+                if (sealComma >= 0 && rawSeal.StartsWith("data:")) rawSeal = rawSeal[(sealComma + 1)..];
+                try
+                {
+                    var bytes = Convert.FromBase64String(rawSeal);
+                    if (bytes.Length > 2 * 1024 * 1024) throw new BusinessRuleException("ไฟล์ตราประทับต้องไม่เกิน 2MB");
+                    company.SealData = bytes;
+                }
+                catch (FormatException)
+                {
+                    throw new BusinessRuleException("ไฟล์ตราประทับไม่ถูกต้อง");
+                }
+            }
+        }
+
         company.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -142,6 +170,9 @@ public class OrganizationService : IOrganizationService
             Email = company.Email,
             Status = company.Status,
             LogoData = logoBase64,
+            SealData = company.SealData != null && company.SealData.Length > 0
+                ? $"data:image/png;base64,{Convert.ToBase64String(company.SealData)}"
+                : null,
             CeoEmployeeId = company.CeoEmployeeId,
             CeoEmployeeCode = ceoCode,
             CeoEmployeeName = ceoName,

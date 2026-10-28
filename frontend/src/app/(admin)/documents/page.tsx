@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { Thermometer, Briefcase, Sun, LogOut, FileText, BadgeCheck, ArrowRight, Clock } from 'lucide-react';
+import { Thermometer, Briefcase, Sun, LogOut, FileText, BadgeCheck, ArrowRight, Clock, Lock } from 'lucide-react';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useAuth } from '@/context/AuthContext';
 
 interface DocumentOption {
   title: string;
@@ -38,8 +39,8 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
     available: true,
   },
   {
-    title: 'ยื่นคำขอเอกสารทั่วไป',
-    description: 'ยื่นคำร้องขอเอกสารหรือเรื่องอื่น ๆ ที่ไม่เข้าประเภทข้างต้น',
+    title: 'ยื่นคำร้องทั่วไป',
+    description: 'คำร้องถึงฝ่ายบุคคล เช่น ขอบัตรพนักงาน ขออุปกรณ์ ขอปฏิบัติงานนอกสถานที่',
     href: '/documents/general',
     icons: [FileText],
     color: 'text-amber-600',
@@ -59,6 +60,8 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
 
 export default function DocumentsHubPage() {
   const { setBreadcrumb } = useBreadcrumb();
+  const { hasPermission, hasRole } = useAuth();
+  const canCreateDoc = hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('ESS_DOCS_CREATE');
 
   useEffect(() => {
     setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' });
@@ -78,10 +81,11 @@ export default function DocumentsHubPage() {
       {/* Option Cards — ตาราง 2 x 2 เต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป (สไตล์การ์ดเดียวกับทั้งระบบ) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {DOCUMENT_OPTIONS.map((opt) => {
+          const isAllowed = opt.available && canCreateDoc;
           const card = (
             <div
               className={`group relative h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm p-6 flex flex-col items-center justify-between gap-5 text-center transition-all ${
-                opt.available ? 'hover:shadow-md hover:border-slate-300 cursor-pointer' : 'opacity-70 cursor-not-allowed'
+                isAllowed ? 'hover:shadow-md hover:border-slate-300 cursor-pointer' : 'opacity-70 cursor-not-allowed'
               }`}
             >
               <div className="flex flex-col items-center gap-1.5">
@@ -102,14 +106,21 @@ export default function DocumentsHubPage() {
                   </div>
                 ))}
               </div>
-              <span className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary group-hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors">
-                ถัดไป
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </span>
+              {canCreateDoc ? (
+                <span className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary group-hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors">
+                  ถัดไป
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                  <Lock className="w-3.5 h-3.5" />
+                  ไม่มีสิทธิ์ยื่นเอกสารใหม่
+                </span>
+              )}
             </div>
           );
 
-          return opt.available ? (
+          return isAllowed ? (
             <Link key={opt.href} href={opt.href} className="block h-full">
               {card}
             </Link>

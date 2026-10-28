@@ -465,6 +465,24 @@ export default function ApprovalHistoryPage() {
 
   // ─── Render ───────────────────────────────────────────────
 
+  /** เปิดเอกสารของรายการ (ใช้ทั้งปุ่ม "ดูเอกสาร" และเลขที่เอกสาร) */
+  const openDocument = (item: UnifiedHistoryItem) => {
+    if (item.docType === 'LEAVE') {
+      handleOpenLeavePreview(item.leaveRaw!);
+    } else if (item.docType === 'CERTIFICATE') {
+      setSelectedCertForPreview(item.certRaw!);
+      setIsCertPreviewOpen(true);
+    } else if (item.docType === 'RESIGNATION') {
+      setSelectedResignForPreview(item.resignationRaw!);
+      setIsResignPreviewOpen(true);
+    } else if (item.docType === 'GENERAL') {
+      setSelectedGeneralForPreview(item.generalRaw!);
+      setIsGeneralPreviewOpen(true);
+    } else if (item.docType === 'BENEFIT') {
+      setBenefitPreview(item.benefitRaw!);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร */}
@@ -562,9 +580,8 @@ export default function ApprovalHistoryPage() {
                   <SortableTh label="พนักงาน" field="employeeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">รายละเอียดคำขอ</th>
                   <SortableTh label="สถานะ" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
-                  <SortableTh label="ผู้ดำเนินการ" field="approvedByName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="วันที่ดำเนินการ" field="actionAt" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
-                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">ดำเนินการ</th>
+                  <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">การจัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -574,8 +591,15 @@ export default function ApprovalHistoryPage() {
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
                       {/* 1. เลขที่เอกสาร */}
-                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-primary dark:text-blue-300">
-                        {item.requestNo}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => openDocument(item)}
+                          title="ดูเอกสาร"
+                          className="font-mono font-semibold text-xs text-primary dark:text-blue-300 hover:underline underline-offset-2 cursor-pointer"
+                        >
+                          {item.requestNo}
+                        </button>
                       </td>
 
                       {/* 2. ประเภทเอกสาร */}
@@ -624,12 +648,9 @@ export default function ApprovalHistoryPage() {
 
                       {/* 4. รายละเอียดคำขอ */}
                       <td className="px-4 py-3.5 text-xs">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:text-slate-300">
-                            {item.subType}
-                          </span>
-                          <span className="text-slate-600 dark:text-slate-400 truncate max-w-xs">{item.details}</span>
-                        </div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                          {item.subType}
+                        </span>
                       </td>
 
                       {/* 5. สถานะ */}
@@ -638,11 +659,6 @@ export default function ApprovalHistoryPage() {
                           {statusConf.icon}
                           {statusConf.label}
                         </span>
-                      </td>
-
-                      {/* 6. ผู้ดำเนินการ */}
-                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-600 dark:text-slate-400">
-                        {item.approvedByName}
                       </td>
 
                       {/* 7. วันที่ดำเนินการ */}
@@ -654,22 +670,7 @@ export default function ApprovalHistoryPage() {
                       <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <button
                           type="button"
-                          onClick={() => {
-                            if (item.docType === 'LEAVE') {
-                              handleOpenLeavePreview(item.leaveRaw!);
-                            } else if (item.docType === 'CERTIFICATE') {
-                              setSelectedCertForPreview(item.certRaw!);
-                              setIsCertPreviewOpen(true);
-                            } else if (item.docType === 'RESIGNATION') {
-                              setSelectedResignForPreview(item.resignationRaw!);
-                              setIsResignPreviewOpen(true);
-                            } else if (item.docType === 'GENERAL') {
-                              setSelectedGeneralForPreview(item.generalRaw!);
-                              setIsGeneralPreviewOpen(true);
-                            } else if (item.docType === 'BENEFIT') {
-                              setBenefitPreview(item.benefitRaw!);
-                            }
-                          }}
+                          onClick={() => openDocument(item)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-all cursor-pointer"
                           title="ดูเอกสาร"
                         >
@@ -749,6 +750,10 @@ export default function ApprovalHistoryPage() {
           setSelectedGeneralForPreview(null);
         }}
         data={selectedGeneralForPreview ? {
+          id: selectedGeneralForPreview.id,
+          requestNo: selectedGeneralForPreview.requestNo,
+          employeeId: selectedGeneralForPreview.employeeId,
+          canApproveCurrentStep: !!(selectedGeneralForPreview.canApprove || selectedGeneralForPreview.isMyTurnToApprove),
           employeeName: selectedGeneralForPreview.employeeName,
           employeeCode: selectedGeneralForPreview.employeeCode,
           positionTitle: selectedGeneralForPreview.positionName,

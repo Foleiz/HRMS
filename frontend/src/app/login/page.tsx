@@ -5,24 +5,33 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { LogIn, Lock, User, Eye, EyeOff, Loader2, Users, ChevronDown, AlertCircle } from 'lucide-react';
 
+const DEFAULT_DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = [
+  { label: 'ผู้ดูแลระบบสูงสุด', username: 'admin', password: 'Admin#2026!Sec' },
+  { label: 'ผู้บริหารสูงสุด (CEO)', username: 'job', password: 'Ceo@Executive2026!' },
+  { label: 'ฝ่ายทรัพยากรบุคคล', username: 'hr', password: 'Hr@2026!Pass' },
+  { label: 'การเงิน / เงินเดือน', username: 'test.finance', password: 'Test#Fin2026' },
+  { label: 'หัวหน้าทีม (ผู้อนุมัติ)', username: 'test.lead', password: 'Test#Lead2026' },
+  { label: 'พนักงานทั่วไป', username: 'test.employee', password: 'Test#Emp2026' },
+];
+
 /**
- * บัญชีทดสอบ (แสดงเฉพาะตอนพัฒนา) — อ่านจาก NEXT_PUBLIC_DEMO_ACCOUNTS ใน frontend/.env.local (ไม่อยู่ใน git)
- * รูปแบบ JSON: [{"label":"พนักงานทั่วไป","username":"...","password":"..."}]
- * ห้ามใส่รหัสผ่านไว้ในซอร์สโค้ด
+ * บัญชีทดสอบ (Quick Login) — อ่านจาก NEXT_PUBLIC_DEMO_ACCOUNTS หรือใช้ค่าเริ่มต้นสำหรับการทดสอบ
  */
 const DEMO_ACCOUNTS: { label: string; username: string; password: string }[] = (() => {
   try {
     const raw = process.env.NEXT_PUBLIC_DEMO_ACCOUNTS;
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed)
-      ? parsed.filter((a) => a && typeof a.username === 'string' && typeof a.password === 'string')
-      : [];
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const valid = parsed.filter((a) => a && typeof a.username === 'string' && typeof a.password === 'string');
+      if (valid.length > 0) return valid;
+    }
   } catch {
-    return [];
+    // fallback below
   }
+  return DEFAULT_DEMO_ACCOUNTS;
 })();
 
-const SHOW_DEMO_ACCOUNTS = process.env.NODE_ENV !== 'production' && DEMO_ACCOUNTS.length > 0;
+const SHOW_DEMO_ACCOUNTS = true;
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -32,7 +41,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,13 +204,13 @@ export default function LoginPage() {
                       key={acc.username}
                       type="button"
                       onClick={() => handleQuickLogin(acc.username, acc.password)}
-                      title={acc.username}
-                      className={`h-14 px-2 rounded-xl border bg-[#FFFFFF] text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
-                        username === acc.username ? 'border-[#0B2046]/40 ring-2 ring-[#0B2046]/10' : 'border-[#E2E8F0]'
+                      title={`คลิกเพื่อเข้าสู่ระบบเป็น ${acc.label} (${acc.username})`}
+                      className={`h-14 px-2.5 py-1.5 rounded-xl border bg-[#FFFFFF] text-left shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md cursor-pointer active:scale-95 ${
+                        username === acc.username ? 'border-[#0B2046] ring-2 ring-[#0B2046]/15 bg-blue-50/50' : 'border-[#E2E8F0] hover:border-[#0B2046]/30'
                       }`}
                     >
                       <div className="text-[12px] font-semibold text-[#0F172A] truncate">{acc.label}</div>
-                      <div className="text-[10px] font-mono text-[#94A3B8] truncate">{acc.username}</div>
+                      <div className="text-[10px] font-mono text-[#64748B] truncate mt-0.5">{acc.username}</div>
                     </button>
                   ))}
                 </div>

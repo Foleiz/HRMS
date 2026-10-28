@@ -21,14 +21,22 @@ import { useAuth } from '@/context/AuthContext';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { leaveService } from '@/services/leaveService';
+import { employeeService } from '@/services/employeeService';
 import { resignationService } from '@/services/resignationService';
 import { RESIGNATION_REASON_CATEGORIES } from '@/types/resignation';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
 import { toast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
-import { CustomSelect } from '@/components/ui/CustomSelect';
+import { RichSelect } from '@/components/ui/RichSelect';
+import { RequesterSummary } from '@/components/documents/RequesterSummary';
+import { FormActionBar } from '@/components/documents/FormActionBar';
 
-const REASON_MAX_LENGTH = 160;
+const REASON_MAX_LENGTH = 190;
+const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
+const INPUT =
+  'w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]';
+const TEXTAREA =
+  'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -55,19 +63,24 @@ export default function ResignationPage() {
 
   // Employee Profile
   const [profile, setProfile] = useState({
-    fullName: user?.fullName || 'วรเมธ รัตนเสถียร',
-    employeeCode: user?.employeeCode || 'EMP001',
-    positionTitle: 'วิศวกรซอฟต์แวร์อาวุโส',
-    departmentName: 'แผนกพัฒนาซอฟต์แวร์',
+    fullName: user?.fullName || '',
+    employeeCode: user?.employeeCode || '',
+    positionTitle: '',
+    departmentName: '',
   });
 
   // วันที่ยื่นคำขอ (วันนี้)
-  const [submissionDate, setSubmissionDate] = useState(() => toInputDate(new Date()));
+  // วันที่ในหนังสือ = วันที่กดยื่นจริง (ระยะแจ้งล่วงหน้านับจากวันนี้) — ไม่ให้เลือกเอง
+  const submissionDate = toInputDate(new Date());
 
   // ช่อง "เรียน" ตาม Figma
   const [addressedTo, setAddressedTo] = useState('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
 
   // คำนำหน้า (นาย / นาง / นางสาว) ตาม Figma
+  // คำนำหน้า: ดึงจากข้อมูลพนักงาน — เลือกเองได้เฉพาะเมื่อข้อมูลพนักงานยังไม่มีคำนำหน้า
+  const [prefixFromProfile, setPrefixFromProfile] = useState(false);
+  // ยังไม่รู้ว่าข้อมูลพนักงานมีคำนำหน้าไหม → ยังไม่แสดงตัวเลือก (กันกระพริบโผล่แล้วหาย)
+  const [prefixChecked, setPrefixChecked] = useState(false);
   const [titlePrefix, setTitlePrefix] = useState<'นาย' | 'นาง' | 'นางสาว'>(() => {
     const fn = user?.fullName || '';
     if (fn.startsWith('นางสาว')) return 'นางสาว';
@@ -115,7 +128,6 @@ export default function ResignationPage() {
       if (savedDraft) {
         const parsed = JSON.parse(savedDraft);
         if (parsed.addressedTo) setAddressedTo(parsed.addressedTo);
-        if (parsed.titlePrefix) setTitlePrefix(parsed.titlePrefix);
         if (parsed.reasonCategory) setReasonCategory(parsed.reasonCategory);
         if (parsed.reasonDetail) setReasonDetail(parsed.reasonDetail);
         if (parsed.requestedLastWorkingDate) setRequestedLastWorkingDate(parsed.requestedLastWorkingDate);
@@ -131,21 +143,38 @@ export default function ResignationPage() {
   const loadInitialData = useCallback(async () => {
     try {
       if (user?.employeeId) {
-        const balances = await leaveService.getLeaveBalances({
-          employeeId: user.employeeId,
-          year: new Date().getFullYear(),
-        });
+        const [balRes, empRes] = await Promise.allSettled([
+          leaveService.getLeaveBalances({ employeeId: user.employeeId, year: new Date().getFullYear() }),
+          employeeService.getById(user.employeeId),
+        ]);
+        const balances = balRes.status === 'fulfilled' ? balRes.value : [];
         if (balances && balances.length > 0) {
           setProfile({
-            fullName: user?.fullName || 'วรเมธ รัตนเสถียร',
-            employeeCode: user?.employeeCode || 'EMP001',
-            positionTitle: balances[0]?.positionTitle || 'วิศวกรซอฟต์แวร์อาวุโส',
-            departmentName: balances[0]?.departmentName || 'แผนกพัฒนาซอฟต์แวร์',
+            fullName: user?.fullName || '',
+            employeeCode: user?.employeeCode || '',
+            positionTitle: balances[0]?.positionTitle || '',
+            departmentName: balances[0]?.departmentName || '',
           });
         }
+        const rawPrefix = empRes.status === 'fulfilled' ? (empRes.value?.prefix || '').trim() : '';
+        const mapped =
+          rawPrefix === 'นางสาว' || /^(miss|ms)\.?$/i.test(rawPrefix)
+            ? 'นางสาว'
+            : rawPrefix === 'นาง' || /^mrs\.?$/i.test(rawPrefix)
+              ? 'นาง'
+              : rawPrefix === 'นาย' || /^mr\.?$/i.test(rawPrefix)
+                ? 'นาย'
+                : null;
+        if (mapped) {
+          setTitlePrefix(mapped);
+          setPrefixFromProfile(true);
+        }
+        setPrefixChecked(true);
       }
     } catch (err) {
       console.error('Error loading employee profile:', err);
+    } finally {
+      setPrefixChecked(true);
     }
   }, [user?.employeeId, user?.fullName, user?.employeeCode]);
 
@@ -164,7 +193,6 @@ export default function ResignationPage() {
   // ล้างฟอร์ม
   const handleResetForm = () => {
     setAddressedTo('กรรมการผู้จัดการบริษัท ไซอโคว จำกัด');
-    setTitlePrefix('นาย');
     setReasonCategory(RESIGNATION_REASON_CATEGORIES[0].value);
     setReasonDetail('');
     const d = new Date();
@@ -187,7 +215,6 @@ export default function ResignationPage() {
         'hrms_resignation_draft',
         JSON.stringify({
           addressedTo,
-          titlePrefix,
           reasonCategory,
           reasonDetail: reasonDetail.trim(),
           requestedLastWorkingDate,
@@ -253,23 +280,8 @@ export default function ResignationPage() {
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" คงรูปแบบเดียวกับระบบทั้งหมด */}
       <DocumentsSubNav />
 
-      {/* Page Header (รูปแบบเดียวกับเมนูอื่นๆ) */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight">เอกสารขอลาออก</h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-            กรอกแบบฟอร์มแสดงความประสงค์ขอลาออกจากงานและส่งต่อสายการอนุมัติ
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleResetForm}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 rounded-xl text-sm font-medium transition-all shrink-0 cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4" />
-          ล้างฟอร์ม
-        </button>
-      </div>
+      {/* หัวข้ออยู่ใน breadcrumb แล้ว — เก็บ h1 ไว้ให้โปรแกรมอ่านหน้าจอ */}
+      <h1 className="sr-only">ยื่นคำขอลาออก</h1>
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -279,105 +291,34 @@ export default function ResignationPage() {
         </div>
       )}
 
-      {/* Main Form (ออกแบบตาม Figma แบบ 2 ฝั่ง แต่คุม Theme และความประณีตระดับ Enterprise) */}
-      <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      {/* ฟอร์มกระชับ — รูปแบบเดียวกับหน้ายื่นคำขอลา */}
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        <RequesterSummary
+          fullName={profile.fullName || '-'}
+          positionTitle={profile.positionTitle}
+          departmentName={profile.departmentName}
+          action={
+            <Button variant="secondary" type="button" onClick={handleResetForm} icon={<RotateCcw className="w-4 h-4" />}>
+              ล้างฟอร์ม
+            </Button>
+          }
+        />
+
         {formError && (
-          <div className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
+          <div role="alert" className="p-3.5 bg-rose-50 border border-rose-200 text-rose-700 text-sm rounded-xl flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{formError}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* ─── ฝั่งซ้าย: ข้อมูลทั่วไป + ข้อมูลพนักงาน (ตาม Figma) ─── */}
-          {/* ใช้ flex-col + การ์ดล่าง flex-1 เพื่อให้ขอบล่างเสมอกับการ์ดฝั่งขวา */}
-          <div className="flex flex-col gap-6">
-            {/* การ์ดที่ 1: ข้อมูลทั่วไป */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลทั่วไป</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ <span className="text-rose-500">*</span></label>
-                  <LeaveDateRangePicker
-                    mode="single"
-                    className="w-full"
-                    startDate={submissionDate}
-                    endDate={submissionDate}
-                    onChange={(d) => setSubmissionDate(d)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">เรียน</label>
-                  <input
-                    type="text"
-                    value={addressedTo}
-                    onChange={(e) => setAddressedTo(e.target.value)}
-                    placeholder="เช่น กรรมการผู้จัดการบริษัท ไซอโคว จำกัด"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* การ์ดที่ 2: ข้อมูลพนักงาน */}
-            <div className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 space-y-4">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">ข้อมูลพนักงาน</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-1">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">คำนำหน้า</label>
-                  <CustomSelect
-                    value={titlePrefix}
-                    onChange={(e) => setTitlePrefix(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
-                  >
-                    <option value="นาย">นาย</option>
-                    <option value="นาง">นาง</option>
-                    <option value="นางสาว">นางสาว</option>
-                  </CustomSelect>
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล <span className="text-rose-500">*</span></label>
-                  <input
-                    type="text"
-                    readOnly
-                    value={profile.fullName}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed font-medium"
-                  />
-                </div>
-                <div className="sm:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={profile.positionTitle || '-'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">แผนก / สังกัด</label>
-                    <input
-                      type="text"
-                      readOnly
-                      value={profile.departmentName || '-'}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-gray-100/70 text-sm text-gray-700 dark:text-slate-300 cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ─── ฝั่งขวา: รายละเอียดการขอลาออก (ตาม Figma) ─── */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-6 flex flex-col">
-            <div className="flex-1 flex flex-col space-y-4">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100">รายละเอียดการขอลาออก</h3>
-
-              {/* วันที่มีผลลาออก (วันทำงานวันสุดท้าย) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                  วันที่มีผลลาออก ( วันทำงานวันสุดท้าย ) <span className="text-rose-500">*</span>
-                </label>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+          {/* ซ้าย: วันสุดท้าย + สาเหตุ */}
+          <div className="space-y-6 min-w-0">
+            <div>
+              <span className={LABEL}>
+                วันทำงานวันสุดท้าย <span className="text-rose-600">*</span>
+              </span>
+              <div className="max-w-sm">
                 <LeaveDateRangePicker
                   mode="single"
                   className="w-full"
@@ -386,97 +327,120 @@ export default function ResignationPage() {
                   onChange={(start) => setRequestedLastWorkingDate(start)}
                 />
               </div>
-
-              {/* กล่องสรุปสถานะการแจ้งล่วงหน้า */}
-              <div
-                className={`p-3 rounded-xl border flex items-center justify-between text-xs ${
-                  noticeDays >= 30
-                    ? 'bg-emerald-50/70 border-emerald-200 text-emerald-800'
-                    : 'bg-amber-50/70 border-amber-200 text-amber-800'
-                }`}
+              <p
+                aria-live="polite"
+                className={`mt-2 text-sm font-semibold ${noticeDays >= 30 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}
               >
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 shrink-0" />
-                  <span>บอกกล่าวล่วงหน้า: <strong>{noticeDays} วัน</strong></span>
-                </div>
-                <span className="font-medium">
-                  {noticeDays >= 30 ? '✓ ครบตามเกณฑ์ 30 วัน' : '⚠ น้อยกว่าเกณฑ์ 30 วัน'}
-                </span>
-              </div>
-
-              {/* สาเหตุการลาออก (หมวดหมู่) */}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">
-                  หมวดหมู่สาเหตุการลาออก
-                </label>
-                <CustomSelect
-                  value={reasonCategory}
-                  onChange={(e) => setReasonCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm bg-white dark:bg-slate-800"
-                >
-                  {RESIGNATION_REASON_CATEGORIES.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
-                      {cat.label}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              {/* เหตุผลการลาออก (Textarea พร้อมตัวนับตาม Figma: สถานที่/เบอร์ติดต่อระหว่างลา หรือเหตุผล) */}
-              {/* ขยายเต็มพื้นที่ที่เหลือ เพื่อให้การ์ดสูงเท่าฝั่งซ้าย */}
-              <div className="flex-1 flex flex-col">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
-                    เหตุผลการลาออก <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-2xs text-gray-400 font-mono">
-                    {reasonDetail.length}/{REASON_MAX_LENGTH}
-                  </span>
-                </div>
-                <textarea
-                  value={reasonDetail}
-                  maxLength={REASON_MAX_LENGTH}
-                  onChange={(e) => setReasonDetail(e.target.value)}
-                  rows={4}
-                  placeholder="ระบุเหตุผลการลาออก และสถานที่หรือเบอร์ติดต่อระหว่างลา..."
-                  className="flex-1 min-h-[104px] w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-primary focus:border-transparent text-sm resize-none"
-                  required
-                />
-              </div>
-
+                แจ้งล่วงหน้า {noticeDays} วัน · {noticeDays >= 30 ? 'ครบตามเกณฑ์ 30 วัน' : 'น้อยกว่าเกณฑ์ 30 วัน'}
+              </p>
             </div>
+
+            <div>
+              <label htmlFor="res-category" className={LABEL}>
+                สาเหตุการลาออก
+              </label>
+              <RichSelect<string>
+                id="res-category"
+                value={reasonCategory}
+                onChange={(v) => {
+                  setReasonCategory(v);
+                  // เลือกหมวดแล้วเติมลงช่องเหตุผลให้ (แก้ต่อได้) — ไม่ทับข้อความที่พิมพ์เอง
+                  const label = RESIGNATION_REASON_CATEGORIES.find((c) => c.value === v)?.label ?? '';
+                  const isAuto = !reasonDetail.trim() || RESIGNATION_REASON_CATEGORIES.some((c) => c.label === reasonDetail.trim());
+                  if (!isAuto) return;
+                  if (/อื่น/.test(label)) {
+                    setReasonDetail('');
+                    setTimeout(() => document.getElementById('res-reason')?.focus(), 0);
+                  } else {
+                    setReasonDetail(label.slice(0, REASON_MAX_LENGTH));
+                  }
+                }}
+                options={RESIGNATION_REASON_CATEGORIES.map((c) => ({ value: c.value, label: c.label, description: c.description }))}
+                placeholder="เลือกสาเหตุ"
+                placement="top"
+              />
+            </div>
+
+          </div>
+
+          {/* ขวา: ผู้รับหนังสือ + เหตุผล (วันที่และคำนำหน้าระบบใส่ให้ในหนังสือ) */}
+          <div className="space-y-6 min-w-0">
+            <div>
+              <label htmlFor="res-to" className={LABEL}>
+                เรียน
+              </label>
+              <input
+                id="res-to"
+                type="text"
+                value={addressedTo}
+                onChange={(e) => setAddressedTo(e.target.value)}
+                placeholder="เช่น กรรมการผู้จัดการ"
+                className={INPUT}
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="res-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  เหตุผลการลาออก <span className="text-rose-600">*</span>
+                </label>
+                <span className="text-xs text-slate-400">{reasonDetail.length}/{REASON_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                id="res-reason"
+                value={reasonDetail}
+                maxLength={REASON_MAX_LENGTH}
+                onChange={(e) => setReasonDetail(e.target.value)}
+                rows={4}
+                placeholder="เลือกสาเหตุด้านซ้าย หรือพิมพ์เหตุผลเอง"
+                className={TEXTAREA}
+                required
+              />
+            </div>
+            {prefixChecked && !prefixFromProfile && (
+              <fieldset>
+                <legend className={LABEL}>คำนำหน้าในหนังสือ</legend>
+                <div role="radiogroup" aria-label="คำนำหน้า" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
+                  {(['นาย', 'นาง', 'นางสาว'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      role="radio"
+                      aria-checked={titlePrefix === p}
+                      onClick={() => setTitlePrefix(p)}
+                      className={`h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
+                        titlePrefix === p
+                          ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 font-medium'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
           </div>
         </div>
 
-        {/* ─── แถบปุ่มสั่งการด้านล่าง (ตาม Figma และตามสไตล์เมนูอื่นๆ: ดูตัวอย่าง / บันทึกแบบร่าง / ถัดไป-ยื่นคำขอ) ─── */}
-        <div className="flex items-center justify-center sm:justify-end gap-3 pt-6 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={() => setIsPreviewOpen(true)}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:bg-slate-800 rounded-xl transition-colors cursor-pointer shadow-xs"
-          >
-            <Eye className="w-4 h-4 text-gray-500 dark:text-slate-400" />
-            ดูตัวอย่าง
-          </button>
+        <FormActionBar>
+          <Button variant="secondary" type="button" onClick={() => setIsPreviewOpen(true)} icon={<Eye className="w-3.5 h-3.5" />}>
+            ดูตัวอย่างเอกสาร
+          </Button>
           <Button
             variant="secondary"
             type="button"
             onClick={handleSaveDraft}
             loading={savingDraft}
             disabled={isSubmitting}
-            icon={<Save className="w-4 h-4 text-gray-500 dark:text-slate-400" />}
+            icon={<Save className="w-3.5 h-3.5" />}
           >
             บันทึกแบบร่าง
           </Button>
-          <Button
-            type="submit"
-            loading={isSubmitting}
-            disabled={savingDraft}
-            icon={<Send className="w-4 h-4" />}
-          >
-            ถัดไป (ยื่นคำขอลาออก)
+          <Button type="submit" loading={isSubmitting} disabled={savingDraft}>
+            ยื่นคำขอลาออก
           </Button>
-        </div>
+        </FormActionBar>
       </form>
 
       {/* Success Modal */}

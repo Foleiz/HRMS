@@ -90,6 +90,14 @@ public class CurrentUserService : ICurrentUserService
         if (perms.Any(p => string.Equals(p, permission, StringComparison.OrdinalIgnoreCase)))
             return true;
 
+        // สิทธิ์ *_EDIT จากตาราง Matrix 3 ปุ่ม (ดู/สร้าง/แก้ไข) ครอบคลุม *_APPROVE ของโมดูลเดียวกัน
+        if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
+        {
+            var editEquivalent = $"{permission[..^8]}_EDIT";
+            if (perms.Any(p => string.Equals(p, editEquivalent, StringComparison.OrdinalIgnoreCase)))
+                return true;
+        }
+
         // Alias mapping สำหรับการดูรายชื่อพนักงาน
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase) &&
             (perms.Any(p => string.Equals(p, "EMP_PROFILE_VIEW", StringComparison.OrdinalIgnoreCase)) ||
@@ -117,6 +125,10 @@ public class CurrentUserService : ICurrentUserService
         if (HasRole("ADMIN") || HasRole("SYSTEM_SUPER")) return "ORGANIZATION";
 
         var permsToCheck = new List<string> { permission };
+        if (permission.EndsWith("_APPROVE", StringComparison.OrdinalIgnoreCase))
+        {
+            permsToCheck.Add($"{permission[..^8]}_EDIT");
+        }
         if (string.Equals(permission, "EMP_VIEW", StringComparison.OrdinalIgnoreCase))
         {
             permsToCheck.Add("EMP_PROFILE_VIEW");

@@ -43,7 +43,27 @@ export interface CreateGeneralDocumentPayload {
   fileData?: string; // base64
 }
 
-/** รายการสำรอง — ใช้เมื่อโหลดประเภทเอกสารจาก Master ไม่ได้ */
+/**
+ * ประเภทคำร้องทั่วไปถึงฝ่ายบุคคล — ชื่อต้องไม่ซ้ำกับเมนูอื่น (ประเภทการลา, หนังสือรับรอง, สวัสดิการ,
+ * ประเภทเอกสารในโปรไฟล์, สาเหตุการลาออก) และไม่ใช่สิ่งที่พนักงานทำเองได้ในโปรไฟล์ (แก้ข้อมูล, อัปโหลดเอกสาร)
+ */
+export const GENERAL_REQUEST_TYPES: readonly {
+  value: string;
+  label: string;
+  description: string;
+  /** required = ต้องแนบ, optional = แนบได้, none = ไม่ต้องแนบ (กล่องแนบไฟล์ปิดใช้งาน) */
+  attachment: 'required' | 'optional' | 'none';
+}[] = [
+  { value: 'EMPLOYEE_CARD', label: 'ขอบัตรพนักงาน / บัตรผ่านเข้าอาคาร', description: 'ทำใหม่ หรือทดแทนบัตรหาย/ชำรุด', attachment: 'optional' },
+  { value: 'WORK_EQUIPMENT', label: 'ขออุปกรณ์สำหรับทำงาน', description: 'คอมพิวเตอร์ โทรศัพท์ หรืออุปกรณ์สำนักงาน', attachment: 'none' },
+  { value: 'SHIFT_SWAP', label: 'ขอเปลี่ยนกะ / สลับวันทำงาน', description: 'ขอทำงานต่างจากตารางเดิมชั่วคราว', attachment: 'none' },
+  { value: 'OFFSITE_WORK', label: 'ขอปฏิบัติงานนอกสถานที่', description: 'ทำงานที่บ้าน หรือไปปฏิบัติงานที่อื่น', attachment: 'none' },
+  { value: 'SALARY_ADVANCE', label: 'ขอเบิกเงินเดือนล่วงหน้า', description: 'ขอรับเงินเดือนบางส่วนก่อนวันจ่าย', attachment: 'none' },
+  { value: 'BENEFICIARY_CHANGE', label: 'แจ้งเปลี่ยนผู้รับผลประโยชน์', description: 'ประกันกลุ่ม หรือกองทุนสำรองเลี้ยงชีพ', attachment: 'required' },
+  { value: 'COMPLAINT', label: 'ร้องเรียน / แจ้งปัญหาในการทำงาน', description: 'ส่งถึงฝ่ายบุคคลโดยตรง', attachment: 'optional' },
+];
+
+/** (เลิกใช้ในหน้าคำร้องทั่วไป — เอกสารเหล่านี้อัปโหลดได้ที่โปรไฟล์ › เอกสาร) */
 export const COMMON_DOCUMENT_TYPES = [
   'สำเนาบัตรประจำตัวประชาชน',
   'สำเนาทะเบียนบ้าน',

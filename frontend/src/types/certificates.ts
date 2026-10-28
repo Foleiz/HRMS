@@ -1,7 +1,11 @@
+import type { ApprovalTimeline } from './leave';
+
 export interface CertificateType {
   id: number;
   certificateCode: string;
   certificateName: string;
+  /** อายุหนังสือ (เดือน) — ตั้งค่าที่ข้อมูลหลัก */
+  validityMonths?: number | null;
 }
 
 export interface CreateCertificateRequest {
@@ -52,27 +56,43 @@ export interface CertificateDocument {
   /** วันที่เริ่มงาน/วันที่ออกหนังสือ ตามภาษาเอกสาร */
   startDateText?: string;
   issueDateText?: string;
+  /** อายุหนังสือ (เดือน) และวันที่ใช้ได้ถึง */
+  validityMonths?: number | null;
+  expiryDateText?: string | null;
   companyName: string;
   companyAddress?: string;
   companyPhone?: string;
   companyEmail?: string;
   companyLogoBase64?: string;
+  /** ตราประทับบริษัท */
+  companySealBase64?: string | null;
   employeeId: number;
   employeeCode: string;
   fullName: string;
   citizenIdMasked?: string;
   positionName: string;
   departmentName: string;
+  /** ประเภทการจ้างงาน และสถานะการเป็นพนักงาน */
+  employmentTypeName?: string;
+  employmentStatusText?: string;
   startDate: string;
   serviceDurationText: string;
   baseSalary?: number;
   salaryText?: string;
+  /** ค่าตำแหน่งรายเดือน และรวมรายได้ต่อเดือน (หนังสือรับรองเงินเดือน) */
+  positionAllowance?: number | null;
+  totalIncome?: number | null;
+  totalIncomeText?: string | null;
   purpose: string;
   certificationBodyTh: string;
   certificationBodyEn: string;
   signatoryName: string;
   signatoryPosition: string;
   signatureBase64?: string;
+  /** ขั้นตอนสายอนุมัติของคำขอ (ช่องลงนาม "ผลการพิจารณา") — ไม่มีในตัวอย่างก่อนยื่น */
+  approvalTimeline?: ApprovalTimeline | null;
+  /** วันที่ยื่นคำขอ (ช่องลงชื่อผู้ยื่นเรื่อง) */
+  requestedAt?: string | null;
 }
 
 export interface EmployeeSignature {

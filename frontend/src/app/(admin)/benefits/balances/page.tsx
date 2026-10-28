@@ -36,6 +36,7 @@ import { getAvatarUrl } from '@/lib/api-client';
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
   const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
 
@@ -621,18 +622,20 @@ export default function EmployeeBenefitBalancesPage() {
                           })()}
                         </div>
 
-                        <button
-                          onClick={() => handleDeleteClaim(claim.id)}
-                          disabled={deletingClaimId === claim.id}
-                          className="p-2 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
-                          title="ยกเลิก/ลบรายการเบิกนี้"
-                        >
-                          {deletingClaimId === claim.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => handleDeleteClaim(claim.id)}
+                            disabled={deletingClaimId === claim.id}
+                            className="p-2 text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors"
+                            title="ยกเลิก/ลบรายการเบิกนี้"
+                          >
+                            {deletingClaimId === claim.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-rose-600" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

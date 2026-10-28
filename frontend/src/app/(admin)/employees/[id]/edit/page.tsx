@@ -695,7 +695,7 @@ function EmployeeEditPageContent() {
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
                       <span>ทีมที่สังกัด (Team)</span>
-                      <FieldInfoTooltip text="เมื่อเลือกทีม ระบบจะผูกหัวหน้างานของพนักงานเข้ากับหัวหน้าทีมโดยอัตโนมัติ" />
+                      <FieldInfoTooltip text="หัวหน้าทีมเป็นผู้อนุมัติคำขอของพนักงาน (ลา ฯลฯ) ถ้าไม่มีทีม คำขอจะไปที่ผู้อนุมัติสำรองที่ตั้งไว้ในสายอนุมัติ (ค่าเริ่มต้น: ฝ่ายบุคคล)" />
                     </label>
                     <CustomSelect
                       value={teamId ?? ''}
@@ -723,7 +723,7 @@ function EmployeeEditPageContent() {
                       if (!currentTeam) return null;
                       return (
                         <div className="mt-1.5 p-2 rounded-lg bg-blue-50/70 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 flex items-center justify-between text-xs">
-                          <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม (หัวหน้างานอัตโนมัติ):</span>
+                          <span className="text-slate-600 dark:text-slate-300">หัวหน้าทีม:</span>
                           <span className="font-semibold text-primary dark:text-blue-300">
                             {currentTeam.leadEmployeeName || 'ยังไม่มีหัวหน้าทีม'}
                           </span>

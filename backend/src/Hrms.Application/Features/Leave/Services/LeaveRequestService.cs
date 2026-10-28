@@ -32,7 +32,6 @@ public partial class LeaveRequestService : ILeaveRequestService
             .AsNoTracking()
             .Include(r => r.Employee)
             .Include(r => r.LeaveType)
-            .Include(r => r.Documents)
             .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(r => r.ApprovalInstance).ThenInclude(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(r => r.ApprovalInstance).ThenInclude(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
@@ -61,7 +60,14 @@ public partial class LeaveRequestService : ILeaveRequestService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        if (requests.Count == 0)
+        {
+            return (new List<LeaveRequestDto>(), totalCount);
+        }
+
+        var reqIds = requests.Select(r => r.Id).ToList();
         var empIds = requests.Select(r => r.EmployeeId).Distinct().ToList();
+
         var assignments = await _context.EmployeeAssignments
             .AsNoTracking()
             .Include(a => a.Department)
@@ -69,11 +75,79 @@ public partial class LeaveRequestService : ILeaveRequestService
             .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
             .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
 
-        var items = new List<LeaveRequestDto>();
+        // โหลดเฉพาะ metadata ของเอกสารแนบ (ไม่ดึง byte[] FileData ขนาดใหญ่ผ่านเครือข่าย)
+        var docMetadataList = await _context.LeaveRequestDocuments
+            .AsNoTracking()
+            .Where(d => reqIds.Contains(d.LeaveRequestId))
+            .Select(d => new LeaveRequestDocumentDto
+            {
+                Id = d.Id,
+                LeaveRequestId = d.LeaveRequestId,
+                FileName = d.FileName,
+                UploadedAt = d.UploadedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var docsByRequestId = docMetadataList
+            .GroupBy(d => d.LeaveRequestId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        // Batch โหลด ApprovalInstances สำหรับรายการที่ยังไม่มี ApprovalInstanceId เพื่อป้องกัน N+1 Query ในลูป
+        var missingInstanceReqIds = requests
+            .Where(r => r.ApprovalInstance == null)
+            .Select(r => r.Id)
+            .ToList();
+
+        if (missingInstanceReqIds.Count > 0)
+        {
+            var fallbackInstances = await _context.ApprovalInstances
+                .AsNoTracking()
+                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+                .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                .Where(i => i.DocumentType == "LEAVE_REQUEST" && missingInstanceReqIds.Contains(i.SourceDocumentId))
+                .OrderByDescending(i => i.Id)
+                .ToListAsync(cancellationToken);
+
+            var fallbackBySourceId = fallbackInstances
+                .GroupBy(i => i.SourceDocumentId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            foreach (var r in requests)
+            {
+                if (r.ApprovalInstance == null && fallbackBySourceId.TryGetValue(r.Id, out var fbInst))
+                {
+                    r.ApprovalInstance = fbInst;
+                }
+            }
+        }
+
+        // ตรวจสอบสิทธิ์ Admin ของผู้ดูเพียงครั้งเดียวก่อนเข้าลูป
+        bool? viewerIsAdmin = null;
+        if (currentViewerEmployeeId.HasValue && requests.Any(r => r.Status == "PENDING" && r.EmployeeId != currentViewerEmployeeId.Value))
+        {
+            viewerIsAdmin = await _context.UserAccounts
+                .AsNoTracking()
+                .AnyAsync(u =>
+                    u.EmployeeId == currentViewerEmployeeId.Value &&
+                    u.Status == "ACTIVE" &&
+                    u.UserRoles.Any(ur => ur.Role.RoleCode == "ADMIN" || ur.RoleId == 1),
+                    cancellationToken);
+        }
+
+        var items = new List<LeaveRequestDto>(requests.Count);
         foreach (var r in requests)
         {
             assignments.TryGetValue(r.EmployeeId, out var assign);
-            var item = await MapToDtoAsync(r, assign, currentViewerEmployeeId, cancellationToken);
+            docsByRequestId.TryGetValue(r.Id, out var docs);
+            var item = await MapToDtoAsync(
+                r,
+                assign,
+                currentViewerEmployeeId,
+                cancellationToken,
+                skipFallbackInstanceQuery: true,
+                viewerIsAdmin: viewerIsAdmin,
+                preloadedDocs: docs ?? new List<LeaveRequestDocumentDto>());
             items.Add(item);
         }
 
@@ -96,8 +170,9 @@ public partial class LeaveRequestService : ILeaveRequestService
         var pendingCount = await query
             .CountAsync(r => r.Status == "PENDING", cancellationToken);
 
-        var approvedThisMonth = await query
+        var approvedDaysThisMonth = await query
             .Where(r => r.Status == "APPROVED" && r.StartDatetime >= startOfMonth && r.StartDatetime < endOfMonth)
+            .Select(r => r.LeaveDays)
             .ToListAsync(cancellationToken);
 
         var rejectedCount = await query
@@ -106,9 +181,9 @@ public partial class LeaveRequestService : ILeaveRequestService
         return new LeaveStatsDto
         {
             PendingRequestsCount = pendingCount,
-            ApprovedThisMonthCount = approvedThisMonth.Count,
+            ApprovedThisMonthCount = approvedDaysThisMonth.Count,
             RejectedThisMonthCount = rejectedCount,
-            TotalLeaveDaysThisMonth = approvedThisMonth.Sum(r => r.LeaveDays)
+            TotalLeaveDaysThisMonth = approvedDaysThisMonth.Sum()
         };
     }
 
@@ -136,7 +211,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         var teamEmployeeIds = await _context.EmployeeAssignments
             .AsNoTracking()
             .Where(a => a.IsCurrent && (
-                a.ManagerEmployeeId == managerId ||
+                (a.Team != null && a.Team.LeadEmployeeId == managerId) ||
                 managedDeptIds.Contains(a.DepartmentId) ||
                 managedDivIds.Contains(a.DivisionId)
             ))
@@ -648,23 +723,31 @@ public partial class LeaveRequestService : ILeaveRequestService
         LeaveRequest r,
         EmployeeAssignment? assign,
         long? currentViewerEmployeeId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool skipFallbackInstanceQuery = false,
+        bool? viewerIsAdmin = null,
+        List<LeaveRequestDocumentDto>? preloadedDocs = null)
     {
         var emp = r.Employee;
         var empName = emp != null ? $"{emp.FirstName} {emp.LastName}".Trim() : string.Empty;
 
-        var instance = r.ApprovalInstance ?? (r.ApprovalInstanceId.HasValue
-            ? await _context.ApprovalInstances.AsNoTracking()
-                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
-                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
-                .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
-                .FirstOrDefaultAsync(i => i.Id == r.ApprovalInstanceId.Value, cancellationToken)
-            : await _context.ApprovalInstances.AsNoTracking()
-                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
-                .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
-                .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
-                .OrderByDescending(i => i.Id)
-                .FirstOrDefaultAsync(i => i.DocumentType == "LEAVE_REQUEST" && i.SourceDocumentId == r.Id, cancellationToken));
+        var instance = r.ApprovalInstance;
+        if (instance == null && !skipFallbackInstanceQuery)
+        {
+            instance = r.ApprovalInstanceId.HasValue
+                ? await _context.ApprovalInstances.AsNoTracking()
+                    .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+                    .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+                    .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                    .FirstOrDefaultAsync(i => i.Id == r.ApprovalInstanceId.Value, cancellationToken)
+                : await _context.ApprovalInstances.AsNoTracking()
+                    .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
+                    .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
+                    .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
+                    .OrderByDescending(i => i.Id)
+                    .FirstOrDefaultAsync(i => i.DocumentType == "LEAVE_REQUEST" && i.SourceDocumentId == r.Id, cancellationToken);
+        }
+
         var currentStepNo = instance?.CurrentStepNo;
         var totalSteps = instance?.ApprovalFlow?.Steps?.Count ?? 0;
         string? currentApproverDisplay = null;
@@ -688,19 +771,21 @@ public partial class LeaveRequestService : ILeaveRequestService
                 };
             }
 
-            if (currentViewerEmployeeId.HasValue)
+            if (currentViewerEmployeeId.HasValue && r.EmployeeId != currentViewerEmployeeId.Value)
             {
-                isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentViewerEmployeeId.Value, cancellationToken);
+                if (viewerIsAdmin == true)
+                {
+                    isMyTurn = true;
+                }
+                else
+                {
+                    isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentViewerEmployeeId.Value, cancellationToken);
+                }
             }
         }
 
         var hasAlreadyApproved = instance != null && currentViewerEmployeeId.HasValue &&
             instance.Actions.Any(a => a.ApproverEmployeeId == currentViewerEmployeeId.Value && a.ActionDecision == "APPROVE");
-
-        var finalAction = instance?.Actions
-            .Where(a => a.ActionDecision == "APPROVE" || a.ActionDecision == "REJECT")
-            .OrderByDescending(a => a.ActionAt)
-            .FirstOrDefault();
 
         var finalApproveAction = instance?.Actions
             .Where(a => a.ActionDecision == "APPROVE")
@@ -725,6 +810,14 @@ public partial class LeaveRequestService : ILeaveRequestService
             operatorName = finalRejectAction?.ApproverEmployee?.FullName;
             operatorAt = finalRejectAction?.ActionAt;
         }
+
+        var docs = preloadedDocs ?? r.Documents.Select(d => new LeaveRequestDocumentDto
+        {
+            Id = d.Id,
+            LeaveRequestId = d.LeaveRequestId,
+            FileName = d.FileName,
+            UploadedAt = d.UploadedAt
+        }).ToList();
 
         return new LeaveRequestDto
         {
@@ -759,13 +852,7 @@ public partial class LeaveRequestService : ILeaveRequestService
             HasAlreadyApproved = hasAlreadyApproved,
             ApprovedByName = operatorName ?? finalApproveAction?.ApproverEmployee?.FullName,
             ApprovedAt = operatorAt ?? instance?.CompletedAt ?? finalApproveAction?.ActionAt,
-            Documents = r.Documents.Select(d => new LeaveRequestDocumentDto
-            {
-                Id = d.Id,
-                LeaveRequestId = d.LeaveRequestId,
-                FileName = d.FileName,
-                UploadedAt = d.UploadedAt
-            }).ToList()
+            Documents = docs
         };
     }
 }

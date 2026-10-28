@@ -3252,11 +3252,11 @@ export default function PayrollPage() {
                         </tbody>
                         {filteredBonuses.length > 0 && (
                           <tfoot>
-                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 text-xs">
-                              <td colSpan={5} className="py-3 px-3.5 font-semibold text-slate-600 dark:text-slate-300">
+                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t-2 border-slate-200 dark:border-slate-700 text-xs">
+                              <td colSpan={5} className="py-3 px-3.5 font-bold text-slate-900 dark:text-slate-100">
                                 รวม {filteredBonuses.length} คน
                               </td>
-                              <td className="py-3 px-3 text-right whitespace-nowrap font-mono font-bold text-amber-900 dark:text-amber-400">
+                              <td className="py-3 px-3 text-right whitespace-nowrap font-mono font-bold text-slate-900 dark:text-white">
                                 ฿{filteredBonuses.reduce((sum, x) => sum + bonusDisplayAmount(x), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </td>
                               <td colSpan={2} />
@@ -3610,6 +3610,19 @@ export default function PayrollPage() {
                                             );
                                           })}
                                         </tbody>
+                                        {filteredBonuses.length > 0 && (
+                                          <tfoot>
+                                            <tr className="bg-slate-50/90 dark:bg-slate-900/50 border-t-2 border-slate-200 dark:border-slate-700 text-xs">
+                                              <td colSpan={4} className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100">
+                                                รวม {filteredBonuses.length} คน
+                                              </td>
+                                              <td className="py-3 px-4 text-right whitespace-nowrap font-mono font-bold text-slate-900 dark:text-white">
+                                                ฿{filteredBonuses.reduce((sum, x) => sum + (x.bonusAmount || 0), 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              </td>
+                                              <td colSpan={2} />
+                                            </tr>
+                                          </tfoot>
+                                        )}
                                       </table>
                                     </div>
                                   )}
@@ -5276,17 +5289,17 @@ export default function PayrollPage() {
                     </div>
                   ) : (
                     <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                      <table className="w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
-                        <thead>
-                          <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">
-                            <th className="py-3 px-4">พนักงาน</th>
-                            <th className="py-3 px-4">ธนาคาร / เลขบัญชี</th>
-                            <th className="py-3 px-4 text-right">ยอดโอน</th>
-                            <th className="py-3 px-4 text-center">Ref No.</th>
-                            <th className="py-3 px-4 text-center">สลิป</th>
-                            <th className="py-3 px-4 text-center">สถานะ</th>
+                      <table className="table-standard w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
+                        <thead className="bg-[#0B2046] text-white font-semibold">
+                          <tr className="whitespace-nowrap">
+                            <th className="py-3 px-4 font-semibold">พนักงาน</th>
+                            <th className="py-3 px-4 font-semibold">ธนาคาร / เลขบัญชี</th>
+                            <th className="py-3 px-4 text-right font-semibold">ยอดโอน</th>
+                            <th className="py-3 px-4 text-center font-semibold">Ref No.</th>
+                            <th className="py-3 px-4 text-center font-semibold">สลิป</th>
+                            <th className="py-3 px-4 text-center font-semibold">สถานะ</th>
                             {selectedPeriod?.status !== 'PAID' && (isCEO || isFinance || isAdmin) && (
-                              <th className="py-3 px-4 text-center">การดำเนินการ</th>
+                              <th className="py-3 px-4 text-center font-semibold">การดำเนินการ</th>
                             )}
                           </tr>
                         </thead>
@@ -5606,22 +5619,76 @@ export default function PayrollPage() {
 
       {/* === TAB: ภาษี (ตารางขั้นบันได) — ประกันสังคมย้ายไปตั้งที่รายการ "เงินสมทบประกันสังคม" === */}
       {activeTab === 'tax-sso' && (
-        <div className="space-y-4">
-          {/* Card 2: Section 1: Tax Brackets */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
-            <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                ตารางอัตราภาษีเงินได้บุคคลธรรมดาแบบขั้นบันได (ภ.ง.ด. 8 ขั้น)
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
+        <div className="space-y-6">
+          {/* Top Header */}
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              อัตราภาษีเงินได้บุคคลธรรมดา
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              แบบขั้นบันได (ภ.ง.ด. 8 ขั้น) · ใช้คำนวณภาษีหัก ณ ที่จ่ายในการประมวลเงินเดือน
+            </p>
+          </div>
 
+          {/* 4 Summary Stat Cards (Distinct Harmonious Theme Colors) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: จำนวนขั้นภาษี (Blue Theme) */}
+            <div className="bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/50 shadow-xs flex flex-col justify-between">
+              <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">จำนวนขั้นภาษี</span>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                  {taxBrackets.length || 8}
+                </span>
+                <span className="text-sm text-blue-700/80 dark:text-blue-300/80 font-medium">ขั้น</span>
+              </div>
+            </div>
+
+            {/* Card 2: เงินได้สุทธิที่ยกเว้นภาษี (Emerald Theme - สิทธิประโยชน์/ยกเว้น) */}
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/50 shadow-xs flex flex-col justify-between">
+              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">เงินได้สุทธิที่ยกเว้นภาษี</span>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 tracking-tight font-mono">
+                  {(taxBrackets.find((b) => b.taxRate === 0)?.incomeTo ?? 150000).toLocaleString()}
+                </span>
+                <span className="text-sm text-emerald-700/80 dark:text-emerald-300/80 font-medium">บาท</span>
+              </div>
+            </div>
+
+            {/* Card 3: อัตราสูงสุด (Amber Theme - เพดานภาษีสูงสุด) */}
+            <div className="bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl p-5 border border-amber-100 dark:border-amber-900/50 shadow-xs flex flex-col justify-between">
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">อัตราสูงสุด</span>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-amber-600 dark:text-amber-400 tracking-tight font-mono">
+                  {(Math.max(0, ...taxBrackets.map((b) => b.taxRate)) * 100).toFixed(0)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Card 4: สถานะการใช้งาน (Signature Dark Navy Theme #0B2046) */}
+            <div className="bg-[#0B2046] dark:bg-slate-900 text-white rounded-2xl p-5 shadow-xs border border-[#0B2046] dark:border-slate-800 flex flex-col justify-between">
+              <span className="text-xs text-blue-200 dark:text-slate-400 font-medium">สถานะการใช้งาน</span>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-bold tracking-tight text-white font-mono">
+                  {taxBrackets.filter((b) => (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length} / {taxBrackets.length || 8}
+                </span>
+                <span className="text-xs text-blue-200/90 dark:text-slate-400 font-medium">ขั้นใช้งาน</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Card: Tax Bracket Table */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-h-9">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                ตารางอัตราภาษีรายขั้น
+              </h2>
+
+              <div className="flex items-center gap-2">
                 {canEditTax ? (
                   <button
                     type="button"
                     onClick={() => setIsTaxModalOpen(true)}
-                    className="h-9 inline-flex items-center gap-2 px-3.5 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+                    className="h-9 inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                     <span>แก้ไขอัตราภาษี</span>
@@ -5631,54 +5698,110 @@ export default function PayrollPage() {
                     <Lock className="w-3.5 h-3.5" />
                     สิทธิ์ดูอย่างเดียว
                   </span>
-                )}</div>
-          </div>
+                )}
+              </div>
+            </div>
 
-          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-            <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
-              <thead>
-                <tr className="bg-slate-50/80 dark:bg-slate-900/40 border-b border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                  <th className="py-3.5 px-4">ขั้นบันไดภาษี</th>
-                  <th className="py-3.5 px-4 text-right">เงินได้สุทธิตั้งแต่</th>
-                  <th className="py-3.5 px-4 text-right">ถึงเงินได้สุทธิ</th>
-                  <th className="py-3.5 px-4 text-center">อัตราภาษี (%)</th>
-                  <th className="py-3.5 px-4 text-right">ภาษีสะสมขั้นก่อนหน้า</th>
-                  <th className="py-3.5 px-4 text-center">สถานะ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
-                {taxBrackets.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/50 transition-colors">
-                    <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{t.bracketName}</td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                      ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-700 dark:text-slate-300">
-                      {t.incomeTo != null
-                        ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                        : 'ขึ้นไป (ไม่จำกัด)'}
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-blue-700 dark:text-blue-400">
-                      {(t.taxRate * 100).toFixed(0)}%
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono text-xs text-slate-600 dark:text-slate-400">
-                      ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        (t.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
-                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                      }`}>
-                        {(t.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ได้ใช้งาน'}
-                      </span>
-                    </td>
+            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <table className="table-standard w-full min-w-[860px] text-left border-collapse text-xs whitespace-nowrap">
+                <thead className="bg-[#0B2046] text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3 px-4 font-semibold">ขั้นเงินได้</th>
+                    <th className="py-3 px-4 text-right font-semibold">เงินได้สุทธิตั้งแต่</th>
+                    <th className="py-3 px-4 text-right font-semibold">ถึงเงินได้สุทธิ</th>
+                    <th className="py-3 px-4 text-left pl-6 font-semibold">อัตราภาษี</th>
+                    <th className="py-3 px-4 text-right font-semibold">ภาษีสะสมขั้นก่อนหน้า</th>
+                    <th className="py-3 px-4 text-center font-semibold">สถานะ</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
+                  {taxBrackets.map((t, idx) => {
+                    const stepNum = idx + 1;
+                    // สีขั้นไล่จากฟ้าอ่อน → กรมท่า ตามลำดับขั้นจริง (จำนวนขั้นเท่าไรก็ได้ ขั้นสุดท้ายเข้มสุดเสมอ)
+                    const shade = taxBrackets.length > 1 ? idx / (taxBrackets.length - 1) : 1;
+                    const lightness = Math.round(90 - shade * 72); // 90% → 18%
+                    const pillStyle: React.CSSProperties = {
+                      backgroundColor: `hsl(220 ${Math.round(85 - shade * 15)}% ${lightness}%)`,
+                      color: lightness > 62 ? '#1e3a8a' : '#ffffff',
+                    };
+                    // ความยาวหลอดเทียบกับอัตราสูงสุดในตาราง (เดิมเทียบ 35% ตายตัว — อัตราที่สูงกว่าเต็มหลอดเท่ากันหมด)
+                    const maxRate = Math.max(0, ...taxBrackets.map((b) => b.taxRate));
+                    const progressPercent = maxRate > 0 ? Math.min(100, Math.max(0, (t.taxRate / maxRate) * 100)) : 0;
+                    const isExempt = t.taxRate === 0;
+                    const titleText = isExempt
+                      ? `ขั้นที่ ${stepNum} · ยกเว้นภาษี`
+                      : `ขั้นที่ ${stepNum} · ภาษี ${(t.taxRate * 100).toFixed(0)}%`;
+                    const subText =
+                      t.incomeTo != null
+                        ? `เงินได้สุทธิ ${t.incomeFrom.toLocaleString()} – ${t.incomeTo.toLocaleString()} บาท`
+                        : `เงินได้สุทธิ ${t.incomeFrom.toLocaleString()} บาทขึ้นไป`;
+
+                    return (
+                      <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/40 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center shrink-0" style={pillStyle}>
+                              {stepNum}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-900 dark:text-slate-100 text-xs">
+                                {titleText}
+                              </div>
+                              <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                                {subText}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-medium text-slate-800 dark:text-slate-200">
+                          ฿{t.incomeFrom.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-medium text-slate-800 dark:text-slate-200">
+                          {t.incomeTo != null
+                            ? `฿${t.incomeTo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : 'ขึ้นไป (ไม่จำกัด)'}
+                        </td>
+                        <td className="py-3 px-4 pl-6">
+                          <div className="flex items-center gap-2.5">
+                            <span className="w-8 font-bold text-blue-600 dark:text-blue-400 font-mono text-xs">
+                              {(t.taxRate * 100).toFixed(0)}%
+                            </span>
+                            <div className="w-24 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all"
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-medium text-slate-800 dark:text-slate-200">
+                          ฿{t.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
+                              (t.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800'
+                                : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                (t.status || 'ACTIVE').toUpperCase() === 'ACTIVE'
+                                  ? 'bg-emerald-500'
+                                  : 'bg-slate-400'
+                              }`}
+                            />
+                            {(t.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ได้ใช้งาน'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         </div>
       )}
 

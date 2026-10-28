@@ -2,20 +2,24 @@
 
 import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Printer, FileText, Loader2 } from 'lucide-react';
 import { CertificateDocument } from '@/types/certificates';
 import { certificateService } from '@/services/certificateService';
 import {
   sarabun,
+  Fill,
+  extractPrefixAndName,
+  ApprovalSignatureTable,
   DocumentLogoHeader,
   DocumentAddressFooter,
   SignatureLine,
+  useApprovalSlots,
   useCompanyDocumentInfo,
+  useEmployeeSignature,
+  type ApprovalSlot,
 } from './documentFormParts';
-
-type Lang = 'TH' | 'EN';
 
 interface CertificatePreviewModalProps {
   isOpen: boolean;
@@ -26,35 +30,114 @@ interface CertificatePreviewModalProps {
   previewParams?: { certificateTypeId: number; purpose: string } | null;
   /** ข้อมูลเอกสารที่เตรียมไว้แล้ว (ไม่ต้องดึงจาก API) */
   initialDoc?: CertificateDocument | null;
-  initialLang?: Lang;
+  /** ผู้ใช้ถึงคิวอนุมัติ → แสดงลายเซ็นของผู้ใช้ในช่องที่รออนุมัติล่วงหน้า (แบบเดียวกับใบลา) */
+  canApproveCurrentStep?: boolean;
 }
 
 const fmtMoney = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** ย่อหน้าแบบหนังสือราชการ/บริษัท: เยื้องบรรทัดแรก จัดชิดสองข้าง */
-const Para: React.FC<{ children: React.ReactNode; indent?: boolean; style?: React.CSSProperties }> = ({
-  children,
-  indent = true,
-  style,
-}) => (
-  <p style={{ margin: '0 0 3.5mm', textIndent: indent ? '25mm' : 0, textAlign: 'justify', ...style }}>{children}</p>
-);
+const THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
 
-/** หน้ากระดาษ A4 ของหนังสือรับรอง (รูปแบบเดียวกับใบลา/ใบลาออก) */
+/** วันที่ออกหนังสือ → วัน / เดือน / พ.ศ. (เวลาไทย) */
+const issueDateParts = (value?: string | null) => {
+  const m = value ? /^(\d{4})-(\d{2})-(\d{2})/.exec(value) : null;
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : value ? new Date(value) : new Date();
+  const date = isNaN(d.getTime()) ? new Date() : d;
+  return {
+    day: String(date.getDate()),
+    dd: String(date.getDate()).padStart(2, '0'),
+    month: THAI_MONTHS[date.getMonth()],
+    mm: String(date.getMonth() + 1).padStart(2, '0'),
+    year: String(date.getFullYear() + 543),
+  };
+};
+
+/** ข้อความที่กรอก — เส้นประใต้ข้อความ ตัดบรรทัดตามคำได้ (แบบเดียวกับคำร้องทั่วไป) */
+const filledStyle: React.CSSProperties = {
+  textDecorationLine: 'underline',
+  textDecorationStyle: 'dotted',
+  textDecorationThickness: '1px',
+  textUnderlineOffset: '4px',
+  padding: '0 1.5mm',
+};
+const V: React.FC<{ children?: React.ReactNode }> = ({ children }) => <span style={filledStyle}>{children || '-'}</span>;
+
+/**
+ * หน้ากระดาษ A4 ของหนังสือรับรอง — แบบฟอร์มเดียวกับใบลา / ใบลาออก / คำร้องทั่วไป
+ * หัวกระดาษโลโก้ · ชื่อหนังสือ · เลขที่/เขียนที่/วันที่ (ชิดขวา)
+ * · การทำงาน: ข้าพเจ้า (ผู้รับรอง) · ขอรับรองว่า (พนักงาน) · ขอรับรองว่าข้อความข้างต้นเป็นความจริง
+ * · เงินเดือน: หนังสือฉบับนี้ออกให้เพื่อรับรองว่า (พนักงาน + อัตราเงินเดือน) · ใช้เพื่อ · ออกให้ ณ วันที่
+ * · ลงชื่อผู้ยื่นเรื่อง (ชิดขวา) · ผลการพิจารณาตามสายอนุมัติ · หมายเหตุ · ที่อยู่บริษัทท้ายกระดาษ
+ */
 const CertificatePaper: React.FC<{
   doc: CertificateDocument;
-  lang: Lang;
   companyLogo: string | null;
   companyAddress: string;
-}> = ({ doc, lang, companyLogo, companyAddress }) => {
-  const [signatureFailed, setSignatureFailed] = useState(false);
-  const isTh = lang === 'TH';
+  approvalSlots: ApprovalSlot[];
+  /** ลายเซ็นของผู้ยื่นเรื่อง (พนักงานเจ้าของคำขอ) */
+  requesterSignatureSrc: string | null;
+  onRequesterSignatureError: () => void;
+  /** ฉบับพิมพ์ (ซ่อนอยู่ วัดขนาดไม่ได้) ใช้ค่าย่อที่วัดจากฉบับบนจอ */
+  fixedZoom?: number;
+  onZoom?: (z: number) => void;
+}> = ({ doc, companyLogo, companyAddress, approvalSlots, requesterSignatureSrc, onRequesterSignatureError, fixedZoom, onZoom }) => {
+  const [sealFailed, setSealFailed] = useState(false);
+  // เนื้อหาต้องจบก่อนหมายเหตุท้ายหน้า — ถ้าล้นย่อเนื้อหาลงพอดีหน้า
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const noteRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(1);
+  useLayoutEffect(() => {
+    if (fixedZoom != null) return;
+    const body = bodyRef.current;
+    const note = noteRef.current;
+    if (!body || !note) return;
+    const fit = () => {
+      body.style.zoom = '1'; // วัดขนาดจริงก่อนย่อ
+      const bodyRect = body.getBoundingClientRect();
+      const noteTop = note.getBoundingClientRect().top;
+      if (!bodyRect.height) return;
+      const mm = bodyRect.width / 162; // ความกว้างเนื้อหา 162 มม. → px ต่อ มม.
+      const available = noteTop - bodyRect.top - 3 * mm; // เว้นช่องไฟเหนือหมายเหตุ 3 มม.
+      const z = bodyRect.height > available ? Math.max(0.75, Math.floor((available / bodyRect.height) * 1000) / 1000) : 1;
+      body.style.zoom = String(z);
+      setZoom(z);
+      onZoom?.(z);
+    };
+    fit();
+    document.fonts?.ready.then(fit).catch(() => undefined);
+    const ro = new ResizeObserver(() => fit());
+    ro.observe(body);
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [doc, fixedZoom]);
+  const appliedZoom = fixedZoom ?? zoom;
+
   const includeSalary = doc.includeSalary ?? doc.baseSalary != null;
-  const purpose = (doc.purpose || '').trim();
   const salary = doc.baseSalary ?? null;
-  const footer = [doc.companyAddress?.trim() || companyAddress, doc.companyPhone && `Tel. ${doc.companyPhone}`, doc.companyEmail]
-    .filter(Boolean)
-    .join('  ');
+  const purpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
+  const position = (doc.positionName || '').replace(/^ตำแหน่ง\s*/, '');
+  const date = issueDateParts(doc.issueDate);
+  const { prefix, displayName } = extractPrefixAndName(doc.fullName);
+  const requesterName = prefix && displayName ? `${prefix} ${displayName}` : doc.fullName;
+  // วันที่ในช่องผู้ยื่นเรื่อง = วันที่ยื่นคำขอ (ตัวอย่างก่อนยื่น = วันนี้)
+  const requestDate = issueDateParts(doc.requestedAt || null);
+  const companyAddr = doc.companyAddress?.trim() || companyAddress;
+  const footer = [companyAddr, doc.companyPhone && `Tel. ${doc.companyPhone}`, doc.companyEmail].filter(Boolean).join('  ');
+  const stillEmployed = !/พ้นสภาพ|ไม่ได้ปฏิบัติงาน/.test(doc.employmentStatusText || '');
+
+  const para: React.CSSProperties = { textIndent: '12.5mm', textAlign: 'justify', margin: 0 };
+  const strike = (p: 'นาย' | 'นาง' | 'นางสาว'): React.CSSProperties | undefined =>
+    prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
+  /** นาย / นางสาว / นาง — ขีดฆ่าคำที่ไม่ตรงกับคำนำหน้าของพนักงาน */
+  const prefixChoices = (
+    <>
+      <span style={strike('นาย')}>นาย</span> / <span style={strike('นางสาว')}>นางสาว</span> /{' '}
+      <span style={strike('นาง')}>นาง</span>
+    </>
+  );
 
   return (
     <div
@@ -65,15 +148,189 @@ const CertificatePaper: React.FC<{
         height: '297mm',
         overflow: 'hidden',
         boxSizing: 'border-box',
-        padding: '32mm 25mm 22mm 30mm',
+        padding: '26mm 23mm 20mm 25mm',
         background: '#fff',
         color: '#000',
-        fontSize: '14pt',
-        lineHeight: 1.55,
+        fontSize: '10.5pt',
+        lineHeight: 1.68,
       }}
     >
       <DocumentLogoHeader companyLogo={doc.companyLogoBase64 || companyLogo} />
 
+      <div ref={bodyRef} style={{ zoom: appliedZoom }}>
+        {/* ===== ชื่อหนังสือ ===== */}
+        <div style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 700, marginBottom: '6mm' }}>
+          {doc.certificateTitle || 'หนังสือรับรองการทำงาน'}
+        </div>
+
+        {/* ===== เลขที่ / เขียนที่ / วันที่ (ชิดขวา) ===== */}
+        <div style={{ marginLeft: '88mm', marginBottom: '5mm', whiteSpace: 'nowrap' }}>
+          <div>เลขที่<Fill value={doc.documentNumber} minWidth="50mm" /></div>
+          <div>เขียนที่<Fill value={doc.companyName} minWidth="50mm" /></div>
+          <div>
+            วันที่<Fill value={date.day} minWidth="8mm" />
+            เดือน<Fill value={date.month} minWidth="20mm" />
+            พ.ศ.<Fill value={date.year} minWidth="12mm" />
+          </div>
+        </div>
+
+        {includeSalary ? (
+          <>
+            {/* ===== หนังสือรับรองเงินเดือน: รับรองการเป็นพนักงาน + อัตราเงินเดือน ===== */}
+            <p style={para}>
+              หนังสือฉบับนี้ออกให้เพื่อรับรองว่า {prefixChoices} <V>{displayName || doc.fullName}</V>
+              {doc.citizenIdMasked ? <> เลขประจำตัวประชาชน <span style={{ whiteSpace: 'nowrap' }}><V>{doc.citizenIdMasked}</V></span></> : null} รหัสพนักงาน{' '}
+              <V>{doc.employeeCode}</V> เป็นพนักงานของ <V>{doc.companyName}</V> ปฏิบัติงานในตำแหน่ง <V>{position}</V>
+              {' '}สังกัด <V>{doc.departmentName}</V> โดยเริ่มงานตั้งแต่วันที่ <V>{doc.startDateText}</V>{' '}
+              {stillEmployed ? 'จนถึงปัจจุบัน' : 'และปัจจุบันพ้นสภาพการเป็นพนักงานแล้ว'} ซึ่งปัจจุบันมีอัตราเงินเดือน เดือนละ{' '}
+              <V>{salary != null ? fmtMoney(salary) : null}</V> บาท
+              {doc.positionAllowance ? (
+                <>
+                  {' '}ค่าตำแหน่งเดือนละ <V>{fmtMoney(doc.positionAllowance)}</V> บาท รวมรายได้เดือนละ{' '}
+                  <V>{fmtMoney(doc.totalIncome ?? salary ?? 0)}</V> บาท (<V>{doc.totalIncomeText || doc.salaryText}</V>)
+                </>
+              ) : (
+                <>
+                  {' '}(<V>{doc.salaryText || doc.totalIncomeText}</V>)
+                </>
+              )}
+            </p>
+
+            <p style={{ ...para, marginTop: '1mm' }}>
+              หนังสือรับรองเงินเดือนฉบับนี้ใช้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงรายได้'}</V> เท่านั้น
+            </p>
+
+            <div style={{ marginLeft: '88mm', marginTop: '4mm', whiteSpace: 'nowrap' }}>
+              ออกให้ ณ วันที่<Fill value={doc.issueDateText} minWidth="46mm" />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* ===== หนังสือรับรองการทำงาน: ผู้รับรอง ===== */}
+            <p style={para}>
+              ข้าพเจ้า <V>{doc.signatoryName}</V> ตำแหน่ง <V>{doc.signatoryPosition}</V> ของ<V>{doc.companyName}</V>
+              {companyAddr ? <> ตั้งอยู่เลขที่ <V>{companyAddr}</V></> : null}
+              {doc.companyPhone ? <> เบอร์โทรศัพท์ <V>{doc.companyPhone}</V></> : null}
+            </p>
+
+            {/* ===== พนักงานที่ได้รับการรับรอง ===== */}
+            <p style={{ ...para, marginTop: '1mm' }}>
+              ขอรับรองว่า {prefixChoices} <V>{displayName || doc.fullName}</V>
+              {doc.citizenIdMasked ? <> เลขประจำตัวประชาชน <span style={{ whiteSpace: 'nowrap' }}><V>{doc.citizenIdMasked}</V></span></> : null} รหัสพนักงาน{' '}
+              <V>{doc.employeeCode}</V> ได้ปฏิบัติงานในตำแหน่ง <V>{position}</V> สังกัด <V>{doc.departmentName}</V>
+              {doc.employmentTypeName ? <> ประเภทการจ้างงาน <V>{doc.employmentTypeName}</V></> : null} ตั้งแต่วันที่{' '}
+              <V>{doc.startDateText}</V> {stillEmployed ? 'จนถึงปัจจุบัน' : 'และปัจจุบันพ้นสภาพการเป็นพนักงานแล้ว'}
+              {doc.serviceDurationText ? <> รวมระยะเวลา <V>{doc.serviceDurationText}</V></> : null}
+            </p>
+
+            <p style={{ ...para, marginTop: '1mm' }}>
+              หนังสือรับรองฉบับนี้ออกให้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงการทำงาน'}</V> เท่านั้น
+            </p>
+
+            <p style={{ ...para, marginTop: '4mm' }}>ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ</p>
+          </>
+        )}
+
+        {/* ===== ลงนามผู้รับรอง (ชิดขวา) — รูปแบบเดียวกับเอกสารอื่น ===== */}
+        <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '12mm', whiteSpace: 'nowrap' }}>
+          {/* ตราประทับบริษัท — รูปจากข้อมูลบริษัท หรือวงกลมเว้นไว้ประทับตราจริงหลังพิมพ์ */}
+          {doc.companySealBase64 && !sealFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={doc.companySealBase64}
+              alt="ตราประทับบริษัท"
+              onError={() => setSealFailed(true)}
+              style={{
+                position: 'absolute',
+                left: '-62mm',
+                top: '-4mm',
+                width: '36mm',
+                height: '36mm',
+                objectFit: 'contain',
+                mixBlendMode: 'multiply', // พื้นขาวของรูปโปร่งใส เหมือนประทับตราจริง
+              }}
+            />
+          ) : (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: '-60mm',
+                top: '-2mm',
+                width: '32mm',
+                height: '32mm',
+                borderRadius: '50%',
+                border: '1px dashed #9ca3af',
+                color: '#9ca3af',
+                fontSize: '9.5pt',
+                lineHeight: 1.3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+              }}
+            >
+              ตราประทับ
+              <br />
+              บริษัท
+            </div>
+          )}
+          <div>
+            (ลงชื่อ)
+            <SignatureLine
+              src={requesterSignatureSrc}
+              onError={onRequesterSignatureError}
+              minWidth="44mm"
+              alt="ลายเซ็นผู้ยื่นเรื่อง"
+              fallbackText={displayName || doc.fullName}
+            />
+            ผู้ยื่นเรื่อง
+          </div>
+          <div>
+            (<Fill value={requesterName} minWidth="50mm" />)
+          </div>
+          <div>
+            ตำแหน่ง<Fill value={position} minWidth="48mm" />
+          </div>
+          <div>
+            วันที่<Fill value={requestDate.dd} minWidth="12mm" />/
+            <Fill value={requestDate.mm} minWidth="12mm" />/
+            <Fill value={requestDate.year} minWidth="14mm" />
+          </div>
+        </div>
+
+        {/* ===== ผลการพิจารณา — ช่องลงนามตามสายอนุมัติ (แบบเดียวกับใบลา/ใบลาออก/คำร้องทั่วไป) ===== */}
+        <div style={{ textAlign: 'center', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px', marginTop: '6mm' }}>
+          ผลการพิจารณา
+        </div>
+        <ApprovalSignatureTable slots={approvalSlots} />
+      </div>
+
+      {/* ===== หมายเหตุท้ายหนังสือ ===== */}
+      <div
+        ref={noteRef}
+        style={{
+          position: 'absolute',
+          left: '25mm',
+          right: '23mm',
+          bottom: '18mm',
+          fontSize: '10pt',
+          lineHeight: 1.6,
+          textAlign: 'justify',
+        }}
+      >
+        <span style={{ fontWeight: 700, marginRight: '6mm' }}>หมายเหตุ</span>
+        {doc.validityMonths
+          ? `หนังสือรับรองฉบับนี้มีอายุ ${doc.validityMonths} เดือน นับจากวันที่ออก${doc.expiryDateText ? ` (ใช้ได้ถึงวันที่ ${doc.expiryDateText})` : ''}`
+          : 'หนังสือรับรองฉบับนี้รับรองข้อมูล ณ วันที่ออกหนังสือ'}{' '}
+        ตรวจสอบความถูกต้องโดยอ้างอิงเลขที่หนังสือ ได้ที่ฝ่ายบุคคล
+        {doc.companyPhone ? <> โทร. <span style={{ whiteSpace: 'nowrap' }}>{doc.companyPhone}</span></> : null}
+        {doc.companyEmail ? <> อีเมล <span style={{ whiteSpace: 'nowrap' }}>{doc.companyEmail}</span></> : null}
+      </div>
+
+      <DocumentAddressFooter address={footer} />
+
+      {/* ลายน้ำ "ตัวอย่าง" อยู่ชั้นบนสุด (โปร่งใส ไม่บังข้อความ) เพื่อไม่ให้รูปตราประทับ/ลายเซ็นทับ */}
       {doc.isPreview && (
         <div
           aria-hidden
@@ -81,98 +338,18 @@ const CertificatePaper: React.FC<{
             position: 'absolute',
             top: '50%',
             left: '50%',
+            zIndex: 5,
             transform: 'translate(-50%, -50%) rotate(-30deg)',
             fontSize: '72pt',
             fontWeight: 700,
-            color: 'rgba(15, 23, 42, 0.06)',
+            color: 'rgba(15, 23, 42, 0.07)',
             whiteSpace: 'nowrap',
             pointerEvents: 'none',
           }}
         >
-          {isTh ? 'ตัวอย่าง' : 'SAMPLE'}
+          ตัวอย่าง
         </div>
       )}
-
-      {/* ===== ที่ / วันที่ ===== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8mm' }}>
-        <div>
-          {isTh ? 'ที่' : 'Ref. No.'} {doc.documentNumber}
-        </div>
-        <div>
-          {isTh ? 'วันที่' : 'Date:'} {doc.issueDateText || doc.issueDate}
-        </div>
-      </div>
-
-      {/* ===== ชื่อเรื่อง ===== */}
-      <div style={{ textAlign: 'center', fontSize: '18pt', fontWeight: 700, marginBottom: '8mm' }}>
-        {isTh
-          ? doc.certificateTitle
-          : includeSalary
-            ? 'SALARY CERTIFICATE'
-            : 'EMPLOYMENT CERTIFICATE'}
-      </div>
-
-      {isTh ? (
-        <>
-          <Para>
-            หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า <b>{doc.fullName}</b> รหัสพนักงาน {doc.employeeCode} เป็นพนักงานของ
-            {doc.companyName} ตำแหน่ง {(doc.positionName || '').replace(/^ตำแหน่ง\s*/, '')} สังกัด{doc.departmentName} โดยเริ่มปฏิบัติงานตั้งแต่วันที่{' '}
-            {doc.startDateText} จนถึงปัจจุบัน รวมระยะเวลา {doc.serviceDurationText}
-            {includeSalary && salary != null && (
-              <>
-                {' '}
-                ได้รับอัตราเงินเดือนเดือนละ <b>{fmtMoney(salary)}</b> บาท ({doc.salaryText}) ซึ่งอัตรานี้ไม่รวมค่าตอบแทนและเงินพิเศษอื่นๆ
-              </>
-            )}
-          </Para>
-          {purpose && (
-            <Para>
-              หนังสือรับรองฉบับนี้ออกให้{purpose.startsWith('เพื่อ') ? ' ' : 'เพื่อ '}
-              {purpose} เท่านั้น
-            </Para>
-          )}
-          <Para>บริษัทฯ ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ</Para>
-          <Para>ให้ไว้ ณ วันที่ {doc.issueDateText}</Para>
-        </>
-      ) : (
-        <>
-          <Para indent={false} style={{ marginBottom: '5mm' }}>
-            To Whom It May Concern,
-          </Para>
-          <Para>
-            This is to certify that <b>{doc.fullName}</b> (Employee ID {doc.employeeCode}) has been employed by{' '}
-            {doc.companyName} since {doc.startDateText} to the present ({doc.serviceDurationText}), currently holding the
-            position of {doc.positionName}, {doc.departmentName}
-            {includeSalary && salary != null ? (
-              <>
-                , and receives a monthly salary of <b>THB {fmtMoney(salary)}</b>, excluding other allowances and benefits.
-              </>
-            ) : (
-              '.'
-            )}
-          </Para>
-          {purpose && <Para>This certificate is issued upon the employee&apos;s request for the purpose of: {purpose}.</Para>}
-          <Para>Issued on {doc.issueDateText}.</Para>
-        </>
-      )}
-
-      {/* ===== ผู้ลงนาม ===== */}
-      <div style={{ marginLeft: '80mm', marginTop: '14mm', textAlign: 'center', whiteSpace: 'nowrap' }}>
-        <div>{isTh ? 'ขอแสดงความนับถือ' : 'Sincerely yours,'}</div>
-        <div style={{ marginTop: '14mm' }}>
-          <SignatureLine
-            src={signatureFailed ? null : doc.signatureBase64 || null}
-            onError={() => setSignatureFailed(true)}
-            minWidth="60mm"
-            alt="ลายเซ็นผู้มีอำนาจลงนาม"
-          />
-        </div>
-        <div>({doc.signatoryName || ' '.repeat(40)})</div>
-        <div>{doc.signatoryPosition}</div>
-        <div>{doc.companyName}</div>
-      </div>
-
-      <DocumentAddressFooter address={footer} />
     </div>
   );
 };
@@ -184,20 +361,16 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
   requestId,
   previewParams,
   initialDoc,
-  initialLang = 'TH',
+  canApproveCurrentStep,
 }) => {
   const { companyLogo, companyAddress } = useCompanyDocumentInfo(isOpen);
-  const [lang, setLang] = useState<Lang>(initialLang);
   const [doc, setDoc] = useState<CertificateDocument | null>(null);
   const [loading, setLoading] = useState(false);
+  const [paperZoom, setPaperZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
   const previewTypeId = previewParams?.certificateTypeId;
   const previewPurpose = previewParams?.purpose ?? '';
-
-  useEffect(() => {
-    if (isOpen) setLang(initialLang);
-  }, [isOpen, initialLang]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -207,8 +380,8 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
     }
     let active = true;
     const load = async () => {
-      if (requestId) return certificateService.getDocument(requestId, lang);
-      if (previewTypeId) return certificateService.previewDocument(previewTypeId, previewPurpose, lang);
+      if (requestId) return certificateService.getDocument(requestId, 'TH');
+      if (previewTypeId) return certificateService.previewDocument(previewTypeId, previewPurpose, 'TH');
       return initialDoc ?? null;
     };
     setLoading(true);
@@ -223,12 +396,32 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
     return () => {
       active = false;
     };
-  }, [isOpen, requestId, previewTypeId, previewPurpose, initialDoc, lang]);
+  }, [isOpen, requestId, previewTypeId, previewPurpose, initialDoc]);
+
+  // ช่องลงนาม: คำขอที่ยื่นแล้วใช้ขั้นตอนจริงจาก timeline, ตัวอย่างก่อนยื่นจำลองจากสายอนุมัติของพนักงาน
+  const approvalSlots = useApprovalSlots({
+    isOpen: isOpen && !!doc,
+    documentType: 'CERTIFICATE_REQUEST',
+    employeeId: doc?.employeeId,
+    timeline: doc?.approvalTimeline,
+    canApproveCurrentStep,
+    isExistingDocument: !!requestId,
+  });
+
+  const requesterSignature = useEmployeeSignature(isOpen && !!doc, doc?.employeeId);
 
   if (!isOpen) return null;
 
   const paper = doc ? (
-    <CertificatePaper doc={doc} lang={lang} companyLogo={companyLogo} companyAddress={companyAddress} />
+    <CertificatePaper
+      doc={doc}
+      companyLogo={companyLogo}
+      companyAddress={companyAddress}
+      approvalSlots={approvalSlots}
+      requesterSignatureSrc={requesterSignature.src}
+      onRequesterSignatureError={requesterSignature.clear}
+      onZoom={setPaperZoom}
+    />
   ) : null;
 
   return (
@@ -264,22 +457,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-6 py-4 bg-white border-t border-gray-100 flex-wrap">
-            <div className="flex items-center bg-slate-100 dark:bg-slate-900 rounded-xl p-1 border border-slate-200 dark:border-slate-800 text-xs">
-              {(['TH', 'EN'] as Lang[]).map((l) => (
-                <button
-                  key={l}
-                  type="button"
-                  onClick={() => setLang(l)}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
-                    lang === l ? 'bg-white text-primary dark:text-blue-300 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200'
-                  }`}
-                >
-                  {l === 'TH' ? 'ภาษาไทย' : 'English'}
-                </button>
-              ))}
-            </div>
-
+          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-gray-100 flex-wrap">
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"
@@ -302,7 +480,20 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
       </ModalShell>
 
       {/* สำเนาสำหรับพิมพ์ใต้ <body> โดยตรง เพื่อให้พิมพ์ได้เต็มหน้า A4 */}
-      {paper && typeof document !== 'undefined' && createPortal(<div className="cert-print-root">{paper}</div>, document.body)}
+      {paper && typeof document !== 'undefined' && createPortal(
+          <div className="cert-print-root">
+            <CertificatePaper
+              doc={doc!}
+              companyLogo={companyLogo}
+              companyAddress={companyAddress}
+              approvalSlots={approvalSlots}
+              requesterSignatureSrc={requesterSignature.src}
+              onRequesterSignatureError={requesterSignature.clear}
+              fixedZoom={paperZoom}
+            />
+          </div>,
+          document.body
+        )}
 
       <style jsx global>{`
         .cert-print-root {

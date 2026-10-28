@@ -77,7 +77,7 @@ const menuGroups: MenuGroup[] = [
         href: '/org-chart',
         matchPrefix: '/org-chart',
         icon: Network,
-        requiredPermissions: ['ORG_CHART_VIEW', 'ORG_STRUCT_VIEW', 'ORG_VIEW'],
+        requiredPermissions: ['ORG_CHART_VIEW'],
       },
     ],
   },
@@ -148,6 +148,7 @@ const menuGroups: MenuGroup[] = [
           'PAYROLL_BONUS_VIEW',
           'PAYROLL_BANK_VIEW',
           'PAYROLL_TAX_VIEW',
+          'PAYROLL_SLIP_VIEW',
         ],
       },
       {
@@ -173,6 +174,7 @@ const menuGroups: MenuGroup[] = [
           'EMP_TRANSFER_VIEW',
           'EMP_TYPE_VIEW',
           'EMP_DOC_VIEW',
+          'EMP_HISTORY_VIEW',
         ],
       },
       {
@@ -201,7 +203,7 @@ const menuGroups: MenuGroup[] = [
         href: '/announcements',
         matchPrefix: '/announcements',
         icon: Megaphone,
-        requiredPermissions: ['ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
+        requiredPermissions: ['ANNOUNCEMENTS_VIEW', 'ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
       },
     ],
   },

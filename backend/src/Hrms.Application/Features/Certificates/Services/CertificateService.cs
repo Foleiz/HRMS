@@ -39,7 +39,8 @@ public class CertificateService : ICertificateService
             {
                 Id = t.Id,
                 CertificateCode = t.CertificateCode,
-                CertificateName = t.CertificateName
+                CertificateName = t.CertificateName,
+                ValidityMonths = t.ValidityMonths
             })
             .ToListAsync(cancellationToken);
     }
@@ -271,9 +272,16 @@ public class CertificateService : ICertificateService
                 };
             }
 
-            if (currentEmpId.HasValue)
+            if (currentEmpId.HasValue && r.EmployeeId != currentEmpId.Value)
             {
-                isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+                if (IsAdmin)
+                {
+                    isMyTurn = true;
+                }
+                else
+                {
+                    isMyTurn = await _approvalWorkflow.CanUserApproveStepAsync(instance.Id, currentEmpId.Value, cancellationToken);
+                }
             }
         }
         else if (instance == null && effectiveStatus == "PENDING" && isHrOrAdmin)
@@ -458,8 +466,14 @@ public class CertificateService : ICertificateService
 
         await EnsureCanViewDocumentAsync(request, cancellationToken);
 
-        return await BuildDocumentAsync(
+        var document = await BuildDocumentAsync(
             request.EmployeeId, request.CertificateType, request.Purpose, request.IssuedAt, request.Id, lang, cancellationToken);
+        document.RequestedAt = DateTime.SpecifyKind(request.RequestedAt, DateTimeKind.Utc);
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            document.ApprovalTimeline = await _approvalWorkflow.GetTimelineAsync(request.ApprovalInstanceId.Value, cancellationToken);
+        }
+        return document;
     }
 
     public async Task<CertificateDocumentDto> PreviewCertificateDocumentAsync(
@@ -530,6 +544,26 @@ public class CertificateService : ICertificateService
         var startDate = firstContract?.StartDate
             ?? assignment?.EffectiveFrom
             ?? DateOnly.FromDateTime(employee.CreatedAt.AddHours(7));
+
+        // ประเภทการจ้างงาน: สัญญาจ้างที่มีผลล่าสุด (เหมือนการคิดสิทธิ์การลา) ถ้าไม่มีใช้ค่าในข้อมูลตำแหน่งงาน
+        var currentContract = await _context.EmploymentContracts.AsNoTracking()
+            .Include(c => c.EmployeeType)
+            .Where(c => c.EmployeeId == employeeId && c.Status == "ACTIVE" && c.StartDate <= todayTh)
+            .OrderByDescending(c => c.StartDate)
+            .FirstOrDefaultAsync(cancellationToken);
+        var employmentTypeName = currentContract?.EmployeeType?.TypeName;
+        if (string.IsNullOrWhiteSpace(employmentTypeName))
+        {
+            var typeId = currentContract?.EmployeeTypeId ?? assignment?.EmployeeTypeId;
+            if (typeId.HasValue)
+            {
+                employmentTypeName = await _context.EmployeeTypes.AsNoTracking()
+                    .Where(t => t.Id == typeId.Value)
+                    .Select(t => t.TypeName)
+                    .FirstOrDefaultAsync(cancellationToken);
+            }
+        }
+        var employmentStatusText = EmploymentStatusText(employee.EmploymentStatus, currentContract, todayTh);
 
         var salaryRecord = await _context.EmployeeSalaries.AsNoTracking()
             .Where(s => s.EmployeeId == employeeId && s.EffectiveFrom <= todayTh
@@ -617,6 +651,27 @@ public class CertificateService : ICertificateService
         var includeSalary = certCode.Contains("SALARY", StringComparison.OrdinalIgnoreCase);
         var salary = includeSalary ? salaryRecord?.BaseSalary : null;
 
+        // ค่าตำแหน่งตามโครงสร้างเงินเดือน (ตำแหน่ง/ระดับ) — ใช้หลักเดียวกับการคำนวณเงินเดือน
+        decimal? positionAllowance = null;
+        if (salary.HasValue && assignment != null)
+        {
+            var positionItemActive = await _context.PayrollItems.AsNoTracking()
+                .AnyAsync(i => i.ItemCode == "INC_POSITION" && i.Status == "ACTIVE", cancellationToken);
+            if (positionItemActive)
+            {
+                var structures = await _context.SalaryStructures.AsNoTracking()
+                    .Where(st => st.Status == "ACTIVE" && st.PositionId == assignment.PositionId
+                                 && st.EffectiveFrom <= todayTh && (st.EffectiveTo == null || st.EffectiveTo >= todayTh))
+                    .OrderByDescending(st => st.EffectiveFrom)
+                    .ToListAsync(cancellationToken);
+                var levelId = assignment.EmployeeLevelId ?? assignment.Position?.EmployeeLevelId;
+                var structure = (levelId.HasValue ? structures.FirstOrDefault(st => st.EmployeeLevelId == levelId.Value) : null)
+                                ?? structures.FirstOrDefault();
+                if (structure != null && structure.PositionAllowance > 0) positionAllowance = structure.PositionAllowance;
+            }
+        }
+        var totalIncome = salary.HasValue ? salary.Value + (positionAllowance ?? 0) : (decimal?)null;
+
         var fullName = employee.FullName;
         // ชื่อตำแหน่งบางรายการขึ้นต้นด้วย "ตำแหน่ง" อยู่แล้ว — ตัดออกเพื่อไม่ให้เป็น "ตำแหน่ง ตำแหน่ง..."
         var position = System.Text.RegularExpressions.Regex.Replace(assignment?.Position?.PositionName ?? "-", @"^ตำแหน่ง\s*", "");
@@ -643,7 +698,7 @@ public class CertificateService : ICertificateService
         {
             RequestId = requestId,
             IsPreview = requestId == 0,
-            DocumentNumber = requestId == 0 ? "(ออกเลขเมื่ออนุมัติ)" : $"HR {requestId:D4}/{issueDate.Year + 543}",
+            DocumentNumber = requestId == 0 ? "(ออกเลขเมื่ออนุมัติ)" : $"HR/{issueDate.Year + 543}/{requestId:D4}",
             IssueDate = issueDate,
             Language = language,
             CertificateCode = certCode,
@@ -654,18 +709,30 @@ public class CertificateService : ICertificateService
             CompanyPhone = company?.Phone,
             CompanyEmail = company?.Email,
             CompanyLogoBase64 = companyLogoBase64,
+            CompanySealBase64 = company?.SealData != null && company.SealData.Length > 0
+                ? $"data:image/png;base64,{Convert.ToBase64String(company.SealData)}"
+                : null,
             EmployeeId = employeeId,
             EmployeeCode = employee.EmployeeCode,
             FullName = fullName,
             CitizenIdMasked = employee.CitizenIdMasked,
             PositionName = position,
             DepartmentName = department,
+            EmploymentTypeName = string.IsNullOrWhiteSpace(employmentTypeName) ? "-" : employmentTypeName.Trim(),
+            EmploymentStatusText = employmentStatusText,
             StartDate = startDate.ToDateTime(TimeOnly.MinValue),
             StartDateText = language == "TH" ? ThaiDate(startDate) : EnglishDate(startDate),
             IssueDateText = language == "TH" ? ThaiDate(DateOnly.FromDateTime(issueDate)) : EnglishDate(DateOnly.FromDateTime(issueDate)),
+            ValidityMonths = certType?.ValidityMonths,
+            ExpiryDateText = certType?.ValidityMonths is int vm && vm > 0
+                ? (language == "TH" ? ThaiDate(DateOnly.FromDateTime(issueDate).AddMonths(vm)) : EnglishDate(DateOnly.FromDateTime(issueDate).AddMonths(vm)))
+                : null,
             ServiceDurationText = duration,
             BaseSalary = salary,
             SalaryText = salary.HasValue ? BahtText(salary.Value) : null,
+            PositionAllowance = positionAllowance,
+            TotalIncome = totalIncome,
+            TotalIncomeText = totalIncome.HasValue ? BahtText(totalIncome.Value) : null,
             Purpose = purposeText,
             CertificationBodyTh = bodyTh,
             CertificationBodyEn = bodyEn,
@@ -680,6 +747,19 @@ public class CertificateService : ICertificateService
         "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
         "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
     };
+
+    /// <summary>สถานะการเป็นพนักงานสำหรับหนังสือรับรอง</summary>
+    private static string EmploymentStatusText(string? employmentStatus, EmploymentContract? contract, DateOnly today)
+    {
+        var status = (employmentStatus ?? string.Empty).Trim().ToUpperInvariant();
+        if (status == "RESIGNED" || status == "TERMINATED") return "พ้นสภาพการเป็นพนักงาน";
+        if (status != "ACTIVE") return "ไม่ได้ปฏิบัติงาน";
+        var onProbation = contract != null
+                          && contract.ProbationPassedDate == null
+                          && contract.ProbationEndDate.HasValue
+                          && contract.ProbationEndDate.Value >= today;
+        return onProbation ? "อยู่ระหว่างทดลองงาน" : "ปฏิบัติงานอยู่ในปัจจุบัน";
+    }
 
     private static string ThaiDate(DateOnly d) => $"{d.Day} {ThaiMonths[d.Month - 1]} พ.ศ. {d.Year + 543}";
 

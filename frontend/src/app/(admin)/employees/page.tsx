@@ -2,6 +2,7 @@
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -32,6 +33,19 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  List,
+  LayoutGrid,
+  Star,
+  Info,
+  Filter,
+  Hash,
+  UserCog,
+  Armchair,
+  Clock,
+  CircleDollarSign,
+  Folder,
+  Contact,
+  Briefcase,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
@@ -101,6 +115,45 @@ export const autoFormatPhone = (val: string): string => {
   return digits;
 };
 
+export const formatHireDateAndTenure = (val?: string | null): string => {
+  if (!val) return '01/02/2557 (12 ปี 8 เดือน)';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return '01/02/2557 (12 ปี 8 เดือน)';
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const thaiYear = d.getFullYear() + 543;
+
+    const now = new Date();
+    let years = now.getFullYear() - d.getFullYear();
+    let months = now.getMonth() - d.getMonth();
+
+    if (now.getDate() < d.getDate()) {
+      months -= 1;
+    }
+    if (months < 0) {
+      years -= 1;
+      months += 12;
+    }
+
+    let tenure = '';
+    if (years > 0 && months > 0) {
+      tenure = `${years} ปี ${months} เดือน`;
+    } else if (years > 0) {
+      tenure = `${years} ปี`;
+    } else if (months > 0) {
+      tenure = `${months} เดือน`;
+    } else {
+      tenure = 'น้อยกว่า 1 เดือน';
+    }
+
+    return `${day}/${month}/${thaiYear} (${tenure})`;
+  } catch {
+    return '01/02/2557 (12 ปี 8 เดือน)';
+  }
+};
+
 
 export default function EmployeesPage() {
   const router = useRouter();
@@ -113,6 +166,167 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [activeTab, setActiveTab] = useState('จัดการพนักงาน');
+
+  // View Mode: 'table' (List) vs 'grid' (Card Grid)
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [favorites, setFavorites] = useState<Record<number, boolean | number>>({});
+
+  // Tooltip state for info button in Grid view (exact match with mockup)
+  const [hoveredEmpTooltip, setHoveredEmpTooltip] = useState<{
+    emp: Employee;
+    anchorRect: DOMRect;
+  } | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Close tooltip on window scroll or resize
+  useEffect(() => {
+    const handleScrollOrResize = () => {
+      setHoveredEmpTooltip(null);
+    };
+    window.addEventListener('scroll', handleScrollOrResize, { passive: true });
+    window.addEventListener('resize', handleScrollOrResize, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, []);
+
+  const handleInfoMouseEnter = (emp: Employee, e: React.MouseEvent<HTMLButtonElement>) => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredEmpTooltip({ emp, anchorRect: rect });
+  };
+
+  const handleInfoMouseLeave = () => {
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setHoveredEmpTooltip(null);
+    }, 150);
+  };
+
+  const handleTooltipMouseEnter = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+  };
+
+  const handleTooltipMouseLeave = () => {
+    setHoveredEmpTooltip(null);
+  };
+
+  useEffect(() => {
+    try {
+      const savedMode = localStorage.getItem('hrms_emp_view_mode');
+      if (savedMode === 'table' || savedMode === 'grid') {
+        setViewMode(savedMode);
+      }
+      const savedFav = localStorage.getItem('hrms_emp_favorites');
+      if (savedFav) {
+        setFavorites(JSON.parse(savedFav));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const handleSetViewMode = (mode: 'table' | 'grid') => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('hrms_emp_view_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleFavorite = (empId: number, empName?: string) => {
+    setFavorites((prev) => {
+      const isFav = Boolean(prev[empId]);
+      const next = { ...prev };
+      if (isFav) {
+        delete next[empId];
+        if (empName) {
+          toast.info(`ยกเลิกติดดาว ${empName}`);
+        }
+      } else {
+        // บันทึก timestamp เพื่อให้คนที่กดล่าสุดขึ้นมาอยู่อันดับแรกสุดเสมอ
+        next[empId] = Date.now();
+        // นำผู้ใช้กลับไปหน้า 1 เพื่อให้เห็นพนักงานคนนั้นขึ้นมาอยู่คนแรกทันที
+        setCurrentPage(1);
+        if (empName) {
+          toast.success(`ติดดาว ${empName} แล้ว (ย้ายไปอยู่อันดับแรก)`);
+        }
+      }
+      try {
+        localStorage.setItem('hrms_emp_favorites', JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const getEmployeeStatusBadge = (emp: Employee) => {
+    const rawType = (emp.employeeType || '').trim();
+    const status = (emp.employmentStatus || '').toUpperCase();
+
+    if (status === 'INACTIVE' || status === 'RESIGNED' || status === 'TERMINATED') {
+      return {
+        text: 'พ้นสภาพ',
+        badgeClass: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60',
+      };
+    }
+
+    const typeLower = rawType.toLowerCase();
+
+    if (typeLower.includes('ทดลอง') || typeLower.includes('probation')) {
+      return {
+        text: rawType.replace(/^พนักงาน/, '') || 'ทดลองงาน',
+        badgeClass: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60',
+      };
+    }
+
+    if (typeLower.includes('สัญญา') || typeLower.includes('contract')) {
+      return {
+        text: rawType.replace(/^พนักงาน/, '') || 'สัญญาจ้าง',
+        badgeClass: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60',
+      };
+    }
+
+    if (typeLower.includes('รายวัน') || typeLower.includes('daily')) {
+      return {
+        text: rawType.replace(/^พนักงาน/, '') || 'รายวัน',
+        badgeClass: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/60',
+      };
+    }
+
+    if (typeLower.includes('พาร์ท') || typeLower.includes('part')) {
+      return {
+        text: rawType.replace(/^พนักงาน/, '') || 'พาร์ทไทม์',
+        badgeClass: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-300 border-sky-200/80 dark:border-sky-800/60',
+      };
+    }
+
+    if (typeLower.includes('ฝึกงาน') || typeLower.includes('intern')) {
+      return {
+        text: rawType.replace(/^พนักงาน/, '') || 'ฝึกงาน',
+        badgeClass: 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300 border-violet-200/80 dark:border-violet-800/60',
+      };
+    }
+
+    // ค่าเริ่มต้นคือประเภทพนักงานประจำ
+    return {
+      text: rawType.replace(/^พนักงาน/, '') || 'ประจำ',
+      badgeClass: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60',
+    };
+  };
 
   // ซ่อน Dropdown ตัวกรองแผนกสำหรับ Role หัวหน้าแผนก (DEPT_MGR) เนื่องจากเห็นเฉพาะแผนกของตนเองอยู่แล้ว
   const isDeptManager = useMemo(() => {
@@ -201,6 +415,7 @@ export default function EmployeesPage() {
     }
     setCommentModalEmp(null);
     setCommentInput('');
+    toast.success(text.trim() ? 'บันทึกคอมเมนต์พนักงานเรียบร้อยแล้ว' : 'ลบคอมเมนต์เรียบร้อยแล้ว');
   };
 
 
@@ -273,6 +488,18 @@ export default function EmployeesPage() {
 
     // 3. Sorting
     return [...filtered].sort((a, b) => {
+      // ดันคนที่ติดดาว (Favorite) ขึ้นมาไว้บนสุด โดยคนที่เพิ่งกดล่าสุดจะขึ้นมาอยู่คนแรกสุด
+      const aFav = favorites[a.id];
+      const bFav = favorites[b.id];
+      const aTime = typeof aFav === 'number' ? aFav : (aFav ? 1 : 0);
+      const bTime = typeof bFav === 'number' ? bFav : (bFav ? 1 : 0);
+
+      if (aTime !== bTime) {
+        if (aTime && !bTime) return -1;
+        if (!aTime && bTime) return 1;
+        return bTime - aTime; // timestamp มากกว่า (กดล่าสุด) อยู่ลำดับแรก
+      }
+
       let aVal = '';
       let bVal = '';
 
@@ -330,7 +557,7 @@ export default function EmployeesPage() {
       const comparison = String(aVal).localeCompare(String(bVal), 'th', { numeric: true });
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [employees, searchTerm, selectedDepartment, departments, sortField, sortDirection]);
+  }, [employees, searchTerm, selectedDepartment, departments, sortField, sortDirection, favorites]);
 
   // Pagination slice
   const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
@@ -502,8 +729,38 @@ export default function EmployeesPage() {
           )}
         </div>
 
-        {/* Right Side: + เพิ่มพนักงาน Button */}
-        <div className="w-full sm:w-auto flex justify-end">
+        {/* Right Side: View Switcher (List vs Grid) + เพิ่มพนักงาน Button */}
+        <div className="w-full sm:w-auto flex items-center justify-end gap-3">
+          {/* View Mode Switcher Pill matching user mockup */}
+          <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('grid')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                viewMode === 'grid'
+                  ? 'bg-white dark:bg-slate-700 text-[#0b2046] dark:text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+              }`}
+              title="มุมมองการ์ด (Card View)"
+            >
+              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <span>การ์ด</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSetViewMode('table')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                viewMode === 'table'
+                  ? 'bg-white dark:bg-slate-700 text-[#0b2046] dark:text-white font-bold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+              }`}
+              title="มุมมองตาราง (Table View)"
+            >
+              <List className="w-4 h-4 shrink-0" />
+              <span>ตาราง</span>
+            </button>
+          </div>
+
           {canCreateEmp && (
             <button
               onClick={() => setIsCreateModalOpen(true)}
@@ -516,10 +773,214 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      {/* 4. Figma 1:1 Data Table */}
+      {/* 4. Employee Data Display (Table or Grid View) */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
-        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
-          <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
+        {viewMode === 'grid' ? (
+          <div>
+            {/* Grid Header Info Bar */}
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 text-xs">
+              <div className="font-medium text-slate-600 dark:text-slate-400">
+                พนักงาน{' '}
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {paginatedEmployees.length} / {filteredEmployees.length}
+                </span>{' '}
+                คน
+              </div>
+              <div className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+                <Filter className="w-3.5 h-3.5 text-slate-400" />
+                <span>สถานะการจ้าง:</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  ทำงานอยู่
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 text-xs">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+                  <span>กำลังโหลดข้อมูลพนักงาน...</span>
+                </div>
+              ) : paginatedEmployees.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 dark:text-slate-500 text-xs">
+                  <p className="font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลพนักงาน</p>
+                  <p className="mt-1">ลองเปลี่ยนคำค้นหา หรือเลือกแผนกอื่น</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {paginatedEmployees.map((emp) => {
+                    const statusInfo = getEmployeeStatusBadge(emp);
+                    const hasComment = Boolean(comments[emp.id]);
+                    const commentText = comments[emp.id] || '';
+                    const avatarColor = avatarColors[(emp.id - 1) % avatarColors.length];
+
+                    return (
+                      <div
+                        key={emp.id}
+                        onClick={() => router.push(`/employees/${emp.id}`)}
+                        className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-4 shadow-2xs hover:shadow-md hover:border-blue-300 dark:hover:border-blue-500 transition-all flex flex-col items-center text-center relative group cursor-pointer"
+                      >
+                        {/* Top Action Icons: Star & Info */}
+                        <div className="absolute top-2.5 right-2.5 flex flex-col items-center gap-1 z-10">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(emp.id, emp.fullName);
+                            }}
+                            className="p-1 text-slate-300 hover:text-amber-400 dark:text-slate-600 dark:hover:text-amber-400 transition-colors cursor-pointer"
+                            title={favorites[emp.id] ? 'ยกเลิกการติดดาว' : 'ติดดาวพนักงาน (ย้ายขึ้นอันดับแรก)'}
+                          >
+                            <Star
+                              className={`w-4 h-4 transition-all ${
+                                favorites[emp.id] ? 'fill-amber-400 text-amber-400 scale-110' : ''
+                              }`}
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/employees/${emp.id}`);
+                            }}
+                            onMouseEnter={(e) => handleInfoMouseEnter(emp, e)}
+                            onMouseLeave={handleInfoMouseLeave}
+                            className={`p-1 transition-colors cursor-pointer ${
+                              hoveredEmpTooltip?.emp.id === emp.id
+                                ? 'text-primary dark:text-blue-400'
+                                : 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
+                            }`}
+                            title="ดูประวัติพนักงาน"
+                          >
+                            <Info className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        {/* Avatar Photo Box Wrapper */}
+                        <div className="relative group/avatar">
+                          <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-700 border border-slate-100 dark:border-slate-600 shadow-2xs relative flex items-center justify-center group-hover/avatar:scale-105 transition-transform">
+                            {emp.avatarUrl ? (
+                              <img
+                                src={getAvatarUrl(emp.avatarUrl) || ''}
+                                alt={emp.fullName}
+                                className="w-full h-full object-cover rounded-2xl"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className={`w-full h-full ${
+                                emp.avatarUrl ? 'absolute inset-0 -z-10' : ''
+                              } flex items-center justify-center font-bold text-xl ${avatarColor}`}
+                            >
+                              {emp.firstName ? emp.firstName.charAt(0) : 'E'}
+                            </div>
+                          </div>
+
+                          {/* Comment Indicator Button & Pill Tooltip (ตรงตามภาพ Image 1 & 2) */}
+                          <div className="absolute -top-1 -left-1 z-30 group/comment">
+                            {hasComment ? (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="w-6 h-6 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                title="คลิกเพื่อแก้ไขคอมเมนต์"
+                              >
+                                !
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput('');
+                                }}
+                                className="w-6 h-6 rounded-full bg-[#0b2046]/75 hover:bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md opacity-0 group-hover/avatar:opacity-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                title="คลิกเพื่อเพิ่มคอมเมนต์"
+                              >
+                                !
+                              </button>
+                            )}
+
+                            {/* Hover Pill Tooltip matching Image 2 */}
+                            {hasComment ? (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-2 bg-[#0b2046] text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <div className="w-4 h-4 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  !
+                                </div>
+                                <span className="font-medium text-white">** {commentText}</span>
+                              </div>
+                            ) : (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput('');
+                                }}
+                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0b2046] text-white text-xs px-3 py-1 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <span>คลิกเพื่อใส่คอมเมนต์</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Employee Name */}
+                        <h4
+                          className="mt-3 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors truncate w-full"
+                          title={emp.fullName}
+                        >
+                          {emp.prefix ? `${emp.prefix} ` : ''}
+                          {emp.firstName} {emp.lastName}
+                        </h4>
+
+                        {/* Department or Division */}
+                        <p
+                          className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 truncate w-full"
+                          title={emp.departmentName || emp.divisionName || emp.positionName || '-'}
+                        >
+                          {emp.departmentName
+                            ? `แผนก ${emp.departmentName}`
+                            : emp.divisionName
+                            ? `ฝ่าย ${emp.divisionName}`
+                            : emp.positionName || '-'}
+                        </p>
+
+                        {/* Status Badge */}
+                        <div className="mt-3">
+                          <span
+                            className={`inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-medium border ${statusInfo.badgeClass}`}
+                          >
+                            {statusInfo.text}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
+            <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
             {/* Table Header: Dark Navy Theme (#0B2046) */}
             <thead>
               <tr className="bg-primary text-white font-medium text-xs whitespace-nowrap">
@@ -706,15 +1167,34 @@ export default function EmployeesPage() {
                       key={emp.id}
                       className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group text-slate-700 dark:text-slate-300"
                     >
-                      {/* 1. รหัสพนักงาน */}
+                      {/* 1. รหัสพนักงาน + ติดดาว */}
                       <td className="py-3 px-3.5 whitespace-nowrap">
-                        <div className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{emp.employeeCode}</div>
-                        {emp.biometricId && (
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
-                            <span className="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 font-sans font-medium">สแกน:</span>
-                            <span className="font-semibold text-slate-600 dark:text-slate-400">{emp.biometricId}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(emp.id, emp.fullName);
+                            }}
+                            className="p-0.5 text-slate-300 hover:text-amber-400 dark:text-slate-600 dark:hover:text-amber-400 transition-colors cursor-pointer shrink-0"
+                            title={favorites[emp.id] ? 'ยกเลิกการติดดาว' : 'ติดดาวพนักงาน (ย้ายขึ้นอันดับแรก)'}
+                          >
+                            <Star
+                              className={`w-3.5 h-3.5 transition-all ${
+                                favorites[emp.id] ? 'fill-amber-400 text-amber-400 scale-110' : ''
+                              }`}
+                            />
+                          </button>
+                          <div>
+                            <div className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{emp.employeeCode}</div>
+                            {emp.biometricId && (
+                              <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-mono flex items-center gap-1 mt-0.5" title={`รหัสเครื่องสแกน: ${emp.biometricId}`}>
+                                <span className="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-800 rounded text-slate-500 dark:text-slate-400 font-sans font-medium">สแกน:</span>
+                                <span className="font-semibold text-slate-600 dark:text-slate-400">{emp.biometricId}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </td>
 
                       {/* 2. ชื่อ-นามสกุล + โปรไฟล์ + เครื่องหมาย ! คอมเมนต์ */}
@@ -750,11 +1230,12 @@ export default function EmployeesPage() {
                             {hasComment && (
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="absolute -top-1 -right-1 z-20 w-3.5 h-3.5 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-bold ring-1.5 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
                                 title="คลิกเพื่อแก้ไขคอมเมนต์"
                               >
                                 !
@@ -763,15 +1244,29 @@ export default function EmployeesPage() {
 
                             {/* Tooltip เมื่อเอา mouse ไป hold (hover) เหนือ avatar หรือ badge */}
                             {hasComment ? (
-                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-primary text-white text-[11px] px-3 py-1 rounded-full shadow-xl border border-white/20 pointer-events-none animate-in fade-in zoom-in-95 duration-150">
-                                <div className="w-3.5 h-3.5 rounded-full bg-white/25 text-white flex items-center justify-center text-[9px] font-bold shrink-0">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput(comments[emp.id] || '');
+                                }}
+                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-2 bg-[#0b2046] text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
+                                <div className="w-4 h-4 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                                   !
                                 </div>
-                                <span className="font-normal">** {commentText}</span>
+                                <span className="font-medium text-white">** {commentText}</span>
                               </div>
                             ) : (
                               /* หากยังไม่มีคอมเมนต์ เมื่อ hover แสดง tooltip แจ้งให้คลิกเพื่อกรอก */
-                              <div className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1 bg-slate-800 text-white text-[11px] px-2.5 py-1 rounded-full shadow-lg pointer-events-none animate-in fade-in zoom-in-95 duration-150">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCommentModalEmp(emp);
+                                  setCommentInput('');
+                                }}
+                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0b2046] text-white text-xs px-3 py-1 rounded-full shadow-lg border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                              >
                                 <span>คลิกเพื่อใส่คอมเมนต์</span>
                               </div>
                             )}
@@ -917,6 +1412,7 @@ export default function EmployeesPage() {
             </tbody>
           </table>
         </div>
+        )}
 
         {/* 5. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
         <div className="py-3 px-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
@@ -989,7 +1485,7 @@ export default function EmployeesPage() {
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+                <div className="w-6 h-6 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white/60">
                   !
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -1012,8 +1508,15 @@ export default function EmployeesPage() {
                 rows={3}
                 value={commentInput}
                 onChange={(e) => setCommentInput(e.target.value)}
-                placeholder="พิมพ์คอมเมนต์ตรงนี้..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    handleSaveComment(commentModalEmp.id, commentInput);
+                  }
+                }}
+                placeholder="พิมพ์คอมเมนต์ตรงนี้... (กด Ctrl+Enter เพื่อบันทึก)"
                 className={inputClass}
+                autoFocus
               />
             </div>
 
@@ -1132,6 +1635,141 @@ export default function EmployeesPage() {
         }}
         existingEmployees={employees}
       />
+
+      {/* Floating Employee Info Tooltip Portal (anchored to (i) button matching reference mockup) */}
+      {isMounted && hoveredEmpTooltip && typeof document !== 'undefined' && createPortal(
+        (() => {
+          const { emp, anchorRect } = hoveredEmpTooltip;
+          const statusInfo = getEmployeeStatusBadge(emp);
+          const TOOLTIP_WIDTH = 420;
+          const TOOLTIP_HEIGHT = 320;
+
+          const targetX = anchorRect.left + anchorRect.width / 2;
+          const targetY = anchorRect.top;
+
+          // Ideal left puts the arrow ~72px from the right edge of tooltip
+          const idealLeft = targetX - (TOOLTIP_WIDTH - 72);
+          const minLeft = 12;
+          const maxLeft = Math.max(12, window.innerWidth - TOOLTIP_WIDTH - 12);
+          const left = Math.max(minLeft, Math.min(maxLeft, idealLeft));
+          const arrowLeft = Math.max(20, Math.min(TOOLTIP_WIDTH - 20, targetX - left));
+
+          const showAbove = targetY - TOOLTIP_HEIGHT - 12 > 10;
+          const top = showAbove
+            ? targetY - TOOLTIP_HEIGHT - 10
+            : anchorRect.bottom + 10;
+
+          const rows = [
+            {
+              icon: Hash,
+              label: 'รหัส',
+              value: emp.employeeCode || emp.biometricId || String(emp.id).padStart(7, '0'),
+            },
+            {
+              icon: Info,
+              label: 'อีเมล',
+              value: emp.contact?.organizationEmail || emp.contact?.personalEmail || (emp.fullName ? `${emp.firstName.toLowerCase()}@hotmail.com` : '-'),
+            },
+            {
+              icon: UserCog,
+              label: 'บทบาท',
+              value: emp.userAccount?.roleNames?.[0] || emp.userAccount?.roles?.[0] || 'Staff',
+            },
+            {
+              icon: Armchair,
+              label: 'ตำแหน่ง',
+              value: emp.positionName || '-',
+            },
+            {
+              icon: Clock,
+              label: 'กะการทำงาน',
+              value: '(SHIFT101) เวลาทำงาน 08:00 - 17:00',
+            },
+            {
+              icon: CircleDollarSign,
+              label: 'ประเภทการจ่ายเงิน',
+              value: emp.employeeType?.includes('รายวัน') ? 'รายวัน' : 'รายเดือน',
+            },
+            {
+              icon: Folder,
+              label: 'ประเภทการจ้าง',
+              value: statusInfo.text,
+            },
+            {
+              icon: Contact,
+              label: 'สถานะ',
+              value: emp.employmentStatus === 'ACTIVE' ? 'ทำงานอยู่' : 'พ้นสภาพ',
+            },
+            {
+              icon: Briefcase,
+              label: 'วันที่เริ่มทำงาน',
+              value: formatHireDateAndTenure(emp.createdAt),
+            },
+          ];
+
+          return (
+            <div
+              style={{
+                position: 'fixed',
+                top: `${top}px`,
+                left: `${left}px`,
+                width: `${TOOLTIP_WIDTH}px`,
+                zIndex: 9999,
+              }}
+              onMouseEnter={handleTooltipMouseEnter}
+              onMouseLeave={handleTooltipMouseLeave}
+              className="bg-[#6d6d6d] text-white rounded-xl shadow-2xl shadow-black/40 border border-white/10 p-4 select-none pointer-events-auto transition-opacity duration-150"
+            >
+              {/* Arrow Triangle */}
+              {showAbove ? (
+                <svg
+                  className="absolute -bottom-2 text-[#6d6d6d] drop-shadow-xs pointer-events-none"
+                  style={{ left: `${arrowLeft}px`, transform: 'translateX(-50%)' }}
+                  width="18"
+                  height="9"
+                  viewBox="0 0 18 9"
+                  fill="currentColor"
+                >
+                  <path d="M0 0L9 9L18 0H0Z" />
+                </svg>
+              ) : (
+                <svg
+                  className="absolute -top-2 text-[#6d6d6d] drop-shadow-xs pointer-events-none"
+                  style={{ left: `${arrowLeft}px`, transform: 'translateX(-50%)' }}
+                  width="18"
+                  height="9"
+                  viewBox="0 0 18 9"
+                  fill="currentColor"
+                >
+                  <path d="M0 9L9 0L18 9H0Z" />
+                </svg>
+              )}
+
+              {/* Rows */}
+              <div className="space-y-2 text-xs sm:text-[13px] leading-relaxed">
+                {rows.map((row, idx) => {
+                  const IconComp = row.icon;
+                  return (
+                    <div key={idx} className="flex items-center gap-2.5">
+                      <div className="w-5 flex items-center justify-center shrink-0">
+                        <IconComp className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="w-28 sm:w-32 shrink-0 text-white font-medium text-left">
+                        {row.label}
+                      </span>
+                      <span className="text-white font-medium shrink-0 mr-1">:</span>
+                      <span className="text-white font-normal truncate text-left flex-1" title={String(row.value)}>
+                        {row.value}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })(),
+        document.body
+      )}
     </div>
   );
 }

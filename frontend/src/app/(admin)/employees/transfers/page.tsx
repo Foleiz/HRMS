@@ -210,28 +210,17 @@ export default function TransfersPage() {
         </div>
       </div>
 
-      {/* 3. Primary Action Button (+ บันทึกคำสั่งแต่งตั้ง/โยกย้าย) */}
-      {canCreateTransfers && (
-        <div className="flex items-center justify-end">
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="h-10 px-5 bg-primary hover:bg-primary-hover text-white text-xs font-medium rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
-          </button>
-        </div>
-      )}
-
-      {/* 4. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง */}
+      {/* 3. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
         {/* Table Header Controls */}
-        <div className="px-6 pt-5 flex flex-wrap items-center justify-between gap-4">
-          <h3 className="pb-3 text-sm font-bold text-slate-800 dark:text-slate-200">ประวัติการโยกย้ายตำแหน่ง (รายบุคคล)</h3>
+        <div className="p-4 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 flex-1">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              ประวัติการโยกย้ายตำแหน่ง (รายบุคคล)
+            </h3>
 
-          {/* Search & Filter Controls */}
-          <div className="flex flex-wrap items-center gap-3 pb-3">
-            <div className="relative w-full sm:w-72">
+            {/* Search & Filter Controls moved to the left */}
+            <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -262,6 +251,17 @@ export default function TransfersPage() {
               ]}
             />
           </div>
+
+          {/* Action Button moved down into table */}
+          {canCreateTransfers && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="h-9 px-4 bg-primary hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl flex items-center gap-2 shadow-xs transition-colors shrink-0 cursor-pointer self-start md:self-auto"
+            >
+              <Plus className="w-4 h-4" />
+              <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
+            </button>
+          )}
         </div>
 
         {/* 5. TABLE: เอาไว้ดูว่ามีใครย้ายตำแหน่งไหนไปไหนวันที่เท่าไหร่ */}

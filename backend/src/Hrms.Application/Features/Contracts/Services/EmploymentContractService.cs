@@ -59,7 +59,7 @@ public class EmploymentContractService : IEmploymentContractService
             query = query.Where(c => c.Status == status);
         }
 
-        var contracts = await query
+        var contracts = await SelectWithoutBlob(query)
             .OrderByDescending(c => c.StartDate)
             .ThenByDescending(c => c.Id)
             .ToListAsync(cancellationToken);
@@ -69,45 +69,50 @@ public class EmploymentContractService : IEmploymentContractService
 
     public async Task<ContractSummaryStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
     {
-        var allContracts = await _context.EmploymentContracts
+        var activeContracts = await _context.EmploymentContracts
             .AsNoTracking()
+            .Where(c => c.Status == "ACTIVE")
+            .Select(c => new
+            {
+                c.ContractType,
+                c.ProbationEndDate,
+                c.ContractEndDate
+            })
             .ToListAsync(cancellationToken);
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var in7Days = today.AddDays(7);
+        var in30Days = today.AddDays(30);
 
-        var probationCount = allContracts.Count(c => c.Status == "ACTIVE" && c.ContractType == "PROBATION");
-        var permanentCount = allContracts.Count(c => c.Status == "ACTIVE" && c.ContractType == "PERMANENT");
+        var probationCount = activeContracts.Count(c => c.ContractType == "PROBATION");
+        var permanentCount = activeContracts.Count(c => c.ContractType == "PERMANENT");
         
         // ใกล้ครบทดลองงาน (7 วัน)
-        var probationExpiring7Days = allContracts.Count(c =>
-            c.Status == "ACTIVE" &&
-            c.ContractType == "PROBATION" &&
+        var probationExpiring7Days = activeContracts.Count(c =>
             c.ProbationEndDate.HasValue &&
             c.ProbationEndDate.Value >= today &&
             c.ProbationEndDate.Value <= in7Days);
+
+        // สัญญาจ้างใกล้หมดอายุ (30 วัน)
+        var contractExpiring30Days = activeContracts.Count(c =>
+            c.ContractEndDate.HasValue &&
+            c.ContractEndDate.Value >= today &&
+            c.ContractEndDate.Value <= in30Days);
 
         return new ContractSummaryStatsDto
         {
             ProbationCount = probationCount,
             PermanentCount = permanentCount,
             ProbationExpiring7DaysCount = probationExpiring7Days,
-            TotalActiveCount = allContracts.Count(c => c.Status == "ACTIVE")
+            ContractExpiring30DaysCount = contractExpiring30Days,
+            TotalActiveCount = activeContracts.Count
         };
     }
 
     public async Task<EmploymentContractDto> GetByIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var contract = await _context.EmploymentContracts
-            .Include(c => c.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(a => a.Department)
-            .Include(c => c.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(a => a.Position)
-            .Include(c => c.EmployeeType)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+        var contract = await SelectWithoutBlob(_context.EmploymentContracts.AsNoTracking().Where(c => c.Id == id))
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (contract == null)
         {
@@ -119,20 +124,69 @@ public class EmploymentContractService : IEmploymentContractService
 
     public async Task<List<EmploymentContractDto>> GetByEmployeeIdAsync(long employeeId, CancellationToken cancellationToken = default)
     {
-        var contracts = await _context.EmploymentContracts
-            .Include(c => c.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(a => a.Department)
-            .Include(c => c.Employee)
-                .ThenInclude(e => e!.Assignments)
-                    .ThenInclude(a => a.Position)
-            .Include(c => c.EmployeeType)
-            .Where(c => c.EmployeeId == employeeId)
+        var contracts = await SelectWithoutBlob(
+                _context.EmploymentContracts
+                    .AsNoTracking()
+                    .Where(c => c.EmployeeId == employeeId))
             .OrderByDescending(c => c.StartDate)
-            .AsNoTracking()
             .ToListAsync(cancellationToken);
 
         return contracts.Select(MapToDto).ToList();
+    }
+
+    /// <summary>
+    /// ดึงข้อมูลสัญญาจ้างโดยไม่โหลดคอลัมน์ไฟล์แนบขนาดใหญ่ (document_file_data) มาในหน่วยความจำ
+    /// </summary>
+    private static IQueryable<EmploymentContract> SelectWithoutBlob(IQueryable<EmploymentContract> source)
+    {
+        return source.Select(c => new EmploymentContract
+        {
+            Id = c.Id,
+            EmployeeId = c.EmployeeId,
+            EmployeeTypeId = c.EmployeeTypeId,
+            ContractType = c.ContractType,
+            WageType = c.WageType,
+            StartDate = c.StartDate,
+            ProbationEndDate = c.ProbationEndDate,
+            ProbationPassedDate = c.ProbationPassedDate,
+            ContractEndDate = c.ContractEndDate,
+            TerminationDate = c.TerminationDate,
+            TerminationReason = c.TerminationReason,
+            Status = c.Status,
+            ApprovalInstanceId = c.ApprovalInstanceId,
+            DocumentFileName = c.DocumentFileName,
+            DocumentMimeType = c.DocumentMimeType,
+            DocumentFileSize = c.DocumentFileSize ?? (c.DocumentFileData != null ? 1L : null),
+            DocumentUploadedAt = c.DocumentUploadedAt,
+            Employee = c.Employee == null ? null : new Employee
+            {
+                Id = c.Employee.Id,
+                EmployeeCode = c.Employee.EmployeeCode,
+                FirstName = c.Employee.FirstName,
+                LastName = c.Employee.LastName,
+                Assignments = c.Employee.Assignments.Where(a => a.IsCurrent).Select(a => new EmployeeAssignment
+                {
+                    Id = a.Id,
+                    EmployeeId = a.EmployeeId,
+                    IsCurrent = a.IsCurrent,
+                    Department = a.Department == null ? null : new Department
+                    {
+                        Id = a.Department.Id,
+                        DepartmentName = a.Department.DepartmentName
+                    },
+                    Position = a.Position == null ? null : new Position
+                    {
+                        Id = a.Position.Id,
+                        PositionName = a.Position.PositionName
+                    }
+                }).ToList()
+            },
+            EmployeeType = c.EmployeeType == null ? null : new EmployeeType
+            {
+                Id = c.EmployeeType.Id,
+                TypeName = c.EmployeeType.TypeName
+            }
+        });
     }
 
     public async Task<List<EmployeeCareerTimelineDto>> GetTimelineByEmployeeIdAsync(

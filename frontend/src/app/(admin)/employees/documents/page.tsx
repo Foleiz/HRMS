@@ -158,29 +158,29 @@ export default function ExpiringDocumentsPage() {
 
       {/* สรุป */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
-              <FileClock className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800/60 flex items-center justify-center">
+              <FileClock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
               <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">ใกล้หมดอายุ</h4>
-              <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">อยู่ในช่วงแจ้งเตือนของแต่ละประเภทเอกสาร</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400">อยู่ในช่วงแจ้งเตือนของแต่ละประเภทเอกสาร</p>
             </div>
           </div>
-          <div className="text-2xl font-bold text-amber-600">{counts.expiring}</div>
+          <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{counts.expiring}</div>
         </div>
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
-              <FileX2 className="w-5 h-5 text-rose-600" />
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-800/60 flex items-center justify-center">
+              <FileX2 className="w-5 h-5 text-rose-600 dark:text-rose-400" />
             </div>
             <div>
               <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">หมดอายุแล้ว</h4>
-              <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ควรขอเอกสารฉบับใหม่จากพนักงาน</p>
+              <p className="text-xs text-slate-400 dark:text-slate-400">ควรขอเอกสารฉบับใหม่จากพนักงาน</p>
             </div>
           </div>
-          <div className="text-2xl font-bold text-rose-600">{counts.expired}</div>
+          <div className="text-2xl font-bold text-rose-600 dark:text-rose-300">{counts.expired}</div>
         </div>
       </div>
 

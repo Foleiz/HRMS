@@ -112,15 +112,18 @@ public class CertificateTypeMasterDto
     public long Id { get; set; }
     public string CertificateCode { get; set; } = string.Empty;
     public string CertificateName { get; set; } = string.Empty;
+    public int? ValidityMonths { get; set; }
 }
 
 public class CreateCertificateTypeMasterDto
 {
     public string CertificateCode { get; set; } = string.Empty;
     public string CertificateName { get; set; } = string.Empty;
+    public int? ValidityMonths { get; set; }
 }
 
 public class UpdateCertificateTypeMasterDto
 {
     public string CertificateName { get; set; } = string.Empty;
+    public int? ValidityMonths { get; set; }
 }

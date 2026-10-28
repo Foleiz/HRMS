@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShieldAlert, Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
 import { useAuth } from '@/context/AuthContext';
@@ -25,7 +26,13 @@ import { NotificationsWidget } from '@/components/dashboard/manager/Notification
 import { AttendancePieChart } from '@/components/dashboard/manager/AttendancePieChart';
 
 export default function HomePage() {
-  const { user, hasRole, hasPermission, logout } = useAuth();
+  const { user, isLoading, hasRole, hasPermission, logout } = useAuth();
+  const router = useRouter();
+
+  // หน้าแรกต้องเข้าสู่ระบบก่อนเสมอ — ยังไม่ login ให้ไปหน้า login (replace: กดย้อนกลับแล้วไม่วนกลับมาหน้านี้)
+  useEffect(() => {
+    if (!isLoading && !user) router.replace('/login');
+  }, [isLoading, user, router]);
 
   // คำนวณแดชบอร์ดที่ผู้ใช้ได้รับสิทธิ์จริงจากระบบสิทธิ์ (Dashboard Permission Matrix)
   const allowedDashboards = React.useMemo<DashboardRole[]>(() => {
@@ -61,20 +68,26 @@ export default function HomePage() {
     return list.length > 0 ? list : ['EMPLOYEE'];
   }, [user, hasPermission]);
 
-  const [activeRole, setActiveRole] = useState<DashboardRole>('EMPLOYEE');
+  const [selectedRole, setSelectedRole] = useState<DashboardRole | null>(null);
   const initializedForUserRef = React.useRef<string | number | null>(null);
 
+  const currentUid = user ? (user.id || user.username || 'current') : null;
+
   useEffect(() => {
-    if (user && allowedDashboards.length > 0) {
-      const uid = user.id || user.username || 'current';
-      if (initializedForUserRef.current !== uid) {
-        initializedForUserRef.current = uid;
-        setActiveRole(allowedDashboards[0]);
-      } else if (!allowedDashboards.includes(activeRole)) {
-        setActiveRole(allowedDashboards[0]);
+    if (user && allowedDashboards.length > 0 && currentUid) {
+      if (initializedForUserRef.current !== currentUid) {
+        initializedForUserRef.current = currentUid;
+        setSelectedRole(allowedDashboards[0]);
+      } else if (selectedRole && !allowedDashboards.includes(selectedRole)) {
+        setSelectedRole(allowedDashboards[0]);
       }
     }
-  }, [user, allowedDashboards, activeRole]);
+  }, [user, allowedDashboards, currentUid, selectedRole]);
+
+  const activeRole: DashboardRole =
+    selectedRole && allowedDashboards.includes(selectedRole) && initializedForUserRef.current === currentUid
+      ? selectedRole
+      : allowedDashboards[0] || 'EMPLOYEE';
 
   const displayName = user?.fullName || user?.username || 'ผู้ใช้งาน';
 
@@ -94,6 +107,15 @@ export default function HomePage() {
     );
     return dataPerms.length > 0;
   }, [user, hasRole]);
+
+  // ระหว่างตรวจเซสชัน / กำลังพาไปหน้า login — ไม่แสดงแดชบอร์ด
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] dark:text-blue-300" aria-label="กำลังตรวจสอบการเข้าสู่ระบบ" />
+      </div>
+    );
+  }
 
   if (user && !hasAnyPermission) {
     return (

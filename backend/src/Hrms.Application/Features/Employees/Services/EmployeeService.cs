@@ -108,17 +108,17 @@ public class EmployeeService : IEmployeeService
             }
             case "TEAM":
             {
-                // เห็นเฉพาะพนักงานในทีมเดียวกัน หรือลูกน้องโดยตรง หรือตัวเอง
+                // เห็นเฉพาะพนักงานในทีมเดียวกัน หรือสมาชิกทีมที่ตนเป็นหัวหน้า หรือตัวเอง
                 long? myTeamId = _currentUserService.TeamId;
                 long? myEmpId = _currentUserService.EmployeeId;
                 if (!myTeamId.HasValue)
                 {
                     if (!myEmpId.HasValue) return new List<EmployeeDto>();
-                    query = query.Where(e => e.Id == myEmpId.Value || e.Assignments.Any(a => a.ManagerEmployeeId == myEmpId.Value && a.IsCurrent));
+                    query = query.Where(e => e.Id == myEmpId.Value || e.Assignments.Any(a => (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent));
                 }
                 else
                 {
-                    query = query.Where(e => e.Assignments.Any(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value)) && a.IsCurrent) || (myEmpId.HasValue && e.Id == myEmpId.Value));
+                    query = query.Where(e => e.Assignments.Any(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent) || (myEmpId.HasValue && e.Id == myEmpId.Value));
                 }
                 break;
             }
@@ -203,14 +203,14 @@ public class EmployeeService : IEmployeeService
                     if (myTeamId.HasValue)
                     {
                         bool inTeam = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && (a.TeamId == myTeamId.Value || (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value)) && a.IsCurrent, cancellationToken);
+                            .AnyAsync(a => a.EmployeeId == id && (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent, cancellationToken);
                         if (!inTeam)
                             throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
                     }
                     else if (myEmpId.HasValue)
                     {
                         bool isSubordinate = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && a.ManagerEmployeeId == myEmpId.Value && a.IsCurrent, cancellationToken);
+                            .AnyAsync(a => a.EmployeeId == id && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent, cancellationToken);
                         if (!isSubordinate)
                             throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
                     }
@@ -248,7 +248,8 @@ public class EmployeeService : IEmployeeService
                     .ThenInclude(t => t!.EmployeeTypeBenefits)
                         .ThenInclude(etb => etb.BenefitItem)
             .Include(e => e.Assignments)
-                .ThenInclude(a => a.ManagerEmployee)
+                .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t!.LeadEmployee)
             .Include(e => e.Signatures)
             .Include(e => e.UserAccount)
                 .ThenInclude(u => u!.UserRoles)
@@ -528,7 +529,8 @@ public class EmployeeService : IEmployeeService
             var empTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
 
             // หากมีการระบุทีม ให้ผูกหัวหน้างานตรงเป็นหัวหน้าทีมอัตโนมัติ
-            long? managerId = request.ManagerEmployeeId;
+            // ระบบใช้หัวหน้าทีมอย่างเดียว — manager_employee_id เก็บสำเนาหัวหน้าทีมไว้ (ข้อมูลเดิม/ประวัติ) ไม่รับค่าจากฟอร์ม
+            long? managerId = null;
             if (request.TeamId.HasValue && request.TeamId.Value > 0)
             {
                 var team = await _dbContext.Teams.AsNoTracking().FirstOrDefaultAsync(t => t.Id == request.TeamId.Value, cancellationToken);
@@ -560,7 +562,7 @@ public class EmployeeService : IEmployeeService
 
     public async Task<EmployeeDto> UpdateAsync(long id, UpdateEmployeeRequest request, CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS)
+        // 1. ตรวจสอบสิทธิ์แก้ไข (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_EDIT, EMP_PROFILE_EDIT หรือแก้ไขโปรไฟล์ตนเอง ESS ที่มี ESS_PROFILE_EDIT)
         bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
         bool hasManagePermission = isSuper ||
                                    _currentUserService.HasPermission("EMP_MANAGE") ||
@@ -569,10 +571,21 @@ public class EmployeeService : IEmployeeService
 
         long? currentEmpId = _currentUserService.EmployeeId;
         bool isSelfUpdate = currentEmpId.HasValue && currentEmpId.Value == id;
+        bool hasSelfEditPermission = _currentUserService.HasPermission("ESS_PROFILE_EDIT");
 
-        if (!hasManagePermission && !isSelfUpdate)
+        if (isSelfUpdate)
         {
-            throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
+            if (!isSuper && !hasManagePermission && !hasSelfEditPermission)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลโปรไฟล์ของตนเอง");
+            }
+        }
+        else
+        {
+            if (!hasManagePermission)
+            {
+                throw new ForbiddenException("คุณไม่มีสิทธิ์แก้ไขข้อมูลพนักงาน");
+            }
         }
 
         if (!isSelfUpdate && !isSuper)
@@ -994,6 +1007,7 @@ public class EmployeeService : IEmployeeService
             if (request.SetTeam)
             {
                 assignment.TeamId = request.TeamId is > 0 ? request.TeamId : null;
+                assignment.ManagerEmployeeId = null; // ไม่มีทีม = ไม่มีหัวหน้า (ใช้ทางสำรองตอนอนุมัติ)
                 if (request.TeamId.HasValue && request.TeamId.Value > 0)
                 {
                     var team = await _dbContext.Teams.AsNoTracking().FirstOrDefaultAsync(t => t.Id == request.TeamId.Value, cancellationToken);
@@ -1005,10 +1019,7 @@ public class EmployeeService : IEmployeeService
                 }
             }
 
-            if (request.SetManager && (!request.SetTeam || assignment.TeamId == null))
-            {
-                assignment.ManagerEmployeeId = await ValidateManagerAsync(request.ManagerEmployeeId, employee.Id, cancellationToken);
-            }
+            // SetManager เลิกใช้แล้ว — หัวหน้ามาจากทีมเท่านั้น
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -1080,18 +1091,26 @@ public class EmployeeService : IEmployeeService
         long length,
         CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์ (ADMIN, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเอง)
-        bool canManageAvatar = _currentUserService.HasRole("ADMIN") ||
+        // 1. ตรวจสอบสิทธิ์ (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเองที่ต้องมี ESS_PROFILE_EDIT)
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageAvatar = isSuper ||
                                _currentUserService.HasPermission("EMP_MANAGE") ||
-                               _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                               _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                               _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageAvatar)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageAvatar && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์ของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์");
             }
+        }
+        else if (!canManageAvatar)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนรูปโปรไฟล์ของพนักงานท่านอื่น");
         }
 
         // 2. Validate content type
@@ -1170,17 +1189,25 @@ public class EmployeeService : IEmployeeService
         long id,
         CancellationToken cancellationToken = default)
     {
-        bool canManageAvatar = _currentUserService.HasRole("ADMIN") ||
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageAvatar = isSuper ||
                                _currentUserService.HasPermission("EMP_MANAGE") ||
-                               _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                               _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                               _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageAvatar)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageAvatar && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์ของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์");
             }
+        }
+        else if (!canManageAvatar)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบรูปโปรไฟล์ของพนักงานท่านอื่น");
         }
 
         var avatar = await _dbContext.EmployeeAvatars.FindAsync(new object[] { id }, cancellationToken);
@@ -1209,18 +1236,26 @@ public class EmployeeService : IEmployeeService
         long length,
         CancellationToken cancellationToken = default)
     {
-        // 1. ตรวจสอบสิทธิ์ (ADMIN, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเอง)
-        bool canManageSig = _currentUserService.HasRole("ADMIN") ||
+        // 1. ตรวจสอบสิทธิ์ (ADMIN, SYSTEM_SUPER, EMP_MANAGE, EMP_PROFILE_EDIT หรือพนักงานตัวเองที่ต้องมี ESS_PROFILE_EDIT)
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageSig = isSuper ||
                             _currentUserService.HasPermission("EMP_MANAGE") ||
-                            _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                            _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                            _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageSig)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageSig && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็นของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็น");
             }
+        }
+        else if (!canManageSig)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็นของพนักงานท่านอื่น");
         }
 
         var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
@@ -1299,17 +1334,25 @@ public class EmployeeService : IEmployeeService
 
     public async Task<bool> DeleteSignatureAsync(long id, CancellationToken cancellationToken = default)
     {
-        bool canManageSig = _currentUserService.HasRole("ADMIN") ||
+        bool isSuper = _currentUserService.HasRole("ADMIN") || _currentUserService.HasRole("SYSTEM_SUPER");
+        bool canManageSig = isSuper ||
                             _currentUserService.HasPermission("EMP_MANAGE") ||
-                            _currentUserService.HasPermission("EMP_PROFILE_EDIT");
+                            _currentUserService.HasPermission("EMP_PROFILE_EDIT") ||
+                            _currentUserService.HasPermission("EMP_EDIT");
 
-        if (!canManageSig)
+        long? myEmpId = _currentUserService.EmployeeId;
+        bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
+
+        if (isSelf)
         {
-            long? myEmpId = _currentUserService.EmployeeId;
-            if (!myEmpId.HasValue || myEmpId.Value != id)
+            if (!isSuper && !canManageSig && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
             {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็นของพนักงานท่านอื่น");
+                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็น");
             }
+        }
+        else if (!canManageSig)
+        {
+            throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็นของพนักงานท่านอื่น");
         }
 
         var signature = await _dbContext.EmployeeSignatures
@@ -1768,9 +1811,10 @@ public class EmployeeService : IEmployeeService
             TeamName = currentAssignment?.Team?.TeamName?.Trim(),
             EmployeeTypeId = currentAssignment?.EmployeeTypeId ?? (currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? 4L : 1L) : null),
             EmployeeType = currentAssignment?.EmployeeType?.TypeName ?? (currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null),
-            ManagerEmployeeId = currentAssignment?.ManagerEmployeeId,
-            ManagerName = currentAssignment?.ManagerEmployee?.FullName,
-            ManagerEmployeeCode = currentAssignment?.ManagerEmployee?.EmployeeCode,
+            // หัวหน้า = หัวหน้าทีมของพนักงาน (ระบบไม่ใช้หัวหน้างานรายคนแล้ว); หัวหน้าทีมเองไม่มีหัวหน้า
+            ManagerEmployeeId = currentAssignment?.Team?.LeadEmployeeId is long leadId && leadId != e.Id ? leadId : null,
+            ManagerName = currentAssignment?.Team?.LeadEmployeeId is long leadId2 && leadId2 != e.Id ? currentAssignment.Team.LeadEmployee?.FullName : null,
+            ManagerEmployeeCode = currentAssignment?.Team?.LeadEmployeeId is long leadId3 && leadId3 != e.Id ? currentAssignment.Team.LeadEmployee?.EmployeeCode : null,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
             AvatarUpdatedAt = e.AvatarUpdatedAt,

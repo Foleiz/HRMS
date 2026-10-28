@@ -175,6 +175,7 @@ public class BenefitsController : ControllerBase
 
     /// <summary>พนักงานยื่นเบิกสวัสดิการของตนเอง (สถานะรออนุมัติ)</summary>
     [HttpPost("claims/request")]
+    [RequirePermission("ESS_BENEFIT_CREATE,BENEFIT_BALANCE_CREATE")]
     public async Task<ActionResult<ApiResponse<BenefitClaimRequestDto>>> SubmitClaimRequest(
         [FromBody] SubmitBenefitClaimRequest request, CancellationToken cancellationToken)
     {
@@ -208,6 +209,7 @@ public class BenefitsController : ControllerBase
     }
 
     [HttpPost("claim-requests/{id:long}/cancel")]
+    [RequirePermission("ESS_BENEFIT_EDIT,ESS_BENEFIT_CREATE,BENEFIT_BALANCE_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> CancelClaimRequest(long id, CancellationToken cancellationToken)
     {
         await _claimRequests.CancelAsync(id, cancellationToken);

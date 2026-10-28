@@ -149,7 +149,7 @@ export const Navbar: React.FC = () => {
   const breadcrumb = getBreadcrumb();
 
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between px-3 sm:px-6 shrink-0 z-10 transition-colors duration-200">
+    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between px-3 sm:px-6 shrink-0 relative z-30 transition-colors duration-200">
       {/* 1. Left Side: Hamburger (mobile) + Back Button + Breadcrumb */}
       <div className="flex items-center gap-2 sm:gap-3.5">
         {/* Hamburger Menu Button — visible only on mobile (< lg) */}

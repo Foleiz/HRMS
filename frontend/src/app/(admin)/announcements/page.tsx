@@ -129,12 +129,10 @@ export default function AnnouncementsPage() {
   const { user, hasRole, hasPermission } = useAuth();
 
   // ใช้รหัสสิทธิ์เดียวกับ backend (ANNOUNCEMENTS_CREATE / ANNOUNCEMENTS_EDIT)
-  const canManage = Boolean(
-    hasRole('ADMIN') ||
-    hasRole('SYSTEM_SUPER') ||
-    hasPermission('ANNOUNCEMENTS_CREATE') ||
-    hasPermission('ANNOUNCEMENTS_EDIT')
-  );
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canCreate = Boolean(isSuper || hasPermission('ANNOUNCEMENTS_CREATE'));
+  const canEdit = Boolean(isSuper || hasPermission('ANNOUNCEMENTS_EDIT'));
+  const canManage = canCreate || canEdit;
 
   // Reading Modal (Preview สำหรับผู้ดูแล)
   const [readingItem, setReadingItem] = useState<Announcement | null>(null);
@@ -424,7 +422,7 @@ export default function AnnouncementsPage() {
           </div>
         </div>
 
-        {canManage && (
+        {canCreate && (
           <div className="flex items-center gap-2">
             <Button
               onClick={handleOpenCreate}
@@ -598,9 +596,10 @@ export default function AnnouncementsPage() {
                           <td className="py-3 px-4 text-center">
                             <button
                               type="button"
-                              onClick={() => handleTogglePin(a)}
-                              title={a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด'}
-                              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                              onClick={() => canEdit && handleTogglePin(a)}
+                              disabled={!canEdit}
+                              title={canEdit ? (a.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด') : 'ไม่มีสิทธิ์แก้ไขประกาศ'}
+                              className={`p-1.5 rounded-lg transition-colors ${canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'} ${
                                 a.isPinned
                                   ? 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                                   : 'text-slate-300 hover:text-slate-500 dark:text-slate-400 hover:bg-slate-100'
@@ -669,15 +668,16 @@ export default function AnnouncementsPage() {
                           <td className="py-3 px-4">
                             <button
                               type="button"
-                              onClick={() => handleTogglePublish(a)}
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all cursor-pointer ${
+                              onClick={() => canEdit && handleTogglePublish(a)}
+                              disabled={!canEdit}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${canEdit ? 'cursor-pointer' : 'cursor-default'} ${
                                 a.status === 'PUBLISHED'
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                   : a.status === 'DRAFT'
                                   ? 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-200'
                                   : 'bg-rose-50 text-rose-700 border-rose-200'
                               }`}
-                              title="คลิกเพื่อสลับสถานะ เผยแพร่ / ฉบับร่าง"
+                              title={canEdit ? 'คลิกเพื่อสลับสถานะ เผยแพร่ / ฉบับร่าง' : undefined}
                             >
                               {a.status === 'PUBLISHED' ? (
                                 <>
@@ -700,18 +700,22 @@ export default function AnnouncementsPage() {
 
                           {/* Actions */}
                           <td className="py-3 px-4 text-center">
-                            <RowActions>
-                              <RowActionButton
-                                action="edit"
-                                title="แก้ไขประกาศ"
-                                onClick={() => handleOpenEdit(a)}
-                              />
-                              <RowActionButton
-                                action="delete"
-                                title="ลบ/จัดเก็บประกาศ"
-                                onClick={() => handleDelete(a)}
-                              />
-                            </RowActions>
+                            {canEdit ? (
+                              <RowActions>
+                                <RowActionButton
+                                  action="edit"
+                                  title="แก้ไขประกาศ"
+                                  onClick={() => handleOpenEdit(a)}
+                                />
+                                <RowActionButton
+                                  action="delete"
+                                  title="ลบ/จัดเก็บประกาศ"
+                                  onClick={() => handleDelete(a)}
+                                />
+                              </RowActions>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
                           </td>
                         </tr>
                       );

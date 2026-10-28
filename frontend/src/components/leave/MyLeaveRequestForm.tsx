@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Paperclip, Sun, Clock3, Phone, Save, FileText } from 'lucide-react';
+import { Loader2, Sun, Clock3, Phone, Save, FileText, RotateCcw } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
-import { CustomSelect } from '@/components/ui/CustomSelect';
+import { RichSelect, type RichSelectOption } from '@/components/ui/RichSelect';
+import { RequesterSummary } from '@/components/documents/RequesterSummary';
+import { FileDropzone } from '@/components/ui/FileDropzone';
+import { FormActionBar } from '@/components/documents/FormActionBar';
 import { Button } from '@/components/ui';
 
 interface EmployeeProfileSummary {
@@ -54,7 +57,6 @@ const fileToBase64 = (file: File): Promise<string> =>
     reader.readAsDataURL(file);
   });
 
-const formatThaiDate = (d: Date) => d.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
 const emptyState = {
   leaveTypeId: '' as number | '',
@@ -99,7 +101,7 @@ const draftToFormState = (draft: LeaveRequest) => {
 
 /**
  * [ESS] ฟอร์มยื่นคำขอลาแบบเต็มหน้าจอ (ปรับตามดีไซน์อ้างอิงจาก Figma)
- * แสดงข้อมูลพนักงาน, ประสงค์ขอลา, สถิติโควตาแบบ Real-time และช่องติดต่อระหว่างลา
+ * ฟอร์มกระชับ: แถบ "ยื่นในนาม" บรรทัดเดียว, ประเภทการลา (dropdown แสดงวันคงเหลือ), วันที่/รูปแบบ, เหตุผล, ช่องไม่บังคับท้ายฟอร์ม
  */
 export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyLeaveRequestFormProps>(({
   leaveTypes,
@@ -305,7 +307,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   }, [leaveTypeId, requests, draftId, startDate]);
 
   const availableDays = selectedBalance ? Math.max(0, selectedBalance.netRemainingLeaveDays - pendingDays) : null;
-  const projectedTotalDays = usedDaysSoFar + leaveDays;
   const withinQuota = availableDays == null ? true : leaveDays <= availableDays;
 
   const resetForm = () => {
@@ -410,280 +411,267 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     }
   };
 
+  // ตัวเลือกประเภทการลา: วันคงเหลือชิดขวา + เงื่อนไขสั้นๆ, สิทธิ์หมดแล้วไปกลุ่มล่าง (เลือกไม่ได้)
+  const typeOptions = useMemo<RichSelectOption<number>[]>(() => {
+    const year = startDate ? startDate.slice(0, 4) : String(new Date().getFullYear());
+    return leaveTypes.map((t) => {
+      const bal = balances.find((b) => b.leaveTypeId === t.id);
+      const policy = leavePolicies.find((p) => p.leaveTypeId === t.id);
+      const pending = requests
+        .filter(
+          (r) =>
+            r.leaveTypeId === t.id &&
+            r.status === 'PENDING' &&
+            r.id !== draftId &&
+            String(new Date(r.startDatetime).getFullYear()) === year
+        )
+        .reduce((sum, r) => sum + (r.leaveDays || 0), 0);
+      const left = bal ? Math.max(0, bal.netRemainingLeaveDays - pending) : null;
+      const quota = bal ? bal.annualQuotaDays + (bal.activeCarriedForwardDays || 0) + (bal.adjustedDays || 0) : policy?.entitlementDays;
+
+      const notes: string[] = [];
+      if (policy?.advanceRequestDays) notes.push(`ยื่นล่วงหน้า ${policy.advanceRequestDays} วัน`);
+      if (policy?.isDocumentRequired) {
+        notes.push(policy.documentRequiredAfterDays ? `เกิน ${policy.documentRequiredAfterDays} วันต้องแนบเอกสาร` : 'ต้องแนบเอกสาร');
+      }
+
+      // สิทธิ์ 0 วันตั้งแต่ต้น = ไม่มีสิทธิ์ (ต่างจาก "ใช้ครบแล้ว")
+      const noEntitlement = !!bal && !quota;
+      const exhausted = left !== null && left <= 0;
+      const low = left !== null && quota ? left <= Math.max(1, quota * 0.2) : false;
+      return {
+        value: t.id,
+        label: t.leaveName,
+        description: notes.join(' · ') || undefined,
+        meta: left !== null && !noEntitlement ? `เหลือ ${left}${quota ? `/${quota}` : ''} วัน` : undefined,
+        metaTone: exhausted ? 'bad' : low ? 'warn' : 'good',
+        disabled: exhausted,
+        disabledReason: noEntitlement
+          ? 'ไม่มีสิทธิ์การลาประเภทนี้'
+          : exhausted
+            ? `ใช้ครบแล้ว${pending > 0 ? ` (รออนุมัติ ${pending} วัน)` : ''}`
+            : undefined,
+      } as RichSelectOption<number>;
+    });
+  }, [leaveTypes, balances, leavePolicies, requests, draftId, startDate]);
+
+  const daysSummary = (() => {
+    if (!calcKey) return null;
+    if (isCalculatingDays) return { text: 'กำลังคำนวณจำนวนวัน...', tone: 'text-slate-500 dark:text-slate-400' };
+    if (leaveDays <= 0) return { text: 'ช่วงที่เลือกเป็นวันหยุดทั้งหมด', tone: 'text-amber-700 dark:text-amber-400' };
+    let text = `รวม ${leaveDays} วันทำการ`;
+    if (excludedDays > 0) text += ` (ไม่นับวันหยุด ${excludedDays} วัน)`;
+    if (availableDays != null) {
+      text += withinQuota ? ` · เหลือหลังลา ${availableDays - leaveDays} วัน` : ` — สิทธิ์เหลือ ${availableDays} วัน ไม่พอ`;
+    }
+    return { text, tone: withinQuota ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400' };
+  })();
+
+  // ไฟล์แนบ: แสดงเฉพาะประเภทที่ตั้งค่าให้แนบเอกสาร (หรือมีไฟล์ค้างอยู่แล้ว เช่นแบบร่าง)
+  const typeUsesDocument = !!applicablePolicy?.isDocumentRequired;
+  // แสดงกล่องตลอด แต่ปิดใช้งาน (พื้นเทา) เมื่อยังไม่เลือกประเภท หรือประเภทนั้นไม่ต้องแนบเอกสาร
+  const attachmentEnabled = typeUsesDocument || isDocumentRecommended || !!attachment;
+  const docAfterDays = applicablePolicy?.documentRequiredAfterDays ?? null;
+
+  const inputCls =
+    'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:focus:border-blue-500 outline-none';
+  const labelCls = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <RequesterSummary
+        fullName={profile.fullName}
+        positionTitle={profile.positionTitle}
+        departmentName={profile.departmentName}
+        action={
+          <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
+            ล้างฟอร์ม
+          </Button>
+        }
+      />
+
       {error && (
-        <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>
+        <div role="alert" className="p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl dark:bg-red-900/20 dark:text-red-400">{error}</div>
       )}
 
-      {/* คอลัมน์ซ้าย/ขวาแยกการ์ด กว้างเท่ากัน และสูงเท่ากัน (grid ยืดทั้งสองฝั่งให้เท่าฝั่งที่สูงกว่า) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        {/* ─── Left column ─────────────────────────────── */}
-        <div className="flex flex-col gap-5">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">ข้อมูลทั่วไป</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">วันที่ยื่น</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={formatThaiDate(new Date())}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">ข้อมูลพนักงาน</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2 sm:col-span-1">
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ชื่อ-นามสกุล</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={profile.fullName}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">ตำแหน่ง</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={profile.positionTitle || '-'}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1.5">แผนก/สังกัด</label>
-                <input
-                  type="text"
-                  readOnly
-                  value={profile.departmentName || '-'}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400 cursor-not-allowed"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6 flex-1 space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">ประสงค์ขอลา <span className="text-rose-500">*</span></label>
-              <CustomSelect
-                value={leaveTypeId}
-                onChange={(e) => setForm((f) => ({ ...f, leaveTypeId: e.target.value ? Number(e.target.value) : '' }))}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                required
-              >
-                <option value="">-- เลือกประเภทการลา --</option>
-                {leaveTypes.map((t) => {
-                  // ดึงจำนวนสิทธิ์ต่อปีจากยอดวันลาคงเหลือของพนักงานคนนี้ก่อน (ถูกต้องตรงตัวที่สุด)
-                  // ถ้ายังไม่มีข้อมูลยอดวันลาของปีนี้ ค่อย fallback ไปที่เกณฑ์สิทธิ์การลา (policy) ทั่วไปของประเภทนั้น
-                  const balanceForType = balances.find((b) => b.leaveTypeId === t.id);
-                  const policy = leavePolicies.find((p) => p.leaveTypeId === t.id);
-                  const quotaDays = balanceForType?.annualQuotaDays ?? policy?.entitlementDays;
-                  return (
-                    <option key={t.id} value={t.id}>
-                      {t.leaveName}
-                    </option>
-                  );
-                })}
-              </CustomSelect>
-              {leaveTypes.length === 0 && (
-                <p className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 mt-1.5">ไม่พบประเภทการลาที่เปิดใช้งาน (กรุณาเพิ่มในหน้า "ประเภทการลา")</p>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">เหตุผล</label>
-                <span className="text-2xs text-gray-300">{reason.length}/{REASON_MAX_LENGTH}</span>
-              </div>
-              <textarea
-                value={reason}
-                maxLength={REASON_MAX_LENGTH}
-                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                rows={3}
-                placeholder="ระบุเหตุผลการลา (ถ้ามี)"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
-              />
-            </div>
-          </div>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
+        {/* ซ้าย: สิ่งที่ต้องเลือก / ขวา: รายละเอียด — จอเล็กเรียงต่อกันเป็นคอลัมน์เดียว */}
+        <div className="space-y-6 min-w-0">
+        {/* 1 ประเภทการลา — ขึ้นก่อน เพราะเป็นตัวกำหนดโควตาและเงื่อนไข */}
+        <div>
+          <label htmlFor="leave-type" className={labelCls}>
+            ประเภทการลา <span className="text-rose-600">*</span>
+          </label>
+          <RichSelect<number>
+            id="leave-type"
+            value={leaveTypeId}
+            onChange={(v) => {
+              const p = leavePolicies.find((x) => x.leaveTypeId === v);
+              setForm((f) => ({ ...f, leaveTypeId: v, attachment: p?.isDocumentRequired ? f.attachment : null }));
+            }}
+            options={typeOptions}
+            placeholder="เลือกประเภทการลา"
+            enabledGroupLabel="ใช้ได้"
+            disabledGroupLabel="ใช้ไม่ได้"
+            emptyText='ไม่พบประเภทการลาที่เปิดใช้งาน (เพิ่มได้ที่หน้า "ประเภทการลา")'
+            aria-describedby="leave-type-help"
+          />
+          <p id="leave-type-help" className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            {!hasSelectedType
+              ? 'เลือกแล้วจะเห็นวันคงเหลือและเงื่อนไขของประเภทนั้น'
+              : [
+                  selectedBalance
+                    ? `ใช้ไป ${usedDaysSoFar} วัน · ลาไปแล้ว ${leaveCountThisYear} ครั้งปีนี้${pendingDays > 0 ? ` · รออนุมัติ ${pendingDays} วัน` : ''}`
+                    : null,
+                  currentValidation?.policySummary || null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || 'ไม่มีข้อจำกัดจำนวนวัน'}
+          </p>
         </div>
 
-        {/* ─── Right column ─────────────────────────────── */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700/60 shadow-sm p-6 h-full flex flex-col gap-5">
-          {/* flex-wrap แทน grid 50/50 เพราะกล่องปฏิทินมีความกว้างคงที่ (320px) เพื่อให้พอดีกับป็อปอัพปฏิทิน
-              ถ้าใช้ grid แบ่งครึ่งจะทำให้ล้นทับตัวเลือก "รูปแบบการลา" เมื่อพื้นที่ไม่พอ — flex-wrap จะดันตัวเลือกไปขึ้นบรรทัดใหม่แทนการซ้อนทับ */}
-          <div className="flex flex-wrap items-start gap-3">
-            <div className="shrink-0">
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">วันที่ลา <span className="text-rose-500">*</span></label>
-              {leaveFormat === 'FULL_DAY' ? (
-                <LeaveDateRangePicker
-                  startDate={startDate}
-                  endDate={endDate}
-                  disabledDates={bookedDates}
-                  onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
-                />
-              ) : (
-                <LeaveDateRangePicker
-                  mode="single"
-                  startDate={startDate}
-                  endDate={endDate}
-                  disabledDates={bookedDates}
-                  onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
-                />
-              )}
-            </div>
-
-            <div className="shrink-0">
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">รูปแบบการลา</label>
-              <div className="inline-flex rounded-xl border border-gray-200 dark:border-slate-700 p-1 bg-gray-50 dark:bg-slate-950">
-                <button
-                  type="button"
-                  onClick={() => setLeaveFormat('FULL_DAY')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    leaveFormat === 'FULL_DAY' ? 'bg-primary text-white shadow-xs' : 'text-gray-500 dark:text-slate-400'
-                  }`}
-                >
-                  <Sun className="w-3.5 h-3.5" /> เต็มวัน
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLeaveFormat('HALF_DAY')}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                    leaveFormat === 'HALF_DAY' ? 'bg-primary text-white shadow-xs' : 'text-gray-500 dark:text-slate-400'
-                  }`}
-                >
-                  <Clock3 className="w-3.5 h-3.5" /> ครึ่งวัน
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">มีกำหนด (วัน)</label>
-            <div className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-950 text-sm text-gray-600 dark:text-slate-400">
-              {isCalculatingDays
-                ? 'กำลังคำนวณ...'
-                : leaveDays > 0
-                  ? `${leaveDays} วัน${excludedDays > 0 ? ` (ไม่นับวันหยุด ${excludedDays} วัน)` : ''}`
-                  : calcKey
-                    ? 'ช่วงที่เลือกเป็นวันหยุดทั้งหมด'
-                    : 'คำนวณอัตโนมัติ'}
-            </div>
+        {/* 2 วันที่ลา + รูปแบบ — จำนวนวันเป็นข้อความผลลัพธ์ ไม่ใช่ช่องกรอก */}
+        <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+          <div className="shrink-0">
+            <span className={labelCls}>
+              วันที่ลา <span className="text-rose-600">*</span>
+            </span>
+            <LeaveDateRangePicker
+              key={leaveFormat}
+              mode={leaveFormat === 'FULL_DAY' ? 'range' : 'single'}
+              startDate={startDate}
+              endDate={endDate}
+              disabledDates={bookedDates}
+              onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
+            />
+            {daysSummary ? (
+              <p className={`mt-2 text-sm font-semibold ${daysSummary.tone}`} aria-live="polite">{daysSummary.text}</p>
+            ) : (
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">นับเฉพาะวันทำงาน ไม่นับวันหยุดบริษัท</p>
+            )}
             {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
-              <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500 dark:text-slate-400">
-                วันหยุดบริษัทในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                วันหยุดในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
               </p>
             )}
-            <p className="mt-1 text-2xs text-gray-400 dark:text-slate-500 dark:text-slate-400">นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท</p>
           </div>
 
-          {/* แสดงตลอด — ยังไม่เลือกประเภทจะแสดงเป็น "-" แทนตัวเลข */}
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4">
-            <p className="text-xs font-semibold text-blue-700 mb-3">
-              สถิติโควตาแบบ Real-time
-              {hasSelectedType ? ` (${leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName})` : ''}
-            </p>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">ลามาแล้ว</div>
-                <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{hasSelectedType ? `${usedDaysSoFar} วัน` : '-'}</div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">ลาครั้ง</div>
-                <div className="text-sm font-bold text-gray-800 dark:text-slate-200">{hasSelectedType ? `${leaveCountThisYear} ครั้ง` : '-'}</div>
-              </div>
-              <div className="bg-white dark:bg-slate-900 rounded-lg py-2.5 border border-blue-100/70">
-                <div className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">รวมเป็น</div>
-                <div
-                  className={`text-sm font-bold ${
-                    !hasSelectedType ? 'text-gray-800 dark:text-slate-200' : withinQuota ? 'text-emerald-600' : 'text-red-600'
+          <fieldset className="shrink-0">
+            <legend className={labelCls}>รูปแบบ</legend>
+            <div role="radiogroup" aria-label="รูปแบบการลา" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
+              {([
+                ['FULL_DAY', 'เต็มวัน', Sun],
+                ['HALF_DAY', 'ครึ่งวัน', Clock3],
+              ] as const).map(([val, text, Icon]) => (
+                <button
+                  key={val}
+                  type="button"
+                  role="radio"
+                  aria-checked={leaveFormat === val}
+                  onClick={() => setLeaveFormat(val)}
+                  className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
+                    leaveFormat === val
+                      ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 font-medium'
                   }`}
                 >
-                  {hasSelectedType ? `${projectedTotalDays} วัน` : '-'}
-                </div>
-              </div>
+                  <Icon className="w-3.5 h-3.5" aria-hidden="true" /> {text}
+                </button>
+              ))}
             </div>
-            {availableDays != null && (
-              <p className={`mt-3 text-xs ${withinQuota ? 'text-blue-700' : 'text-red-600 font-medium'}`}>
-                ใช้ได้อีก {availableDays} วัน
-                {pendingDays > 0 ? ` (หักที่รออนุมัติอยู่ ${pendingDays} วัน)` : ''}
-                {!withinQuota ? ' — วันลาคงเหลือไม่เพียงพอ' : ''}
-              </p>
-            )}
-            {!hasSelectedType && (
-              <p className="mt-3 text-xs text-blue-700/80">เลือกประเภทการลาเพื่อดูยอดวันลาของคุณ</p>
-            )}
-          </div>
+          </fieldset>
+        </div>
 
-          <div className="flex-1 flex flex-col">
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 dark:text-slate-400" /> ระหว่างลาจะติดต่อข้าพเจ้าได้ที่
+        {/* 3 เหตุผล */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+            </label>
+            <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
+          </div>
+          <textarea
+            id="leave-reason"
+            value={reason}
+            maxLength={REASON_MAX_LENGTH}
+            onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+            rows={4}
+            placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
+            className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
+          />
+        </div>
+        </div>
+
+        {/* ขวา: ติดต่อระหว่างลา + ไฟล์แนบ (กล่องลากวางยืดเต็มความสูงคอลัมน์) */}
+        <div className="flex flex-col gap-6 min-w-0">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="leave-contact" className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <Phone className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" /> ติดต่อระหว่างลา{' '}
+                <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
               </label>
-              <span className="text-2xs text-gray-300">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
+              <span className="text-xs text-slate-400">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
             </div>
-            <textarea
+            <input
+              id="leave-contact"
               value={contactDuringLeave}
               maxLength={CONTACT_MAX_LENGTH}
               onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
-              rows={2}
-              placeholder="สถานที่/เบอร์ติดต่อระหว่างลา"
-              className="w-full flex-1 min-h-[72px] px-3.5 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere] overflow-x-hidden"
+              placeholder="เบอร์โทร / สถานที่"
+              className={inputCls}
             />
           </div>
-
-          {isDocumentRecommended && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-semibold text-amber-800 mb-1">ต้องแนบเอกสารประกอบ</p>
-              <p className="text-xs text-amber-700 mb-3">
-                ตามเงื่อนไขของการลาประเภทนี้ ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์) ก่อนยื่นคำขอ
-              </p>
-              <label className="flex items-center gap-2 w-full px-3.5 py-2.5 rounded-xl border border-dashed border-amber-300 bg-white dark:bg-slate-900 text-sm text-gray-500 dark:text-slate-400 cursor-pointer hover:bg-amber-50/50 transition-colors">
-                <Paperclip className="w-4 h-4 shrink-0" />
-                <span className="truncate">{attachment ? attachment.name : 'เลือกไฟล์...'}</span>
-                <input
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  onChange={(e) => setForm((f) => ({ ...f, attachment: e.target.files?.[0] || null }))}
-                />
-              </label>
-            </div>
-          )}
+          <div className="flex-1 flex flex-col">
+            <span id="leave-attachment-label" className={`${labelCls} flex items-center gap-1`}>
+              ไฟล์แนบ{' '}
+              {isDocumentRecommended ? (
+                <span className="text-rose-600">*</span>
+              ) : (
+                <span className="font-normal text-slate-500 dark:text-slate-400">
+                  {!attachmentEnabled
+                  ? ''
+                  : docAfterDays
+                    ? `(ต้องแนบเมื่อลาเกิน ${docAfterDays} วัน)`
+                    : '(ไม่บังคับ)'}
+                </span>
+              )}
+            </span>
+            <FileDropzone
+              className="flex-1"
+              file={attachment}
+              onChange={(file) => setForm((f) => ({ ...f, attachment: file }))}
+              required={isDocumentRecommended}
+              disabled={!attachmentEnabled}
+              disabledText={hasSelectedType ? 'การลาประเภทนี้ไม่ต้องแนบเอกสาร' : 'เลือกประเภทการลาก่อน'}
+              aria-labelledby="leave-attachment-label"
+            />
+            {isDocumentRecommended && (
+              <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">การลาประเภทนี้ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)</p>
+            )}
+          </div>
         </div>
+
+        {validationErrors.length > 0 && (
+          <div role="alert" className="lg:col-span-2 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
+            <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1.5">ยังยื่นคำขอนี้ไม่ได้</p>
+            <ul className="list-disc pl-5 space-y-0.5 text-xs text-red-700 dark:text-red-400">
+              {validationErrors.map((msg) => (
+                <li key={msg}>{msg}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
-      {/* ─── ผลตรวจเงื่อนไขการลา ─────────────────────── */}
-      {currentValidation?.policySummary && (
-        <p className="mt-6 text-xs text-gray-500 dark:text-slate-400">
-          <span className="font-medium text-gray-600 dark:text-slate-400">เงื่อนไขของการลาประเภทนี้:</span> {currentValidation.policySummary}
-        </p>
-      )}
-      {validationErrors.length > 0 && (
-        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-700 mb-1.5">ยังยื่นคำขอนี้ไม่ได้</p>
-          <ul className="list-disc pl-5 space-y-0.5 text-xs text-red-700">
-            {validationErrors.map((msg) => (
-              <li key={msg}>{msg}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* ─── Actions ─────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-3 pt-6 mt-6 border-t border-gray-100 dark:border-slate-700/60">
-        <Button
+      {/* แถบปุ่มติดขอบล่าง — ปุ่มหลักอยู่ที่เดิมเสมอ */}
+      <FormActionBar>
+          <Button
           variant="secondary"
           onClick={() => setShowPreview(true)}
           disabled={loading || savingDraft}
           icon={<FileText className="w-3.5 h-3.5" />}
         >
-          ดูตัวอย่างเอกสาร
+          ดูตัวอย่างใบลา
         </Button>
         <Button
           variant="secondary"
@@ -694,14 +682,10 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         >
           บันทึกแบบร่าง
         </Button>
-        <Button
-          type="submit"
-          loading={loading}
-          disabled={loading || savingDraft || validationErrors.length > 0}
-        >
+        <Button type="submit" loading={loading} disabled={loading || savingDraft || validationErrors.length > 0}>
           ยื่นคำขอลา
         </Button>
-      </div>
+      </FormActionBar>
 
       <LeavePreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} data={showPreview ? previewData : null} />
     </form>
