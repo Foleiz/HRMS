@@ -324,7 +324,7 @@ export default function SettingsPage() {
     if (activeTab === 'users' && canViewUsersTab) {
       loadUsers();
     }
-  }, [userPage, userSearch, userRoleFilter, userStatusFilter]);
+  }, [userPage, userPageSize, userSearch, userRoleFilter, userStatusFilter]);
 
   // Fetch audit logs when pagination or filters change while on audit-log tab (skip mount duplicate)
   const isFirstAuditRender = useRef(true);
@@ -336,7 +336,7 @@ export default function SettingsPage() {
     if (activeTab === 'audit-log' && canViewAuditLogTab) {
       loadAuditLogs();
     }
-  }, [auditLogPage, auditLogFilters]);
+  }, [auditLogPage, auditLogPageSize, auditLogFilters]);
 
   // === 4. User Actions ===
   const handleCreateUser = async (data: CreateUserRequest) => {
