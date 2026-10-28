@@ -793,14 +793,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100 tracking-tight">
                         {role.roleName}
                       </span>
-                      {role.isSystemDefault && (
-                        <span className="px-1.5 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200/60 rounded text-[9px] font-semibold">
-                          System Default
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] font-mono text-slate-400 dark:text-slate-500 mt-0.5">
-                      {role.roleCode}
                     </div>
                   </div>
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">
@@ -879,9 +871,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   <span>ตั้งค่าสิทธิ์สำหรับ:</span>
                   <span className="text-primary dark:text-blue-400">
                     {selectedRoleMatrix.roleName}
-                  </span>
-                  <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                    {selectedRoleMatrix.roleCode}
                   </span>
                 </h2>
                 {selectedRoleMatrix.description && (
