@@ -12,13 +12,14 @@ export const getApiBaseUrl = (): string => {
     if ((hostname === 'localhost' || hostname === '127.0.0.1') && process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
-    // หากเข้าผ่าน Radmin VPN, LAN, หรือ IP ภายนอก ให้ชี้ไปที่ Host เดียวกันที่พอร์ต 5229
-    return `${protocol}//${hostname}:5229/api`;
+    // หากเข้าผ่าน localhost ให้ใช้ 127.0.0.1 เพื่อป้องกัน IPv6 (::1) Connection Refused บน Windows เมื่อ Kestrel ผูกกับ IPv4
+    const targetHost = hostname === 'localhost' ? '127.0.0.1' : hostname;
+    return `${protocol}//${targetHost}:5229/api`;
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api';
+  return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5229/api';
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5229/api';
 
 /**
  * Axios Instance กลางสำหรับเรียกใช้งาน .NET Backend

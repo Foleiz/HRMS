@@ -42,7 +42,7 @@ export const CalendarWidget: React.FC = () => {
       const data = await workCalendarService.getHolidays(targetYear);
       setHolidays(data || []);
     } catch (err) {
-      console.error('Failed to fetch holidays:', err);
+      console.warn('Failed to fetch holidays:', err);
     } finally {
       setIsLoading(false);
     }

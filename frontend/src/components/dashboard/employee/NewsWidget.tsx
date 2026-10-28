@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -52,7 +52,7 @@ export const NewsWidget: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error('Failed to load announcements:', err);
+        console.warn('Failed to load announcements:', err);
         if (isMounted) {
           setNewsList([]);
         }

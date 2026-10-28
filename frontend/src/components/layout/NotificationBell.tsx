@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -39,7 +39,7 @@ export const NotificationBell: React.FC = () => {
       setUnreadCount(summary.unreadCount);
       setNotifications(summary.recentNotifications);
     } catch (err) {
-      console.error('Failed to fetch notifications', err);
+      console.warn('Failed to fetch notifications', err);
     }
   }, [user]);
 
