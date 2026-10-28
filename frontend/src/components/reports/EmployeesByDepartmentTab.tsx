@@ -92,7 +92,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
 
   const allExpanded = !!data && data.departments.length > 0 && data.departments.every((d) => expanded.has(d.departmentId));
   const selectCls =
-    'px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 min-w-[160px]';
+    'px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary min-w-[160px]';
 
   return (
     <div className="space-y-4">
@@ -141,7 +141,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
 
       {loading && !data ? (
         <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
           กำลังโหลดรายงาน...
         </div>
       ) : !data || data.departments.length === 0 ? (
@@ -233,7 +233,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                 type="button"
                 data-print-hide
                 onClick={() => setExpanded(allExpanded ? new Set() : new Set(data.departments.map((d) => d.departmentId)))}
-                className="text-xs font-medium text-[#0B2046] hover:underline print:hidden"
+                className="text-xs font-medium text-primary dark:text-blue-300 hover:underline print:hidden"
               >
                 {allExpanded ? 'ซ่อนรายชื่อทั้งหมด' : 'แสดงรายชื่อทั้งหมด'}
               </button>

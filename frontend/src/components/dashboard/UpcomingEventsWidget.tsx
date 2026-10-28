@@ -124,10 +124,10 @@ export const UpcomingEventsWidget: React.FC = () => {
 
       <Link
         href="/work-calendar"
-        className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 hover:text-[#0B2046] border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between mt-auto transition-colors cursor-pointer group"
+        className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-300 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between mt-auto transition-colors cursor-pointer group"
       >
         <div className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 group-hover:text-[#0B2046] transition-colors" />
+          <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 group-hover:text-primary dark:hover:text-blue-300 transition-colors" />
           <span>ปฏิทินกิจกรรมองค์กร</span>
         </div>
         <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-500 dark:text-slate-400 group-hover:translate-x-0.5 transition-transform" />

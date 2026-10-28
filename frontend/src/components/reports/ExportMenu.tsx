@@ -55,7 +55,7 @@ export default function ExportMenu({
         type="button"
         disabled={disabled || busy !== null}
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#0B2046] text-white text-xs font-medium hover:bg-[#081836] transition-colors disabled:opacity-50 shadow-sm"
+        className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-primary text-white text-xs font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 shadow-sm"
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
         {label}

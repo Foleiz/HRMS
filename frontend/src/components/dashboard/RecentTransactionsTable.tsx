@@ -326,7 +326,7 @@ export const RecentTransactionsTable: React.FC = () => {
                 setCurrentPage(1);
               }}
               placeholder="ค้นหา รหัสเอกสาร หรือประเภท"
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-500 dark:text-slate-400 focus:outline-hidden focus:border-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-500 dark:text-slate-400 focus:outline-hidden focus:border-primary focus:bg-white dark:bg-slate-800 transition-all"
             />
           </div>
 
@@ -403,7 +403,7 @@ export const RecentTransactionsTable: React.FC = () => {
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
                     <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 text-[#0B2046] dark:text-blue-400 animate-spin" />
+                      <Loader2 className="w-6 h-6 text-primary dark:text-blue-300 animate-spin" />
                       <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
                     </div>
                   </td>
@@ -421,7 +421,7 @@ export const RecentTransactionsTable: React.FC = () => {
               ) : (
                 paginatedItems.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                    <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400 truncate">
+                    <td className="py-3.5 px-5 font-semibold text-primary dark:text-blue-300 truncate">
                       {/* กดเลขที่เอกสาร → เปิดเอกสารที่หน้าประวัติเอกสาร */}
                       <Link
                         href={`/documents/history?open=${encodeURIComponent(item.documentCode)}`}

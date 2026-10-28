@@ -113,7 +113,7 @@ export const NotificationsWidget: React.FC<NotificationsWidgetProps> = ({ role }
             href={item.href}
             className="flex items-center px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 dark:bg-slate-900 transition-colors group"
           >
-            <span className="text-lg font-black text-slate-900 dark:text-slate-100 w-9 text-center group-hover:text-[#0B2046] transition-colors">
+            <span className="text-lg font-black text-slate-900 dark:text-slate-100 w-9 text-center group-hover:text-primary dark:group-hover:text-blue-300 transition-colors">
               {loading ? '-' : item.count}
             </span>
             <span className="text-xs font-medium text-slate-700 dark:text-slate-300 ml-2 group-hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 dark:text-slate-100 transition-colors">

@@ -28,7 +28,7 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
           มุมมองแดชบอร์ด:
         </span>
-        <span className="text-xs font-bold text-[#0B2046] bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+        <span className="text-xs font-bold text-primary dark:text-blue-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
           {ROLE_LABELS[activeRole].badge}
         </span>
       </div>
@@ -44,7 +44,7 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
               onClick={() => onRoleChange(role)}
               className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
                 isActive
-                  ? 'bg-[#0B2046] text-white shadow-xs font-bold'
+                  ? 'bg-primary text-white shadow-xs font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 dark:text-slate-100 hover:bg-white dark:bg-slate-800/60'
               }`}
             >
@@ -59,7 +59,7 @@ export const RoleSwitcherBar: React.FC<RoleSwitcherBarProps> = ({
 
 export const GreetingBanner: React.FC<{ displayName: string }> = ({ displayName }) => {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#0B2046] p-7 text-white shadow-md flex items-center min-h-[96px] shrink-0">
+    <div className="relative overflow-hidden rounded-2xl bg-primary p-7 text-white shadow-md flex items-center min-h-[96px] shrink-0">
       <div className="relative z-10">
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
           สวัสดี <span className="underline decoration-2 underline-offset-4">{displayName}</span>, หวังว่าจะเป็นวันที่ดี !

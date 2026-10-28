@@ -496,7 +496,7 @@ export default function ReportsPage() {
               onClick={() => setActiveTab('department')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'department'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -508,7 +508,7 @@ export default function ReportsPage() {
               onClick={() => setActiveTab(canViewHeadcount ? 'headcount' : 'lateness')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 (activeTab === 'headcount' || activeTab === 'lateness')
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -520,7 +520,7 @@ export default function ReportsPage() {
               onClick={() => setActiveTab('leave')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'leave'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -532,7 +532,7 @@ export default function ReportsPage() {
               onClick={() => setActiveTab('turnover')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'turnover'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -544,7 +544,7 @@ export default function ReportsPage() {
               onClick={() => setActiveTab('tax')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'tax'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
               }`}
             >
@@ -563,7 +563,7 @@ export default function ReportsPage() {
                 type="button"
                 onClick={() => setActiveTab('headcount')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  activeTab === 'headcount' ? 'bg-[#0B2046] text-white' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'headcount' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 รายวัน
@@ -574,7 +574,7 @@ export default function ReportsPage() {
                 type="button"
                 onClick={() => setActiveTab('lateness')}
                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  activeTab === 'lateness' ? 'bg-[#0B2046] text-white' : 'text-slate-600 hover:bg-slate-100'
+                  activeTab === 'lateness' ? 'bg-primary text-white' : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 รายเดือน
@@ -763,7 +763,7 @@ export default function ReportsPage() {
 
             {isLoadingHeadcount ? (
               <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                 กำลังโหลดข้อมูลอัตรากำลังคน...
               </div>
             ) : !headcountData || headcountData.departments.length === 0 ? (
@@ -1009,7 +1009,7 @@ export default function ReportsPage() {
 
             {isLoadingLateness ? (
               <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046]" />
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                 กำลังโหลดรายงานการมาสาย...
               </div>
             ) : !latenessData || latenessData.items.length === 0 ? (

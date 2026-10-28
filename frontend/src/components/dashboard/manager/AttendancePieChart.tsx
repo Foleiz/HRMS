@@ -186,7 +186,7 @@ export const AttendancePieChart: React.FC<AttendancePieChartProps> = ({ role }) 
       {/* SVG Pie Chart */}
       <div className="my-auto py-3 relative flex items-center justify-center">
         {loading ? (
-          <div className="w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-700/60 border-t-[#0B2046] animate-spin" />
+          <div className="w-32 h-32 rounded-full border-4 border-slate-100 dark:border-slate-700/60 border-t-primary animate-spin" />
         ) : slices.length === 0 ? (
           <div className="w-32 h-32 rounded-full border-4 border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 text-center px-2">
             ยังไม่มีข้อมูลลงเวลา

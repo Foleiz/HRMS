@@ -194,7 +194,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                   <div key={m.key} className="flex-1 flex flex-col items-center gap-1 h-full justify-end" title={`${m.label}: ${fmt(m.days)} วัน / ${m.requests} ใบ`}>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.days > 0 ? fmt(m.days) : ''}</span>
                     <div
-                      className="w-full rounded-t-md bg-[#0B2046]/80"
+                      className="w-full rounded-t-md bg-primary/80 dark:bg-primary/70"
                       style={{ height: `${(m.days / maxMonth) * 100}%`, minHeight: m.days > 0 ? 4 : 0 }}
                     />
                     <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.label}</span>
