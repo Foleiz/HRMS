@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState } from 'react';
 import {
   X,
@@ -250,18 +250,14 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
                     ดาวน์โหลดไฟล์ Excel เปล่าที่มีคอลัมน์วันที่และรายชื่อพนักงานในระบบ กรอกยอดขายแล้วอัปโหลดกลับเข้ามาได้ทันที
                   </p>
                 </div>
-                <button
+                <Button
                   onClick={handleDownloadTemplate}
-                  disabled={isDownloading}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  loading={isDownloading}
+                  icon={<Download className="h-4 w-4" />}
+                  className="!bg-emerald-600 hover:!bg-emerald-700 !text-white shrink-0"
                 >
-                  {isDownloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                  <span>ดาวน์โหลดเทมเพลต Excel (.xlsx)</span>
-                </button>
+                  ดาวน์โหลดเทมเพลต Excel (.xlsx)
+                </Button>
               </div>
             )}
           </div>
@@ -372,12 +368,12 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
             <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>คอลัมน์สีเขียวเข้มคือคอลัมน์ที่ระบบอ่านค่าเป็นหลัก (คอลัมน์อื่นสามารถมีหรือไม่มีก็ได้)</span>
           </div>
-          <button
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="rounded-xl bg-slate-800 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 transition cursor-pointer"
           >
             เข้าใจแล้ว
-          </button>
+          </Button>
         </div>
       </div>
     </ModalShell>

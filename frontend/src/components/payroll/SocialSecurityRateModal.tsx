@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button, Input } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -214,12 +214,11 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 ชื่อเกณฑ์ประกันสังคม <span className="text-rose-500">*</span>
               </label>
-              <input
+              <Input
                 type="text"
                 value={rateName}
                 onChange={(e) => setRateName(e.target.value)}
                 placeholder="เช่น อัตราเงินสมทบกองทุนประกันสังคม (มาตรา 33)"
-                className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500"
               />
             </div>
 
@@ -399,33 +398,34 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
         {/* Footer Actions */}
         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950 shrink-0">
           <div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setShowConfirmReset(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:bg-slate-200/60 transition-colors cursor-pointer"
+              icon={<RotateCcw className="w-3.5 h-3.5" />}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>รีเซ็ตเป็นค่ามาตรฐานกฎหมาย</span>
-            </button>
+              รีเซ็ตเป็นค่ามาตรฐานกฎหมาย
+            </Button>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               onClick={handleSubmit}
-              disabled={isLoading || validationErrors.length > 0}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+              loading={isLoading}
+              disabled={validationErrors.length > 0}
+              icon={<Save className="w-3.5 h-3.5" />}
             >
-              <Save className="w-3.5 h-3.5" />
-              <span>{isLoading ? 'กำลังบันทึก...' : 'บันทึกอัตราประกันสังคม'}</span>
-            </button>
+              บันทึกอัตราประกันสังคม
+            </Button>
           </div>
         </div>
       </div>
@@ -447,21 +447,23 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
               ลูกจ้าง 5% · นายจ้าง 5% · ฐาน 1,650–15,000 บาท ถึง 31 ธ.ค. 2568 และ 1,650–17,500 บาท ตั้งแต่ 1 ม.ค. 2569
             </p>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowConfirmReset(false)}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
+                size="sm"
                 onClick={handleConfirmReset}
-                disabled={isLoading}
-                className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold cursor-pointer disabled:opacity-50"
+                loading={isLoading}
               >
-                {isLoading ? 'กำลังรีเซ็ต...' : 'ยืนยันรีเซ็ต'}
-              </button>
+                ยืนยันรีเซ็ต
+              </Button>
             </div>
           </div>
         </ModalShell>

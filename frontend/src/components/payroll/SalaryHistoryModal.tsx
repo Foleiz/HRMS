@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Calendar, History, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
 import { salaryService } from '@/services/salaryService';
@@ -46,7 +46,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 dark:bg-blue-900/30 text-[#0B2046] dark:text-blue-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center font-bold">
               <History className="w-5 h-5" />
             </div>
             <div>
@@ -70,7 +70,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
         <div className="p-6 max-h-[70vh] overflow-y-auto">
           {loading ? (
             <div className="py-12 text-center text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 animate-spin text-[#0B2046] dark:text-blue-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-primary dark:text-blue-400" />
               <span>กำลังโหลดประวัติเงินเดือน...</span>
             </div>
           ) : history.length === 0 ? (
@@ -147,12 +147,12 @@ export const SalaryHistoryModal: React.FC<Props> = ({
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/80 dark:bg-slate-900/60 flex justify-end">
-          <button
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="px-5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200/80 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
           >
             ปิด
-          </button>
+          </Button>
         </div>
       </div>
     </ModalShell>

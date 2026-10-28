@@ -179,7 +179,7 @@ function TablePagination({
               onPageSizeChange(newSize);
               onPageChange(1);
             }}
-            className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-1 focus:ring-[#0B2046] cursor-pointer shadow-2xs transition-colors"
+            className="px-2.5 py-1 border border-slate-200 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer shadow-2xs transition-colors"
           >
             {pageSizeOptions.map((opt) => (
               <option key={opt} value={opt}>
@@ -222,7 +222,7 @@ function TablePagination({
             onClick={() => onPageChange(p)}
             className={`w-7 h-7 rounded-lg font-semibold flex items-center justify-center transition-all cursor-pointer ${
               safeCurrentPage === p
-                ? 'bg-[#0B2046] text-white shadow-xs'
+                ? 'bg-primary text-white shadow-xs'
                 : 'border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
             }`}
           >
@@ -2356,7 +2356,7 @@ export default function PayrollPage() {
               onClick={() => setActiveTab(t.id)}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === t.id
-                  ? 'border-[#0B2046] text-[#0B2046] dark:border-white dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:border-white dark:text-white font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
@@ -2534,7 +2534,7 @@ export default function PayrollPage() {
                         placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                        className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                       />
                     </div>
 
@@ -2613,12 +2613,12 @@ export default function PayrollPage() {
                             <td className="py-3.5 px-4 text-center">
                               <div className="inline-flex items-center gap-2">
                                 {canAdjustSalary && (
-                                  <button
+                                  <Button
+                                    size="sm"
                                     onClick={() => handleOpenAdjustSalary(emp)}
-                                    className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
                                   >
                                     {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
-                                  </button>
+                                  </Button>
                                 )}
                                 <button
                                   onClick={() => handleOpenSalaryHistory(emp)}
@@ -2668,7 +2668,7 @@ export default function PayrollPage() {
                 onClick={() => setItemsSubTab('EARNING')}
                 className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   itemsSubTab === 'EARNING'
-                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
@@ -2678,7 +2678,7 @@ export default function PayrollPage() {
                 onClick={() => setItemsSubTab('DEDUCTION')}
                 className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                   itemsSubTab === 'DEDUCTION'
-                    ? 'bg-[#0B2046] text-white shadow-xs'
+                    ? 'bg-primary text-white shadow-xs'
                     : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
                 }`}
               >
@@ -2923,7 +2923,7 @@ export default function PayrollPage() {
               onClick={() => setBonusSubTab('CALCULATE')}
               className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 bonusSubTab === 'CALCULATE'
-                  ? 'bg-[#0B2046] text-white shadow-xs'
+                  ? 'bg-primary text-white shadow-xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
@@ -2937,7 +2937,7 @@ export default function PayrollPage() {
               }}
               className={`h-9 inline-flex items-center px-5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 bonusSubTab === 'HISTORY'
-                  ? 'bg-[#0B2046] text-white shadow-xs'
+                  ? 'bg-primary text-white shadow-xs'
                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
@@ -3023,7 +3023,7 @@ export default function PayrollPage() {
                         setBonusSearchTerm(e.target.value);
                         setBonusCurrentPage(1);
                       }}
-                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                     />
                   </div>
 
@@ -3323,7 +3323,7 @@ export default function PayrollPage() {
               <div className="p-4 space-y-4">
                 {isLoadingBonusPeriods ? (
                   <div className="py-16 text-center text-slate-400">
-                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0B2046] dark:text-blue-400" />
+                    <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                     <p className="text-xs">กำลังโหลดข้อมูลรอบโบนัสย้อนหลัง...</p>
                   </div>
                 ) : bonusPeriods.length === 0 ? (
@@ -3335,14 +3335,15 @@ export default function PayrollPage() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
                       เมื่อมีการคำนวณและบันทึกการจัดสรรโบนัสในแท็บ &quot;คำนวณและจัดสรรโบนัส&quot; รายการรอบจะปรากฏที่นี่
                     </p>
-                    <button
+                    <Button
                       type="button"
+                      variant="primary"
+                      size="sm"
                       onClick={() => setBonusSubTab('CALCULATE')}
-                      className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                      icon={<Plus className="w-3.5 h-3.5" />}
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>ไปที่หน้าคำนวณโบนัส</span>
-                    </button>
+                      ไปที่หน้าคำนวณโบนัส
+                    </Button>
                   </div>
                 ) : (() => {
                   const totalPeriodsCount = bonusPeriods.length;
@@ -3553,7 +3554,7 @@ export default function PayrollPage() {
                                       placeholder="ค้นหารหัส, ชื่อพนักงาน หรือตำแหน่ง..."
                                       value={expandedBonusSearchQuery}
                                       onChange={(e) => setExpandedBonusSearchQuery(e.target.value)}
-                                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                                      className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                                     />
                                   </div>
 
@@ -3577,7 +3578,7 @@ export default function PayrollPage() {
                                   ) : (
                                     <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
                                       <table className="table-standard w-full text-left text-xs border-collapse">
-                                        <thead className="bg-[#0B2046] text-white font-semibold sticky top-0 z-10">
+                                        <thead className="bg-primary text-white font-semibold sticky top-0 z-10">
                                           <tr className="whitespace-nowrap">
                                             <th className="py-3 px-4 font-semibold">พนักงาน</th>
                                             <th className="py-3 px-4 font-semibold">แผนก / ตำแหน่ง</th>
@@ -3926,24 +3927,22 @@ export default function PayrollPage() {
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {(!selectedPeriod || selectedProcessMonth != null) ? (
                     (canAccessHrView || isAdmin) ? (
-                      <button
+                      <Button
                         type="button"
+                        variant="primary"
+                        size="sm"
                         disabled={isCreatingPeriod}
+                        loading={isCreatingPeriod}
                         onClick={() => {
                           const targetMonth =
                             selectedProcessMonth ??
                             (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1);
                           handleCreatePeriodInstant(activeYear, targetMonth);
                         }}
-                        className="h-9 inline-flex items-center gap-1.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                        icon={<Plus className="w-3.5 h-3.5" />}
                       >
-                        {isCreatingPeriod ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        ) : (
-                          <Plus className="w-3.5 h-3.5" />
-                        )}
-                        <span>สร้างรอบเงินเดือน</span>
-                      </button>
+                        สร้างรอบเงินเดือน
+                      </Button>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                         <Clock className="w-4 h-4 text-slate-400" />
@@ -3992,14 +3991,15 @@ export default function PayrollPage() {
                             payrolls.some(
                               (p) => p.status === 'CALCULATED' || (p.netPayableSalary != null && p.netPayableSalary > 0)
                             ) ? (
-                              <button
+                              <Button
                                 type="button"
+                                variant="primary"
+                                size="sm"
                                 onClick={handleSubmitToFinance}
-                                className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+                                icon={<Send className="w-3.5 h-3.5" />}
                               >
-                                <Send className="w-3.5 h-3.5" />
-                                <span>ส่งให้ฝ่ายการเงินตรวจสอบ</span>
-                              </button>
+                                ส่งให้ฝ่ายการเงินตรวจสอบ
+                              </Button>
                             ) : (
                               <button
                                 type="button"
@@ -4396,7 +4396,7 @@ export default function PayrollPage() {
             {/* If no period exists for this selected month */}
             {(!selectedPeriod || selectedProcessMonth != null) ? (
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-12 text-center space-y-4 shadow-xs">
-                <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-blue-400 mx-auto flex items-center justify-center">
+                <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/30 text-primary dark:text-blue-300 mx-auto flex items-center justify-center">
                   <Calendar className="w-8 h-8" />
                 </div>
                 <div className="max-w-md mx-auto space-y-1.5">
@@ -4412,25 +4412,24 @@ export default function PayrollPage() {
                   </p>
                 </div>
                 {(canAccessHrView || isAdmin) && (
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
                     disabled={isCreatingPeriod}
+                    loading={isCreatingPeriod}
                     onClick={() => {
                       const targetMonth =
                         selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1);
                       handleCreatePeriodInstant(activeYear, targetMonth);
                     }}
-                    className="h-10 px-6 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+                    icon={<Plus className="w-4 h-4" />}
                   >
-                    {isCreatingPeriod ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    <span>
-                      สร้างรอบเงินเดือน{' '}
-                      {THAI_MONTH_NAMES[
-                        (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
-                      ]}{' '}
-                      {activeYear + 543}
-                    </span>
-                  </button>
+                    สร้างรอบเงินเดือน{' '}
+                    {THAI_MONTH_NAMES[
+                      (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
+                    ]}{' '}
+                    {activeYear + 543}
+                  </Button>
                 )}
               </div>
             ) : (
@@ -4482,15 +4481,17 @@ export default function PayrollPage() {
                   บทบาทของคุณได้รับสิทธิ์เฉพาะหน้าต่างฝ่ายการเงิน (Finance)
                 </p>
                 {canAccessFinanceView && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={() => {
                       setProcessSubTab('FINANCE');
                       setViewMode('FINANCE');
                     }}
-                    className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl cursor-pointer"
                   >
                     ไปยังหน้าต่างฝ่ายการเงิน (Finance)
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -4512,7 +4513,7 @@ export default function PayrollPage() {
                             setProcessSearchQuery(e.target.value);
                             setProcessPage(1);
                           }}
-                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                         />
                       </div>
 
@@ -4698,7 +4699,7 @@ export default function PayrollPage() {
                             setProcessSearchQuery(e.target.value);
                             setProcessPage(1);
                           }}
-                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                         />
                       </div>
 
@@ -4887,7 +4888,7 @@ export default function PayrollPage() {
                             setProcessSearchQuery(e.target.value);
                             setProcessPage(1);
                           }}
-                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                          className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                         />
                       </div>
 
@@ -4998,15 +4999,17 @@ export default function PayrollPage() {
                   ขั้นตอนการโอนเงินและแนบสลิปสงวนไว้สำหรับฝ่ายการเงิน (Finance) หรือผู้มีสิทธิ์โอนเงินธนาคารเท่านั้น
                 </p>
                 {canAccessHrView && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={() => {
                       setProcessSubTab('HR');
                       setViewMode('HR');
                     }}
-                    className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl cursor-pointer"
                   >
                     กลับไปยังหน้าต่างฝ่ายบุคคล (HR)
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -5203,7 +5206,7 @@ export default function PayrollPage() {
                               type="file"
                               accept="image/jpeg,image/png,image/webp,application/pdf"
                               onChange={e => setBankReceiptFile(e.target.files?.[0] || null)}
-                              className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0B2046] file:text-white hover:file:bg-[#112d5e] cursor-pointer"
+                              className="block w-full text-xs text-slate-500 dark:text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-hover cursor-pointer"
                             />
                             {bankReceiptFile && (
                               <button
@@ -5284,7 +5287,7 @@ export default function PayrollPage() {
                   ) : (
                     <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                       <table className="table-standard w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
-                        <thead className="bg-[#0B2046] text-white font-semibold">
+                        <thead className="bg-primary text-white font-semibold">
                           <tr className="whitespace-nowrap">
                             <th className="py-3 px-4 font-semibold">พนักงาน</th>
                             <th className="py-3 px-4 font-semibold">ธนาคาร / เลขบัญชี</th>
@@ -5389,7 +5392,7 @@ export default function PayrollPage() {
                                         className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer
                                           ${item.paymentStatus === 'TRANSFERRED'
                                             ? 'bg-slate-100 text-slate-500 dark:text-slate-400 hover:bg-slate-200'
-                                            : 'bg-[#0B2046] hover:bg-[#112d5e] text-white shadow-xs'
+                                            : 'bg-primary hover:bg-primary-hover text-white shadow-xs'
                                           } disabled:opacity-50`}
                                       >
                                         {isMarkingTransferred === item.payrollId ? (
@@ -5448,7 +5451,7 @@ export default function PayrollPage() {
                     value={slipTransferRef}
                     onChange={e => setSlipTransferRef(e.target.value)}
                     placeholder="เช่น TH6706161234567890"
-                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-mono"
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary font-mono"
                   />
                 </div>
 
@@ -5479,7 +5482,7 @@ export default function PayrollPage() {
                     }}
                     onClick={() => document.getElementById('slip-file-input')?.click()}
                     className={`border-2 border-dashed rounded-2xl p-5 text-center cursor-pointer transition-all overflow-hidden
-                      ${slipDragOver ? 'border-[#0B2046] bg-blue-50' : slipFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50'}`}
+                      ${slipDragOver ? 'border-primary bg-blue-50 dark:bg-blue-950/40' : slipFile ? 'border-emerald-400 bg-emerald-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50'}`}
                   >
                     {slipFile ? (
                       <div className="flex items-center gap-3 text-emerald-700 w-full min-w-0 px-1">
@@ -5511,23 +5514,24 @@ export default function PayrollPage() {
                 </div>
 
                 <div className="flex gap-3 pt-1">
-                  <button
+                  <Button
+                    type="button"
+                    variant="secondary"
                     onClick={() => setSlipModalOpen(false)}
-                    className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 dark:text-slate-400 rounded-xl text-sm font-semibold hover:bg-slate-50 cursor-pointer"
+                    fullWidth
                   >
                     ยกเลิก
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
                     onClick={handleMarkTransferred}
-                    disabled={isMarkingTransferred !== null}
-                    className="flex-1 px-4 py-2.5 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-sm font-bold cursor-pointer transition-all inline-flex items-center justify-center gap-2"
+                    loading={isMarkingTransferred !== null}
+                    icon={<CheckCircle className="w-4 h-4" />}
+                    fullWidth
                   >
-                    {isMarkingTransferred !== null ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลังบันทึก...</span></>
-                    ) : (
-                      <><CheckCircle className="w-4 h-4" /><span>บันทึกการโอน</span></>
-                    )}
-                  </button>
+                    บันทึกการโอน
+                  </Button>
                 </div>
               </div>
             </ModalShell>
@@ -5720,14 +5724,15 @@ export default function PayrollPage() {
 
               <div className="flex items-center gap-2">
                 {canEditTax ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={() => setIsTaxModalOpen(true)}
-                    className="h-9 inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer"
+                    icon={<Edit2 className="w-3.5 h-3.5" />}
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
-                    <span>แก้ไขอัตราภาษี</span>
-                  </button>
+                    แก้ไขอัตราภาษี
+                  </Button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">
                     <Lock className="w-3.5 h-3.5" />
@@ -5739,7 +5744,7 @@ export default function PayrollPage() {
 
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
               <table className="table-standard w-full min-w-[860px] text-left border-collapse text-xs whitespace-nowrap">
-                <thead className="bg-[#0B2046] text-white font-semibold">
+                <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3 px-4 font-semibold">ขั้นเงินได้</th>
                     <th className="py-3 px-4 text-right font-semibold">เงินได้สุทธิตั้งแต่</th>
@@ -5980,24 +5985,25 @@ export default function PayrollPage() {
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/80">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#0B2046]/10 text-[#0B2046] dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center font-bold">
                   <Calendar className="w-5 h-5" />
                 </div>
                 <h3 className="font-bold text-base text-slate-900 dark:text-slate-100">รอบเงินเดือนทั้งหมด</h3>
               </div>
               <div className="flex items-center gap-2">
                 {canAccessHrView && (
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={() => {
                       setIsAllPeriodsModalOpen(false);
                       handleCreatePeriodFromProcessTab();
                     }}
-                    className="h-8.5 inline-flex items-center gap-1 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                    icon={<Plus className="w-3.5 h-3.5" />}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>สร้างรอบใหม่</span>
-                  </button>
+                    สร้างรอบใหม่
+                  </Button>
                 )}
                 <button
                   type="button"
@@ -6021,17 +6027,18 @@ export default function PayrollPage() {
                     คุณสามารถสร้างรอบการคำนวณเงินเดือนแรกได้ทันที
                   </p>
                   {canAccessHrView && (
-                    <button
+                    <Button
                       type="button"
+                      variant="primary"
+                      size="sm"
                       onClick={() => {
                         setIsAllPeriodsModalOpen(false);
                         handleCreatePeriodFromProcessTab();
                       }}
-                      className="px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+                      icon={<Plus className="w-3.5 h-3.5" />}
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>สร้างรอบเงินเดือนใหม่</span>
-                    </button>
+                      สร้างรอบเงินเดือนใหม่
+                    </Button>
                   )}
                 </div>
               ) : (
@@ -6107,19 +6114,20 @@ export default function PayrollPage() {
                             <td className="py-3 px-4 text-center">
                               <div className="flex items-center justify-center gap-1.5">
                                 {canViewProcess && (
-                                  <button
+                                  <Button
                                     type="button"
+                                    variant="primary"
+                                    size="sm"
                                     onClick={() => {
                                       handlePeriodChange(p.id);
                                       setActiveTab('process');
                                       setIsAllPeriodsModalOpen(false);
                                     }}
-                                    className="px-2.5 py-1 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1"
+                                    icon={<Eye className="w-3.5 h-3.5" />}
                                     title="เปิดดูและประมวลผลรอบนี้"
                                   >
-                                    <Eye className="w-3.5 h-3.5" />
-                                    <span>เปิดดู</span>
-                                  </button>
+                                    เปิดดู
+                                  </Button>
                                 )}
                                 {(p.status === 'DRAFT' || p.status === 'REVIEW') && canAccessHrView && (
                                   <button
@@ -6201,7 +6209,7 @@ export default function PayrollPage() {
                   value={selectedTargetPeriodId || ''}
                   onChange={(e) => setSelectedTargetPeriodId(parseInt(e.target.value) || null)}
                   numbered={false}
-                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 font-medium cursor-pointer"
+                  className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                 >
                   <option value="">-- เลือกงวดเงินเดือน --</option>
                   {periods.filter((p) => p.status === 'DRAFT' || p.status === 'REVIEW').map((p) => {
@@ -6237,23 +6245,25 @@ export default function PayrollPage() {
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setIsApplyBonusModalOpen(false)}
                   disabled={isApplyingBonus}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-medium cursor-pointer"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={handleConfirmApplyBonusToPeriod}
-                  disabled={isApplyingBonus || !selectedTargetPeriodId}
-                  className="px-5 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white text-xs font-semibold shadow-xs cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
+                  loading={isApplyingBonus}
+                  disabled={!selectedTargetPeriodId}
                 >
-                  {isApplyingBonus && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{isApplyingBonus ? 'กำลังบันทึกและคำนวณ...' : 'ยืนยันบันทึกเข้างวดเงินเดือน'}</span>
-                </button>
+                  ยืนยันบันทึกเข้างวดเงินเดือน
+                </Button>
               </div>
             </div>
           </div>

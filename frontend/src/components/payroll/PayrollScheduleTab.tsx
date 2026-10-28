@@ -20,6 +20,7 @@ import {
   savePayrollScheduleSettings,
 } from '@/services/payrollScheduleService';
 import { useToast } from '@/context/ToastContext';
+import { Button } from '@/components/ui';
 
 interface PayrollScheduleTabProps {
   canEdit?: boolean;
@@ -54,7 +55,7 @@ export default function PayrollScheduleTab({
       {/* Top Banner & Header */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-blue-400 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center shrink-0 shadow-2xs">
             <CalendarClock className="w-6 h-6" />
           </div>
           <div>
@@ -72,23 +73,23 @@ export default function PayrollScheduleTab({
 
         {canEdit && (
           <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={handleReset}
-              className="h-10 px-3.5 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+              icon={<RotateCcw className="w-3.5 h-3.5" />}
               title="รีเซ็ตกลับเป็นค่าเริ่มต้น"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>รีเซ็ตค่าเริ่มต้น</span>
-            </button>
-            <button
+              รีเซ็ตค่าเริ่มต้น
+            </Button>
+            <Button
               type="button"
+              variant="primary"
               onClick={handleSave}
-              className="h-10 px-5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
+              icon={isSavedRecently ? <CheckCircle2 className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
             >
-              {isSavedRecently ? <CheckCircle2 className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
-              <span>{isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการกำหนดวัน'}</span>
-            </button>
+              {isSavedRecently ? 'บันทึกเรียบร้อย' : 'บันทึกการกำหนดวัน'}
+            </Button>
           </div>
         )}
       </div>
@@ -118,7 +119,7 @@ export default function PayrollScheduleTab({
                     name="startDayType"
                     checked={settings.startDayType === 'FIRST_DAY'}
                     onChange={() => setSettings({ ...settings, startDayType: 'FIRST_DAY' })}
-                    className="text-[#0B2046] focus:ring-[#0B2046]"
+                    className="text-primary focus:ring-primary"
                   />
                   <div>
                     <span className="font-semibold">ทุกวันที่ 1 ของเดือน</span>
@@ -132,7 +133,7 @@ export default function PayrollScheduleTab({
                     name="startDayType"
                     checked={settings.startDayType === 'CUSTOM_DAY'}
                     onChange={() => setSettings({ ...settings, startDayType: 'CUSTOM_DAY' })}
-                    className="text-[#0B2046] focus:ring-[#0B2046]"
+                    className="text-primary focus:ring-primary"
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
@@ -166,7 +167,7 @@ export default function PayrollScheduleTab({
                     name="endDayType"
                     checked={settings.endDayType === 'LAST_DAY'}
                     onChange={() => setSettings({ ...settings, endDayType: 'LAST_DAY' })}
-                    className="text-[#0B2046] focus:ring-[#0B2046]"
+                    className="text-primary focus:ring-primary"
                   />
                   <div>
                     <span className="font-semibold">วันสิ้นเดือนของแต่ละเดือน</span>
@@ -180,7 +181,7 @@ export default function PayrollScheduleTab({
                     name="endDayType"
                     checked={settings.endDayType === 'CUSTOM_DAY'}
                     onChange={() => setSettings({ ...settings, endDayType: 'CUSTOM_DAY' })}
-                    className="text-[#0B2046] focus:ring-[#0B2046]"
+                    className="text-primary focus:ring-primary"
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
@@ -234,7 +235,7 @@ export default function PayrollScheduleTab({
                   max={31}
                   value={settings.paymentDay}
                   onChange={(e) => setSettings({ ...settings, paymentDay: Number(e.target.value) || 29 })}
-                  className="w-20 px-3 py-1.5 text-center font-bold text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20"
+                  className="w-20 px-3 py-1.5 text-center font-bold text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <span className="text-xs text-slate-500 dark:text-slate-400">ของแต่ละเดือน (เช่น 29)</span>
               </div>
@@ -247,7 +248,7 @@ export default function PayrollScheduleTab({
                   type="checkbox"
                   checked={settings.adjustWeekend}
                   onChange={(e) => setSettings({ ...settings, adjustWeekend: e.target.checked })}
-                  className="mt-0.5 rounded text-[#0B2046] focus:ring-[#0B2046]"
+                  className="mt-0.5 rounded text-primary focus:ring-primary"
                 />
                 <div>
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -289,7 +290,7 @@ export default function PayrollScheduleTab({
                     name="claimCutoffType"
                     checked={settings.claimCutoffType === 'CUSTOM_DAY'}
                     onChange={() => setSettings({ ...settings, claimCutoffType: 'CUSTOM_DAY' })}
-                    className="text-[#0B2046] focus:ring-[#0B2046]"
+                    className="text-primary focus:ring-primary"
                   />
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
@@ -320,7 +321,7 @@ export default function PayrollScheduleTab({
                     name="claimCutoffType"
                     checked={settings.claimCutoffType === 'SAME_AS_PAYMENT'}
                     onChange={() => setSettings({ ...settings, claimCutoffType: 'SAME_AS_PAYMENT' })}
-                    className="text-[#0B2046] focus:ring-[#0B2046]"
+                    className="text-primary focus:ring-primary"
                   />
                   <div>
                     <span className="font-semibold">ใช้วันเดียวกับวันกำหนดจ่ายเงิน</span>
@@ -342,7 +343,7 @@ export default function PayrollScheduleTab({
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-700/80">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#0B2046] dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-800/60 shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center border border-blue-100 dark:border-blue-800/60 shrink-0">
               <CreditCard className="w-4 h-4" />
             </div>
             <div>
@@ -367,14 +368,14 @@ export default function PayrollScheduleTab({
             onClick={() => setSettings({ ...settings, defaultPaymentMethod: 'BANK_BATCH' })}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
               settings.defaultPaymentMethod === 'BANK_BATCH'
-                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-[#0B2046] dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
+                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-primary dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
                 : 'bg-slate-50/50 dark:bg-slate-850 hover:bg-slate-100/60 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
             }`}
           >
             <div
               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 settings.defaultPaymentMethod === 'BANK_BATCH'
-                  ? 'bg-[#0B2046] text-white dark:bg-blue-600'
+                  ? 'bg-primary text-white dark:bg-blue-600'
                   : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
               }`}
             >
@@ -403,14 +404,14 @@ export default function PayrollScheduleTab({
             onClick={() => setSettings({ ...settings, defaultPaymentMethod: 'DIRECT_TRANSFER' })}
             className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
               settings.defaultPaymentMethod === 'DIRECT_TRANSFER'
-                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-[#0B2046] dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
+                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-primary dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
                 : 'bg-slate-50/50 dark:bg-slate-850 hover:bg-slate-100/60 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
             }`}
           >
             <div
               className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                 settings.defaultPaymentMethod === 'DIRECT_TRANSFER'
-                  ? 'bg-[#0B2046] text-white dark:bg-blue-600'
+                  ? 'bg-primary text-white dark:bg-blue-600'
                   : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
               }`}
             >

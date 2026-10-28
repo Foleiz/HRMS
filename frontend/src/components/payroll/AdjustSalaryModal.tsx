@@ -1,8 +1,8 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, Building2, Briefcase, CalendarClock } from 'lucide-react';
+import { X, AlertCircle, Building2, Briefcase, CalendarClock } from 'lucide-react';
 import { EmployeeSalaryOverview, AdjustEmployeeSalaryPayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
@@ -156,7 +156,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             {/* Employee Summary Card */}
             <div className="p-4 bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200/70 dark:border-slate-700/60 rounded-2xl space-y-2.5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-300 flex items-center justify-center font-bold text-sm">
+                <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center font-bold text-sm">
                   {initialsOf(employee.employeeName)}
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
                   className={`w-full text-sm pl-3.5 pr-8 py-2.5 rounded-xl focus:outline-none transition-all font-semibold ${
                     isOutOfRange
                       ? 'border-2 border-rose-500 bg-rose-50/20 text-rose-900 focus:ring-2 focus:ring-rose-400'
-                      : 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800'
+                      : 'bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:bg-white dark:bg-slate-800'
                   }`}
                 />
                 <span className="absolute right-3 top-2.5 text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">฿</span>
@@ -279,7 +279,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               value={effectiveFrom}
               onChange={setEffectiveFrom}
               placeholder="เลือกวันที่มีผลบังคับใช้"
-              className="w-full text-sm px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+              className="w-full text-sm px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
             />
             <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">
               ระบบจะปิดการใช้งานเงินเดือนเดิมในวันก่อนหน้าวันที่มีผลนี้ให้อัตโนมัติ
@@ -296,7 +296,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               placeholder="เช่น ปรับประจำปี, ผ่านการทดลองงาน, เลื่อนตำแหน่ง..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="w-full text-sm px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200 resize-none"
+              className="w-full text-sm px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:bg-slate-800 transition-all text-slate-800 dark:text-slate-200 resize-none"
             />
           </div>
 
@@ -304,28 +304,22 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
           {/* Actions (Sticky footer) */}
           <div className="flex items-center justify-end gap-3 px-6 py-3.5 bg-slate-50/80 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-700/60 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={loading || isOutOfRange}
+              variant="primary"
+              loading={loading}
+              disabled={isOutOfRange}
               title={isOutOfRange ? 'เงินเดือนไม่อยู่ในช่วงกรอบเงินเดือนตามตำแหน่ง' : undefined}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-semibold shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  กำลังบันทึก...
-                </>
-              ) : (
-                'ยืนยันปรับเงินเดือน'
-              )}
-            </button>
+              ยืนยันปรับเงินเดือน
+            </Button>
           </div>
         </form>
       </div>
