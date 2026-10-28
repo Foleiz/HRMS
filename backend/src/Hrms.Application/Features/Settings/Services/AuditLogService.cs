@@ -315,6 +315,20 @@ public class AuditLogService : IAuditLogService
         var thaiEntity = TranslateEntityType(entityType);
         var idStr = entityId.HasValue ? $" #{entityId}" : "";
 
+        // แถวสรุปงานแบบกลุ่ม: FieldName = "BULK|เพิ่ม|แก้ไข|ลบ"
+        if (field != null && field.StartsWith("BULK|", StringComparison.Ordinal))
+        {
+            var parts = field.Split('|');
+            int.TryParse(parts.ElementAtOrDefault(1), out var ins);
+            int.TryParse(parts.ElementAtOrDefault(2), out var upd);
+            int.TryParse(parts.ElementAtOrDefault(3), out var del);
+            var segs = new List<string>();
+            if (ins > 0) segs.Add($"เพิ่ม {ins:N0}");
+            if (upd > 0) segs.Add($"แก้ไข {upd:N0}");
+            if (del > 0) segs.Add($"ลบ {del:N0}");
+            return $"เปลี่ยนแปลง{thaiEntity}แบบกลุ่ม {ins + upd + del:N0} รายการ ({string.Join(" · ", segs)})";
+        }
+
         return action switch
         {
             "LOGIN" => "เข้าสู่ระบบสำเร็จ",
@@ -336,6 +350,9 @@ public class AuditLogService : IAuditLogService
             "employee" => "ข้อมูลพนักงาน",
             "user_account" or "useraccount" => "บัญชีผู้ใช้งาน",
             "role" => "บทบาทและสิทธิ์",
+            "role_permission" or "rolepermission" => "สิทธิ์ของบทบาท",
+            "role_data_scope" or "roledatascope" => "ขอบเขตข้อมูลของบทบาท",
+            "payslip" => "สลิปเงินเดือน",
             "approval_flow" or "approvalflow" => "สายการอนุมัติ",
             "approval_instance" or "approvalinstance" => "รายการอนุมัติ",
             "leave_request" or "leaverequest" => "คำร้องขอลา",

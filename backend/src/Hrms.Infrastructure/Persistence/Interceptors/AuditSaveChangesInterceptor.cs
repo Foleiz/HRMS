@@ -36,6 +36,27 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         "signature_data"
     };
 
+    // ตารางที่ไม่ต้องบันทึก audit เพราะเป็นบันทึกผลการทำงานของระบบอยู่แล้ว
+    private static readonly HashSet<string> ExcludedTables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "attendance_import_error"
+    };
+
+    // ถ้าตารางเดียวเปลี่ยนเกินจำนวนนี้ใน SaveChanges ครั้งเดียว (เช่น นำเข้าเวลา, คำนวณเงินเดือน, บันทึกสิทธิ์)
+    // จะบันทึกเป็นแถวสรุป 1 แถวแทนการบันทึกทีละแถว เพื่อไม่ให้ audit_log โตเร็ว
+    private const int BulkThreshold = 20;
+
+    // ตารางข้อมูลพนักงานที่หน้า "ประวัติการแก้ไข" ของพนักงานอ่านทีละแถว: บันทึกละเอียดเสมอ ไม่สรุป
+    private static readonly HashSet<string> AlwaysDetailedTables = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "employee", "employee_contact", "employee_address", "employee_bank_account",
+        "employee_social_security", "employee_education", "employee_work_experience",
+        "family_member", "emergency_contact", "employee_assignment", "employee_document",
+        "user_account", "user_role"
+    };
+    private const int BulkSampleIdLimit = 50;
+    private const int BulkColumnLimit = 30;
+
     private readonly List<AuditEntry> _pendingAddedEntries = new();
 
     public AuditSaveChangesInterceptor(ICurrentUserService currentUserService)
@@ -116,9 +137,30 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
 
         if (entries.Count == 0) return;
 
+        entries = entries.Where(e => !ExcludedTables.Contains(GetTableName(e))).ToList();
+        if (entries.Count == 0) return;
+
+        // งานแบบกลุ่ม: สรุปเป็น 1 แถวต่อตาราง แล้วไม่บันทึกทีละแถว
+        var bulkGroups = entries
+            .GroupBy(GetTableName, StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > BulkThreshold && !AlwaysDetailedTables.Contains(g.Key))
+            .ToList();
+        if (bulkGroups.Count > 0)
+        {
+            var bulkTables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var group in bulkGroups)
+            {
+                bulkTables.Add(group.Key);
+                var summary = BuildBulkSummary(group.Key, group.ToList(), currentUserId, currentIp, currentUserAgent);
+                if (summary != null) context.Set<AuditLog>().Add(summary);
+            }
+            entries = entries.Where(e => !bulkTables.Contains(GetTableName(e))).ToList();
+            if (entries.Count == 0) return;
+        }
+
         foreach (var entry in entries)
         {
-            var tableName = entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name.ToLowerInvariant();
+            var tableName = GetTableName(entry);
 
             switch (entry.State)
             {
@@ -284,6 +326,68 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                 }
             }
         }
+    }
+
+    private static string GetTableName(EntityEntry entry) =>
+        entry.Metadata.GetTableName() ?? entry.Entity.GetType().Name.ToLowerInvariant();
+
+    private static bool HasRealChange(EntityEntry entry) =>
+        entry.Properties.Any(p => !p.Metadata.IsPrimaryKey() && !Equals(p.OriginalValue, p.CurrentValue));
+
+    /// <summary>
+    /// สร้างแถวสรุปสำหรับการเปลี่ยนแปลงแบบกลุ่ม: FieldName = "BULK|เพิ่ม|แก้ไข|ลบ",
+    /// NewValue เก็บจำนวน, คอลัมน์ที่เปลี่ยน และตัวอย่างรหัสข้อมูล (ไม่เก็บค่าของแต่ละแถว)
+    /// </summary>
+    private static AuditLog? BuildBulkSummary(string tableName, List<EntityEntry> group, long? userId, string? ip, string? userAgent)
+    {
+        var inserted = group.Count(e => e.State == EntityState.Added);
+        var deletedEntries = group.Where(e => e.State == EntityState.Deleted).ToList();
+        var updatedEntries = group.Where(e => e.State == EntityState.Modified && HasRealChange(e)).ToList();
+        var deleted = deletedEntries.Count;
+        var updated = updatedEntries.Count;
+        var total = inserted + updated + deleted;
+        if (total == 0) return null;
+
+        var action = inserted == total ? "INSERT" : deleted == total ? "DELETE" : "UPDATE";
+
+        var sampleIds = updatedEntries.Concat(deletedEntries)
+            .Select(e => e.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey())?.OriginalValue)
+            .Select(v => v != null && long.TryParse(v.ToString(), out var id) ? id : (long?)null)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Take(BulkSampleIdLimit)
+            .ToList();
+
+        var changedColumns = updatedEntries
+            .SelectMany(e => e.Properties
+                .Where(p => !p.Metadata.IsPrimaryKey() && !Equals(p.OriginalValue, p.CurrentValue))
+                .Select(p => p.Metadata.Name))
+            .Distinct()
+            .Take(BulkColumnLimit)
+            .ToList();
+
+        return new AuditLog
+        {
+            Action = action,
+            EntityType = tableName,
+            EntityId = null,
+            FieldName = $"BULK|{inserted}|{updated}|{deleted}",
+            OldValue = null,
+            NewValue = JsonSerializer.Serialize(new
+            {
+                bulk = true,
+                total,
+                inserted,
+                updated,
+                deleted,
+                changedColumns,
+                sampleIds
+            }),
+            UserId = userId,
+            IpAddress = ip,
+            UserAgent = userAgent,
+            CreatedAt = DateTime.UtcNow
+        };
     }
 
     private void OnAfterSaved(DbContext context)
