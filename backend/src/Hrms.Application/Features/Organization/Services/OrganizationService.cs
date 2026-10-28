@@ -71,6 +71,85 @@ public class OrganizationService : IOrganizationService
         return result;
     }
 
+    private async Task AppendCompanyProfileHistoryAsync(Company company, CancellationToken cancellationToken)
+    {
+        var last = await _dbContext.CompanyProfileHistories.AsNoTracking()
+            .Where(h => h.CompanyId == company.Id)
+            .OrderByDescending(h => h.ValidFrom)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        static bool SameBytes(byte[]? a, byte[]? b) =>
+            (a == null || a.Length == 0) ? (b == null || b.Length == 0) : b != null && a.AsSpan().SequenceEqual(b.AsSpan());
+
+        var unchanged = last != null
+                        && last.CompanyName == company.CompanyName
+                        && last.Address == company.Address
+                        && last.Phone == company.Phone
+                        && last.Email == company.Email
+                        && SameBytes(last.LogoData, company.LogoData)
+                        && SameBytes(last.SealData, company.SealData);
+        if (unchanged) return;
+
+        _dbContext.CompanyProfileHistories.Add(new CompanyProfileHistory
+        {
+            CompanyId = company.Id,
+            CompanyName = company.CompanyName,
+            Address = company.Address,
+            Phone = company.Phone,
+            Email = company.Email,
+            LogoData = company.LogoData,
+            SealData = company.SealData,
+            // เอกสารก่อนเริ่มเก็บประวัติ ใช้ชุดที่เก่าที่สุด (ดู GetCompanyDocumentProfileAsync)
+            ValidFrom = DateTime.UtcNow
+        });
+    }
+
+    public async Task<CompanyDocumentProfileDto?> GetCompanyDocumentProfileAsync(DateTime? at, CancellationToken cancellationToken = default)
+    {
+        static string? ToDataUri(byte[]? bytes)
+        {
+            if (bytes == null || bytes.Length == 0) return null;
+            var mime = bytes.Length > 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 ? "image/jpeg" : "image/png";
+            return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
+        }
+
+        if (at.HasValue)
+        {
+            var t = at.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(at.Value, DateTimeKind.Utc) : at.Value.ToUniversalTime();
+            var h = await _dbContext.CompanyProfileHistories.AsNoTracking()
+                        .Where(x => x.ValidFrom <= t)
+                        .OrderByDescending(x => x.ValidFrom)
+                        .FirstOrDefaultAsync(cancellationToken)
+                    ?? await _dbContext.CompanyProfileHistories.AsNoTracking()
+                        .OrderBy(x => x.ValidFrom)
+                        .FirstOrDefaultAsync(cancellationToken);
+            if (h != null)
+            {
+                return new CompanyDocumentProfileDto
+                {
+                    CompanyName = h.CompanyName,
+                    Address = h.Address,
+                    Phone = h.Phone,
+                    Email = h.Email,
+                    LogoData = ToDataUri(h.LogoData),
+                    SealData = ToDataUri(h.SealData)
+                };
+            }
+        }
+
+        var c = await _dbContext.Companies.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        if (c == null) return null;
+        return new CompanyDocumentProfileDto
+        {
+            CompanyName = c.CompanyName,
+            Address = c.Address,
+            Phone = c.Phone,
+            Email = c.Email,
+            LogoData = ToDataUri(c.LogoData),
+            SealData = ToDataUri(c.SealData)
+        };
+    }
+
     public async Task<CompanyDto> UpdateCompanyProfileAsync(UpdateCompanyDto request, CancellationToken cancellationToken = default)
     {
         InvalidateCompanyCache();
@@ -137,6 +216,9 @@ public class OrganizationService : IOrganizationService
         }
 
         company.UpdatedAt = DateTime.UtcNow;
+
+        // เก็บประวัติข้อมูลบนเอกสาร เมื่อชื่อ/ที่อยู่/ติดต่อ/โลโก้/ตราประทับเปลี่ยน
+        await AppendCompanyProfileHistoryAsync(company, cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -49,6 +49,17 @@ public class OrganizationController : ControllerBase
         return Ok(ApiResponse<CompanyDto?>.Ok(result));
     }
 
+    /// <summary>
+    /// ข้อมูลบริษัทสำหรับหัว/ท้ายเอกสาร (โลโก้ ตราประทับ ชื่อ ที่อยู่) ณ เวลา at
+    /// เอกสารที่อนุมัติแล้วส่ง at = วันที่อนุมัติ เพื่อไม่ให้เปลี่ยนตามโลโก้ใหม่
+    /// </summary>
+    [HttpGet("company/document-profile")]
+    public async Task<IActionResult> GetCompanyDocumentProfile([FromQuery] DateTime? at, CancellationToken cancellationToken)
+    {
+        var result = await _orgService.GetCompanyDocumentProfileAsync(at, cancellationToken);
+        return Ok(ApiResponse<CompanyDocumentProfileDto?>.Ok(result));
+    }
+
     [HttpPut("company")]
     [RequirePermission("ORG_COMP_EDIT")]
     public async Task<IActionResult> UpdateCompany([FromBody] UpdateCompanyDto request, CancellationToken cancellationToken)

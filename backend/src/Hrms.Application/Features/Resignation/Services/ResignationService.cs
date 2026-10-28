@@ -84,11 +84,15 @@ public class ResignationService : IResignationService
             throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์เข้าถึงคำขอลาออกนี้");
         }
 
-        var assignment = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .Include(a => a.Department)
-            .Include(a => a.Position)
-            .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.IsCurrent, cancellationToken);
+        // ตำแหน่ง/แผนก ณ วันที่ยื่น
+        var assignment = Hrms.Application.Common.Utilities.AssignmentAsOf.Pick(
+            await _context.EmployeeAssignments
+                .AsNoTracking()
+                .Include(a => a.Department)
+                .Include(a => a.Position)
+                .Where(a => a.EmployeeId == request.EmployeeId)
+                .ToListAsync(cancellationToken),
+            request.SubmittedAt);
 
         return await MapToDtoAsync(request, assignment, currentEmpId, isHrOrAdmin, cancellationToken);
     }
@@ -386,19 +390,23 @@ public class ResignationService : IResignationService
             .ToListAsync(cancellationToken);
 
         var empIds = requests.Select(r => r.EmployeeId).Distinct().ToList();
-        var assignments = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .Include(a => a.Department)
-            .Include(a => a.Position)
-            .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
+        // ประวัติตำแหน่งทั้งหมด — แสดงตำแหน่ง/แผนก ณ วันที่ยื่น
+        var assignments = (await _context.EmployeeAssignments
+                .AsNoTracking()
+                .Include(a => a.Department)
+                .Include(a => a.Position)
+                .Where(a => empIds.Contains(a.EmployeeId))
+                .ToListAsync(cancellationToken))
+            .GroupBy(a => a.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         var isHrOrAdmin = IsHrOrAdmin;
 
         var items = new List<ResignationRequestDto>();
         foreach (var r in requests)
         {
-            assignments.TryGetValue(r.EmployeeId, out var assign);
+            assignments.TryGetValue(r.EmployeeId, out var empAssignments);
+            var assign = Hrms.Application.Common.Utilities.AssignmentAsOf.Pick(empAssignments, r.SubmittedAt);
             var item = await MapToDtoAsync(r, assign, currentEmpId, isHrOrAdmin, cancellationToken);
             items.Add(item);
         }

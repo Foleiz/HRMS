@@ -523,7 +523,8 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
     isExistingDocument: !!requestId,
   });
 
-  const requesterSignature = useEmployeeSignature(isOpen && !!doc, doc?.employeeId);
+  // ลายเซ็นผู้ยื่น ณ เวลาที่ยื่นคำขอ (ตัวอย่างก่อนยื่น = ลายเซ็นปัจจุบัน)
+  const requesterSignature = useEmployeeSignature(isOpen && !!doc, doc?.employeeId, doc?.requestedAt);
 
   if (!isOpen) return null;
 

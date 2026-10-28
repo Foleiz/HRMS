@@ -15,6 +15,8 @@ public class EmployeeSignature : BaseEntity
     public bool IsActive { get; set; } = true;
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>เลิกใช้ลายเซ็นนี้เมื่อไร (ถูกแทนด้วยอันใหม่หรือถูกลบ) — เก็บไว้เพื่อให้เอกสารเก่าแสดงลายเซ็นเดิม</summary>
+    public DateTime? DeactivatedAt { get; set; }
 
     // Navigation Property
     public virtual Employee Employee { get; set; } = null!;

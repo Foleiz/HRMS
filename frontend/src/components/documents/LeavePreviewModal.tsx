@@ -16,6 +16,7 @@ import {
   SignatureLine,
   useCompanyDocumentInfo,
   useEmployeeSignature,
+  getDocumentFinalizedAt,
   useApprovalSlots,
   type ApprovalSlot,
   toThaiShortDate,
@@ -332,8 +333,9 @@ const LeavePaper: React.FC<LeavePaperProps> = ({
 
 /** ตัวอย่างเอกสารใบลา (ป่วย / กิจ / พักร้อน / พิเศษ) พร้อมพิมพ์เต็มหน้า A4 */
 export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, onClose, data }) => {
-  const { companyLogo, companyAddress } = useCompanyDocumentInfo(isOpen);
-  const signature = useEmployeeSignature(isOpen, data?.employeeId);
+  // ใบลาที่อนุมัติแล้ว: โลโก้/ที่อยู่ ณ วันที่อนุมัติ, ลายเซ็นผู้ลา ณ วันที่ยื่น (ไม่เปลี่ยนตามของใหม่)
+  const { companyLogo, companyAddress } = useCompanyDocumentInfo(isOpen, getDocumentFinalizedAt(data?.timeline));
+  const signature = useEmployeeSignature(isOpen, data?.employeeId, data?.requestId ? data?.submissionDate : null);
   const [resolvedPrefix, setResolvedPrefix] = useState<string | null>(data?.employeePrefix || null);
 
   useEffect(() => {

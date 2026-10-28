@@ -579,7 +579,18 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
 
         var currentStep = instance.ApprovalFlow.Steps.FirstOrDefault(s => s.StepNo == instance.CurrentStepNo);
 
-        // 1. บันทึก ApprovalAction
+        // 1. บันทึก ApprovalAction — เก็บชื่อและตำแหน่งผู้อนุมัติ ณ ตอนนี้ไว้ด้วย
+        //    เอกสารที่อนุมัติแล้วจะแสดงตำแหน่งเดิม แม้ผู้อนุมัติย้ายตำแหน่งภายหลัง
+        var approverInfo = await _context.Employees.AsNoTracking()
+            .Where(e => e.Id == approverEmployeeId)
+            .Select(e => new
+            {
+                e.Prefix,
+                e.FirstName,
+                e.LastName,
+                Position = e.Assignments.Where(a => a.IsCurrent).Select(a => a.Position!.PositionName).FirstOrDefault()
+            })
+            .FirstOrDefaultAsync(cancellationToken);
         var action = new ApprovalAction
         {
             ApprovalInstanceId = instance.Id,
@@ -587,7 +598,9 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             ApproverEmployeeId = approverEmployeeId,
             ActionDecision = actionDecision,
             Comment = comment,
-            ActionAt = DateTime.UtcNow
+            ActionAt = DateTime.UtcNow,
+            ApproverName = approverInfo == null ? null : $"{approverInfo.Prefix} {approverInfo.FirstName} {approverInfo.LastName}".Trim(),
+            ApproverPositionName = approverInfo?.Position
         };
 
         _context.ApprovalActions.Add(action);
@@ -684,7 +697,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
-                .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
+                .ThenInclude(e => e!.Assignments).ThenInclude(x => x.Position)
             .FirstOrDefaultAsync(i => i.Id == instanceId, cancellationToken);
 
         if (instance == null || (instance.ApprovalFlow == null && string.IsNullOrWhiteSpace(instance.FlowSnapshotJson)))
@@ -702,7 +715,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverRole)
             .Include(i => i.ApprovalFlow).ThenInclude(f => f.Steps).ThenInclude(s => s.ApproverEmployee)
             .Include(i => i.Actions).ThenInclude(a => a.ApproverEmployee)
-                .ThenInclude(e => e!.Assignments.Where(x => x.IsCurrent)).ThenInclude(x => x.Position)
+                .ThenInclude(e => e!.Assignments).ThenInclude(x => x.Position)
             .OrderByDescending(i => i.Id)
             .FirstOrDefaultAsync(i => i.DocumentType == documentType && i.SourceDocumentId == sourceDocumentId, cancellationToken);
 
@@ -1111,11 +1124,16 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                     DesignatedApproverName = step.ApproverEmployeeName,
                     Status = status,
                     ActionByEmployeeId = action?.ApproverEmployeeId,
-                    ActionByEmployeeName = action?.ApproverEmployee?.FullName,
-                    ActionByPositionName = action?.ApproverEmployee?.Assignments
-                        .Where(x => x.IsCurrent)
-                        .Select(x => x.Position?.PositionName)
-                        .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)),
+                    // ชื่อ/ตำแหน่ง ณ เวลาที่อนุมัติ (บันทึกไว้ตอนกด) — รายการเก่าที่ไม่ได้บันทึก ใช้ประวัติตำแหน่ง ณ วันนั้น
+                    ActionByEmployeeName = !string.IsNullOrWhiteSpace(action?.ApproverName)
+                        ? action!.ApproverName
+                        : action?.ApproverEmployee?.FullName,
+                    ActionByPositionName = !string.IsNullOrWhiteSpace(action?.ApproverPositionName)
+                        ? action!.ApproverPositionName
+                        : action == null
+                            ? null
+                            : Hrms.Application.Common.Utilities.AssignmentAsOf
+                                .Pick(action.ApproverEmployee?.Assignments, action.ActionAt)?.Position?.PositionName,
                     ActionDecision = action?.ActionDecision,
                     ActionAt = action?.ActionAt,
                     Comment = action?.Comment
@@ -1191,11 +1209,15 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                 DesignatedApproverName = step.ApproverEmployee?.FullName,
                 Status = status,
                 ActionByEmployeeId = action?.ApproverEmployeeId,
-                ActionByEmployeeName = action?.ApproverEmployee?.FullName,
-                ActionByPositionName = action?.ApproverEmployee?.Assignments
-                    .Where(x => x.IsCurrent)
-                    .Select(x => x.Position?.PositionName)
-                    .FirstOrDefault(n => !string.IsNullOrWhiteSpace(n)),
+                ActionByEmployeeName = !string.IsNullOrWhiteSpace(action?.ApproverName)
+                    ? action!.ApproverName
+                    : action?.ApproverEmployee?.FullName,
+                ActionByPositionName = !string.IsNullOrWhiteSpace(action?.ApproverPositionName)
+                    ? action!.ApproverPositionName
+                    : action == null
+                        ? null
+                        : Hrms.Application.Common.Utilities.AssignmentAsOf
+                            .Pick(action.ApproverEmployee?.Assignments, action.ActionAt)?.Position?.PositionName,
                 ActionDecision = action?.ActionDecision,
                 ActionAt = action?.ActionAt,
                 Comment = action?.Comment

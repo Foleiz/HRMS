@@ -462,8 +462,35 @@ public class CertificateService : ICertificateService
 
         await EnsureCanViewDocumentAsync(request, cancellationToken);
 
-        var document = await BuildDocumentAsync(
-            request.EmployeeId, request.CertificateType, request.Purpose, request.IssuedAt, request.Id, lang, cancellationToken);
+        // หนังสือที่อนุมัติแล้ว: ใช้ฉบับที่ตรึงไว้ (เงินเดือน ตำแหน่ง โลโก้ ฯลฯ ไม่เปลี่ยนตามข้อมูลภายหลัง)
+        // ยังไม่มีฉบับตรึง (อนุมัติก่อนมีระบบนี้ / เพิ่งอนุมัติ) → สร้างจากข้อมูล ณ วันที่ออก แล้วตรึงไว้
+        var isThai = (lang ?? "TH").Trim().ToUpperInvariant() != "EN";
+        var frozen = isThai && (request.Status == "APPROVED" || request.Status == "ISSUED");
+        CertificateDocumentDto? document = null;
+        if (frozen && !string.IsNullOrWhiteSpace(request.DocumentSnapshot))
+        {
+            try
+            {
+                document = JsonSerializer.Deserialize<CertificateDocumentDto>(request.DocumentSnapshot);
+            }
+            catch (JsonException)
+            {
+                document = null;
+            }
+        }
+        if (document == null)
+        {
+            document = await BuildDocumentAsync(
+                request.EmployeeId, request.CertificateType, request.Purpose, request.IssuedAt, request.Id, lang, cancellationToken);
+            if (frozen)
+            {
+                document.ApprovalTimeline = null;
+                document.RequestedAt = null;
+                var tracked = await _context.CertificateRequests.FirstAsync(r => r.Id == request.Id, cancellationToken);
+                tracked.DocumentSnapshot = JsonSerializer.Serialize(document);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
         document.RequestedAt = DateTime.SpecifyKind(request.RequestedAt, DateTimeKind.Utc);
         if (request.ApprovalInstanceId.HasValue)
         {
@@ -523,12 +550,39 @@ public class CertificateService : ICertificateService
             .OrderBy(c => c.Id)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var assignment = await _context.EmployeeAssignments.AsNoTracking()
+        // ข้อมูลบริษัท ณ วันที่ออกหนังสือ (โลโก้/ตราประทับ/ที่อยู่ที่เปลี่ยนภายหลังไม่มีผลกับหนังสือที่ออกไปแล้ว)
+        if (issuedAt.HasValue && company != null)
+        {
+            var at = DateTime.SpecifyKind(issuedAt.Value, DateTimeKind.Utc);
+            var profile = await _context.CompanyProfileHistories.AsNoTracking()
+                              .Where(h => h.CompanyId == company.Id && h.ValidFrom <= at)
+                              .OrderByDescending(h => h.ValidFrom)
+                              .FirstOrDefaultAsync(cancellationToken)
+                          ?? await _context.CompanyProfileHistories.AsNoTracking()
+                              .Where(h => h.CompanyId == company.Id)
+                              .OrderBy(h => h.ValidFrom)
+                              .FirstOrDefaultAsync(cancellationToken);
+            if (profile != null)
+            {
+                company.CompanyName = profile.CompanyName;
+                company.Address = profile.Address;
+                company.Phone = profile.Phone;
+                company.Email = profile.Email;
+                company.LogoData = profile.LogoData;
+                company.SealData = profile.SealData;
+            }
+        }
+
+        // ตำแหน่ง/แผนก ณ วันที่ออกหนังสือ
+        var assignments = await _context.EmployeeAssignments.AsNoTracking()
             .Include(a => a.Department)
             .Include(a => a.Position)
-            .Where(a => a.EmployeeId == employeeId && a.IsCurrent)
-            .OrderByDescending(a => a.EffectiveFrom)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Where(a => a.EmployeeId == employeeId)
+            .ToListAsync(cancellationToken);
+        var assignment = Hrms.Application.Common.Utilities.AssignmentAsOf.Pick(assignments,
+            issuedAt.HasValue
+                ? DateOnly.FromDateTime(DateTime.SpecifyKind(issuedAt.Value, DateTimeKind.Utc).AddHours(7))
+                : DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)));
 
         var firstContract = await _context.EmploymentContracts.AsNoTracking()
             .Where(c => c.EmployeeId == employeeId && c.Status != "CANCELLED")
@@ -536,7 +590,10 @@ public class CertificateService : ICertificateService
             .FirstOrDefaultAsync(cancellationToken);
 
         var nowTh = DateTime.UtcNow.AddHours(7);
-        var todayTh = DateOnly.FromDateTime(nowTh);
+        // ข้อมูลในหนังสือ ณ วันที่ออก (หนังสือที่อนุมัติแล้ว) หรือวันนี้ (ตัวอย่าง/รออนุมัติ)
+        var todayTh = issuedAt.HasValue
+            ? DateOnly.FromDateTime(DateTime.SpecifyKind(issuedAt.Value, DateTimeKind.Utc).AddHours(7))
+            : DateOnly.FromDateTime(nowTh);
         var startDate = firstContract?.StartDate
             ?? assignment?.EffectiveFrom
             ?? DateOnly.FromDateTime(employee.CreatedAt.AddHours(7));
@@ -825,6 +882,7 @@ public class CertificateService : ICertificateService
         return await _context.EmployeeSignatures
             .AsNoTracking()
             .Include(s => s.Employee)
+            .Where(s => s.IsActive) // ประวัติลายเซ็นเก่าเก็บไว้ให้เอกสารเดิม ไม่ต้องแสดงในรายการ
             .OrderByDescending(s => s.UpdatedAt)
             .Select(s => new EmployeeSignatureDto
             {
@@ -860,15 +918,19 @@ public class CertificateService : ICertificateService
             throw new ValidationException("ข้อมูลภาพลายเซ็น (Base64) ไม่ถูกต้อง");
         }
 
-        // หากตั้งค่าเป็น Active ให้ปิดอันเดิมก่อน
+        // หากตั้งค่าเป็น Active ให้ปิดลายเซ็นเดิมของพนักงานคนนี้ก่อน (เก็บไว้เป็นประวัติ ไม่ลบ)
         if (dto.IsActive)
         {
-            var existing = await _context.EmployeeSignatures.Where(s => s.IsActive).ToListAsync(cancellationToken);
+            var existing = await _context.EmployeeSignatures
+                .Where(s => s.EmployeeId == dto.EmployeeId && s.IsActive)
+                .ToListAsync(cancellationToken);
             foreach (var sig in existing)
             {
                 sig.IsActive = false;
+                sig.DeactivatedAt = DateTime.UtcNow;
                 sig.UpdatedAt = DateTime.UtcNow;
             }
+            if (existing.Count > 0) await _context.SaveChangesAsync(cancellationToken);
         }
 
         var signature = new EmployeeSignature

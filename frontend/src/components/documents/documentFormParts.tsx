@@ -60,6 +60,8 @@ export interface ApprovalSlot {
   signedName?: string | null;
   signedEmployeeId?: number | null;
   signedDate?: string | null;
+  /** เวลาที่อนุมัติ (ISO) — ใช้ดึงลายเซ็นที่ใช้อยู่ ณ ตอนนั้น ไม่ใช่ลายเซ็นปัจจุบัน */
+  signedAt?: string | null;
   /** สถานะขั้นตอน (จาก timeline): COMPLETED, WAITING, PENDING_FUTURE, REJECTED */
   status?: string | null;
   /** true = แสดงข้อมูลผู้อนุมัติล่วงหน้า (ยังไม่ได้กดอนุมัติ) */
@@ -129,12 +131,25 @@ export const toThaiShortDate = (iso?: string | null): string | null => {
   }
 };
 
+/**
+ * URL รูปลายเซ็นพนักงาน — ส่ง at (เวลาที่เซ็น) เพื่อให้ได้ลายเซ็นที่ใช้อยู่ตอนนั้น
+ * เอกสารที่เซ็นไปแล้วจึงไม่เปลี่ยนตามลายเซ็นใหม่ / ไม่ส่ง = ลายเซ็นปัจจุบัน
+ */
+export const signatureUrl = (employeeId: number, at?: string | null) =>
+  getAvatarUrl(
+    at ? `/api/employees/${employeeId}/signature?at=${encodeURIComponent(at)}` : `/api/employees/${employeeId}/signature?v=${Date.now()}`
+  ) || '';
+
 /** รูปลายเซ็นของผู้อนุมัติ (แจ้ง onError เมื่อไม่มีรูป เพื่อแสดงชื่อแทน) */
-export const ApproverSignatureImg: React.FC<{ employeeId: number; onError: () => void }> = ({ employeeId, onError }) => {
+export const ApproverSignatureImg: React.FC<{ employeeId: number; at?: string | null; onError: () => void }> = ({
+  employeeId,
+  at,
+  onError,
+}) => {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={getAvatarUrl(`/api/employees/${employeeId}/signature`) || ''}
+      src={signatureUrl(employeeId, at)}
       alt="ลายเซ็นผู้อนุมัติ"
       onError={onError}
       style={{
@@ -180,7 +195,7 @@ export const SignatureCell: React.FC<{ slot: ApprovalSlot; heading: string; bord
         >
           {showSignature ? '\u00A0' : slot.signedName || '\u00A0'}
           {showSignature && slot.signedEmployeeId ? (
-            <ApproverSignatureImg employeeId={slot.signedEmployeeId} onError={() => setSignatureFailed(true)} />
+            <ApproverSignatureImg employeeId={slot.signedEmployeeId} at={slot.signedAt} onError={() => setSignatureFailed(true)} />
           ) : null}
         </span>
       </div>
@@ -426,13 +441,36 @@ if (typeof window !== 'undefined') {
   prefetchCompanyDocumentInfo();
 }
 
-/** โลโก้และที่อยู่บริษัทจากหน้าตั้งค่าข้อมูลบริษัท (แคชใน RAM + localStorage โหลดทันทีไม่ต้องรอ 0ms) */
-export const useCompanyDocumentInfo = (isOpen: boolean = true) => {
-  const [info, setInfo] = useState<CompanyDocCache | null>(() => getInitialCompanyDocInfo());
+/** ข้อมูลบริษัท ณ เวลาที่กำหนด (แคชต่อเวลา) — สำหรับเอกสารที่อนุมัติแล้ว */
+const companyProfileAtCache = new Map<string, Promise<CompanyDocCache | null>>();
+export const loadCompanyDocumentInfoAt = (at: string): Promise<CompanyDocCache | null> => {
+  let p = companyProfileAtCache.get(at);
+  if (!p) {
+    p = organizationService
+      .getCompanyDocumentProfile(at)
+      .then((prof) => (prof ? { logo: prof.logoData ?? null, address: prof.address?.trim() || null } : null))
+      .catch((err) => {
+        console.error('Failed to load company profile for document:', err);
+        companyProfileAtCache.delete(at);
+        return null;
+      });
+    companyProfileAtCache.set(at, p);
+  }
+  return p;
+};
+
+/**
+ * โลโก้และที่อยู่บริษัทบนเอกสาร
+ * - ไม่ส่ง at: ข้อมูลปัจจุบัน (แคชใน RAM + localStorage โหลดทันที)
+ * - ส่ง at (วันที่อนุมัติครบ): ข้อมูล ณ ตอนนั้น — เปลี่ยนโลโก้ภายหลังไม่กระทบเอกสารที่อนุมัติแล้ว
+ */
+export const useCompanyDocumentInfo = (isOpen: boolean = true, at?: string | null) => {
+  const [info, setInfo] = useState<CompanyDocCache | null>(() => (at ? null : getInitialCompanyDocInfo()));
 
   useEffect(() => {
     let isMounted = true;
-    prefetchCompanyDocumentInfo().then((data) => {
+    if (at) setInfo(null); // ไม่แสดงโลโก้ปัจจุบันระหว่างรอข้อมูล ณ วันที่อนุมัติ
+    (at ? loadCompanyDocumentInfoAt(at) : prefetchCompanyDocumentInfo()).then((data) => {
       if (isMounted && data) {
         setInfo(data);
       }
@@ -440,7 +478,7 @@ export const useCompanyDocumentInfo = (isOpen: boolean = true) => {
     return () => {
       isMounted = false;
     };
-  }, [isOpen]);
+  }, [isOpen, at]);
 
   return {
     companyLogo: info?.logo ?? null,
@@ -448,13 +486,29 @@ export const useCompanyDocumentInfo = (isOpen: boolean = true) => {
   };
 };
 
-/** URL รูปลายเซ็นของพนักงาน (ดึงใหม่ทุกครั้งที่เปิด) */
-export const useEmployeeSignature = (isOpen: boolean, employeeId?: number | null) => {
+/**
+ * URL รูปลายเซ็นของพนักงาน
+ * at = เวลาที่ยื่น/เซ็นเอกสาร → ลายเซ็นที่ใช้อยู่ ณ ตอนนั้น (ไม่ส่ง = ลายเซ็นปัจจุบัน ดึงใหม่ทุกครั้งที่เปิด)
+ */
+export const useEmployeeSignature = (isOpen: boolean, employeeId?: number | null, at?: string | null) => {
   const [src, setSrc] = useState<string | null>(null);
   useEffect(() => {
-    setSrc(isOpen && employeeId ? getAvatarUrl(`/api/employees/${employeeId}/signature?v=${Date.now()}`) : null);
-  }, [isOpen, employeeId]);
+    setSrc(isOpen && employeeId ? signatureUrl(employeeId, at) : null);
+  }, [isOpen, employeeId, at]);
   return { src, clear: () => setSrc(null) };
+};
+
+/**
+ * เวลาที่เอกสารอนุมัติครบ (ISO) — ใช้ตรึงโลโก้/ที่อยู่บริษัทบนเอกสารที่อนุมัติแล้ว
+ * ยังไม่อนุมัติครบ = null (ใช้ข้อมูลปัจจุบัน)
+ */
+export const getDocumentFinalizedAt = (timeline?: ApprovalTimeline | null): string | null => {
+  if (!timeline) return null;
+  const status = (timeline.status || '').toUpperCase();
+  if (status !== 'APPROVED' && status !== 'COMPLETED') return null;
+  if (timeline.completedAt) return timeline.completedAt;
+  const times = (timeline.steps || []).map((s) => s.actionAt).filter((t): t is string => !!t).sort();
+  return times.length ? times[times.length - 1] : null;
 };
 
 const simulatedSlotsCache = new Map<string, ApprovalSlot[]>();
@@ -567,6 +621,7 @@ export const useApprovalSlots = (params: {
           signedName: approved ? s.actionByEmployeeName || null : null,
           signedEmployeeId: approved ? s.actionByEmployeeId || null : null,
           signedDate: approved ? toThaiShortDate(s.actionAt) : null,
+          signedAt: approved ? s.actionAt || null : null,
           positionHint: approved ? s.actionByPositionName || null : null,
           status: s.status,
         };

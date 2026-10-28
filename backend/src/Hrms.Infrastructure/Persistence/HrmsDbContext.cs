@@ -42,6 +42,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // Organization Master Data (Dev 1 Sprint 1)
     public DbSet<Company> Companies => Set<Company>();
+    public DbSet<CompanyProfileHistory> CompanyProfileHistories => Set<CompanyProfileHistory>();
     public DbSet<CompanyBankAccount> CompanyBankAccounts => Set<CompanyBankAccount>();
     public DbSet<Division> Divisions => Set<Division>();
     public DbSet<Department> Departments => Set<Department>();
@@ -532,6 +533,22 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
         });
 
         // Configuration: Company
+        modelBuilder.Entity<CompanyProfileHistory>(entity =>
+        {
+            entity.ToTable("company_profile_history", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityAlwaysColumn();
+            entity.Property(e => e.CompanyId).HasColumnName("company_id").IsRequired();
+            entity.Property(e => e.CompanyName).HasColumnName("company_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.Phone).HasColumnName("phone").HasMaxLength(50);
+            entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(255);
+            entity.Property(e => e.LogoData).HasColumnName("logo_data");
+            entity.Property(e => e.SealData).HasColumnName("seal_data");
+            entity.Property(e => e.ValidFrom).HasColumnName("valid_from").IsRequired();
+            entity.HasIndex(e => new { e.CompanyId, e.ValidFrom });
+        });
+
         modelBuilder.Entity<Company>(entity =>
         {
             entity.ToTable("company", "hrms");
@@ -1212,6 +1229,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.FileSize).HasColumnName("file_size");
             entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
             entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(e => e.DeactivatedAt).HasColumnName("deactivated_at");
             entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").HasDefaultValueSql("now()");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 
@@ -1650,6 +1668,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.DelegationId).HasColumnName("delegation_id");
             entity.Property(e => e.ActedForEmployeeId).HasColumnName("acted_for_employee_id");
             entity.Property(e => e.SignatureData).HasColumnName("signature_data");
+            entity.Property(e => e.ApproverName).HasColumnName("approver_name").HasMaxLength(255);
+            entity.Property(e => e.ApproverPositionName).HasColumnName("approver_position_name").HasMaxLength(255);
 
             entity.HasOne(e => e.ApprovalInstance)
                 .WithMany(i => i.Actions)
@@ -2151,6 +2171,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.IssuedFileUrl).HasColumnName("issued_file_url");
             entity.Property(e => e.IssuedAt).HasColumnName("issued_at");
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.DocumentSnapshot).HasColumnName("document_snapshot");
 
             entity.HasOne(e => e.Employee)
                 .WithMany()

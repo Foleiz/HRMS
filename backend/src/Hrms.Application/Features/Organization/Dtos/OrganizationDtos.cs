@@ -1,6 +1,19 @@
 namespace Hrms.Application.Features.Organization.Dtos;
 
 #region Company DTOs
+/// <summary>ข้อมูลบริษัทสำหรับหัว/ท้ายเอกสาร ณ เวลาที่กำหนด (เอกสารที่อนุมัติแล้วใช้ข้อมูล ณ วันที่อนุมัติ)</summary>
+public class CompanyDocumentProfileDto
+{
+    public string CompanyName { get; set; } = string.Empty;
+    public string? Address { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    /// <summary>data URI ของโลโก้</summary>
+    public string? LogoData { get; set; }
+    /// <summary>data URI ของตราประทับ</summary>
+    public string? SealData { get; set; }
+}
+
 public class CompanyDto
 {
     public long Id { get; set; }

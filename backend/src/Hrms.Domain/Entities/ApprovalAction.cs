@@ -18,6 +18,9 @@ public class ApprovalAction : BaseEntity
     public long? DelegationId { get; set; }
     public long? ActedForEmployeeId { get; set; }
     public byte[]? SignatureData { get; set; }
+    /// <summary>ชื่อและตำแหน่งของผู้อนุมัติ ณ เวลาที่กดอนุมัติ (เอกสารเก่าไม่เปลี่ยนตามการย้ายตำแหน่ง)</summary>
+    public string? ApproverName { get; set; }
+    public string? ApproverPositionName { get; set; }
 
     // Navigation Properties
     public virtual ApprovalInstance? ApprovalInstance { get; set; }

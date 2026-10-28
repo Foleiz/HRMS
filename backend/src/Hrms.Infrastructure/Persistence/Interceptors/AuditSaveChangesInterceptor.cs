@@ -33,7 +33,9 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
         "CitizenIdEncrypted",
         "citizen_id_encrypted",
         "SignatureData",
-        "signature_data"
+        "signature_data",
+        // ฉบับตรึงของหนังสือรับรอง (JSON ใหญ่ มีรูปภาพ) — ไม่เก็บซ้ำใน audit log
+        "DocumentSnapshot"
     };
 
     // ตารางที่ไม่ต้องบันทึก audit เพราะเป็นบันทึกผลการทำงานของระบบอยู่แล้ว

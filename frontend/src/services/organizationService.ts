@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/api-client';
 import { ApiResponse } from '@/types/api';
 import {
   Company,
+  CompanyDocumentProfile,
   UpdateCompanyRequest,
   Division,
   CreateDivisionRequest,
@@ -38,6 +39,17 @@ export const organizationService = {
   // Company
   async getCompany(): Promise<Company | null> {
     const res = await apiClient.get<ApiResponse<Company>>('/organization/company');
+    return res.data.data;
+  },
+
+  /**
+   * ข้อมูลบริษัทสำหรับหัว/ท้ายเอกสาร ณ เวลา at (เอกสารที่อนุมัติแล้ว = วันที่อนุมัติ)
+   * โลโก้/ตราประทับ/ที่อยู่ที่เปลี่ยนภายหลังจะไม่มีผลกับเอกสารเดิม
+   */
+  async getCompanyDocumentProfile(at?: string | null): Promise<CompanyDocumentProfile | null> {
+    const res = await apiClient.get<ApiResponse<CompanyDocumentProfile>>('/organization/company/document-profile', {
+      params: at ? { at } : undefined,
+    });
     return res.data.data;
   },
 

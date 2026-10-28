@@ -25,6 +25,7 @@ public interface IEmployeeService
 
     // จัดการลายเซ็นดิจิทัล (PostgreSQL Binary Storage)
     Task<string> UploadSignatureAsync(long id, Stream stream, string fileName, string contentType, long length, CancellationToken cancellationToken = default);
-    Task<(byte[] SignatureData, string MimeType)?> GetSignatureAsync(long id, CancellationToken cancellationToken = default);
+    /// <summary>ลายเซ็นปัจจุบัน หรือ ลายเซ็นที่ใช้อยู่ ณ เวลา <paramref name="at"/> (สำหรับเอกสารที่เซ็นไปแล้ว)</summary>
+    Task<(byte[] SignatureData, string MimeType)?> GetSignatureAsync(long id, DateTime? at = null, CancellationToken cancellationToken = default);
     Task<bool> DeleteSignatureAsync(long id, CancellationToken cancellationToken = default);
 }
