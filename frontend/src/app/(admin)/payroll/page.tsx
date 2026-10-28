@@ -811,7 +811,7 @@ export default function PayrollPage() {
         setTaxSsoSummary(null);
       }
     } catch (err) {
-      console.error('Failed to load payroll data:', err);
+      console.warn('Failed to load payroll data:', err);
     } finally {
       setLoading(false);
     }
@@ -887,7 +887,7 @@ export default function PayrollPage() {
         }
       }
     } catch (err) {
-      console.error('Failed to load payroll periods:', err);
+      console.warn('Failed to load payroll periods:', err);
     } finally {
       setLoading(false);
     }

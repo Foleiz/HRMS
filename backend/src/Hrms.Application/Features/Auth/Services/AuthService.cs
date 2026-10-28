@@ -243,6 +243,23 @@ public class AuthService : IAuthService
             dataScopes.AddRange(derivedApproveScopes);
         }
 
+        // ยุบรวม DataScope ซ้ำของแต่ละ PermissionCode ให้เหลือเฉพาะระดับที่กว้างที่สุด (ORGANIZATION > DIVISION > DEPARTMENT > TEAM > SELF)
+        // เพื่อให้ทั้ง Frontend (getDataScope) และ Backend ได้รับ Scope สูงสุดที่ผู้ใช้มีสิทธิ์เสมอ และลดขนาด Payload
+        static int GetScopeRank(string? scope) => (scope ?? "SELF").ToUpperInvariant() switch
+        {
+            "ORGANIZATION" => 5,
+            "DIVISION" => 4,
+            "DEPARTMENT" => 3,
+            "TEAM" => 2,
+            "SELF" => 1,
+            _ => 0
+        };
+
+        dataScopes = dataScopes
+            .GroupBy(s => s.PermissionCode, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(s => GetScopeRank(s.DataVisibilityScope)).First())
+            .ToList();
+
         // ดึงแผนก ฝ่าย และทีมปัจจุบันของพนักงาน เพื่อใช้จำกัดขอบเขตการมองเห็นข้อมูล (Data Scoping)
         long? departmentId = null;
         long? divisionId = null;

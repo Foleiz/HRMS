@@ -37,6 +37,14 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ขยายขนาด Header สูงสุดของ Kestrel (128 KB) เพื่อรองรับกรณีที่ Browser ของผู้ใช้ยังมี Token รุ่นเก่าขนาดใหญ่ค้างใน localStorage
+// ก่อนที่จะถูกสลับเป็น Token รุ่นกะทัดรัดผ่าน X-Refreshed-Token โดยอัตโนมัติ (ป้องกัน HTTP 431 Request Header Fields Too Large)
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestHeadersTotalSize = 131072;
+    options.Limits.MaxRequestLineSize = 16384;
+});
+
 // 1. Database Connection (PostgreSQL - Schema: hrms)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddScoped<AuditSaveChangesInterceptor>();

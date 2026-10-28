@@ -32,7 +32,7 @@ public class JwtTokenService : ITokenService
 
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
-        var claims = BuildClaims(user);
+        var claims = BuildTokenClaims(user);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -49,8 +49,11 @@ public class JwtTokenService : ITokenService
         return (tokenHandler.WriteToken(token), expiresAt);
     }
 
-    /// <summary>Claims ของผู้ใช้ (ใช้ตอนออก token และตอนโหลดสิทธิ์ล่าสุดในแต่ละคำขอ)</summary>
-    public static List<Claim> BuildClaims(UserInfoDto user)
+    /// <summary>
+    /// Claims ขนาดกะทัดรัดสำหรับฝังใน JWT Token ที่ส่งผ่าน HTTP Header (ป้องกัน HTTP 431 Request Header Fields Too Large
+    /// เมื่อผู้ใช้มีหลายบทบาทหรือมี Permission/DataScope จำนวนมาก เพราะสิทธิ์จริงถูกโหลดสดผ่าน UserAccessLoader ทุกคำขอ)
+    /// </summary>
+    public static List<Claim> BuildTokenClaims(UserInfoDto user)
     {
         var claims = new List<Claim>
         {
@@ -65,11 +68,18 @@ public class JwtTokenService : ITokenService
             new("team_id", user.TeamId?.ToString() ?? "")
         };
 
-        // เพิ่ม Role Claims
         foreach (var role in user.Roles)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
+
+        return claims;
+    }
+
+    /// <summary>Claims เต็มรูปแบบของผู้ใช้ (ใช้สร้าง ClaimsPrincipal ในหน่วยความจำตอนตรวจสอบสิทธิ์แต่ละคำขอผ่าน UserAccessLoader)</summary>
+    public static List<Claim> BuildClaims(UserInfoDto user)
+    {
+        var claims = BuildTokenClaims(user);
 
         // เพิ่ม Permission Claims
         foreach (var perm in user.Permissions)

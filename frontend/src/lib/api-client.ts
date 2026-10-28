@@ -48,7 +48,7 @@ apiClient.interceptors.request.use(
         config.timeout = 45000;
       }
       const token = localStorage.getItem('hrms_token');
-      if (token) {
+      if (token && !isLogin) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
