@@ -42,7 +42,7 @@ import {
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
 import { useToast } from '@/context/ToastContext';
-import { Button } from '@/components/ui/Button';
+import { Button, ModalShell } from '@/components/ui';
 
 interface ActivePopoverState {
   moduleCode: string;
@@ -836,22 +836,25 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       </>
                     ) : (
                       <>
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
-                          className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 flex items-center gap-1 cursor-pointer"
+                          icon={<Edit2 className="w-3 h-3" />}
                         >
-                          <Edit2 className="w-3 h-3" />
-                          <span>แก้ไข</span>
-                        </button>
-                        <button
+                          แก้ไข
+                        </Button>
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => { e.stopPropagation(); onDeleteRoleClick(role); }}
-                          className="text-rose-500 hover:text-rose-700 flex items-center gap-1 cursor-pointer"
+                          className="text-rose-500 hover:text-rose-700"
+                          icon={<Trash2 className="w-3 h-3" />}
                         >
-                          <Trash2 className="w-3 h-3" />
-                          <span>ลบ</span>
-                        </button>
+                          ลบ
+                        </Button>
                       </>
                     )}
                   </div>
@@ -899,36 +902,40 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             {/* 2. Top Toolbar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
               <div className="flex flex-wrap items-center gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={handleCollapseAll}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
                   หุบทั้งหมด
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={handleExpandAll}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                 >
                   ขยายทั้งหมด
-                </button>
+                </Button>
                 <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={handleSelectAll}
-                  className="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 rounded-xl transition-colors cursor-pointer flex items-center gap-1"
+                  icon={<CheckSquare className="w-3.5 h-3.5 text-emerald-600" />}
                 >
-                  <CheckSquare className="w-3.5 h-3.5 text-emerald-600" />
                   เลือกทั้งหมด
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={handleDeselectAll}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer"
                 >
                   ยกเลิกทั้งหมด
-                </button>
+                </Button>
               </div>
 
               {/* Search Bar */}
@@ -1196,14 +1203,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       </div>
 
       {/* Scope Details Popover Portal */}
-      {activePopover && activeMod && activeScopeConfig && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[99999]">
-          {/* Backdrop to close on click outside */}
-          <div
-            className="fixed inset-0 bg-transparent"
-            onClick={() => setActivePopover(null)}
-          />
-
+      {activePopover && activeMod && activeScopeConfig && (
+        <ModalShell
+          className="z-[99999] bg-transparent"
+          innerClassName="p-0"
+          onBackdropClick={() => setActivePopover(null)}
+        >
           {/* Popover Card */}
           <div
             onClick={(e) => e.stopPropagation()}
@@ -1308,8 +1313,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </button>
             </div>
           </div>
-        </div>,
-        document.body
+        </ModalShell>
       )}
     </div>
   );

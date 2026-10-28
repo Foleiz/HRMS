@@ -19,6 +19,8 @@ export const ModalShell: React.FC<{
   className?: string;
   /** class ของชั้นจัดกลาง (ระยะขอบ / การจัดแนว) */
   innerClassName?: string;
+  /** ตำแหน่ง popup: 'center' (ค่าเริ่มต้น กลางจอ) หรือ 'right' (drawer ชิดขวา) */
+  placement?: 'center' | 'right';
   /** กดพื้นที่ว่างรอบ popup */
   onBackdropClick?: () => void;
   /** false = ไม่ย้ายไป document.body (เช่น หน้าพิมพ์เอกสารที่ CSS ผูกกับตำแหน่งเดิม) */
@@ -26,7 +28,8 @@ export const ModalShell: React.FC<{
 }> = ({
   children,
   className = 'z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200',
-  innerClassName = 'items-center justify-center p-4',
+  innerClassName,
+  placement = 'center',
   onBackdropClick,
   portal = true,
 }) => {
@@ -45,9 +48,12 @@ export const ModalShell: React.FC<{
     if (onBackdropClick && e.target === e.currentTarget) onBackdropClick();
   };
 
+  const defaultInner = placement === 'right' ? 'justify-end p-0' : 'items-center justify-center p-4';
+  const resolvedInnerClassName = innerClassName ?? defaultInner;
+
   const node = (
     <div className={`fixed inset-0 overflow-y-auto ${className}`} onClick={handleClick}>
-      <div className={`flex min-h-full ${innerClassName}`} onClick={handleClick}>
+      <div className={`flex min-h-full ${resolvedInnerClassName}`} onClick={handleClick}>
         {children}
       </div>
     </div>

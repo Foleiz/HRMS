@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2, Plus, Trash2 } from 'lucide-react';
 import { PayrollRecord, PayrollDetailItem, PayrollItem } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
-import { Button, Input, NumberInput, SegmentedControl } from '@/components/ui';
+import { Button, Input, NumberInput, SegmentedControl, ModalShell } from '@/components/ui';
 import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
 
 interface Props {
@@ -117,8 +117,12 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
   const netSalary = details.length > 0 ? (totalGross - totalDed) : (record.netPayableSalary ?? (totalGross - totalDed));
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/30 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-700/60 animate-in slide-in-from-right duration-300">
+    <ModalShell
+      placement="right"
+      onBackdropClick={onClose}
+      className="z-50 bg-slate-900/30 backdrop-blur-xs animate-in fade-in duration-200"
+    >
+      <div className="w-full max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col border-l border-slate-100 dark:border-slate-700/60 animate-in slide-in-from-right duration-300">
         {/* Header */}
         <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between">
           <div>
@@ -276,7 +280,7 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
           )}
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };
 
