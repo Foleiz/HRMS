@@ -239,7 +239,7 @@ public static class ResignationOffboarding
     {
         var managerId = await context.EmployeeAssignments.AsNoTracking()
             .Where(a => a.EmployeeId == employeeId && a.IsCurrent)
-            .Select(a => a.ManagerEmployeeId)
+            .Select(a => a.Team != null && a.Team.LeadEmployeeId != employeeId ? a.Team.LeadEmployeeId : null) // หัวหน้าทีม
             .FirstOrDefaultAsync(cancellationToken);
 
         return await context.UserAccounts.AsNoTracking()

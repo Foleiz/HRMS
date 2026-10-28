@@ -82,7 +82,7 @@ public class DataScopeService : IDataScopeService
                 .AsNoTracking()
                 .AnyAsync(e => e.Id == targetEmployeeId && e.Assignments.Any(a =>
                     ((myDeptId.HasValue && a.DepartmentId == myDeptId.Value) ||
-                     (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value))
+                     (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value)))
                     && a.IsCurrent), ct);
         }
 
@@ -91,24 +91,24 @@ public class DataScopeService : IDataScopeService
             long? myTeamId = _currentUser.TeamId;
             long? myEmpId = _currentUser.EmployeeId;
 
-            // หากผู้ใช้มีสังกัดทีม ให้เห็นเฉพาะสมาชิกในทีมเดียวกัน หรือลูกน้องโดยตรง หรือตัวเอง
+            // หากผู้ใช้มีสังกัดทีม ให้เห็นเฉพาะสมาชิกในทีมเดียวกัน หรือสมาชิกทีมที่ตนเป็นหัวหน้า หรือตัวเอง
             if (myTeamId.HasValue)
             {
                 return await _context.Employees
                     .AsNoTracking()
                     .AnyAsync(e => e.Id == targetEmployeeId && e.Assignments.Any(a =>
                         (a.TeamId == myTeamId.Value ||
-                         (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value))
+                         (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value)))
                         && a.IsCurrent), ct);
             }
 
-            // ถ้าไม่มีทีม แต่เป็นหัวหน้างานตรงของ target
+            // ถ้าไม่มีทีม แต่เป็นหัวหน้าทีมของ target
             if (myEmpId.HasValue)
             {
                 return await _context.Employees
                     .AsNoTracking()
                     .AnyAsync(e => e.Id == targetEmployeeId && e.Assignments.Any(a =>
-                        a.ManagerEmployeeId == myEmpId.Value && a.IsCurrent), ct);
+                        (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent), ct);
             }
 
             return false;
@@ -156,7 +156,7 @@ public class DataScopeService : IDataScopeService
                 .AsNoTracking()
                 .Where(e => e.Assignments.Any(a =>
                     ((myDeptId.HasValue && a.DepartmentId == myDeptId.Value) ||
-                     (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value) ||
+                     (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value)) ||
                      (myEmpId.HasValue && e.Id == myEmpId.Value))
                     && a.IsCurrent))
                 .Select(e => e.Id)
@@ -177,7 +177,7 @@ public class DataScopeService : IDataScopeService
                 .AsNoTracking()
                 .Where(e => e.Assignments.Any(a =>
                     ((myTeamId.HasValue && a.TeamId == myTeamId.Value) ||
-                     (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value) ||
+                     (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value)) ||
                      (myEmpId.HasValue && e.Id == myEmpId.Value))
                     && a.IsCurrent))
                 .Select(e => e.Id)

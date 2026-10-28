@@ -364,9 +364,8 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                         return new HashSet<long> { teamLeadId.Value };
                     }
                 }
-                return requesterAssignment?.ManagerEmployeeId is { } managerId
-                    ? new HashSet<long> { managerId }
-                    : new HashSet<long>();
+                // ระบบใช้หัวหน้าทีมอย่างเดียว — ไม่มีทีม/ทีมไม่มีหัวหน้า → ว่าง แล้วใช้ทางสำรองที่ตั้งไว้ในขั้น (FallbackAction: HR ค่าเริ่มต้น / ESCALATE / SKIP / WAIT)
+                return new HashSet<long>();
             }
 
             case "DEPARTMENT_HEAD":
