@@ -91,6 +91,8 @@ export interface CertificateDocument {
   signatureBase64?: string;
   /** ขั้นตอนสายอนุมัติของคำขอ (ช่องลงนาม "ผลการพิจารณา") — ไม่มีในตัวอย่างก่อนยื่น */
   approvalTimeline?: ApprovalTimeline | null;
+  /** วันที่ยื่นคำขอ (ช่องลงชื่อผู้ยื่นเรื่อง) */
+  requestedAt?: string | null;
 }
 
 export interface EmployeeSignature {

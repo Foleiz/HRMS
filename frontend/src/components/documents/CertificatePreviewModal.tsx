@@ -17,6 +17,7 @@ import {
   SignatureLine,
   useApprovalSlots,
   useCompanyDocumentInfo,
+  useEmployeeSignature,
   type ApprovalSlot,
 } from './documentFormParts';
 
@@ -74,11 +75,13 @@ const CertificatePaper: React.FC<{
   companyLogo: string | null;
   companyAddress: string;
   approvalSlots: ApprovalSlot[];
+  /** ลายเซ็นของผู้ยื่นเรื่อง (พนักงานเจ้าของคำขอ) */
+  requesterSignatureSrc: string | null;
+  onRequesterSignatureError: () => void;
   /** ฉบับพิมพ์ (ซ่อนอยู่ วัดขนาดไม่ได้) ใช้ค่าย่อที่วัดจากฉบับบนจอ */
   fixedZoom?: number;
   onZoom?: (z: number) => void;
-}> = ({ doc, companyLogo, companyAddress, approvalSlots, fixedZoom, onZoom }) => {
-  const [signatureFailed, setSignatureFailed] = useState(false);
+}> = ({ doc, companyLogo, companyAddress, approvalSlots, requesterSignatureSrc, onRequesterSignatureError, fixedZoom, onZoom }) => {
   const [sealFailed, setSealFailed] = useState(false);
   // เนื้อหาต้องจบก่อนหมายเหตุท้ายหน้า — ถ้าล้นย่อเนื้อหาลงพอดีหน้า
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -116,6 +119,9 @@ const CertificatePaper: React.FC<{
   const position = (doc.positionName || '').replace(/^ตำแหน่ง\s*/, '');
   const date = issueDateParts(doc.issueDate);
   const { prefix, displayName } = extractPrefixAndName(doc.fullName);
+  const requesterName = prefix && displayName ? `${prefix} ${displayName}` : doc.fullName;
+  // วันที่ในช่องผู้ยื่นเรื่อง = วันที่ยื่นคำขอ (ตัวอย่างก่อนยื่น = วันนี้)
+  const requestDate = issueDateParts(doc.requestedAt || null);
   const companyAddr = doc.companyAddress?.trim() || companyAddress;
   const footer = [companyAddr, doc.companyPhone && `Tel. ${doc.companyPhone}`, doc.companyEmail].filter(Boolean).join('  ');
   const stillEmployed = !/พ้นสภาพ|ไม่ได้ปฏิบัติงาน/.test(doc.employmentStatusText || '');
@@ -141,25 +147,6 @@ const CertificatePaper: React.FC<{
       }}
     >
       <DocumentLogoHeader companyLogo={doc.companyLogoBase64 || companyLogo} />
-
-      {doc.isPreview && (
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%) rotate(-30deg)',
-            fontSize: '72pt',
-            fontWeight: 700,
-            color: 'rgba(15, 23, 42, 0.06)',
-            whiteSpace: 'nowrap',
-            pointerEvents: 'none',
-          }}
-        >
-          ตัวอย่าง
-        </div>
-      )}
 
       <div ref={bodyRef} style={{ zoom: appliedZoom }}>
         {/* ===== ชื่อหนังสือ ===== */}
@@ -219,7 +206,15 @@ const CertificatePaper: React.FC<{
               src={doc.companySealBase64}
               alt="ตราประทับบริษัท"
               onError={() => setSealFailed(true)}
-              style={{ position: 'absolute', left: '-62mm', top: '-4mm', width: '36mm', height: '36mm', objectFit: 'contain' }}
+              style={{
+                position: 'absolute',
+                left: '-62mm',
+                top: '-4mm',
+                width: '36mm',
+                height: '36mm',
+                objectFit: 'contain',
+                mixBlendMode: 'multiply', // พื้นขาวของรูปโปร่งใส เหมือนประทับตราจริง
+              }}
             />
           ) : (
             <div
@@ -249,23 +244,24 @@ const CertificatePaper: React.FC<{
           <div>
             (ลงชื่อ)
             <SignatureLine
-              src={signatureFailed ? null : doc.signatureBase64 || null}
-              onError={() => setSignatureFailed(true)}
-              minWidth="46mm"
-              alt="ลายเซ็นผู้รับรอง"
+              src={requesterSignatureSrc}
+              onError={onRequesterSignatureError}
+              minWidth="44mm"
+              alt="ลายเซ็นผู้ยื่นเรื่อง"
+              fallbackText={displayName || doc.fullName}
             />
-            ผู้รับรอง
+            ผู้ยื่นเรื่อง
           </div>
           <div>
-            (<Fill value={doc.signatoryName} minWidth="50mm" />)
+            (<Fill value={requesterName} minWidth="50mm" />)
           </div>
           <div>
-            ตำแหน่ง<Fill value={doc.signatoryPosition} minWidth="48mm" />
+            ตำแหน่ง<Fill value={position} minWidth="48mm" />
           </div>
           <div>
-            วันที่<Fill value={date.dd} minWidth="12mm" />/
-            <Fill value={date.mm} minWidth="12mm" />/
-            <Fill value={date.year} minWidth="14mm" />
+            วันที่<Fill value={requestDate.dd} minWidth="12mm" />/
+            <Fill value={requestDate.mm} minWidth="12mm" />/
+            <Fill value={requestDate.year} minWidth="14mm" />
           </div>
         </div>
 
@@ -299,6 +295,27 @@ const CertificatePaper: React.FC<{
       </div>
 
       <DocumentAddressFooter address={footer} />
+
+      {/* ลายน้ำ "ตัวอย่าง" อยู่ชั้นบนสุด (โปร่งใส ไม่บังข้อความ) เพื่อไม่ให้รูปตราประทับ/ลายเซ็นทับ */}
+      {doc.isPreview && (
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            zIndex: 5,
+            transform: 'translate(-50%, -50%) rotate(-30deg)',
+            fontSize: '72pt',
+            fontWeight: 700,
+            color: 'rgba(15, 23, 42, 0.07)',
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+          }}
+        >
+          ตัวอย่าง
+        </div>
+      )}
     </div>
   );
 };
@@ -357,6 +374,8 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
     isExistingDocument: !!requestId,
   });
 
+  const requesterSignature = useEmployeeSignature(isOpen && !!doc, doc?.employeeId);
+
   if (!isOpen) return null;
 
   const paper = doc ? (
@@ -365,6 +384,8 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
       companyLogo={companyLogo}
       companyAddress={companyAddress}
       approvalSlots={approvalSlots}
+      requesterSignatureSrc={requesterSignature.src}
+      onRequesterSignatureError={requesterSignature.clear}
       onZoom={setPaperZoom}
     />
   ) : null;
@@ -432,6 +453,8 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
               companyLogo={companyLogo}
               companyAddress={companyAddress}
               approvalSlots={approvalSlots}
+              requesterSignatureSrc={requesterSignature.src}
+              onRequesterSignatureError={requesterSignature.clear}
               fixedZoom={paperZoom}
             />
           </div>,
