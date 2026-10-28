@@ -12,13 +12,14 @@ export const getApiBaseUrl = (): string => {
     if ((hostname === 'localhost' || hostname === '127.0.0.1') && process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL;
     }
-    // หากเข้าผ่าน Radmin VPN, LAN, หรือ IP ภายนอก ให้ชี้ไปที่ Host เดียวกันที่พอร์ต 5229
-    return `${protocol}//${hostname}:5229/api`;
+    // หากเข้าผ่าน localhost ให้ใช้ 127.0.0.1 เพื่อป้องกัน IPv6 (::1) Connection Refused บน Windows
+    const targetHost = hostname === 'localhost' ? '127.0.0.1' : hostname;
+    return `${protocol}//${targetHost}:5229/api`;
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api';
+  return process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5229/api';
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5229/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5229/api';
 
 /**
  * Axios Instance กลางสำหรับเรียกใช้งาน .NET Backend
@@ -46,8 +47,18 @@ apiClient.interceptors.request.use(
       } else if (method !== 'get' && (config.timeout ?? 0) <= 30000) {
         config.timeout = 45000;
       }
-      const token = localStorage.getItem('hrms_token');
-      if (token) {
+      let token = localStorage.getItem('hrms_token');
+      // ล้าง Token รุ่นเก่าที่มีขนาดใหญ่เกินไป (> 4 KB จากโค้ดเดิมที่ฝังสิทธิ์ทั้งหมดใน JWT) อัตโนมัติ
+      // เพื่อป้องกัน HTTP 431 Request Header Fields Too Large โดยไม่ต้องให้ผู้ใช้ลบใน DevTools เอง
+      if (token && token.length > 4000) {
+        localStorage.removeItem('hrms_token');
+        localStorage.removeItem('hrms_user');
+        token = null;
+        if (!isLogin && window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
+      if (token && !isLogin) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }

@@ -968,99 +968,99 @@ export default function CommissionTab() {
       {/* 2. Stat Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Sales */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
+        <div className="rounded-2xl border border-blue-200 dark:border-blue-800/80 bg-blue-100/60 dark:bg-blue-950/40 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
               ยอดขายรวมทั้งบริษัท
             </span>
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <div className="text-2xl font-bold tracking-tight text-blue-950 dark:text-white">
               ฿
               {(summary?.totalSalesAmount ?? summary?.totalSales ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-blue-600/80 dark:text-blue-400 font-medium">
               รอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543}
             </p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 shadow-2xs">
             <TrendingUp className="h-6 w-6" />
           </div>
         </div>
 
         {/* Card 2: Total Commission */}
-        <div className="rounded-2xl border border-emerald-100 dark:border-emerald-950 bg-emerald-50/40 dark:bg-emerald-950/20 p-5 shadow-xs flex items-center justify-between">
+        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-100/60 dark:bg-emerald-950/40 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
               ค่าคอมมิชชั่นรวมที่ต้องจ่าย
             </span>
-            <div className="text-2xl font-bold tracking-tight text-emerald-700 dark:text-emerald-300">
+            <div className="text-2xl font-bold tracking-tight text-emerald-950 dark:text-white">
               ฿
               {(summary?.totalCommissionAmount ?? summary?.totalCommission ?? 0).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}
             </div>
-            <p className="text-[11px] text-emerald-600/80 dark:text-emerald-400/70">
+            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300 font-medium">
               ดึงเข้าเป็นเงินได้ในงวดเงินเดือน
             </p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
             <DollarSign className="h-6 w-6" />
           </div>
         </div>
 
         {/* Card 3: Employee Count */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
+        <div className="rounded-2xl border border-purple-200 dark:border-purple-800/80 bg-purple-100/60 dark:bg-purple-950/40 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
               พนักงานที่ได้รับค่าคอม
             </span>
-            <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            <div className="text-2xl font-bold tracking-tight text-purple-950 dark:text-white">
               {summary?.totalEmployees ?? 0}{' '}
-              <span className="text-sm font-normal text-slate-500">คน</span>
+              <span className="text-sm font-normal text-purple-700 dark:text-purple-300">คน</span>
             </div>
-            <p className="text-[11px] text-slate-400">จากข้อมูลที่มีในงวดนี้</p>
+            <p className="text-[11px] text-purple-600/80 dark:text-purple-400 font-medium">จากข้อมูลที่มีในงวดนี้</p>
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 shadow-2xs">
             <Users className="h-6 w-6" />
           </div>
         </div>
 
         {/* Card 4: Status */}
-        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-100/60 dark:bg-amber-950/40 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex items-center justify-between">
+          <div className="space-y-1.5">
+            <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
               สถานะรอบคอมมิชชั่น
             </span>
             <div>
               {summary?.status === 'CONFIRMED' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-                  <CheckCircle2 className="h-3.5 w-3.5" /> ยืนยันแล้ว (พร้อมคิดเงินเดือน)
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> ยืนยันแล้ว (พร้อมคิดเงินเดือน)
                 </span>
               ) : summary?.status === 'PAID' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-800 dark:bg-blue-950/80 dark:text-blue-300">
-                  <Lock className="h-3.5 w-3.5" /> จ่ายพร้อมเงินเดือนแล้ว
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs">
+                  <Lock className="h-3.5 w-3.5 text-blue-600" /> จ่ายพร้อมเงินเดือนแล้ว
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
-                  <AlertCircle className="h-3.5 w-3.5" /> ฉบับร่าง (ยังไม่ยืนยัน)
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-2xs">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-600" /> ฉบับร่าง (ยังไม่ยืนยัน)
                 </span>
               )}
             </div>
             {summary?.confirmedAt && (
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-amber-700/80 dark:text-amber-400 font-medium">
                 ยืนยันโดย {summary.confirmedByName || 'HR'} เมื่อ{' '}
                 {new Date(summary.confirmedAt).toLocaleDateString('th-TH')}
               </p>
             )}
           </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-amber-200/80 dark:border-amber-800/80 shadow-2xs">
             {isPeriodConfirmed ? (
               <CheckCircle2 className="h-6 w-6 text-emerald-600" />
             ) : (
-              <AlertCircle className="h-6 w-6" />
+              <AlertCircle className="h-6 w-6 text-amber-600" />
             )}
           </div>
         </div>

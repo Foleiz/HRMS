@@ -12,6 +12,7 @@ export interface PayrollScheduleSettings {
   adjustWeekend: boolean; // เลื่อนวันจ่ายเป็นวันศุกร์ก่อนหน้าหากตรงกับเสาร์-อาทิตย์
   claimCutoffType: 'SAME_AS_PAYMENT' | 'CUSTOM_DAY';
   claimCutoffDay: number; // e.g. 25
+  defaultPaymentMethod: 'BANK_BATCH' | 'DIRECT_TRANSFER';
   note?: string;
 }
 
@@ -24,6 +25,7 @@ export const DEFAULT_PAYROLL_SCHEDULE_SETTINGS: PayrollScheduleSettings = {
   adjustWeekend: true,
   claimCutoffType: 'CUSTOM_DAY',
   claimCutoffDay: 25,
+  defaultPaymentMethod: 'BANK_BATCH',
   note: 'กำหนดรอบการคำนวณตั้งแต่วันที่ 1 ถึงสิ้นเดือน และจ่ายเงินเดือนทุกวันที่ 29 ของเดือน',
 };
 
