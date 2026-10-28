@@ -11,6 +11,8 @@ public interface IOrganizationService
     // Company
     Task<CompanyDto?> GetCompanyProfileAsync(CancellationToken cancellationToken = default);
     Task<CompanyDto> UpdateCompanyProfileAsync(UpdateCompanyDto request, CancellationToken cancellationToken = default);
+    /// <summary>ข้อมูลบริษัทบนเอกสาร ณ เวลา <paramref name="at"/> (null = ปัจจุบัน)</summary>
+    Task<CompanyDocumentProfileDto?> GetCompanyDocumentProfileAsync(DateTime? at, CancellationToken cancellationToken = default);
 
     // Divisions
     Task<List<DivisionDto>> GetAllDivisionsAsync(CancellationToken cancellationToken = default);

@@ -250,7 +250,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Team)
                     .ThenInclude(t => t!.LeadEmployee)
-            .Include(e => e.Signatures)
+            .Include(e => e.Signatures.Where(s => s.IsActive))
             .Include(e => e.UserAccount)
                 .ThenInclude(u => u!.UserRoles)
                     .ThenInclude(ur => ur.Role)
@@ -611,7 +611,7 @@ public class EmployeeService : IEmployeeService
             .Include(e => e.FamilyMembers)
             .Include(e => e.EmergencyContacts)
             .Include(e => e.Assignments)
-            .Include(e => e.Signatures)
+            .Include(e => e.Signatures.Where(s => s.IsActive))
             .FirstOrDefaultAsync(e => e.Id == id || e.EmployeeCode == idStr, cancellationToken);
 
         if (employee == null)
@@ -1068,7 +1068,7 @@ public class EmployeeService : IEmployeeService
         var employee = await _dbContext.Employees
             .Include(e => e.Avatar)
             .Include(e => e.Contact)
-            .Include(e => e.Signatures)
+            .Include(e => e.Signatures.Where(s => s.IsActive))
             .Include(e => e.Assignments).ThenInclude(a => a.Position)
             .Include(e => e.Assignments).ThenInclude(a => a.Department)
             .Include(e => e.Assignments).ThenInclude(a => a.Division)
@@ -1283,33 +1283,31 @@ public class EmployeeService : IEmployeeService
             signatureBytes = memoryStream.ToArray();
         }
 
-        var existingSignature = await _dbContext.EmployeeSignatures
-            .FirstOrDefaultAsync(s => s.EmployeeId == id && s.IsActive, cancellationToken);
-
+        // ไม่เขียนทับลายเซ็นเดิม — ปิดอันเดิม (เก็บไว้ให้เอกสารที่เซ็นไปแล้ว) แล้วเพิ่มอันใหม่
         var now = DateTime.UtcNow;
-        if (existingSignature != null)
+        var previous = await _dbContext.EmployeeSignatures
+            .Where(s => s.EmployeeId == id && s.IsActive)
+            .ToListAsync(cancellationToken);
+        foreach (var old in previous)
         {
-            existingSignature.SignatureData = signatureBytes;
-            existingSignature.FileName = fileName;
-            existingSignature.FileSize = (int)length;
-            existingSignature.MimeType = contentType;
-            existingSignature.UpdatedAt = now;
+            old.IsActive = false;
+            old.DeactivatedAt = now;
+            old.UpdatedAt = now;
         }
-        else
+        // บันทึกการปิดก่อน เพราะมี unique index (ลายเซ็นที่ใช้งานได้ 1 อันต่อพนักงาน)
+        if (previous.Count > 0) await _dbContext.SaveChangesAsync(cancellationToken);
+
+        _dbContext.EmployeeSignatures.Add(new EmployeeSignature
         {
-            var newSignature = new EmployeeSignature
-            {
-                EmployeeId = id,
-                SignatureData = signatureBytes,
-                FileName = fileName,
-                FileSize = (int)length,
-                MimeType = contentType,
-                IsActive = true,
-                UploadedAt = now,
-                UpdatedAt = now
-            };
-            _dbContext.EmployeeSignatures.Add(newSignature);
-        }
+            EmployeeId = id,
+            SignatureData = signatureBytes,
+            FileName = fileName,
+            FileSize = (int)length,
+            MimeType = contentType,
+            IsActive = true,
+            UploadedAt = now,
+            UpdatedAt = now
+        });
 
         employee.UpdatedAt = now;
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -1317,12 +1315,28 @@ public class EmployeeService : IEmployeeService
         return $"/api/employees/{id}/signature?v={now.Ticks}";
     }
 
-    public async Task<(byte[] SignatureData, string MimeType)?> GetSignatureAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<(byte[] SignatureData, string MimeType)?> GetSignatureAsync(long id, DateTime? at = null, CancellationToken cancellationToken = default)
     {
-        var signature = await _dbContext.EmployeeSignatures
-            .Where(s => s.EmployeeId == id && s.IsActive)
-            .OrderByDescending(s => s.UpdatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
+        EmployeeSignature? signature;
+        if (at.HasValue)
+        {
+            // ลายเซ็นที่ใช้อยู่ ณ เวลาที่เซ็นเอกสาร (เอกสารที่อนุมัติ/ยื่นไปแล้วไม่เปลี่ยนตามลายเซ็นใหม่)
+            var t = at.Value.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(at.Value, DateTimeKind.Utc) : at.Value.ToUniversalTime();
+            var rows = _dbContext.EmployeeSignatures.AsNoTracking()
+                .Where(s => s.EmployeeId == id && (s.DeactivatedAt == null || s.DeactivatedAt > t));
+            signature = await rows.Where(s => s.UploadedAt <= t)
+                            .OrderByDescending(s => s.UploadedAt)
+                            .FirstOrDefaultAsync(cancellationToken)
+                        // ข้อมูลก่อนเริ่มเก็บประวัติ: ใช้ลายเซ็นที่เก่าที่สุดที่ยังใช้อยู่หลังเวลานั้น
+                        ?? await rows.OrderBy(s => s.UploadedAt).FirstOrDefaultAsync(cancellationToken);
+        }
+        else
+        {
+            signature = await _dbContext.EmployeeSignatures.AsNoTracking()
+                .Where(s => s.EmployeeId == id && s.IsActive)
+                .OrderByDescending(s => s.UpdatedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
 
         if (signature == null || signature.SignatureData == null || signature.SignatureData.Length == 0)
         {
@@ -1363,7 +1377,10 @@ public class EmployeeService : IEmployeeService
             return false;
         }
 
-        _dbContext.EmployeeSignatures.Remove(signature);
+        // ไม่ลบจริง — ปิดไว้ เอกสารที่เซ็นไปแล้วยังแสดงลายเซ็นเดิมได้
+        signature.IsActive = false;
+        signature.DeactivatedAt = DateTime.UtcNow;
+        signature.UpdatedAt = DateTime.UtcNow;
         var employee = await _dbContext.Employees.FindAsync(new object[] { id }, cancellationToken);
         if (employee != null)
         {

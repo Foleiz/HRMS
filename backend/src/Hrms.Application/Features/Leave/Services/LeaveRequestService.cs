@@ -68,12 +68,15 @@ public partial class LeaveRequestService : ILeaveRequestService
         var reqIds = requests.Select(r => r.Id).ToList();
         var empIds = requests.Select(r => r.EmployeeId).Distinct().ToList();
 
-        var assignments = await _context.EmployeeAssignments
-            .AsNoTracking()
-            .Include(a => a.Department)
-            .Include(a => a.Position)
-            .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
-            .ToDictionaryAsync(a => a.EmployeeId, cancellationToken);
+        // ประวัติตำแหน่งทั้งหมด — เอกสารแสดงตำแหน่ง/แผนก ณ วันที่ยื่น ไม่เปลี่ยนตามการย้ายภายหลัง
+        var assignments = (await _context.EmployeeAssignments
+                .AsNoTracking()
+                .Include(a => a.Department)
+                .Include(a => a.Position)
+                .Where(a => empIds.Contains(a.EmployeeId))
+                .ToListAsync(cancellationToken))
+            .GroupBy(a => a.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         // โหลดเฉพาะ metadata ของเอกสารแนบ (ไม่ดึง byte[] FileData ขนาดใหญ่ผ่านเครือข่าย)
         var docMetadataList = await _context.LeaveRequestDocuments
@@ -138,7 +141,8 @@ public partial class LeaveRequestService : ILeaveRequestService
         var items = new List<LeaveRequestDto>(requests.Count);
         foreach (var r in requests)
         {
-            assignments.TryGetValue(r.EmployeeId, out var assign);
+            assignments.TryGetValue(r.EmployeeId, out var empAssignments);
+            var assign = Hrms.Application.Common.Utilities.AssignmentAsOf.Pick(empAssignments, r.SubmittedAt ?? DateTime.UtcNow);
             docsByRequestId.TryGetValue(r.Id, out var docs);
             var item = await MapToDtoAsync(
                 r,
@@ -246,11 +250,14 @@ public partial class LeaveRequestService : ILeaveRequestService
 
         if (r == null) return null;
 
-        var assign = await _context.EmployeeAssignments
+        // ตำแหน่ง/แผนก ณ วันที่ยื่น
+        var empAssignments = await _context.EmployeeAssignments
             .AsNoTracking()
             .Include(a => a.Department)
             .Include(a => a.Position)
-            .FirstOrDefaultAsync(a => a.EmployeeId == r.EmployeeId && a.IsCurrent, cancellationToken);
+            .Where(a => a.EmployeeId == r.EmployeeId)
+            .ToListAsync(cancellationToken);
+        var assign = Hrms.Application.Common.Utilities.AssignmentAsOf.Pick(empAssignments, r.SubmittedAt ?? DateTime.UtcNow);
 
         return await MapToDtoAsync(r, assign, currentViewerEmployeeId, cancellationToken);
     }

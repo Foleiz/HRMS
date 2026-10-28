@@ -666,8 +666,9 @@ export default function LeaveRequestsApprovalPage() {
         return {
           ...prev,
           timeline: tl || prev.timeline,
-          positionTitle: emp?.positionName || prev.positionTitle,
-          departmentName: emp?.departmentName || prev.departmentName,
+          // ตำแหน่ง/แผนกใช้ค่าจากคำขอ (ณ วันที่ยื่น) — ไม่แทนด้วยตำแหน่งปัจจุบัน
+          positionTitle: prev.positionTitle || emp?.positionName || '',
+          departmentName: prev.departmentName || emp?.departmentName || '',
           employeePrefix: emp?.prefix || prev.employeePrefix,
         };
       });
@@ -1933,6 +1934,7 @@ export default function LeaveRequestsApprovalPage() {
           positionTitle: selectedResignForPreview.positionName,
           departmentName: selectedResignForPreview.departmentName,
           submissionDate: selectedResignForPreview.submittedAt ? selectedResignForPreview.submittedAt.split('T')[0] : '',
+          signedAt: selectedResignForPreview.submittedAt || null,
           requestedLastWorkingDate: selectedResignForPreview.requestedLastWorkingDate,
           reasonCategoryLabel: selectedResignForPreview.reasonCategory || 'ลาออกจากงาน',
           reasonDetail: selectedResignForPreview.reasonDetail || selectedResignForPreview.reason || '-',
@@ -2110,6 +2112,7 @@ export default function LeaveRequestsApprovalPage() {
           positionTitle: selectedGeneralForPreview.positionName,
           departmentName: selectedGeneralForPreview.departmentName,
           issueDate: selectedGeneralForPreview.issueDate,
+          signedAt: selectedGeneralForPreview.submittedAt || null,
           expiryDate: selectedGeneralForPreview.expiryDate,
           documentType: selectedGeneralForPreview.documentType,
           purpose: selectedGeneralForPreview.purpose,

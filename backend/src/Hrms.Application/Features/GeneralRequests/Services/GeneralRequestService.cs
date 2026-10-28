@@ -274,15 +274,17 @@ public class GeneralRequestService : IGeneralRequestService
         var assignments = (await _context.EmployeeAssignments.AsNoTracking()
                 .Include(a => a.Department)
                 .Include(a => a.Position)
-                .Where(a => empIds.Contains(a.EmployeeId) && a.IsCurrent)
+                .Where(a => empIds.Contains(a.EmployeeId))
                 .ToListAsync(cancellationToken))
             .GroupBy(a => a.EmployeeId)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.EffectiveFrom).First());
+            .ToDictionary(g => g.Key, g => g.ToList());
 
         var result = new List<GeneralRequestDto>();
         foreach (var r in requests)
         {
-            assignments.TryGetValue(r.EmployeeId, out var assign);
+            // ตำแหน่ง/แผนก ณ วันที่ยื่น
+            assignments.TryGetValue(r.EmployeeId, out var empAssignments);
+            var assign = Hrms.Application.Common.Utilities.AssignmentAsOf.Pick(empAssignments, r.RequestedAt);
             var instance = r.ApprovalInstance;
             var status = r.Status;
             if (instance != null && instance.Status != "PENDING" && status == "PENDING") status = instance.Status;

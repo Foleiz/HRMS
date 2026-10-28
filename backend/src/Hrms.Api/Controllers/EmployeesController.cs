@@ -233,9 +233,11 @@ public class EmployeesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetSignature(
         long id,
+        [FromQuery] DateTime? at,
         CancellationToken cancellationToken)
     {
-        var sig = await _employeeService.GetSignatureAsync(id, cancellationToken);
+        // at = เวลาที่เซ็นเอกสาร → ได้ลายเซ็นที่ใช้อยู่ตอนนั้น (ไม่ส่ง = ลายเซ็นปัจจุบัน)
+        var sig = await _employeeService.GetSignatureAsync(id, at, cancellationToken);
         if (sig == null)
         {
             return NotFound();

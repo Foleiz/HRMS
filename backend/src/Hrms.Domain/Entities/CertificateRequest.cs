@@ -16,6 +16,8 @@ public class CertificateRequest : BaseEntity
     public string? IssuedFileUrl { get; set; }
     public DateTime? IssuedAt { get; set; }
     public long? ApprovalInstanceId { get; set; }
+    /// <summary>ข้อมูลหนังสือทั้งฉบับ (JSON) ที่ตรึงไว้ ณ วันที่อนุมัติ — เปิดดูภายหลังได้ฉบับเดิมเสมอ</summary>
+    public string? DocumentSnapshot { get; set; }
 
     // Navigation Properties
     public virtual Employee Employee { get; set; } = null!;

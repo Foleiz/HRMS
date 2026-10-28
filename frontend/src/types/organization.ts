@@ -1,3 +1,15 @@
+/** ข้อมูลบริษัทบนเอกสาร ณ เวลาที่กำหนด (GET /organization/company/document-profile?at=) */
+export interface CompanyDocumentProfile {
+  companyName: string;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  /** data URI */
+  logoData?: string | null;
+  /** data URI */
+  sealData?: string | null;
+}
+
 export interface Company {
   id: number;
   companyCode: string;

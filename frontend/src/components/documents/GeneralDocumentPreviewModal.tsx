@@ -17,6 +17,8 @@ import {
   type ApprovalSlot,
   DEFAULT_SLOTS,
   toThaiShortDate,
+  signatureUrl as buildSignatureUrl,
+  getDocumentFinalizedAt,
   ApprovalSignatureTable,
   SignatureLine,
   extractPrefixAndName,
@@ -37,6 +39,8 @@ export interface GeneralDocumentPreviewModalProps {
     /** รหัสพนักงานผู้ยื่น ใช้ดึงรูปลายเซ็น และจำลองสายอนุมัติ GENERAL_REQUEST */
     employeeId?: number | null;
     signatureUrl?: string | null;
+    /** เวลาที่ยื่นเอกสาร (ISO) — ใช้ดึงลายเซ็นผู้ยื่นที่ใช้อยู่ตอนนั้น (เอกสารเก่าไม่เปลี่ยนตามลายเซ็นใหม่) */
+    signedAt?: string | null;
     titlePrefix?: string;
     positionTitle: string;
     departmentName: string;
@@ -345,6 +349,8 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
   data,
 }) => {
   const [companyLogo, setCompanyLogo] = useState<string | null>(data?.companyLogo || null);
+  /** เวลาที่อนุมัติครบ (null = ยังไม่ครบ ใช้ข้อมูลบริษัทปัจจุบัน) */
+  const docFinalizedAt = getDocumentFinalizedAt(data?.timeline);
   const [companyAddress, setCompanyAddress] = useState<string | null>(data?.companyAddress || null);
   const [companyName, setCompanyName] = useState<string>('');
   const [signatureSrc, setSignatureSrc] = useState<string | null>(null);
@@ -408,6 +414,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
               signedName: approved ? s.actionByEmployeeName || null : null,
               signedEmployeeId: approved ? s.actionByEmployeeId || null : null,
               signedDate: approved ? toThaiShortDate(s.actionAt) : null,
+              signedAt: approved ? s.actionAt || null : null,
               positionHint: approved ? s.actionByPositionName || null : null,
               status: s.status,
             };
@@ -471,11 +478,12 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
     if (data?.signatureUrl) {
       setSignatureSrc(getAvatarUrl(data.signatureUrl));
     } else if (data?.employeeId) {
-      setSignatureSrc(getAvatarUrl(`/api/employees/${data.employeeId}/signature?v=${Date.now()}`));
+      // เอกสารที่ยื่นแล้ว: ลายเซ็น ณ เวลาที่ยื่น / ยังไม่ยื่น: ลายเซ็นปัจจุบัน
+      setSignatureSrc(buildSignatureUrl(data.employeeId, data.signedAt));
     } else {
       setSignatureSrc(null);
     }
-  }, [isOpen, data?.employeeId, data?.signatureUrl]);
+  }, [isOpen, data?.employeeId, data?.signatureUrl, data?.signedAt]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -483,13 +491,12 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
     if (data?.companyAddress) setCompanyAddress(data.companyAddress);
 
     let isMounted = true;
+    // อนุมัติครบแล้ว → ข้อมูลบริษัท ณ วันที่อนุมัติ (เปลี่ยนโลโก้ภายหลังไม่กระทบเอกสารเดิม)
     organizationService
-      .getCompany()
+      .getCompanyDocumentProfile(docFinalizedAt)
       .then((comp) => {
         if (!isMounted || !comp) return;
-        if (!data?.companyLogo && comp.logoData) {
-          setCompanyLogo(comp.logoData.startsWith('data:') ? comp.logoData : `data:image/png;base64,${comp.logoData}`);
-        }
+        if (!data?.companyLogo) setCompanyLogo(comp.logoData || null);
         if (comp.companyName?.trim()) setCompanyName(comp.companyName.trim());
         if (!data?.companyAddress && comp.address?.trim()) {
           setCompanyAddress(comp.address.trim());
@@ -502,7 +509,7 @@ export const GeneralDocumentPreviewModal: React.FC<GeneralDocumentPreviewModalPr
     return () => {
       isMounted = false;
     };
-  }, [isOpen, data?.companyLogo, data?.companyAddress]);
+  }, [isOpen, data?.companyLogo, data?.companyAddress, docFinalizedAt]);
 
   if (!isOpen || !data) return null;
 
