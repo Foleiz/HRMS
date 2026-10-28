@@ -108,17 +108,17 @@ public class EmployeeService : IEmployeeService
             }
             case "TEAM":
             {
-                // เห็นเฉพาะพนักงานในทีมเดียวกัน หรือลูกน้องโดยตรง หรือตัวเอง
+                // เห็นเฉพาะพนักงานในทีมเดียวกัน หรือสมาชิกทีมที่ตนเป็นหัวหน้า หรือตัวเอง
                 long? myTeamId = _currentUserService.TeamId;
                 long? myEmpId = _currentUserService.EmployeeId;
                 if (!myTeamId.HasValue)
                 {
                     if (!myEmpId.HasValue) return new List<EmployeeDto>();
-                    query = query.Where(e => e.Id == myEmpId.Value || e.Assignments.Any(a => a.ManagerEmployeeId == myEmpId.Value && a.IsCurrent));
+                    query = query.Where(e => e.Id == myEmpId.Value || e.Assignments.Any(a => (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent));
                 }
                 else
                 {
-                    query = query.Where(e => e.Assignments.Any(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value)) && a.IsCurrent) || (myEmpId.HasValue && e.Id == myEmpId.Value));
+                    query = query.Where(e => e.Assignments.Any(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent) || (myEmpId.HasValue && e.Id == myEmpId.Value));
                 }
                 break;
             }
@@ -203,14 +203,14 @@ public class EmployeeService : IEmployeeService
                     if (myTeamId.HasValue)
                     {
                         bool inTeam = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && (a.TeamId == myTeamId.Value || (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value)) && a.IsCurrent, cancellationToken);
+                            .AnyAsync(a => a.EmployeeId == id && (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent, cancellationToken);
                         if (!inTeam)
                             throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
                     }
                     else if (myEmpId.HasValue)
                     {
                         bool isSubordinate = await _dbContext.EmployeeAssignments
-                            .AnyAsync(a => a.EmployeeId == id && a.ManagerEmployeeId == myEmpId.Value && a.IsCurrent, cancellationToken);
+                            .AnyAsync(a => a.EmployeeId == id && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value) && a.IsCurrent, cancellationToken);
                         if (!isSubordinate)
                             throw new ForbiddenException("คุณไม่มีสิทธิ์ดูข้อมูลพนักงานนอกทีมของคุณ");
                     }
@@ -248,7 +248,8 @@ public class EmployeeService : IEmployeeService
                     .ThenInclude(t => t!.EmployeeTypeBenefits)
                         .ThenInclude(etb => etb.BenefitItem)
             .Include(e => e.Assignments)
-                .ThenInclude(a => a.ManagerEmployee)
+                .ThenInclude(a => a.Team)
+                    .ThenInclude(t => t!.LeadEmployee)
             .Include(e => e.Signatures)
             .Include(e => e.UserAccount)
                 .ThenInclude(u => u!.UserRoles)
@@ -528,7 +529,8 @@ public class EmployeeService : IEmployeeService
             var empTypeId = await ResolveEmployeeTypeIdAsync(request.EmployeeType, cancellationToken);
 
             // หากมีการระบุทีม ให้ผูกหัวหน้างานตรงเป็นหัวหน้าทีมอัตโนมัติ
-            long? managerId = request.ManagerEmployeeId;
+            // ระบบใช้หัวหน้าทีมอย่างเดียว — manager_employee_id เก็บสำเนาหัวหน้าทีมไว้ (ข้อมูลเดิม/ประวัติ) ไม่รับค่าจากฟอร์ม
+            long? managerId = null;
             if (request.TeamId.HasValue && request.TeamId.Value > 0)
             {
                 var team = await _dbContext.Teams.AsNoTracking().FirstOrDefaultAsync(t => t.Id == request.TeamId.Value, cancellationToken);
@@ -1005,6 +1007,7 @@ public class EmployeeService : IEmployeeService
             if (request.SetTeam)
             {
                 assignment.TeamId = request.TeamId is > 0 ? request.TeamId : null;
+                assignment.ManagerEmployeeId = null; // ไม่มีทีม = ไม่มีหัวหน้า (ใช้ทางสำรองตอนอนุมัติ)
                 if (request.TeamId.HasValue && request.TeamId.Value > 0)
                 {
                     var team = await _dbContext.Teams.AsNoTracking().FirstOrDefaultAsync(t => t.Id == request.TeamId.Value, cancellationToken);
@@ -1016,10 +1019,7 @@ public class EmployeeService : IEmployeeService
                 }
             }
 
-            if (request.SetManager && (!request.SetTeam || assignment.TeamId == null))
-            {
-                assignment.ManagerEmployeeId = await ValidateManagerAsync(request.ManagerEmployeeId, employee.Id, cancellationToken);
-            }
+            // SetManager เลิกใช้แล้ว — หัวหน้ามาจากทีมเท่านั้น
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -1811,9 +1811,10 @@ public class EmployeeService : IEmployeeService
             TeamName = currentAssignment?.Team?.TeamName?.Trim(),
             EmployeeTypeId = currentAssignment?.EmployeeTypeId ?? (currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? 4L : 1L) : null),
             EmployeeType = currentAssignment?.EmployeeType?.TypeName ?? (currentAssignment != null ? (currentAssignment.WageType == "DAILY" ? "พนักงานรายวัน" : "พนักงานประจำ") : null),
-            ManagerEmployeeId = currentAssignment?.ManagerEmployeeId,
-            ManagerName = currentAssignment?.ManagerEmployee?.FullName,
-            ManagerEmployeeCode = currentAssignment?.ManagerEmployee?.EmployeeCode,
+            // หัวหน้า = หัวหน้าทีมของพนักงาน (ระบบไม่ใช้หัวหน้างานรายคนแล้ว); หัวหน้าทีมเองไม่มีหัวหน้า
+            ManagerEmployeeId = currentAssignment?.Team?.LeadEmployeeId is long leadId && leadId != e.Id ? leadId : null,
+            ManagerName = currentAssignment?.Team?.LeadEmployeeId is long leadId2 && leadId2 != e.Id ? currentAssignment.Team.LeadEmployee?.FullName : null,
+            ManagerEmployeeCode = currentAssignment?.Team?.LeadEmployeeId is long leadId3 && leadId3 != e.Id ? currentAssignment.Team.LeadEmployee?.EmployeeCode : null,
             CreatedAt = e.CreatedAt,
             UpdatedAt = e.UpdatedAt,
             AvatarUpdatedAt = e.AvatarUpdatedAt,

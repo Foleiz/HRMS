@@ -44,7 +44,6 @@ export default function CreateTransferModal({
   const [fromDisplay, setFromDisplay] = useState<string>('');
   const [toDepartmentId, setToDepartmentId] = useState<string>('');
   const [toPositionId, setToPositionId] = useState<string>('');
-  const [toManagerId, setToManagerId] = useState<string>('');
   const [effectiveDate, setEffectiveDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -167,7 +166,6 @@ export default function CreateTransferModal({
         toDivisionId: targetDept?.divisionId,
         toDepartmentId: Number(toDepartmentId),
         toPositionId: Number(toPositionId),
-        toManagerId: toManagerId ? Number(toManagerId) : undefined,
         effectiveDate,
         orderNo: orderNo.trim() || undefined,
         reason: reason.trim() || undefined,
@@ -249,7 +247,6 @@ export default function CreateTransferModal({
               <option value="DEPARTMENT_TRANSFER">ย้ายแผนก</option>
               <option value="PROMOTION">เลื่อนตำแหน่ง</option>
               <option value="TRANSFER_AND_PROMOTION">โอนย้ายและเลื่อนตำแหน่ง</option>
-              <option value="PROMOTION_AND_SUPERVISOR">เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน</option>
             </CustomSelect>
           </div>
 
@@ -279,12 +276,6 @@ export default function CreateTransferModal({
                   const nextDeptId = e.target.value;
                   setToDepartmentId(nextDeptId);
                   setToPositionId('');
-                  if (nextDeptId && toManagerId) {
-                    const currentMgr = employees.find((emp) => emp.id === Number(toManagerId));
-                    if (currentMgr && currentMgr.departmentId !== Number(nextDeptId)) {
-                      setToManagerId('');
-                    }
-                  }
                 }}
                 className="w-full"
               >
@@ -339,24 +330,7 @@ export default function CreateTransferModal({
             </div>
           </div>
 
-          {/* 6. หัวหน้างานสายตรงเป้าหมาย (ถ้ามี) */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">
-              หัวหน้างานสายตรงใหม่ (ถ้ามี)
-            </label>
-            <EmployeeSelect
-              employees={employees.filter(
-                (emp) =>
-                  emp.id !== Number(selectedEmployeeId) &&
-                  (!toDepartmentId || emp.departmentId === Number(toDepartmentId))
-              )}
-              value={toManagerId ? Number(toManagerId) : ''}
-              onChange={(empId) => setToManagerId(empId ? String(empId) : '')}
-              placeholder="ไม่ระบุ / คงเดิม (พิมพ์ค้นหา...)"
-              disabled={loadingData}
-              required={false}
-            />
-          </div>
+          {/* หัวหน้ามาจากทีมของพนักงาน — ไม่ต้องเลือกหัวหน้างานในการโยกย้าย */}
 
           {/* 7. อัปโหลดไฟล์เอกสารคำสั่งแต่งตั้ง/โยกย้าย */}
           <div className="space-y-1.5">

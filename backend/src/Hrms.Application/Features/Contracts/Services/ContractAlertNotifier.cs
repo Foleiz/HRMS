@@ -89,10 +89,10 @@ public class ContractAlertNotifier : IContractAlertNotifier
             .ToListAsync(cancellationToken);
         var nameOf = names.ToDictionary(n => n.Id, n => $"{n.Prefix} {n.FirstName} {n.LastName}".Trim() + $" ({n.EmployeeCode})");
 
-        // หัวหน้างานโดยตรงของแต่ละคน → user account ของหัวหน้า
+        // หัวหน้าทีมของแต่ละคน → user account ของหัวหน้า
         var managerOf = (await _context.EmployeeAssignments.AsNoTracking()
-                .Where(a => employeeIds.Contains(a.EmployeeId) && a.IsCurrent && a.ManagerEmployeeId != null)
-                .Select(a => new { a.EmployeeId, a.EffectiveFrom, ManagerId = a.ManagerEmployeeId!.Value })
+                .Where(a => employeeIds.Contains(a.EmployeeId) && a.IsCurrent && a.Team != null && a.Team.LeadEmployeeId != null && a.Team.LeadEmployeeId != a.EmployeeId)
+                .Select(a => new { a.EmployeeId, a.EffectiveFrom, ManagerId = a.Team!.LeadEmployeeId!.Value })
                 .ToListAsync(cancellationToken))
             .GroupBy(a => a.EmployeeId)
             .ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.EffectiveFrom).First().ManagerId);
