@@ -32,7 +32,9 @@ public class JwtTokenService : ITokenService
 
         var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
 
-        var claims = BuildClaims(user);
+        // token เก็บแค่ตัวตนผู้ใช้ — บทบาท/สิทธิ์/ขอบเขตข้อมูลโหลดจากฐานข้อมูลทุกคำขอ (UserAccessLoader ใน OnTokenValidated)
+        // เดิมฝังสิทธิ์ทุกตัวลง token: ผู้ดูแลที่มีสิทธิ์หลายร้อยรายการได้ token ใหญ่จน header เกินเพดาน → 431
+        var claims = BuildIdentityClaims(user);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
@@ -49,7 +51,16 @@ public class JwtTokenService : ITokenService
         return (tokenHandler.WriteToken(token), expiresAt);
     }
 
-    /// <summary>Claims ของผู้ใช้ (ใช้ตอนออก token และตอนโหลดสิทธิ์ล่าสุดในแต่ละคำขอ)</summary>
+    /// <summary>Claims ตัวตนผู้ใช้ (ไม่มีสิทธิ์) — ใส่ใน token</summary>
+    public static List<Claim> BuildIdentityClaims(UserInfoDto user) => new()
+    {
+        new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+        new(JwtRegisteredClaimNames.UniqueName, user.Username),
+        new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new("employee_id", user.EmployeeId.ToString()),
+    };
+
+    /// <summary>Claims เต็มของผู้ใช้ (ตัวตน + บทบาท + สิทธิ์ + ขอบเขตข้อมูล) — ใช้ตอนโหลดสิทธิ์ล่าสุดในแต่ละคำขอ</summary>
     public static List<Claim> BuildClaims(UserInfoDto user)
     {
         var claims = new List<Claim>
