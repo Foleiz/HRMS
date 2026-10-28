@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { leaveService } from '@/services/leaveService';
 import { certificateService } from '@/services/certificateService';
@@ -421,7 +422,14 @@ export const RecentTransactionsTable: React.FC = () => {
                 paginatedItems.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
                     <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400 truncate">
-                      {item.documentCode}
+                      {/* กดเลขที่เอกสาร → เปิดเอกสารที่หน้าประวัติเอกสาร */}
+                      <Link
+                        href={`/documents/history?open=${encodeURIComponent(item.documentCode)}`}
+                        title="ดูเอกสาร"
+                        className="hover:underline underline-offset-2"
+                      >
+                        {item.documentCode}
+                      </Link>
                     </td>
                     <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400 truncate">
                       {item.createdDate}

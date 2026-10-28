@@ -924,6 +924,26 @@ export default function LeaveRequestsApprovalPage() {
   const totalRejected = countStatus('REJECTED');
   const totalCancelled = countStatus('CANCELLED');
 
+  /** เปิดเอกสารของรายการ (ใช้ทั้งปุ่ม "ดูเอกสาร" และเลขที่เอกสาร) */
+  const openDocument = (item: UnifiedApprovalItem) => {
+    if (item.docType === 'LEAVE') {
+      handleOpenLeavePreview(item.leaveRaw!);
+    } else if (item.docType === 'CERTIFICATE') {
+      setSelectedCertForPreview(item.certRaw!);
+      setIsCertPreviewOpen(true);
+    } else if (item.docType === 'RESIGNATION') {
+      setSelectedResignForPreview(item.resignationRaw!);
+      setIsResignPreviewOpen(true);
+    } else if (item.docType === 'GENERAL') {
+      setSelectedGeneralForPreview(item.generalRaw!);
+    } else if (item.docType === 'TIME_ADJUST') {
+      setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'view' });
+    } else if (item.docType === 'BENEFIT') {
+      setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
+      setIsGeneralPreviewOpen(true);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร */}
@@ -1069,8 +1089,15 @@ export default function LeaveRequestsApprovalPage() {
                       }`}
                     >
                       {/* 1. เลขที่เอกสาร */}
-                      <td className="px-5 py-3.5 whitespace-nowrap font-mono font-semibold text-xs text-primary dark:text-blue-300">
-                        {item.requestNo}
+                      <td className="px-5 py-3.5 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => openDocument(item)}
+                          title="ดูเอกสาร"
+                          className="font-mono font-semibold text-xs text-primary dark:text-blue-300 hover:underline underline-offset-2 cursor-pointer"
+                        >
+                          {item.requestNo}
+                        </button>
                       </td>
 
                       {/* 2. ประเภทเอกสาร */}
@@ -1201,24 +1228,7 @@ export default function LeaveRequestsApprovalPage() {
                           {/* 4. ดูเอกสาร */}
                           <button
                             type="button"
-                            onClick={() => {
-                              if (item.docType === 'LEAVE') {
-                                handleOpenLeavePreview(item.leaveRaw!);
-                              } else if (item.docType === 'CERTIFICATE') {
-                                setSelectedCertForPreview(item.certRaw!);
-                                setIsCertPreviewOpen(true);
-                              } else if (item.docType === 'RESIGNATION') {
-                                setSelectedResignForPreview(item.resignationRaw!);
-                                setIsResignPreviewOpen(true);
-                              } else if (item.docType === 'GENERAL') {
-                                setSelectedGeneralForPreview(item.generalRaw!);
-                              } else if (item.docType === 'TIME_ADJUST') {
-                                setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'view' });
-                              } else if (item.docType === 'BENEFIT') {
-                                setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
-                                setIsGeneralPreviewOpen(true);
-                              }
-                            }}
+                            onClick={() => openDocument(item)}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-all cursor-pointer"
                             title="ดูเอกสาร"
                           >
@@ -1309,9 +1319,14 @@ export default function LeaveRequestsApprovalPage() {
                             ปรับเวลา
                           </span>
                         )}
-                        <span className="font-mono font-bold text-xs text-primary dark:text-blue-300">
+                        <button
+                          type="button"
+                          onClick={() => openDocument(item)}
+                          title="ดูเอกสาร"
+                          className="font-mono font-bold text-xs text-primary dark:text-blue-300 hover:underline underline-offset-2 cursor-pointer"
+                        >
                           {item.requestNo}
-                        </span>
+                        </button>
                       </div>
                       <span className="text-2xs text-slate-400 block font-mono">
                         ยื่นเมื่อ: {formatDate(item.submittedAt)}
@@ -1418,24 +1433,7 @@ export default function LeaveRequestsApprovalPage() {
                     <div className="flex items-center justify-between gap-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (item.docType === 'LEAVE') {
-                            handleOpenLeavePreview(item.leaveRaw!);
-                          } else if (item.docType === 'CERTIFICATE') {
-                            setSelectedCertForPreview(item.certRaw!);
-                            setIsCertPreviewOpen(true);
-                          } else if (item.docType === 'RESIGNATION') {
-                            setSelectedResignForPreview(item.resignationRaw!);
-                            setIsResignPreviewOpen(true);
-                          } else if (item.docType === 'GENERAL') {
-                            setSelectedGeneralForPreview(item.generalRaw!);
-                          } else if (item.docType === 'TIME_ADJUST') {
-                            setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'view' });
-                          } else if (item.docType === 'BENEFIT') {
-                            setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
-                            setIsGeneralPreviewOpen(true);
-                          }
-                        }}
+                        onClick={() => openDocument(item)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition-all"
                       >
                         <Eye className="w-3.5 h-3.5" />
