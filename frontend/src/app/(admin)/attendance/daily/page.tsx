@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -3612,8 +3612,10 @@ function DailyAttendanceContent() {
 
             {/* Action Buttons */}
             <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 disabled={isUploading}
                 onClick={() => {
                   setOverlapModalOpen(false);
@@ -3622,28 +3624,20 @@ function DailyAttendanceContent() {
                   if (fileInputRef.current) fileInputRef.current.value = '';
                   toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
                 }}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold transition cursor-pointer"
               >
                 ใช้ไฟล์เก่า (ยกเลิกการอัปโหลด)
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 disabled={isUploading}
+                loading={isUploading}
                 onClick={() => handleUploadSubmit(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-xs cursor-pointer active:scale-95"
+                icon={!isUploading ? <CheckCircle2 className="w-3.5 h-3.5" /> : undefined}
               >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>กำลังเขียนทับข้อมูล...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>ใช้ไฟล์ใหม่ (เขียนทับข้อมูลเดิม)</span>
-                  </>
-                )}
-              </button>
+                ใช้ไฟล์ใหม่ (เขียนทับข้อมูลเดิม)
+              </Button>
             </div>
           </div>
         </div>

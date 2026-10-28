@@ -474,7 +474,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   const docAfterDays = applicablePolicy?.documentRequiredAfterDays ?? null;
 
   const inputCls =
-    'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:focus:border-blue-500 outline-none';
+    'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:ring-2 focus:ring-primary focus:border-primary dark:focus:border-blue-500 outline-none';
   const labelCls = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
 
   return (
@@ -571,7 +571,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   onClick={() => setLeaveFormat(val)}
                   className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
                     leaveFormat === val
-                      ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
+                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-semibold shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 font-medium'
                   }`}
                 >

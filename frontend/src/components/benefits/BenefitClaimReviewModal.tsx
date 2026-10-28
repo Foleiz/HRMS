@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { Button, ModalShell } from '@/components/ui';
 import React, { useState } from 'react';
 import { BenefitClaimRequest } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
@@ -221,7 +221,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={2}
-                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046] resize-none"
+                className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
               />
             </div>
           )}
@@ -230,30 +230,27 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
         </div>
 
         <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-700/60 flex justify-end gap-2">
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             {mode === 'view' ? 'ปิด' : 'ยกเลิก'}
-          </button>
+          </Button>
           {mode !== 'view' && (
-            <button
+            <Button
               type="button"
+              variant={mode === 'approve' ? 'primary' : 'danger'}
+              size="sm"
               onClick={handleSubmit}
               disabled={submitting}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 disabled:opacity-50 ${mode === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
+              loading={submitting}
+              icon={!submitting ? (mode === 'approve' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />) : undefined}
             >
-              {submitting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : mode === 'approve' ? (
-                <CheckCircle2 className="w-3.5 h-3.5" />
-              ) : (
-                <XCircle className="w-3.5 h-3.5" />
-              )}
               {mode === 'approve' ? 'อนุมัติ' : 'ไม่อนุมัติ'}
-            </button>
+            </Button>
           )}
         </div>
       </div>

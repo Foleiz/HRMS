@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { Button, ModalShell } from '@/components/ui';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -715,7 +715,7 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Network className="w-5 h-5 text-[#0B2046] dark:text-blue-400" />
+            <Network className="w-5 h-5 text-primary dark:text-blue-400" />
             แผนผังองค์กร
           </h2>
           {chart && (
@@ -756,7 +756,7 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
             placeholder="ค้นหาชื่อ รหัส ตำแหน่ง ฝ่าย หรือแผนก..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+            className="w-full pl-8 pr-8 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
           />
           {search && (
             <button
@@ -791,20 +791,22 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
         >
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[360px] py-24">
-              <Loader2 className="w-8 h-8 animate-spin text-[#0B2046]" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-sm text-slate-500">กำลังโหลดแผนผังองค์กร...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center gap-3 h-full min-h-[360px] py-24 text-center px-4">
               <AlertTriangle className="w-8 h-8 text-amber-500" />
               <p className="text-sm text-slate-600">{error}</p>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={load}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold cursor-pointer"
+                icon={<RefreshCw className="w-3.5 h-3.5" />}
               >
-                <RefreshCw className="w-3.5 h-3.5" /> ลองใหม่
-              </button>
+                ลองใหม่
+              </Button>
             </div>
           ) : chart ? (
             <div
@@ -904,7 +906,7 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
           onBackdropClick={() => setOpened(null)}
         >
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-sm w-full shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-[#0B2046] px-6 pt-6 pb-5 text-center text-white relative">
+            <div className="bg-primary px-6 pt-6 pb-5 text-center text-white relative">
               <button
                 type="button"
                 onClick={() => setOpened(null)}
@@ -1014,13 +1016,15 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
                 )}
               </div>
               {canViewEmployee && (
-                <button
+                <Button
                   type="button"
+                  variant="primary"
+                  className="w-full mt-2"
                   onClick={() => router.push(`/employees/${opened.person.id}`)}
-                  className="w-full mt-2 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-[#0B2046] text-white text-xs font-semibold hover:bg-[#081836]"
+                  icon={<ExternalLink className="w-3.5 h-3.5" />}
                 >
-                  <ExternalLink className="w-3.5 h-3.5" /> ดูโปรไฟล์พนักงาน
-                </button>
+                  ดูโปรไฟล์พนักงาน
+                </Button>
               )}
             </div>
           </div>

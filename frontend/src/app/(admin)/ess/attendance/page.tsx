@@ -453,7 +453,7 @@ export default function EssAttendancePage() {
             onClick={() => setActiveTab('history')}
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
               activeTab === 'history'
-                ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >
@@ -465,7 +465,7 @@ export default function EssAttendancePage() {
             onClick={() => setActiveTab('adjustments')}
             className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'adjustments'
-                ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
             }`}
           >
@@ -526,7 +526,7 @@ export default function EssAttendancePage() {
                   className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg transition disabled:opacity-50 cursor-pointer"
                   title="ประมวลผลคำนวณเวลาใหม่สำหรับเดือนนี้"
                 >
-                  <RotateCcw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin text-[#0B2046] dark:text-blue-400' : ''}`} />
+                  <RotateCcw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin text-primary dark:text-blue-400' : ''}`} />
                 </button>
               </div>
             </div>

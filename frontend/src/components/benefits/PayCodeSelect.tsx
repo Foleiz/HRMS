@@ -55,7 +55,7 @@ export const PayCodeSelect: React.FC<PayCodeSelectProps> = ({ value, onChange, i
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
         className={
           className ??
-          'w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200'
+          'w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200'
         }
       >
         <option value="">{isNew ? 'สร้างรายการรายได้ใหม่ให้อัตโนมัติ' : '— คงรายการเดิม —'}</option>

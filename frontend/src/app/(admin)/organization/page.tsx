@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
@@ -2904,18 +2904,22 @@ export default function OrganizationPage() {
             </p>
 
             <div className="flex items-center justify-center gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
                 onClick={() => { setDeleteModalOpen(false); setItemToDelete(null); }}
-                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 text-xs font-medium w-full dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                className="w-full"
                 onClick={executeDelete}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-md shadow-rose-600/20 w-full"
               >
                 {itemToDelete.type === 'bank-account' ? 'ยืนยันปิดใช้งาน' : 'ยืนยันลบ'}
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { Button, ModalShell } from '@/components/ui';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -206,7 +206,7 @@ export default function EmployeeBenefitBalancesPage() {
   return (
     <div className="space-y-6 font-sans">
       {/* Top Banner / Header */}
-      <div className="p-5 md:p-6 rounded-2xl bg-gradient-to-r from-[#0B2046] via-[#153468] to-[#1e448b] text-white shadow-md relative overflow-hidden">
+      <div className="p-5 md:p-6 rounded-2xl bg-gradient-to-r from-primary via-primary-hover to-blue-900 text-white shadow-md relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -645,15 +645,16 @@ export default function EmployeeBenefitBalancesPage() {
 
             {/* Footer */}
             <div className="px-6 py-3.5 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/50 flex justify-end">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setIsClaimsHistoryOpen(false);
                   setHistoryBenefit(null);
                 }}
-                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-semibold text-gray-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-colors"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>

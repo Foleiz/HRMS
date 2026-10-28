@@ -41,7 +41,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
-import { RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter } from '@/components/ui';
+import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter } from '@/components/ui';
 
 type MasterTab =
   | 'document-types'
@@ -417,13 +417,13 @@ export default function MasterDataHubPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
           </button>
           {canCreateMasterData && (
-            <button
+            <Button
+              size="sm"
+              icon={<Plus className="w-4 h-4" />}
               onClick={handleOpenCreate}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
               เพิ่มข้อมูลใหม่
-            </button>
+            </Button>
           )}
         </div>
       </div>
