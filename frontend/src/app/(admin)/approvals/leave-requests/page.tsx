@@ -86,6 +86,17 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 dark:text-slate-400 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
+/** สถานะที่แสดงในตาราง — รายการที่ผู้ใช้อนุมัติขั้นของตนแล้ว (รอขั้นถัดไป) แสดงว่า "คุณอนุมัติแล้ว" */
+const MY_APPROVED_STATUS = {
+  label: 'คุณอนุมัติแล้ว',
+  color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  icon: <CheckCircle2 className="w-3.5 h-3.5" />,
+};
+const getRowStatus = (item: { status: string; isMyTurnToApprove: boolean; hasAlreadyApproved: boolean }) =>
+  item.status === 'PENDING' && !item.isMyTurnToApprove && item.hasAlreadyApproved
+    ? MY_APPROVED_STATUS
+    : STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+
 export interface UnifiedApprovalItem {
   id: string;
   rawId: number | string;
@@ -1045,7 +1056,7 @@ export default function LeaveRequestsApprovalPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filteredRequests.map((item) => {
-                  const statusConf = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+                  const statusConf = getRowStatus(item);
                   const isPending = item.status === 'PENDING';
 
                   return (
@@ -1112,31 +1123,11 @@ export default function LeaveRequestsApprovalPage() {
                         </div>
                       </td>
 
-                      {/* 4. รายละเอียดคำขอ */}
+                      {/* 4. รายละเอียดคำขอ — แสดงเฉพาะชื่อประเภท (รายละเอียดดูได้ที่ "ดูเอกสาร") */}
                       <td className="px-4 py-3.5 text-xs">
-                        <div className="flex flex-col gap-0.5">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:text-slate-300">
-                              {item.subType}
-                            </span>
-                            <span className="text-slate-600 dark:text-slate-400 truncate max-w-xs">{item.details}</span>
-                          </div>
-                          {item.documents && item.documents.length > 0 && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {item.documents.map((doc) => (
-                                <button
-                                  key={doc.id}
-                                  type="button"
-                                  onClick={() => handleDownloadDoc(typeof item.rawId === 'number' ? item.rawId : 0, doc.id, doc.fileName || 'document')}
-                                  className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
-                                >
-                                  <Download className="w-3 h-3" />
-                                  <span className="max-w-28 truncate">{doc.fileName}</span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                          {item.subType}
+                        </span>
                       </td>
 
                       {/* 5. วันที่ยื่น */}
@@ -1207,28 +1198,6 @@ export default function LeaveRequestsApprovalPage() {
                             </>
                           )}
 
-                          {/* 2. กรณีผู้ใช้นี้ได้อนุมัติขั้นตอนนี้ไปแล้ว */}
-                          {isPending && !item.isMyTurnToApprove && item.hasAlreadyApproved && (
-                            <span
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              title="คุณได้ทำการอนุมัติในขั้นตอนนี้เรียบร้อยแล้ว กำลังรอขั้นตอนถัดไป"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              คุณอนุมัติแล้ว
-                            </span>
-                          )}
-
-                          {/* 3. กรณีเอกสารรออนุมัติ แต่ยังไม่ถึงคิวของผู้ใช้นี้ */}
-                          {isPending && !item.isMyTurnToApprove && !item.hasAlreadyApproved && (
-                            <span
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 dark:text-slate-400 border border-slate-200"
-                              title={`กำลังรอการพิจารณาจาก ${item.currentApproverDisplay || 'ขั้นตอนก่อนหน้า'}`}
-                            >
-                              <Clock className="w-3.5 h-3.5 text-slate-400" />
-                              {item.currentApproverDisplay ? `รอ: ${item.currentApproverDisplay}` : 'รอคิวก่อนหน้า'}
-                            </span>
-                          )}
-
                           {/* 4. ดูเอกสาร */}
                           <button
                             type="button"
@@ -1258,7 +1227,7 @@ export default function LeaveRequestsApprovalPage() {
                           </button>
 
                           {/* 5. ยกเลิกคำขอ — จะขึ้นก็ต่อเมื่อกดอนุมัติไปแล้ว */}
-                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
+                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && !(isPending && item.isMyTurnToApprove) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
                             <button
                               onClick={() => {
                                 if (item.docType === 'LEAVE') {
@@ -1290,7 +1259,7 @@ export default function LeaveRequestsApprovalPage() {
           {/* Mobile View: Stacked Approval Cards */}
           <div className="lg:hidden divide-y divide-gray-100">
             {filteredRequests.map((item) => {
-              const statusConf = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+              const statusConf = getRowStatus(item);
               const isPending = item.status === 'PENDING';
 
               return (
@@ -1370,7 +1339,6 @@ export default function LeaveRequestsApprovalPage() {
                       <div className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-semibold bg-slate-200/70 text-slate-700">
                         {item.subType}
                       </div>
-                      <p className="text-slate-600 text-xs leading-relaxed">{item.details}</p>
                     </div>
 
                     {item.documents && item.documents.length > 0 && (
@@ -1446,21 +1414,6 @@ export default function LeaveRequestsApprovalPage() {
                       </div>
                     )}
 
-                    {/* Status notes if not turn */}
-                    {isPending && !item.isMyTurnToApprove && item.hasAlreadyApproved && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 w-full justify-center">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        คุณอนุมัติแล้ว (รอขั้นตอนถัดไป)
-                      </div>
-                    )}
-
-                    {isPending && !item.isMyTurnToApprove && !item.hasAlreadyApproved && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 text-slate-600 border border-slate-200 w-full justify-center">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        กำลังรอการพิจารณาจาก {item.currentApproverDisplay || 'ขั้นตอนก่อนหน้า'}
-                      </div>
-                    )}
-
                     {/* Secondary action: View document */}
                     <div className="flex items-center justify-between gap-2">
                       <button
@@ -1489,7 +1442,7 @@ export default function LeaveRequestsApprovalPage() {
                         ดูตัวอย่างเอกสาร
                       </button>
 
-                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
+                      {(item.status === 'APPROVED' || item.hasAlreadyApproved) && !(isPending && item.isMyTurnToApprove) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
                         <button
                           onClick={() => {
                             if (item.docType === 'LEAVE') {
