@@ -15,7 +15,6 @@ import {
   RefreshCw,
   ChevronLeft,
   Pencil,
-  MoreVertical,
   Trash2,
   Eye,
 } from 'lucide-react';
@@ -33,7 +32,6 @@ import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { employeeService } from '@/services/employeeService';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
-import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
@@ -775,66 +773,43 @@ export default function DocumentHistoryPage() {
                           )}
                         </td>
                         <td className="px-5 py-4 text-right">
-                          {(() => {
-                            const hasAttachments = !!doc.documents && doc.documents.length > 0;
-                            const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
-                            const hasCancel = doc.status === 'PENDING';
-                            const hasDelete = doc.status === 'DRAFT';
-                            return (
-                              <ActionDropdown
-                                menuClassName="w-56"
-                                triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 dark:text-slate-300 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
-                                items={[
-                                  {
-                                    label: 'ดูตัวอย่างเอกสาร',
-                                    icon: <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
-                                    onClick: () => handleOpenDocumentPreview(doc),
-                                  },
-                                  ...(hasAttachments || hasEdit || hasCancel || hasDelete
-                                    ? [{ divider: true, label: '' }]
-                                    : []),
-                                  ...(hasAttachments
-                                    ? doc.documents!.map((d) => ({
-                                        label: d.fileName ?? 'เอกสารแนบ',
-                                        icon: <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />,
-                                        onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
-                                      }))
-                                    : []),
-                                  ...(hasAttachments && (hasEdit || hasCancel || hasDelete) ? [{ divider: true, label: '' }] : []),
-                                  ...(hasEdit
-                                    ? [
-                                        {
-                                          label: 'แก้ไขต่อ',
-                                          icon: <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
-                                          href: doc.editUrl!,
-                                          className: 'text-blue-600 hover:bg-blue-50',
-                                        },
-                                      ]
-                                    : []),
-                                  ...(hasCancel
-                                    ? [
-                                        {
-                                          label: 'ถอนคำขอ',
-                                          icon: <Ban className="w-3.5 h-3.5 text-red-600 shrink-0" />,
-                                          danger: true,
-                                          onClick: () => handleCancel(doc),
-                                        },
-                                      ]
-                                    : []),
-                                  ...(hasDelete
-                                    ? [
-                                        {
-                                          label: 'ลบ',
-                                          icon: <Trash2 className="w-3.5 h-3.5 text-red-600 shrink-0" />,
-                                          danger: true,
-                                          onClick: () => handleDelete(doc),
-                                        },
-                                      ]
-                                    : []),
-                                ]}
-                              />
-                            );
-                          })()}
+                          {/* ปุ่มตรงๆ แบบเดียวกับประวัติเอกสารในเมนูอนุมัติ (แทนเมนูสามจุด) */}
+                          <div className="flex items-center justify-end gap-2">
+                            {doc.documents?.map((d) => (
+                              <button
+                                key={d.id}
+                                type="button"
+                                onClick={() => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment')}
+                                title={`ดาวน์โหลด ${d.fileName ?? 'ไฟล์แนบ'}`}
+                                aria-label={`ดาวน์โหลด ${d.fileName ?? 'ไฟล์แนบ'}`}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 transition-all cursor-pointer"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </button>
+                            ))}
+                            {doc.status === 'DRAFT' && doc.editUrl && (
+                              <Link href={doc.editUrl} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
+                                <Pencil className="w-3.5 h-3.5" />
+                                แก้ไขต่อ
+                              </Link>
+                            )}
+                            <button type="button" onClick={() => handleOpenDocumentPreview(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition-all cursor-pointer" title="ดูเอกสาร">
+                              <Eye className="w-3.5 h-3.5" />
+                              ดูเอกสาร
+                            </button>
+                            {doc.status === 'PENDING' && (
+                              <button type="button" onClick={() => handleCancel(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
+                                <Ban className="w-3.5 h-3.5" />
+                                ถอนคำขอ
+                              </button>
+                            )}
+                            {doc.status === 'DRAFT' && (
+                              <button type="button" onClick={() => handleDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
+                                <Trash2 className="w-3.5 h-3.5" />
+                                ลบ
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -922,53 +897,25 @@ export default function DocumentHistoryPage() {
                         )}
                       </div>
 
-                      <ActionDropdown
-                        menuClassName="w-56"
-                        triggerClassName="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all cursor-pointer"
-                        items={[
-                          ...(hasAttachments || hasEdit || hasCancel || hasDelete
-                            ? []
-                            : []),
-                          ...(hasAttachments
-                            ? doc.documents!.map((d) => ({
-                                label: d.fileName ?? 'เอกสารแนบ',
-                                icon: <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />,
-                                onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
-                              }))
-                            : []),
-                          ...(hasAttachments && (hasEdit || hasCancel || hasDelete) ? [{ divider: true, label: '' }] : []),
-                          ...(hasEdit
-                            ? [
-                                {
-                                  label: 'แก้ไขต่อ',
-                                  icon: <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
-                                  href: doc.editUrl!,
-                                  className: 'text-blue-600 hover:bg-blue-50',
-                                },
-                              ]
-                            : []),
-                          ...(hasCancel
-                            ? [
-                                {
-                                  label: 'ถอนคำขอ',
-                                  icon: <Ban className="w-3.5 h-3.5 text-red-600 shrink-0" />,
-                                  danger: true,
-                                  onClick: () => handleCancel(doc),
-                                },
-                              ]
-                            : []),
-                          ...(hasDelete
-                            ? [
-                                {
-                                  label: 'ลบ',
-                                  icon: <Trash2 className="w-3.5 h-3.5 text-red-600 shrink-0" />,
-                                  danger: true,
-                                  onClick: () => handleDelete(doc),
-                                },
-                              ]
-                            : []),
-                        ]}
-                      />
+                      <div className="flex items-center gap-1.5">
+                        {doc.documents?.map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment')}
+                            aria-label={`ดาวน์โหลด ${d.fileName ?? 'ไฟล์แนบ'}`}
+                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 transition-all cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        ))}
+                        {hasDelete && (
+                          <button type="button" onClick={() => handleDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
+                            <Trash2 className="w-3.5 h-3.5" />
+                            ลบ
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
