@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   ChevronRight,
@@ -434,6 +434,19 @@ export default function DocumentHistoryPage() {
       setIsGeneralPreviewOpen(true);
     }
   };
+
+  // เปิดเอกสารอัตโนมัติจากลิงก์ ?open=<เลขที่เอกสาร> (เช่น กดเลขที่เอกสารจากแดชบอร์ด)
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (loading || autoOpenedRef.current || typeof window === 'undefined') return;
+    const code = new URLSearchParams(window.location.search).get('open');
+    if (!code) return;
+    autoOpenedRef.current = true;
+    const target = documents.find((d) => d.code === code);
+    if (target) handleOpenDocumentPreview(target);
+    window.history.replaceState(null, '', window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, documents]);
 
   const handleOpenTimeline = (doc: MyDocumentRow) => {
     if (doc.source === 'LEAVE' && doc.rawLeave) {
