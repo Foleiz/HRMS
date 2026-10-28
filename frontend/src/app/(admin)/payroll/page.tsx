@@ -105,7 +105,7 @@ import { commissionService } from '@/services/commissionService';
 import { CommissionPeriodSummary } from '@/types/commission';
 import PayrollPeriodsTab from '@/components/payroll/PayrollPeriodsTab';
 import PayrollScheduleTab from '@/components/payroll/PayrollScheduleTab';
-import { calculatePeriodDatesFromSettings } from '@/services/payrollScheduleService';
+import { calculatePeriodDatesFromSettings, getPayrollScheduleSettings } from '@/services/payrollScheduleService';
 
 type ActiveTab =
   | 'overview'
@@ -1213,6 +1213,15 @@ export default function PayrollPage() {
       setIsSettingPaymentMethod(false);
     }
   };
+
+  // นำวิธีการจ่ายเงินเริ่มต้นจากหน้า "กำหนดวันตัดรอบและจ่ายเงิน" มาใช้โดยอัตโนมัติเมื่อรอบได้รับการอนุมัติ
+  useEffect(() => {
+    if (selectedPeriod && selectedPeriod.status === 'APPROVED' && !selectedPeriod.paymentMethod && !isSettingPaymentMethod) {
+      const scheduleSettings = getPayrollScheduleSettings();
+      const defaultMethod = scheduleSettings.paymentMethod || 'DIRECT_TRANSFER';
+      handleSetPaymentMethod(defaultMethod);
+    }
+  }, [selectedPeriod?.id, selectedPeriod?.status, selectedPeriod?.paymentMethod]);
 
   const handleOpenSlipModal = (item: PayrollTransferItem) => {
     setSlipModalTarget(item);
@@ -5048,11 +5057,27 @@ export default function PayrollPage() {
                           <span>กำลังดำเนินการจ่าย</span>
                         </span>
                       )}
-                      {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
+                      {selectedPeriod?.status === 'APPROVED' && (
                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5">
                           <CheckCircle className="w-3.5 h-3.5" />
-                          <span>อนุมัติแล้ว — รอเลือกวิธีการจ่าย</span>
+                          <span>อนุมัติแล้ว — ดำเนินการจ่ายเงิน</span>
                         </span>
+                      )}
+                      {selectedPeriod?.paymentMethod && (
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">
+                          <span>วิธีจ่าย: {selectedPeriod.paymentMethod === 'BANK_BATCH' ? 'ส่งไฟล์ธนาคาร' : 'โอนเองทีละคน'}</span>
+                          {selectedPeriod.status === 'APPROVED' && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPaymentMethod(selectedPeriod.paymentMethod === 'BANK_BATCH' ? 'DIRECT_TRANSFER' : 'BANK_BATCH')}
+                              disabled={isSettingPaymentMethod}
+                              className="text-blue-600 dark:text-blue-400 hover:underline ml-1 cursor-pointer"
+                              title="คลิกเพื่อสลับวิธีการจ่ายเงิน"
+                            >
+                              (สลับเป็น{selectedPeriod.paymentMethod === 'BANK_BATCH' ? 'โอนเองทีละคน' : 'ส่งไฟล์ธนาคาร'})
+                            </button>
+                          )}
+                        </div>
                       )}
                       {selectedPeriod?.status === 'CLOSED' && (
                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 inline-flex items-center gap-1.5">
@@ -5090,44 +5115,6 @@ export default function PayrollPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* ── PHASE 1: เลือกวิธีการจ่ายเงิน (เมื่อ APPROVED และยังไม่ได้เลือก) ── */}
-                {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
-                  <div className="bg-gradient-to-br from-[#0B2046] to-[#1a3a7a] rounded-2xl p-6 text-white shadow-lg">
-                    <h3 className="text-base font-bold mb-1">เลือกวิธีการจ่ายเงินเดือน</h3>
-                    <p className="text-xs text-blue-200 mb-5">CEO อนุมัติรอบเงินเดือนแล้ว กรุณาเลือกวิธีการจ่ายเงิน</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Model 1: Bank Batch */}
-                      <button
-                        onClick={() => handleSetPaymentMethod('BANK_BATCH')}
-                        disabled={isSettingPaymentMethod}
-                        className="flex flex-col items-start gap-3 p-5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl transition-all cursor-pointer disabled:opacity-60 text-left"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-blue-400/30 flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm">ส่งไฟล์ธนาคาร (Bank Batch)</div>
-                          <div className="text-xs text-blue-200 mt-1">ดาวน์โหลดไฟล์ .CSV ส่งให้ธนาคาร ธนาคารจะโอนเงินให้พนักงานอัตโนมัติ (สำหรับบริษัทขนาดใหญ่)</div>
-                        </div>
-                      </button>
-                      {/* Model 2: Direct Transfer */}
-                      <button
-                        onClick={() => handleSetPaymentMethod('DIRECT_TRANSFER')}
-                        disabled={isSettingPaymentMethod}
-                        className="flex flex-col items-start gap-3 p-5 bg-white/10 hover:bg-white/20 border-2 border-emerald-400/50 rounded-2xl transition-all cursor-pointer disabled:opacity-60 text-left"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-emerald-400/30 flex items-center justify-center">
-                          <Banknote className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm">โอนเองทีละคน</div>
-                          <div className="text-xs text-blue-200 mt-1">โอนเงินผ่าน Internet Banking ทีละคน แนบสลิปยืนยัน แล้วยืนยันการจ่ายเงินทั้งหมด</div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* ── PHASE 2a: BANK_BATCH SLIP & RECEIPT (Option 1: Compact Clean Bar) ── */}
                 {selectedPeriod?.paymentMethod === 'BANK_BATCH' && selectedPeriod?.status !== 'CLOSED' && (

@@ -8,7 +8,9 @@ import {
   Sparkles,
   Info,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  Banknote
 } from 'lucide-react';
 import {
   PayrollScheduleSettings,
@@ -332,6 +334,86 @@ export default function PayrollScheduleTab({
             <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <span>คำขอเบิกสวัสดิการที่อนุมัติหลังวันตัดรอบนี้ จะถูกยกยอดไปจ่ายในรอบเงินเดือนถัดไปโดยอัตโนมัติ</span>
           </div>
+        </div>
+      </div>
+
+      {/* Card 4: เลือกวิธีการจ่ายเงินเดือน (Payment Method) */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs space-y-5">
+        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
+          <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#0B2046] dark:text-blue-400 flex items-center justify-center font-bold text-xs">
+            4
+          </div>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">เลือกวิธีการจ่ายเงินเดือน</h3>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">เลือกรูปแบบการจ่ายเงินเดือนหลักที่บริษัทใช้งานสำหรับรอบเงินเดือน</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Model 1: Bank Batch */}
+          <button
+            type="button"
+            onClick={() => setSettings({ ...settings, paymentMethod: 'BANK_BATCH' })}
+            disabled={!canEdit}
+            className={`flex flex-col items-start gap-3 p-5 rounded-2xl transition-all cursor-pointer text-left border-2 ${
+              settings.paymentMethod === 'BANK_BATCH'
+                ? 'border-[#0B2046] dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-2 ring-[#0B2046]/10 dark:ring-blue-500/20 shadow-xs'
+                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-[#0B2046] dark:text-blue-300 flex items-center justify-center">
+                <Building2 className="w-5 h-5" />
+              </div>
+              {settings.paymentMethod === 'BANK_BATCH' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#0B2046] text-white dark:bg-blue-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  เลือกใช้งาน
+                </span>
+              )}
+            </div>
+            <div>
+              <div className="font-bold text-sm text-slate-900 dark:text-slate-100">ส่งไฟล์ธนาคาร (Bank Batch)</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                ดาวน์โหลดไฟล์ .CSV ส่งให้ธนาคาร ธนาคารจะโอนเงินให้พนักงานอัตโนมัติ (สำหรับบริษัทขนาดใหญ่)
+              </div>
+            </div>
+          </button>
+
+          {/* Model 2: Direct Transfer */}
+          <button
+            type="button"
+            onClick={() => setSettings({ ...settings, paymentMethod: 'DIRECT_TRANSFER' })}
+            disabled={!canEdit}
+            className={`flex flex-col items-start gap-3 p-5 rounded-2xl transition-all cursor-pointer text-left border-2 ${
+              settings.paymentMethod === 'DIRECT_TRANSFER'
+                ? 'border-emerald-500 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 ring-2 ring-emerald-500/10 shadow-xs'
+                : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800/80'
+            }`}
+          >
+            <div className="flex items-center justify-between w-full">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                <Banknote className="w-5 h-5" />
+              </div>
+              {settings.paymentMethod === 'DIRECT_TRANSFER' && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-600 text-white dark:bg-emerald-600">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  เลือกใช้งาน
+                </span>
+              )}
+            </div>
+            <div>
+              <div className="font-bold text-sm text-slate-900 dark:text-slate-100">โอนเองทีละคน</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                โอนเงินผ่าน Internet Banking ทีละคน แนบสลิปยืนยัน แล้วยืนยันการจ่ายเงินทั้งหมด
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-800/60 text-[11px] text-blue-800 dark:text-blue-300 flex items-start gap-2">
+          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+          <span>ระบบจะนำวิธีการจ่ายเงินเดือนนี้ไปใช้เป็นค่าเริ่มต้นเมื่อ CEO อนุมัติรอบเงินเดือน</span>
         </div>
       </div>
     </div>
