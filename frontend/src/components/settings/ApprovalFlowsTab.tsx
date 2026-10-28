@@ -781,8 +781,8 @@ export const ApprovalFlowsTab: React.FC = () => {
             onClick={closeEditor}
           />
 
-          <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-            <div className="w-screen max-w-6xl bg-white dark:bg-slate-900 shadow-2xl flex flex-col">
+          <div className="fixed inset-0 flex">
+            <div className="w-full h-full bg-white dark:bg-slate-900 flex flex-col">
               {/* Drawer Header */}
               <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
                 <div>
@@ -802,7 +802,7 @@ export const ApprovalFlowsTab: React.FC = () => {
               </div>
 
               {/* Drawer Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-6 lg:px-10 space-y-6">
                 {/* 1. ข้อมูลทั่วไป — แถวเดียว กระชับ */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
                   <div>
@@ -885,10 +885,10 @@ export const ApprovalFlowsTab: React.FC = () => {
                   </div>
 
                   <div className="overflow-x-auto pb-3 -mx-1 px-1">
-                    <div className="flex items-stretch min-w-max">
+                    <div className="flex items-center min-w-max">
                       {/* จุดเริ่ม */}
-                      <div className="w-40 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-4 flex flex-col justify-center">
-                        <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center mb-2">
+                      <div className="w-36 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-3">
+                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center mb-1.5">
                           <Users className="w-4 h-4 text-slate-500 dark:text-slate-300" aria-hidden="true" />
                         </div>
                         <div className="text-sm font-bold text-slate-800 dark:text-slate-100">ผู้ยื่นคำขอ</div>
@@ -901,7 +901,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                         return (
                           <React.Fragment key={idx}>
                             {renderConnector(idx)}
-                            <div className="w-72 shrink-0 rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/30 flex flex-col">
+                            <div className="w-72 shrink-0 self-stretch rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/30 flex flex-col">
                               {/* หัวการ์ด */}
                               <div className="px-4 pt-3.5 pb-3 flex items-start justify-between gap-2">
                                 <div className="min-w-0">
@@ -1124,8 +1124,8 @@ export const ApprovalFlowsTab: React.FC = () => {
                       {renderConnector(form.steps.length)}
 
                       {/* จุดสิ้นสุด */}
-                      <div className="w-36 shrink-0 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 p-4 flex flex-col justify-center">
-                        <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center mb-2">
+                      <div className="w-36 shrink-0 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 px-3.5 py-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center mb-1.5">
                           <CheckCircle2 className="w-4 h-4 text-white" aria-hidden="true" />
                         </div>
                         <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">อนุมัติสำเร็จ</div>
