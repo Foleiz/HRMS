@@ -15,6 +15,7 @@ import { PayrollOverview, PayrollPeriod } from '@/types/payroll';
 import { THAI_MONTH_NAMES } from '@/services/payrollScheduleService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { Button } from '@/components/ui';
 import { PayrollPeriodDetailModal } from './PayrollPeriodDetailModal';
 
 interface PayrollPeriodsTabProps {
@@ -141,7 +142,7 @@ export default function PayrollPeriodsTab({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Left: Title & Counter */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-blue-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center font-bold">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -173,7 +174,7 @@ export default function PayrollPeriodsTab({
                   setPage(1);
                 }}
                 placeholder="ค้นหารอบเงินเดือน..."
-                className="w-full pl-9 pr-3 h-9 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                className="w-full pl-9 pr-3 h-9 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-primary"
               />
             </div>
 
@@ -196,16 +197,18 @@ export default function PayrollPeriodsTab({
             </div>
 
             {/* Refresh Button */}
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onRefresh}
               disabled={isLoading}
-              className="h-9 px-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+              icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
               title="รีเฟรชข้อมูล"
+              className="!h-9"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">รีเฟรช</span>
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -323,14 +326,15 @@ export default function PayrollPeriodsTab({
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
               คุณสามารถเปลี่ยนตัวกรองปี หรือไปที่หน้าประมวลผลเงินเดือนเพื่อสร้างรอบใหม่
             </p>
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onRefresh}
-              className="px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5"
+              icon={<RefreshCw className="w-3.5 h-3.5" />}
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>รีเฟรชข้อมูล</span>
-            </button>
+              รีเฟรชข้อมูล
+            </Button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -393,15 +397,16 @@ export default function PayrollPeriodsTab({
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1.5">
                           {canViewProcess && (
-                            <button
+                            <Button
                               type="button"
+                              variant="primary"
+                              size="sm"
                               onClick={() => setSelectedDetailPeriod(p)}
-                              className="px-3 py-1.5 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-lg text-xs font-semibold transition-all shadow-xs cursor-pointer inline-flex items-center gap-1.5 active:scale-95"
+                              icon={<Eye className="w-3.5 h-3.5" />}
                               title="เปิดดูรายละเอียดรอบเงินเดือน"
                             >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>เปิดดู</span>
-                            </button>
+                              เปิดดู
+                            </Button>
                           )}
                           {(p.status === 'DRAFT' || p.status === 'REVIEW') && canAccessHrView && (
                             <button

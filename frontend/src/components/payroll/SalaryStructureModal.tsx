@@ -1,12 +1,11 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
 import { SalaryStructure, CreateSalaryStructurePayload, UpdateSalaryStructurePayload } from '@/types/payroll';
 import { Position, EmployeeLevel } from '@/types/organization';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { ModalShell, Button, ActiveToggleRow, inputClass } from '@/components/ui';
 
 interface Props {
   isOpen: boolean;
@@ -137,7 +136,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
             <CustomSelect
               value={employeeLevelId}
               onChange={(e) => setEmployeeLevelId(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200"
+              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all text-slate-800 dark:text-slate-200"
               required
             >
               <option value="">เลือกระดับพนักงาน</option>
@@ -159,7 +158,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
               placeholder="0.00"
               value={minSalary}
               onChange={(e) => setMinSalary(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              className={inputClass}
               required
             />
           </div>
@@ -174,7 +173,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
               placeholder="0.00"
               value={maxSalary}
               onChange={(e) => setMaxSalary(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              className={inputClass}
               required
             />
           </div>
@@ -189,7 +188,7 @@ export const SalaryStructureModal: React.FC<Props> = ({
               placeholder="0.00"
               value={positionAllowance}
               onChange={(e) => setPositionAllowance(e.target.value)}
-              className="w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              className={inputClass}
             />
           </div>
 
@@ -200,27 +199,22 @@ export const SalaryStructureModal: React.FC<Props> = ({
 
           {/* Action Buttons: ยกเลิก / บันทึก */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="w-full py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-all cursor-pointer text-center"
+              fullWidth
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={loading}
-              className="w-full py-2.5 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white rounded-xl text-xs font-medium shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+              variant="primary"
+              loading={loading}
+              fullWidth
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  กำลังบันทึก...
-                </>
-              ) : (
-                'บันทึก'
-              )}
-            </button>
+              บันทึก
+            </Button>
           </div>
         </form>
       </div>

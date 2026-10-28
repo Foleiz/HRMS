@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FileSpreadsheet,
@@ -935,7 +935,7 @@ export default function CommissionTab() {
                   type="button"
                   onClick={handleConfirmPeriod}
                   disabled={isConfirming}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2046] dark:bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-[#133066] dark:hover:bg-blue-500 transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary dark:bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-primary-hover dark:hover:bg-blue-500 transition active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   {isConfirming ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1253,7 +1253,7 @@ export default function CommissionTab() {
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
-              <thead className="bg-[#0B2046] text-white font-semibold">
+              <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
                   <th className="py-3.5 px-4 font-semibold">งวดเดือน</th>
                   <th className="py-3.5 px-4 text-center font-semibold">ช่วงวันที่ที่มีข้อมูล</th>
@@ -1411,7 +1411,7 @@ export default function CommissionTab() {
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead className="bg-[#0B2046] text-white font-semibold">
+              <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
                   <th className="py-3.5 px-4 text-center w-12">#ID</th>
                   <th className="py-3.5 px-4">วันที่/เวลานำเข้า</th>
@@ -1638,20 +1638,23 @@ export default function CommissionTab() {
             </div>
 
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setEditingRecord(null)}
-                className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={handleSaveEdit}
-                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer"
+                className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
               >
                 บันทึกการแก้ไข
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -1826,20 +1829,23 @@ export default function CommissionTab() {
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={handleSaveAdd}
-                  className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 transition cursor-pointer"
+                  className="!bg-emerald-600 hover:!bg-emerald-700 !text-white"
                 >
                   บันทึกข้อมูล
-                </button>
+                </Button>
               </div>
             </div>
           </ModalShell>
@@ -1938,7 +1944,7 @@ export default function CommissionTab() {
                       setBatchRecordsSearch(e.target.value);
                       setBatchRecordsPage(1);
                     }}
-                    className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                    className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                   />
                 </div>
 
@@ -1951,7 +1957,7 @@ export default function CommissionTab() {
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
-                    <thead className="bg-[#0B2046] text-white font-semibold">
+                    <thead className="bg-primary text-white font-semibold">
                       <tr className="whitespace-nowrap">
                         <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
                         <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
@@ -2058,16 +2064,17 @@ export default function CommissionTab() {
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 รวมทั้งหมด {batchRecords.length} รายการ
               </div>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setSelectedBatchForDetails(null);
                   setBatchRecords([]);
                 }}
-                className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -2139,7 +2146,7 @@ export default function CommissionTab() {
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
-                    <thead className="bg-[#0B2046] text-white font-semibold">
+                    <thead className="bg-primary text-white font-semibold">
                       <tr className="whitespace-nowrap">
                         <th className="py-3.5 px-4 font-semibold">ช่วงวันที่</th>
                         <th className="py-3.5 px-4 font-semibold">ที่มา / ไฟล์</th>
@@ -2227,17 +2234,18 @@ export default function CommissionTab() {
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 รวมทั้งหมด {employeeEntries.length} รายการย่อย
               </div>
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setSelectedEmployeeForEntries(null);
                   setSelectedEmployeePeriodInfo(null);
                   setEmployeeEntries([]);
                 }}
-                className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -2369,7 +2377,7 @@ export default function CommissionTab() {
                       setPeriodModalSearch(e.target.value);
                       setPeriodModalPage(1);
                     }}
-                    className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0B2046] focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                    className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
                   />
                 </div>
               </div>
@@ -2380,7 +2388,7 @@ export default function CommissionTab() {
                   {periodModalTab === 'EMPLOYEES' ? (
                     /* Tab 1: Employee Summary */
                     <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
-                      <thead className="bg-[#0B2046] text-white font-semibold">
+                      <thead className="bg-primary text-white font-semibold">
                         <tr className="whitespace-nowrap">
                           <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
                           <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
@@ -2515,7 +2523,7 @@ export default function CommissionTab() {
                   ) : (
                     /* Tab 2: All Days / Entries in Month */
                     <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
-                      <thead className="bg-[#0B2046] text-white font-semibold">
+                      <thead className="bg-primary text-white font-semibold">
                         <tr className="whitespace-nowrap">
                           <th className="py-3.5 px-4 font-semibold">ช่วงวันที่</th>
                           <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
@@ -2646,23 +2654,24 @@ export default function CommissionTab() {
                         error(err?.response?.data?.message || 'ยืนยันงวดไม่สำเร็จ');
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2046] dark:bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-[#133066] dark:hover:bg-blue-500 transition active:scale-95 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-primary dark:bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-primary-hover dark:hover:bg-blue-500 transition active:scale-95 cursor-pointer"
                   >
                     <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                     <span>ยืนยันค่าคอมมิชชั่นงวดนี้</span>
                   </button>
                 )}
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setSelectedPeriodForDetails(null);
                     setPeriodSummaryForDetails(null);
                     setPeriodAllEntriesForDetails([]);
                   }}
-                  className="rounded-xl px-4 py-2 text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
                 >
                   ปิดหน้าต่าง
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -2837,34 +2846,27 @@ export default function CommissionTab() {
 
             {/* Footer */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2.5 bg-slate-50/70 dark:bg-slate-900/60">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   setShowOverlapModal(false);
                   setPendingOverlapPreview(null);
                 }}
-                className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                disabled={isExecutingImport}
+                variant="primary"
+                size="sm"
+                loading={isExecutingImport}
                 onClick={() => executeImport(overlapMode)}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#0B2046] hover:bg-[#133066] dark:bg-blue-600 dark:hover:bg-blue-500 shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                icon={<CheckCircle2 className="w-4 h-4 text-emerald-400" />}
               >
-                {isExecutingImport ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>กำลังนำเข้า...</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>ยืนยันการนำเข้า</span>
-                  </>
-                )}
-              </button>
+                ยืนยันการนำเข้า
+              </Button>
             </div>
           </div>
         </ModalShell>

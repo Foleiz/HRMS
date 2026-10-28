@@ -214,7 +214,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in" innerClassName="items-center justify-center p-4">
       <div className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl border border-slate-100 dark:border-slate-700/60 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
+        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
           <div className="flex items-center gap-3">
             <div>
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
@@ -251,11 +251,11 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
           )}
 
           {/* Table of Brackets */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+          <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
             <div className="overflow-x-auto">
               <table className="table-standard w-full min-w-[650px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
-                  <tr className="bg-slate-100/80 border-b border-slate-200 font-semibold text-slate-700 whitespace-nowrap">
+                  <tr className="bg-slate-100/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                     <th className="py-3 px-3 w-12 text-center">ขั้น</th>
                     <th className="py-3 px-3">ชื่อขั้นบันได</th>
                     <th className="py-3 px-3 text-right w-36">เงินได้สุทธิตั้งแต่ (฿)</th>
@@ -265,11 +265,11 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                     <th className="py-3 px-2 w-10"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {localBrackets.map((b, idx) => {
                     const isLast = idx === localBrackets.length - 1;
                     return (
-                      <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-2.5 px-3 text-center font-bold text-slate-500">
                           {idx + 1}
                         </td>
@@ -378,7 +378,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5 bg-slate-50/50">
+        <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5 bg-slate-50/50 dark:bg-slate-900/50">
           <Button variant="secondary" onClick={onClose}>
             ยกเลิก
           </Button>
@@ -407,20 +407,22 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowConfirmSave(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
               >
                 ย้อนกลับไปแก้ไข
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={handleSaveSubmit}
-                className="px-5 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-xs font-bold text-white shadow-sm cursor-pointer"
               >
                 ยืนยันและบันทึก
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
@@ -440,20 +442,22 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
               </p>
             </div>
             <div className="flex items-center justify-center gap-3 pt-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowConfirmReset(false)}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
               >
                 ยกเลิก
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="danger"
+                size="sm"
                 onClick={handleResetSubmit}
-                className="px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-xs font-bold text-white shadow-sm cursor-pointer"
               >
                 ยืนยันการคืนค่า
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>
