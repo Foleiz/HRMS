@@ -5659,7 +5659,7 @@ export default function PayrollPage() {
               <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">อัตราสูงสุด</span>
               <div className="mt-3 flex items-baseline gap-1.5">
                 <span className="text-3xl font-bold text-amber-600 dark:text-amber-400 tracking-tight font-mono">
-                  {(Math.max(...taxBrackets.map((b) => b.taxRate), 0.35) * 100).toFixed(0)}%
+                  {(Math.max(0, ...taxBrackets.map((b) => b.taxRate)) * 100).toFixed(0)}%
                 </span>
               </div>
             </div>
@@ -5717,18 +5717,16 @@ export default function PayrollPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
                   {taxBrackets.map((t, idx) => {
                     const stepNum = idx + 1;
-                    const stepPillColors = [
-                      'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300',
-                      'bg-blue-200 text-blue-900 dark:bg-blue-900/60 dark:text-blue-200',
-                      'bg-blue-300 text-blue-950 dark:bg-blue-800/70 dark:text-blue-100',
-                      'bg-blue-400 text-white dark:bg-blue-700 dark:text-white',
-                      'bg-blue-500 text-white dark:bg-blue-600 dark:text-white',
-                      'bg-blue-600 text-white dark:bg-blue-500 dark:text-white',
-                      'bg-blue-700 text-white dark:bg-blue-600 dark:text-white',
-                      'bg-[#0B2046] text-white dark:bg-[#1e3a8a] dark:text-white',
-                    ];
-                    const pillColor = stepPillColors[idx] || 'bg-blue-600 text-white';
-                    const progressPercent = Math.min(100, Math.max(0, (t.taxRate / 0.35) * 100));
+                    // สีขั้นไล่จากฟ้าอ่อน → กรมท่า ตามลำดับขั้นจริง (จำนวนขั้นเท่าไรก็ได้ ขั้นสุดท้ายเข้มสุดเสมอ)
+                    const shade = taxBrackets.length > 1 ? idx / (taxBrackets.length - 1) : 1;
+                    const lightness = Math.round(90 - shade * 72); // 90% → 18%
+                    const pillStyle: React.CSSProperties = {
+                      backgroundColor: `hsl(220 ${Math.round(85 - shade * 15)}% ${lightness}%)`,
+                      color: lightness > 62 ? '#1e3a8a' : '#ffffff',
+                    };
+                    // ความยาวหลอดเทียบกับอัตราสูงสุดในตาราง (เดิมเทียบ 35% ตายตัว — อัตราที่สูงกว่าเต็มหลอดเท่ากันหมด)
+                    const maxRate = Math.max(0, ...taxBrackets.map((b) => b.taxRate));
+                    const progressPercent = maxRate > 0 ? Math.min(100, Math.max(0, (t.taxRate / maxRate) * 100)) : 0;
                     const isExempt = t.taxRate === 0;
                     const titleText = isExempt
                       ? `ขั้นที่ ${stepNum} · ยกเว้นภาษี`
@@ -5742,7 +5740,7 @@ export default function PayrollPage() {
                       <tr key={t.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/40 transition-colors">
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <div className={`w-8 h-8 rounded-lg ${pillColor} font-bold text-xs flex items-center justify-center shrink-0`}>
+                            <div className="w-8 h-8 rounded-lg font-bold text-xs flex items-center justify-center shrink-0" style={pillStyle}>
                               {stepNum}
                             </div>
                             <div>
