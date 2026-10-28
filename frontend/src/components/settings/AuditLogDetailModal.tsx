@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { AuditLogItem } from '@/types/settings';
+import { ModalShell, Button } from '@/components/ui';
 import {
   getLogType,
   getIconElement,
@@ -277,16 +278,14 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden font-sans">
-      {/* Backdrop Overlay */}
-      <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200 animate-in fade-in"
-        onClick={onClose}
-      />
-
+    <ModalShell
+      placement="right"
+      onBackdropClick={onClose}
+      className="z-50 bg-black/40 backdrop-blur-xs font-sans animate-in fade-in duration-200"
+    >
       {/* Slide-over Right Drawer */}
       <aside
-        className="fixed inset-y-0 right-0 w-full max-w-[480px] bg-white z-50 shadow-2xl flex flex-col border-l border-slate-200 animate-in slide-in-from-right duration-250"
+        className="w-full max-w-[480px] bg-white dark:bg-slate-800 min-h-screen h-full shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-700 animate-in slide-in-from-right duration-250"
         aria-hidden="false"
       >
         {/* Drawer Header */}
@@ -610,27 +609,29 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
         </div>
 
         {/* Drawer Footer Navigation */}
-        <div className="p-3 border-t border-slate-200 bg-slate-50/90 flex items-center justify-between shrink-0 text-xs">
+        <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-800/90 flex items-center justify-between shrink-0 text-xs">
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={handlePrev}
               disabled={!hasPrev}
-              className="h-8 px-3 bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer flex items-center gap-1"
+              icon={<ChevronLeft className="w-3.5 h-3.5" />}
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
-              <span>ใหม่กว่า</span>
-            </button>
+              ใหม่กว่า
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleNext}
               disabled={!hasNext}
-              className="h-8 px-3 bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none rounded-lg text-slate-700 font-semibold transition-colors cursor-pointer flex items-center gap-1"
             >
               <span>เก่ากว่า</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+              <ChevronRight className="w-3.5 h-3.5 ml-1" />
+            </Button>
           </div>
 
           <span className="text-slate-500 text-xs font-mono">
@@ -640,6 +641,6 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           </span>
         </div>
       </aside>
-    </div>
+    </ModalShell>
   );
 };

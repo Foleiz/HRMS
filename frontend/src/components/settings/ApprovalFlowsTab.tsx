@@ -39,7 +39,7 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ActiveToggleRow, ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { Button } from '@/components/ui/Button';
+import { Button, ModalShell } from '@/components/ui';
 
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
@@ -726,24 +726,26 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                       <div className="flex items-center gap-4">
                         {/* Delete Button */}
-                        <button
+                        <Button
                           type="button"
+                          variant="soft-danger"
+                          size="sm"
                           onClick={() => handleDeleteFlow(flow)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-all cursor-pointer"
+                          icon={<Trash2 className="w-3.5 h-3.5" />}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>ลบ</span>
-                        </button>
+                          ลบ
+                        </Button>
 
                         {/* Edit Button */}
-                        <button
+                        <Button
                           type="button"
+                          variant="soft-warning"
+                          size="sm"
                           onClick={() => openEditEditor(flow)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-600 hover:text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 rounded-lg transition-all cursor-pointer"
+                          icon={<Pencil className="w-3.5 h-3.5" />}
                         >
-                          <Pencil className="w-3.5 h-3.5" />
-                          <span>แก้ไข</span>
-                        </button>
+                          แก้ไข
+                        </Button>
 
                         {/* Toggle Status */}
                         <div className="flex items-center gap-2">
@@ -775,15 +777,12 @@ export const ApprovalFlowsTab: React.FC = () => {
       {/* Slide-Over Drawer สำหรับสร้าง / แก้ไข สายการอนุมัติ (Visual Builder) */}
       {/* ========================================================================= */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-            onClick={closeEditor}
-          />
-
-          <div className="fixed inset-0 flex">
-            <div className="w-full h-full bg-white dark:bg-slate-900 flex flex-col">
+        <ModalShell
+          onBackdropClick={closeEditor}
+          innerClassName="p-0"
+          className="z-50 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+        >
+          <div className="w-full min-h-screen h-full bg-white dark:bg-slate-900 flex flex-col">
               {/* Drawer Header */}
               <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
                 <div>
@@ -1155,9 +1154,8 @@ export const ApprovalFlowsTab: React.FC = () => {
                   {editingFlow ? 'บันทึกการแก้ไข' : 'สร้างสายการอนุมัติ'}
                 </Button>
               </div>
-            </div>
           </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* ========================================================================= */}

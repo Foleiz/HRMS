@@ -19,6 +19,7 @@ import {
 import { PayrollPeriod, PayrollRecord } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { ModalShell, Button } from '@/components/ui';
 
 interface PayrollPeriodDetailModalProps {
   period: PayrollPeriod | null;
@@ -131,12 +132,12 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
   if (!isOpen || !period) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
+    <ModalShell onBackdropClick={onClose}>
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col border border-slate-100 dark:border-slate-700 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/40 text-[#0B2046] dark:text-blue-300 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/40 text-primary dark:text-blue-300 flex items-center justify-center">
               <Calendar className="w-5 h-5" />
             </div>
             <div>
@@ -290,7 +291,7 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-[#0B2046]"
+                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -299,7 +300,7 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
             <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
               {loading ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#0B2046] dark:text-blue-400" />
+                  <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-400" />
                   <span className="text-xs font-medium">กำลังโหลดข้อมูลเงินเดือน...</span>
                 </div>
               ) : filteredPayrolls.length === 0 ? (
@@ -419,28 +420,26 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
         <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/80">
           <div>
             {canViewProcess && onGoToProcess && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
                 onClick={() => {
                   onClose();
                   onGoToProcess(period.id);
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-xl transition-all shadow-2xs cursor-pointer"
               >
                 <span>ไปที่หน้าประมวลผลเงินเดือน</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
             )}
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="px-4 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition-all cursor-pointer"
           >
             ปิด
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

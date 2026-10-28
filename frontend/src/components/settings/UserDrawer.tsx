@@ -8,7 +8,7 @@ import { RoleSummary, UserAccount, CreateUserRequest, UpdateUserRequest } from '
 import { settingsService } from '@/services/settingsService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { Button } from '@/components/ui/Button';
+import { Button, ModalShell } from '@/components/ui';
 
 interface UserDrawerProps {
   isOpen: boolean;
@@ -238,15 +238,12 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity animate-in fade-in"
-        onClick={onClose}
-      />
-
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-4 sm:pl-10">
-        <div className="w-screen max-w-md bg-white shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-slate-200">
+    <ModalShell
+      placement="right"
+      onBackdropClick={onClose}
+      className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200"
+    >
+      <div className="w-screen max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-slate-700">
           {/* Header */}
           <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
@@ -454,8 +451,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
               บันทึก
             </Button>
           </div>
-        </div>
       </div>
-    </div>
+    </ModalShell>
   );
 };

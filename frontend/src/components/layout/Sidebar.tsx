@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -421,13 +421,13 @@ export const Sidebar: React.FC = () => {
         {(!isCollapsed || !isDesktop) && (
           <Link href="/" onClick={handleSelectMenu} className="flex items-center gap-3 overflow-hidden">
             {/* Logo Badge Icon (3 avatars in navy square) */}
-            <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/20 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
               <Users className="w-5 h-5" />
             </div>
 
             <div className="leading-tight select-none">
               <div className="text-[15px] font-bold text-slate-900 dark:text-slate-100 tracking-tight">Human</div>
-              <div className="text-[15px] font-bold text-[#0B2046] dark:text-blue-400 tracking-tight">Resource</div>
+              <div className="text-[15px] font-bold text-primary dark:text-blue-400 tracking-tight">Resource</div>
             </div>
           </Link>
         )}
@@ -464,7 +464,7 @@ export const Sidebar: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="ค้นหาเมนู..."
-              className="w-full pl-9 pr-3 py-2 bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </div>
         </div>
@@ -502,7 +502,7 @@ export const Sidebar: React.FC = () => {
                   title={isCollapsed && isDesktop ? item.title : undefined}
                   className={`flex items-center gap-3.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
                     active
-                      ? 'bg-[#0B2046] text-white shadow-xs font-semibold'
+                      ? 'bg-primary text-white shadow-xs font-semibold'
                       : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
                   } ${isCollapsed && isDesktop ? 'justify-center px-0 py-2.5' : ''}`}
                 >
