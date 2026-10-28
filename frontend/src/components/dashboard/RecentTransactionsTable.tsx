@@ -302,7 +302,7 @@ export const RecentTransactionsTable: React.FC = () => {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden flex flex-col flex-1 h-full">
       {/* Table Header & Filters */}
-      <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 space-y-3.5 shrink-0">
+      <div className="px-5 pt-5 pb-4 space-y-3.5 shrink-0">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
             ประวัติการทำรายการล่าสุด
@@ -385,60 +385,62 @@ export const RecentTransactionsTable: React.FC = () => {
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto flex-1 min-h-0">
-        <table className="table-standard md:table-fixed w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
-          <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0 whitespace-nowrap">
-            <tr>
-              <th className="py-3 px-5 w-[18%] whitespace-nowrap">รหัสเอกสาร</th>
-              <th className="py-3 px-5 w-[18%] whitespace-nowrap">วันที่กรอกเอกสาร</th>
-              <th className="py-3 px-5 w-[28%] whitespace-nowrap">ระยะเวลาในการลา</th>
-              <th className="py-3 px-5 w-[20%] whitespace-nowrap">ประเภทเอกสาร</th>
-              <th className="py-3 px-5 w-[16%] text-center whitespace-nowrap">สถานะเอกสาร</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-            {loading ? (
+      <div className="px-5 pb-4 flex-1 min-h-0 flex flex-col">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto flex-1 min-h-0">
+          <table className="table-standard md:table-fixed w-full min-w-[700px] text-left text-xs text-slate-600 dark:text-slate-300 border-collapse whitespace-nowrap">
+            <thead className="bg-slate-50/80 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-100 dark:border-slate-700/60 shrink-0 whitespace-nowrap">
               <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="w-6 h-6 text-[#0B2046] dark:text-blue-400 animate-spin" />
-                    <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
-                  </div>
-                </td>
+                <th className="py-3.5 px-5 w-[18%] whitespace-nowrap">รหัสเอกสาร</th>
+                <th className="py-3.5 px-5 w-[18%] whitespace-nowrap">วันที่กรอกเอกสาร</th>
+                <th className="py-3.5 px-5 w-[28%] whitespace-nowrap">ระยะเวลาในการลา</th>
+                <th className="py-3.5 px-5 w-[20%] whitespace-nowrap">ประเภทเอกสาร</th>
+                <th className="py-3.5 px-5 w-[16%] text-center whitespace-nowrap">สถานะเอกสาร</th>
               </tr>
-            ) : paginatedItems.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                  <div className="flex flex-col items-center justify-center gap-1.5 py-4">
-                    <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              paginatedItems.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
-                  <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400 truncate">
-                    {item.documentCode}
-                  </td>
-                  <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400 truncate">
-                    {item.createdDate}
-                  </td>
-                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 truncate">
-                    {item.duration}
-                  </td>
-                  <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 truncate">
-                    {item.documentType}
-                  </td>
-                  <td className="py-3.5 px-5 text-center">
-                    {renderStatusBadge(item.status)}
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="w-6 h-6 text-[#0B2046] dark:text-blue-400 animate-spin" />
+                      <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
+                    </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : paginatedItems.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-1.5 py-4">
+                      <FileText className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลประวัติการทำรายการของคุณ</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">เมื่อคุณยื่นคำขอลาหยุดงานหรือส่งเอกสาร ข้อมูลจะแสดงที่นี่โดยอัตโนมัติ</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                paginatedItems.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors">
+                    <td className="py-3.5 px-5 font-semibold text-[#0B2046] dark:text-blue-400 truncate">
+                      {item.documentCode}
+                    </td>
+                    <td className="py-3.5 px-5 text-slate-600 dark:text-slate-400 truncate">
+                      {item.createdDate}
+                    </td>
+                    <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 truncate">
+                      {item.duration}
+                    </td>
+                    <td className="py-3.5 px-5 text-slate-700 dark:text-slate-300 truncate">
+                      {item.documentType}
+                    </td>
+                    <td className="py-3.5 px-5 text-center">
+                      {renderStatusBadge(item.status)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination Bar */}

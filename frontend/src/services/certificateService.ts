@@ -8,6 +8,15 @@ import {
   EmployeeSignature,
 } from '@/types/certificates';
 
+let myCertRequestsCache: { data: CertificateRequest[]; expiresAt: number } | null = null;
+let myCertRequestsInFlight: Promise<CertificateRequest[]> | null = null;
+const CERT_CACHE_TTL_MS = 15_000;
+
+function clearMyCertCache() {
+  myCertRequestsCache = null;
+  myCertRequestsInFlight = null;
+}
+
 /**
  * Service สำหรับเรียก API ระบบคำขอหนังสือรับรองและลายเซ็นดิจิทัล (Certificate Service)
  */
@@ -24,8 +33,26 @@ export const certificateService = {
    * ดึงรายการคำขอหนังสือรับรองของพนักงานที่ล็อกอินอยู่ (ESS)
    */
   async getMyRequests(): Promise<CertificateRequest[]> {
-    const res = await apiClient.get<ApiResponse<CertificateRequest[]>>('/certificates/my-requests');
-    return res.data.data;
+    const now = Date.now();
+    if (myCertRequestsCache && myCertRequestsCache.expiresAt > now) {
+      return myCertRequestsCache.data;
+    }
+    if (myCertRequestsInFlight) {
+      return myCertRequestsInFlight;
+    }
+
+    myCertRequestsInFlight = apiClient
+      .get<ApiResponse<CertificateRequest[]>>('/certificates/my-requests')
+      .then((res) => {
+        const data = res.data.data || [];
+        myCertRequestsCache = { data, expiresAt: Date.now() + CERT_CACHE_TTL_MS };
+        return data;
+      })
+      .finally(() => {
+        myCertRequestsInFlight = null;
+      });
+
+    return myCertRequestsInFlight;
   },
 
   /**
@@ -42,6 +69,7 @@ export const certificateService = {
    */
   async createRequest(payload: CreateCertificateRequest): Promise<CertificateRequest> {
     const res = await apiClient.post<ApiResponse<CertificateRequest>>('/certificates/requests', payload);
+    clearMyCertCache();
     return res.data.data;
   },
 
@@ -51,6 +79,7 @@ export const certificateService = {
   async cancelRequest(id: number, reason?: string): Promise<boolean> {
     const params = reason ? `?reason=${encodeURIComponent(reason)}` : '';
     const res = await apiClient.post<ApiResponse<boolean>>(`/certificates/requests/${id}/cancel${params}`);
+    clearMyCertCache();
     return res.data.data;
   },
 
@@ -61,6 +90,7 @@ export const certificateService = {
     const res = await apiClient.put<ApiResponse<CertificateRequest>>(`/certificates/requests/${id}/approve`, {
       comment,
     });
+    clearMyCertCache();
     return res.data.data;
   },
 
@@ -71,6 +101,7 @@ export const certificateService = {
     const res = await apiClient.put<ApiResponse<CertificateRequest>>(`/certificates/requests/${id}/reject`, {
       reason,
     });
+    clearMyCertCache();
     return res.data.data;
   },
 

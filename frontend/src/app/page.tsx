@@ -68,20 +68,26 @@ export default function HomePage() {
     return list.length > 0 ? list : ['EMPLOYEE'];
   }, [user, hasPermission]);
 
-  const [activeRole, setActiveRole] = useState<DashboardRole>('EMPLOYEE');
+  const [selectedRole, setSelectedRole] = useState<DashboardRole | null>(null);
   const initializedForUserRef = React.useRef<string | number | null>(null);
 
+  const currentUid = user ? (user.id || user.username || 'current') : null;
+
   useEffect(() => {
-    if (user && allowedDashboards.length > 0) {
-      const uid = user.id || user.username || 'current';
-      if (initializedForUserRef.current !== uid) {
-        initializedForUserRef.current = uid;
-        setActiveRole(allowedDashboards[0]);
-      } else if (!allowedDashboards.includes(activeRole)) {
-        setActiveRole(allowedDashboards[0]);
+    if (user && allowedDashboards.length > 0 && currentUid) {
+      if (initializedForUserRef.current !== currentUid) {
+        initializedForUserRef.current = currentUid;
+        setSelectedRole(allowedDashboards[0]);
+      } else if (selectedRole && !allowedDashboards.includes(selectedRole)) {
+        setSelectedRole(allowedDashboards[0]);
       }
     }
-  }, [user, allowedDashboards, activeRole]);
+  }, [user, allowedDashboards, currentUid, selectedRole]);
+
+  const activeRole: DashboardRole =
+    selectedRole && allowedDashboards.includes(selectedRole) && initializedForUserRef.current === currentUid
+      ? selectedRole
+      : allowedDashboards[0] || 'EMPLOYEE';
 
   const displayName = user?.fullName || user?.username || 'ผู้ใช้งาน';
 

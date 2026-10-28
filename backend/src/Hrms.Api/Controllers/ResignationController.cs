@@ -70,6 +70,7 @@ public class ResignationController : ControllerBase
     /// ยื่นคำขอลาออกใหม่
     /// </summary>
     [HttpPost("requests")]
+    [RequirePermission("ESS_DOCS_CREATE")]
     public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> CreateRequest(
         [FromBody] CreateResignationRequestDto dto,
         CancellationToken cancellationToken)
