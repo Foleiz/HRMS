@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -231,7 +231,7 @@ export default function AttachContractModal({
                 className={`p-6 border-2 border-dashed rounded-xl cursor-pointer text-center transition-all flex flex-col items-center justify-center gap-2 ${
                   isDragging
                     ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-900/20'
-                    : 'border-slate-200 dark:border-slate-700 hover:border-[#0B2046] dark:hover:border-blue-400 bg-slate-50/40 dark:bg-slate-800/40 hover:bg-blue-50/20'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-blue-400 bg-slate-50/40 dark:bg-slate-800/40 hover:bg-blue-50/20'
                 }`}
               >
                 <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center">
@@ -282,31 +282,25 @@ export default function AttachContractModal({
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="sm"
               disabled={isSubmitting || !fileData}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#07152d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs transition-all cursor-pointer"
+              loading={isSubmitting}
+              icon={!isSubmitting ? <CheckCircle2 className="w-3.5 h-3.5" /> : undefined}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>กำลังบันทึก...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>บันทึกเอกสารสัญญา</span>
-                </>
-              )}
-            </button>
+              บันทึกเอกสารสัญญา
+            </Button>
           </div>
         </form>
       </div>

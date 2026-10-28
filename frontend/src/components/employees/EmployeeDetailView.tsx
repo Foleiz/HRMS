@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -1290,26 +1290,23 @@ export default function EmployeeDetailView({
 
               {/* Modal Actions */}
               <div className="flex items-center justify-end gap-2.5 pt-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setIsPasswordModalOpen(false)}
-                  disabled={isChangingPassword}
-                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold transition-colors cursor-pointer"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={isChangingPassword}
-                  className="px-5 py-2 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  variant="primary"
+                  size="sm"
+                  loading={isChangingPassword}
+                  icon={<CheckCircle2 className="w-3.5 h-3.5" />}
                 >
-                  {isChangingPassword ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  )}
-                  <span>บันทึกรหัสผ่านใหม่</span>
-                </button>
+                  บันทึกรหัสผ่านใหม่
+                </Button>
               </div>
             </form>
           </div>

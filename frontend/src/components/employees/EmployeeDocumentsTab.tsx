@@ -21,7 +21,7 @@ import { DocumentTypeItem } from '@/types/master';
 import { useToast } from '@/context/ToastContext';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
-import { RowActionButton } from '@/components/ui';
+import { Button, RowActionButton } from '@/components/ui';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ACCEPT = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
@@ -529,22 +529,23 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
                                     </div>
                                   )}
                                   <div className="flex justify-end gap-2">
-                                    <button
+                                    <Button
                                       type="button"
+                                      variant="secondary"
+                                      size="sm"
                                       onClick={resetUploadForm}
-                                      className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
                                     >
                                       ยกเลิก
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                       type="button"
+                                      variant="primary"
+                                      size="sm"
                                       onClick={handleSave}
-                                      disabled={saving}
-                                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-hover cursor-pointer disabled:opacity-60"
+                                      loading={saving}
                                     >
-                                      {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                                       อัปโหลด {files.length > 1 ? `(${files.length} ไฟล์)` : ''}
-                                    </button>
+                                    </Button>
                                   </div>
                                 </div>
                               )}

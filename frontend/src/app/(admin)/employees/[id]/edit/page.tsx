@@ -31,7 +31,7 @@ import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundE
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AccessDenied } from '@/components/common/AccessDenied';
-import { inputClass } from '@/components/ui';
+import { Button, inputClass } from '@/components/ui';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -1506,22 +1506,21 @@ function EmployeeEditPageContent() {
 
           {/* Bottom Actions Bar (ยกเลิก & บันทึกข้อมูล) ตรงตาม Figma */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => router.push(returnUrl)}
-              className="px-6 py-2.5 rounded-xl border border-slate-300 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 transition-all cursor-pointer"
             >
               ยกเลิก
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="px-7 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
+              variant="primary"
+              loading={isSubmitting}
             >
-              {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>บันทึกข้อมูล</span>
-            </button>
+              บันทึกข้อมูล
+            </Button>
           </div>
         </form>
       </div>

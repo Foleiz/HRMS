@@ -69,7 +69,7 @@ export default function EmployeeTimelineModal({
         <div className="p-7 max-h-[70vh] overflow-y-auto">
           {loading ? (
             <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
-              <Loader2 className="w-6 h-6 animate-spin text-[#0B2046]" />
+              <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-300" />
               <span className="text-xs">กำลังโหลดไทม์ไลน์ตำแหน่งงาน...</span>
             </div>
           ) : error ? (

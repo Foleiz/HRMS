@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState } from 'react';
 import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
@@ -469,31 +469,24 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
 
           {/* Footer Actions */}
           <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={submitting}
-              className="px-5 py-2 rounded-xl text-xs font-semibold bg-primary dark:bg-blue-600 hover:bg-primary-hover dark:hover:bg-blue-500 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+              variant="primary"
+              size="sm"
+              loading={submitting}
+              icon={<CheckCircle2 className="w-3.5 h-3.5" />}
             >
-              {submitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>กำลังบันทึก...</span>
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{isSelf ? 'ยื่นเบิก' : 'บันทึกการใช้สิทธิ์'}</span>
-                </>
-              )}
-            </button>
+              {isSelf ? 'ยื่นเบิก' : 'บันทึกการใช้สิทธิ์'}
+            </Button>
           </div>
         </form>
       </div>

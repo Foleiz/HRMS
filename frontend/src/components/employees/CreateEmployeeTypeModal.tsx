@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
@@ -706,21 +706,22 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
 
           {/* Modal Footer Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-5 py-2 text-xs font-semibold text-white bg-primary hover:bg-[#07152d] rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              variant="primary"
+              size="sm"
+              loading={isSubmitting}
             >
-              {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>{isEdit ? 'บันทึกการแก้ไข' : 'สร้างประเภทสัญญา'}</span>
-            </button>
+              {isEdit ? 'บันทึกการแก้ไข' : 'สร้างประเภทสัญญา'}
+            </Button>
           </div>
         </form>
       </div>

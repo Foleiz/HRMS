@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -227,7 +227,7 @@ export default function ContractDetailModal({
           {/* 1. Modern Header */}
           <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/60 bg-gradient-to-r from-slate-50 via-white to-blue-50/20 dark:from-slate-800 dark:to-slate-800/80 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">
                 <FileText className="w-5 h-5 text-blue-200" />
               </div>
               <div>
@@ -504,24 +504,17 @@ export default function ContractDetailModal({
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 mb-3">
                     สามารถแนบไฟล์สัญญาต้นฉบับ (PDF, JPG, PNG, DOCX) ขนาดไม่เกิน 10 MB
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingDoc}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#07152d] transition-all shadow-xs cursor-pointer"
+                    loading={isUploadingDoc}
+                    icon={!isUploadingDoc ? <Upload className="w-3.5 h-3.5" /> : undefined}
                   >
-                    {isUploadingDoc ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>กำลังอัปโหลด...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>แนบเอกสารสัญญาจ้าง</span>
-                      </>
-                    )}
-                  </button>
+                    แนบเอกสารสัญญาจ้าง
+                  </Button>
                 </div>
               )}
             </div>
@@ -670,14 +663,15 @@ export default function ContractDetailModal({
                   <p className="text-xs text-slate-400 mt-1 mb-4">
                     กรุณาดาวน์โหลดไฟล์เพื่อเปิดดูบนเครื่องของคุณ
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={handleDownload}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#07152d]"
+                    icon={<Download className="w-3.5 h-3.5" />}
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>ดาวน์โหลดไฟล์</span>
-                  </button>
+                    ดาวน์โหลดไฟล์
+                  </Button>
                 </div>
               )}
             </div>

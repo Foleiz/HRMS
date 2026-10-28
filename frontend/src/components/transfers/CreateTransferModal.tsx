@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -312,7 +312,7 @@ export default function CreateTransferModal({
                 value={effectiveDate}
                 onChange={setEffectiveDate}
                 placeholder="เลือกวันที่มีผล"
-                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:focus:border-blue-500"
               />
             </div>
 
@@ -325,7 +325,7 @@ export default function CreateTransferModal({
                 value={orderNo}
                 onChange={(e) => setOrderNo(e.target.value)}
                 placeholder="เช่น คำสั่งที่ 15/2569 (ถ้ามี)"
-                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+                className="w-full h-10 px-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:focus:border-blue-500"
               />
             </div>
           </div>
@@ -344,7 +344,7 @@ export default function CreateTransferModal({
             {!attachedFile ? (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#0B2046]/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary/50 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-slate-50 dark:hover:bg-slate-800/40"
               >
                 <input
                   ref={fileInputRef}
@@ -392,28 +392,27 @@ export default function CreateTransferModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="ระบุเหตุผลความจำเป็นในการโยกย้าย..."
-              className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:focus:border-blue-500"
             />
           </div>
 
           {/* Footer Buttons */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-200/70 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={submitting}
-              className="px-6 py-2.5 rounded-xl text-xs font-medium text-white bg-[#0B2046] hover:bg-[#081836] transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
+              variant="primary"
+              loading={submitting}
             >
-              {submitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
-            </button>
+              บันทึกคำสั่งแต่งตั้ง/โยกย้าย
+            </Button>
           </div>
         </form>
       </div>

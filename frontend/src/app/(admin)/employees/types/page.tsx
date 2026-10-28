@@ -30,6 +30,7 @@ import {
 import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { Button } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -327,16 +328,16 @@ export default function EmployeeTypesPage() {
 
         {canCreateTypes && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <button
+            <Button
+              size="sm"
               onClick={() => {
                 setSelectedTypeForEdit(null);
                 setIsCreateModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>เพิ่มประเภทสัญญา/การจ้างงาน</span>
-            </button>
+              เพิ่มประเภทสัญญา/การจ้างงาน
+            </Button>
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -277,13 +277,14 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
             </div>
 
             {!isFormOpen && (
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={handleOpenCreate}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-medium text-white bg-primary hover:bg-primary-hover rounded-xl transition-all shadow-sm shrink-0"
+                icon={<Plus className="w-4 h-4" />}
               >
-                <Plus className="w-4 h-4" />
-                <span>เพิ่มสวัสดิการใหม่</span>
-              </button>
+                เพิ่มสวัสดิการใหม่
+              </Button>
             )}
           </div>
 
@@ -433,21 +434,22 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={resetForm}
-                  className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 rounded-xl transition-colors"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  disabled={formSubmitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium text-white bg-primary hover:bg-primary-hover rounded-xl transition-colors disabled:opacity-50"
+                  variant="primary"
+                  size="sm"
+                  loading={formSubmitting}
                 >
-                  {formSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{editingItem ? 'บันทึกการแก้ไข' : 'สร้างสวัสดิการ'}</span>
-                </button>
+                  {editingItem ? 'บันทึกการแก้ไข' : 'สร้างสวัสดิการ'}
+                </Button>
               </div>
             </form>
           )}
@@ -591,20 +593,21 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
                 คุณแน่ใจหรือไม่ว่าต้องการลบสิทธิประโยชน์นี้? การกระทำนี้ไม่สามารถย้อนกลับได้
               </p>
               <div className="flex items-center justify-end gap-2 pt-2">
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setDeleteConfirmId(null)}
-                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={() => handleDelete(deleteConfirmId)}
-                  disabled={isDeleting}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
+                  loading={isDeleting}
                 >
-                  {isDeleting && <Loader2 className="w-3 h-3 animate-spin" />}
-                  <span>ยืนยันลบ</span>
-                </button>
+                  ยืนยันลบ
+                </Button>
               </div>
             </div>
           </div>
@@ -613,12 +616,13 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>รวมทั้งสิ้น {benefits.length} สิทธิประโยชน์</span>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onClose}
-            className="px-4 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors shadow-2xs"
           >
             ปิดหน้าต่าง
-          </button>
+          </Button>
         </div>
       </div>
     </ModalShell>

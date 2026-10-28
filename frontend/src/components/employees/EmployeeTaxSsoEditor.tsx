@@ -2,8 +2,9 @@
 
 import React from 'react';
 import { Landmark, ShieldCheck } from 'lucide-react';
+import { inputClass } from '@/components/ui';
 
-const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary';
+const INPUT = inputClass;
 
 export interface TaxSsoValues {
   socialSecurityNo?: string;

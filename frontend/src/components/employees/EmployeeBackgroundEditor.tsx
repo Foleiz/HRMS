@@ -4,12 +4,13 @@ import React, { useState } from 'react';
 import { Plus, Trash2, GraduationCap, Briefcase } from 'lucide-react';
 import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { Button, inputClass } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { formatGpaInput, clampGpa } from '@/lib/gpaUtils';
 
 export const EDUCATION_LEVELS = ['มัธยมศึกษาตอนต้น', 'มัธยมศึกษาตอนปลาย', 'ปวช.', 'ปวส.', 'ปริญญาตรี', 'ปริญญาโท', 'ปริญญาเอก', 'อื่น ๆ'];
 
-const INPUT = 'w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary';
+const INPUT = inputClass;
 const currentBE = new Date().getFullYear() + 543;
 const YEARS = Array.from({ length: 50 }, (_, i) => currentBE + 1 - i);
 
@@ -96,13 +97,15 @@ export default function EmployeeBackgroundEditor({
             <span className="text-[11px] text-slate-400 dark:text-slate-500">({educations.length} รายการ)</span>
           </div>
           {educations.length === 0 && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleAddEducation}
-              className="inline-flex items-center gap-1 px-3 py-1.5 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition-colors cursor-pointer"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" /> เพิ่มวุฒิการศึกษา
-            </button>
+              เพิ่มวุฒิการศึกษา
+            </Button>
           )}
         </div>
 
@@ -263,13 +266,15 @@ export default function EmployeeBackgroundEditor({
             <span className="text-[11px] text-slate-400 dark:text-slate-500">({workExperiences.length} แห่ง)</span>
           </div>
           {workExperiences.length === 0 && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={handleAddWorkExperience}
-              className="inline-flex items-center gap-1 px-3 py-1.5 border border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition-colors cursor-pointer"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" /> เพิ่มประวัติการทำงาน
-            </button>
+              เพิ่มประวัติการทำงาน
+            </Button>
           )}
         </div>
 

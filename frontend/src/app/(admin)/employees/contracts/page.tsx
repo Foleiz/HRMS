@@ -37,6 +37,7 @@ import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal'
 import AttachContractModal from '@/components/contracts/AttachContractModal';
 import ContractDocumentPreviewModal from '@/components/contracts/ContractDocumentPreviewModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { Button } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -192,13 +193,12 @@ export default function ContractsPage() {
       {/* 2. Header Action Bar */}
       {canCreateContracts && (
         <div className="flex items-center justify-end">
-          <button
+          <Button
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#07152d] text-white text-sm font-medium rounded-xl shadow-xs transition-colors cursor-pointer"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>สร้างสัญญาใหม่</span>
-          </button>
+            สร้างสัญญาใหม่
+          </Button>
         </div>
       )}
 

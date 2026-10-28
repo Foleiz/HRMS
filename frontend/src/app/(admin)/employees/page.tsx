@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
-import { inputClass } from '@/components/ui';
+import { Button, inputClass } from '@/components/ui';
 
 interface DepartmentItem {
   id: number;
@@ -738,7 +738,7 @@ export default function EmployeesPage() {
               onClick={() => handleSetViewMode('grid')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
                 viewMode === 'grid'
-                  ? 'bg-white dark:bg-slate-700 text-[#0b2046] dark:text-white font-bold shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
               }`}
               title="มุมมองการ์ด (Card View)"
@@ -751,7 +751,7 @@ export default function EmployeesPage() {
               onClick={() => handleSetViewMode('table')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
                 viewMode === 'table'
-                  ? 'bg-white dark:bg-slate-700 text-[#0b2046] dark:text-white font-bold shadow-xs'
+                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
               }`}
               title="มุมมองตาราง (Table View)"
@@ -762,13 +762,13 @@ export default function EmployeesPage() {
           </div>
 
           {canCreateEmp && (
-            <button
+            <Button
+              size="sm"
               onClick={() => setIsCreateModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg shadow-sm transition-all active:scale-95 cursor-pointer"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
               เพิ่มพนักงาน
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -889,7 +889,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="w-6 h-6 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md hover:scale-110 active:scale-95 transition-all cursor-pointer"
                                 title="คลิกเพื่อแก้ไขคอมเมนต์"
                               >
                                 !
@@ -903,7 +903,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput('');
                                 }}
-                                className="w-6 h-6 rounded-full bg-[#0b2046]/75 hover:bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md opacity-0 group-hover/avatar:opacity-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                                className="w-6 h-6 rounded-full bg-primary/75 hover:bg-primary-hover text-white flex items-center justify-center text-xs font-bold ring-2 ring-white dark:ring-slate-800 shadow-md opacity-0 group-hover/avatar:opacity-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
                                 title="คลิกเพื่อเพิ่มคอมเมนต์"
                               >
                                 !
@@ -919,7 +919,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-2 bg-[#0b2046] text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-2 bg-primary text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
                               >
                                 <div className="w-4 h-4 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                                   !
@@ -934,7 +934,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput('');
                                 }}
-                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0b2046] text-white text-xs px-3 py-1 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                                className="hidden group-hover/comment:flex absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 whitespace-nowrap items-center gap-1.5 bg-primary text-white text-xs px-3 py-1 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
                               >
                                 <span>คลิกเพื่อใส่คอมเมนต์</span>
                               </div>
@@ -981,7 +981,7 @@ export default function EmployeesPage() {
         ) : (
           <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
             <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
-            {/* Table Header: Dark Navy Theme (#0B2046) */}
+            {/* Table Header: Dark Navy Theme (Primary) */}
             <thead>
               <tr className="bg-primary text-white font-medium text-xs whitespace-nowrap">
                 <th
@@ -1235,7 +1235,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                                className="absolute -top-1 -right-1 z-20 w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-bold ring-2 ring-white shadow-xs cursor-pointer hover:scale-110 transition-transform"
                                 title="คลิกเพื่อแก้ไขคอมเมนต์"
                               >
                                 !
@@ -1250,7 +1250,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput(comments[emp.id] || '');
                                 }}
-                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-2 bg-[#0b2046] text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-2 bg-primary text-white text-xs px-3.5 py-1.5 rounded-full shadow-2xl border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
                               >
                                 <div className="w-4 h-4 rounded-full bg-white/20 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
                                   !
@@ -1265,7 +1265,7 @@ export default function EmployeesPage() {
                                   setCommentModalEmp(emp);
                                   setCommentInput('');
                                 }}
-                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-[#0b2046] text-white text-xs px-3 py-1 rounded-full shadow-lg border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
+                                className="hidden group-hover/avatar:flex absolute left-8 -top-2 z-50 whitespace-nowrap items-center gap-1.5 bg-primary text-white text-xs px-3 py-1 rounded-full shadow-lg border border-white/20 cursor-pointer animate-in fade-in zoom-in-95 duration-150"
                               >
                                 <span>คลิกเพื่อใส่คอมเมนต์</span>
                               </div>
@@ -1485,7 +1485,7 @@ export default function EmployeesPage() {
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[#0b2046] text-white flex items-center justify-center text-xs font-bold ring-2 ring-white/60">
+                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold ring-2 ring-white/60">
                   !
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
@@ -1531,20 +1531,22 @@ export default function EmployeesPage() {
                 </button>
               )}
               <div className="flex items-center gap-2 ml-auto">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setCommentModalEmp(null)}
-                  className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-lg"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="primary"
+                  size="sm"
                   onClick={() => handleSaveComment(commentModalEmp.id, commentInput)}
-                  className="px-4 py-1.5 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-lg shadow-xs"
                 >
                   บันทึกคอมเมนต์
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1615,12 +1617,13 @@ export default function EmployeesPage() {
             </div>
 
             <div className="px-6 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-700/60 flex justify-end">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setIsDetailOpen(false)}
-                className="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg"
               >
                 ปิดหน้าต่าง
-              </button>
+              </Button>
             </div>
           </div>
         </ModalShell>

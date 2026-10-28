@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button } from '@/components/ui';
 import { showError } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
@@ -254,13 +255,13 @@ export default function TransfersPage() {
 
           {/* Action Button moved down into table */}
           {canCreateTransfers && (
-            <button
+            <Button
+              size="sm"
               onClick={() => setIsCreateModalOpen(true)}
-              className="h-9 px-4 bg-primary hover:bg-[#07152d] text-white text-xs font-semibold rounded-xl flex items-center gap-2 shadow-xs transition-colors shrink-0 cursor-pointer self-start md:self-auto"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" />
-              <span>บันทึกคำสั่งแต่งตั้ง/โยกย้าย</span>
-            </button>
+              บันทึกคำสั่งแต่งตั้ง/โยกย้าย
+            </Button>
           )}
         </div>
 

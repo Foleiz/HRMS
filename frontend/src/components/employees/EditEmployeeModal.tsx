@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -1504,23 +1504,22 @@ export default function EditEmployeeModal({
 
             {/* Footer Actions */}
             <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 flex items-center justify-end gap-3 shrink-0">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer disabled:opacity-50"
               >
                 ยกเลิก
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary-hover transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2 shadow-xs"
+                variant="primary"
+                loading={isSubmitting}
               >
-                {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>บันทึกข้อมูล</span>
-              </button>
+                บันทึกข้อมูล
+              </Button>
             </div>
           </form>
         )}

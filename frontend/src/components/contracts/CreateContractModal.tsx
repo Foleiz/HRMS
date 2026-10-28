@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { X, Calendar, Loader2, AlertCircle, ExternalLink, Upload, Trash2, FileText } from 'lucide-react';
@@ -249,7 +249,7 @@ export default function CreateContractModal({
               value={employeeTypeId || ''}
               onChange={(e) => handleTypeSelectChange(e.target.value)}
               required
-              className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+              className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:focus:border-blue-500 transition-all"
             >
               {employeeTypes.length > 0 ? (
                 employeeTypes.map((t) => (
@@ -303,8 +303,8 @@ export default function CreateContractModal({
               แนบเอกสารสัญญาจ้าง (ไม่บังคับ)
             </label>
             {!fileData ? (
-              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-[#0B2046] dark:hover:border-blue-500 rounded-xl cursor-pointer bg-slate-50/50 dark:bg-slate-800/40 hover:bg-blue-50/20 transition-all group">
-                <Upload className="w-6 h-6 text-slate-400 group-hover:text-[#0B2046] dark:group-hover:text-blue-400 mb-1.5 transition-colors" />
+              <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-blue-500 rounded-xl cursor-pointer bg-slate-50/50 dark:bg-slate-800/40 hover:bg-blue-50/20 transition-all group">
+                <Upload className="w-6 h-6 text-slate-400 group-hover:text-primary dark:group-hover:text-blue-400 mb-1.5 transition-colors" />
                 <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   คลิกเพื่อเลือกไฟล์สัญญา หรือลากไฟล์มาวาง
                 </span>
@@ -345,28 +345,21 @@ export default function CreateContractModal({
 
           {/* Buttons Footer */}
           <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700/60">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-200/80 hover:bg-slate-300 transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="px-7 py-2.5 rounded-xl text-sm font-medium text-white bg-[#0B2046] hover:bg-[#07152d] transition-colors flex items-center gap-2 shadow-xs cursor-pointer"
+              variant="primary"
+              loading={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>กำลังบันทึก...</span>
-                </>
-              ) : (
-                <span>บันทึก</span>
-              )}
-            </button>
+              บันทึก
+            </Button>
           </div>
         </form>
       </div>

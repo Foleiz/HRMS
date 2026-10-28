@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   X,
@@ -192,14 +192,15 @@ export default function ContractDocumentPreviewModal({
               <p className="text-xs text-slate-400 mt-1 mb-4">
                 กรุณาดาวน์โหลดเพื่อเปิดดูผ่านโปรแกรมบนอุปกรณ์ของคุณ
               </p>
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={handleDownload}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#07152d] shadow-xs cursor-pointer"
+                icon={<Download className="w-3.5 h-3.5" />}
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>ดาวน์โหลดไฟล์</span>
-              </button>
+                ดาวน์โหลดไฟล์
+              </Button>
             </div>
           )}
         </div>
