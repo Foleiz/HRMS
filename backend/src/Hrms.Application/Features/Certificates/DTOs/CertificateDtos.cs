@@ -114,6 +114,12 @@ public class CertificateDocumentDto
     public string SignatoryName { get; set; } = string.Empty;
     public string SignatoryPosition { get; set; } = string.Empty;
     public string? SignatureBase64 { get; set; }
+
+    /// <summary>ขั้นตอนสายอนุมัติของคำขอ (ใช้วาดช่องลงนาม "ผลการพิจารณา" แบบเดียวกับเอกสารอื่น) — null สำหรับตัวอย่างก่อนยื่น</summary>
+    public Hrms.Application.Features.Approvals.DTOs.ApprovalTimelineDto? ApprovalTimeline { get; set; }
+
+    /// <summary>วันที่ยื่นคำขอ (ใช้เป็นวันที่ในช่องลงชื่อผู้ยื่นเรื่อง) — null สำหรับตัวอย่างก่อนยื่น</summary>
+    public DateTime? RequestedAt { get; set; }
 }
 
 public class SignatureUploadDto

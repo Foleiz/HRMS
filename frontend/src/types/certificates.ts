@@ -1,3 +1,5 @@
+import type { ApprovalTimeline } from './leave';
+
 export interface CertificateType {
   id: number;
   certificateCode: string;
@@ -87,6 +89,10 @@ export interface CertificateDocument {
   signatoryName: string;
   signatoryPosition: string;
   signatureBase64?: string;
+  /** ขั้นตอนสายอนุมัติของคำขอ (ช่องลงนาม "ผลการพิจารณา") — ไม่มีในตัวอย่างก่อนยื่น */
+  approvalTimeline?: ApprovalTimeline | null;
+  /** วันที่ยื่นคำขอ (ช่องลงชื่อผู้ยื่นเรื่อง) */
+  requestedAt?: string | null;
 }
 
 export interface EmployeeSignature {
