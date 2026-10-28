@@ -117,7 +117,9 @@ const CertificatePaper: React.FC<{
 
   const includeSalary = doc.includeSalary ?? doc.baseSalary != null;
   const salary = doc.baseSalary ?? null;
-  const purpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
+  // วัตถุประสงค์ไม่บังคับแล้ว — ค่าว่าง (หรือค่าเริ่มต้นเดิมของระบบ) ใช้ข้อความกลางตามประเภทหนังสือ
+  const rawPurpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
+  const purpose = /^(เป็น)?หลักฐานแสดงการทำงาน$/.test(rawPurpose) ? '' : rawPurpose;
   const position = (doc.positionName || '').replace(/^ตำแหน่ง\s*/, '');
   const date = issueDateParts(doc.issueDate);
   const { prefix, displayName } = extractPrefixAndName(doc.fullName);
@@ -197,7 +199,13 @@ const CertificatePaper: React.FC<{
             </p>
 
             <p style={{ ...para, marginTop: '1mm' }}>
-              หนังสือรับรองเงินเดือนฉบับนี้ใช้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงรายได้'}</V> เท่านั้น
+              {purpose ? (
+                <>
+                  หนังสือรับรองเงินเดือนฉบับนี้ใช้เพื่อ <V>{purpose}</V> เท่านั้น
+                </>
+              ) : (
+                'หนังสือรับรองเงินเดือนฉบับนี้ออกให้เพื่อใช้เป็นหลักฐานแสดงรายได้เท่านั้น'
+              )}
             </p>
 
             <div style={{ marginLeft: '88mm', marginTop: '4mm', whiteSpace: 'nowrap' }}>
@@ -224,7 +232,13 @@ const CertificatePaper: React.FC<{
             </p>
 
             <p style={{ ...para, marginTop: '1mm' }}>
-              หนังสือรับรองฉบับนี้ออกให้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงการทำงาน'}</V> เท่านั้น
+              {purpose ? (
+                <>
+                  หนังสือรับรองฉบับนี้ออกให้เพื่อ <V>{purpose}</V> เท่านั้น
+                </>
+              ) : (
+                'หนังสือรับรองฉบับนี้ออกให้เพื่อใช้เป็นหลักฐานแสดงการทำงานเท่านั้น'
+              )}
             </p>
 
             <p style={{ ...para, marginTop: '4mm' }}>ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ</p>
@@ -349,6 +363,107 @@ const CertificatePaper: React.FC<{
         >
           ตัวอย่าง
         </div>
+      )}
+    </div>
+  );
+};
+
+/** ขนาดกระดาษ A4 เป็นพิกเซล (210 × 297 มม. ที่ 96 dpi) */
+const PAPER_W = 794;
+const PAPER_H = 1123;
+
+/**
+ * ตัวอย่างหนังสือรับรองแบบฝังในหน้า (ย่อให้พอดีความกว้างกล่อง) — ใช้ในหน้าขอหนังสือรับรอง
+ * ดึงข้อมูลจริงของผู้ใช้ตามประเภทที่เลือก (แคชต่อประเภท) พร้อมช่องลงนามตามสายอนุมัติ
+ */
+export const CertificateInlinePreview: React.FC<{ certificateTypeId: number | null }> = ({ certificateTypeId }) => {
+  const { companyLogo, companyAddress } = useCompanyDocumentInfo(true);
+  const [doc, setDoc] = useState<CertificateDocument | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cacheRef = useRef(new Map<number, CertificateDocument>());
+
+  useEffect(() => {
+    if (!certificateTypeId) {
+      setDoc(null);
+      return;
+    }
+    const hit = cacheRef.current.get(certificateTypeId);
+    if (hit) {
+      setDoc(hit);
+      setError(null);
+      return;
+    }
+    let active = true;
+    setLoading(true);
+    setError(null);
+    certificateService
+      .previewDocument(certificateTypeId, '', 'TH')
+      .then((d) => {
+        if (!active) return;
+        cacheRef.current.set(certificateTypeId, d);
+        setDoc(d);
+      })
+      .catch((err) => {
+        console.error('Failed to load certificate preview:', err);
+        if (active) setError(err?.response?.data?.message || 'ไม่สามารถโหลดตัวอย่างหนังสือรับรองได้');
+      })
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [certificateTypeId]);
+
+  const approvalSlots = useApprovalSlots({
+    isOpen: !!doc,
+    documentType: 'CERTIFICATE_REQUEST',
+    employeeId: doc?.employeeId,
+  });
+  const signature = useEmployeeSignature(!!doc, doc?.employeeId);
+
+  // ย่อกระดาษ A4 ให้พอดีความกว้างของกล่อง
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.6);
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const fit = () => {
+      const w = el.clientWidth;
+      if (w > 0) setScale(Math.min(1, w / PAPER_W));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div ref={boxRef} className="w-full">
+      {error ? (
+        <div className="py-16 text-center text-rose-600 text-sm">{error}</div>
+      ) : doc ? (
+        <div
+          className={`relative mx-auto shadow-md border border-slate-300 transition-opacity ${loading ? 'opacity-60' : ''}`}
+          style={{ width: PAPER_W * scale, height: PAPER_H * scale, overflow: 'hidden' }}
+        >
+          <div style={{ width: PAPER_W, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+            <CertificatePaper
+              doc={doc}
+              companyLogo={companyLogo}
+              companyAddress={companyAddress}
+              approvalSlots={approvalSlots}
+              requesterSignatureSrc={signature.src}
+              onRequesterSignatureError={signature.clear}
+            />
+          </div>
+        </div>
+      ) : loading ? (
+        <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-400" />
+          <p className="text-xs">กำลังจัดเตรียมตัวอย่างหนังสือ...</p>
+        </div>
+      ) : (
+        <div className="py-16 text-center text-slate-500 dark:text-slate-400 text-sm">เลือกประเภทหนังสือรับรองเพื่อดูตัวอย่าง</div>
       )}
     </div>
   );

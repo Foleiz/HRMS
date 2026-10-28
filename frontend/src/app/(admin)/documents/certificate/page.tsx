@@ -1,210 +1,100 @@
 'use client';
 
-import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  CheckCircle2,
-  AlertCircle,
-  RotateCcw,
-  Save,
-  Eye,
-  Loader2,
-  CalendarCheck,
-  Clock3,
-  ListChecks,
-} from 'lucide-react';
+import { AlertCircle, Briefcase, Wallet, Maximize2, Clock3 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { CertificateType } from '@/types/certificates';
 import { certificateService } from '@/services/certificateService';
 import { leaveService } from '@/services/leaveService';
-import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
+import { CertificatePreviewModal, CertificateInlinePreview } from '@/components/documents/CertificatePreviewModal';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
+import { useApprovalSlots, getSlotHeading } from '@/components/documents/documentFormParts';
 import { toast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
-import { RichSelect } from '@/components/ui/RichSelect';
 import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 
-const REASON_MAX_LENGTH = 160;
-const TEXTAREA =
-  'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
-const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
+const isSalaryType = (t?: CertificateType | null) => !!t?.certificateCode?.toUpperCase().includes('SALARY');
 
+/** คำอธิบายสั้น ๆ ใต้ชื่อประเภท — ช่วยให้เลือกถูกโดยไม่ต้องเปิดตัวอย่าง */
+const typeDescription = (t: CertificateType) =>
+  isSalaryType(t) ? 'ใช้ยื่นขอสินเชื่อ ขอวีซ่า หรือเช่าที่พัก' : 'ยืนยันการเป็นพนักงาน ตำแหน่ง และอายุงาน';
 
+/**
+ * ขอหนังสือรับรอง — เลือกประเภทอย่างเดียว ข้อมูลในหนังสือดึงจากระบบทั้งหมด
+ * ซ้าย: การ์ดประเภท + อายุหนังสือ + ผู้อนุมัติ · ขวา: ตัวอย่างหนังสือจริงของผู้ใช้ (เปลี่ยนตามประเภททันที)
+ */
 export default function CertificatePage() {
   const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
   const { user } = useAuth();
 
-  // Employee Profile
-  const [profile, setProfile] = useState({
-    fullName: user?.fullName || '',
-    positionTitle: '',
-    departmentName: '',
-  });
-
-  // Form Fields
+  const [profile, setProfile] = useState({ positionTitle: '', departmentName: '' });
   const [types, setTypes] = useState<CertificateType[]>([]);
-  const [selectedTypeId, setSelectedTypeId] = useState<number | ''>('');
-  const [purpose, setPurpose] = useState('');
-
-  // วันที่ออก = วันที่อนุมัติ, อายุหนังสือมาจากข้อมูลหลัก — ผู้ใช้ไม่ต้องกรอกเอง
-  // ช่องข้อความยืด/หดตามเนื้อหา
-  const purposeRef = useRef<HTMLTextAreaElement>(null);
-  useEffect(() => {
-    [purposeRef.current].forEach((el) => {
-      if (!el) return;
-      el.style.height = 'auto';
-      el.style.height = `${el.scrollHeight + (el.offsetHeight - el.clientHeight)}px`;
-    });
-  }, [purpose]);
-
-  // State
+  const [typesLoaded, setTypesLoaded] = useState(false);
+  const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [savingDraft, setSavingDraft] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-
-  // Preview Modal State
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Initialize breadcrumb & load saved draft
   useEffect(() => {
     setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ขอหนังสือรับรอง' });
-
+    // แบบร่างเดิม (มีวัตถุประสงค์) ไม่ใช้แล้ว
     try {
-      const savedDraft = localStorage.getItem('hrms_cert_draft');
-      if (savedDraft) {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed.purpose) setPurpose(parsed.purpose);
-        if (parsed.selectedTypeId) setSelectedTypeId(parsed.selectedTypeId);
-      }
+      localStorage.removeItem('hrms_cert_draft');
     } catch {
-      // Ignore
+      // ignore
     }
-
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  // Load types & profile
   const loadInitialData = useCallback(async () => {
-    try {
-      const [typeList, balances] = await Promise.allSettled([
-        certificateService.getCertificateTypes(),
-        user?.employeeId
-          ? leaveService.getLeaveBalances({ employeeId: user.employeeId, year: new Date().getFullYear() })
-          : Promise.resolve([]),
-      ]);
-
-      if (typeList.status === 'fulfilled' && typeList.value.length > 0) {
-        setTypes(typeList.value);
-        if (!selectedTypeId) {
-          setSelectedTypeId(typeList.value[0].id);
-        }
-      }
-
-      if (balances.status === 'fulfilled' && balances.value.length > 0) {
-        setProfile({
-          fullName: user?.fullName || '',
-          positionTitle: balances.value[0]?.positionTitle || '',
-          departmentName: balances.value[0]?.departmentName || '',
-        });
-      }
-    } catch (err) {
-      console.error('Error loading initial data:', err);
+    const [typeList, balances] = await Promise.allSettled([
+      certificateService.getCertificateTypes(),
+      user?.employeeId
+        ? leaveService.getLeaveBalances({ employeeId: user.employeeId, year: new Date().getFullYear() })
+        : Promise.resolve([]),
+    ]);
+    if (typeList.status === 'fulfilled') {
+      setTypes(typeList.value);
+      setSelectedTypeId((cur) => cur ?? typeList.value[0]?.id ?? null);
     }
-  }, [user?.employeeId, user?.fullName, selectedTypeId]);
+    setTypesLoaded(true);
+    if (balances.status === 'fulfilled' && balances.value.length > 0) {
+      setProfile({
+        positionTitle: balances.value[0]?.positionTitle || '',
+        departmentName: balances.value[0]?.departmentName || '',
+      });
+    }
+  }, [user?.employeeId]);
 
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
 
-  // Show Toast
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4000);
-  };
-
-  // Reset form
-  const handleResetForm = () => {
-    setPurpose('');
-    if (types.length > 0) setSelectedTypeId(types[0].id);
-    setFormError(null);
-    localStorage.removeItem('hrms_cert_draft');
-    showToast('ล้างข้อมูลในแบบฟอร์มเรียบร้อยแล้ว');
-  };
-
-  const selectedType = types.find((t) => t.id === Number(selectedTypeId));
-  const includeSalary = !!selectedType?.certificateCode?.toUpperCase().includes('SALARY');
+  const selectedType = types.find((t) => t.id === selectedTypeId) ?? null;
   const validityMonths = selectedType?.validityMonths ?? null;
 
-  // Action 1: ดูตัวอย่าง (Preview) — ดึงหนังสือรับรองจริงของผู้ใช้จาก API (ยังไม่บันทึกลงระบบ)
-  const handlePreview = () => {
-    if (!selectedTypeId) {
-      setFormError('กรุณาเลือกประเภทหนังสือรับรองก่อนดูตัวอย่าง');
-      return;
-    }
-    setFormError(null);
-    setIsPreviewOpen(true);
-  };
+  // ผู้อนุมัติตามสายอนุมัติ "คำขอหนังสือรับรอง" ของผู้ใช้ (จำลองจากหน้าตั้งค่า)
+  const approvalSlots = useApprovalSlots({
+    isOpen: true,
+    documentType: 'CERTIFICATE_REQUEST',
+    employeeId: user?.employeeId,
+  });
 
-  // Action 2: บันทึกแบบร่าง (Save Draft)
-  const handleSaveDraft = async () => {
-    if (!purpose.trim()) {
-      setFormError('กรุณากรอกวัตถุประสงค์ในการขอเอกสารก่อนบันทึกแบบร่าง');
-      return;
-    }
-    setSavingDraft(true);
-    try {
-      localStorage.setItem(
-        'hrms_cert_draft',
-        JSON.stringify({
-          purpose: purpose.trim(),
-          selectedTypeId,
-          savedAt: new Date().toISOString(),
-        })
-      );
-      setFormError(null);
-      showToast('บันทึกแบบร่างสำเร็จ');
-    } catch {
-      showToast('ไม่สามารถบันทึกแบบร่างได้');
-    } finally {
-      setSavingDraft(false);
-    }
-  };
-
-  // Action 3: ยื่นคำขอ (Submit Request)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTypeId) {
       setFormError('กรุณาเลือกประเภทหนังสือรับรอง');
       return;
     }
-    if (!purpose.trim()) {
-      setFormError('กรุณาระบุวัตถุประสงค์ในการขอเอกสาร (เอกสารนี้ใช้สำหรับ *)');
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       setFormError(null);
-
-
-      await certificateService.createRequest({
-        certificateTypeId: Number(selectedTypeId),
-        purpose: purpose.trim(),
-        language: 'TH',
-      });
-
-      // Clear draft
-      localStorage.removeItem('hrms_cert_draft');
-      setPurpose('');
-        toast.success('ยื่นขอหนังสือรับรองสำเร็จ ติดตามสถานะได้ที่หน้านี้');
+      await certificateService.createRequest({ certificateTypeId: selectedTypeId, purpose: '', language: 'TH' });
+      toast.success('ยื่นขอหนังสือรับรองสำเร็จ ติดตามสถานะได้ที่ประวัติเอกสาร');
       router.push('/documents/history');
     } catch (err: any) {
       console.error('Error submitting certificate request:', err);
@@ -216,31 +106,14 @@ export default function CertificatePage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" คงรูปแบบเดียวกับเอกสารการลา */}
       <DocumentsSubNav />
-
-      {/* หัวข้ออยู่ใน breadcrumb แล้ว — เก็บ h1 ไว้ให้โปรแกรมอ่านหน้าจอ */}
       <h1 className="sr-only">ขอหนังสือรับรอง</h1>
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-slate-900 text-white rounded-xl text-sm shadow-lg flex items-center gap-2 animate-in slide-in-from-bottom-3">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
-      {/* ฟอร์มกระชับ — รูปแบบเดียวกับหน้ายื่นคำขอลา */}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <RequesterSummary
-          fullName={profile.fullName || '-'}
+          fullName={user?.fullName || '-'}
           positionTitle={profile.positionTitle}
           departmentName={profile.departmentName}
-          action={
-            <Button variant="secondary" type="button" onClick={handleResetForm} icon={<RotateCcw className="w-4 h-4" />}>
-              ล้างฟอร์ม
-            </Button>
-          }
         />
 
         {formError && (
@@ -250,162 +123,131 @@ export default function CertificatePage() {
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-          {/* ซ้าย: ประเภท + วัตถุประสงค์ + หมายเหตุ */}
-          <div className="space-y-6 min-w-0">
-            <div>
-              <label htmlFor="cert-type" className={LABEL}>
-                ประเภทหนังสือรับรอง <span className="text-rose-600">*</span>
-              </label>
-              <RichSelect<number>
-                id="cert-type"
-                value={selectedTypeId}
-                onChange={(v) => setSelectedTypeId(v)}
-                options={types.map((t) => {
-                  const salary = !!t.certificateCode?.toUpperCase().includes('SALARY');
-                  return {
-                    value: t.id,
-                    label: t.certificateName,
-                    description: salary ? 'ระบุอัตราเงินเดือนในเอกสาร' : 'ไม่ระบุเงินเดือน',
-                  };
-                })}
-                placeholder="เลือกประเภทหนังสือรับรอง"
-                emptyText="ยังไม่มีประเภทหนังสือรับรอง"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="cert-purpose" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  วัตถุประสงค์ <span className="text-rose-600">*</span>
-                </label>
-                <span className="text-xs text-slate-400">{purpose.length}/{REASON_MAX_LENGTH}</span>
-              </div>
-              <textarea
-                id="cert-purpose"
-                value={purpose}
-                maxLength={REASON_MAX_LENGTH}
-                ref={purposeRef}
-                onChange={(e) => setPurpose(e.target.value)}
-                rows={2}
-                placeholder="เช่น เพื่อใช้ประกอบการขอสินเชื่อที่อยู่อาศัย"
-                className={`${TEXTAREA} block overflow-hidden`}
-                required
-                aria-describedby="cert-purpose-help"
-              />
-              <p id="cert-purpose-help" className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                แสดงในเอกสารว่า “หนังสือรับรองฉบับนี้ออกให้เพื่อ...”
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] gap-4 items-start">
+          {/* ===== ซ้าย: ประเภท + สรุปคำขอ ===== */}
+          <div className="space-y-4 min-w-0">
+            <fieldset className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-6">
+              <legend className="sr-only">ประเภทหนังสือรับรอง</legend>
+              <p aria-hidden="true" className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                เลือกประเภทหนังสือรับรอง
               </p>
-            </div>
-
-          </div>
-
-          {/* ขวา: สิ่งที่ผู้ขอควรรู้ก่อนยื่น — ข้อมูลที่ระบบใส่ให้ และหนังสือใช้ได้ถึงเมื่อไร */}
-          <div className="min-w-0">
-            <span className={LABEL}>รายละเอียดเอกสาร</span>
-            {!selectedType ? (
-              <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                เลือกประเภทหนังสือรับรองเพื่อดูรายละเอียด
+              <div className="space-y-3">
+                {types.map((t) => {
+                  const active = t.id === selectedTypeId;
+                  const Icon = isSalaryType(t) ? Wallet : Briefcase;
+                  return (
+                    <label
+                      key={t.id}
+                      className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
+                        active
+                          ? 'border-2 border-[#0B2046] bg-indigo-50/60 dark:border-blue-400 dark:bg-slate-700/50'
+                          : 'border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/30 m-px'
+                      }`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${
+                          active ? 'bg-[#0B2046] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-sm font-semibold text-slate-900 dark:text-slate-100">{t.certificateName}</span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">{typeDescription(t)}</span>
+                      </span>
+                      <input
+                        type="radio"
+                        name="certificate-type"
+                        value={t.id}
+                        checked={active}
+                        onChange={() => setSelectedTypeId(t.id)}
+                        className="w-4 h-4 shrink-0 accent-[#0B2046]"
+                      />
+                    </label>
+                  );
+                })}
+                {typesLoaded && types.length === 0 && (
+                  <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-600 px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                    ยังไม่มีประเภทหนังสือรับรอง กรุณาติดต่อฝ่ายบุคคล
+                  </div>
+                )}
               </div>
-            ) : (
-              <dl className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700/60 text-sm">
-                <div className="flex items-start gap-3 px-4 py-3">
-                  <ListChecks className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-                  <dt className="w-28 shrink-0 text-slate-500 dark:text-slate-400">ข้อมูลในหนังสือ</dt>
-                  <dd className="text-slate-800 dark:text-slate-200">
-                    <span className="font-medium">
-                      ชื่อ-นามสกุล ตำแหน่ง แผนก ประเภทการจ้างงาน วันที่เริ่มงาน อายุงาน
-                      {includeSalary ? ' เงินเดือนและค่าตำแหน่ง' : ''}
-                    </span>
-                    <span className="block mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                      ดึงจากระบบอัตโนมัติ ถ้าข้อมูลไม่ถูกต้องให้แจ้งฝ่ายบุคคลก่อนยื่น
-                    </span>
-                  </dd>
-                </div>
-                <div className="flex items-start gap-3 px-4 py-3">
-                  <CalendarCheck className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-                  <dt className="w-28 shrink-0 text-slate-500 dark:text-slate-400">วันที่ออก</dt>
-                  <dd className="font-medium text-slate-800 dark:text-slate-200">วันที่ได้รับอนุมัติ</dd>
-                </div>
-                <div className="flex items-start gap-3 px-4 py-3">
-                  <Clock3 className="w-4 h-4 mt-0.5 shrink-0 text-slate-400" aria-hidden="true" />
-                  <dt className="w-28 shrink-0 text-slate-500 dark:text-slate-400">อายุหนังสือ</dt>
-                  <dd className="font-medium text-slate-800 dark:text-slate-200">
-                    {validityMonths ? `${validityMonths} เดือน นับจากวันที่ออก` : 'ไม่กำหนดวันหมดอายุ'}
-                  </dd>
-                </div>
-              </dl>
-            )}
+            </fieldset>
+
+            <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-6 space-y-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                  <Clock3 className="w-4 h-4" aria-hidden="true" />
+                  อายุหนังสือ
+                </span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                  {validityMonths ? `${validityMonths} เดือน นับจากวันที่อนุมัติ` : 'ไม่กำหนดวันหมดอายุ'}
+                </span>
+              </div>
+
+              <div className="border-t border-slate-100 dark:border-slate-700/60 pt-4">
+                <p className="text-slate-500 dark:text-slate-400 mb-3">ผู้อนุมัติ</p>
+                <ol className="space-y-0">
+                  {approvalSlots.map((slot, i) => (
+                    <li key={`${slot.stepNo}-${i}`} className="relative flex items-start gap-3 pb-3 last:pb-0">
+                      {i < approvalSlots.length - 1 && (
+                        <span aria-hidden="true" className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-600" />
+                      )}
+                      <span className="w-7 h-7 shrink-0 rounded-full bg-[#0B2046] dark:bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+                        {i + 1}
+                      </span>
+                      <span className="min-w-0 pt-0.5">
+                        <span className="block font-medium text-slate-800 dark:text-slate-200">{getSlotHeading(slot)}</span>
+                        {slot.positionHint && (
+                          <span className="block text-xs text-slate-500 dark:text-slate-400">{slot.positionHint}</span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <p className="border-t border-slate-100 dark:border-slate-700/60 pt-4 text-xs text-slate-500 dark:text-slate-400">
+                ข้อมูลในหนังสือดึงจากระบบอัตโนมัติ ถ้าไม่ถูกต้องให้แจ้งฝ่ายบุคคลก่อนยื่น
+              </p>
+            </section>
           </div>
+
+          {/* ===== ขวา: ตัวอย่างหนังสือจริงของผู้ใช้ ===== */}
+          <section className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-4 sm:p-5 min-w-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                ตัวอย่างหนังสือ <span className="font-normal text-slate-500 dark:text-slate-400">· ข้อมูลจริงของคุณ</span>
+              </h2>
+              <Button
+                variant="secondary"
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                disabled={!selectedTypeId}
+                icon={<Maximize2 className="w-3.5 h-3.5" />}
+              >
+                ขยายเต็มจอ
+              </Button>
+            </div>
+            <div className="rounded-xl bg-slate-200/70 dark:bg-slate-900/60 p-3 sm:p-5">
+              <CertificateInlinePreview certificateTypeId={selectedTypeId} />
+            </div>
+          </section>
         </div>
 
         <FormActionBar>
-          <Button variant="secondary" type="button" onClick={handlePreview} icon={<Eye className="w-3.5 h-3.5" />}>
-            ดูตัวอย่างเอกสาร
-          </Button>
-          <Button
-            variant="secondary"
-            type="button"
-            onClick={handleSaveDraft}
-            loading={savingDraft}
-            disabled={isSubmitting}
-            icon={<Save className="w-3.5 h-3.5" />}
-          >
-            บันทึกแบบร่าง
-          </Button>
-          <Button type="submit" loading={isSubmitting} disabled={savingDraft}>
-            ยื่นขอหนังสือรับรอง
+          <Button type="submit" loading={isSubmitting} disabled={!selectedTypeId}>
+            ยื่นขอ{selectedType?.certificateName || 'หนังสือรับรอง'}
           </Button>
         </FormActionBar>
       </form>
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <ModalShell className="z-50" innerClassName="items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
-            onClick={() => setShowSuccessModal(false)}
-          />
-
-          <div className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-1">
-              ยื่นคำขอหนังสือรับรองสำเร็จ!
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
-              ติดตามสถานะและพิมพ์เอกสารได้ที่เมนู ประวัติเอกสาร
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                fullWidth
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  router.push('/documents/history');
-                }}
-              >
-                ไปที่ประวัติเอกสาร
-              </Button>
-              <Button
-                variant="secondary"
-                fullWidth
-                onClick={() => setShowSuccessModal(false)}
-              >
-                ปิดหน้าต่าง
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
-      )}
-
-      {/* Certificate Preview Modal */}
       <CertificatePreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
-        previewParams={selectedTypeId ? { certificateTypeId: Number(selectedTypeId), purpose: purpose.trim() } : null}
+        previewParams={selectedTypeId ? { certificateTypeId: selectedTypeId, purpose: '' } : null}
       />
     </div>
   );
 }
-
