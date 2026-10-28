@@ -695,7 +695,7 @@ function EmployeeEditPageContent() {
                   <div>
                     <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
                       <span>ทีมที่สังกัด (Team)</span>
-                      <FieldInfoTooltip text="หัวหน้าทีมเป็นผู้อนุมัติคำขอของพนักงาน (ลา ฯลฯ) ถ้าไม่มีทีม คำขอจะไปที่หัวหน้าแผนก" />
+                      <FieldInfoTooltip text="หัวหน้าทีมเป็นผู้อนุมัติคำขอของพนักงาน (ลา ฯลฯ) ถ้าไม่มีทีม คำขอจะไปที่ผู้อนุมัติสำรองที่ตั้งไว้ในสายอนุมัติ (ค่าเริ่มต้น: ฝ่ายบุคคล)" />
                     </label>
                     <CustomSelect
                       value={teamId ?? ''}

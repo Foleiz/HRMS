@@ -649,7 +649,7 @@ export default function EmployeeDetailView({
                       {employee.managerName || '-'}
                     </Link>
                   ) : (
-                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">ไม่มีทีม — อนุมัติโดยหัวหน้าแผนก</p>
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500">ไม่มีทีม — ใช้ผู้อนุมัติสำรองตามสายอนุมัติ</p>
                   )}
                 </div>
               </div>

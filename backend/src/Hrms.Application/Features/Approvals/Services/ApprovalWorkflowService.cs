@@ -364,7 +364,7 @@ public class ApprovalWorkflowService : IApprovalWorkflowService
                         return new HashSet<long> { teamLeadId.Value };
                     }
                 }
-                // ระบบใช้หัวหน้าทีมอย่างเดียว — ไม่มีทีม/ทีมไม่มีหัวหน้า → ว่าง แล้วใช้ทางสำรอง (หัวหน้าแผนก → หัวหน้าฝ่าย → ฝ่ายบุคคล)
+                // ระบบใช้หัวหน้าทีมอย่างเดียว — ไม่มีทีม/ทีมไม่มีหัวหน้า → ว่าง แล้วใช้ทางสำรองที่ตั้งไว้ในขั้น (FallbackAction: HR ค่าเริ่มต้น / ESCALATE / SKIP / WAIT)
                 return new HashSet<long>();
             }
 
