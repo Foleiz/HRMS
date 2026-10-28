@@ -67,8 +67,10 @@ const V: React.FC<{ children?: React.ReactNode }> = ({ children }) => <span styl
 
 /**
  * หน้ากระดาษ A4 ของหนังสือรับรอง — แบบฟอร์มเดียวกับใบลา / ใบลาออก / คำร้องทั่วไป
- * หัวกระดาษโลโก้ · ชื่อหนังสือ · เลขที่/เขียนที่/วันที่ (ชิดขวา) · ข้าพเจ้า (ผู้รับรอง) · ขอรับรองว่า (พนักงาน)
- * · ขอรับรองว่าข้อความข้างต้นเป็นความจริง · ลงชื่อผู้รับรอง (ชิดขวา) · หมายเหตุ · ที่อยู่บริษัทท้ายกระดาษ
+ * หัวกระดาษโลโก้ · ชื่อหนังสือ · เลขที่/เขียนที่/วันที่ (ชิดขวา)
+ * · การทำงาน: ข้าพเจ้า (ผู้รับรอง) · ขอรับรองว่า (พนักงาน) · ขอรับรองว่าข้อความข้างต้นเป็นความจริง
+ * · เงินเดือน: หนังสือฉบับนี้ออกให้เพื่อรับรองว่า (พนักงาน + อัตราเงินเดือน) · ใช้เพื่อ · ออกให้ ณ วันที่
+ * · ลงชื่อผู้ยื่นเรื่อง (ชิดขวา) · ผลการพิจารณาตามสายอนุมัติ · หมายเหตุ · ที่อยู่บริษัทท้ายกระดาษ
  */
 const CertificatePaper: React.FC<{
   doc: CertificateDocument;
@@ -129,6 +131,13 @@ const CertificatePaper: React.FC<{
   const para: React.CSSProperties = { textIndent: '12.5mm', textAlign: 'justify', margin: 0 };
   const strike = (p: 'นาย' | 'นาง' | 'นางสาว'): React.CSSProperties | undefined =>
     prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
+  /** นาย / นางสาว / นาง — ขีดฆ่าคำที่ไม่ตรงกับคำนำหน้าของพนักงาน */
+  const prefixChoices = (
+    <>
+      <span style={strike('นาย')}>นาย</span> / <span style={strike('นางสาว')}>นางสาว</span> /{' '}
+      <span style={strike('นาง')}>นาง</span>
+    </>
+  );
 
   return (
     <div
@@ -165,37 +174,62 @@ const CertificatePaper: React.FC<{
           </div>
         </div>
 
-        {/* ===== ผู้รับรอง ===== */}
-        <p style={para}>
-          ข้าพเจ้า <V>{doc.signatoryName}</V> ตำแหน่ง <V>{doc.signatoryPosition}</V> ของ<V>{doc.companyName}</V>
-          {companyAddr ? <> ตั้งอยู่เลขที่ <V>{companyAddr}</V></> : null}
-          {doc.companyPhone ? <> เบอร์โทรศัพท์ <V>{doc.companyPhone}</V></> : null}
-        </p>
+        {includeSalary ? (
+          <>
+            {/* ===== หนังสือรับรองเงินเดือน: รับรองการเป็นพนักงาน + อัตราเงินเดือน ===== */}
+            <p style={para}>
+              หนังสือฉบับนี้ออกให้เพื่อรับรองว่า {prefixChoices} <V>{displayName || doc.fullName}</V>
+              {doc.citizenIdMasked ? <> เลขประจำตัวประชาชน <span style={{ whiteSpace: 'nowrap' }}><V>{doc.citizenIdMasked}</V></span></> : null} รหัสพนักงาน{' '}
+              <V>{doc.employeeCode}</V> เป็นพนักงานของ <V>{doc.companyName}</V> ปฏิบัติงานในตำแหน่ง <V>{position}</V>
+              {' '}สังกัด <V>{doc.departmentName}</V> โดยเริ่มงานตั้งแต่วันที่ <V>{doc.startDateText}</V>{' '}
+              {stillEmployed ? 'จนถึงปัจจุบัน' : 'และปัจจุบันพ้นสภาพการเป็นพนักงานแล้ว'} ซึ่งปัจจุบันมีอัตราเงินเดือน เดือนละ{' '}
+              <V>{salary != null ? fmtMoney(salary) : null}</V> บาท
+              {doc.positionAllowance ? (
+                <>
+                  {' '}ค่าตำแหน่งเดือนละ <V>{fmtMoney(doc.positionAllowance)}</V> บาท รวมรายได้เดือนละ{' '}
+                  <V>{fmtMoney(doc.totalIncome ?? salary ?? 0)}</V> บาท (<V>{doc.totalIncomeText || doc.salaryText}</V>)
+                </>
+              ) : (
+                <>
+                  {' '}(<V>{doc.salaryText || doc.totalIncomeText}</V>)
+                </>
+              )}
+            </p>
 
-        {/* ===== พนักงานที่ได้รับการรับรอง ===== */}
-        <p style={{ ...para, marginTop: '1mm' }}>
-          ขอรับรองว่า <span style={strike('นาย')}>นาย</span> / <span style={strike('นางสาว')}>นางสาว</span> /{' '}
-          <span style={strike('นาง')}>นาง</span> <V>{displayName || doc.fullName}</V>
-          {doc.citizenIdMasked ? <> เลขประจำตัวประชาชน <V>{doc.citizenIdMasked}</V></> : null} รหัสพนักงาน{' '}
-          <V>{doc.employeeCode}</V> ได้ปฏิบัติงานในตำแหน่ง <V>{position}</V> สังกัด <V>{doc.departmentName}</V>
-          {doc.employmentTypeName ? <> ประเภทการจ้างงาน <V>{doc.employmentTypeName}</V></> : null} ตั้งแต่วันที่{' '}
-          <V>{doc.startDateText}</V> {stillEmployed ? 'จนถึงปัจจุบัน' : 'และปัจจุบันพ้นสภาพการเป็นพนักงานแล้ว'}
-          {doc.serviceDurationText ? <> รวมระยะเวลา <V>{doc.serviceDurationText}</V></> : null}
-          {includeSalary && salary != null ? (
-            <>
-              {' '}ปัจจุบันได้รับเงินเดือนเดือนละ <V>{fmtMoney(salary)}</V> บาท
-              {doc.positionAllowance ? <> ค่าตำแหน่งเดือนละ <V>{fmtMoney(doc.positionAllowance)}</V> บาท</> : null}
-              {' '}รวมรายได้เดือนละ <V>{fmtMoney(doc.totalIncome ?? salary)}</V> บาท (<V>{doc.totalIncomeText || doc.salaryText}</V>)
-              {' '}ไม่รวมค่าล่วงเวลาและเงินพิเศษอื่น
-            </>
-          ) : null}
-        </p>
+            <p style={{ ...para, marginTop: '1mm' }}>
+              หนังสือรับรองเงินเดือนฉบับนี้ใช้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงรายได้'}</V> เท่านั้น
+            </p>
 
-        <p style={{ ...para, marginTop: '1mm' }}>
-          หนังสือรับรองฉบับนี้ออกให้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงการทำงาน'}</V> เท่านั้น
-        </p>
+            <div style={{ marginLeft: '88mm', marginTop: '4mm', whiteSpace: 'nowrap' }}>
+              ออกให้ ณ วันที่<Fill value={doc.issueDateText} minWidth="46mm" />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* ===== หนังสือรับรองการทำงาน: ผู้รับรอง ===== */}
+            <p style={para}>
+              ข้าพเจ้า <V>{doc.signatoryName}</V> ตำแหน่ง <V>{doc.signatoryPosition}</V> ของ<V>{doc.companyName}</V>
+              {companyAddr ? <> ตั้งอยู่เลขที่ <V>{companyAddr}</V></> : null}
+              {doc.companyPhone ? <> เบอร์โทรศัพท์ <V>{doc.companyPhone}</V></> : null}
+            </p>
 
-        <p style={{ ...para, marginTop: '4mm' }}>ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ</p>
+            {/* ===== พนักงานที่ได้รับการรับรอง ===== */}
+            <p style={{ ...para, marginTop: '1mm' }}>
+              ขอรับรองว่า {prefixChoices} <V>{displayName || doc.fullName}</V>
+              {doc.citizenIdMasked ? <> เลขประจำตัวประชาชน <span style={{ whiteSpace: 'nowrap' }}><V>{doc.citizenIdMasked}</V></span></> : null} รหัสพนักงาน{' '}
+              <V>{doc.employeeCode}</V> ได้ปฏิบัติงานในตำแหน่ง <V>{position}</V> สังกัด <V>{doc.departmentName}</V>
+              {doc.employmentTypeName ? <> ประเภทการจ้างงาน <V>{doc.employmentTypeName}</V></> : null} ตั้งแต่วันที่{' '}
+              <V>{doc.startDateText}</V> {stillEmployed ? 'จนถึงปัจจุบัน' : 'และปัจจุบันพ้นสภาพการเป็นพนักงานแล้ว'}
+              {doc.serviceDurationText ? <> รวมระยะเวลา <V>{doc.serviceDurationText}</V></> : null}
+            </p>
+
+            <p style={{ ...para, marginTop: '1mm' }}>
+              หนังสือรับรองฉบับนี้ออกให้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงการทำงาน'}</V> เท่านั้น
+            </p>
+
+            <p style={{ ...para, marginTop: '4mm' }}>ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ</p>
+          </>
+        )}
 
         {/* ===== ลงนามผู้รับรอง (ชิดขวา) — รูปแบบเดียวกับเอกสารอื่น ===== */}
         <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '12mm', whiteSpace: 'nowrap' }}>
