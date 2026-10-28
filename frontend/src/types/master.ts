@@ -76,4 +76,6 @@ export interface CertificateTypeItem {
   id: number;
   certificateCode: string;
   certificateName: string;
+  /** อายุหนังสือรับรอง (เดือน) นับจากวันที่ออก */
+  validityMonths?: number | null;
 }

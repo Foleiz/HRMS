@@ -236,7 +236,7 @@ public class LookupMasterService : ILookupMasterService
         return await _context.CertificateTypes
             .AsNoTracking()
             .OrderBy(c => c.Id)
-            .Select(c => new CertificateTypeMasterDto { Id = c.Id, CertificateCode = c.CertificateCode, CertificateName = c.CertificateName })
+            .Select(c => new CertificateTypeMasterDto { Id = c.Id, CertificateCode = c.CertificateCode, CertificateName = c.CertificateName, ValidityMonths = c.ValidityMonths })
             .ToListAsync(cancellationToken);
     }
 
@@ -251,11 +251,18 @@ public class LookupMasterService : ILookupMasterService
             throw new BusinessRuleException($"รหัส '{code}' มีอยู่ในระบบแล้ว");
         if (await _context.CertificateTypes.AnyAsync(c => c.CertificateName.ToLower() == name.ToLower(), cancellationToken))
             throw new BusinessRuleException($"ประเภทหนังสือรับรอง '{name}' มีอยู่ในระบบแล้ว");
+        ValidateCertificateValidity(dto.ValidityMonths);
 
-        var item = new CertificateType { CertificateCode = code, CertificateName = name };
+        var item = new CertificateType { CertificateCode = code, CertificateName = name, ValidityMonths = dto.ValidityMonths };
         _context.CertificateTypes.Add(item);
         await _context.SaveChangesAsync(cancellationToken);
-        return new CertificateTypeMasterDto { Id = item.Id, CertificateCode = item.CertificateCode, CertificateName = item.CertificateName };
+        return new CertificateTypeMasterDto { Id = item.Id, CertificateCode = item.CertificateCode, CertificateName = item.CertificateName, ValidityMonths = item.ValidityMonths };
+    }
+
+    private static void ValidateCertificateValidity(int? months)
+    {
+        if (months.HasValue && (months.Value < 1 || months.Value > 24))
+            throw new BusinessRuleException("อายุหนังสือรับรองต้องอยู่ระหว่าง 1-24 เดือน");
     }
 
     public async Task<CertificateTypeMasterDto> UpdateCertificateTypeAsync(long id, UpdateCertificateTypeMasterDto dto, CancellationToken cancellationToken = default)
@@ -268,9 +275,11 @@ public class LookupMasterService : ILookupMasterService
             throw new BusinessRuleException($"ประเภทหนังสือรับรอง '{name}' มีอยู่ในระบบแล้ว");
 
         // รหัสแก้ไม่ได้ — ระบบใช้รหัส (เช่น CERT_SALARY) ตัดสินว่าจะแสดงเงินเดือนในเอกสารหรือไม่
+        ValidateCertificateValidity(dto.ValidityMonths);
         item.CertificateName = name;
+        item.ValidityMonths = dto.ValidityMonths;
         await _context.SaveChangesAsync(cancellationToken);
-        return new CertificateTypeMasterDto { Id = item.Id, CertificateCode = item.CertificateCode, CertificateName = item.CertificateName };
+        return new CertificateTypeMasterDto { Id = item.Id, CertificateCode = item.CertificateCode, CertificateName = item.CertificateName, ValidityMonths = item.ValidityMonths };
     }
 
     public async Task DeleteCertificateTypeAsync(long id, CancellationToken cancellationToken = default)
