@@ -500,12 +500,16 @@ export default function LeaveRequestsApprovalPage() {
       });
     });
 
-    // เรียงลำดับ: รายการที่ถึงคิวเราอนุมัติขึ้นก่อน จากนั้นเรียงตามวันที่ยื่นล่าสุด
+    // เรียงลำดับ: เอกสารที่ยื่นมาล่าสุดขึ้นมาด้านบน แล้วไล่ลงไปตามเวลาการส่ง (submittedAt ล่าสุดขึ้นก่อน)
+    const toTime = (dateStr?: string | null) => {
+      if (!dateStr) return 0;
+      const t = new Date(dateStr).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
     return list.sort((a, b) => {
-      if (a.isMyTurnToApprove && !b.isMyTurnToApprove) return -1;
-      if (!a.isMyTurnToApprove && b.isMyTurnToApprove) return 1;
-      const timeA = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
-      const timeB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+      const timeA = toTime(a.submittedAt);
+      const timeB = toTime(b.submittedAt);
       if (timeA !== timeB) return timeB - timeA;
       const rawA = typeof a.rawId === 'number' ? a.rawId : 0;
       const rawB = typeof b.rawId === 'number' ? b.rawId : 0;
