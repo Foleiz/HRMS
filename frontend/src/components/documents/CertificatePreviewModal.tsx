@@ -11,10 +11,13 @@ import {
   sarabun,
   Fill,
   extractPrefixAndName,
+  ApprovalSignatureTable,
   DocumentLogoHeader,
   DocumentAddressFooter,
   SignatureLine,
+  useApprovalSlots,
   useCompanyDocumentInfo,
+  type ApprovalSlot,
 } from './documentFormParts';
 
 interface CertificatePreviewModalProps {
@@ -26,6 +29,8 @@ interface CertificatePreviewModalProps {
   previewParams?: { certificateTypeId: number; purpose: string } | null;
   /** ข้อมูลเอกสารที่เตรียมไว้แล้ว (ไม่ต้องดึงจาก API) */
   initialDoc?: CertificateDocument | null;
+  /** ผู้ใช้ถึงคิวอนุมัติ → แสดงลายเซ็นของผู้ใช้ในช่องที่รออนุมัติล่วงหน้า (แบบเดียวกับใบลา) */
+  canApproveCurrentStep?: boolean;
 }
 
 const fmtMoney = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -68,10 +73,11 @@ const CertificatePaper: React.FC<{
   doc: CertificateDocument;
   companyLogo: string | null;
   companyAddress: string;
+  approvalSlots: ApprovalSlot[];
   /** ฉบับพิมพ์ (ซ่อนอยู่ วัดขนาดไม่ได้) ใช้ค่าย่อที่วัดจากฉบับบนจอ */
   fixedZoom?: number;
   onZoom?: (z: number) => void;
-}> = ({ doc, companyLogo, companyAddress, fixedZoom, onZoom }) => {
+}> = ({ doc, companyLogo, companyAddress, approvalSlots, fixedZoom, onZoom }) => {
   const [signatureFailed, setSignatureFailed] = useState(false);
   const [sealFailed, setSealFailed] = useState(false);
   // เนื้อหาต้องจบก่อนหมายเหตุท้ายหน้า — ถ้าล้นย่อเนื้อหาลงพอดีหน้า
@@ -262,6 +268,12 @@ const CertificatePaper: React.FC<{
             <Fill value={date.year} minWidth="14mm" />
           </div>
         </div>
+
+        {/* ===== ผลการพิจารณา — ช่องลงนามตามสายอนุมัติ (แบบเดียวกับใบลา/ใบลาออก/คำร้องทั่วไป) ===== */}
+        <div style={{ textAlign: 'center', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px', marginTop: '6mm' }}>
+          ผลการพิจารณา
+        </div>
+        <ApprovalSignatureTable slots={approvalSlots} />
       </div>
 
       {/* ===== หมายเหตุท้ายหนังสือ ===== */}
@@ -298,6 +310,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
   requestId,
   previewParams,
   initialDoc,
+  canApproveCurrentStep,
 }) => {
   const { companyLogo, companyAddress } = useCompanyDocumentInfo(isOpen);
   const [doc, setDoc] = useState<CertificateDocument | null>(null);
@@ -334,10 +347,26 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
     };
   }, [isOpen, requestId, previewTypeId, previewPurpose, initialDoc]);
 
+  // ช่องลงนาม: คำขอที่ยื่นแล้วใช้ขั้นตอนจริงจาก timeline, ตัวอย่างก่อนยื่นจำลองจากสายอนุมัติของพนักงาน
+  const approvalSlots = useApprovalSlots({
+    isOpen: isOpen && !!doc,
+    documentType: 'CERTIFICATE_REQUEST',
+    employeeId: doc?.employeeId,
+    timeline: doc?.approvalTimeline,
+    canApproveCurrentStep,
+    isExistingDocument: !!requestId,
+  });
+
   if (!isOpen) return null;
 
   const paper = doc ? (
-    <CertificatePaper doc={doc} companyLogo={companyLogo} companyAddress={companyAddress} onZoom={setPaperZoom} />
+    <CertificatePaper
+      doc={doc}
+      companyLogo={companyLogo}
+      companyAddress={companyAddress}
+      approvalSlots={approvalSlots}
+      onZoom={setPaperZoom}
+    />
   ) : null;
 
   return (
@@ -398,7 +427,13 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
       {/* สำเนาสำหรับพิมพ์ใต้ <body> โดยตรง เพื่อให้พิมพ์ได้เต็มหน้า A4 */}
       {paper && typeof document !== 'undefined' && createPortal(
           <div className="cert-print-root">
-            <CertificatePaper doc={doc!} companyLogo={companyLogo} companyAddress={companyAddress} fixedZoom={paperZoom} />
+            <CertificatePaper
+              doc={doc!}
+              companyLogo={companyLogo}
+              companyAddress={companyAddress}
+              approvalSlots={approvalSlots}
+              fixedZoom={paperZoom}
+            />
           </div>,
           document.body
         )}

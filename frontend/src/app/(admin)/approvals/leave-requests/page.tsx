@@ -1772,6 +1772,7 @@ export default function LeaveRequestsApprovalPage() {
           setSelectedCertForPreview(null);
         }}
         requestId={selectedCertForPreview?.id}
+        canApproveCurrentStep={!!selectedCertForPreview?.isMyTurnToApprove}
       />
 
       {/* ─── Modal ยืนยันการอนุมัติคำขอลาออก ─── */}

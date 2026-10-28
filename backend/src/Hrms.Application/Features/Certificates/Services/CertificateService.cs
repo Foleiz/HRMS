@@ -466,8 +466,13 @@ public class CertificateService : ICertificateService
 
         await EnsureCanViewDocumentAsync(request, cancellationToken);
 
-        return await BuildDocumentAsync(
+        var document = await BuildDocumentAsync(
             request.EmployeeId, request.CertificateType, request.Purpose, request.IssuedAt, request.Id, lang, cancellationToken);
+        if (request.ApprovalInstanceId.HasValue)
+        {
+            document.ApprovalTimeline = await _approvalWorkflow.GetTimelineAsync(request.ApprovalInstanceId.Value, cancellationToken);
+        }
+        return document;
     }
 
     public async Task<CertificateDocumentDto> PreviewCertificateDocumentAsync(
