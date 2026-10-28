@@ -19,6 +19,7 @@ import {
 import { UserAccount, RoleSummary } from '@/types/settings';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button } from '@/components/ui/Button';
 import { formatRoleName } from '@/lib/roleUtils';
 
 interface UsersTabProps {
@@ -133,7 +134,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="ค้นหาผู้ใช้งาน, อีเมล..."
-              className="w-full h-10 pl-9 pr-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+              className="w-full h-10 pl-9 pr-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
           </form>
 
@@ -167,13 +168,12 @@ export const UsersTab: React.FC<UsersTabProps> = ({
 
         {/* Add User Button */}
         {canCreateUser && (
-          <button
+          <Button
             onClick={onAddUserClick}
-            className="h-10 px-4 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all shrink-0 cursor-pointer"
+            icon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            <span>เพิ่มผู้ใช้งาน</span>
-          </button>
+            เพิ่มผู้ใช้งาน
+          </Button>
         )}
       </div>
 
@@ -358,7 +358,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 }
                 onPageChange(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -388,8 +388,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 <button
                   key={idx}
                   onClick={() => onPageChange(p)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${ p === currentPage ? 'bg-[#0B2046] text-white shadow-xs'
-                      : 'border border-slate-200 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${ p === currentPage ? 'bg-primary text-white shadow-xs'
+                      : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   {p}

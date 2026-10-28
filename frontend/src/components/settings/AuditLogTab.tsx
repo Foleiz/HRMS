@@ -21,6 +21,7 @@ import {
 import { AuditLogItem, UserAccount } from '@/types/settings';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Button } from '@/components/ui/Button';
 
 interface AuditLogTabProps {
   logs: AuditLogItem[];
@@ -365,7 +366,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleApplyFilter()}
               placeholder="ค้นหา เช่น ชื่อผู้ใช้, รหัสข้อมูล, IP…"
-              className="w-full h-9 pl-9 pr-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]"
+              className="w-full h-9 pl-9 pr-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
 
@@ -426,7 +427,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={() => setActiveTab('all')}
               className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'all'
-                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  ? 'bg-primary text-white border-primary shadow-xs'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -440,7 +441,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={() => setActiveTab('imp')}
               className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'imp'
-                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  ? 'bg-primary text-white border-primary shadow-xs'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -454,7 +455,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={() => setActiveTab('sec')}
               className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'sec'
-                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  ? 'bg-primary text-white border-primary shadow-xs'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -468,7 +469,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={() => setActiveTab('data')}
               className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'data'
-                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  ? 'bg-primary text-white border-primary shadow-xs'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -482,7 +483,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={() => setActiveTab('sys')}
               className={`px-3 py-1 rounded-full border transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeTab === 'sys'
-                  ? 'bg-[#0f2547] text-white border-[#0f2547] shadow-xs'
+                  ? 'bg-primary text-white border-primary shadow-xs'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -497,7 +498,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               type="checkbox"
               checked={showSystemEvents}
               onChange={(e) => setShowSystemEvents(e.target.checked)}
-              className="rounded border-slate-300 text-[#0f2547] focus:ring-0 cursor-pointer"
+              className="rounded border-slate-300 text-primary focus:ring-primary/20 cursor-pointer"
             />
             <span>แสดงเหตุการณ์อัตโนมัติของระบบ</span>
           </label>
@@ -600,13 +601,13 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               <RotateCcw className="w-3 h-3 text-slate-400" />
               <span>ล้างค่า</span>
             </button>
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={handleApplyFilter}
-              className="h-8 px-4 bg-[#0f2547] text-white text-xs font-semibold rounded-lg hover:bg-slate-800"
             >
               ปรับใช้ตัวกรอง
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -748,7 +749,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
               onClick={() => onPageChange(p)}
               className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold ${
                 currentPage === p
-                  ? 'bg-[#0f2547] text-white shadow-xs'
+                  ? 'bg-primary text-white shadow-xs'
                   : 'text-slate-600 hover:bg-slate-100'
               }`}
             >

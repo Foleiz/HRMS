@@ -42,6 +42,7 @@ import {
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
 import { useToast } from '@/context/ToastContext';
+import { Button } from '@/components/ui/Button';
 
 interface ActivePopoverState {
   moduleCode: string;
@@ -85,7 +86,7 @@ const ToggleSwitch: React.FC<{
       disabled={disabled}
       className={`relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${ isSm ? 'h-5 w-9' : 'h-6 w-11'
       } ${
-        checked ? 'bg-[#0B2046]' : 'bg-slate-300 hover:bg-slate-400'
+        checked ? 'bg-primary' : 'bg-slate-300 hover:bg-slate-400'
       } ${disabled ? 'opacity-40 !cursor-not-allowed' : ''}`}
     >
       <span
@@ -757,17 +758,17 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               value={searchRole}
               onChange={(e) => setSearchRole(e.target.value)}
               placeholder="ค้นหาบทบาท..."
-              className="w-full h-9.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full h-9.5 pl-8 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
           {canCreateRole && (
-            <button
+            <Button
               onClick={onAddRoleClick}
-              className="h-9.5 px-3 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0 cursor-pointer"
+              size="sm"
+              icon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>เพิ่มบทบาท</span>
-            </button>
+              เพิ่มบทบาท
+            </Button>
           )}
         </div>
 
@@ -782,7 +783,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div
                 key={role.id}
                 onClick={() => onSelectRole(role.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${ isSelected ? 'bg-white border-[#0B2046] ring-2 ring-[#0B2046]/10 shadow-sm'
+                className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${ isSelected ? 'bg-white dark:bg-slate-800 border-primary ring-2 ring-primary/10 shadow-sm'
                     : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
                 }`}
               >
@@ -873,7 +874,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <span>ตั้งค่าสิทธิ์สำหรับ:</span>
-                  <span className="text-[#0B2046] dark:text-blue-400">
+                  <span className="text-primary dark:text-blue-400">
                     {selectedRoleMatrix.roleName}
                   </span>
                   <span className="text-xs font-mono font-medium text-slate-500 dark:text-slate-400 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg">
@@ -938,7 +939,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   value={searchModuleQuery}
                   onChange={(e) => setSearchModuleQuery(e.target.value)}
                   placeholder="ค้นหากลุ่มหรือสิทธิ์..."
-                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 />
                 {searchModuleQuery && (
                   <button
@@ -998,7 +999,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                             )}
                           </button>
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isCatOff ? 'bg-slate-200/70 text-slate-400 dark:bg-slate-800' : 'bg-[#0B2046]/5 text-[#0B2046]'}`}>
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isCatOff ? 'bg-slate-200/70 text-slate-400 dark:bg-slate-800' : 'bg-primary/10 text-primary dark:text-blue-300'}`}>
                             <IconComp className="w-4 h-4" />
                           </div>
                           <div className="flex items-center gap-2">
@@ -1111,9 +1112,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                             onClick={(e) => handleOpenPopover(e, mod.moduleCode, scope.key)}
                                             className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer select-none ${ !modActive || !canEditRole ? 'bg-slate-100 text-slate-300 border-slate-200/60 cursor-not-allowed'
                                                 : isScopeActive
-                                                ? 'bg-[#0B2046] hover:bg-[#112d5e] text-white border-[#0B2046] shadow-2xs'
+                                                ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs'
                                                 : isPopoverOpen
-                                                ? 'bg-slate-100 text-[#0B2046] border-slate-300 ring-2 ring-[#0B2046]/20'
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20'
                                                 : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300'
                                             }`}
                                           >
@@ -1163,34 +1164,27 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
               <div className="flex items-center gap-2.5">
                 {isDirty && (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={() => {
                       if (selectedRoleMatrix) {
                         setLocalModules(normalizeModules(selectedRoleMatrix.modules));
                         setIsDirty(false);
                       }
                     }}
-                    className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
                   >
                     ยกเลิก
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
                   type="button"
-                  disabled={!isDirty || isSavingMatrix || !canEditRole}
+                  disabled={!isDirty || !canEditRole}
+                  loading={isSavingMatrix}
                   onClick={handleSave}
-                  className="px-6 py-2 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2"
                 >
-                  {isSavingMatrix ? (
-                    <>
-                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>กำลังบันทึก...</span>
-                    </>
-                  ) : (
-                    <span>บันทึกสิทธิ์การใช้งาน</span>
-                  )}
-                </button>
+                  บันทึกสิทธิ์การใช้งาน
+                </Button>
               </div>
             </div>
           </>
@@ -1228,7 +1222,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   {activeMod.moduleName}
                 </div>
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mt-0.5">
-                  <span className="w-2 h-2 rounded-full bg-[#0B2046] shrink-0" />
+                  <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
                   <span>ระดับ: {activeScopeConfig.label}</span>
                 </div>
               </div>
@@ -1275,7 +1269,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       type="checkbox"
                       checked={isChecked}
                       onChange={() => {}}
-                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-[#0B2046] focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 pointer-events-none cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary/20 pointer-events-none cursor-pointer"
                     />
                   </div>
                 );

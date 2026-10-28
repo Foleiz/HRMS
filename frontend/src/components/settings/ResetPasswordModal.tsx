@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { ModalShell } from '@/components/ui/ModalShell';
+import { Button } from '@/components/ui/Button';
 import React, { useState } from 'react';
 import { X, KeyRound, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { UserAccount } from '@/types/settings';
@@ -96,7 +97,7 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="กรอกรหัสผ่านใหม่..."
-                className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
               <button
                 type="button"
@@ -109,21 +110,20 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/10 transition-all cursor-pointer disabled:opacity-50"
+              loading={isSubmitting}
             >
-              {isSubmitting ? 'กำลังบันทึก...' : 'ยืนยันเปลี่ยนรหัสผ่าน'}
-            </button>
+              ยืนยันเปลี่ยนรหัสผ่าน
+            </Button>
           </div>
         </form>
       </div>

@@ -8,6 +8,7 @@ import { RoleSummary, UserAccount, CreateUserRequest, UpdateUserRequest } from '
 import { settingsService } from '@/services/settingsService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { Button } from '@/components/ui/Button';
 
 interface UserDrawerProps {
   isOpen: boolean;
@@ -279,7 +280,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="เช่น USER001"
-                className={`w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-500 dark:text-slate-400' : ''
+                className={`w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${ isEditMode ? 'bg-slate-50 cursor-not-allowed text-slate-500 dark:text-slate-400' : ''
                 }`}
               />
               {isEditMode && (
@@ -300,7 +301,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="เช่น 123456"
-                    className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                    className="w-full h-11 pl-3.5 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   />
                   <button
                     type="button"
@@ -348,7 +349,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                 value={corporateEmail}
                 onChange={(e) => setCorporateEmail(e.target.value)}
                 placeholder="เช่น wichai.s@enterprise.co.th"
-                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 transition-all"
+                className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
 
@@ -380,7 +381,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                     >
                       <div className="flex items-center gap-3">
                         {/* Badge Number Circle (Navy) */}
-                        <div className="w-7 h-7 rounded-full bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                        <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                           {index + 1}
                         </div>
 
@@ -388,7 +389,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                         <CustomSelect
                           value={roleItem.roleId}
                           onChange={(e) => handleRoleChange(index, Number(e.target.value))}
-                          className="flex-1 h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+                          className="flex-1 h-10 px-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                         >
                           {roles.map((r) => (
                             <option key={r.id} value={r.id}>
@@ -424,7 +425,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                     <button
                       type="button"
                       onClick={handleAddRoleCard}
-                      className="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#0B2046] hover:border-[#0B2046] hover:bg-slate-50/50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      className="w-full py-2.5 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-primary hover:border-primary hover:bg-slate-50/50 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                     >
                       <Plus className="w-4 h-4" />
                       <span>เพิ่มบทบาท</span>
@@ -437,22 +438,21 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
 
           {/* Footer Actions */}
           <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3 bg-slate-50/50">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               disabled={isSubmitting}
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               form="user-drawer-form"
-              disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/10 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              loading={isSubmitting}
             >
-              {isSubmitting ? 'กำลังบันทึก...' : 'บันทึก'}
-            </button>
+              บันทึก
+            </Button>
           </div>
         </div>
       </div>

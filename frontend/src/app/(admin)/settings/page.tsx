@@ -474,7 +474,7 @@ export default function SettingsPage() {
               onClick={() => setActiveTab('users')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'users'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:text-blue-300 dark:border-blue-400 font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
@@ -488,7 +488,7 @@ export default function SettingsPage() {
               onClick={() => setActiveTab('roles')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'roles'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:text-blue-300 dark:border-blue-400 font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
@@ -502,7 +502,7 @@ export default function SettingsPage() {
               onClick={() => setActiveTab('audit-log')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'audit-log'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:text-blue-300 dark:border-blue-400 font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >
@@ -516,7 +516,7 @@ export default function SettingsPage() {
               onClick={() => setActiveTab('approval-flows')}
               className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
                 activeTab === 'approval-flows'
-                  ? 'border-[#0B2046] dark:border-white text-[#0B2046] dark:text-white font-bold'
+                  ? 'border-primary text-primary dark:text-blue-300 dark:border-blue-400 font-bold'
                   : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 hover:border-slate-300 dark:hover:border-slate-600'
               }`}
             >

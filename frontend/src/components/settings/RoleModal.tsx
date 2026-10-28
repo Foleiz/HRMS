@@ -1,6 +1,7 @@
 'use client';
 
 import { ModalShell } from '@/components/ui/ModalShell';
+import { Button } from '@/components/ui/Button';
 import React, { useState, useEffect } from 'react';
 import { X, Shield } from 'lucide-react';
 import { CodeInput } from '@/components/ui/CodeInput';
@@ -122,7 +123,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       <div className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-700/60 overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0B2046]/10 dark:bg-[#0B2046]/30 text-[#0B2046] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center">
               <Shield className="w-4 h-4" />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -155,7 +156,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             prefix="ROLE_"
             existingCodes={existingRoles.map((r) => r.roleCode)}
             labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
-            inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono uppercase text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:text-slate-400 disabled:cursor-not-allowed"
+            inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-mono uppercase text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-slate-50 dark:disabled:bg-slate-900/50 disabled:text-slate-400 disabled:cursor-not-allowed"
           />
 
           <div>
@@ -169,7 +170,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               value={roleName}
               onChange={(e) => setRoleName(e.target.value)}
               placeholder="เช่น ผู้เชี่ยวชาญฝ่ายสรรหาบุคลากร"
-              className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+              className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>
 
@@ -181,26 +182,25 @@ export const RoleModal: React.FC<RoleModalProps> = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="ระบุหน้าที่และขอบข่ายความรับผิดชอบของบทบาทนี้..."
-              className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500 resize-none"
+              className="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
             />
           </div>
 
           <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer"
             >
               ยกเลิก
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-xl bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold shadow-md shadow-[#0B2046]/10 transition-all cursor-pointer disabled:opacity-50"
+              loading={isSubmitting}
             >
-              {isSubmitting ? 'กำลังบันทึก...' : 'บันทึกบทบาท'}
-            </button>
+              บันทึกบทบาท
+            </Button>
           </div>
         </form>
       </div>

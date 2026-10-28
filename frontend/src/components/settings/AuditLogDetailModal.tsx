@@ -347,7 +347,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
               ผู้ดำเนินการ
             </h3>
             <div className="flex items-center gap-2.5 border border-slate-200 rounded-xl p-2.5 bg-white shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-[#0f2547] text-white flex items-center justify-center font-bold text-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
                 {userInitial}
               </div>
               <div className="flex-1 min-w-0">

@@ -39,6 +39,7 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ActiveToggleRow, ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { Button } from '@/components/ui/Button';
 
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
@@ -128,7 +129,7 @@ const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: E
 };
 
 const SELECT_CLS =
-  'w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-[#0B2046] focus:outline-none cursor-pointer';
+  'w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer';
 const LABEL_CLS = 'block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1';
 
 /** จำนวนขั้นตอนอนุมัติสูงสุดของทุกสายการอนุมัติ (ต้องตรงกับ backend: ApprovalFlowService.MaxApprovalSteps) */
@@ -381,7 +382,7 @@ export const ApprovalFlowsTab: React.FC = () => {
             onClick={() => insertStep(insertAt)}
             aria-label={insertAt === form.steps.length ? 'เพิ่มขั้นต่อท้าย' : `แทรกขั้นก่อนขั้นที่ ${insertAt + 1}`}
             title={insertAt === form.steps.length ? 'เพิ่มขั้นต่อท้าย' : 'แทรกขั้นตรงนี้'}
-            className="w-8 h-8 mx-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-[#0B2046] hover:text-[#0B2046] dark:hover:text-blue-300 flex items-center justify-center shadow-xs cursor-pointer shrink-0"
+            className="w-8 h-8 mx-0.5 rounded-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-primary hover:text-primary dark:hover:text-blue-300 flex items-center justify-center shadow-xs cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -557,7 +558,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                   placeholder="ค้นหาสายการอนุมัติ..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400"
+                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400"
                 />
               </div>
 
@@ -566,7 +567,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <CustomSelect
                   value={docTypeFilter}
                   onChange={(e) => setDocTypeFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
+                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
                 >
                   <option value="">ประเภทเอกสารทั้งหมด</option>
                   {DOCUMENT_TYPE_OPTIONS.map((dt) => (
@@ -582,7 +583,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <CustomSelect
                   value={deptFilter}
                   onChange={(e) => setDeptFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
+                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
                 >
                   <option value="">ทุกแผนก</option>
                   {departments.map((d) => (
@@ -598,7 +599,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                 <CustomSelect
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 appearance-none cursor-pointer"
+                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
                 >
                   <option value="">สถานะ: ทั้งหมด</option>
                   <option value="ACTIVE">ใช้งานอยู่</option>
@@ -608,13 +609,13 @@ export const ApprovalFlowsTab: React.FC = () => {
             </div>
 
             {/* Add Flow Button */}
-            <button
+            <Button
               type="button"
               onClick={openCreateEditor}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2046] hover:bg-[#0B2046]/90 text-white rounded-xl text-sm font-medium transition-all shadow-xs cursor-pointer"
+              icon={<Plus className="w-4 h-4" />}
             >
-              <Plus className="w-4 h-4" /> เพิ่มสายการอนุมัติ
-            </button>
+              เพิ่มสายการอนุมัติ
+            </Button>
           </div>
 
           {/* Flows Cards List */}
@@ -686,7 +687,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                             .map((step) => (
                               <React.Fragment key={step.id}>
                                 <div className="flex items-center gap-3 bg-slate-50/90 border border-slate-200/90 rounded-xl px-4 py-2.5 shadow-2xs">
-                                  <div className="w-5 h-5 rounded-full bg-[#0B2046] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+                                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                                     {step.stepNo}
                                   </div>
                                   <div className="min-w-0">
@@ -830,7 +831,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       value={form.flowName}
                       onChange={(e) => setForm({ ...form, flowName: e.target.value })}
                       placeholder="เช่น สายอนุมัติการลาทั่วไป"
-                      className="w-full h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-[#0B2046]/20 dark:focus:ring-blue-500/20 focus:outline-none"
+                      className="w-full h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1138,23 +1139,21 @@ export const ApprovalFlowsTab: React.FC = () => {
 
               {/* Drawer Footer */}
               <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 flex items-center justify-end gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={closeEditor}
                   disabled={isSavingFlow}
-                  className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 rounded-xl transition-all cursor-pointer disabled:opacity-50"
                 >
                   ยกเลิก
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSaveFlow}
-                  disabled={isSavingFlow}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-medium text-white bg-[#0B2046] hover:bg-[#0B2046]/90 rounded-xl transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  loading={isSavingFlow}
                 >
-                  {isSavingFlow && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>{editingFlow ? 'บันทึกการแก้ไข' : 'สร้างสายการอนุมัติ'}</span>
-                </button>
+                  {editingFlow ? 'บันทึกการแก้ไข' : 'สร้างสายการอนุมัติ'}
+                </Button>
               </div>
             </div>
           </div>
