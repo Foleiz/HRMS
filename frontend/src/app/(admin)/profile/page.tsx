@@ -39,7 +39,7 @@ export default function ProfilePage() {
         if (!cancelled) setEmployee(data);
       } catch (err: unknown) {
         if (cancelled) return;
-        console.error('Failed to load profile:', err);
+        console.warn('Failed to load profile:', err);
         toast.error('ไม่สามารถโหลดข้อมูลโปรไฟล์ได้');
       } finally {
         if (!cancelled) setIsLoading(false);
