@@ -9,6 +9,8 @@ import { CertificateDocument } from '@/types/certificates';
 import { certificateService } from '@/services/certificateService';
 import {
   sarabun,
+  Fill,
+  extractPrefixAndName,
   DocumentLogoHeader,
   DocumentAddressFooter,
   SignatureLine,
@@ -28,10 +30,39 @@ interface CertificatePreviewModalProps {
 
 const fmtMoney = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const THAI_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
+
+/** วันที่ออกหนังสือ → วัน / เดือน / พ.ศ. (เวลาไทย) */
+const issueDateParts = (value?: string | null) => {
+  const m = value ? /^(\d{4})-(\d{2})-(\d{2})/.exec(value) : null;
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : value ? new Date(value) : new Date();
+  const date = isNaN(d.getTime()) ? new Date() : d;
+  return {
+    day: String(date.getDate()),
+    dd: String(date.getDate()).padStart(2, '0'),
+    month: THAI_MONTHS[date.getMonth()],
+    mm: String(date.getMonth() + 1).padStart(2, '0'),
+    year: String(date.getFullYear() + 543),
+  };
+};
+
+/** ข้อความที่กรอก — เส้นประใต้ข้อความ ตัดบรรทัดตามคำได้ (แบบเดียวกับคำร้องทั่วไป) */
+const filledStyle: React.CSSProperties = {
+  textDecorationLine: 'underline',
+  textDecorationStyle: 'dotted',
+  textDecorationThickness: '1px',
+  textUnderlineOffset: '4px',
+  padding: '0 1.5mm',
+};
+const V: React.FC<{ children?: React.ReactNode }> = ({ children }) => <span style={filledStyle}>{children || '-'}</span>;
+
 /**
- * หน้ากระดาษ A4 ของหนังสือรับรอง (ภาษาไทย) — รูปแบบหนังสือบริษัทที่นิยมใช้
- * หัวกระดาษโลโก้ · ชื่อหนังสือ · ที่/วันที่ · เรื่อง/เรียน · เนื้อความรับรอง · วัตถุประสงค์ · ให้ไว้ ณ วันที่
- * · ผู้มีอำนาจลงนาม (ชิดขวา) · หมายเหตุอายุหนังสือ/ติดต่อตรวจสอบ · ที่อยู่บริษัทท้ายกระดาษ
+ * หน้ากระดาษ A4 ของหนังสือรับรอง — แบบฟอร์มเดียวกับใบลา / ใบลาออก / คำร้องทั่วไป
+ * หัวกระดาษโลโก้ · ชื่อหนังสือ · เลขที่/เขียนที่/วันที่ (ชิดขวา) · ข้าพเจ้า (ผู้รับรอง) · ขอรับรองว่า (พนักงาน)
+ * · ขอรับรองว่าข้อความข้างต้นเป็นความจริง · ลงชื่อผู้รับรอง (ชิดขวา) · หมายเหตุ · ที่อยู่บริษัทท้ายกระดาษ
  */
 const CertificatePaper: React.FC<{
   doc: CertificateDocument;
@@ -42,7 +73,8 @@ const CertificatePaper: React.FC<{
   onZoom?: (z: number) => void;
 }> = ({ doc, companyLogo, companyAddress, fixedZoom, onZoom }) => {
   const [signatureFailed, setSignatureFailed] = useState(false);
-  // เนื้อหาต้องจบก่อนหมายเหตุท้ายหน้า — ถ้าล้น (เช่น หนังสือเงินเดือนที่มีค่าตำแหน่ง) ย่อเนื้อหาลงพอดีหน้า
+  const [sealFailed, setSealFailed] = useState(false);
+  // เนื้อหาต้องจบก่อนหมายเหตุท้ายหน้า — ถ้าล้นย่อเนื้อหาลงพอดีหน้า
   const bodyRef = useRef<HTMLDivElement>(null);
   const noteRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
@@ -56,15 +88,14 @@ const CertificatePaper: React.FC<{
       const bodyRect = body.getBoundingClientRect();
       const noteTop = note.getBoundingClientRect().top;
       if (!bodyRect.height) return;
-      const mm = bodyRect.width / 162; // ความกว้างเนื้อหา 162 มม. → px ต่อ มม. (รองรับกรณีหน้าจอย่อขนาดกระดาษ)
+      const mm = bodyRect.width / 162; // ความกว้างเนื้อหา 162 มม. → px ต่อ มม.
       const available = noteTop - bodyRect.top - 3 * mm; // เว้นช่องไฟเหนือหมายเหตุ 3 มม.
       const z = bodyRect.height > available ? Math.max(0.75, Math.floor((available / bodyRect.height) * 1000) / 1000) : 1;
-      body.style.zoom = String(z); // React ไม่เขียน style ซ้ำถ้าค่าเท่าเดิม
+      body.style.zoom = String(z);
       setZoom(z);
       onZoom?.(z);
     };
     fit();
-    // วัดใหม่เมื่อฟอนต์/รูปโหลดเสร็จหรือขนาดเปลี่ยน (ฟอนต์สำรองทำให้ตัดบรรทัดต่างจากฟอนต์จริง)
     document.fonts?.ready.then(fit).catch(() => undefined);
     const ro = new ResizeObserver(() => fit());
     ro.observe(body);
@@ -72,38 +103,20 @@ const CertificatePaper: React.FC<{
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc, fixedZoom]);
   const appliedZoom = fixedZoom ?? zoom;
-  const [sealFailed, setSealFailed] = useState(false);
+
   const includeSalary = doc.includeSalary ?? doc.baseSalary != null;
-  const purpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
   const salary = doc.baseSalary ?? null;
-  const position = (doc.positionName || '-').replace(/^ตำแหน่ง\s*/, '');
-  const department = doc.departmentName || '-';
-  const footer = [doc.companyAddress?.trim() || companyAddress, doc.companyPhone && `Tel. ${doc.companyPhone}`, doc.companyEmail]
-    .filter(Boolean)
-    .join('  ');
-  const para: React.CSSProperties = { margin: '0 0 2.5mm', textIndent: '12.5mm', textAlign: 'justify' };
-  const b: React.CSSProperties = { fontWeight: 700 };
-  // ตารางในหนังสือ (รายละเอียดการทำงาน / รายได้) — ขนาดและเส้นแบบเดียวกัน
-  const table: React.CSSProperties = {
-    width: '140mm',
-    margin: '0 auto',
-    borderCollapse: 'collapse',
-    fontSize: '10.5pt',
-    lineHeight: 1.35,
-    borderTop: '1px solid #000',
-    borderBottom: '1px solid #000',
-  };
-  const cell: React.CSSProperties = { padding: '0.4mm 2mm', verticalAlign: 'top' };
-  const rowLine: React.CSSProperties = { borderBottom: '1px solid #e5e7eb' };
-  const workRows: [string, React.ReactNode][] = [
-    ['รหัสพนักงาน', doc.employeeCode || '-'],
-    ['ตำแหน่ง', <span key="p" style={b}>{position}</span>],
-    ['แผนก', department],
-    ['ประเภทการจ้างงาน', doc.employmentTypeName || '-'],
-    ['วันที่เริ่มงาน', doc.startDateText || '-'],
-    ['อายุงาน', doc.serviceDurationText ? `${doc.serviceDurationText} (นับถึงวันที่ออกหนังสือ)` : '-'],
-    ['สถานะ', <span key="s" style={b}>{doc.employmentStatusText || '-'}</span>],
-  ];
+  const purpose = (doc.purpose || '').trim().replace(/^เพื่อ\s*/, '');
+  const position = (doc.positionName || '').replace(/^ตำแหน่ง\s*/, '');
+  const date = issueDateParts(doc.issueDate);
+  const { prefix, displayName } = extractPrefixAndName(doc.fullName);
+  const companyAddr = doc.companyAddress?.trim() || companyAddress;
+  const footer = [companyAddr, doc.companyPhone && `Tel. ${doc.companyPhone}`, doc.companyEmail].filter(Boolean).join('  ');
+  const stillEmployed = !/พ้นสภาพ|ไม่ได้ปฏิบัติงาน/.test(doc.employmentStatusText || '');
+
+  const para: React.CSSProperties = { textIndent: '12.5mm', textAlign: 'justify', margin: 0 };
+  const strike = (p: 'นาย' | 'นาง' | 'นางสาว'): React.CSSProperties | undefined =>
+    prefix && prefix !== p ? { textDecoration: 'line-through', textDecorationThickness: '1.5px' } : undefined;
 
   return (
     <div
@@ -117,8 +130,8 @@ const CertificatePaper: React.FC<{
         padding: '26mm 23mm 20mm 25mm',
         background: '#fff',
         color: '#000',
-        fontSize: '12pt',
-        lineHeight: 1.6,
+        fontSize: '10.5pt',
+        lineHeight: 1.68,
       }}
     >
       <DocumentLogoHeader companyLogo={doc.companyLogoBase64 || companyLogo} />
@@ -143,175 +156,134 @@ const CertificatePaper: React.FC<{
       )}
 
       <div ref={bodyRef} style={{ zoom: appliedZoom }}>
-      {/* ===== ชื่อหนังสือ ===== */}
-      <div style={{ textAlign: 'center', marginBottom: '4mm' }}>
-        <div style={{ fontSize: '16pt', fontWeight: 700, lineHeight: 1.4 }}>{doc.certificateTitle || 'หนังสือรับรอง'}</div>
-        <div style={{ fontSize: '8.5pt', letterSpacing: '0.3em', color: '#4b5563', fontFamily: 'Arial, Helvetica, sans-serif' }}>
-          {includeSalary ? 'SALARY CERTIFICATE' : 'EMPLOYMENT CERTIFICATE'}
+        {/* ===== ชื่อหนังสือ ===== */}
+        <div style={{ textAlign: 'center', fontSize: '16pt', fontWeight: 700, marginBottom: '6mm' }}>
+          {doc.certificateTitle || 'หนังสือรับรองการทำงาน'}
         </div>
-      </div>
 
-      {/* ===== ที่ (ซ้าย) / วันที่ (ขวา) ===== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3mm' }}>
-        <div>
-          เลขที่ <span style={b}>{doc.documentNumber}</span>
-        </div>
-        <div>วันที่ {doc.issueDateText || doc.issueDate}</div>
-      </div>
-
-      {/* ===== เรื่อง / เรียน ===== */}
-      <div style={{ marginBottom: '3mm' }}>
-        <div style={{ display: 'flex' }}>
-          <span style={{ width: '13mm', flexShrink: 0 }}>เรื่อง</span>
-          <span>{includeSalary ? 'รับรองการทำงานและเงินเดือน' : 'รับรองการทำงาน'}</span>
-        </div>
-        <div style={{ display: 'flex' }}>
-          <span style={{ width: '13mm', flexShrink: 0 }}>เรียน</span>
-          <span>ผู้ที่เกี่ยวข้อง</span>
-        </div>
-      </div>
-
-      {/* ===== เนื้อความรับรอง ===== */}
-      <p style={para}>
-        หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า <span style={b}>{doc.fullName}</span>
-        {doc.citizenIdMasked ? (
-          <>
-            {' '}เลขประจำตัวประชาชน {doc.citizenIdMasked}
-          </>
-        ) : null}{' '}
-        เป็นพนักงานของ{doc.companyName} โดยมีรายละเอียดการทำงาน ดังนี้
-      </p>
-
-      {/* ===== ตารางรายละเอียดการทำงาน (ทุกประเภทหนังสือ) ===== */}
-      <table style={{ ...table, marginBottom: '3mm' }}>
-        <tbody>
-          {workRows.map(([label, value], i) => (
-            // แถวสุดท้าย (สถานะ) เน้นพื้นเทา แบบเดียวกับแถวรวมของตารางรายได้
-            <tr key={label} style={i < workRows.length - 1 ? rowLine : { background: '#f3f4f6' }}>
-              <td style={{ ...cell, width: '42mm', color: '#374151' }}>{label}</td>
-              <td style={cell}>{value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {includeSalary && salary != null && (
-        <>
-          <p style={{ ...para, marginBottom: '2mm' }}>และปัจจุบันได้รับค่าตอบแทนเป็นรายเดือน ดังนี้</p>
-          {/* ===== ตารางรายได้ (เฉพาะหนังสือรับรองเงินเดือน) ===== */}
-          <table style={table}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #9ca3af', fontSize: '9.5pt', color: '#374151' }}>
-                <th style={{ ...cell, textAlign: 'left', fontWeight: 400 }}>รายการ</th>
-                <th style={{ ...cell, textAlign: 'right', fontWeight: 400 }}>จำนวนเงิน (บาท)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={rowLine}>
-                <td style={cell}>เงินเดือนประจำ</td>
-                <td style={{ ...cell, textAlign: 'right' }}>{fmtMoney(salary)}</td>
-              </tr>
-              {doc.positionAllowance ? (
-                <tr style={rowLine}>
-                  <td style={cell}>ค่าตำแหน่ง</td>
-                  <td style={{ ...cell, textAlign: 'right' }}>{fmtMoney(doc.positionAllowance)}</td>
-                </tr>
-              ) : null}
-              <tr style={{ background: '#f3f4f6', fontWeight: 700 }}>
-                <td style={cell}>รวมรายได้ต่อเดือน</td>
-                <td style={{ ...cell, textAlign: 'right' }}>{fmtMoney(doc.totalIncome ?? salary)}</td>
-              </tr>
-            </tbody>
-          </table>
-          <div style={{ textAlign: 'center', margin: '1mm 0 3mm', lineHeight: 1.5 }}>
-            <span style={b}>( {doc.totalIncomeText || doc.salaryText} )</span>
+        {/* ===== เลขที่ / เขียนที่ / วันที่ (ชิดขวา) ===== */}
+        <div style={{ marginLeft: '88mm', marginBottom: '5mm', whiteSpace: 'nowrap' }}>
+          <div>เลขที่<Fill value={doc.documentNumber} minWidth="50mm" /></div>
+          <div>เขียนที่<Fill value={doc.companyName} minWidth="50mm" /></div>
+          <div>
+            วันที่<Fill value={date.day} minWidth="8mm" />
+            เดือน<Fill value={date.month} minWidth="20mm" />
+            พ.ศ.<Fill value={date.year} minWidth="12mm" />
           </div>
-        </>
-      )}
-
-      <p style={para}>
-        หนังสือรับรองฉบับนี้ออกให้เพื่อ{purpose || 'เป็นหลักฐานแสดงการเป็นพนักงาน'}เท่านั้น
-        และไม่มีผลผูกพันต่อบริษัทในทางอื่นใด บริษัทฯ ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ
-      </p>
-
-      <p style={para}>ให้ไว้ ณ วันที่ {doc.issueDateText}</p>
-
-      {/* ===== ผู้มีอำนาจลงนาม (ชิดขวา) ===== */}
-      <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '3mm', whiteSpace: 'nowrap' }}>
-        {/* ตราประทับบริษัท — รูปจากข้อมูลบริษัท หรือวงกลมเว้นไว้ประทับตราจริงหลังพิมพ์ */}
-        {doc.companySealBase64 && !sealFailed ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={doc.companySealBase64}
-            alt="ตราประทับบริษัท"
-            onError={() => setSealFailed(true)}
-            style={{ position: 'absolute', left: '-84mm', top: '2mm', width: '40mm', height: '40mm', objectFit: 'contain' }}
-          />
-        ) : (
-          <div
-            aria-hidden
-            style={{
-              position: 'absolute',
-              left: '-82mm',
-              top: '4mm',
-              width: '36mm',
-              height: '36mm',
-              borderRadius: '50%',
-              border: '1px dashed #9ca3af',
-              color: '#9ca3af',
-              fontSize: '10pt',
-              lineHeight: 1.3,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-            }}
-          >
-            ตราประทับ
-            <br />
-            บริษัท
-          </div>
-        )}
-        <div>ขอแสดงความนับถือ</div>
-        <div style={{ marginTop: '7mm' }}>
-          <SignatureLine
-            src={signatureFailed ? null : doc.signatureBase64 || null}
-            onError={() => setSignatureFailed(true)}
-            minWidth="60mm"
-            alt="ลายเซ็นผู้มีอำนาจลงนาม"
-          />
         </div>
-        <div>({doc.signatoryName || ' '.repeat(40)})</div>
-        <div style={b}>{doc.signatoryPosition}</div>
-        <div style={{ fontSize: '10pt', color: '#374151' }}>ผู้มีอำนาจลงนาม</div>
-      </div>
+
+        {/* ===== ผู้รับรอง ===== */}
+        <p style={para}>
+          ข้าพเจ้า <V>{doc.signatoryName}</V> ตำแหน่ง <V>{doc.signatoryPosition}</V> ของ<V>{doc.companyName}</V>
+          {companyAddr ? <> ตั้งอยู่เลขที่ <V>{companyAddr}</V></> : null}
+          {doc.companyPhone ? <> เบอร์โทรศัพท์ <V>{doc.companyPhone}</V></> : null}
+        </p>
+
+        {/* ===== พนักงานที่ได้รับการรับรอง ===== */}
+        <p style={{ ...para, marginTop: '1mm' }}>
+          ขอรับรองว่า <span style={strike('นาย')}>นาย</span> / <span style={strike('นางสาว')}>นางสาว</span> /{' '}
+          <span style={strike('นาง')}>นาง</span> <V>{displayName || doc.fullName}</V>
+          {doc.citizenIdMasked ? <> เลขประจำตัวประชาชน <V>{doc.citizenIdMasked}</V></> : null} รหัสพนักงาน{' '}
+          <V>{doc.employeeCode}</V> ได้ปฏิบัติงานในตำแหน่ง <V>{position}</V> สังกัด <V>{doc.departmentName}</V>
+          {doc.employmentTypeName ? <> ประเภทการจ้างงาน <V>{doc.employmentTypeName}</V></> : null} ตั้งแต่วันที่{' '}
+          <V>{doc.startDateText}</V> {stillEmployed ? 'จนถึงปัจจุบัน' : 'และปัจจุบันพ้นสภาพการเป็นพนักงานแล้ว'}
+          {doc.serviceDurationText ? <> รวมระยะเวลา <V>{doc.serviceDurationText}</V></> : null}
+          {includeSalary && salary != null ? (
+            <>
+              {' '}ปัจจุบันได้รับเงินเดือนเดือนละ <V>{fmtMoney(salary)}</V> บาท
+              {doc.positionAllowance ? <> ค่าตำแหน่งเดือนละ <V>{fmtMoney(doc.positionAllowance)}</V> บาท</> : null}
+              {' '}รวมรายได้เดือนละ <V>{fmtMoney(doc.totalIncome ?? salary)}</V> บาท (<V>{doc.totalIncomeText || doc.salaryText}</V>)
+              {' '}ไม่รวมค่าล่วงเวลาและเงินพิเศษอื่น
+            </>
+          ) : null}
+        </p>
+
+        <p style={{ ...para, marginTop: '1mm' }}>
+          หนังสือรับรองฉบับนี้ออกให้เพื่อ <V>{purpose || 'เป็นหลักฐานแสดงการทำงาน'}</V> เท่านั้น
+        </p>
+
+        <p style={{ ...para, marginTop: '4mm' }}>ขอรับรองว่าข้อความข้างต้นเป็นความจริงทุกประการ</p>
+
+        {/* ===== ลงนามผู้รับรอง (ชิดขวา) — รูปแบบเดียวกับเอกสารอื่น ===== */}
+        <div style={{ position: 'relative', marginLeft: '88mm', width: '74mm', textAlign: 'center', marginTop: '12mm', whiteSpace: 'nowrap' }}>
+          {/* ตราประทับบริษัท — รูปจากข้อมูลบริษัท หรือวงกลมเว้นไว้ประทับตราจริงหลังพิมพ์ */}
+          {doc.companySealBase64 && !sealFailed ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={doc.companySealBase64}
+              alt="ตราประทับบริษัท"
+              onError={() => setSealFailed(true)}
+              style={{ position: 'absolute', left: '-62mm', top: '-4mm', width: '36mm', height: '36mm', objectFit: 'contain' }}
+            />
+          ) : (
+            <div
+              aria-hidden
+              style={{
+                position: 'absolute',
+                left: '-60mm',
+                top: '-2mm',
+                width: '32mm',
+                height: '32mm',
+                borderRadius: '50%',
+                border: '1px dashed #9ca3af',
+                color: '#9ca3af',
+                fontSize: '9.5pt',
+                lineHeight: 1.3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+              }}
+            >
+              ตราประทับ
+              <br />
+              บริษัท
+            </div>
+          )}
+          <div>
+            (ลงชื่อ)
+            <SignatureLine
+              src={signatureFailed ? null : doc.signatureBase64 || null}
+              onError={() => setSignatureFailed(true)}
+              minWidth="46mm"
+              alt="ลายเซ็นผู้รับรอง"
+            />
+            ผู้รับรอง
+          </div>
+          <div>
+            (<Fill value={doc.signatoryName} minWidth="50mm" />)
+          </div>
+          <div>
+            ตำแหน่ง<Fill value={doc.signatoryPosition} minWidth="48mm" />
+          </div>
+          <div>
+            วันที่<Fill value={date.dd} minWidth="12mm" />/
+            <Fill value={date.mm} minWidth="12mm" />/
+            <Fill value={date.year} minWidth="14mm" />
+          </div>
+        </div>
       </div>
 
-      {/* ===== หมายเหตุท้ายหนังสือ: อายุหนังสือ + ติดต่อตรวจสอบ ===== */}
+      {/* ===== หมายเหตุท้ายหนังสือ ===== */}
       <div
         ref={noteRef}
         style={{
           position: 'absolute',
           left: '25mm',
           right: '23mm',
-          bottom: '16mm',
+          bottom: '18mm',
           fontSize: '10pt',
-          lineHeight: 1.5,
-          borderTop: '1px dotted #6b7280',
-          paddingTop: '2mm',
+          lineHeight: 1.6,
+          textAlign: 'justify',
         }}
       >
-        <div>
-          <span style={b}>หมายเหตุ</span>{' '}
-          {doc.validityMonths
-            ? `หนังสือรับรองฉบับนี้มีอายุ ${doc.validityMonths} เดือน นับจากวันที่ออก${doc.expiryDateText ? ` (ใช้ได้ถึงวันที่ ${doc.expiryDateText})` : ''}`
-            : 'หนังสือรับรองฉบับนี้รับรองข้อมูล ณ วันที่ออกหนังสือ'}
-        </div>
-        <div>
-          ตรวจสอบความถูกต้องโดยอ้างอิงเลขที่หนังสือ ได้ที่ฝ่ายบุคคล
-          {doc.companyPhone ? <> โทร. <span style={{ whiteSpace: 'nowrap' }}>{doc.companyPhone}</span></> : null}
-          {doc.companyEmail ? <> อีเมล <span style={{ whiteSpace: 'nowrap' }}>{doc.companyEmail}</span></> : null}
-        </div>
+        <span style={{ fontWeight: 700, marginRight: '6mm' }}>หมายเหตุ</span>
+        {doc.validityMonths
+          ? `หนังสือรับรองฉบับนี้มีอายุ ${doc.validityMonths} เดือน นับจากวันที่ออก${doc.expiryDateText ? ` (ใช้ได้ถึงวันที่ ${doc.expiryDateText})` : ''}`
+          : 'หนังสือรับรองฉบับนี้รับรองข้อมูล ณ วันที่ออกหนังสือ'}{' '}
+        ตรวจสอบความถูกต้องโดยอ้างอิงเลขที่หนังสือ ได้ที่ฝ่ายบุคคล
+        {doc.companyPhone ? <> โทร. <span style={{ whiteSpace: 'nowrap' }}>{doc.companyPhone}</span></> : null}
+        {doc.companyEmail ? <> อีเมล <span style={{ whiteSpace: 'nowrap' }}>{doc.companyEmail}</span></> : null}
       </div>
 
       <DocumentAddressFooter address={footer} />
