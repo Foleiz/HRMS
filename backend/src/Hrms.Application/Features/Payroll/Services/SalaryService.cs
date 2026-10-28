@@ -79,7 +79,7 @@ public class SalaryService : ISalaryService
                     return myEmpId.HasValue ? new List<long> { myEmpId.Value } : new List<long>();
 
                 return await _context.EmployeeAssignments
-                    .Where(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && a.ManagerEmployeeId == myEmpId.Value)) && a.IsCurrent)
+                    .Where(a => (a.TeamId == myTeamId.Value || (myEmpId.HasValue && (a.Team != null && a.Team.LeadEmployeeId == myEmpId.Value))) && a.IsCurrent)
                     .Select(a => a.EmployeeId)
                     .Distinct()
                     .ToListAsync(cancellationToken);

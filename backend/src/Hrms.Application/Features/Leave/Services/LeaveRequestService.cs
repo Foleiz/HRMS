@@ -211,7 +211,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         var teamEmployeeIds = await _context.EmployeeAssignments
             .AsNoTracking()
             .Where(a => a.IsCurrent && (
-                a.ManagerEmployeeId == managerId ||
+                (a.Team != null && a.Team.LeadEmployeeId == managerId) ||
                 managedDeptIds.Contains(a.DepartmentId) ||
                 managedDivIds.Contains(a.DivisionId)
             ))
