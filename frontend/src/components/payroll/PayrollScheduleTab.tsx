@@ -8,7 +8,10 @@ import {
   Sparkles,
   Info,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Building2,
+  Banknote,
+  CreditCard,
 } from 'lucide-react';
 import {
   PayrollScheduleSettings,
@@ -332,6 +335,102 @@ export default function PayrollScheduleTab({
             <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <span>คำขอเบิกสวัสดิการที่อนุมัติหลังวันตัดรอบนี้ จะถูกยกยอดไปจ่ายในรอบเงินเดือนถัดไปโดยอัตโนมัติ</span>
           </div>
+        </div>
+      </div>
+
+      {/* วิธีการจ่ายเงินเดือน (Payment Method) - Compact Layout */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-700/80">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-[#0B2046] dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-800/60 shrink-0">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">วิธีการจ่ายเงินเดือนหลัก</h3>
+                <span className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full">
+                  วิธีหลักขององค์กร
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                กำหนดวิธีจ่ายเงินเดือนหลักเมื่อรอบได้รับอนุมัติจาก CEO
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Option 1: Bank Batch */}
+          <button
+            type="button"
+            disabled={!canEdit}
+            onClick={() => setSettings({ ...settings, defaultPaymentMethod: 'BANK_BATCH' })}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
+              settings.defaultPaymentMethod === 'BANK_BATCH'
+                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-[#0B2046] dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
+                : 'bg-slate-50/50 dark:bg-slate-850 hover:bg-slate-100/60 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <div
+              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                settings.defaultPaymentMethod === 'BANK_BATCH'
+                  ? 'bg-[#0B2046] text-white dark:bg-blue-600'
+                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                ส่งไฟล์ธนาคาร (Bank Batch)
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                ส่งไฟล์ .CSV ให้ธนาคารโอนให้อัตโนมัติ
+              </div>
+            </div>
+            {settings.defaultPaymentMethod === 'BANK_BATCH' && (
+              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="w-3 h-3" />
+                เลือกใช้
+              </span>
+            )}
+          </button>
+
+          {/* Option 2: Direct Transfer */}
+          <button
+            type="button"
+            disabled={!canEdit}
+            onClick={() => setSettings({ ...settings, defaultPaymentMethod: 'DIRECT_TRANSFER' })}
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
+              settings.defaultPaymentMethod === 'DIRECT_TRANSFER'
+                ? 'bg-blue-50/70 dark:bg-blue-950/30 border-2 border-[#0B2046] dark:border-blue-500 shadow-xs ring-1 ring-blue-500/20'
+                : 'bg-slate-50/50 dark:bg-slate-850 hover:bg-slate-100/60 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <div
+              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                settings.defaultPaymentMethod === 'DIRECT_TRANSFER'
+                  ? 'bg-[#0B2046] text-white dark:bg-blue-600'
+                  : 'bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600'
+              }`}
+            >
+              <Banknote className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate">
+                โอนเองทีละคน
+              </div>
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                โอนผ่าน Net Banking และแนบสลิปยืนยัน
+              </div>
+            </div>
+            {settings.defaultPaymentMethod === 'DIRECT_TRANSFER' && (
+              <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="w-3 h-3" />
+                เลือกใช้
+              </span>
+            )}
+          </button>
         </div>
       </div>
     </div>

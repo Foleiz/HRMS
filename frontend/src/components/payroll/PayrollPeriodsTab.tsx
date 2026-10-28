@@ -212,91 +212,91 @@ export default function PayrollPeriodsTab({
 
       {/* 4 Summary Stat Cards (Image 1) - ต่อจากแถบเครื่องมือ (Image 2) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+        {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ (Solid Blue Panel) */}
+        <div className="bg-blue-100/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/80 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดเงินเดือนรวมเดือนนี้</span>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <span className="text-xs text-blue-700 dark:text-blue-300 font-semibold">ยอดเงินเดือนรวมเดือนนี้</span>
+              <div className="text-2xl font-bold text-blue-950 dark:text-white tracking-tight">
                 {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+          <div className="mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/60 text-xs text-blue-700/80 dark:text-blue-300 font-medium">
             <span>{overview?.currentMonthPeriod || '-'}</span>
           </div>
         </div>
 
-        {/* Card 2: พนักงานที่คำนวณแล้ว */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+        {/* Card 2: พนักงานที่คำนวณแล้ว (Solid Emerald Panel) */}
+        <div className="bg-emerald-100/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">พนักงานที่คำนวณแล้ว</span>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">พนักงานที่คำนวณแล้ว</span>
+              <div className="text-2xl font-bold text-emerald-950 dark:text-white tracking-tight">
                 {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-400 dark:text-slate-400">
+          <div className="mt-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-700/80 dark:text-emerald-300">
             <span>ความคืบหน้า</span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
               คิดเป็น {overview?.calculatedPercentage ?? 0}%
             </span>
           </div>
         </div>
 
-        {/* Card 3: รอตรวจสอบ/อนุมัติ */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+        {/* Card 3: รอตรวจสอบ/อนุมัติ (Solid Amber Panel) */}
+        <div className="bg-amber-100/60 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800/80 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">รอตรวจสอบ/อนุมัติ</span>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">รอตรวจสอบ/อนุมัติ</span>
+              <div className="text-2xl font-bold text-amber-950 dark:text-white tracking-tight">
                 {overview ? `${overview.pendingApprovalCount} คน` : '-'}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Clock className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs text-slate-400 dark:text-slate-400">
+          <div className="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-700/80 dark:text-amber-300 font-medium">
             <span>ต้องดำเนินการก่อนปิดรอบ</span>
           </div>
         </div>
 
-        {/* Card 4: กำหนดปิดรอบถัดไป */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/80 p-5 shadow-xs hover:border-slate-200 dark:hover:border-slate-600 transition-all flex flex-col justify-between">
+        {/* Card 4: กำหนดปิดรอบถัดไป (Solid Purple Panel) */}
+        <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำหนดปิดรอบถัดไป</span>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">กำหนดปิดรอบถัดไป</span>
+              <div className="text-2xl font-bold text-purple-950 dark:text-white tracking-tight">
                 {overview?.nextClosingDate || '-'}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-slate-100/90 dark:bg-slate-700/80 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 text-xs flex items-center justify-between">
-            <span className="text-slate-400">
+          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs flex items-center justify-between">
+            <span className="text-purple-700/80 dark:text-purple-300 font-medium">
               สถานะกำหนดการ
               {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300 font-semibold">
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-slate-800 text-rose-600 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800 shadow-2xs">
                   ค้าง {overview!.overdueOpenPeriodCount} รอบ
                 </span>
               )}
             </span>
-            <span className={`font-semibold ${
+            <span className={`font-bold ${
               overview?.remainingDays != null && overview.remainingDays < 0
                 ? 'text-rose-600 dark:text-rose-400'
                 : overview?.remainingDays === 0
                 ? 'text-amber-600 dark:text-amber-400'
-                : 'text-slate-600 dark:text-slate-300'
+                : 'text-purple-700 dark:text-purple-300'
             }`}>
               {overview?.remainingDays != null
                 ? overview.remainingDays < 0

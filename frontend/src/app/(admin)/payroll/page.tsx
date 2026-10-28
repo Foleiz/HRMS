@@ -105,7 +105,7 @@ import { commissionService } from '@/services/commissionService';
 import { CommissionPeriodSummary } from '@/types/commission';
 import PayrollPeriodsTab from '@/components/payroll/PayrollPeriodsTab';
 import PayrollScheduleTab from '@/components/payroll/PayrollScheduleTab';
-import { calculatePeriodDatesFromSettings } from '@/services/payrollScheduleService';
+import { calculatePeriodDatesFromSettings, getPayrollScheduleSettings } from '@/services/payrollScheduleService';
 
 type ActiveTab =
   | 'overview'
@@ -986,7 +986,7 @@ export default function PayrollPage() {
       text:
         `รอบเงินเดือน: ${selectedPeriod.periodName}\nยอดสุทธิรวม: ฿${totalNet}` +
         (noSalaryCount > 0
-          ? `\n\n⚠ มีพนักงาน ${noSalaryCount} คนที่ยังไม่มีฐานเงินเดือน จะไม่ได้รับเงินในรอบนี้`
+          ? `\n\n(หมายเหตุ: มีพนักงาน ${noSalaryCount} คนที่ยังไม่มีฐานเงินเดือน จะไม่ได้รับเงินในรอบนี้)`
           : '') +
         '\n\nหลังส่งแล้ว HR จะคำนวณใหม่ไม่ได้ จนกว่าการเงินจะส่งคืน',
       confirmButtonText: 'ส่งให้การเงิน',
@@ -1198,7 +1198,7 @@ export default function PayrollPage() {
     }
   };
 
-  const handleSetPaymentMethod = async (method: 'BANK_BATCH' | 'DIRECT_TRANSFER') => {
+  const handleSetPaymentMethod = async (method: 'BANK_BATCH' | 'DIRECT_TRANSFER', silent = false) => {
     if (!selectedPeriod) return;
     setIsSettingPaymentMethod(true);
     try {
@@ -1206,13 +1206,30 @@ export default function PayrollPage() {
       setSelectedPeriod(updated);
       setPeriods(prev => prev.map(p => (p.id === updated.id ? updated : p)));
       await loadTransferList(selectedPeriod.id);
-      showToast(`เลือกวิธีการจ่ายเงิน: ${method === 'BANK_BATCH' ? 'ส่งไฟล์ธนาคาร' : 'CEO โอนเอง'}`);
+      if (!silent) {
+        showToast(`เลือกวิธีการจ่ายเงิน: ${method === 'BANK_BATCH' ? 'ส่งไฟล์ธนาคาร' : 'โอนเองทีละคน'}`);
+      }
     } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการตั้งค่าวิธีการจ่ายเงิน');
+      if (!silent) {
+        showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการตั้งค่าวิธีการจ่ายเงิน');
+      }
     } finally {
       setIsSettingPaymentMethod(false);
     }
   };
+
+  // Auto-apply default payment method from schedule settings if period is APPROVED and has no method set
+  useEffect(() => {
+    if (
+      selectedPeriod?.status === 'APPROVED' &&
+      !selectedPeriod?.paymentMethod &&
+      (isFinance || isCEO || isAdmin) &&
+      !isSettingPaymentMethod
+    ) {
+      const defaultMethod = getPayrollScheduleSettings().defaultPaymentMethod || 'BANK_BATCH';
+      handleSetPaymentMethod(defaultMethod, true);
+    }
+  }, [selectedPeriod?.id, selectedPeriod?.status, selectedPeriod?.paymentMethod, isFinance, isCEO, isAdmin]);
 
   const handleOpenSlipModal = (item: PayrollTransferItem) => {
     setSlipModalTarget(item);
@@ -1269,7 +1286,7 @@ export default function PayrollPage() {
       const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
       setSelectedPeriod(updatedPeriod);
       setPeriods(prev => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
-      showToast('✅ บันทึกการโอนเงินเรียบร้อยแล้ว');
+      showToast('บันทึกการโอนเงินเรียบร้อยแล้ว');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกการโอนเงิน');
     } finally {
@@ -1295,7 +1312,7 @@ export default function PayrollPage() {
       const updatedPeriod = await salaryService.getPayrollPeriodById(selectedPeriod.id);
       setSelectedPeriod(updatedPeriod);
       setPeriods(prev => prev.map(p => (p.id === updatedPeriod.id ? updatedPeriod : p)));
-      showToast('✅ ทำเครื่องหมายว่าโอนเงินให้พนักงานทุกคนเรียบร้อยแล้ว');
+      showToast('ทำเครื่องหมายว่าโอนเงินให้พนักงานทุกคนเรียบร้อยแล้ว');
     } catch (err: any) {
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการทำเครื่องหมายโอนทั้งหมด');
     } finally {
@@ -4747,8 +4764,11 @@ export default function PayrollPage() {
                                     </div>
                                   </>
                                 ) : (
-                                  <div className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">⚠️ ยังไม่มีบัญชีธนาคาร</div>
-                                )}
+                                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                                      <AlertTriangle className="w-3 h-3 shrink-0" />
+                                      <span>ยังไม่มีบัญชีธนาคาร</span>
+                                    </div>
+                                  )}
                               </td>
                               <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                                 {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
@@ -4843,9 +4863,9 @@ export default function PayrollPage() {
                     <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">สถานะการตรวจทาน</span>
                     <div className="text-base font-bold text-indigo-700 mt-2">
                       {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
-                        ? 'รอ CEO อนุมัติ ⏳'
+                        ? 'รอ CEO อนุมัติ'
                         : selectedPeriod?.status === 'APPROVED'
-                        ? 'อนุมัติเรียบร้อยแล้ว ✅'
+                        ? 'อนุมัติเรียบร้อยแล้ว'
                         : selectedPeriod?.statusText}
                     </div>
                   </div>
@@ -5003,8 +5023,9 @@ export default function PayrollPage() {
                         {bankSummary.payerAccountName ? ` (${bankSummary.payerAccountName})` : ''}
                       </div>
                     ) : (
-                      <div className="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
-                        ⚠️ ยังไม่ได้ตั้งบัญชีธนาคารหลักสำหรับจ่ายเงินเดือน (โครงสร้างองค์กร → บัญชีธนาคารบริษัท) — สร้างไฟล์ธนาคารไม่ได้
+                      <div className="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span>ยังไม่ได้ตั้งบัญชีธนาคารหลักสำหรับจ่ายเงินเดือน (โครงสร้างองค์กร → บัญชีธนาคารบริษัท) — สร้างไฟล์ธนาคารไม่ได้</span>
                       </div>
                     )}
                     {(bankSummary.pendingBankChangeCount ?? 0) > 0 && (
@@ -5048,10 +5069,20 @@ export default function PayrollPage() {
                           <span>กำลังดำเนินการจ่าย</span>
                         </span>
                       )}
-                      {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
+                      {selectedPeriod?.status === 'APPROVED' && (
                         <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 inline-flex items-center gap-1.5">
                           <CheckCircle className="w-3.5 h-3.5" />
-                          <span>อนุมัติแล้ว — รอเลือกวิธีการจ่าย</span>
+                          <span>CEO อนุมัติแล้ว</span>
+                        </span>
+                      )}
+                      {selectedPeriod && (
+                        <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 inline-flex items-center gap-1.5">
+                          <span className="text-slate-400">วิธีจ่าย:</span>
+                          <span className="font-semibold">
+                            {selectedPeriod.paymentMethod === 'DIRECT_TRANSFER'
+                              ? 'โอนเองทีละคน'
+                              : 'ส่งไฟล์ธนาคาร (Bank Batch)'}
+                          </span>
                         </span>
                       )}
                       {selectedPeriod?.status === 'CLOSED' && (
@@ -5091,43 +5122,6 @@ export default function PayrollPage() {
                   </div>
                 </div>
 
-                {/* ── PHASE 1: เลือกวิธีการจ่ายเงิน (เมื่อ APPROVED และยังไม่ได้เลือก) ── */}
-                {selectedPeriod?.status === 'APPROVED' && !selectedPeriod?.paymentMethod && (
-                  <div className="bg-gradient-to-br from-[#0B2046] to-[#1a3a7a] rounded-2xl p-6 text-white shadow-lg">
-                    <h3 className="text-base font-bold mb-1">เลือกวิธีการจ่ายเงินเดือน</h3>
-                    <p className="text-xs text-blue-200 mb-5">CEO อนุมัติรอบเงินเดือนแล้ว กรุณาเลือกวิธีการจ่ายเงิน</p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Model 1: Bank Batch */}
-                      <button
-                        onClick={() => handleSetPaymentMethod('BANK_BATCH')}
-                        disabled={isSettingPaymentMethod}
-                        className="flex flex-col items-start gap-3 p-5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl transition-all cursor-pointer disabled:opacity-60 text-left"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-blue-400/30 flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm">ส่งไฟล์ธนาคาร (Bank Batch)</div>
-                          <div className="text-xs text-blue-200 mt-1">ดาวน์โหลดไฟล์ .CSV ส่งให้ธนาคาร ธนาคารจะโอนเงินให้พนักงานอัตโนมัติ (สำหรับบริษัทขนาดใหญ่)</div>
-                        </div>
-                      </button>
-                      {/* Model 2: Direct Transfer */}
-                      <button
-                        onClick={() => handleSetPaymentMethod('DIRECT_TRANSFER')}
-                        disabled={isSettingPaymentMethod}
-                        className="flex flex-col items-start gap-3 p-5 bg-white/10 hover:bg-white/20 border-2 border-emerald-400/50 rounded-2xl transition-all cursor-pointer disabled:opacity-60 text-left"
-                      >
-                        <div className="w-10 h-10 rounded-xl bg-emerald-400/30 flex items-center justify-center">
-                          <Banknote className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <div className="font-bold text-sm">โอนเองทีละคน</div>
-                          <div className="text-xs text-blue-200 mt-1">โอนเงินผ่าน Internet Banking ทีละคน แนบสลิปยืนยัน แล้วยืนยันการจ่ายเงินทั้งหมด</div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* ── PHASE 2a: BANK_BATCH SLIP & RECEIPT (Option 1: Compact Clean Bar) ── */}
                 {selectedPeriod?.paymentMethod === 'BANK_BATCH' && selectedPeriod?.status !== 'CLOSED' && (
@@ -5329,7 +5323,10 @@ export default function PayrollPage() {
                                       {item.accountName && <div className="text-[11px] text-slate-400">{item.accountName}</div>}
                                     </>
                                   ) : (
-                                    <span className="text-red-400 font-medium">⚠️ ไม่มีบัญชีธนาคาร</span>
+                                    <span className="inline-flex items-center gap-1 text-red-500 dark:text-red-400 font-medium text-[11px]">
+                                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                      <span>ไม่มีบัญชีธนาคาร</span>
+                                    </span>
                                   )}
                                 </td>
                                 {/* ยอด */}
@@ -5358,16 +5355,19 @@ export default function PayrollPage() {
                                 {/* Status Badge */}
                                 <td className="py-3.5 px-4 text-center">
                                   {item.paymentStatus === 'TRANSFERRED' ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
-                                      ✓ โอนแล้ว
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                      <span>โอนแล้ว</span>
                                     </span>
                                   ) : item.paymentStatus === 'FAILED' ? (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
-                                      ✗ โอนไม่สำเร็จ
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+                                      <span>โอนไม่สำเร็จ</span>
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700 border border-amber-200">
-                                      ⏳ รอโอน
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                                      <span>รอโอน</span>
                                     </span>
                                   )}
                                 </td>
@@ -5376,10 +5376,11 @@ export default function PayrollPage() {
                                   <td className="py-3.5 px-4 text-center">
                                     {!item.accountNumber || !item.bankName ? (
                                       <span
-                                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[11px] font-medium bg-red-50 text-red-600 border border-red-200 cursor-not-allowed"
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 cursor-not-allowed"
                                         title="ไม่สามารถโอนได้เนื่องจากไม่มีข้อมูลบัญชีธนาคาร"
                                       >
-                                        ⚠️ รอข้อมูลบัญชี
+                                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                        <span>รอข้อมูลบัญชี</span>
                                       </span>
                                     ) : (
                                       <button
@@ -5630,48 +5631,82 @@ export default function PayrollPage() {
             </p>
           </div>
 
-          {/* 4 Summary Stat Cards (Distinct Harmonious Theme Colors) */}
+          {/* 4 Summary Stat Cards (Solid Panel Theme Colors matching previous tabs) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1: จำนวนขั้นภาษี (Blue Theme) */}
-            <div className="bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/50 shadow-xs flex flex-col justify-between">
-              <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">จำนวนขั้นภาษี</span>
-              <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {taxBrackets.length || 8}
-                </span>
-                <span className="text-sm text-blue-700/80 dark:text-blue-300/80 font-medium">ขั้น</span>
+            {/* Card 1: จำนวนขั้นภาษี (Solid Blue Panel) */}
+            <div className="bg-blue-100/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/80 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-blue-700 dark:text-blue-300 font-semibold">จำนวนขั้นภาษี</span>
+                  <div className="text-2xl font-bold text-blue-950 dark:text-white tracking-tight">
+                    {taxBrackets.length || 8}{' '}
+                    <span className="text-sm font-normal text-blue-700 dark:text-blue-300">ขั้น</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Layers className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/60 text-xs text-blue-700/80 dark:text-blue-300 font-medium">
+                <span>คำนวณแบบขั้นบันได ภ.ง.ด.</span>
               </div>
             </div>
 
-            {/* Card 2: เงินได้สุทธิที่ยกเว้นภาษี (Emerald Theme - สิทธิประโยชน์/ยกเว้น) */}
-            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/50 shadow-xs flex flex-col justify-between">
-              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">เงินได้สุทธิที่ยกเว้นภาษี</span>
-              <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 tracking-tight font-mono">
-                  {(taxBrackets.find((b) => b.taxRate === 0)?.incomeTo ?? 150000).toLocaleString()}
-                </span>
-                <span className="text-sm text-emerald-700/80 dark:text-emerald-300/80 font-medium">บาท</span>
+            {/* Card 2: เงินได้สุทธิที่ยกเว้นภาษี (Solid Emerald Panel) */}
+            <div className="bg-emerald-100/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">เงินได้สุทธิที่ยกเว้นภาษี</span>
+                  <div className="text-2xl font-bold text-emerald-950 dark:text-white tracking-tight font-mono">
+                    ฿{(taxBrackets.find((b) => b.taxRate === 0)?.incomeTo ?? 150000).toLocaleString()}
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 text-xs text-emerald-700/80 dark:text-emerald-300 font-medium">
+                <span>อัตราภาษี 0% (ขั้นแรก)</span>
               </div>
             </div>
 
-            {/* Card 3: อัตราสูงสุด (Amber Theme - เพดานภาษีสูงสุด) */}
-            <div className="bg-amber-50/60 dark:bg-amber-950/30 rounded-2xl p-5 border border-amber-100 dark:border-amber-900/50 shadow-xs flex flex-col justify-between">
-              <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">อัตราสูงสุด</span>
-              <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-amber-600 dark:text-amber-400 tracking-tight font-mono">
-                  {(Math.max(0, ...taxBrackets.map((b) => b.taxRate)) * 100).toFixed(0)}%
-                </span>
+            {/* Card 3: อัตราสูงสุด (Solid Amber Panel) */}
+            <div className="bg-amber-100/60 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800/80 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">อัตราภาษีสูงสุด</span>
+                  <div className="text-2xl font-bold text-amber-950 dark:text-white tracking-tight font-mono">
+                    {(Math.max(0, ...taxBrackets.map((b) => b.taxRate)) * 100).toFixed(0)}%
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Percent className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-700/80 dark:text-amber-300 font-medium">
+                <span>เพดานอัตราภาษีสูงสุด</span>
               </div>
             </div>
 
-            {/* Card 4: สถานะการใช้งาน (Signature Dark Navy Theme #0B2046) */}
-            <div className="bg-[#0B2046] dark:bg-slate-900 text-white rounded-2xl p-5 shadow-xs border border-[#0B2046] dark:border-slate-800 flex flex-col justify-between">
-              <span className="text-xs text-blue-200 dark:text-slate-400 font-medium">สถานะการใช้งาน</span>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-bold tracking-tight text-white font-mono">
-                  {taxBrackets.filter((b) => (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length} / {taxBrackets.length || 8}
+            {/* Card 4: สถานะการใช้งาน (Solid Purple Panel) */}
+            <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">สถานะการใช้งาน</span>
+                  <div className="text-2xl font-bold text-purple-950 dark:text-white tracking-tight font-mono">
+                    {taxBrackets.filter((b) => (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length} / {taxBrackets.length || 8}{' '}
+                    <span className="text-sm font-normal text-purple-700 dark:text-purple-300 font-sans">ขั้นใช้งาน</span>
+                  </div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 flex items-center justify-between text-xs text-purple-700/80 dark:text-purple-300 font-medium">
+                <span>พร้อมคำนวณในระบบ</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-purple-200/80 dark:border-purple-800/80 shadow-2xs">
+                  เปิดใช้งานครบ
                 </span>
-                <span className="text-xs text-blue-200/90 dark:text-slate-400 font-medium">ขั้นใช้งาน</span>
               </div>
             </div>
           </div>
