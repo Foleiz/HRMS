@@ -261,7 +261,7 @@ export default function DocumentHistoryPage() {
         id: `CERT-${r.id}`,
         code: `CERT-${String(r.id).padStart(4, '0')}`,
         submittedDate: r.requestedAt,
-        detailDate: `วัตถุประสงค์: ${r.purpose || '-'}`,
+        detailDate: r.purpose ? `วัตถุประสงค์: ${r.purpose}` : docName,
         documentType: `หนังสือรับรอง (${docName})`,
         status: r.status,
         source: 'CERTIFICATE',

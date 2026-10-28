@@ -352,16 +352,12 @@ public class CertificateService : ICertificateService
             throw new NotFoundException($"ไม่พบประเภทหนังสือรับรองรหัส {dto.CertificateTypeId}");
         }
 
-        if (string.IsNullOrWhiteSpace(dto.Purpose))
-        {
-            throw new ValidationException("กรุณาระบุวัตถุประสงค์ในการขอหนังสือรับรอง");
-        }
-
+        // วัตถุประสงค์ไม่บังคับ — ว่างได้ หนังสือจะใช้ข้อความกลางตามประเภท ("เป็นหลักฐานแสดงการทำงาน/รายได้")
         var request = new CertificateRequest
         {
             EmployeeId = employeeId.Value,
             CertificateTypeId = dto.CertificateTypeId,
-            Purpose = dto.Purpose.Trim(),
+            Purpose = dto.Purpose?.Trim() ?? string.Empty,
             Status = "PENDING",
             RequestedAt = DateTime.UtcNow
         };
@@ -679,7 +675,8 @@ public class CertificateService : ICertificateService
         var companyName = company?.CompanyName ?? string.Empty;
         var issueDate = issuedAt ?? nowTh;
         var duration = ServiceDuration(startDate, todayTh, language);
-        var purposeText = string.IsNullOrWhiteSpace(purpose) ? "เป็นหลักฐานแสดงการทำงาน" : purpose.Trim();
+        // ว่าง = ให้หน้าเอกสารใช้ข้อความกลางตามประเภทหนังสือ
+        var purposeText = purpose?.Trim() ?? string.Empty;
 
         var bodyTh = $"หนังสือฉบับนี้ให้ไว้เพื่อรับรองว่า {fullName} เป็นพนักงานของ{companyName} "
                      + $"ตำแหน่ง {position} สังกัด{department} โดยเริ่มปฏิบัติงานตั้งแต่วันที่ {ThaiDate(startDate)} "
