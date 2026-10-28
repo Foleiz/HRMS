@@ -214,14 +214,70 @@ export default function EmployeeDetailView({
     return 'personal';
   });
 
+  // Active Section State (ทางลัดหัวข้อย่อยในแท็บข้อมูลส่วนตัว)
+  const [activeSection, setActiveSection] = useState<string>('sec-basic');
+  const isManualClickRef = useRef<boolean>(false);
+
   // ลิงก์เดิม ?tab=family / ?tab=emergency → เลื่อนไปหัวข้อในแท็บข้อมูลส่วนตัว
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     const target = tabParam === 'family' ? 'sec-family' : tabParam === 'emergency' ? 'sec-emergency' : null;
     if (!target) return;
+    setActiveSection(target);
     const t = setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     return () => clearTimeout(t);
   }, [searchParams]);
+
+  // ซิงค์ activeSection ตามตำแหน่งการ Scroll จริงในหน้าจอ
+  useEffect(() => {
+    if (activeTab !== 'personal') return;
+
+    const mainEl = document.querySelector('main');
+    const sectionIds = ['sec-basic', 'sec-contact', 'sec-bank', 'sec-family', 'sec-emergency'];
+
+    const handleScroll = () => {
+      if (isManualClickRef.current) return;
+
+      const elements = sectionIds
+        .map((id) => document.getElementById(id))
+        .filter((el): el is HTMLElement => el !== null);
+
+      if (elements.length === 0) return;
+
+      // หากเลื่อนจนสุดด้านล่าง ให้ไฮไลต์หัวข้อสุดท้าย
+      if (mainEl && mainEl.scrollHeight - mainEl.scrollTop - mainEl.clientHeight < 60) {
+        setActiveSection('sec-emergency');
+        return;
+      }
+
+      let currentId = 'sec-basic';
+      for (const el of elements) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= 200) {
+          currentId = el.id;
+        }
+      }
+      setActiveSection(currentId);
+    };
+
+    handleScroll();
+    mainEl?.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      mainEl?.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [activeTab]);
+
+  const handleSectionClick = (sectionId: string) => {
+    isManualClickRef.current = true;
+    setActiveSection(sectionId);
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      isManualClickRef.current = false;
+    }, 800);
+  };
 
   // ใช้รหัสสิทธิ์เดียวกับ backend (EMP_DOC_CREATE / EMP_DOC_EDIT)
   const canManageDocuments =
@@ -721,23 +777,30 @@ export default function EmployeeDetailView({
           {activeTab === 'personal' && (
             <div className="pt-5 flex-1 w-full space-y-5 animate-in fade-in duration-150">
               {/* ทางลัดไปแต่ละหัวข้อ */}
-              <div className="flex flex-wrap gap-2">
+              <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xs py-2 -mt-2 -mx-1 px-1 border-b border-slate-100/90 dark:border-slate-700/60 flex flex-wrap gap-2 transition-colors">
                 {[
                   { id: 'sec-basic', label: 'ข้อมูลพื้นฐาน' },
                   { id: 'sec-contact', label: 'ติดต่อ & ที่อยู่' },
                   { id: 'sec-bank', label: 'บัญชีธนาคาร' },
-                  { id: 'sec-family', label: `ครอบครัว` },
-                  { id: 'sec-emergency', label: `ผู้ติดต่อฉุกเฉิน` },
-                ].map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-colors"
-                  >
-                    {s.label}
-                  </button>
-                ))}
+                  { id: 'sec-family', label: 'ครอบครัว' },
+                  { id: 'sec-emergency', label: 'ผู้ติดต่อฉุกเฉิน' },
+                ].map((s) => {
+                  const isActive = activeSection === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleSectionClick(s.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                        isActive
+                          ? 'bg-primary text-white shadow-2xs dark:bg-blue-600 dark:text-white'
+                          : 'bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* 1) ข้อมูลพื้นฐาน */}
