@@ -9,7 +9,6 @@ import {
   Clock,
   CalendarDays,
   FileText,
-  Info,
 } from 'lucide-react';
 import { attendanceImportService } from '@/services/attendanceImportService';
 import { useToast } from '@/context/ToastContext';
@@ -31,6 +30,7 @@ interface HeaderCell {
   text: string;
   colSpan?: number;
   rowSpan?: number;
+  tooltip?: string;
 }
 interface SheetSample {
   /** ตัวอักษรคอลัมน์ Excel เริ่มที่ D */
@@ -50,40 +50,40 @@ const DELIY: SheetSample = {
   ],
   headerRows: [
     [
-      { text: 'รหัส', rowSpan: 2 },
-      { text: 'ชื่อ-สกุล', rowSpan: 2 },
-      { text: 'แผนก', rowSpan: 2 },
-      { text: 'วันที่', rowSpan: 2 },
-      { text: 'สัปดาห์', rowSpan: 2 },
-      { text: 'เข้า-ออก', rowSpan: 2 },
-      { text: 'กะการทำงาน', colSpan: 2 },
-      { text: 'วันทำงาน', colSpan: 2 },
-      { text: 'ขาด', rowSpan: 2 },
-      { text: 'สาย', colSpan: 2 },
-      { text: 'ออกก่อน', colSpan: 2 },
-      { text: 'ไม่ลงเวลา', colSpan: 2 },
-      { text: 'วันหยุด', colSpan: 2 },
-      { text: 'การลา', colSpan: 2 },
-      { text: 'สัญลักษณ์', colSpan: 2 },
-      { text: 'Lock', rowSpan: 2 },
+      { text: 'รหัส', rowSpan: 2, tooltip: 'รหัสพนักงานในเครื่องสแกน (Biometric ID)' },
+      { text: 'ชื่อ-สกุล', rowSpan: 2, tooltip: 'ชื่อ-นามสกุลพนักงาน' },
+      { text: 'แผนก', rowSpan: 2, tooltip: 'แผนก/ฝ่ายสังกัด' },
+      { text: 'วันที่', rowSpan: 2, tooltip: 'วันที่ทำงาน (Work Date)' },
+      { text: 'สัปดาห์', rowSpan: 2, tooltip: 'ลำดับวันในสัปดาห์ (1=จันทร์, 7=อาทิตย์)' },
+      { text: 'เข้า-ออก', rowSpan: 2, tooltip: 'เวลาเข้า-ออกจริง เช่น 09:49-18:08 (N=ไม่ได้สแกน, L=สาย, E=ออกก่อน)' },
+      { text: 'กะการทำงาน', colSpan: 2, tooltip: 'เกณฑ์มาตรฐานตามกะที่พนักงานควรมาทำงาน (Scheduled Work)' },
+      { text: 'วันทำงาน', colSpan: 2, tooltip: 'ผลการมาทำงานจริงของพนักงาน (Actual Worked)' },
+      { text: 'ขาด', rowSpan: 2, tooltip: 'จำนวนวันขาดงาน (1 = ขาดทั้งวัน, 0.5 = ครึ่งวัน)' },
+      { text: 'สาย', colSpan: 2, tooltip: 'สถิติการมาสาย (ครั้ง / นาที)' },
+      { text: 'ออกก่อน', colSpan: 2, tooltip: 'สถิติการออกก่อนเวลา (ครั้ง / นาที)' },
+      { text: 'ไม่ลงเวลา', colSpan: 2, tooltip: 'สถิติไม่ได้สแกนเวลาเข้า หรือ ออก' },
+      { text: 'วันหยุด', colSpan: 2, tooltip: 'วันหยุดประจำสัปดาห์ หรือ วันหยุดประจำปี' },
+      { text: 'การลา', colSpan: 2, tooltip: 'สถิติการลา (ครั้ง / ชั่วโมง)' },
+      { text: 'สัญลักษณ์', colSpan: 2, tooltip: 'สัญลักษณ์ประเภทกะหรือการลา เช่น DV=วันทำงาน, W=วันหยุดสัปดาห์, H=วันหยุดนักขัตฤกษ์' },
+      { text: 'Lock', rowSpan: 2, tooltip: 'สถานะการล็อกข้อมูลจากเครื่องสแกน' },
     ],
     [
-      { text: 'วัน' },
-      { text: 'ชั่วโมง' },
-      { text: 'วัน' },
-      { text: 'ชั่วโมง' },
-      { text: 'ครั้ง' },
-      { text: 'นาที.' },
-      { text: 'ครั้ง' },
-      { text: 'นาที.' },
-      { text: 'เข้า' },
-      { text: 'ออก' },
-      { text: 'สัปดาห์' },
-      { text: 'ประจำปี' },
-      { text: 'ครั้ง' },
-      { text: 'ชั่วโมง' },
-      { text: 'กะ' },
-      { text: 'ลา' },
+      { text: 'วัน', tooltip: 'จำนวนวันตามกะที่ควรมาทำงาน (เช่น 1 วัน)' },
+      { text: 'ชั่วโมง', tooltip: 'จำนวนชั่วโมงตามกะที่ควรมาทำงาน (เช่น 8 ชม.)' },
+      { text: 'วัน', tooltip: 'จำนวนวันที่มาทำงานจริง (หากขาดงานจะเป็น 0)' },
+      { text: 'ชั่วโมง', tooltip: 'จำนวนชั่วโมงที่ทำงานจริง (ระบบนำไปคำนวณเงินเดือน)' },
+      { text: 'ครั้ง', tooltip: 'จำนวนครั้งที่มาสาย' },
+      { text: 'นาที.', tooltip: 'จำนวนนาทีที่มาสาย' },
+      { text: 'ครั้ง', tooltip: 'จำนวนครั้งที่ออกก่อนเวลา' },
+      { text: 'นาที.', tooltip: 'จำนวนนาทีที่ออกก่อนเวลา' },
+      { text: 'เข้า', tooltip: 'จำนวนครั้งที่ไม่ได้สแกนเข้า' },
+      { text: 'ออก', tooltip: 'จำนวนครั้งที่ไม่ได้สแกนออก' },
+      { text: 'สัปดาห์', tooltip: 'วันหยุดประจำสัปดาห์ (1=ใช่, 0=ไม่ใช่)' },
+      { text: 'ประจำปี', tooltip: 'วันหยุดนักขัตฤกษ์/ประจำปี (1=ใช่, 0=ไม่ใช่)' },
+      { text: 'ครั้ง', tooltip: 'จำนวนครั้งที่ขอลา' },
+      { text: 'ชั่วโมง', tooltip: 'จำนวนชั่วโมงที่ขอลา' },
+      { text: 'กะ', tooltip: 'สัญลักษณ์กะการทำงาน (เช่น DV, W, H)' },
+      { text: 'ลา', tooltip: 'สัญลักษณ์ประเภทการลา' },
     ],
   ],
   dataRows: [
@@ -103,19 +103,19 @@ const RECORD: SheetSample = {
   ],
   headerRows: [
     [
-      { text: 'รหัส', rowSpan: 2 },
-      { text: 'ชื่อ-สกุล', rowSpan: 2 },
-      { text: 'แผนก-ฝ่าย.', rowSpan: 2 },
-      { text: 'วันที่-เวลา', rowSpan: 2 },
-      { text: 'สถานะ', rowSpan: 2 },
-      { text: 'ลงเวลาด้วย', rowSpan: 2 },
-      { text: 'การตรวจอุณหภูมิ', colSpan: 2 },
-      { text: 'เครื่อง', rowSpan: 2 },
-      { text: 'ประมวลผล', rowSpan: 2 },
+      { text: 'รหัส', rowSpan: 2, tooltip: 'รหัสพนักงานในเครื่องสแกน (Biometric ID)' },
+      { text: 'ชื่อ-สกุล', rowSpan: 2, tooltip: 'ชื่อ-นามสกุลพนักงาน' },
+      { text: 'แผนก-ฝ่าย.', rowSpan: 2, tooltip: 'แผนก/ฝ่ายสังกัด' },
+      { text: 'วันที่-เวลา', rowSpan: 2, tooltip: 'วันเวลาที่สแกนจริง (YYYY-MM-DD HH:mm:ss)' },
+      { text: 'สถานะ', rowSpan: 2, tooltip: 'สถานะจากเครื่อง เช่น AUTO' },
+      { text: 'ลงเวลาด้วย', rowSpan: 2, tooltip: 'รูปแบบการลงเวลา เช่น นิ้ว, ใบหน้า, บัตร' },
+      { text: 'การตรวจอุณหภูมิ', colSpan: 2, tooltip: 'การตรวจวัดอุณหภูมิร่างกายจากเครื่องสแกน' },
+      { text: 'เครื่อง', rowSpan: 2, tooltip: 'ชื่อเครื่องหรือจุดสแกน' },
+      { text: 'ประมวลผล', rowSpan: 2, tooltip: 'ผลการประมวลผลจากเครื่อง (IN / OUT / EARLY / LATE / INVALID)' },
     ],
     [
-      { text: 'อุณหภูมิ' },
-      { text: 'องศา' },
+      { text: 'อุณหภูมิ', tooltip: 'สถานะการตรวจอุณหภูมิ' },
+      { text: 'องศา', tooltip: 'อุณหภูมิร่างกาย (องศาเซลเซียส)' },
     ],
   ],
   dataRows: [
@@ -127,7 +127,7 @@ const RECORD: SheetSample = {
 };
 
 const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
-  const rowNo = 'px-1 text-center text-slate-400 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-normal align-middle';
+  const rowNo = 'px-1 text-center text-slate-400 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-normal align-middle select-none';
   return (
     <div className="border border-slate-300 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
       <table className="text-[11px] text-left border-collapse font-mono">
@@ -161,9 +161,10 @@ const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
                   key={i}
                   colSpan={cell.colSpan || 1}
                   rowSpan={cell.rowSpan || 1}
+                  title={cell.tooltip}
                   className={`px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans align-middle ${
                     cell.colSpan && cell.colSpan > 1 ? 'text-center' : ''
-                  }`}
+                  } ${cell.tooltip ? 'cursor-help hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors' : ''}`}
                 >
                   {cell.text}
                 </td>
@@ -224,7 +225,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">รูปแบบไฟล์ที่รองรับ</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                อัปโหลดไฟล์ .xls / .xlsx ที่ส่งออกจากเครื่องสแกน Syaco ได้ทันที ไม่ต้องแก้ไขไฟล์
+                อัปโหลดไฟล์ .xls / .xlsx ที่ส่งออกจากเครื่องสแกน Syaco ได้ทันที ไม่ต้องแก้ไขไฟล์ (สามารถนำเมาส์ชี้ที่หัวคอลัมน์เพื่อดูคำอธิบายได้)
               </p>
             </div>
           </div>
@@ -273,34 +274,6 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
                 เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน ระบบรู้ว่าเป็นไฟล์ชนิดนี้จากคำว่า <code className="font-mono">deliy</code> ในแถวแรก
               </p>
               <SheetPreview sample={DELIY} />
-
-              {/* คำอธิบายคอลัมน์กะการทำงาน vs วันทำงาน */}
-              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 text-[11px] space-y-2 text-slate-600 dark:text-slate-400">
-                <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Info className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
-                  <span>คำอธิบาย: ความแตกต่างระหว่างคอลัมน์ &quot;กะการทำงาน&quot; และ &quot;วันทำงาน&quot;</span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5 text-slate-600 dark:text-slate-300">
-                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700/50 space-y-1">
-                    <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-                      กะการทำงาน (วัน / ชั่วโมง) — แผนงาน
-                    </div>
-                    <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-[11px]">
-                      คือ <strong>เกณฑ์มาตรฐานตามกะที่พนักงานควรมาทำงาน</strong> (Scheduled Work) เช่น วันทำงานปกติ = 1 วัน (8 ชม.) ส่วนวันหยุดประจำสัปดาห์ = 0 วัน (0 ชม.) โดยระบบ HRMS จะตรวจสอบและยึดตารางกะจริงในระบบเป็นหลัก
-                    </p>
-                  </div>
-                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700/50 space-y-1">
-                    <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                      วันทำงาน (วัน / ชั่วโมง) — ผลงานจริง
-                    </div>
-                    <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-[11px]">
-                      คือ <strong>ผลการมาทำงานจริงของพนักงาน</strong> (Actual Worked) ที่เครื่องสรุปได้ เช่น มาทำงานครบ = 1 วัน (8 ชม.), หากขาดงาน = 0 วัน (0 ชม.) และช่องขาดจะเป็น 1 วัน โดยระบบจะนำ &quot;ชั่วโมงทำงานจริง&quot; ไปบันทึกลงตารางประจำวันเพื่อใช้คำนวณเงินเดือน
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
