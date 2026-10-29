@@ -61,7 +61,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Button, ActiveStatus, RowActions, RowActionButton } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem } from '@/components/ui';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -457,44 +457,15 @@ export default function LeaveManagementPage() {
     <div className="space-y-6">
       {/* 1. Sub-Navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {canViewTypes && (
-            <button
-              onClick={() => setActiveTab('types')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'types'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ประเภทการลา
-            </button>
-          )}
-          {canViewPolicies && (
-            <button
-              onClick={() => setActiveTab('policies')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'policies'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              สิทธิ์การลา
-            </button>
-          )}
-          {canViewBalances && (
-            <button
-              onClick={() => setActiveTab('balances')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'balances'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ยอดวันลาพนักงาน
-            </button>
-          )}
-        </nav>
+        <TabBar
+          aria-label="เมนูการลา"
+          items={([
+            canViewTypes ? { key: 'types', label: 'ประเภทการลา', onClick: () => setActiveTab('types') } : null,
+            canViewPolicies ? { key: 'policies', label: 'สิทธิ์การลา', onClick: () => setActiveTab('policies') } : null,
+            canViewBalances ? { key: 'balances', label: 'ยอดวันลาพนักงาน', onClick: () => setActiveTab('balances') } : null,
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'types') ? 'types' : (activeTab === 'policies') ? 'policies' : (activeTab === 'balances') ? 'balances' : null}
+        />
       </div>
 
       {/* Main Card */}

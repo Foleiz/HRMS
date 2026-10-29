@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1244,68 +1244,16 @@ function DailyAttendanceContent() {
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
       <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {/* Tab 1: ตรวจบันทึกเวลาประจำวัน */}
-          {canViewDaily && (
-            <button
-              onClick={() => handleTabChange('daily')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'daily'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ตรวจบันทึกเวลาประจำวัน
-            </button>
-          )}
-
-          {/* Tab 2: นำเข้าไฟล์บันทึกเวลา */}
-          {canViewImport && (
-            <button
-              onClick={() => handleTabChange('import')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'import'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              นำเข้าไฟล์บันทึกเวลา
-            </button>
-          )}
-
-          {/* Tab 3: คำขอปรับปรุงเวลา (Sprint 7) */}
-          {canViewDaily && (
-            <button
-              onClick={() => handleTabChange('adjustments')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
-                activeTab === 'adjustments'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              <span>คำขอปรับปรุงเวลา</span>
-              {pendingAdjustmentsCount > 0 && (
-                <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
-                  {pendingAdjustmentsCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Tab 4: สรุปสถิติประจำเดือน */}
-          {canViewDaily && (
-            <button
-              onClick={() => handleTabChange('monthly')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'monthly'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              สรุปสถิติประจำเดือน
-            </button>
-          )}
-        </nav>
+        <TabBar
+          aria-label="เมนูลงเวลา"
+          items={([
+            canViewDaily ? { key: 'daily', label: 'ตรวจบันทึกเวลาประจำวัน', onClick: () => handleTabChange('daily') } : null,
+            canViewImport ? { key: 'import', label: 'นำเข้าไฟล์บันทึกเวลา', onClick: () => handleTabChange('import') } : null,
+            canViewDaily ? { key: 'adjustments', label: <><span>คำขอปรับปรุงเวลา</span> {pendingAdjustmentsCount > 0 && ( <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse"> {pendingAdjustmentsCount} </span> )}</>, onClick: () => handleTabChange('adjustments') } : null,
+            canViewDaily ? { key: 'monthly', label: 'สรุปสถิติประจำเดือน', onClick: () => handleTabChange('monthly') } : null,
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'daily') ? 'daily' : (activeTab === 'import') ? 'import' : (activeTab === 'adjustments') ? 'adjustments' : (activeTab === 'monthly') ? 'monthly' : null}
+        />
       </div>
 
       {/* ========================================================= */}

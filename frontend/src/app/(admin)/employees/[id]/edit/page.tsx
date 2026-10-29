@@ -31,7 +31,7 @@ import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundE
 import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AccessDenied } from '@/components/common/AccessDenied';
-import { Button, inputClass } from '@/components/ui';
+import { Button, inputClass, TabBar } from '@/components/ui';
 
 const formatPhoneNumber = (val?: string | null): string => {
   if (!val) return '';
@@ -554,25 +554,12 @@ function EmployeeEditPageContent() {
     <div className="space-y-4 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma) */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {subNavTabs.map((tab) => {
-            const isActive = tab.active;
-            return (
-              <button
-                key={tab.title}
-                type="button"
-                onClick={() => router.push(tab.href)}
-                className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                  isActive
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-                }`}
-              >
-                {tab.title}
-              </button>
-            );
-          })}
-        </nav>
+        <TabBar
+          aria-label="เมนูพนักงาน"
+          memoryKey="employees-subnav"
+          items={subNavTabs.map((tab) => ({ key: tab.href, label: tab.title, href: tab.href }))}
+          activeKey={subNavTabs.find((tab) => tab.active)?.href}
+        />
       </div>
 
       {/* 2. Main Edit Card Container */}
@@ -580,66 +567,21 @@ function EmployeeEditPageContent() {
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col justify-between space-y-6">
           <div className="space-y-6">
             {/* Card Tabs: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว */}
-            <div className="flex items-center gap-8 border-b border-slate-100 dark:border-slate-700/60 pb-3 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setActiveTab('personal')}
-                className={`pb-2 transition-all border-b-2 cursor-pointer ${
-                  activeTab === 'personal'
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                ข้อมูลส่วนตัว
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('family')}
-                className={`pb-2 transition-all border-b-2 cursor-pointer ${
-                  activeTab === 'family'
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                ข้อมูลครอบครัว
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('emergency')}
-                className={`pb-2 transition-all border-b-2 cursor-pointer ${
-                  activeTab === 'emergency'
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                ผู้ติดต่อกรณีฉุกเฉิน
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('background')}
-                className={`pb-2 transition-all border-b-2 cursor-pointer ${
-                  activeTab === 'background'
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                การศึกษา & ประวัติการทำงาน
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab('tax')}
-                className={`pb-2 transition-all border-b-2 cursor-pointer ${
-                  activeTab === 'tax'
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:text-slate-300'
-                }`}
-              >
-                ภาษี & ประกันสังคม
-              </button>
+            <div className="border-b border-slate-100 dark:border-slate-700/60">
+              <TabBar
+                aria-label="ส่วนของข้อมูลที่แก้ไข"
+                className="gap-8 text-xs"
+                itemClassName="pb-3"
+                items={[
+                  { key: 'personal', label: 'ข้อมูลส่วนตัว' },
+                  { key: 'family', label: 'ข้อมูลครอบครัว' },
+                  { key: 'emergency', label: 'ผู้ติดต่อกรณีฉุกเฉิน' },
+                  { key: 'background', label: 'การศึกษา & ประวัติการทำงาน' },
+                  { key: 'tax', label: 'ภาษี & ประกันสังคม' },
+                ]}
+                activeKey={activeTab}
+                onChange={setActiveTab}
+              />
             </div>
 
             {activeTab === 'background' && (

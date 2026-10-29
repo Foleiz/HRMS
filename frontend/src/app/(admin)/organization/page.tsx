@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
@@ -1021,120 +1021,20 @@ export default function OrganizationPage() {
     <div className="space-y-6">
       {/* Sub Navigation Bar - Standardized to Employee Module */}
       <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {canViewStruct && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('divisions'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'divisions'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              จัดการฝ่าย
-            </button>
-          )}
-
-          {canViewStruct && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('departments'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'departments'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              จัดการแผนก
-            </button>
-          )}
-
-          {canViewStruct && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('teams'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'teams'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              จัดการทีม
-            </button>
-          )}
-
-          {canViewPos && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('positions'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'positions'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              จัดการตำแหน่ง
-            </button>
-          )}
-
-          {canViewPos && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('levels'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'levels'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ระดับพนักงาน
-            </button>
-          )}
-
-          {canViewBenefits && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('benefits'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'benefits'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              สวัสดิการและสิทธิประโยชน์
-            </button>
-          )}
-
-          {canViewCompany && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('company'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'company'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ข้อมูลบริษัท
-            </button>
-          )}
-
-          {canViewCompany && (
-            <button
-              type="button"
-              onClick={() => { setActiveTab('bank-accounts'); setSearchQuery(''); }}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'bank-accounts'
-                  ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              บัญชีธนาคารบริษัท
-            </button>
-          )}
-
-        </nav>
+        <TabBar
+          aria-label="เมนูองค์กร"
+          items={([
+            canViewStruct ? { key: 'divisions', label: 'จัดการฝ่าย', onClick: () => { setActiveTab('divisions'); setSearchQuery(''); } } : null,
+            canViewStruct ? { key: 'departments', label: 'จัดการแผนก', onClick: () => { setActiveTab('departments'); setSearchQuery(''); } } : null,
+            canViewStruct ? { key: 'teams', label: 'จัดการทีม', onClick: () => { setActiveTab('teams'); setSearchQuery(''); } } : null,
+            canViewPos ? { key: 'positions', label: 'จัดการตำแหน่ง', onClick: () => { setActiveTab('positions'); setSearchQuery(''); } } : null,
+            canViewPos ? { key: 'levels', label: 'ระดับพนักงาน', onClick: () => { setActiveTab('levels'); setSearchQuery(''); } } : null,
+            canViewBenefits ? { key: 'benefits', label: 'สวัสดิการและสิทธิประโยชน์', onClick: () => { setActiveTab('benefits'); setSearchQuery(''); } } : null,
+            canViewCompany ? { key: 'company', label: 'ข้อมูลบริษัท', onClick: () => { setActiveTab('company'); setSearchQuery(''); } } : null,
+            canViewCompany ? { key: 'bank-accounts', label: 'บัญชีธนาคารบริษัท', onClick: () => { setActiveTab('bank-accounts'); setSearchQuery(''); } } : null,
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'divisions') ? 'divisions' : (activeTab === 'departments') ? 'departments' : (activeTab === 'teams') ? 'teams' : (activeTab === 'positions') ? 'positions' : (activeTab === 'levels') ? 'levels' : (activeTab === 'benefits') ? 'benefits' : (activeTab === 'company') ? 'company' : (activeTab === 'bank-accounts') ? 'bank-accounts' : null}
+        />
       </div>
 
       {/* 4. Tab Content Panels */}

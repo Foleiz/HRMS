@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
-import { Button, inputClass } from '@/components/ui';
+import { Button, inputClass, TabBar } from '@/components/ui';
 
 interface DepartmentItem {
   id: number;
@@ -673,25 +673,12 @@ export default function EmployeesPage() {
     <div className="space-y-4 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma & Mockup) */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {subNavTabs.map((tab) => {
-            const isActive = tab.title === activeTab;
-            return (
-              <Link
-                key={tab.title}
-                href={tab.href}
-                onClick={() => setActiveTab(tab.title)}
-                className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
-                  isActive
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-                }`}
-              >
-                {tab.title}
-              </Link>
-            );
-          })}
-        </nav>
+        <TabBar
+          aria-label="เมนูพนักงาน"
+          memoryKey="employees-subnav"
+          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href, onClick: () => setActiveTab(t.title) }))}
+          activeKey={subNavTabs.find((t) => t.title === activeTab)?.href}
+        />
       </div>
 
       {/* 2. Search Bar, Department Filter & Action Buttons */}
