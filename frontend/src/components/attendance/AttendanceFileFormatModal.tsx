@@ -208,8 +208,8 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
   };
 
   const tabs: { key: FormatTab; label: string; sub: string; Icon: React.ElementType; badge?: string }[] = [
-    { key: 'deliy', label: 'ไฟล์สรุปทั้งเดือน (deliy)', sub: 'ไฟล์ที่มีข้อมูลของทั้งเดือน', Icon: CalendarDays, badge: 'แนะนำ' },
-    { key: 'record', label: 'ไฟล์บันทึกรายวัน (record)', sub: 'ไฟล์ที่เลือกแบบรายวัน หรือบางวันมาใส่', Icon: Clock },
+    { key: 'deliy', label: 'ไฟล์สรุปทั้งเดือน', sub: 'ไฟล์ที่มีข้อมูลของทั้งเดือน', Icon: CalendarDays, badge: 'แนะนำ' },
+    { key: 'record', label: 'ไฟล์บันทึกรายวัน', sub: 'ไฟล์ที่เลือกแบบรายวัน หรือบางวันมาใส่', Icon: Clock },
     { key: 'template', label: 'ทำไฟล์เองจาก Excel', sub: 'กรณีไม่มีไฟล์จากเครื่อง', Icon: FileText },
   ];
 
@@ -225,7 +225,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">รูปแบบไฟล์ที่รองรับ</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                อัปโหลดไฟล์ .xls / .xlsx ที่ส่งออกจากเครื่องสแกน Syaco ได้ทันที ไม่ต้องแก้ไขไฟล์ (สามารถนำเมาส์ชี้ที่หัวคอลัมน์เพื่อดูคำอธิบายได้)
+                อัปโหลดไฟล์ .xls / .xlsx ที่ส่งออกจากเครื่องสแกนได้ทันที
               </p>
             </div>
           </div>
@@ -270,8 +270,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
           {tab === 'deliy' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               <p className="leading-relaxed">
-                รายงาน <strong>deliy</strong> จากเครื่องสแกน เป็นไฟล์ที่มีข้อมูลสรุปของทั้งเดือน (สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของพนักงานทุกคนตลอดทั้งเดือน)
-                เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน ระบบรู้ว่าเป็นไฟล์ชนิดนี้จากคำว่า <code className="font-mono">deliy</code> ในแถวแรก
+                เป็นไฟล์ที่มีข้อมูลสรุปของทั้งเดือน (สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของพนักงานทุกคนตลอดทั้งเดือน) เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน
               </p>
               <SheetPreview sample={DELIY} />
             </div>
@@ -280,8 +279,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
           {tab === 'record' && (
             <div className="space-y-4 animate-in fade-in duration-150">
               <p className="leading-relaxed">
-                รายงาน <strong>record</strong> จากเครื่องสแกน เป็นไฟล์บันทึกการสแกนที่เลือกแบบรายวัน หรือเลือกบางวันมาใส่ (1 แถว = สแกน 1 ครั้ง) ระบบจะรวมการสแกนในวันเดียวกันเป็นรายวันให้อัตโนมัติ
-                โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะการทำงาน
+                เป็นไฟล์บันทึกการสแกนที่เลือกแบบรายวัน หรือเลือกบางวันมาใส่ (1 แถว = สแกน 1 ครั้ง) ระบบจะรวมการสแกนในวันเดียวกันเป็นรายวันให้อัตโนมัติ โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะการทำงาน
               </p>
               <SheetPreview sample={RECORD} />
             </div>
