@@ -235,6 +235,8 @@ export default function EmployeeDetailView({
     hasPermission('EMP_PROFILE_EDIT') ||
     hasPermission('EMP_EDIT') ||
     (isProfilePage && hasPermission('ESS_PROFILE_EDIT'));
+  // ลายเซ็นของตัวเอง ทุกคนตั้งได้ (ใช้ลงนามในเอกสารที่ตนยื่น) / ของคนอื่นต้องมีสิทธิ์แก้ไขข้อมูลพนักงาน
+  const canEditSignature = canEditEmployee || (!!user?.employeeId && user.employeeId === employee.id);
 
   // Custom Avatar
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
@@ -1142,7 +1144,7 @@ export default function EmployeeDetailView({
                     onError={() => !pendingSig && setCustomSig(null)}
                   />
                 </div>
-              ) : canEditEmployee ? (
+              ) : canEditSignature ? (
                 /* ยังไม่มีลายเซ็น — ลากไฟล์มาวาง หรือเลือกจากเครื่อง */
                 <div
                   onDragOver={(e) => {
@@ -1178,11 +1180,11 @@ export default function EmployeeDetailView({
                 </div>
               ) : (
                 <div className="h-32 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">
-                  ยังไม่มีลายเซ็นในระบบ
+                  ยังไม่มีลายเซ็น — เจ้าของบัญชีหรือฝ่ายบุคคลเป็นผู้อัปโหลด
                 </div>
               )}
 
-              {canEditEmployee && (
+              {canEditSignature && (
                 <p className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
                   <span>รองรับ PNG, JPG ขนาดไม่เกิน 2 MB · แนะนำ PNG พื้นหลังโปร่งใสเพื่อให้ลายเซ็นกลมกลืนกับเอกสาร</span>
@@ -1191,7 +1193,7 @@ export default function EmployeeDetailView({
             </div>
 
             {/* Footer — ปุ่มลบอยู่ติดกับปุ่มเปลี่ยนลายเซ็น */}
-            {canEditEmployee && (
+            {canEditSignature && (
               <div className="px-6 pb-5 flex items-center justify-end gap-2">
                 {signatureUrl && !pendingSig ? (
                   <>
