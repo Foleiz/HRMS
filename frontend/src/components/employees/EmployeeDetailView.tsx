@@ -1,7 +1,7 @@
 'use client';
 
 import { ModalShell, Button } from '@/components/ui';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -215,6 +215,9 @@ export default function EmployeeDetailView({
     if (tabParam === 'tax') return 'tax';
     return 'personal';
   });
+  // เส้นใต้แท็บที่เลื่อนตามแท็บที่เลือก (วัดตำแหน่ง/ความกว้างจากปุ่มจริง)
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const [tabIndicator, setTabIndicator] = useState<{ left: number; width: number } | null>(null);
 
   // ลิงก์เดิม ?tab=family / ?tab=emergency → เลื่อนไปหัวข้อในแท็บข้อมูลส่วนตัว
   useEffect(() => {
@@ -469,6 +472,21 @@ export default function EmployeeDetailView({
     { id: 'documents', label: 'เอกสาร' },
     { id: 'history', label: 'ประวัติการเปลี่ยนแปลง' },
   ] as const;
+
+  // วัดตำแหน่งแท็บที่เลือกใหม่ทุกครั้งที่เปลี่ยนแท็บ / ขนาดเปลี่ยน / ฟอนต์โหลดเสร็จ
+  useLayoutEffect(() => {
+    const bar = tabBarRef.current;
+    if (!bar) return;
+    const measure = () => {
+      const el = bar.querySelector<HTMLElement>(`[data-tab-id="${activeTab}"]`);
+      if (el) setTabIndicator({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    document.fonts?.ready.then(measure).catch(() => undefined);
+    const ro = new ResizeObserver(measure);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [activeTab]);
 
   return (
     <div className="font-sans space-y-3.5">
@@ -725,21 +743,33 @@ export default function EmployeeDetailView({
         <div className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col h-full">
           {/* Top Bar: Tabs & Icon-Only Edit Button */}
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3.5 gap-3">
-            <div className="flex items-center gap-x-5 gap-y-2 text-xs font-medium overflow-x-auto scrollbar-none flex-1 min-w-0">
+            <div
+              ref={tabBarRef}
+              className="relative flex items-center gap-x-5 gap-y-2 text-xs font-medium overflow-x-auto scrollbar-none flex-1 min-w-0"
+            >
               {TABS.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
+                  data-tab-id={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`pb-1 transition-all border-b-2 font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`pb-1.5 transition-colors duration-200 font-semibold cursor-pointer whitespace-nowrap shrink-0 ${
                     activeTab === tab.id
-                      ? 'border-primary text-primary dark:border-blue-400 dark:text-blue-400'
-                      : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                      ? 'text-primary dark:text-blue-400'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                   }`}
                 >
                   {tab.label}
                 </button>
               ))}
+              {/* เส้นใต้แท็บ: หนา 3px เลื่อนไปยังแท็บที่เลือกแบบนุ่มนวล */}
+              {tabIndicator && (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-0 h-[3px] rounded-full bg-primary dark:bg-blue-400 transition-[left,width] duration-300 ease-out motion-reduce:transition-none"
+                  style={{ left: tabIndicator.left, width: tabIndicator.width }}
+                />
+              )}
             </div>
 
             {/* ปุ่มแก้ไขข้อมูล: ตำแหน่งเดิม แต่มีเฉพาะ icon อย่างเดียว */}
