@@ -39,6 +39,7 @@ daily_reports/
 import_excel/2026914172026_sep.xls
 /import_excel
 attendance_*.xlsx
+!frontend/public/templates/*.xlsx
 Claude outputs/
 __pycache__/
 *.pyc

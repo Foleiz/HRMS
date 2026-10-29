@@ -8,9 +8,7 @@ import {
   Download,
   Clock,
   CalendarDays,
-  FileText,
 } from 'lucide-react';
-import { attendanceImportService } from '@/services/attendanceImportService';
 import { useToast } from '@/context/ToastContext';
 import { Button } from '@/components/ui';
 
@@ -185,32 +183,41 @@ const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
   );
 };
 
-type FormatTab = 'deliy' | 'record' | 'template';
+type FormatTab = 'deliy' | 'record';
 
 export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [tab, setTab] = useState<FormatTab>('deliy');
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingType, setDownloadingType] = useState<FormatTab | null>(null);
   const toast = useToast();
 
   if (!isOpen) return null;
 
-  const handleDownload = async () => {
+  const handleDownload = async (type: FormatTab) => {
     try {
-      setIsDownloading(true);
-      await attendanceImportService.downloadTemplate('xlsx');
-      toast.success('ดาวน์โหลดไฟล์แม่แบบ (attendance_import_template.xlsx) เรียบร้อยแล้ว');
-    } catch (err: unknown) {
-      const error = err as { response?: { data?: { message?: string } } };
-      toast.error(error.response?.data?.message || 'ไม่สามารถดาวน์โหลดไฟล์แม่แบบได้');
+      setDownloadingType(type);
+      const fileName = type === 'deliy' ? 'attendance_sample_deliy.xlsx' : 'attendance_sample_record.xlsx';
+      const thaiName = type === 'deliy' ? 'ไฟล์สรุปทั้งเดือน' : 'ไฟล์บันทึกรายวัน';
+
+      const link = document.createElement('a');
+      link.href = `/templates/${fileName}`;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+      }, 500);
+
+      toast.success(`ดาวน์โหลดตัวอย่าง${thaiName} (${fileName}) เรียบร้อยแล้ว`);
+    } catch {
+      toast.error('ไม่สามารถดาวน์โหลดไฟล์ตัวอย่างได้');
     } finally {
-      setIsDownloading(false);
+      setDownloadingType(null);
     }
   };
 
   const tabs: { key: FormatTab; label: string; sub: string; Icon: React.ElementType; badge?: string }[] = [
     { key: 'deliy', label: 'ไฟล์สรุปทั้งเดือน', sub: 'ไฟล์ที่มีข้อมูลของทั้งเดือน', Icon: CalendarDays, badge: 'แนะนำ' },
     { key: 'record', label: 'ไฟล์บันทึกรายวัน', sub: 'ไฟล์ที่เลือกแบบรายวัน หรือบางวันมาใส่', Icon: Clock },
-    { key: 'template', label: 'ทำไฟล์เองจาก Excel', sub: 'กรณีไม่มีไฟล์จากเครื่อง', Icon: FileText },
   ];
 
   return (
@@ -241,7 +248,7 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-slate-700 dark:text-slate-300">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
             {tabs.map(({ key, label, sub, Icon, badge }) => (
               <button
                 key={key}
@@ -269,71 +276,41 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
 
           {tab === 'deliy' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <p className="leading-relaxed">
-                เป็นไฟล์ที่มีข้อมูลสรุปของทั้งเดือน (สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของพนักงานทุกคนตลอดทั้งเดือน) เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน
-              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                  เป็นไฟล์ที่มีข้อมูลสรุปของทั้งเดือน (สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของพนักงานทุกคนตลอดทั้งเดือน) เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน
+                </p>
+                <Button
+                  onClick={() => handleDownload('deliy')}
+                  loading={downloadingType === 'deliy'}
+                  icon={<Download className="w-3.5 h-3.5" />}
+                  size="sm"
+                  className="shrink-0 cursor-pointer"
+                >
+                  ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
+                </Button>
+              </div>
               <SheetPreview sample={DELIY} />
             </div>
           )}
 
           {tab === 'record' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <p className="leading-relaxed">
-                เป็นไฟล์บันทึกการสแกนที่เลือกแบบรายวัน หรือเลือกบางวันมาใส่ (1 แถว = สแกน 1 ครั้ง) ระบบจะรวมการสแกนในวันเดียวกันเป็นรายวันให้อัตโนมัติ โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะการทำงาน
-              </p>
-              <SheetPreview sample={RECORD} />
-            </div>
-          )}
-
-          {tab === 'template' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <p className="leading-relaxed">
-                ถ้าไม่มีไฟล์จากเครื่องสแกน ให้ดาวน์โหลดไฟล์แม่แบบ แล้วกรอก 1 แถวต่อการสแกน 1 ครั้ง (หัวคอลัมน์อยู่แถวแรก)
-              </p>
-              <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    <tr>
-                      <th className="py-2 px-3 font-semibold">หัวคอลัมน์</th>
-                      <th className="py-2 px-3 font-semibold">จำเป็น</th>
-                      <th className="py-2 px-3 font-semibold">ตัวอย่าง / ค่าที่รองรับ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    <tr>
-                      <td className="py-2 px-3 font-semibold">รหัส</td>
-                      <td className="py-2 px-3 text-rose-600">ใช่</td>
-                      <td className="py-2 px-3">รหัสพนักงาน (EMP0001) หรือรหัสเครื่องสแกน (100001)</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-semibold">วันที่-เวลา</td>
-                      <td className="py-2 px-3 text-rose-600">ใช่</td>
-                      <td className="py-2 px-3">
-                        <code className="font-mono">2026-08-03 08:25:00</code> — ใช้รูปแบบ ปี-เดือน-วัน (ค.ศ.) หรือเซลล์วันที่ของ Excel
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-semibold">สถานะ</td>
-                      <td className="py-2 px-3 text-slate-500">ไม่บังคับ</td>
-                      <td className="py-2 px-3">
-                        เข้า / ออก, IN / OUT, C/In / C/Out — ถ้าไม่ใส่ ระบบใช้การสแกนแรกของวันเป็นเวลาเข้า และสุดท้ายเป็นเวลาออก
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2 px-3 font-semibold">ชื่อ-สกุล, แผนก-ฝ่าย., เครื่อง</td>
-                      <td className="py-2 px-3 text-slate-500">ไม่บังคับ</td>
-                      <td className="py-2 px-3">ใส่ไว้ดูได้ ระบบใช้ชื่อและแผนกจากข้อมูลพนักงานในระบบ</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                  เป็นไฟล์บันทึกการสแกนที่เลือกแบบรายวัน หรือเลือกบางวันมาใส่ (1 แถว = สแกน 1 ครั้ง) ระบบจะรวมการสแกนในวันเดียวกันเป็นรายวันให้อัตโนมัติ โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะการทำงาน
+                </p>
+                <Button
+                  onClick={() => handleDownload('record')}
+                  loading={downloadingType === 'record'}
+                  icon={<Download className="w-3.5 h-3.5" />}
+                  size="sm"
+                  className="shrink-0 cursor-pointer"
+                >
+                  ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
+                </Button>
               </div>
-              <Button
-                onClick={handleDownload}
-                loading={isDownloading}
-                icon={<Download className="w-3.5 h-3.5" />}
-              >
-                ดาวน์โหลดไฟล์แม่แบบ (.xlsx)
-              </Button>
+              <SheetPreview sample={RECORD} />
             </div>
           )}
         </div>
