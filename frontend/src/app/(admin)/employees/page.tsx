@@ -1557,38 +1557,33 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1">
-              {comments[commentModalEmp.id] ? (
-                <button
+            <div className="flex items-center justify-end gap-2 pt-1">
+              {comments[commentModalEmp.id] && (
+                <Button
                   type="button"
+                  variant="danger"
+                  size="sm"
                   onClick={() => handleSaveComment(commentModalEmp.id, '')}
-                  title="ลบคอมเมนต์"
-                  aria-label="ลบคอมเมนต์"
-                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              ) : (
-                <div />
+                  ลบ
+                </Button>
               )}
-              <div className="flex items-center gap-2 ml-auto">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setCommentModalEmp(null)}
-                >
-                  ยกเลิก
-                </Button>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleSaveComment(commentModalEmp.id, commentInput)}
-                >
-                  บันทึกคอมเมนต์
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setCommentModalEmp(null)}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => handleSaveComment(commentModalEmp.id, commentInput)}
+              >
+                บันทึกคอมเมนต์
+              </Button>
             </div>
           </div>
         </ModalShell>
