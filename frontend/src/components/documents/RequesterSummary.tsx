@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Hash, Briefcase, Network, UserCheck, BadgeCheck, Mail, Phone, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { employeeService } from '@/services/employeeService';
+import { getAvatarUrl } from '@/lib/api-client';
 import type { Employee } from '@/types/employee';
 
 /** ข้อมูลที่แสดงตามประเภทเอกสาร — เลือกเฉพาะเรื่องที่เกี่ยวกับเอกสารนั้น */
@@ -41,12 +42,13 @@ const loadEmployee = (id: number) => {
 type MetaItem = { key: string; icon: React.ReactNode; text: string; title: string };
 
 /**
- * แถบ "ผู้ยื่น" ของฟอร์มยื่นเอกสาร — ชื่อ และข้อมูลสำคัญคั่นด้วยจุด
+ * แถบ "ผู้ยื่น" ของฟอร์มยื่นเอกสาร — รูปโปรไฟล์ ชื่อ และข้อมูลสำคัญคั่นด้วยจุด
  * ข้อมูลที่ระบบรู้อยู่แล้วไม่ทำเป็นช่องกรอก — รายละเอียดเต็มอยู่ในตัวอย่างเอกสาร
  */
 export function RequesterSummary({ variant = 'general', fullName, positionTitle, departmentName, date, action }: RequesterSummaryProps) {
   const { user } = useAuth();
   const [emp, setEmp] = useState<Employee | null>(null);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   useEffect(() => {
     if (!user?.employeeId) return;
@@ -60,6 +62,8 @@ export function RequesterSummary({ variant = 'general', fullName, positionTitle,
   const name = emp?.fullName || fullName || '-';
   const position = emp?.positionName || positionTitle || '';
   const department = emp?.departmentName || departmentName || '';
+  const avatar = !avatarFailed && emp?.avatarUrl ? getAvatarUrl(emp.avatarUrl) : null;
+  const initial = name.replace(/^(นาย|นางสาว|นาง|Mr\.?|Mrs\.?|Ms\.?)\s*/i, '').trim().charAt(0) || '?';
   const iconCls = 'w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500';
 
   const all: Record<string, MetaItem | null> = {
@@ -87,7 +91,29 @@ export function RequesterSummary({ variant = 'general', fullName, positionTitle,
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="min-w-0">
+      <div className="flex items-center gap-3.5 min-w-0">
+        <span className="relative shrink-0">
+          {avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatar}
+              alt=""
+              onError={() => setAvatarFailed(true)}
+              className="w-11 h-11 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+            />
+          ) : (
+            <span
+              aria-hidden="true"
+              className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 text-primary dark:text-slate-100 text-base font-bold inline-flex items-center justify-center uppercase"
+            >
+              {initial}
+            </span>
+          )}
+          <span
+            title="ทำงานอยู่"
+            className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"
+          />
+        </span>
         <div className="min-w-0">
           <div className="flex items-baseline gap-1.5 min-w-0">
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{name}</span>
