@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { MoneyInput } from '@/components/ui/MoneyInput';
 import { YearPicker } from '@/components/ui/YearPicker';
 import { ModalShell } from '@/components/ui/ModalShell';
@@ -480,6 +482,7 @@ export default function PayrollPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
+  const payrollPhase = useLoadPhase(loading);
 
   // Sub-tab in Structure view: 'positions' vs 'employees'
   // กรอบโครงสร้างเงินเดือนย้ายไปอยู่ที่ โครงสร้างองค์กร › ระดับพนักงาน แล้ว — แท็บนี้เหลือฐานเงินเดือนพนักงาน
@@ -711,6 +714,7 @@ export default function PayrollPage() {
   const [bonuses, setBonuses] = useState<EmployeeBonus[]>([]);
   const [bonusPeriods, setBonusPeriods] = useState<BonusPeriodSummary[]>([]);
   const [isLoadingBonusPeriods, setIsLoadingBonusPeriods] = useState<boolean>(false);
+  const bonusPhase = useLoadPhase(isLoadingBonusPeriods);
   const [bonusPeriodsCurrentPage, setBonusPeriodsCurrentPage] = useState<number>(1);
   const [bonusPeriodsPageSize, setBonusPeriodsPageSize] = useState<number>(10);
   const [selectedBonusPeriodModal, setSelectedBonusPeriodModal] = useState<BonusPeriodSummary | null>(null);
@@ -2375,6 +2379,7 @@ export default function PayrollPage() {
             return (
               <div className="space-y-4">
                 <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                  <RefreshIndicator active={payrollPhase.refreshing} />
                   <table className="table-standard text-xs w-full min-w-[650px] text-left border-collapse whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
@@ -2387,7 +2392,7 @@ export default function PayrollPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
-                      {loading ? (
+                      {payrollPhase.initialLoading ? (
                         <tr>
                           <td colSpan={6} className="py-12 text-center text-slate-400">
                             <div className="inline-flex items-center gap-2">
@@ -3312,7 +3317,8 @@ export default function PayrollPage() {
 
               {/* Table Content */}
               <div className="p-4 space-y-4">
-                {isLoadingBonusPeriods ? (
+                <RefreshIndicator active={bonusPhase.refreshing} />
+                {bonusPhase.initialLoading ? (
                   <div className="py-16 text-center text-slate-400">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                     <p className="text-xs">กำลังโหลดข้อมูลรอบโบนัสย้อนหลัง...</p>

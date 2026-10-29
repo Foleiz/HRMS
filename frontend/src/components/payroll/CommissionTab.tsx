@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -119,6 +121,7 @@ export default function CommissionTab() {
   // Monthly Periods Summary Rows State (เหมือนประวัติแต่เป็นงวดเดือน)
   const [monthlyPeriods, setMonthlyPeriods] = useState<CommissionMonthlyPeriod[]>([]);
   const [isLoadingPeriods, setIsLoadingPeriods] = useState<boolean>(false);
+  const periodsPhase = useLoadPhase(isLoadingPeriods);
   const [periodsSearch, setPeriodsSearch] = useState<string>('');
   const [periodsPage, setPeriodsPage] = useState<number>(1);
   const [periodsPageSize, setPeriodsPageSize] = useState<number>(10);
@@ -1234,6 +1237,7 @@ export default function CommissionTab() {
         {/* Table inside inner container with rounded corners */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
           <div className="overflow-x-auto">
+            <RefreshIndicator active={periodsPhase.refreshing} />
             <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
               <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
@@ -1249,7 +1253,7 @@ export default function CommissionTab() {
               </thead>
 
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {isLoadingPeriods ? (
+                {periodsPhase.initialLoading ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400">
                       <Loader2 className="mx-auto h-6 w-6 animate-spin text-blue-600" />

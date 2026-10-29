@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -220,6 +222,7 @@ function SchedulesContent() {
   // 2. Loading & Data States
   // -------------------------------------------------------------
   const [loadingRoster, setLoadingRoster] = useState(false);
+  const rosterPhase = useLoadPhase(loadingRoster);
   const [loadingAssignments, setLoadingAssignments] = useState(true);
   const [loadingShifts, setLoadingShifts] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -1283,7 +1286,8 @@ function SchedulesContent() {
               </div>
 
               {/* Calendar 7-Day Grid */}
-              {loadingRoster ? (
+              <RefreshIndicator active={rosterPhase.refreshing} />
+              {rosterPhase.initialLoading ? (
                 <div className="py-24 flex flex-col items-center justify-center text-slate-400 gap-3 dark:text-slate-500 dark:text-slate-400">
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   <p className="text-sm">กำลังโหลดปฏิทินการจัดเวร...</p>

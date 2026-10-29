@@ -360,3 +360,50 @@ html.dark .table-standard.table-standard > thead > tr > th {
     transform: none !important;
   }
 }
+
+/* ===================== โหลดข้อมูลใหม่โดยไม่กระพริบ =====================
+   <RefreshIndicator active /> วางก่อนเนื้อหา: แถบโหลดบาง ๆ (สูง 0 ไม่ดันเลย์เอาต์)
+   และเนื้อหาที่ตามหลังจางลงระหว่างโหลด แทนการสลับเป็นกล่อง "กำลังโหลด" */
+.refresh-indicator {
+  position: relative;
+  height: 0;
+}
+.refresh-indicator__bar {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  overflow: hidden;
+  z-index: 5;
+}
+.refresh-indicator__bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 35%;
+  border-radius: 999px;
+  background: var(--color-primary);
+  animation: refresh-indicator-slide 1s ease-in-out infinite;
+}
+html.dark .refresh-indicator__bar::before {
+  background: #93C5FD;
+}
+.refresh-indicator ~ * {
+  transition: opacity 150ms ease;
+}
+.refresh-indicator[data-active="true"] ~ * {
+  opacity: 0.55;
+  pointer-events: none;
+}
+@keyframes refresh-indicator-slide {
+  from { left: -35%; }
+  to { left: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .refresh-indicator__bar::before {
+    animation: none;
+    left: 0;
+    width: 100%;
+    opacity: 0.6;
+  }
+}

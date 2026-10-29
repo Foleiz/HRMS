@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import React, { useState, useMemo } from 'react';
 import {
   Search,
@@ -214,6 +216,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
   const [showSystemEvents, setShowSystemEvents] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const auditPhase = useLoadPhase(isLoading);
 
   // Advanced filters
   const [startDate, setStartDate] = useState('');
@@ -641,7 +644,8 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
       </div>
 
       {/* 3. Grouped Date List */}
-      {isLoading ? (
+      <RefreshIndicator active={auditPhase.refreshing} />
+      {auditPhase.initialLoading ? (
         <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-sm">
           กำลังโหลดบันทึกการใช้งานระบบ...
         </div>
