@@ -637,10 +637,10 @@ export default function EmployeeDetailView({
           <hr className="my-5 border-slate-100 dark:border-slate-700/60" />
 
           {/* Section: ข้อมูลตำแหน่งงาน */}
-          <div className="space-y-3">
+          <div className="space-y-3.5">
             <h2 className="text-[13px] font-bold text-slate-900 dark:text-slate-100">ข้อมูลตำแหน่งงาน</h2>
 
-            <div className="space-y-2 text-xs">
+            <div className="space-y-3.5 text-xs">
               {/* ฝ่าย */}
               <div className="flex items-start justify-between gap-3">
                 <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">ฝ่าย</span>
