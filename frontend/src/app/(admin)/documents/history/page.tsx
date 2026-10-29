@@ -32,6 +32,7 @@ import { generalDocumentService } from '@/services/generalDocumentService';
 import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { employeeService } from '@/services/employeeService';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { ActionDropdown, ActionDropdownItem } from '@/components/ui/ActionDropdown';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { ResignationPreviewModal } from '@/components/documents/ResignationPreviewModal';
@@ -614,6 +615,62 @@ export default function DocumentHistoryPage() {
     URL.revokeObjectURL(url);
   };
 
+  const getDocumentActionItems = (doc: MyDocumentRow): ActionDropdownItem[] => {
+    const hasAttachments = !!doc.documents && doc.documents.length > 0;
+    const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
+    const hasCancel = doc.status === 'PENDING';
+    const hasDelete = doc.status === 'DRAFT';
+
+    const items: ActionDropdownItem[] = [
+      {
+        label: 'ดูเอกสาร',
+        icon: <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+        onClick: () => handleOpenDocumentPreview(doc),
+      },
+    ];
+
+    if (hasEdit && doc.editUrl) {
+      items.push({
+        label: 'แก้ไขต่อ',
+        icon: <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+        href: doc.editUrl,
+      });
+    }
+
+    if (hasAttachments) {
+      items.push({ divider: true, label: '' });
+      doc.documents!.forEach((d) => {
+        items.push({
+          label: d.fileName ? `ดาวน์โหลด ${d.fileName}` : 'ดาวน์โหลดเอกสารแนบ',
+          icon: <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />,
+          onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
+        });
+      });
+    }
+
+    if (hasCancel || hasDelete) {
+      items.push({ divider: true, label: '' });
+      if (hasCancel) {
+        items.push({
+          label: 'ถอนคำขอ',
+          icon: <Ban className="w-3.5 h-3.5 text-rose-600 shrink-0" />,
+          danger: true,
+          onClick: () => handleCancel(doc),
+        });
+      }
+      if (hasDelete) {
+        items.push({
+          label: 'ลบ',
+          icon: <Trash2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />,
+          danger: true,
+          onClick: () => handleDelete(doc),
+        });
+      }
+    }
+
+    return items;
+  };
+
   // ─── Render ──────────────────────────────────────────────────
 
   const statCards = [
@@ -774,42 +831,13 @@ export default function DocumentHistoryPage() {
                           )}
                         </td>
                         <td className="px-5 py-4 text-right">
-                          {/* ปุ่มตรงๆ แบบเดียวกับประวัติเอกสารในเมนูอนุมัติ (แทนเมนูสามจุด) */}
-                          <div className="flex items-center justify-end gap-2">
-                            {doc.documents?.map((d) => (
-                              <button
-                                key={d.id}
-                                type="button"
-                                onClick={() => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment')}
-                                title={`ดาวน์โหลด ${d.fileName ?? 'ไฟล์แนบ'}`}
-                                aria-label={`ดาวน์โหลด ${d.fileName ?? 'ไฟล์แนบ'}`}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 transition-all cursor-pointer"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </button>
-                            ))}
-                            {doc.status === 'DRAFT' && doc.editUrl && (
-                              <Link href={doc.editUrl} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
-                                <Pencil className="w-3.5 h-3.5" />
-                                แก้ไขต่อ
-                              </Link>
-                            )}
-                            <button type="button" onClick={() => handleOpenDocumentPreview(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition-all cursor-pointer" title="ดูเอกสาร">
-                              <Eye className="w-3.5 h-3.5" />
-                              ดูเอกสาร
-                            </button>
-                            {doc.status === 'PENDING' && (
-                              <button type="button" onClick={() => handleCancel(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
-                                <Ban className="w-3.5 h-3.5" />
-                                ถอนคำขอ
-                              </button>
-                            )}
-                            {doc.status === 'DRAFT' && (
-                              <button type="button" onClick={() => handleDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
-                                <Trash2 className="w-3.5 h-3.5" />
-                                ลบ
-                              </button>
-                            )}
+                          <div className="flex items-center justify-end">
+                            <ActionDropdown
+                              align="right"
+                              menuClassName="w-52"
+                              triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
+                              items={getDocumentActionItems(doc)}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -865,58 +893,22 @@ export default function DocumentHistoryPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDocumentPreview(doc)}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium active:scale-95 transition-all"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          ดูตัวอย่าง
-                        </button>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDocumentPreview(doc)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        ดูเอกสาร
+                      </button>
 
-                        {hasEdit && (
-                          <Link
-                            href={doc.editUrl!}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold active:scale-95 transition-all"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                            แก้ไขต่อ
-                          </Link>
-                        )}
-
-                        {hasCancel && (
-                          <button
-                            type="button"
-                            onClick={() => handleCancel(doc)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold active:scale-95 transition-all"
-                          >
-                            <Ban className="w-3.5 h-3.5" />
-                            ถอนคำขอ
-                          </button>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        {doc.documents?.map((d) => (
-                          <button
-                            key={d.id}
-                            type="button"
-                            onClick={() => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment')}
-                            aria-label={`ดาวน์โหลด ${d.fileName ?? 'ไฟล์แนบ'}`}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-blue-600 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 transition-all cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </button>
-                        ))}
-                        {hasDelete && (
-                          <button type="button" onClick={() => handleDelete(doc)} className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer">
-                            <Trash2 className="w-3.5 h-3.5" />
-                            ลบ
-                          </button>
-                        )}
-                      </div>
+                      <ActionDropdown
+                        align="right"
+                        menuClassName="w-52"
+                        triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
+                        items={getDocumentActionItems(doc)}
+                      />
                     </div>
                   </div>
                 );
