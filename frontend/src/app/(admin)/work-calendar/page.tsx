@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell, Button, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
@@ -249,6 +251,7 @@ export default function WorkCalendarPage() {
 
   const [activeTab, setActiveTab] = useState<TabType>('work-week');
   const [loading, setLoading] = useState(true);
+  const calendarPhase = useLoadPhase(loading);
   const [saving, setSaving] = useState(false);
 
   // Filter states
@@ -506,7 +509,8 @@ export default function WorkCalendarPage() {
             </div>
 
             {/* 7-Day Grid Cards */}
-            {loading ? (
+            <RefreshIndicator active={calendarPhase.refreshing} />
+            {calendarPhase.initialLoading ? (
               <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                 กำลังโหลดการตั้งค่าวันทำงาน...
@@ -694,6 +698,7 @@ export default function WorkCalendarPage() {
             {/* Holidays Table */}
             {holidayView === 'list' && (
             <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <RefreshIndicator active={calendarPhase.refreshing} />
               <table className="table-standard w-full min-w-[600px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
@@ -705,7 +710,7 @@ export default function WorkCalendarPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
-                  {loading ? (
+                  {calendarPhase.initialLoading ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />

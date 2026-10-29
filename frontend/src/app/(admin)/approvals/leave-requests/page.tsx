@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
@@ -173,6 +175,7 @@ export default function LeaveRequestsApprovalPage() {
   const [benefitReview, setBenefitReview] = useState<{ claim: BenefitClaimRequest; mode: BenefitClaimReviewMode } | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const listPhase = useLoadPhase(loading);
 
   // Sync breadcrumb
   useEffect(() => {
@@ -1033,7 +1036,8 @@ export default function LeaveRequestsApprovalPage() {
 
       {/* Table Section */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
-        {loading ? (
+        <RefreshIndicator active={listPhase.refreshing} />
+        {listPhase.initialLoading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
               <Loader2 className="w-5 h-5 animate-spin text-primary dark:text-blue-400" />

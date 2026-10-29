@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { Button, ModalShell } from '@/components/ui';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -44,6 +46,7 @@ export default function EmployeeBenefitBalancesPage() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const overviewPhase = useLoadPhase(loading);
   const [overviewList, setOverviewList] = useState<EmployeeBenefitOverview[]>([]);
   const [expandedEmployeeIds, setExpandedEmployeeIds] = useState<Set<number>>(new Set());
 
@@ -298,7 +301,8 @@ export default function EmployeeBenefitBalancesPage() {
         </div>
 
         {/* Grouped Employees Accordion List */}
-        {loading ? (
+        <RefreshIndicator active={overviewPhase.refreshing} />
+        {overviewPhase.initialLoading ? (
           <div className="py-20 text-center text-gray-400 dark:text-slate-500 border border-gray-100 dark:border-slate-800 rounded-2xl">
             <div className="inline-flex items-center gap-2 text-sm">
               <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" /> กำลังโหลดยอดสวัสดิการพนักงาน...

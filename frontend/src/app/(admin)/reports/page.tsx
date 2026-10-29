@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -150,6 +152,7 @@ export default function ReportsPage() {
   const [selectedDepartment, setSelectedDepartment] = useState<number | 'ALL'>('ALL');
   const [headcountData, setHeadcountData] = useState<DailyHeadcountSummary | null>(null);
   const [isLoadingHeadcount, setIsLoadingHeadcount] = useState(false);
+  const headcountPhase = useLoadPhase(isLoadingHeadcount);
   const [isExportingHeadcount, setIsExportingHeadcount] = useState(false);
 
   // -------------------------------------------------------------
@@ -161,6 +164,7 @@ export default function ReportsPage() {
   const [latenessSearch, setLatenessSearch] = useState<string>('');
   const [latenessData, setLatenessData] = useState<MonthlyLatenessReport | null>(null);
   const [isLoadingLateness, setIsLoadingLateness] = useState(false);
+  const latenessPhase = useLoadPhase(isLoadingLateness);
   const [isExportingLateness, setIsExportingLateness] = useState(false);
 
   // -------------------------------------------------------------
@@ -174,6 +178,7 @@ export default function ReportsPage() {
   const [taxSearch, setTaxSearch] = useState<string>('');
   const [taxData, setTaxData] = useState<PayrollTaxSummary | null>(null);
   const [isLoadingTax, setIsLoadingTax] = useState(false);
+  const taxPhase = useLoadPhase(isLoadingTax);
   const [isExportingTax, setIsExportingTax] = useState(false);
   const [isExportingSso, setIsExportingSso] = useState(false);
   const [taxPage, setTaxPage] = useState(1);
@@ -188,6 +193,7 @@ export default function ReportsPage() {
   const [turnoverDepartment, setTurnoverDepartment] = useState<number | 'ALL'>('ALL');
   const [turnoverData, setTurnoverData] = useState<MonthlyTurnoverSummary | null>(null);
   const [isLoadingTurnover, setIsLoadingTurnover] = useState(false);
+  const turnoverPhase = useLoadPhase(isLoadingTurnover);
   const [isExportingTurnover, setIsExportingTurnover] = useState(false);
   const [turnoverTrend, setTurnoverTrend] = useState<{ rate: (number | null)[]; joined: (number | null)[]; resigned: (number | null)[] } | null>(null);
 
@@ -711,7 +717,8 @@ export default function ReportsPage() {
               </span>
             </div>
 
-            {isLoadingHeadcount ? (
+            <RefreshIndicator active={headcountPhase.refreshing} />
+            {headcountPhase.initialLoading ? (
               <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                 กำลังโหลดข้อมูลอัตรากำลังคน...
@@ -957,7 +964,8 @@ export default function ReportsPage() {
               </span>
             </div>
 
-            {isLoadingLateness ? (
+            <RefreshIndicator active={latenessPhase.refreshing} />
+            {latenessPhase.initialLoading ? (
               <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
                 กำลังโหลดรายงานการมาสาย...
@@ -1298,7 +1306,8 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            {isLoadingTax ? (
+            <RefreshIndicator active={taxPhase.refreshing} />
+            {taxPhase.initialLoading ? (
               <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
                 กำลังโหลดรายงานภาษีและประกันสังคม...
@@ -1649,7 +1658,8 @@ export default function ReportsPage() {
               </span>
             </div>
 
-            {isLoadingTurnover ? (
+            <RefreshIndicator active={turnoverPhase.refreshing} />
+            {turnoverPhase.initialLoading ? (
               <div className="p-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
                 กำลังโหลดรายงานอัตราการเข้า-ออกของพนักงาน...

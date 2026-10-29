@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ClipboardList,
@@ -117,6 +119,7 @@ export default function ApprovalHistoryPage() {
   const [benefitHistory, setBenefitHistory] = useState<BenefitClaimRequest[]>([]);
   const [benefitPreview, setBenefitPreview] = useState<BenefitClaimRequest | null>(null);
   const [loading, setLoading] = useState(true);
+  const historyPhase = useLoadPhase(loading);
 
   // Sync breadcrumb
   useEffect(() => {
@@ -559,7 +562,8 @@ export default function ApprovalHistoryPage() {
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
-        {loading ? (
+        <RefreshIndicator active={historyPhase.refreshing} />
+        {historyPhase.initialLoading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
               <Loader2 className="w-5 h-5 animate-spin text-primary dark:text-blue-400" />

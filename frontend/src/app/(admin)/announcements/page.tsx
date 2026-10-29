@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -141,6 +143,7 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
+  const listPhase = useLoadPhase(loading);
   const [totalCount, setTotalCount] = useState(0);
 
   // Filter state for Admin
@@ -544,6 +547,7 @@ export default function AnnouncementsPage() {
           {/* Announcements Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
             <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <RefreshIndicator active={listPhase.refreshing} />
               <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -559,7 +563,7 @@ export default function AnnouncementsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {loading ? (
+                  {listPhase.initialLoading ? (
                     <tr>
                       <td colSpan={9} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">

@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { TabBar, type TabBarItem } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useCallback } from 'react';
@@ -65,11 +67,13 @@ export default function EssAttendancePage() {
   const [historyList, setHistoryList] = useState<AttendanceDaily[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MyAttendanceMonthlySummary | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const historyPhase = useLoadPhase(isLoadingHistory);
   const [isRecalculating, setIsRecalculating] = useState(false);
 
   // Adjustments list
   const [adjustmentsList, setAdjustmentsList] = useState<AttendanceAdjustment[]>([]);
   const [isLoadingAdjustments, setIsLoadingAdjustments] = useState(false);
+  const adjustmentsPhase = useLoadPhase(isLoadingAdjustments);
 
   // Adjustment Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -510,7 +514,8 @@ export default function EssAttendancePage() {
               </div>
             </div>
 
-            {isLoadingHistory ? (
+            <RefreshIndicator active={historyPhase.refreshing} />
+            {historyPhase.initialLoading ? (
               <div className="p-12 text-center text-slate-400">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0052CC]" />
                 กำลังโหลดประวัติเวลา...
@@ -666,7 +671,8 @@ export default function EssAttendancePage() {
             <span className="text-xs text-slate-400">{adjustmentsList.length} รายการ</span>
           </div>
 
-          {isLoadingAdjustments ? (
+          <RefreshIndicator active={adjustmentsPhase.refreshing} />
+          {adjustmentsPhase.initialLoading ? (
             <div className="p-12 text-center text-slate-400">
               <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#0052CC]" />
               กำลังโหลดรายการคำขอ...

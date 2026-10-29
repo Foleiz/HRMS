@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
@@ -188,6 +190,7 @@ function DailyAttendanceContent() {
 
   // Loading & Action States
   const [loading, setLoading] = useState(true);
+  const dailyPhase = useLoadPhase(loading);
   const [refreshing, setRefreshing] = useState(false);
 
   // Edit Modal State
@@ -233,6 +236,7 @@ function DailyAttendanceContent() {
   // Batches Table State
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
   const [isLoadingBatches, setIsLoadingBatches] = useState<boolean>(false);
+  const batchesPhase = useLoadPhase(isLoadingBatches);
   const [batchPage, setBatchPage] = useState<number>(1);
   const [batchPageSize, setBatchPageSize] = useState<number>(10);
   const [batchTotalPages, setBatchTotalPages] = useState<number>(1);
@@ -1436,6 +1440,7 @@ function DailyAttendanceContent() {
           {/* Daily Table with whitespace-nowrap */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
             <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <RefreshIndicator active={dailyPhase.refreshing} />
               <table className="table-standard w-full min-w-[1000px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider whitespace-nowrap">
@@ -1454,7 +1459,7 @@ function DailyAttendanceContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {loading ? (
+                  {dailyPhase.initialLoading ? (
                     <tr>
                       <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
@@ -1837,6 +1842,7 @@ function DailyAttendanceContent() {
             </div>
 
             <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <RefreshIndicator active={batchesPhase.refreshing} />
               <table className="table-standard w-full min-w-[1050px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider whitespace-nowrap">
@@ -1855,7 +1861,7 @@ function DailyAttendanceContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {isLoadingBatches ? (
+                  {batchesPhase.initialLoading ? (
                     <tr>
                       <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
                         <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />

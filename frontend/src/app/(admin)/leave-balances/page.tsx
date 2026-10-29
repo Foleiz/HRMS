@@ -1,5 +1,7 @@
 'use client';
 
+import { useLoadPhase } from '@/hooks/useLoadPhase';
+import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -23,6 +25,7 @@ export default function LeaveBalancesPage() {
   const [selectedYear, setSelectedYear] = useState<number>(currentThaiYear);
   const [summary, setSummary] = useState<MyLeaveSummary | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const balancePhase = useLoadPhase(isLoading);
   const [isExporting, setIsExporting] = useState<boolean>(false);
 
   // Available Thai Buddhist Years for dropdown (current year, and past 3 years)
@@ -160,7 +163,8 @@ export default function LeaveBalancesPage() {
       {/* ========================================================= */}
       <section className="space-y-3">
         <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">ยอดวันลาประจำปี พ.ศ. {selectedYear}</h2>
-        {isLoading ? (
+        <RefreshIndicator active={balancePhase.refreshing} />
+        {balancePhase.initialLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {Array.from({ length: 4 }).map((_, idx) => (
               <div
