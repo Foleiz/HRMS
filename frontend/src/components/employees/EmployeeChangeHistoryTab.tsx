@@ -21,6 +21,8 @@ import {
   Tag,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  ArrowUpDown,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { toInputDate } from '@/components/ui/ThaiDatePicker';
@@ -120,7 +122,7 @@ const formatTimeOnly = (v: string) => {
     : d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 };
 
-/** วันที่ตามเวลาเครื่อง (yyyy-MM-dd) — เดิมใช้ toISOString ทำให้รายการหลังเที่ยงคืนไทยไปอยู่วันก่อนหน้า */
+/** วันที่ตามเวลาเครื่อง (yyyy-MM-dd) */
 const dateKey = (v: string) => {
   const d = new Date(v);
   return isNaN(d.getTime()) ? v : toInputDate(d);
@@ -151,33 +153,33 @@ function ChangeRow({ c, action }: { c: FieldChange; action: string }) {
   const isUpdate = !isDelete && !isInsert;
 
   return (
-    <div className="flex items-start gap-3 text-xs py-1.5 border-b border-slate-100 last:border-0">
+    <div className="flex items-start gap-3 text-xs py-1.5 border-b border-slate-100 dark:border-slate-700/60 last:border-0">
       {/* Field name */}
-      <span className="w-36 shrink-0 text-slate-500 truncate pt-0.5 font-medium">
+      <span className="w-36 shrink-0 text-slate-500 dark:text-slate-400 truncate pt-0.5 font-medium">
         {c.field}
       </span>
 
       {/* Value(s) */}
       <div className="flex items-center gap-1.5 flex-wrap min-w-0">
         {isDelete && (
-          <span className="text-rose-600 font-medium flex items-center gap-1">
+          <span className="text-rose-600 dark:text-rose-400 font-medium flex items-center gap-1">
             <Minus className="w-3 h-3 text-rose-500 inline shrink-0" />
             <span>{c.oldValue ?? <Empty />}</span>
           </span>
         )}
         {isInsert && (
-          <span className="text-emerald-700 font-medium flex items-center gap-1">
+          <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
             <Plus className="w-3 h-3 text-emerald-600 inline shrink-0" />
             <span>{c.newValue ?? <Empty />}</span>
           </span>
         )}
         {isUpdate && (
           <>
-            <span className="text-slate-400 line-through decoration-slate-300">
+            <span className="text-slate-400 dark:text-slate-500 line-through decoration-slate-300 dark:decoration-slate-600">
               {c.oldValue ?? <Empty />}
             </span>
             <ArrowRight className="w-3 h-3 text-slate-400 shrink-0 mx-0.5" />
-            <span className="text-slate-900 font-bold">
+            <span className="text-slate-900 dark:text-slate-100 font-bold">
               {c.newValue ?? <Empty />}
             </span>
           </>
@@ -187,27 +189,20 @@ function ChangeRow({ c, action }: { c: FieldChange; action: string }) {
   );
 }
 
-/* ─── Clean summary helper (แสดงแค่ชื่อการเปลี่ยน ไม่ต้องบอกจากอะไรเป็นอะไร) ─── */
+/* ─── Clean summary helper ───────────────────────────────────────── */
 const cleanSummary = (summary?: string, fallback = '') => {
   if (!summary) return fallback;
-  // ตัดส่วน " จาก ... เป็น ..." ออก เช่น "เปลี่ยนเลขประกันสังคม จาก ... เป็น ..." -> "เปลี่ยนเลขประกันสังคม"
   const fromIdx = summary.indexOf(' จาก ');
   const toIdx = summary.indexOf(' เป็น ', fromIdx + 6);
   if (fromIdx > 0 && toIdx > fromIdx) {
     return summary.substring(0, fromIdx);
   }
-  // ตัดส่วนหลัง colon ออกทั้งหมด เช่น:
-  // "เพิ่มประวัติการทำงาน: test · ful aasd · 2 ต.ค. 2569" -> "เพิ่มประวัติการทำงาน"
-  // "ลบประวัติการทำงาน: ..." -> "ลบประวัติการทำงาน"
-  // "กรอกเลขประจำตัวประชาชน: 1-xxxx" -> "กรอกเลขประจำตัวประชาชน"
-  // "แก้ไขข้อมูลส่วนตัว 2 ช่อง: ..." -> "แก้ไขข้อมูลส่วนตัว"
   const colonIdx = summary.indexOf(':');
   if (colonIdx > 0) {
     let base = summary.substring(0, colonIdx).trim();
     base = base.replace(/\s+\d+\s+ช่อง$/, '');
     return base;
   }
-  // ตัด " (เดิม ...)" เช่น "ลบค่าเลขประกันสังคม (เดิม 1-xxxx)" -> "ลบค่าเลขประกันสังคม"
   const delIdx = summary.indexOf(' (เดิม ');
   if (delIdx > 0) {
     return summary.substring(0, delIdx);
@@ -241,21 +236,21 @@ function EntryCard({ e }: { e: HistoryEntry }) {
       </div>
 
       {/* Card */}
-      <div className="flex-1 bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+      <div className="flex-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-200/90 dark:border-slate-700/80 shadow-2xs overflow-hidden">
         {/* Header */}
         <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 text-sm leading-snug">
+            <p className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug">
               {title}
             </p>
-            <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-slate-500">
-              <span className="flex items-center gap-1 text-slate-500">
+            <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
                 <User className="w-3 h-3 text-slate-400" />
-                <span>โดย <strong className="font-semibold text-slate-700">{e.changedBy || 'ระบบ'}</strong></span>
+                <span>โดย <strong className="font-semibold text-slate-700 dark:text-slate-200">{e.changedBy || 'ระบบ'}</strong></span>
               </span>
-              <span className="text-slate-300">·</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-medium border border-slate-200/60">
-                <CategoryIcon className="w-2.5 h-2.5 text-slate-500" />
+              <span className="text-slate-300 dark:text-slate-600">·</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-medium border border-slate-200/60 dark:border-slate-600">
+                <CategoryIcon className="w-2.5 h-2.5 text-slate-500 dark:text-slate-400" />
                 <span>{e.category}</span>
               </span>
             </div>
@@ -267,7 +262,7 @@ function EntryCard({ e }: { e: HistoryEntry }) {
 
         {/* Change rows */}
         {e.changes.length > 0 && (
-          <div className="border-t border-slate-100 px-4 py-2 bg-slate-50/40">
+          <div className="border-t border-slate-100 dark:border-slate-700 px-4 py-2 bg-slate-50/40 dark:bg-slate-800/40">
             {shown.map((c, i) => (
               <ChangeRow key={i} c={c} action={e.action} />
             ))}
@@ -275,7 +270,7 @@ function EntryCard({ e }: { e: HistoryEntry }) {
               <button
                 type="button"
                 onClick={() => setExpanded((p) => !p)}
-                className="mt-1 text-[11px] text-blue-600 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
+                className="mt-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-700 font-semibold flex items-center gap-1 cursor-pointer"
               >
                 {expanded ? (
                   <>
@@ -306,13 +301,22 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
   const [rangePreset, setRangePreset] = useState<RangePreset>('ALL');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+
   const topRef = useRef<HTMLDivElement>(null);
-  /* เปลี่ยนหน้าแล้วเลื่อนกลับขึ้นไปหัวรายการ (ปุ่มเปลี่ยนหน้าอยู่ท้ายรายการ) */
+  const pillsScrollRef = useRef<HTMLDivElement>(null);
+
   const goToPage = (p: number) => {
     setPage(p);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const scrollPills = () => {
+    if (pillsScrollRef.current) {
+      pillsScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
@@ -341,7 +345,6 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       case '7D': return [daysAgo(6), ''];
       case '30D': return [daysAgo(29), ''];
       case '90D': return [daysAgo(89), ''];
-      // ระหว่างเลือก (มีแค่วันเริ่ม) ให้กรองเฉพาะวันนั้นไปก่อน
       case 'CUSTOM': return [dateFrom, dateTo || dateFrom];
       default: return ['', ''];
     }
@@ -357,9 +360,9 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
 
   useEffect(() => {
     setPage(1);
-  }, [category, rangeFrom, rangeTo]);
+  }, [category, rangeFrom, rangeTo, sortOrder]);
 
-  /* Category filter chips (นับเฉพาะในช่วงวันที่ที่เลือก) */
+  /* Category filter chips (นับเฉพาะในช่วงวันที่ที่เลือก) เรียงตามจำนวนรายการมากไปน้อยตาม mockup */
   const categories = useMemo(() => {
     const map = new Map<string, { label: string; count: number }>();
     inRange.forEach((e) => {
@@ -367,12 +370,21 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       c.count += 1;
       map.set(e.categoryKey, c);
     });
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
   }, [inRange]);
 
-  const filtered = category === 'ALL'
-    ? inRange
-    : inRange.filter((e) => e.categoryKey === category);
+  /* กรองตามหมวดหมู่และเรียงลำดับวันที่ (ใหม่สุดก่อน / เก่าสุดก่อน) */
+  const filtered = useMemo(() => {
+    const list = category === 'ALL'
+      ? inRange
+      : inRange.filter((e) => e.categoryKey === category);
+
+    return [...list].sort((a, b) => {
+      const tA = new Date(a.at).getTime();
+      const tB = new Date(b.at).getTime();
+      return sortOrder === 'desc' ? tB - tA : tA - tB;
+    });
+  }, [inRange, category, sortOrder]);
 
   /* แบ่งหน้าตามจำนวนรายการ แล้วจัดกลุ่มตามวันในหน้านั้น */
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -382,7 +394,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
     [filtered, currentPage, pageSize]
   );
 
-  /* Group by date */
+  /* Group by date (รักษารูปแบบลำดับตาม sortOrder) */
   const grouped = useMemo(() => {
     const map = new Map<string, HistoryEntry[]>();
     pageEntries.forEach((e) => {
@@ -396,32 +408,33 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
 
   return (
     <div ref={topRef} className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4 scroll-mt-24">
-      {/* Title + date range filter */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2">
-          <History className="w-4 h-4 text-primary dark:text-blue-400" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
+      {/* ─── Row 1: Title + Date Range Filter ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
+        <div className="flex items-center gap-2.5">
+          <History className="w-5 h-5 text-slate-800 dark:text-slate-100" />
+          <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
         </div>
+
         {!loading && !error && entries.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* ตัวเลือกช่วงเวลาสำเร็จรูป (ทุกช่วงเวลา, 7 วัน, 30 วัน, 3 เดือน) */}
             <CustomSelect
-              // เลือกช่วงวันที่เอง → ปุ่มนี้ยังแสดง "ทุกช่วงเวลา" (กดเลือกอีกครั้งเพื่อล้างวันที่)
               value={rangePreset === 'CUSTOM' ? 'ALL' : rangePreset}
               onChange={(e) => {
-                // เลือกช่วงสำเร็จรูป = ยกเลิกช่วงวันที่ที่เลือกเอง
                 setRangePreset(e.target.value as RangePreset);
                 setDateFrom('');
                 setDateTo('');
               }}
               numbered={false}
               placeholder="ทุกช่วงเวลา"
-              className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"
+              className="h-9 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
             >
               {RANGE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </CustomSelect>
-            {/* เลือกช่วงวันที่เอง (คลิกวันเริ่ม แล้วคลิกวันสิ้นสุด) */}
+
+            {/* เลือกช่วงวันที่เอง (dd/mm/yyyy – dd/mm/yyyy 📅) */}
             <LeaveDateRangePicker
               startDate={dateFrom}
               endDate={dateTo}
@@ -431,54 +444,66 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
                 setRangePreset(from || to ? 'CUSTOM' : 'ALL');
               }}
               align="right"
-              className="w-[230px] max-w-none py-1.5! text-xs! rounded-lg!"
+              className="h-9 w-[240px] max-w-none py-0! px-3.5! text-xs! rounded-xl! border-slate-200! dark:border-slate-700! bg-white! dark:bg-slate-800! text-slate-700! dark:text-slate-300!"
             />
           </div>
         )}
       </div>
 
-      {/* Category chips with Lucide icons */}
+      {/* ─── Row 2: Category Filter Pills + Scroll Right Button ─── */}
       {!loading && !error && entries.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 text-xs">
+        <div className="relative flex items-center gap-2">
+          <div
+            ref={pillsScrollRef}
+            className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
+          >
+            {/* ทั้งหมด */}
+            <button
+              type="button"
+              onClick={() => setCategory('ALL')}
+              className={`px-4 py-2 rounded-full text-xs font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
+                category === 'ALL'
+                  ? 'bg-primary text-white border border-primary shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60'
+              }`}
+            >
+              ทั้งหมด ({inRange.length})
+            </button>
+
+            {/* แต่ละหมวดหมู่ */}
+            {categories.map(([key, c]) => {
+              const isSelected = category === key;
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setCategory(key)}
+                  className={`px-4 py-2 rounded-full text-xs font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
+                    isSelected
+                      ? 'bg-primary text-white border border-primary shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60'
+                  }`}
+                >
+                  {c.label} ({c.count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ปุ่มเลื่อนดูหมวดหมู่ไปทางขวา (ChevronRight) */}
           <button
             type="button"
-            onClick={() => setCategory('ALL')}
-            className={`px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
-              category === 'ALL'
-                ? 'bg-primary text-white border-primary shadow-xs'
-                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-            }`}
+            onClick={scrollPills}
+            title="เลื่อนดูหมวดหมู่เพิ่มเติม"
+            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center shrink-0 shadow-xs transition-colors cursor-pointer"
           >
-            <History className="w-3.5 h-3.5" />
-            <span>ทั้งหมด</span>
-            <span className="opacity-80 font-normal">({inRange.length})</span>
+            <ChevronRight className="w-4 h-4" />
           </button>
-
-          {categories.map(([key, c]) => {
-            const CatIcon = getCategoryIcon(key);
-            const isSelected = category === key;
-
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setCategory(key)}
-                className={`px-3 py-1.5 rounded-full border cursor-pointer transition-colors flex items-center gap-1.5 ${
-                  isSelected
-                    ? 'bg-primary text-white border-primary shadow-xs'
-                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <CatIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
-                <span>{c.label}</span>
-                <span className="opacity-80 font-normal">({c.count})</span>
-              </button>
-            );
-          })}
         </div>
       )}
 
-      {/* Body */}
+      {/* ─── Row 3+: Timeline + Date Group Headers + Sort Toggle ─── */}
       {loading ? (
         <div className="py-16 flex items-center justify-center text-slate-400 gap-2 text-sm">
           <Loader2 className="w-4 h-4 animate-spin text-primary" /> กำลังโหลด...
@@ -488,28 +513,44 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
           <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" /> {error}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="text-center text-slate-400 py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-sm">
+        <p className="text-center text-slate-400 py-10 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-sm">
           {entries.length === 0 ? 'ยังไม่มีประวัติการเปลี่ยนแปลง' : 'ไม่มีประวัติในช่วงวันที่หรือหมวดที่เลือก'}
         </p>
       ) : (
         <div className="space-y-6">
-          {grouped.map(([dk, dayEntries]) => (
+          {grouped.map(([dk, dayEntries], idx) => (
             <div key={dk} className="space-y-2.5">
-              {/* Date header with trailing line and Calendar icon */}
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 pl-0.5">
-                <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>{formatDateShort(dayEntries[0].at)}</span>
-                <div className="flex-1 h-px bg-slate-200" />
+              {/* Date Header + Horizontal Divider Line + Sort Button (on first group) */}
+              <div className="flex items-center gap-3 text-xs font-semibold text-slate-600 dark:text-slate-400 pl-0.5">
+                <div className="flex items-center gap-1.5 shrink-0 text-slate-800 dark:text-slate-200">
+                  <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                  <span className="font-bold">{formatDateShort(dayEntries[0].at)}</span>
+                </div>
+
+                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700" />
+
+                {idx === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSortOrder((p) => (p === 'desc' ? 'asc' : 'desc'))}
+                    className="inline-flex items-center gap-1.5 shrink-0 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-blue-400 transition-colors cursor-pointer select-none"
+                    title={`สลับลำดับวันที่ (ปัจจุบัน: ${sortOrder === 'desc' ? 'ใหม่สุดก่อน' : 'เก่าสุดก่อน'})`}
+                  >
+                    <ArrowUpDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span>{sortOrder === 'desc' ? 'ใหม่สุดก่อน' : 'เก่าสุดก่อน'}</span>
+                  </button>
+                )}
               </div>
 
               {/* Entry cards */}
               <div className="space-y-3">
-                {dayEntries.map((e, idx) => (
-                  <EntryCard key={`${e.at}-${idx}`} e={e} />
+                {dayEntries.map((e, eIdx) => (
+                  <EntryCard key={`${e.at}-${eIdx}`} e={e} />
                 ))}
               </div>
             </div>
           ))}
+
           <TablePagination
             total={filtered.length}
             page={currentPage}
