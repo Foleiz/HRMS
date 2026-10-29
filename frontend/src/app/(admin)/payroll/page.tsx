@@ -90,7 +90,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
-import { Button, ActiveStatus, RowActions, RowActionButton } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton, TabBar } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
@@ -2348,22 +2348,12 @@ export default function PayrollPage() {
 
       {/* Sub Navigation Bar - Standardized to Employee Module */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {visibleNavTabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setActiveTab(t.id)}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === t.id
-                  ? 'border-primary text-primary dark:border-white dark:text-white font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <TabBar
+          aria-label="เมนูเงินเดือน"
+          items={visibleNavTabs.map((t) => ({ key: t.id, label: t.label }))}
+          activeKey={activeTab}
+          onChange={(k) => setActiveTab(k as typeof activeTab)}
+        />
       </div>
 
 

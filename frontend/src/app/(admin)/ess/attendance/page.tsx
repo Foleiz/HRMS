@@ -1,5 +1,6 @@
 'use client';
 
+import { TabBar, type TabBarItem } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -447,36 +448,14 @@ export default function EssAttendancePage() {
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 rounded-t-2xl">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {/* Tab 1: ตรวจบันทึกเวลาของฉัน */}
-          <button
-            onClick={() => setActiveTab('history')}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'history'
-                ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            ตรวจบันทึกเวลาของฉัน
-          </button>
-
-          {/* Tab 2: คำขอปรับปรุงเวลา */}
-          <button
-            onClick={() => setActiveTab('adjustments')}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'adjustments'
-                ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            <span>คำขอปรับปรุงเวลา</span>
-            {pendingCount > 0 && (
-              <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse">
-                {pendingCount}
-              </span>
-            )}
-          </button>
-        </nav>
+        <TabBar
+          aria-label="เมนูเวลาทำงานของฉัน"
+          items={([
+            { key: 'history', label: 'ตรวจบันทึกเวลาของฉัน', onClick: () => setActiveTab('history') },
+            { key: 'adjustments', label: <><span>คำขอปรับปรุงเวลา</span> {pendingCount > 0 && ( <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse"> {pendingCount} </span> )}</>, onClick: () => setActiveTab('adjustments') },
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'history') ? 'history' : (activeTab === 'adjustments') ? 'adjustments' : null}
+        />
       </div>
 
       {/* ─────────────────────────────────────────────────────────────

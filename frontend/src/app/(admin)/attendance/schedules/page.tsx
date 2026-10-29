@@ -56,7 +56,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem } from '@/components/ui';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1007,31 +1007,14 @@ function SchedulesContent() {
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
       <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {/* Tab 1: มอบหมายกะให้พนักงาน */}
-          <button
-            onClick={() => handleTabChange('roster')}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'roster'
-                ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            มอบหมายกะให้พนักงาน
-          </button>
-
-          {/* Tab 2: กะการทำงาน */}
-          <button
-            onClick={() => handleTabChange('shifts')}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'shifts'
-                ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            กะการทำงาน
-          </button>
-        </nav>
+        <TabBar
+          aria-label="เมนูตารางกะ"
+          items={([
+            { key: 'roster', label: 'มอบหมายกะให้พนักงาน', onClick: () => handleTabChange('roster') },
+            { key: 'shifts', label: 'กะการทำงาน', onClick: () => handleTabChange('shifts') },
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'roster') ? 'roster' : (activeTab === 'shifts') ? 'shifts' : null}
+        />
       </div>
 
       {/* ============================================================= */}

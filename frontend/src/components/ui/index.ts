@@ -15,3 +15,4 @@ export * from './SegmentedControl';
 export * from './RowActions';
 export * from './YearPicker';
 export * from './MoneyInput';
+export * from './TabBar';

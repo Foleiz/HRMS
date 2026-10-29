@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell, Button } from '@/components/ui';
+import { ModalShell, Button, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -433,35 +433,14 @@ export default function WorkCalendarPage() {
     <div className="space-y-6">
       {/* 1. Sub-navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          <button
-            onClick={() => {
-              setActiveTab('work-week');
-              setSearchQuery('');
-            }}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'work-week'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            วันทำงานประจำสัปดาห์
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveTab('holidays');
-              setSearchQuery('');
-            }}
-            className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-              activeTab === 'holidays'
-                ? 'border-primary text-primary font-bold'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-            }`}
-          >
-            วันหยุดประจำปี
-          </button>
-        </nav>
+        <TabBar
+          aria-label="เมนูปฏิทินการทำงาน"
+          items={([
+            { key: 'work-week', label: 'วันทำงานประจำสัปดาห์', onClick: () => { setActiveTab('work-week'); setSearchQuery(''); } },
+            { key: 'holidays', label: 'วันหยุดประจำปี', onClick: () => { setActiveTab('holidays'); setSearchQuery(''); } },
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'work-week') ? 'work-week' : (activeTab === 'holidays') ? 'holidays' : null}
+        />
       </div>
 
       {/* 3. Tab Content Panels */}

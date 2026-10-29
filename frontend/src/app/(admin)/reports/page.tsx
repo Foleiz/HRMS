@@ -1,5 +1,6 @@
 'use client';
 
+import { TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -490,68 +491,17 @@ export default function ReportsPage() {
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
       <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {canViewHeadcount && (
-            <button
-              onClick={() => setActiveTab('department')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'department'
-                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              พนักงานแยกตามแผนก
-            </button>
-          )}
-          {(canViewHeadcount || canViewLateness) && (
-            <button
-              onClick={() => setActiveTab(canViewHeadcount ? 'headcount' : 'lateness')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                (activeTab === 'headcount' || activeTab === 'lateness')
-                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              การเข้าออกงาน
-            </button>
-          )}
-          {canViewLeave && (
-            <button
-              onClick={() => setActiveTab('leave')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'leave'
-                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              การลา
-            </button>
-          )}
-          {canViewTurnover && (
-            <button
-              onClick={() => setActiveTab('turnover')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'turnover'
-                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              อัตราการลาออก
-            </button>
-          )}
-          {canViewTax && (
-            <button
-              onClick={() => setActiveTab('tax')}
-              className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium cursor-pointer ${
-                activeTab === 'tax'
-                  ? 'border-primary text-primary dark:border-primary dark:text-primary-soft font-bold'
-                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-              }`}
-            >
-              ภาษีและประกันสังคม
-            </button>
-          )}
-        </nav>
+        <TabBar
+          aria-label="เมนูรายงาน"
+          items={([
+            canViewHeadcount ? { key: 'department', label: 'พนักงานแยกตามแผนก', onClick: () => setActiveTab('department') } : null,
+            (canViewHeadcount || canViewLateness) ? { key: 'attendance', label: 'การเข้าออกงาน', onClick: () => setActiveTab(canViewHeadcount ? 'headcount' : 'lateness') } : null,
+            canViewLeave ? { key: 'leave', label: 'การลา', onClick: () => setActiveTab('leave') } : null,
+            canViewTurnover ? { key: 'turnover', label: 'อัตราการลาออก', onClick: () => setActiveTab('turnover') } : null,
+            canViewTax ? { key: 'tax', label: 'ภาษีและประกันสังคม', onClick: () => setActiveTab('tax') } : null,
+          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
+          activeKey={(activeTab === 'department') ? 'department' : ((activeTab === 'headcount' || activeTab === 'lateness')) ? 'attendance' : (activeTab === 'leave') ? 'leave' : (activeTab === 'turnover') ? 'turnover' : (activeTab === 'tax') ? 'tax' : null}
+        />
       </div>
 
       {/* การเข้าออกงาน: สลับมุมมองรายวัน / รายเดือน */}

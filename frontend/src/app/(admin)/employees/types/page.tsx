@@ -30,7 +30,7 @@ import {
 import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
-import { Button } from '@/components/ui';
+import { Button, TabBar } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -274,24 +274,12 @@ export default function EmployeeTypesPage() {
     <div className="space-y-5 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs matching Design System */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <nav className="flex space-x-6 overflow-x-auto no-scrollbar py-2 text-[13px] font-medium">
-          {subNavTabs.map((tab) => {
-            const isActive = tab.active;
-            return (
-              <Link
-                key={tab.title}
-                href={tab.href}
-                className={`py-2 whitespace-nowrap transition-all border-b-2 font-medium ${
-                  isActive
-                    ? 'border-primary dark:border-white text-primary dark:text-white font-bold'
-                    : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:border-slate-300'
-                }`}
-              >
-                {tab.title}
-              </Link>
-            );
-          })}
-        </nav>
+        <TabBar
+          aria-label="เมนูพนักงาน"
+          memoryKey="employees-subnav"
+          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href }))}
+          activeKey={subNavTabs.find((t) => t.active)?.href}
+        />
       </div>
 
       {/* 2. Notifications Alert */}
