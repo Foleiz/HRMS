@@ -26,6 +26,7 @@ import {
   X,
   Pencil,
   User,
+  ChevronRight,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { authService } from '@/services/authService';
@@ -246,6 +247,7 @@ export default function EmployeeDetailView({
 
   // Password Modal State
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState<boolean>(false);
   const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -998,180 +1000,49 @@ export default function EmployeeDetailView({
           {/* TAB 6: ข้อมูลผู้ใช้งาน & จัดการบัญชี (User Account & Signature) */}
           {/* ============================================================ */}
           {activeTab === 'user' && (
-            <div className="pt-6 flex-1 w-full space-y-6 text-xs animate-in fade-in duration-150">
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="w-4 h-4 text-primary dark:text-blue-400" />
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลบัญชีผู้ใช้งานในระบบ (System Account)</h3>
-              </div>
-
-              {employee.userAccount ? (
-                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-5 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">ชื่อบัญชีผู้ใช้ (Username)</p>
-                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm font-mono mt-0.5">
-                        {employee.userAccount.username}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">สถานะบัญชี</p>
-                      {employee.userAccount.status?.toUpperCase() === 'ACTIVE' ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-full font-semibold text-[11px] mt-1 border border-emerald-200/60 dark:border-emerald-800/40">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          เปิดใช้งาน (Active)
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-full font-semibold text-[11px] mt-1 border border-rose-200 dark:border-rose-900">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          ระงับการใช้งาน ({employee.userAccount.status})
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">บทบาทในระบบ (Role)</p>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                        {employee.userAccount.roleNames && employee.userAccount.roleNames.length > 0
-                          ? employee.userAccount.roleNames.join(', ')
-                          : employee.userAccount.roles && employee.userAccount.roles.length > 0
-                          ? employee.userAccount.roles.map((r) => formatRoleName(r)).join(', ')
-                          : 'พนักงานทั่วไป (Employee)'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">สิทธิ์การเข้าถึง (Access Scope)</p>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
-                        {employee.userAccount.accessScope || 'SELF (ดูข้อมูลตนเอง)'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">เข้าสู่ระบบล่าสุด</p>
-                      <p className="text-slate-600 dark:text-slate-400 mt-0.5">
-                        {employee.userAccount.lastLoginAt
-                          ? formatThaiDate(employee.userAccount.lastLoginAt)
-                          : 'ยังไม่เคยเข้าสู่ระบบ'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-slate-400 dark:text-slate-500 text-[11px]">ปรับปรุงข้อมูลล่าสุด</p>
-                      <p className="text-slate-600 dark:text-slate-400 mt-0.5">{formatThaiDate(employee.updatedAt)}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                  <p className="font-medium text-slate-600 dark:text-slate-400 mb-1">ยังไม่มีบัญชีผู้ใช้งานในระบบสำหรับพนักงานท่านนี้</p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">สามารถสร้างบัญชีผู้ใช้งานได้ที่เมนูตั้งค่าผู้ใช้งาน</p>
-                </div>
-              )}
-
-              {/* จัดการรหัสผ่าน (Merged from Profile) */}
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-5 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                      <KeyRound className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
-                      รหัสผ่านสำหรับเข้าสู่ระบบ
-                    </h4>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                      เปลี่ยนรหัสผ่านใหม่เพื่อความปลอดภัยของบัญชีผู้ใช้
-                    </p>
-                  </div>
+            <div className="pt-4 flex-1 w-full animate-in fade-in duration-150">
+              {/* รายการตั้งค่าบัญชี — แตะทั้งแถวเพื่อเปิด */}
+              <ul className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                <li>
                   <button
                     type="button"
                     onClick={() => setIsPasswordModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer shrink-0"
+                    className="w-full flex items-center gap-4 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl px-2 -mx-2 transition-colors cursor-pointer"
                   >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>เปลี่ยนรหัสผ่าน</span>
+                    <span className="w-12 h-12 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                      <Lock className="w-5 h-5" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-bold text-slate-900 dark:text-slate-100">เปลี่ยนรหัสผ่าน</span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        เพื่อความปลอดภัยของบัญชี แนะนำให้เปลี่ยนรหัสผ่านทุก ๆ 3-6 เดือน และตั้งรหัสผ่านที่คาดเดายาก
+                      </span>
+                    </span>
+                    <ChevronRight className="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" />
                   </button>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-1 max-w-xs">
-                    <input
-                      type="password"
-                      disabled
-                      value="••••••••••••"
-                      className="w-full h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-xs bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 font-mono tracking-widest cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* ลายเซ็นดิจิทัล (Digital Signature - Merged from Profile) */}
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-5 space-y-4">
-                <div>
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200 text-xs flex items-center gap-1.5">
-                    <FileSignature className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
-                    ลายเซ็นดิจิทัล (Digital Signature)
-                  </h4>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                    อัปโหลดรูปลายเซ็นสำหรับใช้ในระบบเอกสารอิเล็กทรอนิกส์และใบอนุมัติ
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-5">
-                  {/* Preview box */}
-                  <div className="w-56 h-24 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center p-2 relative shrink-0">
-                    {signatureUrl ? (
-                      <img
-                        src={signatureUrl}
-                        alt="Digital Signature"
-                        className="max-h-full max-w-full object-contain"
-                        onError={() => setCustomSig(null)}
-                      />
-                    ) : (
-                      <div className="text-center text-slate-400 text-xs font-medium">
-                        <FileSignature className="w-6 h-6 mx-auto mb-1 text-slate-300 dark:text-slate-600" />
-                        <span>ยังไม่มีลายเซ็นในระบบ</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Upload & Delete buttons */}
-                  {canEditEmployee && (
-                    <div className="space-y-2 text-center sm:text-left">
-                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                        <button
-                          type="button"
-                          onClick={() => sigFileInputRef.current?.click()}
-                          disabled={isUploadingSig}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
-                        >
-                          {isUploadingSig ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                          ) : (
-                            <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                          )}
-                          <span>{signatureUrl ? 'เปลี่ยนลายเซ็น' : 'อัปโหลดลายเซ็น'}</span>
-                        </button>
-
-                        {signatureUrl && (
-                          <button
-                            type="button"
-                            onClick={handleDeleteSignature}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>ลบ</span>
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                        รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignatureModalOpen(true)}
+                    className="w-full flex items-center gap-4 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl px-2 -mx-2 transition-colors cursor-pointer"
+                  >
+                    <span className="w-12 h-12 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                      <FileSignature className="w-5 h-5" />
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-900 dark:text-slate-100">ลายเซ็น</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500">{signatureUrl ? 'ตั้งค่าแล้ว' : 'ยังไม่กำหนด'}</span>
+                      </span>
+                      <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        รูปลายเซ็นที่ใช้ลงนามในเอกสารและใบอนุมัติในระบบ
+                      </span>
+                    </span>
+                    <ChevronRight className="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" />
+                  </button>
+                </li>
+              </ul>
             </div>
           )}
 
@@ -1194,6 +1065,82 @@ export default function EmployeeDetailView({
       {/* ============================================================ */}
       {/* CHANGE PASSWORD MODAL                                        */}
       {/* ============================================================ */}
+      {isSignatureModalOpen && (
+        <ModalShell onBackdropClick={() => setIsSignatureModalOpen(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <FileSignature className="w-4 h-4 text-primary dark:text-blue-400" />
+                ลายเซ็น
+              </h3>
+              <button
+                type="button"
+                aria-label="ปิด"
+                onClick={() => setIsSignatureModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 text-xs">
+                <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* Preview box */}
+                <div className="w-56 h-24 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center p-2 relative shrink-0">
+                  {signatureUrl ? (
+                    <img
+                      src={signatureUrl}
+                      alt="Digital Signature"
+                      className="max-h-full max-w-full object-contain"
+                      onError={() => setCustomSig(null)}
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400 text-xs font-medium">
+                      <FileSignature className="w-6 h-6 mx-auto mb-1 text-slate-300 dark:text-slate-600" />
+                      <span>ยังไม่มีลายเซ็นในระบบ</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Upload & Delete buttons */}
+                {canEditEmployee && (
+                  <div className="space-y-2 text-center sm:text-left">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <button
+                        type="button"
+                        onClick={() => sigFileInputRef.current?.click()}
+                        disabled={isUploadingSig}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
+                      >
+                        {isUploadingSig ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        )}
+                        <span>{signatureUrl ? 'เปลี่ยนลายเซ็น' : 'อัปโหลดลายเซ็น'}</span>
+                      </button>
+
+                      {signatureUrl && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteSignature}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>ลบ</span>
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
       {isPasswordModalOpen && (
         <ModalShell className="z-50 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
