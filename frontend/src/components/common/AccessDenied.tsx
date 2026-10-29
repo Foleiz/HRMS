@@ -3,6 +3,7 @@
 import React from 'react';
 import { ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui';
 
 interface AccessDeniedProps {
   title?: string;
@@ -29,14 +30,9 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
         {message}
       </p>
       {onBackAction ? (
-        <button
-          type="button"
-          onClick={onBackAction}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-xs cursor-pointer"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>{backText}</span>
-        </button>
+        <Button onClick={onBackAction} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
+          {backText}
+        </Button>
       ) : (
         <Link
           href={backHref}

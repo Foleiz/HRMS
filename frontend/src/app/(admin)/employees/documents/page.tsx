@@ -6,6 +6,7 @@ import { Search, Download, Loader2, AlertTriangle, BellRing, FileClock, FileX2, 
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { Button } from '@/components/ui';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
 import { EmployeeDocument } from '@/types/employeeDocument';
 
@@ -214,16 +215,15 @@ export default function ExpiringDocumentsPage() {
             ))}
           </div>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
           onClick={handleRunCheck}
-          disabled={checking}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 border border-primary dark:border-white text-primary dark:text-white text-xs font-medium rounded-xl hover:bg-primary hover:text-white transition-colors cursor-pointer disabled:opacity-60"
+          loading={checking}
+          icon={<BellRing className="w-3.5 h-3.5" />}
           title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
         >
-          {checking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BellRing className="w-3.5 h-3.5" />}
           ตรวจและแจ้งเตือนตอนนี้
-        </button>
+        </Button>
       </div>
 
       {/* ตาราง */}

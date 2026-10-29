@@ -559,14 +559,9 @@ export default function ContractDetailModal({
                   >
                     ยกเลิก
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isTerminating}
-                    className="px-4 py-1.5 text-xs text-white bg-rose-600 hover:bg-rose-700 rounded-lg font-medium flex items-center gap-1.5 shadow-xs cursor-pointer"
-                  >
-                    {isTerminating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  <Button type="submit" variant="danger" size="sm" loading={isTerminating}>
                     ยืนยันสิ้นสุดสัญญา
-                  </button>
+                  </Button>
                 </div>
               </form>
             )}

@@ -2985,15 +2985,16 @@ export default function PayrollPage() {
                   )}
 
                   {canApproveBonus && (
-                    <button
-                      type="button"
+                    <Button
+                      variant="success"
+                      size="sm"
+                      className="h-9"
                       onClick={handleOpenApplyBonusModal}
                       disabled={bonuses.length === 0}
-                      className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                      icon={<ArrowDownToLine className="w-3.5 h-3.5" />}
                     >
-                      <ArrowDownToLine className="w-3.5 h-3.5" />
-                      <span>บันทึกเข้างวด</span>
-                    </button>
+                      บันทึกเข้างวด
+                    </Button>
                   )}
                   {canExportBonus && (
                     <button
@@ -3967,23 +3968,20 @@ export default function PayrollPage() {
                           )}
 
                           {/* คำนวณเงินเดือน */}
-                          <button
-                            type="button"
+                          <Button
+                            variant="success"
+                            size="sm"
+                            className="h-9"
                             onClick={handleCalculatePayroll}
+                            loading={isCalculating}
                             disabled={
-                              isCalculating ||
                               !selectedPeriod ||
                               (selectedPeriod?.status !== 'DRAFT' && selectedPeriod?.status !== 'REVIEW')
                             }
-                            className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                            icon={<Scale className="w-3.5 h-3.5" />}
                           >
-                            {isCalculating ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Scale className="w-3.5 h-3.5" />
-                            )}
-                            <span>{isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}</span>
-                          </button>
+                            {isCalculating ? 'กำลังคำนวณ...' : 'คำนวณเงินเดือน'}
+                          </Button>
 
                           {/* ส่งให้ฝ่ายการเงิน */}
                           {(selectedPeriod?.status === 'REVIEW' || selectedPeriod?.status === 'DRAFT') &&
@@ -4029,14 +4027,15 @@ export default function PayrollPage() {
                           )}
 
                           {selectedPeriod?.status === 'SUBMITTED_TO_FINANCE' && (
-                            <button
-                              type="button"
+                            <Button
+                              variant="success"
+                              size="sm"
+                              className="h-9"
                               onClick={handleVerifyByFinance}
-                              className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all active:scale-95 cursor-pointer"
+                              icon={<CheckCircle className="w-3.5 h-3.5" />}
                             >
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              <span>การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)</span>
-                            </button>
+                              การเงินยืนยันความถูกต้อง (ส่งขออนุมัติจาก CEO)
+                            </Button>
                           )}
 
                           {selectedPeriod?.status === 'FINANCE_VERIFIED' && (
@@ -4116,14 +4115,15 @@ export default function PayrollPage() {
                                 <span>ไม่อนุมัติ (ส่งคืน HR)</span>
                               </button>
 
-                              <button
-                                type="button"
+                              <Button
+                                variant="success"
+                                size="sm"
+                                className="h-9"
                                 onClick={handleAdvancePeriodStatus}
-                                className="h-9 inline-flex items-center gap-1.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                                icon={<CheckCircle2 className="w-3.5 h-3.5" />}
                               >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>อนุมัติรอบเงินเดือน</span>
-                              </button>
+                                อนุมัติรอบเงินเดือน
+                              </Button>
                             </>
                           ) : ['APPROVED', 'PAID', 'CLOSED'].includes(selectedPeriod?.status || '') ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -4159,14 +4159,15 @@ export default function PayrollPage() {
                           </button>
 
                           {selectedPeriod?.status === 'APPROVED' && (isFinance || isAdmin || isCEO) && (
-                            <button
-                              type="button"
+                            <Button
+                              variant="success"
+                              size="sm"
+                              className="h-9"
                               onClick={handleAdvancePeriodStatus}
-                              className="h-9 inline-flex items-center gap-1.5 px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-all cursor-pointer"
+                              icon={<Banknote className="w-3.5 h-3.5" />}
                             >
-                              <Banknote className="w-3.5 h-3.5" />
-                              <span>บันทึกว่าจ่ายแล้ว</span>
-                            </button>
+                              บันทึกว่าจ่ายแล้ว
+                            </Button>
                           )}
 
                           {selectedPeriod?.status === 'PAID' && (isFinance || isAdmin || isCEO) && (
@@ -5155,15 +5156,15 @@ export default function PayrollPage() {
                           </button>
 
                           {selectedPeriod?.status === 'PROCESSING_BANK' && isFinance && (
-                            <button
-                              type="button"
+                            <Button
+                              variant="success"
+                              size="sm"
                               onClick={handleMarkPaid}
-                              disabled={isConfirmingPayment}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer transition-all"
+                              loading={isConfirmingPayment}
+                              icon={<CheckCircle className="w-3.5 h-3.5" />}
                             >
-                              {isConfirmingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
-                              <span>ยืนยันการจ่ายเงิน (โอนสำเร็จ)</span>
-                            </button>
+                              ยืนยันการจ่ายเงิน (โอนสำเร็จ)
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -5605,17 +5606,19 @@ export default function PayrollPage() {
                   >
                     ยกเลิก
                   </button>
-                  <button
+                  <Button
+                    variant="success"
+                    className="flex-1"
                     onClick={selectedPeriod?.paymentMethod === 'DIRECT_TRANSFER' ? handleConfirmPayment : handleConfirmBankTransfer}
-                    disabled={isConfirmingPayment}
-                    className="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-xl text-sm font-bold transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+                    loading={isConfirmingPayment}
+                    icon={<CheckCircle className="w-4 h-4" />}
                   >
-                    {isConfirmingPayment ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /><span>กำลังยืนยัน...</span></>
-                    ) : (
-                      <><CheckCircle className="w-4 h-4" /><span>{selectedPeriod?.paymentMethod === 'BANK_BATCH' ? 'ยืนยันว่าธนาคารโอนเงินแล้ว' : 'ยืนยันการจ่ายเงิน'}</span></>
-                    )}
-                  </button>
+                    {isConfirmingPayment
+                      ? 'กำลังยืนยัน...'
+                      : selectedPeriod?.paymentMethod === 'BANK_BATCH'
+                        ? 'ยืนยันว่าธนาคารโอนเงินแล้ว'
+                        : 'ยืนยันการจ่ายเงิน'}
+                  </Button>
                 </div>
               </div>
             </ModalShell>
