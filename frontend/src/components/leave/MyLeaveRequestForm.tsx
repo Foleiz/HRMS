@@ -480,6 +480,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <RequesterSummary
+        variant="leave"
         fullName={profile.fullName}
         positionTitle={profile.positionTitle}
         departmentName={profile.departmentName}

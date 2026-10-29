@@ -111,6 +111,7 @@ export default function CertificatePage() {
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <RequesterSummary
+          variant="certificate"
           fullName={user?.fullName || '-'}
           positionTitle={profile.positionTitle}
           departmentName={profile.departmentName}
