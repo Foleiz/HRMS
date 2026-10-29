@@ -294,6 +294,7 @@ export default function ResignationPage() {
       {/* ฟอร์มกระชับ — รูปแบบเดียวกับหน้ายื่นคำขอลา */}
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <RequesterSummary
+          variant="resignation"
           fullName={profile.fullName || '-'}
           positionTitle={profile.positionTitle}
           departmentName={profile.departmentName}
