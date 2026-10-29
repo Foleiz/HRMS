@@ -18,6 +18,7 @@ import {
   CreditCard,
   FileSignature,
   Upload,
+  Info,
   Trash2,
   Lock,
   Eye,
@@ -248,6 +249,9 @@ export default function EmployeeDetailView({
   // Password Modal State
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState<boolean>(false);
+  /** ไฟล์ลายเซ็นที่เลือกไว้แต่ยังไม่บันทึก (กรณียังไม่มีลายเซ็น) */
+  const [pendingSig, setPendingSig] = useState<{ file: File; url: string } | null>(null);
+  const [isSigDragOver, setIsSigDragOver] = useState(false);
   const [currentPassword, setCurrentPassword] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
@@ -296,20 +300,50 @@ export default function EmployeeDetailView({
     }
   };
 
-  const handleSignatureFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  /** ตรวจไฟล์ลายเซ็น: PNG/JPG ไม่เกิน 2MB */
+  const isValidSignatureFile = (file: File) => {
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
       toast.warning('กรุณาเลือกไฟล์ภาพ PNG หรือ JPG เท่านั้น');
-      return;
+      return false;
     }
-
     if (file.size > 2 * 1024 * 1024) {
       toast.warning('ขนาดไฟล์ต้องไม่เกิน 2MB');
+      return false;
+    }
+    return true;
+  };
+
+  /** ยังไม่มีลายเซ็น: เลือกไฟล์แล้วพักไว้ให้กด "บันทึก" / มีแล้ว: เปลี่ยนทันที */
+  const handlePickedSignature = (file: File | undefined) => {
+    if (!file || !isValidSignatureFile(file)) {
+      if (sigFileInputRef.current) sigFileInputRef.current.value = '';
       return;
     }
+    if (signatureUrl) {
+      void uploadSignatureFile(file);
+    } else {
+      setPendingSig((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url);
+        return { file, url: URL.createObjectURL(file) };
+      });
+      if (sigFileInputRef.current) sigFileInputRef.current.value = '';
+    }
+  };
 
+  const handleSignatureFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handlePickedSignature(e.target.files?.[0]);
+  };
+
+  const closeSignatureModal = () => {
+    setPendingSig((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
+    setIsSigDragOver(false);
+    setIsSignatureModalOpen(false);
+  };
+
+  const uploadSignatureFile = async (file: File) => {
     try {
       setIsUploadingSig(true);
       const url = await employeeService.uploadSignature(employee.id, file);
@@ -317,6 +351,10 @@ export default function EmployeeDetailView({
       const updated = await employeeService.getById(employee.id);
       onEmployeeUpdate?.(updated);
       toast.success('อัปโหลดลายเซ็นดิจิทัลเรียบร้อยแล้ว');
+      setPendingSig((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url);
+        return null;
+      });
     } catch (err: unknown) {
       const error = err as Error;
       toast.error(error.message || 'อัปโหลดลายเซ็นไม่สำเร็จ');
@@ -1066,77 +1104,134 @@ export default function EmployeeDetailView({
       {/* CHANGE PASSWORD MODAL                                        */}
       {/* ============================================================ */}
       {isSignatureModalOpen && (
-        <ModalShell onBackdropClick={() => setIsSignatureModalOpen(false)}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <FileSignature className="w-4 h-4 text-primary dark:text-blue-400" />
-                ลายเซ็น
-              </h3>
+        <ModalShell onBackdropClick={closeSignatureModal}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3 px-6 pt-5">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ลายเซ็น</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ใช้ประทับในเอกสารที่ต้องลงนาม</p>
+              </div>
               <button
                 type="button"
                 aria-label="ปิด"
-                onClick={() => setIsSignatureModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
+                onClick={closeSignatureModal}
+                className="p-1.5 -mr-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-5 text-xs">
-                <div className="flex flex-col sm:flex-row items-center gap-5">
-                {/* Preview box */}
-                <div className="w-56 h-24 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 flex items-center justify-center p-2 relative shrink-0">
-                  {signatureUrl ? (
-                    <img
-                      src={signatureUrl}
-                      alt="Digital Signature"
-                      className="max-h-full max-w-full object-contain"
-                      onError={() => setCustomSig(null)}
-                    />
-                  ) : (
-                    <div className="text-center text-slate-400 text-xs font-medium">
-                      <FileSignature className="w-6 h-6 mx-auto mb-1 text-slate-300 dark:text-slate-600" />
-                      <span>ยังไม่มีลายเซ็นในระบบ</span>
-                    </div>
-                  )}
+
+            <div className="px-6 pt-4 pb-5 space-y-3">
+              {signatureUrl || pendingSig ? (
+                /* รูปลายเซ็น — พื้นลายตารางให้เห็นส่วนโปร่งใส */
+                <div
+                  className="h-32 rounded-lg border-2 border-blue-500/70 flex items-center justify-center p-3"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    backgroundImage:
+                      'linear-gradient(45deg,#f1f5f9 25%,transparent 25%),linear-gradient(-45deg,#f1f5f9 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#f1f5f9 75%),linear-gradient(-45deg,transparent 75%,#f1f5f9 75%)',
+                    backgroundSize: '16px 16px',
+                    backgroundPosition: '0 0,0 8px,8px -8px,-8px 0',
+                  }}
+                >
+                  <img
+                    src={pendingSig?.url || signatureUrl || ''}
+                    alt="ลายเซ็น"
+                    className="max-h-full max-w-full object-contain"
+                    onError={() => !pendingSig && setCustomSig(null)}
+                  />
                 </div>
+              ) : canEditEmployee ? (
+                /* ยังไม่มีลายเซ็น — ลากไฟล์มาวาง หรือเลือกจากเครื่อง */
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsSigDragOver(true);
+                  }}
+                  onDragLeave={() => setIsSigDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsSigDragOver(false);
+                    handlePickedSignature(e.dataTransfer.files?.[0]);
+                  }}
+                  className={`h-32 rounded-lg border flex flex-col items-center justify-center gap-1.5 text-center transition-colors ${
+                    isSigDragOver
+                      ? 'border-primary bg-primary-soft dark:bg-slate-800'
+                      : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
+                  }`}
+                >
+                  <span className="w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                    <Upload className="w-4 h-4" />
+                  </span>
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">ลากไฟล์มาวางที่นี่</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    หรือ{' '}
+                    <button
+                      type="button"
+                      onClick={() => sigFileInputRef.current?.click()}
+                      className="font-semibold text-primary dark:text-blue-400 underline underline-offset-2 cursor-pointer"
+                    >
+                      เลือกไฟล์จากเครื่อง
+                    </button>
+                  </span>
+                </div>
+              ) : (
+                <div className="h-32 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">
+                  ยังไม่มีลายเซ็นในระบบ
+                </div>
+              )}
 
-                {/* Upload & Delete buttons */}
-                {canEditEmployee && (
-                  <div className="space-y-2 text-center sm:text-left">
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                      <button
-                        type="button"
-                        onClick={() => sigFileInputRef.current?.click()}
-                        disabled={isUploadingSig}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors cursor-pointer"
-                      >
-                        {isUploadingSig ? (
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
-                        ) : (
-                          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                        )}
-                        <span>{signatureUrl ? 'เปลี่ยนลายเซ็น' : 'อัปโหลดลายเซ็น'}</span>
-                      </button>
+              {canEditEmployee && (
+                <p className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                  <Info className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
+                  <span>รองรับ PNG, JPG ขนาดไม่เกิน 2 MB · แนะนำ PNG พื้นหลังโปร่งใสเพื่อให้ลายเซ็นกลมกลืนกับเอกสาร</span>
+                </p>
+              )}
+            </div>
 
-                      {signatureUrl && (
-                        <button
-                          type="button"
-                          onClick={handleDeleteSignature}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-medium transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>ลบ</span>
-                        </button>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                      รองรับไฟล์ PNG, JPG (แนะนำไฟล์ PNG พื้นหลังโปร่งใส) ขนาดไม่เกิน 2MB
-                    </p>
-                  </div>
+            {/* Footer — ปุ่มลบอยู่ติดกับปุ่มเปลี่ยนลายเซ็น */}
+            {canEditEmployee && (
+              <div className="px-6 pb-5 flex items-center justify-end gap-2">
+                {signatureUrl && !pendingSig ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleDeleteSignature}
+                      disabled={isUploadingSig}
+                      className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      ลบลายเซ็น
+                    </button>
+                    <Button
+                      size="sm"
+                      className="h-9"
+                      onClick={() => sigFileInputRef.current?.click()}
+                      loading={isUploadingSig}
+                      icon={<Upload className="w-3.5 h-3.5" />}
+                    >
+                      เปลี่ยนลายเซ็น
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="secondary" size="sm" className="h-9" onClick={closeSignatureModal}>
+                      ยกเลิก
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-9"
+                      disabled={!pendingSig}
+                      loading={isUploadingSig}
+                      onClick={() => pendingSig && uploadSignatureFile(pendingSig.file)}
+                    >
+                      บันทึก
+                    </Button>
+                  </>
                 )}
               </div>
-            </div>
+            )}
           </div>
         </ModalShell>
       )}
