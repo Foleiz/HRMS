@@ -862,15 +862,16 @@ export default function CommissionTab() {
               <span className="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
             </div>
             {!isPeriodConfirmed && summary && summary.records && summary.records.length > 0 && (
-              <button
-                type="button"
+              <Button
+                variant="success"
+                size="sm"
+                className="h-6 px-2 ml-1"
                 onClick={handleApplyDefaultRate}
-                disabled={isRecalculatingRate}
+                loading={isRecalculatingRate}
                 title={`นำอัตรา ${defaultRate}% ไปคำนวณใหม่กับทุกรายการในงวดนี้`}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition active:scale-95 disabled:opacity-50 cursor-pointer shadow-2xs ml-1"
               >
-                {isRecalculatingRate ? <Loader2 className="w-3 h-3 animate-spin" /> : <span>คำนวณใหม่</span>}
-              </button>
+                {isRecalculatingRate ? null : 'คำนวณใหม่'}
+              </Button>
             )}
           </div>
 
@@ -931,19 +932,13 @@ export default function CommissionTab() {
           {summary && summary.records.length > 0 && (
             <>
               {!isPeriodConfirmed ? (
-                <button
-                  type="button"
+                <Button
                   onClick={handleConfirmPeriod}
-                  disabled={isConfirming}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-primary dark:bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-2xs hover:bg-primary-hover dark:hover:bg-blue-500 transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  loading={isConfirming}
+                  icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />}
                 >
-                  {isConfirming ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  )}
-                  <span>ยืนยันค่าคอมมิชชั่น</span>
-                </button>
+                  ยืนยันค่าคอมมิชชั่น
+                </Button>
               ) : summary.status !== 'PAID' ? (
                 <button
                   type="button"
@@ -1102,28 +1097,15 @@ export default function CommissionTab() {
                 <span>ดาวน์โหลดเทมเพลต</span>
               </button>
 
-              <button
-                type="button"
-                disabled={!selectedFile || isExecutingImport}
+              <Button
+                variant="success"
+                disabled={!selectedFile}
+                loading={isExecutingImport}
                 onClick={handleConfirmImport}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-all ${
-                  !selectedFile || isExecutingImport
-                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
-                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 active:scale-[0.98] cursor-pointer'
-                }`}
+                icon={<UploadCloud className="w-4 h-4" />}
               >
-                {isExecutingImport ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>กำลังนำเข้าและประมวลผล...</span>
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="w-4 h-4" />
-                    <span>เริ่มประมวลผลนำเข้าไฟล์</span>
-                  </>
-                )}
-              </button>
+                {isExecutingImport ? 'กำลังนำเข้าและประมวลผล...' : 'เริ่มประมวลผลนำเข้าไฟล์'}
+              </Button>
             </div>
           </div>
 
