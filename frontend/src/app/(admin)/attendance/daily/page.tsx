@@ -79,6 +79,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { confirmAction } from '@/lib/sweetalert';
+import { getSmartYearRange } from '@/lib/yearUtils';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1413,74 +1414,86 @@ function DailyAttendanceContent() {
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* 1. Total Employees */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                <span className="text-xs font-medium">พนักงานทั้งหมด</span>
-                <Users className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+            <div className="bg-slate-100 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                <span className="text-xs font-bold">พนักงานทั้งหมด</span>
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-slate-700 shadow-xs flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                  <Users className="w-4 h-4" />
+                </div>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{summary?.totalEmployees ?? 0}</div>
-                <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">ในระบบวันนี้</div>
+                <div className="text-2xl font-black text-slate-900 dark:text-slate-100">{summary?.totalEmployees ?? 0}</div>
+                <div className="text-2xs text-slate-600 dark:text-slate-400 mt-0.5">ในระบบวันนี้</div>
               </div>
             </div>
 
             {/* 2. Present */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-emerald-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
-              <div className="flex items-center justify-between text-emerald-700">
-                <span className="text-xs font-medium">มาตรงเวลา</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <div className="bg-emerald-100 dark:bg-emerald-950/60 p-4 rounded-2xl border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300">
+                <span className="text-xs font-bold">มาตรงเวลา</span>
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-emerald-900/60 shadow-xs flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-emerald-600">{summary?.presentCount ?? 0}</div>
-                <div className="text-2xs text-emerald-600/80 mt-0.5">คน ({summary?.attendanceRate ?? 0}%)</div>
+                <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">{summary?.presentCount ?? 0}</div>
+                <div className="text-2xs text-emerald-700 dark:text-emerald-400 mt-0.5 font-medium">คน ({summary?.attendanceRate ?? 0}%)</div>
               </div>
             </div>
 
             {/* 3. Late */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-amber-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
-              <div className="flex items-center justify-between text-amber-700">
-                <span className="text-xs font-medium">มาสาย</span>
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <div className="bg-amber-100 dark:bg-amber-950/60 p-4 rounded-2xl border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-amber-800 dark:text-amber-300">
+                <span className="text-xs font-bold">มาสาย</span>
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                  <AlertTriangle className="w-4 h-4" />
+                </div>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-amber-600">{summary?.lateCount ?? 0}</div>
-                <div className="text-2xs text-amber-600/80 mt-0.5">เกินระยะเวลาผ่อนปรน</div>
+                <div className="text-2xl font-black text-amber-700 dark:text-amber-300">{summary?.lateCount ?? 0}</div>
+                <div className="text-2xs text-amber-700 dark:text-amber-400 mt-0.5 font-medium">เกินระยะเวลาผ่อนปรน</div>
               </div>
             </div>
 
             {/* 4. Early Leave */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-purple-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
-              <div className="flex items-center justify-between text-purple-700">
-                <span className="text-xs font-medium">ออกก่อนเวลา</span>
-                <LogOut className="w-4 h-4 text-purple-500" />
+            <div className="bg-purple-100 dark:bg-purple-950/60 p-4 rounded-2xl border border-purple-300 dark:border-purple-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-purple-800 dark:text-purple-300">
+                <span className="text-xs font-bold">ออกก่อนเวลา</span>
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-purple-900/60 shadow-xs flex items-center justify-center text-purple-600 dark:text-purple-400 shrink-0">
+                  <LogOut className="w-4 h-4" />
+                </div>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-purple-600">{summary?.earlyLeaveCount ?? 0}</div>
-                <div className="text-2xs text-purple-600/80 mt-0.5">ก่อนเวลาสิ้นสุดกะ</div>
+                <div className="text-2xl font-black text-purple-700 dark:text-purple-300">{summary?.earlyLeaveCount ?? 0}</div>
+                <div className="text-2xs text-purple-700 dark:text-purple-400 mt-0.5 font-medium">ก่อนเวลาสิ้นสุดกะ</div>
               </div>
             </div>
 
             {/* 5. Absent */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-rose-100 shadow-xs flex flex-col justify-between dark:bg-slate-800">
-              <div className="flex items-center justify-between text-rose-700">
-                <span className="text-xs font-medium">ขาดงาน</span>
-                <XCircle className="w-4 h-4 text-rose-500" />
+            <div className="bg-rose-100 dark:bg-rose-950/60 p-4 rounded-2xl border border-rose-300 dark:border-rose-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-rose-800 dark:text-rose-300">
+                <span className="text-xs font-bold">ขาดงาน</span>
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                  <XCircle className="w-4 h-4" />
+                </div>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-rose-600">{summary?.absentCount ?? 0}</div>
-                <div className="text-2xs text-rose-600/80 mt-0.5">ไม่มีบันทึกเวลา</div>
+                <div className="text-2xl font-black text-rose-700 dark:text-rose-300">{summary?.absentCount ?? 0}</div>
+                <div className="text-2xs text-rose-700 dark:text-rose-400 mt-0.5 font-medium">ไม่มีบันทึกเวลา</div>
               </div>
             </div>
 
             {/* 6. Holiday / Off */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between dark:bg-slate-800 dark:border-slate-700">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                <span className="text-xs font-medium">วันหยุด</span>
-                <Calendar className="w-4 h-4 text-blue-500" />
+            <div className="bg-sky-100 dark:bg-sky-950/60 p-4 rounded-2xl border border-sky-300 dark:border-sky-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-sky-800 dark:text-sky-300">
+                <span className="text-xs font-bold">วันหยุด</span>
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-sky-900/60 shadow-xs flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
               </div>
               <div className="mt-2">
-                <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{summary?.holidayOrOffCount ?? 0}</div>
-                <div className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">วันหยุดบริษัท / ประจำสัปดาห์</div>
+                <div className="text-2xl font-black text-sky-700 dark:text-sky-300">{summary?.holidayOrOffCount ?? 0}</div>
+                <div className="text-2xs text-sky-700 dark:text-sky-400 mt-0.5 font-medium">วันหยุดบริษัท / ประจำสัปดาห์</div>
               </div>
             </div>
           </div>
@@ -2399,7 +2412,7 @@ function DailyAttendanceContent() {
                   onChange={(e) => setMonthlyYear(Number(e.target.value))}
                   className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold dark:text-slate-200"
                 >
-                  {[2024, 2025, 2026, 2027].map((y) => (
+                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: monthlyYear }).map((y) => (
                     <option key={y} value={y}>
                       พ.ศ. {y + 543}
                     </option>
@@ -2473,85 +2486,97 @@ function DailyAttendanceContent() {
           {/* Overview Metric Cards (6 Cards) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Card 1: Total Employees */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5 dark:text-slate-400">
+            <div className="bg-slate-100 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="flex items-center justify-between text-slate-700 dark:text-slate-300 mb-1.5">
                 <span className="text-2xs font-bold uppercase tracking-wider">พนักงานทั้งหมด</span>
-                <Users className="w-4 h-4 text-blue-600" />
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-slate-700 shadow-xs flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                  <Users className="w-4 h-4" />
+                </div>
               </div>
               <div className="text-xl font-black text-slate-900 dark:text-slate-100">
                 {monthlyData ? monthlyData.totalEmployees.toLocaleString() : '-'}
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">ในรอบเดือนนี้</p>
+              <p className="text-3xs text-slate-600 dark:text-slate-400 mt-0.5">ในรอบเดือนนี้</p>
             </div>
 
             {/* Card 2: Total Planned Work Days */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5 dark:text-slate-400">
+            <div className="bg-sky-100 dark:bg-sky-950/60 p-4 rounded-2xl border border-sky-300 dark:border-sky-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="flex items-center justify-between text-sky-800 dark:text-sky-300 mb-1.5">
                 <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานตามแผน</span>
-                <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-sky-900/60 shadow-xs flex items-center justify-center text-sky-600 dark:text-sky-400 shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-xl font-black text-slate-800 dark:text-slate-200">
+              <div className="text-xl font-black text-sky-800 dark:text-sky-200">
                 {monthlyData ? monthlyData.totalPlannedDays.toLocaleString() : '-'}
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">รวมทุกพนักงาน</p>
+              <p className="text-3xs text-sky-700 dark:text-sky-400 mt-0.5 font-medium">รวมทุกพนักงาน</p>
             </div>
 
             {/* Card 3: Actual Work Days & Rate */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5 dark:text-slate-400">
+            <div className="bg-emerald-100 dark:bg-emerald-950/60 p-4 rounded-2xl border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300 mb-1.5">
                 <span className="text-2xs font-bold uppercase tracking-wider">วันทำงานจริง</span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-emerald-900/60 shadow-xs flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-xl font-black text-emerald-700 flex items-baseline gap-1.5">
+              <div className="text-xl font-black text-emerald-700 dark:text-emerald-300 flex items-baseline gap-1.5">
                 <span>{monthlyData ? monthlyData.totalActualDays.toLocaleString() : '-'}</span>
                 {monthlyData && (
-                  <span className="text-xs font-bold text-emerald-600">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                     ({monthlyData.averageAttendanceRate}%)
                   </span>
                 )}
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">อัตราเข้างานเฉลี่ย</p>
+              <p className="text-3xs text-emerald-700 dark:text-emerald-400 mt-0.5 font-medium">อัตราเข้างานเฉลี่ย</p>
             </div>
 
             {/* Card 4: Late Minutes */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5 dark:text-slate-400">
+            <div className="bg-amber-100 dark:bg-amber-950/60 p-4 rounded-2xl border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="flex items-center justify-between text-amber-800 dark:text-amber-300 mb-1.5">
                 <span className="text-2xs font-bold uppercase tracking-wider">มาสายสะสม</span>
-                <Clock className="w-4 h-4 text-amber-600" />
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                  <Clock className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-xl font-black text-amber-700">
+              <div className="text-xl font-black text-amber-700 dark:text-amber-300">
                 {monthlyData ? monthlyData.totalLateMinutes.toLocaleString() : '-'}
-                <span className="text-xs font-semibold text-amber-600 ml-1">นาที</span>
+                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 ml-1">นาที</span>
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">
+              <p className="text-3xs text-amber-700 dark:text-amber-400 mt-0.5 font-medium">
                 {monthlyData ? `${monthlyData.employees.reduce((acc, e) => acc + e.lateDays, 0)} ครั้ง` : '-'}
               </p>
             </div>
 
             {/* Card 5: Leave Days */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5 dark:text-slate-400">
+            <div className="bg-indigo-100 dark:bg-indigo-950/60 p-4 rounded-2xl border border-indigo-300 dark:border-indigo-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="flex items-center justify-between text-indigo-800 dark:text-indigo-300 mb-1.5">
                 <span className="text-2xs font-bold uppercase tracking-wider">ลางานสะสม</span>
-                <FileText className="w-4 h-4 text-blue-600" />
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-indigo-900/60 shadow-xs flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
+                  <FileText className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-xl font-black text-blue-700">
+              <div className="text-xl font-black text-indigo-700 dark:text-indigo-300">
                 {monthlyData ? Number(monthlyData.totalLeaveDays).toFixed(1) : '-'}
-                <span className="text-xs font-semibold text-blue-600 ml-1">วัน</span>
+                <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 ml-1">วัน</span>
               </div>
-              <p className="text-3xs text-emerald-600 font-medium mt-0.5">อนุมัติแล้ว</p>
+              <p className="text-3xs text-indigo-700 dark:text-indigo-400 font-medium mt-0.5">อนุมัติแล้ว</p>
             </div>
 
             {/* Card 6: Absent Days */}
-            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-xs dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5 dark:text-slate-400">
+            <div className="bg-rose-100 dark:bg-rose-950/60 p-4 rounded-2xl border border-rose-300 dark:border-rose-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div className="flex items-center justify-between text-rose-800 dark:text-rose-300 mb-1.5">
                 <span className="text-2xs font-bold uppercase tracking-wider">ขาดงานสะสม</span>
-                <XCircle className="w-4 h-4 text-rose-600" />
+                <div className="w-7 h-7 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                  <XCircle className="w-4 h-4" />
+                </div>
               </div>
-              <div className="text-xl font-black text-rose-700">
+              <div className="text-xl font-black text-rose-700 dark:text-rose-300">
                 {monthlyData ? monthlyData.totalAbsentDays.toLocaleString() : '-'}
-                <span className="text-xs font-semibold text-rose-600 ml-1">วัน</span>
+                <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 ml-1">วัน</span>
               </div>
-              <p className="text-3xs text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">ไม่รวมวันลาอนุมัติ</p>
+              <p className="text-3xs text-rose-700 dark:text-rose-400 mt-0.5 font-medium">ไม่รวมวันลาอนุมัติ</p>
             </div>
           </div>
 

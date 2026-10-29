@@ -4,7 +4,8 @@ import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
 import { BenefitClaimRequest } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
-import { X, Gift, Paperclip, Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
+import BenefitAttachmentPreviewModal from './BenefitAttachmentPreviewModal';
+import { X, Gift, Paperclip, Loader2, CheckCircle2, XCircle, AlertCircle, Eye, Download } from 'lucide-react';
 
 export type BenefitClaimReviewMode = 'approve' | 'reject' | 'view';
 
@@ -39,6 +40,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (!claim) return null;
 
@@ -97,7 +99,8 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
   );
 
   return (
-    <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
+    <>
+      <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -193,15 +196,32 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
           )}
 
           {claim.fileName ? (
-            <button
-              type="button"
-              onClick={handleDownload}
-              disabled={downloading}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-blue-700 dark:text-blue-300 hover:bg-slate-50 dark:hover:bg-slate-700/40"
-            >
-              {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
-              <span className="truncate">{claim.fileName}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                className="flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/60 dark:bg-blue-950/40 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 transition-colors cursor-pointer group"
+                title="คลิกเพื่อเปิดดูตัวอย่างเอกสาร"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Paperclip className="w-3.5 h-3.5 text-blue-500 shrink-0 group-hover:scale-110 transition-transform" />
+                  <span className="truncate font-medium group-hover:underline">{claim.fileName}</span>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400 shrink-0">
+                  <Eye className="w-3.5 h-3.5" />
+                  ดูไฟล์
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={downloading}
+                title="ดาวน์โหลดไฟล์"
+                className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              </button>
+            </div>
           ) : (
             <p className="text-[11px] text-slate-400">ไม่มีไฟล์แนบ</p>
           )}
@@ -258,5 +278,14 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
         </div>
       </div>
     </ModalShell>
+
+    <BenefitAttachmentPreviewModal
+      isOpen={isPreviewOpen}
+      onClose={() => setIsPreviewOpen(false)}
+      claimId={claim.id}
+      fileName={claim.fileName}
+      requestNo={claim.requestNo}
+    />
+  </>
   );
 };

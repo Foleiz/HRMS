@@ -4411,27 +4411,6 @@ export default function PayrollPage() {
                     ยังไม่ได้สร้างรอบเงินเดือนสำหรับเดือนนี้ คุณสามารถกดปุ่ม &ldquo;สร้างรอบเงินเดือน&rdquo; เพื่อเริ่มประมวลผล
                   </p>
                 </div>
-                {(canAccessHrView || isAdmin) && (
-                  <button
-                    type="button"
-                    disabled={isCreatingPeriod}
-                    onClick={() => {
-                      const targetMonth =
-                        selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1);
-                      handleCreatePeriodInstant(activeYear, targetMonth);
-                    }}
-                    className="h-10 px-6 bg-[#0B2046] hover:bg-[#112d5e] disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer inline-flex items-center gap-2"
-                  >
-                    {isCreatingPeriod ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                    <span>
-                      สร้างรอบเงินเดือน{' '}
-                      {THAI_MONTH_NAMES[
-                        (selectedProcessMonth ?? (selectedPeriod ? selectedPeriod.month : new Date().getMonth() + 1)) - 1
-                      ]}{' '}
-                      {activeYear + 543}
-                    </span>
-                  </button>
-                )}
               </div>
             ) : (
               <>
@@ -4638,20 +4617,20 @@ export default function PayrollPage() {
               <div className="space-y-4">
                 {/* 4 Stat Cards for Finance */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดจ่ายรวม (Gross)</span>
-                    <div className="text-2xl font-bold text-amber-700 mt-1">
+                  <div className="bg-amber-100 dark:bg-amber-950/60 rounded-2xl border border-amber-300 dark:border-amber-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-amber-800 dark:text-amber-300 font-bold">ยอดจ่ายรวม (Gross)</span>
+                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100 mt-1">
                       ฿{totalGross.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">{totalEmployees} คน</span>
+                    <span className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-1 block font-medium">{totalEmployees} คน</span>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
-                    <div className="text-2xl font-bold text-rose-600 mt-1">
+                  <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-rose-800 dark:text-rose-300 font-bold">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
+                    <div className="text-2xl font-bold text-rose-700 dark:text-rose-300 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">
+                    <span className="text-[11px] text-rose-700/80 dark:text-rose-400 mt-1 block font-medium">
                       กำหนดนำส่ง {(() => {
                         if (!selectedPeriod) return '-';
                         const nextMonth = selectedPeriod.month === 12 ? 1 : selectedPeriod.month + 1;
@@ -4662,22 +4641,22 @@ export default function PayrollPage() {
                     </span>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ยอดโอนสุทธิ (Net Pay)</span>
-                    <div className="text-2xl font-bold text-emerald-600 mt-1">
+                  <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl border border-emerald-300 dark:border-emerald-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">ยอดโอนสุทธิ (Net Pay)</span>
+                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">
+                    <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400 mt-1 block font-medium">
                       โอนวันที่ {formatThaiShortDate(selectedPeriod?.paymentDate)}
                     </span>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">สถานะการโอน</span>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <div className="bg-sky-100 dark:bg-sky-950/60 rounded-2xl border border-sky-300 dark:border-sky-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-sky-800 dark:text-sky-300 font-bold">สถานะการโอน</span>
+                    <div className="text-2xl font-bold text-sky-950 dark:text-sky-100 mt-1">
                       {transferredCount} / {transferTotal}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">
+                    <span className="text-[11px] text-sky-700/80 dark:text-sky-400 mt-1 block font-medium">
                       {transferredCount === transferTotal ? 'สำเร็จครบทั้งหมด' : `${pendingTransferCount} รายการรอโอน`}
                     </span>
                   </div>
@@ -4837,31 +4816,31 @@ export default function PayrollPage() {
               <div className="space-y-4">
                 {/* 4 Stat Cards for Approver */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">งบประมาณเงินเดือนสุทธิรวม</span>
-                    <div className="text-2xl font-bold text-emerald-600 mt-1">
+                  <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl border border-emerald-300 dark:border-emerald-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">งบประมาณเงินเดือนสุทธิรวม</span>
+                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ภาระภาษีและประกันสังคม</span>
-                    <div className="text-2xl font-bold text-rose-600 mt-1">
+                  <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-rose-800 dark:text-rose-300 font-bold">ภาระภาษีและประกันสังคม</span>
+                    <div className="text-2xl font-bold text-rose-700 dark:text-rose-300 mt-1">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <span className="text-[11px] text-slate-400 mt-1 block">ภ.ง.ด.1 + SSO รวม</span>
+                    <span className="text-[11px] text-rose-700/80 dark:text-rose-400 mt-1 block font-medium">ภ.ง.ด.1 + SSO รวม</span>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">จำนวนพนักงานทั้งหมด</span>
+                  <div className="bg-slate-100 dark:bg-slate-800/90 rounded-2xl border border-slate-300 dark:border-slate-700 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">จำนวนพนักงานทั้งหมด</span>
                     <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
-                      {totalEmployees} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">คน</span>
+                      {totalEmployees} <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">คน</span>
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-2xs">
-                    <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">สถานะการตรวจทาน</span>
-                    <div className="text-base font-bold text-indigo-700 mt-2">
+                  <div className="bg-indigo-100 dark:bg-indigo-950/60 rounded-2xl border border-indigo-300 dark:border-indigo-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
+                    <span className="text-xs text-indigo-800 dark:text-indigo-300 font-bold">สถานะการตรวจทาน</span>
+                    <div className="text-base font-bold text-indigo-900 dark:text-indigo-200 mt-2">
                       {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
                         ? 'รอ CEO อนุมัติ'
                         : selectedPeriod?.status === 'APPROVED'

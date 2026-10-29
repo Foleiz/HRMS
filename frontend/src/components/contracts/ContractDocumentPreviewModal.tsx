@@ -6,10 +6,7 @@ import {
   X,
   FileText,
   Download,
-  ExternalLink,
   Loader2,
-  AlertCircle,
-  FileCheck,
 } from 'lucide-react';
 import { contractService } from '@/services/contractService';
 import { useToast } from '@/context/ToastContext';
@@ -95,113 +92,93 @@ export default function ContractDocumentPreviewModal({
   };
 
   return (
-    <ModalShell className="z-60 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 font-sans" innerClassName="items-center justify-center p-3 sm:p-5">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-        {/* Header Toolbar */}
-        <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center shrink-0">
-              <FileCheck className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
-                {actualFileName}
-              </h3>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                เอกสารสัญญาจ้างงานต้นฉบับ
-              </p>
-            </div>
+    <ModalShell
+      className="leave-modal no-print z-50 bg-slate-900/60 backdrop-blur-xs font-sans"
+      innerClassName="items-center justify-center p-2 sm:p-4"
+      portal={false}
+    >
+      <div className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+        {/* Header - Matching Image 1 (LeavePreviewModal) */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-800">
+          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+            <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
+            <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มเอกสารสัญญา</h3>
           </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {blobUrl && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => window.open(blobUrl, '_blank')}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
-                  title="เปิดในหน้าต่างใหม่"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">เปิดแท็บใหม่</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors cursor-pointer"
-                  title="ดาวน์โหลดไฟล์"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">ดาวน์โหลด</span>
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
-        {/* Content Viewer Body */}
-        <div className="p-4 bg-slate-100 dark:bg-slate-950 flex-1 overflow-auto flex items-center justify-center">
+        {/* Content Viewer Body - Matching Image 1 paper style */}
+        <div className="flex-1 overflow-auto bg-slate-200/70 dark:bg-slate-950 py-6 px-4">
           {isLoading ? (
-            <div className="flex flex-col items-center gap-3 text-slate-500 dark:text-slate-400 py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              <p className="text-sm font-medium">กำลังโหลดเอกสารสัญญา...</p>
+            <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-400" />
+              <p className="text-xs">กำลังโหลดเอกสารสัญญา...</p>
             </div>
           ) : error ? (
-            <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xs max-w-md border border-slate-200 dark:border-slate-700">
-              <AlertCircle className="w-10 h-10 text-rose-500 mx-auto mb-2.5" />
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1">
-                เกิดข้อผิดพลาดในการโหลดเอกสาร
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{error}</p>
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold"
-              >
-                ปิดหน้าต่าง
-              </button>
+            <div className="py-16 text-center text-rose-600 dark:text-rose-400 text-sm">
+              {error}
             </div>
           ) : blobUrl && mimeType.includes('pdf') ? (
-            <iframe
-              src={blobUrl}
-              title="PDF Contract Preview"
-              className="w-full h-full rounded-xl border border-slate-300 dark:border-slate-800 bg-white shadow-xs"
-            />
+            <div className="mx-auto w-full max-w-[850px] h-[75vh] shadow-md border border-gray-300 dark:border-slate-700 bg-white">
+              <iframe
+                src={blobUrl}
+                title="PDF Contract Preview"
+                className="w-full h-full bg-white"
+              />
+            </div>
           ) : blobUrl && mimeType.includes('image') ? (
-            <div className="max-h-full max-w-full overflow-auto flex items-center justify-center p-2">
+            <div className="mx-auto w-fit shadow-md border border-gray-300 dark:border-slate-700 bg-white">
               <img
                 src={blobUrl}
                 alt={actualFileName}
-                className="max-h-[72vh] max-w-full object-contain rounded-xl shadow-lg border border-slate-200 dark:border-slate-800 bg-white"
+                className="max-h-[75vh] max-w-full object-contain bg-white block"
               />
             </div>
           ) : (
-            <div className="text-center p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-xs max-w-sm border border-slate-200 dark:border-slate-700">
-              <FileText className="w-12 h-12 text-blue-600 mx-auto mb-3" />
-              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            <div className="py-16 text-center text-slate-500 dark:text-slate-400 text-sm">
+              <FileText className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+              <p className="font-semibold text-slate-700 dark:text-slate-300">
                 ไฟล์ประเภทนี้ไม่สามารถแสดงผลแบบพรีวิวได้
               </p>
               <p className="text-xs text-slate-400 mt-1 mb-4">
                 กรุณาดาวน์โหลดเพื่อเปิดดูผ่านโปรแกรมบนอุปกรณ์ของคุณ
               </p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Toolbar - Matching Image 1 */}
+        <div className="flex items-center justify-between gap-3 px-6 py-4 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-800 flex-wrap">
+          <div className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[280px]">
+            {actualFileName}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {blobUrl && (
               <button
                 type="button"
                 onClick={handleDownload}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#0B2046] hover:bg-[#07152d] shadow-xs cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>ดาวน์โหลดไฟล์</span>
+                <Download className="w-4 h-4" />
+                ดาวน์โหลด
               </button>
-            </div>
-          )}
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+            >
+              ปิดหน้าต่าง
+            </button>
+          </div>
         </div>
       </div>
     </ModalShell>

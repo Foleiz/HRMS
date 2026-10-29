@@ -616,10 +616,42 @@ export default function DocumentHistoryPage() {
   // ─── Render ──────────────────────────────────────────────────
 
   const statCards = [
-    { label: 'เอกสารที่อนุมัติแล้ว', value: stats.approved, icon: <CheckCircle2 className="w-5 h-5" />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'เอกสารรอการอนุมัติ', value: stats.pending, icon: <Clock className="w-5 h-5" />, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'เอกสารที่ไม่อนุมัติ', value: stats.rejected, icon: <XCircle className="w-5 h-5" />, color: 'text-red-600', bg: 'bg-red-50' },
-    { label: 'เอกสารทั้งหมด', value: stats.total, icon: <FileText className="w-5 h-5" />, color: 'text-gray-600 dark:text-slate-400', bg: 'bg-gray-100' },
+    {
+      label: 'เอกสารทั้งหมด',
+      value: stats.total,
+      icon: <FileText className="w-5 h-5 text-slate-600 dark:text-slate-300" />,
+      cardBg: 'bg-slate-100 dark:bg-slate-800/90',
+      border: 'border-slate-300 dark:border-slate-700',
+      labelColor: 'text-slate-700 dark:text-slate-300',
+      valColor: 'text-slate-900 dark:text-slate-100',
+    },
+    {
+      label: 'เอกสารรอการอนุมัติ',
+      value: stats.pending,
+      icon: <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />,
+      cardBg: 'bg-amber-100 dark:bg-amber-950/60',
+      border: 'border-amber-300 dark:border-amber-800',
+      labelColor: 'text-amber-800 dark:text-amber-300',
+      valColor: 'text-amber-700 dark:text-amber-300',
+    },
+    {
+      label: 'เอกสารที่อนุมัติแล้ว',
+      value: stats.approved,
+      icon: <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />,
+      cardBg: 'bg-emerald-100 dark:bg-emerald-950/60',
+      border: 'border-emerald-300 dark:border-emerald-800',
+      labelColor: 'text-emerald-800 dark:text-emerald-300',
+      valColor: 'text-emerald-700 dark:text-emerald-300',
+    },
+    {
+      label: 'เอกสารที่ไม่อนุมัติ',
+      value: stats.rejected,
+      icon: <XCircle className="w-5 h-5 text-rose-600 dark:text-rose-400" />,
+      cardBg: 'bg-rose-100 dark:bg-rose-950/60',
+      border: 'border-rose-300 dark:border-rose-800',
+      labelColor: 'text-rose-800 dark:text-rose-300',
+      valColor: 'text-rose-700 dark:text-rose-300',
+    },
   ];
 
   return (
@@ -635,11 +667,13 @@ export default function DocumentHistoryPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((s) => (
-          <div key={s.label} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4 flex items-center gap-3">
-            <div className={`w-11 h-11 rounded-xl ${s.bg} ${s.color} flex items-center justify-center shrink-0`}>{s.icon}</div>
+          <div key={s.label} className={`${s.cardBg} ${s.border} rounded-2xl border shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all p-4 flex items-center gap-3.5`}>
+            <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-700/80 shadow-xs flex items-center justify-center shrink-0">
+              {s.icon}
+            </div>
             <div className="min-w-0">
-              <div className="text-2xl font-bold text-gray-900 dark:text-slate-100">{s.value}</div>
-              <div className="text-xs text-gray-400 truncate">{s.label}</div>
+              <div className={`text-xs font-bold ${s.labelColor} truncate`}>{s.label}</div>
+              <div className={`text-2xl font-black ${s.valColor} mt-0.5`}>{s.value}</div>
             </div>
           </div>
         ))}

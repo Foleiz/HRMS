@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { EmployeeBenefitUsageSummary, BenefitClaim, BenefitUsageItem } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { RecordBenefitClaimModal } from './RecordBenefitClaimModal';
+import BenefitAttachmentPreviewModal from '@/components/benefits/BenefitAttachmentPreviewModal';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { confirmAction } from '@/lib/sweetalert';
+import { getSmartYearRange } from '@/lib/yearUtils';
 
 function paymentStatusLabel(c: BenefitClaim): string {
   switch (c.paymentStatus) {
@@ -110,6 +112,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBenefitForClaim, setSelectedBenefitForClaim] = useState<number | null>(null);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
+  const [previewClaim, setPreviewClaim] = useState<BenefitClaim | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -222,7 +225,12 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="bg-transparent font-bold focus:outline-none cursor-pointer"
             >
-              {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
+              {getSmartYearRange({
+                forwardYears: 1,
+                backYears: 4,
+                historicalYears: claims.map((c) => c.claimYear),
+                selectedYear,
+              }).map((y) => (
                 <option key={y} value={y} className="dark:bg-slate-800">
                   พ.ศ. {y + 543}
                 </option>
@@ -251,54 +259,54 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: วงเงินโควตารวม */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+          <div className="p-4 rounded-2xl bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-sky-900/60 text-sky-600 dark:text-sky-300 shadow-xs flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">วงเงินโควตารวมต่อปี</p>
-              <p className="text-base font-bold text-slate-900 dark:text-slate-100 font-mono">
-                {summary.totalQuotaAmount.toLocaleString()} <span className="text-xs font-normal text-slate-400">บาท</span>
+              <p className="text-[11px] font-bold text-sky-800 dark:text-sky-300">วงเงินโควตารวมต่อปี</p>
+              <p className="text-base font-bold text-sky-950 dark:text-sky-100 font-mono">
+                {summary.totalQuotaAmount.toLocaleString()} <span className="text-xs font-medium text-sky-700/80 dark:text-sky-300/80">บาท</span>
               </p>
             </div>
           </div>
 
           {/* Card 2: ใช้ไปแล้วรวม */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+          <div className="p-4 rounded-2xl bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-amber-900/60 text-amber-600 dark:text-amber-300 shadow-xs flex items-center justify-center shrink-0">
               <Coins className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">ใช้สิทธิ์ไปแล้วรวม</p>
-              <p className="text-base font-bold text-amber-600 dark:text-amber-400 font-mono">
-                {summary.totalUsedAmount.toLocaleString()} <span className="text-xs font-normal text-slate-400">บาท</span>
+              <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">ใช้สิทธิ์ไปแล้วรวม</p>
+              <p className="text-base font-bold text-amber-800 dark:text-amber-200 font-mono">
+                {summary.totalUsedAmount.toLocaleString()} <span className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80">บาท</span>
               </p>
             </div>
           </div>
 
           {/* Card 3: คงเหลือที่ใช้ได้ */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <div className="p-4 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 shadow-xs flex items-center justify-center shrink-0">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">โควตาคงเหลือที่ใช้ได้</p>
-              <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">
-                {summary.totalRemainingAmount.toLocaleString()} <span className="text-xs font-normal text-slate-400">บาท</span>
+              <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">โควตาคงเหลือที่ใช้ได้</p>
+              <p className="text-base font-bold text-emerald-800 dark:text-emerald-200 font-mono">
+                {summary.totalRemainingAmount.toLocaleString()} <span className="text-xs font-medium text-emerald-700/80 dark:text-emerald-300/80">บาท</span>
               </p>
             </div>
           </div>
 
           {/* Card 4: อัตราการใช้สิทธิ์ */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+          <div className="p-4 rounded-2xl bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-purple-900/60 text-purple-600 dark:text-purple-300 shadow-xs flex items-center justify-center shrink-0">
               <Percent className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">อัตราการใช้งานโควตา</p>
-              <p className="text-base font-bold text-slate-900 dark:text-slate-100 font-mono">
+              <p className="text-[11px] font-bold text-purple-800 dark:text-purple-300">อัตราการใช้งานโควตา</p>
+              <p className="text-base font-bold text-purple-950 dark:text-purple-100 font-mono">
                 {summary.overallUsagePercent}%{' '}
-                <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                <span className="text-[10px] font-medium text-purple-700 dark:text-purple-300">
                   ({summary.maxedOutBenefitsCount} สิทธิ์เต็มแล้ว)
                 </span>
               </p>
@@ -484,132 +492,233 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
 
         <div className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs overflow-hidden">
           {claims.length > 0 ? (
-            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-              <table className="table-standard w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200/70 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
-                    <th className="py-3 px-4">เลขที่คำขอ</th>
-                    <th className="py-3 px-4">วันที่ใช้สิทธิ์</th>
-                    <th className="py-3 px-4">รายการสวัสดิการ</th>
-                    <th className="py-3 px-4">สถานพยาบาล / ผู้ให้บริการ</th>
-                    <th className="py-3 px-4">เลขที่ใบเสร็จ</th>
-                    <th className="py-3 px-4">รายละเอียด / หมายเหตุ</th>
-                    <th className="py-3 px-4 text-right">จำนวนเงิน</th>
-                    <th className="py-3 px-4 text-center">สถานะ</th>
-                    <th className="py-3 px-4 text-center">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {claims.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {c.requestNo || `BC-${String(c.id).padStart(4, '0')}`}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                        {formatThaiShortDate(c.claimDate)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">
-                          {c.benefitName}
+            <>
+              {/* Mobile Card List View (< md) */}
+              <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-700/60">
+                {claims.map((c) => {
+                  const badge = CLAIM_STATUS_BADGE[c.status] ?? CLAIM_STATUS_BADGE.APPROVED;
+                  const Icon =
+                    c.status === 'PENDING' ? Clock : c.status === 'REJECTED' ? XCircle : c.status === 'CANCELLED' ? Ban : CheckCircle2;
+                  return (
+                    <div key={c.id} className="p-4 space-y-2.5 hover:bg-slate-50/60 dark:hover:bg-slate-700/20 transition-colors">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {c.requestNo || `BC-${String(c.id).padStart(4, '0')}`}
+                          </span>
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
+                            • {formatThaiShortDate(c.claimDate)}
+                          </span>
+                        </div>
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${badge.className}`}
+                        >
+                          <Icon className="w-3 h-3" />
+                          <span>{badge.label}</span>
                         </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                        {c.serviceProvider || '-'}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px]">
-                        <div>{c.receiptNumber || '-'}</div>
-                        {c.attachmentFileName && (
-                          <div className="flex items-center gap-1 text-[10px] text-blue-600 dark:text-blue-400 mt-0.5 font-sans">
-                            <Paperclip className="w-3 h-3 shrink-0" />
-                            {c.attachmentUrl ? (
-                              <a
-                                href={c.attachmentUrl}
-                                download={c.attachmentFileName}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="hover:underline truncate max-w-[120px]"
-                                title={c.attachmentFileName}
-                              >
-                                {c.attachmentFileName}
-                              </a>
-                            ) : (
-                              <span className="truncate max-w-[120px]" title={c.attachmentFileName}>
-                                {c.attachmentFileName}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate">
-                        {c.remarks || '-'}
-                      </td>
-                      <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
-                        {c.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บ.
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {(() => {
-                          const badge = CLAIM_STATUS_BADGE[c.status] ?? CLAIM_STATUS_BADGE.APPROVED;
-                          const Icon =
-                            c.status === 'PENDING' ? Clock : c.status === 'REJECTED' ? XCircle : c.status === 'CANCELLED' ? Ban : CheckCircle2;
-                          return (
-                            <span
-                              title={c.status === 'REJECTED' && c.rejectReason ? `เหตุผล: ${c.rejectReason}` : undefined}
-                              className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${badge.className}`}
-                            >
-                              <Icon className="w-3 h-3" />
-                              <span>{badge.label}</span>
+                      </div>
+
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <h5 className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
+                            {c.benefitName}
+                          </h5>
+                          {c.serviceProvider && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                              ผู้ให้บริการ: {c.serviceProvider}
+                            </p>
+                          )}
+                          {c.remarks && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                              {c.remarks}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {c.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บ.
+                          </span>
+                          {c.status === 'APPROVED' && c.paymentStatus && (
+                            <span className="block text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                              {paymentStatusLabel(c)}
                             </span>
-                          );
-                        })()}
-                        {c.status === 'REJECTED' && c.rejectReason && (
-                          <span className="block mt-0.5 text-[10px] text-rose-500 max-w-[10rem] mx-auto truncate" title={c.rejectReason}>
-                            {c.rejectReason}
-                          </span>
-                        )}
-                        {c.status === 'APPROVED' && c.paymentStatus && (
-                          <span className="block mt-1 text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                            {paymentStatusLabel(c)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {isSelf ? (
-                          c.status === 'PENDING' && canDeleteClaim ? (
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Footer: receipt / attachments + actions */}
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700/40 text-[11px]">
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                          {c.receiptNumber && <span>ใบเสร็จ: {c.receiptNumber}</span>}
+                          {(c.attachmentFileName || c.fileName) && (
                             <button
                               type="button"
-                              onClick={() => handleCancelRequest(c.id)}
-                              disabled={deletingClaimId === c.id}
-                              className="px-2 py-1 rounded-md text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                              title="ยกเลิกคำขอเบิก"
+                              onClick={() => setPreviewClaim(c)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-[10px] text-blue-700 dark:text-blue-300 font-sans border border-blue-200/60 dark:border-blue-800/60 transition-colors cursor-pointer group"
+                              title={`คลิกเพื่อเปิดดูไฟล์แนบ: ${c.attachmentFileName || c.fileName}`}
                             >
-                              {deletingClaimId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยกเลิก'}
+                              <Paperclip className="w-3 h-3 shrink-0 text-blue-500 group-hover:scale-110 transition-transform" />
+                              <span className="truncate max-w-[130px] font-medium group-hover:underline">
+                                {c.attachmentFileName || c.fileName}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+
+                        <div>
+                          {isSelf ? (
+                            c.status === 'PENDING' && canDeleteClaim && (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelRequest(c.id)}
+                                disabled={deletingClaimId === c.id}
+                                className="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                              >
+                                {deletingClaimId === c.id ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'ยกเลิกคำขอ'}
+                              </button>
+                            )
+                          ) : canDeleteClaim && (c.status || 'APPROVED') !== 'APPROVED' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClaim(c.id)}
+                              disabled={deletingClaimId === c.id}
+                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              title="ยกเลิก/ลบรายการนี้"
+                            >
+                              {deletingClaimId === c.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View (>= md) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="table-standard w-full min-w-[960px] text-left text-xs border-collapse whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200/70 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
+                      <th className="py-3.5 px-4 min-w-[100px]">เลขที่คำขอ</th>
+                      <th className="py-3.5 px-4 min-w-[100px]">วันที่ใช้สิทธิ์</th>
+                      <th className="py-3.5 px-4 min-w-[160px]">รายการสวัสดิการ</th>
+                      <th className="py-3.5 px-4 min-w-[150px]">สถานพยาบาล / ผู้ให้บริการ</th>
+                      <th className="py-3.5 px-4 min-w-[120px]">เลขที่ใบเสร็จ</th>
+                      <th className="py-3.5 px-4 min-w-[160px] max-w-xs">รายละเอียด / หมายเหตุ</th>
+                      <th className="py-3.5 px-4 min-w-[110px] text-right">จำนวนเงิน</th>
+                      <th className="py-3.5 px-4 min-w-[110px] text-center">สถานะ</th>
+                      <th className="py-3.5 px-4 min-w-[80px] text-center">จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    {claims.map((c) => (
+                      <tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors">
+                        <td className="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {c.requestNo || `BC-${String(c.id).padStart(4, '0')}`}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {formatThaiShortDate(c.claimDate)}
+                        </td>
+                        <td className="py-3 px-4 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                          {c.benefitName}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          {c.serviceProvider || '-'}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
+                          <div>{c.receiptNumber || '-'}</div>
+                          {(c.attachmentFileName || c.fileName) && (
+                            <div className="mt-1">
+                              <button
+                                type="button"
+                                onClick={() => setPreviewClaim(c)}
+                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-[10px] text-blue-700 dark:text-blue-300 font-sans border border-blue-200/60 dark:border-blue-800/60 transition-colors cursor-pointer group"
+                                title={`คลิกเพื่อเปิดดูไฟล์แนบ: ${c.attachmentFileName || c.fileName}`}
+                              >
+                                <Paperclip className="w-3 h-3 shrink-0 text-blue-500 group-hover:scale-110 transition-transform" />
+                                <span className="truncate max-w-[130px] font-medium group-hover:underline">
+                                  {c.attachmentFileName || c.fileName}
+                                </span>
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400 max-w-xs truncate" title={c.remarks || undefined}>
+                          {c.remarks || '-'}
+                        </td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                          {c.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บ.
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          {(() => {
+                            const badge = CLAIM_STATUS_BADGE[c.status] ?? CLAIM_STATUS_BADGE.APPROVED;
+                            const Icon =
+                              c.status === 'PENDING' ? Clock : c.status === 'REJECTED' ? XCircle : c.status === 'CANCELLED' ? Ban : CheckCircle2;
+                            return (
+                              <span
+                                title={c.status === 'REJECTED' && c.rejectReason ? `เหตุผล: ${c.rejectReason}` : undefined}
+                                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md border ${badge.className}`}
+                              >
+                                <Icon className="w-3 h-3" />
+                                <span>{badge.label}</span>
+                              </span>
+                            );
+                          })()}
+                          {c.status === 'REJECTED' && c.rejectReason && (
+                            <span className="block mt-0.5 text-[10px] text-rose-500 max-w-[10rem] mx-auto truncate" title={c.rejectReason}>
+                              {c.rejectReason}
+                            </span>
+                          )}
+                          {c.status === 'APPROVED' && c.paymentStatus && (
+                            <span className="block mt-1 text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                              {paymentStatusLabel(c)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          {isSelf ? (
+                            c.status === 'PENDING' && canDeleteClaim ? (
+                              <button
+                                type="button"
+                                onClick={() => handleCancelRequest(c.id)}
+                                disabled={deletingClaimId === c.id}
+                                className="px-2 py-1 rounded-md text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                title="ยกเลิกคำขอเบิก"
+                              >
+                                {deletingClaimId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยกเลิก'}
+                              </button>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )
+                          ) : canDeleteClaim && (c.status || 'APPROVED') !== 'APPROVED' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteClaim(c.id)}
+                              disabled={deletingClaimId === c.id}
+                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                              title="ยกเลิก/ลบรายการนี้"
+                            >
+                              {deletingClaimId === c.id ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-3.5 h-3.5" />
+                              )}
                             </button>
                           ) : (
                             <span className="text-slate-300 dark:text-slate-600">-</span>
-                          )
-                        ) : canDeleteClaim ? (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteClaim(c.id)}
-                            disabled={deletingClaimId === c.id}
-                            className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                            title="ยกเลิก/ลบรายการนี้"
-                          >
-                            {deletingClaimId === c.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-                        ) : (
-                          <span className="text-slate-300 dark:text-slate-600">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           ) : (
             <div className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
               <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -632,6 +741,15 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
           mode={mode}
         />
       )}
+
+      {/* Attachment Preview Modal */}
+      <BenefitAttachmentPreviewModal
+        isOpen={!!previewClaim}
+        onClose={() => setPreviewClaim(null)}
+        claimId={previewClaim?.id ?? null}
+        fileName={previewClaim?.attachmentFileName || previewClaim?.fileName}
+        requestNo={previewClaim?.requestNo}
+      />
     </div>
   );
 };

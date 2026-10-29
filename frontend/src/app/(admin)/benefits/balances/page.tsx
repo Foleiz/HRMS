@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getAvatarUrl } from '@/lib/api-client';
+import { confirmAction } from '@/lib/sweetalert';
+import { getSmartYearRange } from '@/lib/yearUtils';
 
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -132,7 +134,14 @@ export default function EmployeeBenefitBalancesPage() {
   };
 
   const handleDeleteClaim = async (claimId: number) => {
-    if (!confirm('คุณแน่ใจหรือไม่ว่าต้องการยกเลิก/ลบรายการเบิกสวัสดิการนี้?')) return;
+    const isConfirmed = await confirmAction({
+      title: 'ลบรายการเบิกสวัสดิการ',
+      text: 'คุณแน่ใจหรือไม่ว่าต้องการยกเลิก/ลบรายการเบิกสวัสดิการนี้?',
+      confirmButtonText: 'ใช่, ลบรายการ',
+      cancelButtonText: 'ยกเลิก',
+      isDestructive: true,
+    });
+    if (!isConfirmed) return;
     setDeletingClaimId(claimId);
     try {
       await benefitService.deleteClaim(claimId);
@@ -243,7 +252,7 @@ export default function EmployeeBenefitBalancesPage() {
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
                 className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
               >
-                {[2025, 2026, 2027].map((y) => (
+                {getSmartYearRange({ forwardYears: 1, backYears: 4, selectedYear }).map((y) => (
                   <option key={y} value={y} className="bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200">
                     พ.ศ. {y + 543}
                   </option>
@@ -622,7 +631,7 @@ export default function EmployeeBenefitBalancesPage() {
                           })()}
                         </div>
 
-                        {canEdit && (
+                        {canEdit && (claim.status || 'APPROVED') !== 'APPROVED' && (
                           <button
                             onClick={() => handleDeleteClaim(claim.id)}
                             disabled={deletingClaimId === claim.id}
