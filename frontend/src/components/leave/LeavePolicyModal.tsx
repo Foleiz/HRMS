@@ -40,12 +40,9 @@ interface PolicyForm {
   entitlementDays: NumInput;
   prorationMethod: LeaveProrationMethod;
   minimumServiceDays: NumInput;
-  isAllowedDuringProbation: boolean;
   advanceRequestDays: NumInput;
   backdateMode: BackdateMode;
   maxBackdateDays: NumInput;
-  maxDaysPerOccurrence: NumInput;
-  maxOccurrencesPerYear: NumInput;
   maxLifetimeOccurrences: NumInput;
   isDocumentRequired: boolean;
   documentRequiredAfterDays: NumInput;
@@ -57,30 +54,30 @@ interface PolicyForm {
 /** ค่าแนะนำตามหมวดการลา (อ้างอิงแนวปฏิบัติทั่วไปตามกฎหมายแรงงาน — ปรับได้ทุกช่อง) */
 const TEMPLATES: Record<LeaveFormCategory, PolicyForm> = {
   SICK: {
-    entitlementDays: 30, prorationMethod: 'FULL', minimumServiceDays: 0, isAllowedDuringProbation: true,
+    entitlementDays: 30, prorationMethod: 'FULL', minimumServiceDays: 0,
     advanceRequestDays: 0, backdateMode: 'LIMIT', maxBackdateDays: 7,
-    maxDaysPerOccurrence: '', maxOccurrencesPerYear: '', maxLifetimeOccurrences: '',
+    maxLifetimeOccurrences: '',
     isDocumentRequired: true, documentRequiredAfterDays: 3,
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   PERSONAL: {
-    entitlementDays: 3, prorationMethod: 'FULL', minimumServiceDays: 0, isAllowedDuringProbation: true,
+    entitlementDays: 3, prorationMethod: 'FULL', minimumServiceDays: 0,
     advanceRequestDays: 1, backdateMode: 'LIMIT', maxBackdateDays: 3,
-    maxDaysPerOccurrence: '', maxOccurrencesPerYear: '', maxLifetimeOccurrences: '',
+    maxLifetimeOccurrences: '',
     isDocumentRequired: false, documentRequiredAfterDays: '',
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   VACATION: {
-    entitlementDays: 6, prorationMethod: 'PRORATA_MONTHLY', minimumServiceDays: 365, isAllowedDuringProbation: false,
+    entitlementDays: 6, prorationMethod: 'PRORATA_MONTHLY', minimumServiceDays: 365,
     advanceRequestDays: 7, backdateMode: 'NONE', maxBackdateDays: '',
-    maxDaysPerOccurrence: '', maxOccurrencesPerYear: '', maxLifetimeOccurrences: '',
+    maxLifetimeOccurrences: '',
     isDocumentRequired: false, documentRequiredAfterDays: '',
     isCarryForwardAllowed: true, carryForwardMaxDays: 6, carryForwardExpiryMonths: 3,
   },
   SPECIAL: {
-    entitlementDays: 0, prorationMethod: 'FULL', minimumServiceDays: 0, isAllowedDuringProbation: true,
+    entitlementDays: 0, prorationMethod: 'FULL', minimumServiceDays: 0,
     advanceRequestDays: 7, backdateMode: 'UNLIMITED', maxBackdateDays: '',
-    maxDaysPerOccurrence: '', maxOccurrencesPerYear: '', maxLifetimeOccurrences: '',
+    maxLifetimeOccurrences: '',
     isDocumentRequired: true, documentRequiredAfterDays: '',
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
@@ -98,12 +95,9 @@ const policyToForm = (p: LeavePolicy): PolicyForm => ({
   entitlementDays: p.entitlementDays,
   prorationMethod: (p.prorationMethod as LeaveProrationMethod) || 'FULL',
   minimumServiceDays: p.minimumServiceDays,
-  isAllowedDuringProbation: p.isAllowedDuringProbation,
   advanceRequestDays: p.advanceRequestDays,
   backdateMode: p.maxBackdateDays === null || p.maxBackdateDays === undefined ? 'UNLIMITED' : p.maxBackdateDays === 0 ? 'NONE' : 'LIMIT',
   maxBackdateDays: p.maxBackdateDays ? p.maxBackdateDays : '',
-  maxDaysPerOccurrence: fromNum(p.maxDaysPerOccurrence),
-  maxOccurrencesPerYear: fromNum(p.maxOccurrencesPerYear),
   maxLifetimeOccurrences: fromNum(p.maxLifetimeOccurrences),
   isDocumentRequired: p.isDocumentRequired,
   documentRequiredAfterDays: p.documentRequiredAfterDays ? p.documentRequiredAfterDays : '',
@@ -241,12 +235,9 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
     const parts: string[] = [`${who} ได้${typeName} ${form.entitlementDays || 0} วัน/ปี`];
     if (form.prorationMethod === 'PRORATA_MONTHLY') parts.push('ปีแรกคิดตามสัดส่วนเดือนที่เหลือ');
     if (Number(form.minimumServiceDays) > 0) parts.push(`เมื่อทำงานครบ ${form.minimumServiceDays} วัน`);
-    parts.push(form.isAllowedDuringProbation ? 'ใช้ได้ระหว่างทดลองงาน' : 'ใช้ไม่ได้ระหว่างทดลองงาน');
     parts.push(Number(form.advanceRequestDays) > 0 ? `ต้องยื่นล่วงหน้า ${form.advanceRequestDays} วัน` : 'ยื่นวันเดียวกันได้');
     if (form.backdateMode === 'NONE') parts.push('ห้ามยื่นย้อนหลัง');
     if (form.backdateMode === 'LIMIT' && form.maxBackdateDays !== '') parts.push(`ยื่นย้อนหลังได้ ${form.maxBackdateDays} วัน`);
-    if (form.maxDaysPerOccurrence !== '') parts.push(`ครั้งละไม่เกิน ${form.maxDaysPerOccurrence} วัน`);
-    if (form.maxOccurrencesPerYear !== '') parts.push(`ไม่เกิน ${form.maxOccurrencesPerYear} ครั้ง/ปี`);
     if (form.maxLifetimeOccurrences !== '') parts.push(`ไม่เกิน ${form.maxLifetimeOccurrences} ครั้งตลอดอายุงาน`);
     if (form.isDocumentRequired)
       parts.push(Number(form.documentRequiredAfterDays) > 0 ? `แนบเอกสารเมื่อลา ${form.documentRequiredAfterDays} วันขึ้นไป` : 'แนบเอกสารทุกครั้ง');
@@ -283,11 +274,11 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         entitlementDays: Number(form.entitlementDays),
         prorationMethod: form.prorationMethod,
         minimumServiceDays: toNum(form.minimumServiceDays) ?? 0,
-        isAllowedDuringProbation: form.isAllowedDuringProbation,
+        isAllowedDuringProbation: true,
         advanceRequestDays: toNum(form.advanceRequestDays) ?? 0,
         maxBackdateDays: form.backdateMode === 'UNLIMITED' ? null : form.backdateMode === 'NONE' ? 0 : toNum(form.maxBackdateDays),
-        maxDaysPerOccurrence: toNum(form.maxDaysPerOccurrence),
-        maxOccurrencesPerYear: toNum(form.maxOccurrencesPerYear),
+        maxDaysPerOccurrence: null,
+        maxOccurrencesPerYear: null,
         maxLifetimeOccurrences: toNum(form.maxLifetimeOccurrences),
         isDocumentRequired: form.isDocumentRequired,
         documentRequiredAfterDays: form.isDocumentRequired ? toNum(form.documentRequiredAfterDays) : null,
@@ -386,12 +377,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
               <Field label="อายุงานขั้นต่ำก่อนใช้สิทธิ์" hint="0 = ใช้ได้ตั้งแต่วันแรก · 365 = ทำงานครบ 1 ปี">
                 <NumberBox value={form.minimumServiceDays} onChange={(v) => set('minimumServiceDays', v)} unit="วัน" />
               </Field>
-              <Field label="ระหว่างทดลองงาน">
-                <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-                  <span className="text-sm text-gray-700 dark:text-slate-300">{form.isAllowedDuringProbation ? 'ใช้สิทธิ์ได้' : 'ยังใช้สิทธิ์ไม่ได้'}</span>
-                  <Toggle checked={form.isAllowedDuringProbation} onChange={(v) => set('isAllowedDuringProbation', v)} />
-                </div>
-              </Field>
             </div>
           </Section>
 
@@ -414,14 +399,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                     </div>
                   )}
                 </div>
-              </Field>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <Field label="ลาได้สูงสุดต่อครั้ง">
-                <NumberBox value={form.maxDaysPerOccurrence} onChange={(v) => set('maxDaysPerOccurrence', v)} unit="วัน" step="0.5" placeholder="ไม่จำกัด" />
-              </Field>
-              <Field label="จำนวนครั้งต่อปี">
-                <NumberBox value={form.maxOccurrencesPerYear} onChange={(v) => set('maxOccurrencesPerYear', v)} unit="ครั้ง" placeholder="ไม่จำกัด" />
               </Field>
               <Field label="จำนวนครั้งตลอดอายุงาน" hint="เช่น ลาบวช = 1">
                 <NumberBox value={form.maxLifetimeOccurrences} onChange={(v) => set('maxLifetimeOccurrences', v)} unit="ครั้ง" placeholder="ไม่จำกัด" />

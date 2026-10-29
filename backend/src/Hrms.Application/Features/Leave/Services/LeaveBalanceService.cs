@@ -291,12 +291,7 @@ public class LeaveBalanceService : ILeaveBalanceService
 
             var policy = LeavePolicyRules.SelectPolicy(policies.Where(p => p.LeaveTypeId == lt.Id), empTypeId, empLevelId, onDate);
             int? maxTimes = null; int? usedTimes = null; string? scope = null;
-            if (policy?.MaxOccurrencesPerYear is int perYear && perYear > 0)
-            {
-                maxTimes = perYear; scope = "YEAR";
-                usedTimes = approvedRequests.Count(r => r.LeaveTypeId == lt.Id);
-            }
-            else if (policy?.MaxLifetimeOccurrences is int lifetime && lifetime > 0)
+            if (policy?.MaxLifetimeOccurrences is int lifetime && lifetime > 0)
             {
                 maxTimes = lifetime; scope = "LIFETIME";
                 usedTimes = lifetimeCounts.TryGetValue(lt.Id, out var c) ? c : 0;

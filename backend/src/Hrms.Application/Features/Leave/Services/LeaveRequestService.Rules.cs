@@ -127,14 +127,6 @@ public partial class LeaveRequestService
                 .OrderByDescending(c => c.StartDate)
                 .FirstOrDefault() ?? contracts.OrderByDescending(c => c.StartDate).First();
 
-            if (!policy.IsAllowedDuringProbation
-                && current.ProbationEndDate.HasValue
-                && current.ProbationPassedDate == null
-                && startDate <= current.ProbationEndDate.Value)
-            {
-                result.Errors.Add($"อยู่ระหว่างทดลองงาน (ถึง {ThaiDate(current.ProbationEndDate.Value)}) ยังใช้สิทธิ์ลาประเภทนี้ไม่ได้");
-            }
-
             if (policy.MinimumServiceDays > 0)
             {
                 var hireDate = contracts.Min(c => c.StartDate);
@@ -160,22 +152,12 @@ public partial class LeaveRequestService
                 result.Errors.Add($"ยื่นลาย้อนหลังได้ไม่เกิน {policy.MaxBackdateDays.Value} วัน");
         }
 
-        // 5) จำนวนวันสูงสุดต่อครั้ง
-        if (policy.MaxDaysPerOccurrence.HasValue && calc.LeaveDays > policy.MaxDaysPerOccurrence.Value)
-            result.Errors.Add($"ลาได้สูงสุดครั้งละ {Days(policy.MaxDaysPerOccurrence.Value)} วัน (คำขอนี้ {Days(calc.LeaveDays)} วัน)");
-
-        // 6) จำนวนครั้งต่อปี / ตลอดอายุงาน (นับคำขอที่รออนุมัติและอนุมัติแล้ว)
+        // 5) จำนวนครั้งตลอดอายุงาน (นับคำขอที่รออนุมัติและอนุมัติแล้ว)
         var sameType = activeRequests.Where(r => r.LeaveTypeId == leaveTypeId).ToList();
-        if (policy.MaxOccurrencesPerYear.HasValue)
-        {
-            var thisYear = sameType.Count(r => ToThaiDate(r.StartDatetime).Year == startDate.Year);
-            if (thisYear + 1 > policy.MaxOccurrencesPerYear.Value)
-                result.Errors.Add($"ลาประเภทนี้ได้ไม่เกิน {policy.MaxOccurrencesPerYear.Value} ครั้งต่อปี (ปีนี้ใช้ไปแล้ว {thisYear} ครั้ง)");
-        }
         if (policy.MaxLifetimeOccurrences.HasValue && sameType.Count + 1 > policy.MaxLifetimeOccurrences.Value)
             result.Errors.Add($"ลาประเภทนี้ได้ไม่เกิน {policy.MaxLifetimeOccurrences.Value} ครั้งตลอดอายุงาน");
 
-        // 7) เอกสารแนบ
+        // 6) เอกสารแนบ
         var docAfter = policy.DocumentRequiredAfterDays ?? 0m;
         result.RequiresDocument = policy.IsDocumentRequired && (docAfter <= 0 || calc.LeaveDays >= docAfter);
         if (result.RequiresDocument && !hasAttachment)
@@ -204,12 +186,9 @@ public partial class LeaveRequestService
     {
         var parts = new List<string> { $"สิทธิ์ {Days(p.EntitlementDays)} วัน/ปี" };
         if (p.MinimumServiceDays > 0) parts.Add($"อายุงานครบ {p.MinimumServiceDays} วัน");
-        if (!p.IsAllowedDuringProbation) parts.Add("ไม่ใช้สิทธิ์ระหว่างทดลองงาน");
         parts.Add(p.AdvanceRequestDays > 0 ? $"ยื่นล่วงหน้า {p.AdvanceRequestDays} วัน" : "ยื่นวันเดียวกันได้");
         if (p.MaxBackdateDays.HasValue)
             parts.Add(p.MaxBackdateDays.Value == 0 ? "ห้ามยื่นย้อนหลัง" : $"ยื่นย้อนหลังได้ {p.MaxBackdateDays.Value} วัน");
-        if (p.MaxDaysPerOccurrence.HasValue) parts.Add($"ครั้งละไม่เกิน {Days(p.MaxDaysPerOccurrence.Value)} วัน");
-        if (p.MaxOccurrencesPerYear.HasValue) parts.Add($"ไม่เกิน {p.MaxOccurrencesPerYear.Value} ครั้ง/ปี");
         if (p.MaxLifetimeOccurrences.HasValue) parts.Add($"ไม่เกิน {p.MaxLifetimeOccurrences.Value} ครั้งตลอดอายุงาน");
         if (p.IsDocumentRequired)
             parts.Add(p.DocumentRequiredAfterDays is > 0 ? $"แนบเอกสารเมื่อลา {Days(p.DocumentRequiredAfterDays.Value)} วันขึ้นไป" : "แนบเอกสารทุกครั้ง");
