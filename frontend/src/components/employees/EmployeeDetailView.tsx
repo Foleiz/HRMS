@@ -641,77 +641,62 @@ export default function EmployeeDetailView({
           <div className="space-y-3">
             <h2 className="text-[13px] font-bold text-slate-900 dark:text-slate-100">ข้อมูลตำแหน่งงาน</h2>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2 text-xs">
               {/* ฝ่าย */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ฝ
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ฝ่าย</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.divisionName || '-'}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">ฝ่าย</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                  {employee.divisionName || '-'}
+                </span>
               </div>
 
               {/* แผนก */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ผ
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">แผนก</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.departmentName || '-'}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">แผนก</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                  {employee.departmentName || '-'}
+                </span>
               </div>
 
               {/* ทีมที่สังกัด */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ท
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ทีมที่สังกัด</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.teamName || '-'}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">ทีมที่สังกัด</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                  {employee.teamName || '-'}
+                </span>
               </div>
 
-              {/* หัวหน้าทีม (ผู้อนุมัติขั้นแรก) */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ห
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">หัวหน้าทีม</p>
-                  {employee.managerEmployeeId ? (
-                    <Link href={`/employees/${employee.managerEmployeeId}`} className="text-xs font-semibold text-primary dark:text-blue-400 hover:underline">
-                      {employee.managerName || '-'}
-                    </Link>
-                  ) : (
-                    <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.managerName || '-'}</p>
-                  )}
-                </div>
+              {/* หัวหน้าทีม */}
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">หัวหน้าทีม</span>
+                {employee.managerEmployeeId ? (
+                  <Link
+                    href={`/employees/${employee.managerEmployeeId}`}
+                    className="font-semibold text-primary dark:text-blue-400 hover:underline text-right"
+                  >
+                    {employee.managerName || '-'}
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                    {employee.managerName || '-'}
+                  </span>
+                )}
               </div>
 
               {/* ตำแหน่ง */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ต
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ตำแหน่ง</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.positionName || '-'}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">ตำแหน่ง</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                  {employee.positionName || '-'}
+                </span>
               </div>
 
               {/* ประเภทพนักงาน */}
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-md bg-slate-200/80 dark:bg-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 text-[10px] font-bold">
-                  ป
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ประเภทพนักงาน</p>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{employee.employeeType || '-'}</p>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">ประเภทพนักงาน</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
+                  {employee.employeeType || '-'}
+                </span>
               </div>
             </div>
           </div>
