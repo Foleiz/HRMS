@@ -452,7 +452,6 @@ export default function EmployeeDetailView({
   };
 
   const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
-  const primaryEducation = employee.educations?.[0];
   const primaryBank =
     employee.bankAccounts?.find((b) => b.status === 'ACTIVE' && b.isPrimary) ||
     employee.bankAccounts?.find((b) => b.status === 'ACTIVE');
@@ -771,21 +770,6 @@ export default function EmployeeDetailView({
                   <ProfileField label="ศาสนา" value={employee.religion || '-'} />
                   <ProfileField label="สถานภาพสมรส" value={employee.maritalStatus || '-'} />
                   <ProfileField label="สถานภาพทางทหาร" value={employee.militaryStatus || '-'} />
-                  <ProfileField
-                    label="วุฒิการศึกษาสูงสุด"
-                    value={
-                      primaryEducation
-                        ? [primaryEducation.educationLevel, primaryEducation.major, primaryEducation.institution].filter(Boolean).join(' · ') || '-'
-                        : '-'
-                    }
-                    sub={
-                      primaryEducation?.graduationYear || primaryEducation?.gpa
-                        ? [primaryEducation?.graduationYear ? `จบปี ${primaryEducation.graduationYear}` : '', primaryEducation?.gpa ? `GPA ${Number(primaryEducation.gpa).toFixed(2)}` : '']
-                            .filter(Boolean)
-                            .join(' · ')
-                        : undefined
-                    }
-                  />
                 </div>
               </ProfileSection>
 
