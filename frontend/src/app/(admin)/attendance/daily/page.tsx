@@ -1329,12 +1329,6 @@ function DailyAttendanceContent() {
                   className="w-[145px] sm:w-[155px]"
                 />
 
-                {allowedDateRange.min && allowedDateRange.max && (
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg whitespace-nowrap hidden sm:inline-flex items-center gap-1.5 font-medium dark:bg-slate-700 dark:text-slate-300 dark:text-slate-400 dark:border-slate-700">
-                    <Calendar className="w-3.5 h-3.5 text-primary" />
-                    <span>ช่วงข้อมูลในไฟล์: {formatThaiDate(allowedDateRange.min)} - {formatThaiDate(allowedDateRange.max)}</span>
-                  </span>
-                )}
               </div>
 
               {/* Recalculate Button */}
