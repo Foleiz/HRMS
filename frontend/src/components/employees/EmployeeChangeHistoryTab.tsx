@@ -21,14 +21,16 @@ import {
   Tag,
   ChevronDown,
   ChevronUp,
-  ChevronRight,
   ArrowUpDown,
+  SlidersHorizontal,
+  RotateCcw,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api-client';
 import { toInputDate } from '@/components/ui/ThaiDatePicker';
 import { LeaveDateRangePicker } from '@/components/leave/LeaveDateRangePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { Button } from '@/components/ui/Button';
 import { ApiResponse } from '@/types/api';
 
 /* ─── Types ─────────────────────────────────────────────────────── */
@@ -135,6 +137,27 @@ const RANGE_OPTIONS: { value: RangePreset; label: string }[] = [
   { value: '30D', label: '30 วันล่าสุด' },
   { value: '90D', label: '3 เดือนล่าสุด' },
 ];
+/** ค่าตัวกรองขั้นสูง (ร่างในแผงตัวกรอง → กด "ปรับใช้ตัวกรอง" แล้วจึงมีผล) */
+interface HistoryFilter {
+  category: string;
+  rangePreset: RangePreset;
+  dateFrom: string;
+  dateTo: string;
+  action: string;
+  changedBy: string;
+}
+const EMPTY_FILTER: HistoryFilter = {
+  category: 'ALL',
+  rangePreset: 'ALL',
+  dateFrom: '',
+  dateTo: '',
+  action: 'ALL',
+  changedBy: 'ALL',
+};
+const filterLabelCls = 'block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1';
+const filterInputCls =
+  'w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer';
+
 const daysAgo = (n: number) => {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -297,26 +320,29 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [category, setCategory] = useState('ALL');
-  const [rangePreset, setRangePreset] = useState<RangePreset>('ALL');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [filter, setFilter] = useState<HistoryFilter>(EMPTY_FILTER);
+  const [draft, setDraft] = useState<HistoryFilter>(EMPTY_FILTER);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const { category, rangePreset, dateFrom, dateTo } = filter;
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
   const topRef = useRef<HTMLDivElement>(null);
-  const pillsScrollRef = useRef<HTMLDivElement>(null);
 
   const goToPage = (p: number) => {
     setPage(p);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const scrollPills = () => {
-    if (pillsScrollRef.current) {
-      pillsScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-    }
+  const toggleAdvanced = () => {
+    if (!showAdvanced) setDraft(filter);
+    setShowAdvanced((v) => !v);
+  };
+  const applyFilter = () => setFilter(draft);
+  const clearFilter = () => {
+    setDraft(EMPTY_FILTER);
+    setFilter(EMPTY_FILTER);
   };
 
   useEffect(() => {
@@ -360,7 +386,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
 
   useEffect(() => {
     setPage(1);
-  }, [category, rangeFrom, rangeTo, sortOrder]);
+  }, [filter, sortOrder]);
 
   /* Category filter chips (นับเฉพาะในช่วงวันที่ที่เลือก) เรียงตามจำนวนรายการมากไปน้อยตาม mockup */
   const categories = useMemo(() => {
@@ -373,18 +399,36 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
     return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
   }, [inRange]);
 
-  /* กรองตามหมวดหมู่และเรียงลำดับวันที่ (ใหม่สุดก่อน / เก่าสุดก่อน) */
+  /* ตัวเลือกในแผงตัวกรอง: การกระทำ และผู้แก้ไขที่มีอยู่จริงในประวัติ */
+  const actionOptions = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.action))).sort(),
+    [entries]
+  );
+  const editorOptions = useMemo(
+    () => Array.from(new Set(entries.map((e) => e.changedBy?.trim()).filter((v): v is string => !!v))).sort((a, b) => a.localeCompare(b, 'th')),
+    [entries]
+  );
+  const activeFilterCount =
+    (filter.category !== 'ALL' ? 1 : 0) +
+    (filter.rangePreset !== 'ALL' ? 1 : 0) +
+    (filter.action !== 'ALL' ? 1 : 0) +
+    (filter.changedBy !== 'ALL' ? 1 : 0);
+
+  /* กรองตามหมวดหมู่ การกระทำ ผู้แก้ไข แล้วเรียงลำดับวันที่ (ใหม่สุดก่อน / เก่าสุดก่อน) */
   const filtered = useMemo(() => {
-    const list = category === 'ALL'
-      ? inRange
-      : inRange.filter((e) => e.categoryKey === category);
+    const list = inRange.filter(
+      (e) =>
+        (category === 'ALL' || e.categoryKey === category) &&
+        (filter.action === 'ALL' || e.action === filter.action) &&
+        (filter.changedBy === 'ALL' || e.changedBy?.trim() === filter.changedBy)
+    );
 
     return [...list].sort((a, b) => {
       const tA = new Date(a.at).getTime();
       const tB = new Date(b.at).getTime();
       return sortOrder === 'desc' ? tB - tA : tA - tB;
     });
-  }, [inRange, category, sortOrder]);
+  }, [inRange, category, filter.action, filter.changedBy, sortOrder]);
 
   /* แบ่งหน้าตามจำนวนรายการ แล้วจัดกลุ่มตามวันในหน้านั้น */
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -408,7 +452,7 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
 
   return (
     <div ref={topRef} className="pt-6 flex-1 text-xs animate-in fade-in duration-150 space-y-4 scroll-mt-24">
-      {/* ─── Row 1: Title + Date Range Filter ─── */}
+      {/* ─── Row 1: Title + ปุ่มตัวกรองขั้นสูง ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2.5">
           <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
@@ -418,90 +462,135 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
         </div>
 
         {!loading && !error && entries.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* ตัวเลือกช่วงเวลาสำเร็จรูป (ทุกช่วงเวลา, 7 วัน, 30 วัน, 3 เดือน) */}
-            <CustomSelect
-              value={rangePreset === 'CUSTOM' ? 'ALL' : rangePreset}
-              onChange={(e) => {
-                setRangePreset(e.target.value as RangePreset);
-                setDateFrom('');
-                setDateTo('');
-              }}
-              numbered={false}
-              placeholder="ทุกช่วงเวลา"
-              className="h-9 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-            >
-              {RANGE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </CustomSelect>
-
-            {/* เลือกช่วงวันที่เอง (dd/mm/yyyy – dd/mm/yyyy 📅) */}
-            <LeaveDateRangePicker
-              startDate={dateFrom}
-              endDate={dateTo}
-              onChange={(from, to) => {
-                setDateFrom(from);
-                setDateTo(to);
-                setRangePreset(from || to ? 'CUSTOM' : 'ALL');
-              }}
-              align="right"
-              className="h-9 w-[240px] max-w-none py-0! px-3.5! text-xs! rounded-xl! border-slate-200! dark:border-slate-700! bg-white! dark:bg-slate-800! text-slate-700! dark:text-slate-300!"
-            />
-          </div>
+          <button
+            type="button"
+            onClick={toggleAdvanced}
+            aria-expanded={showAdvanced}
+            className={`h-9 px-3.5 border rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto ${
+              showAdvanced
+                ? 'bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-800 dark:text-slate-100'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            <span>ตัวกรองขั้นสูง</span>
+            {activeFilterCount > 0 && (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-primary text-white text-[11px] font-bold inline-flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         )}
       </div>
 
-      {/* ─── Row 2: Category Filter Pills + Scroll Right Button ─── */}
-      {!loading && !error && entries.length > 0 && (
-        <div className="relative flex items-center gap-2">
-          <div
-            ref={pillsScrollRef}
-            className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
-          >
-            {/* ทั้งหมด */}
-            <button
-              type="button"
-              onClick={() => setCategory('ALL')}
-              className={`px-4 py-2 rounded-full text-xs font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
-                category === 'ALL'
-                  ? 'bg-primary text-white border border-primary shadow-xs'
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60'
-              }`}
-            >
-              ทั้งหมด ({inRange.length})
-            </button>
+      {/* ─── Row 2: แผงตัวกรองขั้นสูง (รูปแบบเดียวกับบันทึกการใช้งานระบบ) ─── */}
+      {showAdvanced && !loading && !error && entries.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs space-y-3 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div>
+              <label className={filterLabelCls}>ช่วงเวลา</label>
+              <CustomSelect
+                value={draft.rangePreset === 'CUSTOM' ? 'ALL' : draft.rangePreset}
+                onChange={(e) => setDraft((d) => ({ ...d, rangePreset: e.target.value as RangePreset, dateFrom: '', dateTo: '' }))}
+                numbered={false}
+                className={filterInputCls}
+              >
+                {RANGE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </CustomSelect>
+            </div>
 
-            {/* แต่ละหมวดหมู่ */}
-            {categories.map(([key, c]) => {
-              const isSelected = category === key;
+            <div>
+              <label className={filterLabelCls}>หรือเลือกช่วงวันที่</label>
+              <LeaveDateRangePicker
+                startDate={draft.dateFrom}
+                endDate={draft.dateTo}
+                onChange={(from, to) =>
+                  setDraft((d) => ({ ...d, dateFrom: from, dateTo: to, rangePreset: from || to ? 'CUSTOM' : 'ALL' }))
+                }
+                className="h-9 w-full max-w-none py-0! px-3! text-xs! rounded-lg! border-slate-200! dark:border-slate-700! bg-slate-50! dark:bg-slate-800! text-slate-700! dark:text-slate-300!"
+              />
+            </div>
 
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setCategory(key)}
-                  className={`px-4 py-2 rounded-full text-xs font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary text-white border border-primary shadow-xs'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60'
-                  }`}
-                >
-                  {c.label} ({c.count})
-                </button>
-              );
-            })}
+            <div>
+              <label className={filterLabelCls}>หมวดข้อมูล</label>
+              <CustomSelect
+                value={draft.category}
+                onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+                numbered={false}
+                className={filterInputCls}
+              >
+                <option value="ALL">ทุกหมวด ({inRange.length})</option>
+                {categories.map(([key, c]) => (
+                  <option key={key} value={key}>{c.label} ({c.count})</option>
+                ))}
+              </CustomSelect>
+            </div>
+
+            <div>
+              <label className={filterLabelCls}>ประเภทการกระทำ</label>
+              <CustomSelect
+                value={draft.action}
+                onChange={(e) => setDraft((d) => ({ ...d, action: e.target.value }))}
+                numbered={false}
+                className={filterInputCls}
+              >
+                <option value="ALL">ทั้งหมด</option>
+                {actionOptions.map((a) => (
+                  <option key={a} value={a}>{ACTION_CONFIG[a]?.label ?? a}</option>
+                ))}
+              </CustomSelect>
+            </div>
+
+            <div>
+              <label className={filterLabelCls}>ผู้แก้ไข</label>
+              <CustomSelect
+                value={draft.changedBy}
+                onChange={(e) => setDraft((d) => ({ ...d, changedBy: e.target.value }))}
+                numbered={false}
+                className={filterInputCls}
+              >
+                <option value="ALL">ผู้แก้ไขทั้งหมด</option>
+                {editorOptions.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </CustomSelect>
+            </div>
           </div>
 
-          {/* ปุ่มเลื่อนดูหมวดหมู่ไปทางขวา (ChevronRight) */}
-          <button
-            type="button"
-            onClick={scrollPills}
-            title="เลื่อนดูหมวดหมู่เพิ่มเติม"
-            className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-center shrink-0 shadow-xs transition-colors cursor-pointer"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={clearFilter}
+              className="h-8 px-3 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 flex items-center gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3 text-slate-400" />
+              <span>ล้างค่า</span>
+            </button>
+            <Button type="button" size="sm" onClick={applyFilter}>
+              ปรับใช้ตัวกรอง
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* จำนวนรายการตามตัวกรอง */}
+      {!loading && !error && entries.length > 0 && (
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span>
+            พบ <strong className="text-slate-700 dark:text-slate-200">{filtered.length.toLocaleString()}</strong>
+            {activeFilterCount > 0 ? ` จาก ${entries.length.toLocaleString()} รายการตามตัวกรอง` : ' รายการ'}
+          </span>
+          {activeFilterCount > 0 && (
+            <button
+              type="button"
+              onClick={clearFilter}
+              className="text-primary dark:text-blue-400 font-semibold hover:underline cursor-pointer"
+            >
+              ล้างตัวกรอง
+            </button>
+          )}
         </div>
       )}
 
