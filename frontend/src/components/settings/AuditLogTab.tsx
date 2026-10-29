@@ -39,7 +39,14 @@ interface AuditLogTabProps {
     entityType?: string;
     search?: string;
   }) => void;
-  onExport: () => void;
+  onExport: (filters?: {
+    startDate?: string;
+    endDate?: string;
+    userId?: number;
+    action?: string;
+    entityType?: string;
+    search?: string;
+  }) => void;
   onViewDetail: (log: AuditLogItem) => void;
   isLoading: boolean;
 }
@@ -240,15 +247,23 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
     }
   };
 
+  const getCurrentFilters = () => ({
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+    userId: selectedUserId !== 'ทั้งหมด' ? Number(selectedUserId) : undefined,
+    action: selectedAction !== 'ทั้งหมด' ? selectedAction : undefined,
+    entityType: selectedEntityType !== 'ทั้งหมด' ? selectedEntityType : undefined,
+    search: searchQuery.trim() || undefined,
+  });
+
   const handleApplyFilter = () => {
-    onFilterChange({
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
-      userId: selectedUserId !== 'ทั้งหมด' ? Number(selectedUserId) : undefined,
-      action: selectedAction !== 'ทั้งหมด' ? selectedAction : undefined,
-      entityType: selectedEntityType !== 'ทั้งหมด' ? selectedEntityType : undefined,
-      search: searchQuery.trim() || undefined,
-    });
+    onFilterChange(getCurrentFilters());
+  };
+
+  const handleExportClick = () => {
+    const current = getCurrentFilters();
+    onFilterChange(current);
+    onExport(current);
   };
 
   const handleClearFilter = () => {
@@ -345,7 +360,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
 
           <button
             type="button"
-            onClick={onExport}
+            onClick={handleExportClick}
             className="h-8.5 px-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-slate-600" />

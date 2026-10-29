@@ -181,6 +181,7 @@ export const settingsService = {
     const params = new URLSearchParams();
     if (filter?.startDate) params.append('startDate', filter.startDate);
     if (filter?.endDate) params.append('endDate', filter.endDate);
+    if (filter?.userId) params.append('userId', filter.userId.toString());
     if (filter?.action && filter.action !== 'ทั้งหมด') params.append('action', filter.action);
     if (filter?.entityType && filter.entityType !== 'ทั้งหมด') params.append('entityType', filter.entityType);
     if (filter?.search) params.append('search', filter.search);

@@ -433,10 +433,18 @@ export default function SettingsPage() {
   };
 
   // === 6. Audit Log Actions ===
-  const handleExportAuditLogs = async () => {
+  const handleExportAuditLogs = async (overrideFilters?: {
+    startDate?: string;
+    endDate?: string;
+    userId?: number;
+    action?: string;
+    entityType?: string;
+    search?: string;
+  }) => {
     try {
       info('กำลังส่งออกข้อมูลบันทึก...');
-      const blob = await settingsService.exportAuditLogs(auditLogFilters);
+      const filters = overrideFilters ?? auditLogFilters;
+      const blob = await settingsService.exportAuditLogs(filters);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
