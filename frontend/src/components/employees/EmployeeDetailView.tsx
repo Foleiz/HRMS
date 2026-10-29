@@ -496,6 +496,19 @@ export default function EmployeeDetailView({
         {/* ซ้าย: Employee Summary Card                                  */}
         {/* ============================================================ */}
         <div className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col h-full">
+          {/* รหัสพนักงานที่มุมซ้ายบน */}
+          <div className="flex items-center justify-between w-full mb-2">
+            <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-full font-mono">
+              {employee.employeeCode || 'EMP0001'}
+            </span>
+            {employee.employmentStatus?.toUpperCase() === 'INACTIVE' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-semibold rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                ไม่ได้ทำงาน
+              </span>
+            )}
+          </div>
+
           {/* Avatar โปรไฟล์ */}
           <div className="flex flex-col items-center">
             <div className="relative mb-3 group/avatar">
@@ -559,23 +572,6 @@ export default function EmployeeDetailView({
               )}
             </div>
 
-            {/* Badges: Employee Code & Status */}
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-full font-mono">
-                {employee.employeeCode || 'EMP0001'}
-              </span>
-              {employee.employmentStatus?.toUpperCase() === 'INACTIVE' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-[11px] font-semibold rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                  ไม่ได้ทำงาน
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-[11px] font-semibold rounded-full border border-emerald-200/60 dark:border-emerald-800/40">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  ทำงานอยู่
-                </span>
-              )}
-            </div>
 
             {/* Full Name & Position */}
             <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center tracking-tight">
