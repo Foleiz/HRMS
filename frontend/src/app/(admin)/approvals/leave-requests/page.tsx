@@ -45,6 +45,13 @@ import { Button } from '@/components/ui';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
+import {
+  ApprovalActionModal,
+  ApprovalDetailRow,
+  formatThaiDate,
+  formatThaiDateRange,
+  getNoticeDaysText,
+} from '@/components/approvals/ApprovalActionModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -1477,89 +1484,97 @@ export default function LeaveRequestsApprovalPage() {
 
       {/* ─── Modal ยืนยันการอนุมัติคำขอลา ─── */}
       {selectedForApprove && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำขอลา</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {selectedForApprove.requestNo} • {selectedForApprove.employeeName}
-                  {selectedForApprove.departmentName ? ` (${selectedForApprove.departmentName})` : ''}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลประกอบการตัดสินใจ (เอาขั้นตอนการอนุมัติออก และแสดงข้อมูลสิทธิ์/การลาชนกัน/ประวัติ) */}
-            <LeaveDecisionInsightsPanel request={selectedForApprove} data={approveLeaveDecisionData} />
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                ความเห็นผู้อนุมัติ (ไม่บังคับ)
-              </label>
-              <textarea
-                value={approveComment}
-                onChange={(e) => setApproveComment(e.target.value)}
-                placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedForApprove(null)}
-                disabled={isSubmittingApprove}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                onClick={submitApprove}
-                loading={isSubmittingApprove}
-                icon={<CheckCircle2 className="w-4 h-4" />}
-                variant="success"
-              >
-                ยืนยันการอนุมัติ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+        <ApprovalActionModal
+          isOpen={!!selectedForApprove}
+          onClose={() => setSelectedForApprove(null)}
+          iconType="leave"
+          title="อนุมัติคำขอลา"
+          code={selectedForApprove.requestNo}
+          requesterName={`${selectedForApprove.employeeName}${selectedForApprove.employeeCode ? ` (${selectedForApprove.employeeCode})` : ''}`}
+          categoryLabel="การลา"
+          heroTitle={`${selectedForApprove.leaveTypeName} · ${Number(selectedForApprove.leaveDays ?? selectedForApprove.totalDays ?? 1)} วัน`}
+          heroSubtitle={formatThaiDateRange(
+            selectedForApprove.startDate ?? selectedForApprove.startDatetime,
+            selectedForApprove.endDate ?? selectedForApprove.endDatetime
+          )}
+          detailRows={[
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: `${formatThaiDate(selectedForApprove.submittedAt)}${getNoticeDaysText(
+                selectedForApprove.startDate ?? selectedForApprove.startDatetime,
+                selectedForApprove.submittedAt
+              )}`,
+            },
+            ...(selectedForApprove.reason
+              ? [
+                  {
+                    label: 'เหตุผล',
+                    value: selectedForApprove.reason,
+                  },
+                ]
+              : []),
+            ...(selectedForApprove.contactDuringLeave
+              ? [
+                  {
+                    label: 'ติดต่อระหว่างลา',
+                    value: selectedForApprove.contactDuringLeave,
+                  },
+                ]
+              : []),
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedForApprove.departmentName || '-'}${selectedForApprove.positionName ? ` · ${selectedForApprove.positionName}` : ''}`,
+            },
+          ]}
+          comment={approveComment}
+          onCommentChange={setApproveComment}
+          onSubmit={submitApprove}
+          isSubmitting={isSubmittingApprove}
+          variant="approve"
+        />
       )}
 
       {/* ─── Modal ปฏิเสธคำขอลา ─── */}
       {selectedForReject && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <XCircle className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำขอลา</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {selectedForReject.requestNo} • {selectedForReject.employeeName}
-                  {selectedForReject.departmentName ? ` (${selectedForReject.departmentName})` : ''}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลประกอบการตัดสินใจสำหรับปฏิเสธ (แบบกระชับ) */}
-            <LeaveDecisionInsightsPanel request={selectedForReject} data={rejectLeaveDecisionData} compact />
-
-            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว (Quick Reject Reasons) */}
+        <ApprovalActionModal
+          isOpen={!!selectedForReject}
+          onClose={() => setSelectedForReject(null)}
+          iconType="leave"
+          title="ปฏิเสธคำขอลา"
+          code={selectedForReject.requestNo}
+          requesterName={`${selectedForReject.employeeName}${selectedForReject.employeeCode ? ` (${selectedForReject.employeeCode})` : ''}`}
+          categoryLabel="การลา"
+          heroTitle={`${selectedForReject.leaveTypeName} · ${Number(selectedForReject.leaveDays ?? selectedForReject.totalDays ?? 1)} วัน`}
+          heroSubtitle={formatThaiDateRange(
+            selectedForReject.startDate ?? selectedForReject.startDatetime,
+            selectedForReject.endDate ?? selectedForReject.endDatetime
+          )}
+          detailRows={[
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: `${formatThaiDate(selectedForReject.submittedAt)}${getNoticeDaysText(
+                selectedForReject.startDate ?? selectedForReject.startDatetime,
+                selectedForReject.submittedAt
+              )}`,
+            },
+            ...(selectedForReject.reason
+              ? [
+                  {
+                    label: 'เหตุผล',
+                    value: selectedForReject.reason,
+                  },
+                ]
+              : []),
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedForReject.departmentName || '-'}${selectedForReject.positionName ? ` · ${selectedForReject.positionName}` : ''}`,
+            },
+          ]}
+          quickRejectSlot={
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  เลือกเหตุผลแบบรวดเร็ว (คลิกเพื่อเลือกหรือพิมพ์เอง)
+                  เลือกเหตุผลแบบรวดเร็ว
                 </label>
                 {rejectReason && (
                   <button
@@ -1577,128 +1592,78 @@ export default function LeaveRequestsApprovalPage() {
                 onChange={setRejectReason}
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                เหตุผลในการปฏิเสธ <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
-                rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedForReject(null)}
-                disabled={isSubmittingReject}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant="danger"
-                onClick={submitReject}
-                loading={isSubmittingReject}
-                disabled={isSubmittingReject || !rejectReason.trim()}
-                icon={<XCircle className="w-4 h-4" />}
-              >
-                ยืนยันการปฏิเสธ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+          }
+          comment={rejectReason}
+          onCommentChange={setRejectReason}
+          commentLabel="เหตุผลในการปฏิเสธ"
+          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
+          commentRequired
+          onSubmit={submitReject}
+          isSubmitting={isSubmittingReject}
+          variant="reject"
+          submitText="ยืนยันการปฏิเสธ"
+        />
       )}
-
 
       {/* ─── Modal ยืนยันการอนุมัติคำขอหนังสือรับรอง ─── */}
       {selectedCertForApprove && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำขอหนังสือรับรอง</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  CERT-{String(selectedCertForApprove.id).padStart(4, '0')} • {selectedCertForApprove.employeeName}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลประกอบการตัดสินใจสำหรับหนังสือรับรอง (เอาขั้นตอนการอนุมัติออก) */}
-            <CertDecisionInsightsPanel
-              request={selectedCertForApprove}
-              onPreview={() => {
-                setSelectedCertForPreview(selectedCertForApprove);
-                setIsCertPreviewOpen(true);
-              }}
-            />
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                ความเห็นผู้อนุมัติ (ไม่บังคับ)
-              </label>
-              <textarea
-                value={approveCertComment}
-                onChange={(e) => setApproveCertComment(e.target.value)}
-                placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedCertForApprove(null)}
-                disabled={isSubmittingCertApprove}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                onClick={submitCertApprove}
-                loading={isSubmittingCertApprove}
-                icon={<CheckCircle2 className="w-4 h-4" />}
-                variant="success"
-              >
-                ยืนยันการอนุมัติ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+        <ApprovalActionModal
+          isOpen={!!selectedCertForApprove}
+          onClose={() => setSelectedCertForApprove(null)}
+          iconType="certificate"
+          title="อนุมัติคำขอหนังสือรับรอง"
+          code={`CERT-${String(selectedCertForApprove.id).padStart(4, '0')}`}
+          requesterName={`${selectedCertForApprove.employeeName}${selectedCertForApprove.employeeCode ? ` (${selectedCertForApprove.employeeCode})` : ''}`}
+          categoryLabel="เอกสารที่ขอ"
+          heroTitle={selectedCertForApprove.certificateName || 'หนังสือรับรอง'}
+          detailRows={[
+            {
+              label: 'วัตถุประสงค์',
+              value: selectedCertForApprove.purpose || '[วัตถุประสงค์ที่ผู้ขอระบุ]',
+            },
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedCertForApprove.departmentName || '-'}${selectedCertForApprove.positionName ? ` · ${selectedCertForApprove.positionName}` : ''}`,
+            },
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: formatThaiDate(selectedCertForApprove.requestedAt),
+            },
+          ]}
+          comment={approveCertComment}
+          onCommentChange={setApproveCertComment}
+          onSubmit={submitCertApprove}
+          isSubmitting={isSubmittingCertApprove}
+          variant="approve"
+        />
       )}
 
       {/* ─── Modal ปฏิเสธคำขอหนังสือรับรอง ─── */}
       {selectedCertForReject && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <XCircle className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำขอหนังสือรับรอง</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  CERT-{String(selectedCertForReject.id).padStart(4, '0')} • {selectedCertForReject.employeeName}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลสรุปคำขอหนังสือรับรอง */}
-            <CertDecisionInsightsPanel request={selectedCertForReject} compact />
-
-            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว */}
+        <ApprovalActionModal
+          isOpen={!!selectedCertForReject}
+          onClose={() => setSelectedCertForReject(null)}
+          iconType="certificate"
+          title="ปฏิเสธคำขอหนังสือรับรอง"
+          code={`CERT-${String(selectedCertForReject.id).padStart(4, '0')}`}
+          requesterName={`${selectedCertForReject.employeeName}${selectedCertForReject.employeeCode ? ` (${selectedCertForReject.employeeCode})` : ''}`}
+          categoryLabel="เอกสารที่ขอ"
+          heroTitle={selectedCertForReject.certificateName || 'หนังสือรับรอง'}
+          detailRows={[
+            {
+              label: 'วัตถุประสงค์',
+              value: selectedCertForReject.purpose || '[วัตถุประสงค์ที่ผู้ขอระบุ]',
+            },
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedCertForReject.departmentName || '-'}${selectedCertForReject.positionName ? ` · ${selectedCertForReject.positionName}` : ''}`,
+            },
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: formatThaiDate(selectedCertForReject.requestedAt),
+            },
+          ]}
+          quickRejectSlot={
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -1716,40 +1681,17 @@ export default function LeaveRequestsApprovalPage() {
               </div>
               <CertRejectReasonChips value={rejectCertReason} onChange={setRejectCertReason} />
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                เหตุผลในการปฏิเสธ <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={rejectCertReason}
-                onChange={(e) => setRejectCertReason(e.target.value)}
-                placeholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
-                rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedCertForReject(null)}
-                disabled={isSubmittingCertReject}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant="danger"
-                onClick={submitCertReject}
-                loading={isSubmittingCertReject}
-                disabled={isSubmittingCertReject || !rejectCertReason.trim()}
-                icon={<XCircle className="w-4 h-4" />}
-              >
-                ยืนยันการปฏิเสธ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+          }
+          comment={rejectCertReason}
+          onCommentChange={setRejectCertReason}
+          commentLabel="เหตุผลในการปฏิเสธ"
+          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
+          commentRequired
+          onSubmit={submitCertReject}
+          isSubmitting={isSubmittingCertReject}
+          variant="reject"
+          submitText="ยืนยันการปฏิเสธ"
+        />
       )}
 
       {/* ─── Modal ผังขั้นตอนการอนุมัติคำขอลา (Leave Approval Timeline) ─── */}
@@ -1782,89 +1724,71 @@ export default function LeaveRequestsApprovalPage() {
 
       {/* ─── Modal ยืนยันการอนุมัติคำขอลาออก ─── */}
       {selectedResignForApprove && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำขอลาออก</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {selectedResignForApprove.requestNo} • {selectedResignForApprove.employeeName}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลประกอบการตัดสินใจสำหรับคำขอลาออก */}
-            <ResignDecisionInsightsPanel
-              request={selectedResignForApprove}
-              onPreview={() => {
-                setSelectedResignForPreview(selectedResignForApprove);
-                setIsResignPreviewOpen(true);
-              }}
-            />
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                ความเห็นผู้อนุมัติ (ไม่บังคับ)
-              </label>
-              <textarea
-                value={approveResignComment}
-                onChange={(e) => setApproveResignComment(e.target.value)}
-                placeholder="ระบุข้อความหรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedResignForApprove(null)}
-                disabled={isSubmittingResignApprove}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                onClick={submitResignApprove}
-                loading={isSubmittingResignApprove}
-                icon={<CheckCircle2 className="w-4 h-4" />}
-                variant="success"
-              >
-                ยืนยันการอนุมัติ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+        <ApprovalActionModal
+          isOpen={!!selectedResignForApprove}
+          onClose={() => setSelectedResignForApprove(null)}
+          iconType="resignation"
+          title="อนุมัติคำขอลาออก"
+          code={selectedResignForApprove.requestNo || `RESIGN-${String(selectedResignForApprove.id).padStart(4, '0')}`}
+          requesterName={`${selectedResignForApprove.employeeName}${selectedResignForApprove.employeeCode ? ` (${selectedResignForApprove.employeeCode})` : ''}`}
+          categoryLabel="การลาออก"
+          heroTitle={`วันทำงานสุดท้าย: ${formatThaiDate(selectedResignForApprove.requestedLastWorkingDate)}`}
+          detailRows={[
+            {
+              label: 'เหตุผลการลาออก',
+              value: selectedResignForApprove.reason || '-',
+            },
+            ...(selectedResignForApprove.noticePeriodDays !== undefined && selectedResignForApprove.noticePeriodDays !== null
+              ? [
+                  {
+                    label: 'แจ้งล่วงหน้า',
+                    value: `${selectedResignForApprove.noticePeriodDays} วัน`,
+                  },
+                ]
+              : []),
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedResignForApprove.departmentName || '-'}${selectedResignForApprove.positionName ? ` · ${selectedResignForApprove.positionName}` : ''}`,
+            },
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: formatThaiDate(selectedResignForApprove.submittedAt),
+            },
+          ]}
+          comment={approveResignComment}
+          onCommentChange={setApproveResignComment}
+          onSubmit={submitResignApprove}
+          isSubmitting={isSubmittingResignApprove}
+          variant="approve"
+        />
       )}
 
       {/* ─── Modal ปฏิเสธคำขอลาออก ─── */}
       {selectedResignForReject && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <XCircle className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำขอลาออก</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {selectedResignForReject.requestNo} • {selectedResignForReject.employeeName}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลสรุปคำขอลาออก */}
-            <ResignDecisionInsightsPanel request={selectedResignForReject} compact />
-
-            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว */}
+        <ApprovalActionModal
+          isOpen={!!selectedResignForReject}
+          onClose={() => setSelectedResignForReject(null)}
+          iconType="resignation"
+          title="ปฏิเสธคำขอลาออก"
+          code={selectedResignForReject.requestNo || `RESIGN-${String(selectedResignForReject.id).padStart(4, '0')}`}
+          requesterName={`${selectedResignForReject.employeeName}${selectedResignForReject.employeeCode ? ` (${selectedResignForReject.employeeCode})` : ''}`}
+          categoryLabel="การลาออก"
+          heroTitle={`วันทำงานสุดท้าย: ${formatThaiDate(selectedResignForReject.requestedLastWorkingDate)}`}
+          detailRows={[
+            {
+              label: 'เหตุผลการลาออก',
+              value: selectedResignForReject.reason || '-',
+            },
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedResignForReject.departmentName || '-'}${selectedResignForReject.positionName ? ` · ${selectedResignForReject.positionName}` : ''}`,
+            },
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: formatThaiDate(selectedResignForReject.submittedAt),
+            },
+          ]}
+          quickRejectSlot={
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -1881,45 +1805,22 @@ export default function LeaveRequestsApprovalPage() {
                 )}
               </div>
               <ResignRejectReasonChips
-                isShortNotice={selectedResignForReject.noticePeriodDays < 30}
+                isShortNotice={(selectedResignForReject.noticePeriodDays ?? 30) < 30}
                 value={rejectResignReason}
                 onChange={setRejectResignReason}
               />
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                เหตุผลในการปฏิเสธ <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={rejectResignReason}
-                onChange={(e) => setRejectResignReason(e.target.value)}
-                placeholder="ระบุเหตุผลในการปฏิเสธคำขอลาออก..."
-                rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedResignForReject(null)}
-                disabled={isSubmittingResignReject}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant="danger"
-                onClick={submitResignReject}
-                loading={isSubmittingResignReject}
-                disabled={isSubmittingResignReject || !rejectResignReason.trim()}
-                icon={<XCircle className="w-4 h-4" />}
-              >
-                ยืนยันการปฏิเสธ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+          }
+          comment={rejectResignReason}
+          onCommentChange={setRejectResignReason}
+          commentLabel="เหตุผลในการปฏิเสธ"
+          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำขอลาออก..."
+          commentRequired
+          onSubmit={submitResignReject}
+          isSubmitting={isSubmittingResignReject}
+          variant="reject"
+          submitText="ยืนยันการปฏิเสธ"
+        />
       )}
 
       {/* ─── Modal ดูตัวอย่างหนังสือขอลาออก (Resignation Preview) ─── */}
@@ -1950,29 +1851,36 @@ export default function LeaveRequestsApprovalPage() {
 
       {/* ─── Modal ยืนยันการอนุมัติคำร้องเอกสารทั่วไป ─── */}
       {selectedGeneralForApprove && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ยืนยันการอนุมัติคำร้องเอกสารทั่วไป</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {selectedGeneralForApprove.requestNo} • {selectedGeneralForApprove.employeeName}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลประกอบการตัดสินใจสำหรับคำร้องเอกสารทั่วไป */}
-            <GeneralDecisionInsightsPanel
-              request={selectedGeneralForApprove}
-              onDownloadAttachment={
-                selectedGeneralForApprove.fileName
-                  ? async () => {
+        <ApprovalActionModal
+          isOpen={!!selectedGeneralForApprove}
+          onClose={() => setSelectedGeneralForApprove(null)}
+          iconType="general"
+          title="อนุมัติคำร้องเอกสารทั่วไป"
+          code={selectedGeneralForApprove.requestNo || `DOC-${String(selectedGeneralForApprove.id).padStart(4, '0')}`}
+          requesterName={`${selectedGeneralForApprove.employeeName}${selectedGeneralForApprove.employeeCode ? ` (${selectedGeneralForApprove.employeeCode})` : ''}`}
+          categoryLabel="ประเภทคำร้อง"
+          heroTitle={selectedGeneralForApprove.documentType || 'คำร้องทั่วไป'}
+          heroSubtitle={undefined}
+          detailRows={[
+            {
+              label: 'วัตถุประสงค์ / รายละเอียด',
+              value: selectedGeneralForApprove.purpose || selectedGeneralForApprove.notes || '-',
+            },
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedGeneralForApprove.departmentName || '-'}${selectedGeneralForApprove.positionName ? ` · ${selectedGeneralForApprove.positionName}` : ''}`,
+            },
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: formatThaiDate(selectedGeneralForApprove.submittedAt),
+            },
+          ]}
+          attachments={
+            selectedGeneralForApprove.fileName
+              ? [
+                  {
+                    name: selectedGeneralForApprove.fileName,
+                    onOpen: async () => {
                       try {
                         const blob = await generalDocumentService.downloadAttachment(selectedGeneralForApprove.id);
                         const url = URL.createObjectURL(blob);
@@ -1984,68 +1892,46 @@ export default function LeaveRequestsApprovalPage() {
                       } catch {
                         showToast('ไม่สามารถดาวน์โหลดไฟล์แนบได้', 'error');
                       }
-                    }
-                  : undefined
-              }
-            />
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                ความเห็นผู้อนุมัติ (ไม่บังคับ)
-              </label>
-              <textarea
-                value={approveGeneralComment}
-                onChange={(e) => setApproveGeneralComment(e.target.value)}
-                placeholder="ระบุความเห็น ข้อความ หรือบันทึกเพิ่มเติม (ถ้ามี)..."
-                rows={2}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedGeneralForApprove(null)}
-                disabled={isSubmittingGeneralApprove}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                onClick={submitGeneralApprove}
-                loading={isSubmittingGeneralApprove}
-                icon={<CheckCircle2 className="w-4 h-4" />}
-                variant="success"
-              >
-                ยืนยันการอนุมัติ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+                    },
+                  },
+                ]
+              : undefined
+          }
+          comment={approveGeneralComment}
+          onCommentChange={setApproveGeneralComment}
+          onSubmit={submitGeneralApprove}
+          isSubmitting={isSubmittingGeneralApprove}
+          variant="approve"
+        />
       )}
 
       {/* ─── Modal ปฏิเสธคำร้องเอกสารทั่วไป ─── */}
       {selectedGeneralForReject && (
-        <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-                <XCircle className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิเสธคำร้องเอกสารทั่วไป</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {selectedGeneralForReject.requestNo} • {selectedGeneralForReject.employeeName}
-                </p>
-              </div>
-            </div>
-
-            {/* ข้อมูลสรุปคำร้องเอกสารทั่วไป */}
-            <GeneralDecisionInsightsPanel request={selectedGeneralForReject} compact />
-
-            {/* ปุ่มเหตุผลปฏิเสธแบบเลือกเร็ว */}
+        <ApprovalActionModal
+          isOpen={!!selectedGeneralForReject}
+          onClose={() => setSelectedGeneralForReject(null)}
+          iconType="general"
+          title="ปฏิเสธคำร้องเอกสารทั่วไป"
+          code={selectedGeneralForReject.requestNo || `DOC-${String(selectedGeneralForReject.id).padStart(4, '0')}`}
+          requesterName={`${selectedGeneralForReject.employeeName}${selectedGeneralForReject.employeeCode ? ` (${selectedGeneralForReject.employeeCode})` : ''}`}
+          categoryLabel="ประเภทคำร้อง"
+          heroTitle={selectedGeneralForReject.documentType || 'คำร้องทั่วไป'}
+          heroSubtitle={undefined}
+          detailRows={[
+            {
+              label: 'วัตถุประสงค์ / รายละเอียด',
+              value: selectedGeneralForReject.purpose || selectedGeneralForReject.notes || '-',
+            },
+            {
+              label: 'สังกัด / ตำแหน่ง',
+              value: `${selectedGeneralForReject.departmentName || '-'}${selectedGeneralForReject.positionName ? ` · ${selectedGeneralForReject.positionName}` : ''}`,
+            },
+            {
+              label: 'ยื่นคำขอเมื่อ',
+              value: formatThaiDate(selectedGeneralForReject.submittedAt),
+            },
+          ]}
+          quickRejectSlot={
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -2063,40 +1949,17 @@ export default function LeaveRequestsApprovalPage() {
               </div>
               <GeneralRejectReasonChips value={rejectGeneralReason} onChange={setRejectGeneralReason} />
             </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                เหตุผลในการปฏิเสธ <span className="text-rose-500">*</span>
-              </label>
-              <textarea
-                value={rejectGeneralReason}
-                onChange={(e) => setRejectGeneralReason(e.target.value)}
-                placeholder="ระบุเหตุผลในการปฏิเสธคำร้อง..."
-                rows={3}
-                className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white dark:focus:bg-slate-800 transition-all outline-none resize-none"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedGeneralForReject(null)}
-                disabled={isSubmittingGeneralReject}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant="danger"
-                onClick={submitGeneralReject}
-                loading={isSubmittingGeneralReject}
-                disabled={isSubmittingGeneralReject || !rejectGeneralReason.trim()}
-                icon={<XCircle className="w-4 h-4" />}
-              >
-                ยืนยันการปฏิเสธ
-              </Button>
-            </div>
-          </div>
-        </ModalShell>
+          }
+          comment={rejectGeneralReason}
+          onCommentChange={setRejectGeneralReason}
+          commentLabel="เหตุผลในการปฏิเสธ"
+          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำร้อง..."
+          commentRequired
+          onSubmit={submitGeneralReject}
+          isSubmitting={isSubmittingGeneralReject}
+          variant="reject"
+          submitText="ยืนยันการปฏิเสธ"
+        />
       )}
 
       {/* ─── Modal ดูตัวอย่างคำร้องเอกสารทั่วไป (General Document Preview) ─── */}
@@ -2142,83 +2005,61 @@ export default function LeaveRequestsApprovalPage() {
         const adj = timeAdjustReview.adj;
         const mode = timeAdjustReview.mode;
         const canAct = mode !== 'view' && adj.status === 'PENDING';
+        const isApprove = mode === 'approve';
+        const isReject = mode === 'reject';
+        const title = isApprove
+          ? 'อนุมัติคำขอปรับเวลาเข้า-ออก'
+          : isReject
+            ? 'ปฏิเสธคำขอปรับเวลาเข้า-ออก'
+            : 'คำขอปรับเวลาเข้า-ออก';
+
         return (
-          <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-            <div
-              className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4 max-h-[90vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'reject' ? 'bg-rose-50 text-rose-600' : mode === 'approve' ? 'bg-emerald-50 text-emerald-600' : 'bg-sky-50 text-sky-600'}`}>
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
-                    {mode === 'approve' ? 'ยืนยันการอนุมัติคำขอปรับเวลา' : mode === 'reject' ? 'ยืนยันการปฏิเสธคำขอปรับเวลา' : 'คำขอปรับเวลาเข้า-ออก'}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                    TA-{adj.id} • {adj.employeeName}{adj.departmentName ? ` • ${adj.departmentName}` : ''}
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 text-xs">
-                <div className="flex justify-between px-4 py-2.5">
-                  <span className="text-slate-500 dark:text-slate-400">วันที่ทำงาน</span>
-                  <span className="font-semibold text-slate-800 dark:text-slate-200">{formatDate(adj.workDate)}{adj.shiftName ? ` • ${adj.shiftName}` : ''}</span>
-                </div>
-                <div className="grid grid-cols-3 px-4 py-2.5 gap-2">
-                  <span className="text-slate-500 dark:text-slate-400"></span>
-                  <span className="text-slate-500 dark:text-slate-400 text-center">เวลาเดิม</span>
-                  <span className="text-slate-500 dark:text-slate-400 text-center">ขอปรับเป็น</span>
-                </div>
-                <div className="grid grid-cols-3 px-4 py-2.5 gap-2">
-                  <span className="text-slate-500 dark:text-slate-400">เข้างาน</span>
-                  <span className="text-center font-mono text-slate-600 dark:text-slate-300">{formatTime(adj.originalClockIn)}</span>
-                  <span className="text-center font-mono font-bold text-sky-700 dark:text-sky-300">{formatTime(adj.adjustedClockIn)}</span>
-                </div>
-                <div className="grid grid-cols-3 px-4 py-2.5 gap-2">
-                  <span className="text-slate-500 dark:text-slate-400">ออกงาน</span>
-                  <span className="text-center font-mono text-slate-600 dark:text-slate-300">{formatTime(adj.originalClockOut)}</span>
-                  <span className="text-center font-mono font-bold text-sky-700 dark:text-sky-300">{formatTime(adj.adjustedClockOut)}</span>
-                </div>
-                <div className="px-4 py-2.5">
-                  <div className="text-slate-500 dark:text-slate-400 mb-1">เหตุผล</div>
-                  <div className="text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{adj.reason || '-'}</div>
-                </div>
-                <div className="flex justify-between px-4 py-2.5">
-                  <span className="text-slate-500 dark:text-slate-400">ยื่นเมื่อ</span>
-                  <span className="text-slate-700 dark:text-slate-300">{formatDate(adj.createdAt)} {formatTime(adj.createdAt)} น.</span>
-                </div>
-                {adj.reviewedAt && (
-                  <div className="flex justify-between px-4 py-2.5">
-                    <span className="text-slate-500 dark:text-slate-400">พิจารณาโดย</span>
-                    <span className="text-slate-700 dark:text-slate-300">{adj.reviewedByEmployeeName || '-'} • {formatDate(adj.reviewedAt)}</span>
-                  </div>
-                )}
-              </div>
-
-              {mode === 'approve' && canAct && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">เมื่ออนุมัติ ระบบจะแทนที่เวลาเข้า-ออกของวันนั้นและคำนวณสาย/ออกก่อนใหม่ทันที</p>
-              )}
-
-              <div className="flex justify-end gap-2 pt-1">
-                <Button variant="secondary" onClick={() => setTimeAdjustReview(null)} disabled={isSubmittingTimeAdjust}>
-                  {canAct ? 'ยกเลิก' : 'ปิด'}
-                </Button>
-                {canAct && (
-                  <Button
-                    variant={mode === 'reject' ? 'danger' : 'success'}
-                    onClick={() => submitTimeAdjustReview(mode === 'reject' ? 'REJECTED' : 'APPROVED')}
-                    disabled={isSubmittingTimeAdjust}
-                  >
-                    {isSubmittingTimeAdjust && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}
-                    {mode === 'reject' ? 'ยืนยันปฏิเสธ' : 'ยืนยันอนุมัติ'}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </ModalShell>
+          <ApprovalActionModal
+            isOpen={!!timeAdjustReview}
+            onClose={() => setTimeAdjustReview(null)}
+            iconType="time_adjust"
+            title={title}
+            code={`TA-${adj.id}`}
+            requesterName={`${adj.employeeName}${adj.departmentName ? ` (${adj.departmentName})` : ''}`}
+            categoryLabel="การปรับเวลาเข้า-ออก"
+            heroTitle={`วันที่ ${formatDate(adj.workDate)}${adj.shiftName ? ` · ${adj.shiftName}` : ''}`}
+            heroSubtitle={`ขอปรับเป็น: เข้า ${formatTime(adj.adjustedClockIn)} – ออก ${formatTime(adj.adjustedClockOut)}`}
+            detailRows={[
+              {
+                label: 'เวลาเดิม',
+                value: `เข้า ${formatTime(adj.originalClockIn)} – ออก ${formatTime(adj.originalClockOut)}`,
+              },
+              ...(adj.reason
+                ? [
+                    {
+                      label: 'เหตุผล',
+                      value: adj.reason,
+                    },
+                  ]
+                : []),
+              {
+                label: 'สังกัด / ตำแหน่ง',
+                value: `${adj.departmentName || '-'}${adj.positionName ? ` · ${adj.positionName}` : ''}`,
+              },
+              {
+                label: 'ยื่นคำขอเมื่อ',
+                value: `${formatDate(adj.createdAt)} ${formatTime(adj.createdAt)} น.`,
+              },
+              ...(adj.reviewedAt
+                ? [
+                    {
+                      label: 'พิจารณาโดย',
+                      value: `${adj.reviewedByEmployeeName || '-'} • ${formatDate(adj.reviewedAt)}`,
+                    },
+                  ]
+                : []),
+            ]}
+            onSubmit={canAct ? () => submitTimeAdjustReview(isReject ? 'REJECTED' : 'APPROVED') : undefined}
+            isSubmitting={isSubmittingTimeAdjust}
+            submitText={isReject ? 'ยืนยันการปฏิเสธ' : 'อนุมัติ'}
+            cancelText={canAct ? 'ยกเลิก' : 'ปิด'}
+            variant={isReject ? 'reject' : isApprove ? 'approve' : 'view'}
+          />
         );
       })()}
 
