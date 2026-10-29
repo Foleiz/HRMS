@@ -9,6 +9,7 @@ import {
   Clock,
   CalendarDays,
   FileText,
+  Info,
 } from 'lucide-react';
 import { attendanceImportService } from '@/services/attendanceImportService';
 import { useToast } from '@/context/ToastContext';
@@ -211,6 +212,34 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
                 เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน ระบบรู้ว่าเป็นไฟล์ชนิดนี้จากคำว่า <code className="font-mono">deliy</code> ในแถวแรก
               </p>
               <SheetPreview sample={DELIY} />
+
+              {/* คำอธิบายคอลัมน์กะการทำงาน vs วันทำงาน */}
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-700/80 text-[11px] space-y-2 text-slate-600 dark:text-slate-400">
+                <div className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Info className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                  <span>คำอธิบาย: ความแตกต่างระหว่างคอลัมน์ &quot;กะการทำงาน&quot; และ &quot;วันทำงาน&quot;</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-0.5 text-slate-600 dark:text-slate-300">
+                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700/50 space-y-1">
+                    <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                      กะการทำงาน (วัน / ชั่วโมง) — แผนงาน
+                    </div>
+                    <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-[11px]">
+                      คือ <strong>เกณฑ์มาตรฐานตามกะที่พนักงานควรมาทำงาน</strong> (Scheduled Work) เช่น วันทำงานปกติ = 1 วัน (8 ชม.) ส่วนวันหยุดประจำสัปดาห์ = 0 วัน (0 ชม.) โดยระบบ HRMS จะตรวจสอบและยึดตารางกะจริงในระบบเป็นหลัก
+                    </p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700/50 space-y-1">
+                    <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      วันทำงาน (วัน / ชั่วโมง) — ผลงานจริง
+                    </div>
+                    <p className="leading-relaxed text-slate-600 dark:text-slate-400 text-[11px]">
+                      คือ <strong>ผลการมาทำงานจริงของพนักงาน</strong> (Actual Worked) ที่เครื่องสรุปได้ เช่น มาทำงานครบ = 1 วัน (8 ชม.), หากขาดงาน = 0 วัน (0 ชม.) และช่องขาดจะเป็น 1 วัน โดยระบบจะนำ &quot;ชั่วโมงทำงานจริง&quot; ไปบันทึกลงตารางประจำวันเพื่อใช้คำนวณเงินเดือน
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
