@@ -27,11 +27,16 @@ interface Props {
  * ───────────────────────────────────────────────────────────────────────────── */
 
 type Cell = string;
+interface HeaderCell {
+  text: string;
+  colSpan?: number;
+  rowSpan?: number;
+}
 interface SheetSample {
   /** ตัวอักษรคอลัมน์ Excel เริ่มที่ D */
   columns: string[];
   titleRows: Cell[][];
-  headerRows: Cell[][];
+  headerRows: HeaderCell[][];
   dataRows: Cell[][];
 }
 
@@ -44,8 +49,42 @@ const DELIY: SheetSample = {
     ['unit: Syaco    date from: 2026-08-01 to 2026-08-31 23:59'],
   ],
   headerRows: [
-    ['รหัส', 'ชื่อ-สกุล', 'แผนก', 'วันที่', 'สัปดาห์', 'เข้า-ออก', 'กะการทำงาน', '', 'วันทำงาน', '', '', 'สาย', '', 'ออกก่อน', '', 'ไม่ลงเวลา', '', 'วันหยุด', '', 'การลา', '', 'สัญลักษณ์', '', 'Lock'],
-    ['', '', '', '', '', '', 'วัน', 'ชั่วโมง', 'วัน', 'ชั่วโมง', 'ขาด', 'ครั้ง', 'นาที.', 'ครั้ง', 'นาที.', 'เข้า', 'ออก', 'สัปดาห์', 'ประจำปี', 'ครั้ง', 'ชั่วโมง', 'กะ', 'ลา', ''],
+    [
+      { text: 'รหัส', rowSpan: 2 },
+      { text: 'ชื่อ-สกุล', rowSpan: 2 },
+      { text: 'แผนก', rowSpan: 2 },
+      { text: 'วันที่', rowSpan: 2 },
+      { text: 'สัปดาห์', rowSpan: 2 },
+      { text: 'เข้า-ออก', rowSpan: 2 },
+      { text: 'กะการทำงาน', colSpan: 2 },
+      { text: 'วันทำงาน', colSpan: 2 },
+      { text: 'ขาด', rowSpan: 2 },
+      { text: 'สาย', colSpan: 2 },
+      { text: 'ออกก่อน', colSpan: 2 },
+      { text: 'ไม่ลงเวลา', colSpan: 2 },
+      { text: 'วันหยุด', colSpan: 2 },
+      { text: 'การลา', colSpan: 2 },
+      { text: 'สัญลักษณ์', colSpan: 2 },
+      { text: 'Lock', rowSpan: 2 },
+    ],
+    [
+      { text: 'วัน' },
+      { text: 'ชั่วโมง' },
+      { text: 'วัน' },
+      { text: 'ชั่วโมง' },
+      { text: 'ครั้ง' },
+      { text: 'นาที.' },
+      { text: 'ครั้ง' },
+      { text: 'นาที.' },
+      { text: 'เข้า' },
+      { text: 'ออก' },
+      { text: 'สัปดาห์' },
+      { text: 'ประจำปี' },
+      { text: 'ครั้ง' },
+      { text: 'ชั่วโมง' },
+      { text: 'กะ' },
+      { text: 'ลา' },
+    ],
   ],
   dataRows: [
     ['100001', 'สมชาย', 'Syaco', '2026-08-02', '7', '', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0', '0', '0', 'W', '', '0'],
@@ -63,8 +102,21 @@ const RECORD: SheetSample = {
     ['unit: Syaco    date from: 2026-08-03 to 2026-08-03 23:59'],
   ],
   headerRows: [
-    ['รหัส', 'ชื่อ-สกุล', 'แผนก-ฝ่าย.', 'วันที่-เวลา', 'สถานะ', 'ลงเวลาด้วย', 'การตรวจอุณหภูมิ', '', 'เครื่อง', 'ประมวลผล'],
-    ['', '', '', '', '', '', 'อุณหภูมิ', 'องศา', '', ''],
+    [
+      { text: 'รหัส', rowSpan: 2 },
+      { text: 'ชื่อ-สกุล', rowSpan: 2 },
+      { text: 'แผนก-ฝ่าย.', rowSpan: 2 },
+      { text: 'วันที่-เวลา', rowSpan: 2 },
+      { text: 'สถานะ', rowSpan: 2 },
+      { text: 'ลงเวลาด้วย', rowSpan: 2 },
+      { text: 'การตรวจอุณหภูมิ', colSpan: 2 },
+      { text: 'เครื่อง', rowSpan: 2 },
+      { text: 'ประมวลผล', rowSpan: 2 },
+    ],
+    [
+      { text: 'อุณหภูมิ' },
+      { text: 'องศา' },
+    ],
   ],
   dataRows: [
     ['100001', 'สมชาย', 'Syaco', '2026-08-03 09:49:12', 'AUTO', 'l', 'AUTO', '', 'Attendance', 'IN'],
@@ -75,7 +127,7 @@ const RECORD: SheetSample = {
 };
 
 const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
-  const rowNo = 'px-1 text-center text-slate-400 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-normal';
+  const rowNo = 'px-1 text-center text-slate-400 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-normal align-middle';
   return (
     <div className="border border-slate-300 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
       <table className="text-[11px] text-left border-collapse font-mono">
@@ -104,8 +156,17 @@ const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
           {sample.headerRows.map((row, r) => (
             <tr key={`h${r}`} className="border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/60">
               <td className={rowNo}>{sample.titleRows.length + r + 1}</td>
-              {row.map((v, i) => (
-                <td key={i} className="px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans">{v}</td>
+              {row.map((cell, i) => (
+                <td
+                  key={i}
+                  colSpan={cell.colSpan || 1}
+                  rowSpan={cell.rowSpan || 1}
+                  className={`px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans align-middle ${
+                    cell.colSpan && cell.colSpan > 1 ? 'text-center' : ''
+                  }`}
+                >
+                  {cell.text}
+                </td>
               ))}
             </tr>
           ))}
