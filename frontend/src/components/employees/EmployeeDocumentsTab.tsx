@@ -287,8 +287,10 @@ export default function EmployeeDocumentsTab({ employeeId, canManage, isSelf = f
       {/* หัวข้อ + สรุป */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap">
-          <FolderOpen className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">แฟ้มเอกสารพนักงาน</h3>
+          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+            <FolderOpen className="w-4 h-4" />
+          </span>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">แฟ้มเอกสารพนักงาน</h3>
           <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 dark:bg-slate-700 text-slate-600 dark:text-slate-400 dark:text-slate-300 text-[11px]">ทั้งหมด {summary.total}</span>
           {summary.expiring > 0 && (
             <span className="px-2 py-0.5 rounded-full border bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 text-[11px]">

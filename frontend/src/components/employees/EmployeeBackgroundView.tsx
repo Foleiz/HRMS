@@ -31,8 +31,10 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
     <div className="pt-6 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <GraduationCap className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการศึกษา</h3>
+          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-4 h-4" />
+          </span>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ประวัติการศึกษา</h3>
         </div>
         {educations.length === 0 ? (
           <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 py-6 text-center bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">ยังไม่มีข้อมูล</p>
@@ -58,8 +60,10 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
 
       <section>
         <div className="flex items-center gap-2 mb-4">
-          <Briefcase className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการทำงาน</h3>
+          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+            <Briefcase className="w-4 h-4" />
+          </span>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ประวัติการทำงาน</h3>
         </div>
         {works.length === 0 ? (
           <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 py-6 text-center bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">ยังไม่มีข้อมูล</p>
@@ -98,16 +102,20 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
     <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประกันสังคม</h3>
+          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4 h-4" />
+          </span>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ประกันสังคม</h3>
         </div>
         {row('เลขประกันสังคม', <span className="font-mono">{employee.socialSecurity?.socialSecurityNoMasked || '-'}</span>)}
         {row('โรงพยาบาลตามสิทธิ์', employee.socialSecurity?.hospitalName || '-')}
       </section>
       <section className="space-y-4">
         <div className="flex items-center gap-2">
-          <Landmark className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลลดหย่อนภาษี</h3>
+          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+            <Landmark className="w-4 h-4" />
+          </span>
+          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ข้อมูลลดหย่อนภาษี</h3>
         </div>
         {row('คู่สมรสมีเงินได้', employee.spouseHasIncome ? 'มี' : 'ไม่มี / ไม่ระบุ')}
         {row('จำนวนบุตรที่ใช้ลดหย่อน', `${employee.numberOfChildren ?? 0} คน`)}

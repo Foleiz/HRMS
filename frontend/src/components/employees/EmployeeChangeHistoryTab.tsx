@@ -411,7 +411,9 @@ export default function EmployeeChangeHistoryTab({ employeeId }: { employeeId: n
       {/* ─── Row 1: Title + Date Range Filter ─── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2.5">
-          <History className="w-5 h-5 text-slate-800 dark:text-slate-100" />
+          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+            <History className="w-4 h-4" />
+          </span>
           <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">ประวัติการเปลี่ยนแปลงข้อมูล</h3>
         </div>
 
