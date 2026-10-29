@@ -401,6 +401,47 @@ export default function EmployeesPage() {
     }
   }, []);
 
+// Helper for word counting and limiting (max 20 words)
+const countWords = (t: string): number => {
+  if (!t.trim()) return 0;
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      const segmenter = new Intl.Segmenter('th', { granularity: 'word' });
+      return Array.from(segmenter.segment(t)).filter((s) => s.isWordLike).length;
+    } catch {
+      // fallback below
+    }
+  }
+  return t.trim().split(/\s+/).filter(Boolean).length;
+};
+
+const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
+  if (!t) return '';
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      const segmenter = new Intl.Segmenter('th', { granularity: 'word' });
+      const segments = Array.from(segmenter.segment(t));
+      let wordCount = 0;
+      let lastIndex = t.length;
+      for (const seg of segments) {
+        if (seg.isWordLike) {
+          wordCount++;
+          if (wordCount > maxWords) {
+            lastIndex = seg.index;
+            break;
+          }
+        }
+      }
+      return t.slice(0, lastIndex);
+    } catch {
+      // fallback below
+    }
+  }
+  const words = t.trim().split(/\s+/);
+  if (words.length <= maxWords) return t;
+  return words.slice(0, maxWords).join(' ');
+};
+
   // Save comment
   const handleSaveComment = (empId: number, text: string) => {
     const updated = { ...comments };
@@ -1487,14 +1528,18 @@ export default function EmployeesPage() {
               </button>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs text-slate-500 dark:text-slate-400 block">
-                ระบุหมายเหตุ/ข้อควรระวังสำหรับ HR หรือ Admin (เช่น พนักงานคนนี้ป่วยห้ามใช้งานหนัก):
-              </label>
+            <div className="space-y-1.5">
               <textarea
                 rows={3}
                 value={commentInput}
-                onChange={(e) => setCommentInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (countWords(val) <= 20) {
+                    setCommentInput(val);
+                  } else {
+                    setCommentInput(sliceToMaxWords(val, 20));
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
@@ -1502,20 +1547,29 @@ export default function EmployeesPage() {
                   }
                 }}
                 placeholder="พิมพ์คอมเมนต์ตรงนี้... (กด Ctrl+Enter เพื่อบันทึก)"
-                className={inputClass}
+                className={`${inputClass} resize-none`}
                 autoFocus
               />
+              <div className="flex justify-end">
+                <span className={`text-[11px] ${countWords(commentInput) >= 20 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-slate-400 dark:text-slate-500'}`}>
+                  {countWords(commentInput)}/20 คำ
+                </span>
+              </div>
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              {comments[commentModalEmp.id] && (
+              {comments[commentModalEmp.id] ? (
                 <button
                   type="button"
                   onClick={() => handleSaveComment(commentModalEmp.id, '')}
-                  className="text-xs text-rose-600 hover:underline"
+                  title="ลบคอมเมนต์"
+                  aria-label="ลบคอมเมนต์"
+                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer border border-transparent hover:border-rose-200 dark:hover:border-rose-800/60"
                 >
-                  ลบคอมเมนต์นี้
+                  <Trash2 className="w-4 h-4" />
                 </button>
+              ) : (
+                <div />
               )}
               <div className="flex items-center gap-2 ml-auto">
                 <Button
