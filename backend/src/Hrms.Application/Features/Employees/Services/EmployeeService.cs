@@ -1246,12 +1246,10 @@ public class EmployeeService : IEmployeeService
         long? myEmpId = _currentUserService.EmployeeId;
         bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
 
+        // ลายเซ็นของตัวเอง: ทุกคนตั้ง/เปลี่ยน/ลบได้เสมอ (ใช้ลงนามในเอกสารที่ตนยื่น)
         if (isSelf)
         {
-            if (!isSuper && !canManageSig && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
-            {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์เปลี่ยนลายเซ็น");
-            }
+            // อนุญาต
         }
         else if (!canManageSig)
         {
@@ -1357,12 +1355,10 @@ public class EmployeeService : IEmployeeService
         long? myEmpId = _currentUserService.EmployeeId;
         bool isSelf = myEmpId.HasValue && myEmpId.Value == id;
 
+        // ลายเซ็นของตัวเอง: ทุกคนตั้ง/เปลี่ยน/ลบได้เสมอ (ใช้ลงนามในเอกสารที่ตนยื่น)
         if (isSelf)
         {
-            if (!isSuper && !canManageSig && !_currentUserService.HasPermission("ESS_PROFILE_EDIT"))
-            {
-                throw new ForbiddenException("คุณไม่มีสิทธิ์ลบลายเซ็น");
-            }
+            // อนุญาต
         }
         else if (!canManageSig)
         {
