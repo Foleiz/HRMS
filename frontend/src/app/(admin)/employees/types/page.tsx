@@ -21,6 +21,7 @@ import {
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { employeeTypeService } from '@/services/employeeTypeService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import {
   EmployeeType,
   EmployeeTypeStats,

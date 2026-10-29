@@ -19,6 +19,7 @@ import {
 import { UserAccount, RoleSummary } from '@/types/settings';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { Button } from '@/components/ui/Button';
 import { formatRoleName } from '@/lib/roleUtils';
 

@@ -31,6 +31,7 @@ import {
   Tag
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button } from '@/components/ui/Button';
 import { RowActions, RowActionButton } from '@/components/ui/RowActions';
@@ -730,46 +731,18 @@ export default function AnnouncementsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <span>แสดง</span>
-                <CustomSelect
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={200}>200</option>
-                </CustomSelect>
-                <span>แถวต่อหน้า</span>
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-                  (ทั้งหมด {totalCount} รายการ - หน้า {page} จาก {Math.max(1, Math.ceil(totalCount / pageSize))})
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={page <= 1}
-                  onClick={() => setPage(page - 1)}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  disabled={page >= Math.max(1, Math.ceil(totalCount / pageSize))}
-                  onClick={() => setPage(page + 1)}
-                  className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+              <TablePagination
+                total={totalCount}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 200]}
+              />
             </div>
           </div>
         </div>

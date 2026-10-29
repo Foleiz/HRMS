@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { Button, TabBar } from '@/components/ui';
 import { showError } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';

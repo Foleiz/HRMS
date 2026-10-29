@@ -27,6 +27,7 @@ import {
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { contractService } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
 import { EmploymentContract, ContractSummaryStats, CreateContractRequest } from '@/types/contract';

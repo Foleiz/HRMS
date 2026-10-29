@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem, TablePagination } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1576,46 +1576,18 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <span>แสดง</span>
-                <CustomSelect
-                  value={dailyPageSize}
-                  onChange={(e) => {
-                    setDailyPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={200}>200</option>
-                </CustomSelect>
-                <span>แถวต่อหน้า</span>
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-                  (แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{currentPage}</span> จาก{' '}
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{totalPages || 1}</span> หน้า - รวม {totalCount} รายการ)
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+              <TablePagination
+                total={totalCount}
+                page={currentPage}
+                pageSize={dailyPageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newSize) => {
+                  setDailyPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 200]}
+              />
             </div>
           </div>
             </>
@@ -1967,74 +1939,18 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <CustomSelect
-                    value={batchPageSize}
-                    onChange={(e) => {
-                      setBatchPageSize(Number(e.target.value));
-                      setBatchPage(1);
-                    }}
-                    className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-2xs cursor-pointer"
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </CustomSelect>
-                  <span>แถวต่อหน้า</span>
-                </div>
-
-                <span className="text-slate-300 dark:text-slate-600">|</span>
-
-                <div>
-                  แสดงหน้า <span className="font-bold text-slate-800 dark:text-slate-200">{batchPage}</span> จาก{' '}
-                  <span className="font-bold text-slate-800 dark:text-slate-200">{batchTotalPages || 1}</span> หน้า
-                  {batchTotalCount > 0 && (
-                    <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-                      (ทั้งหมด {batchTotalCount.toLocaleString()} รายการ)
-                    </span>
-                  )}
-                </div>
-
-                {batchTotalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-slate-300 dark:text-slate-600">|</span>
-                    <span className="text-slate-600 dark:text-slate-400 font-medium">ไปที่หน้า:</span>
-                    <CustomSelect
-                      value={batchPage}
-                      onChange={(e) => setBatchPage(Number(e.target.value))}
-                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700"
-                    >
-                      {Array.from({ length: batchTotalPages }, (_, i) => i + 1).map((p) => (
-                        <option key={p} value={p}>
-                          หน้า {p}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={batchPage <= 1}
-                  onClick={() => setBatchPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 cursor-pointer"
-                  title="หน้าก่อนหน้า"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  disabled={batchPage >= batchTotalPages}
-                  onClick={() => setBatchPage((p) => Math.min(batchTotalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700 cursor-pointer"
-                  title="หน้าถัดไป"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+              <TablePagination
+                total={batchTotalCount}
+                page={batchPage}
+                pageSize={batchPageSize}
+                onPageChange={setBatchPage}
+                onPageSizeChange={(newSize) => {
+                  setBatchPageSize(newSize);
+                  setBatchPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
             </div>
           </div>
         </div>
@@ -2271,44 +2187,18 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <span>แสดง</span>
-                <CustomSelect
-                  value={adjustmentsPageSize}
-                  onChange={(e) => {
-                    setAdjustmentsPageSize(Number(e.target.value));
-                    setAdjustmentsPage(1);
-                  }}
-                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
-                >
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={200}>200</option>
-                </CustomSelect>
-                <span>แถวต่อหน้า</span>
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-                  (แสดง {adjustments.length} จากทั้งหมด {adjustmentsTotalCount} รายการ - หน้า {adjustmentsPage} / {adjustmentsTotalPages})
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={adjustmentsPage <= 1}
-                  onClick={() => setAdjustmentsPage((p) => Math.max(1, p - 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  disabled={adjustmentsPage >= adjustmentsTotalPages}
-                  onClick={() => setAdjustmentsPage((p) => Math.min(adjustmentsTotalPages, p + 1))}
-                  className="p-1.5 rounded-lg border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer dark:hover:bg-slate-800/40 dark:border-slate-700 dark:text-slate-400"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+              <TablePagination
+                total={adjustmentsTotalCount}
+                page={adjustmentsPage}
+                pageSize={adjustmentsPageSize}
+                onPageChange={setAdjustmentsPage}
+                onPageSizeChange={(newSize) => {
+                  setAdjustmentsPageSize(newSize);
+                  setAdjustmentsPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 200]}
+              />
             </div>
           </div>
         </div>
@@ -3129,70 +3019,34 @@ function DailyAttendanceContent() {
 
             {/* Footer Pagination */}
             <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3 text-xs dark:border-slate-700">
-              <div className="flex items-center gap-3">
-                <span className="text-slate-500 dark:text-slate-400">
-                  แสดงหน้า <strong className="font-bold text-slate-800 dark:text-slate-200">{batchRecordPage}</strong> จาก{' '}
-                  <strong className="font-bold text-slate-800 dark:text-slate-200">{batchRecordTotalPages || 1}</strong> หน้า
-                  {batchRecordTotalCount > 0 && ` (ทั้งหมด ${batchRecordTotalCount.toLocaleString()} รายการ)`}
-                </span>
-
-                {batchRecordTotalPages > 1 && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-slate-300">|</span>
-                    <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">ไปที่หน้า:</span>
-                    <CustomSelect
-                      value={batchRecordPage}
-                      onChange={(e) => {
-                        const targetP = Number(e.target.value);
-                        setBatchRecordPage(targetP);
-                        loadBatchRecords(selectedBatchForReview.id, targetP, batchRecordPageSize, batchRecordSearch);
-                      }}
-                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
-                    >
-                      {Array.from({ length: batchRecordTotalPages }, (_, i) => i + 1).map((p) => (
-                        <option key={p} value={p}>
-                          หน้า {p}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  disabled={batchRecordPage <= 1}
-                  onClick={() => {
-                    const nextP = batchRecordPage - 1;
-                    setBatchRecordPage(nextP);
+              <TablePagination
+                total={batchRecordTotalCount}
+                page={batchRecordPage}
+                pageSize={batchRecordPageSize}
+                onPageChange={(nextP) => {
+                  setBatchRecordPage(nextP);
+                  if (selectedBatchForReview) {
                     loadBatchRecords(selectedBatchForReview.id, nextP, batchRecordPageSize, batchRecordSearch);
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-900"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  ย้อนกลับ
-                </button>
-                <button
-                  disabled={batchRecordPage >= batchRecordTotalPages}
-                  onClick={() => {
-                    const nextP = batchRecordPage + 1;
-                    setBatchRecordPage(nextP);
-                    loadBatchRecords(selectedBatchForReview.id, nextP, batchRecordPageSize, batchRecordSearch);
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 dark:text-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 transition-colors flex items-center gap-1 font-medium cursor-pointer disabled:cursor-not-allowed dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-300 dark:bg-slate-900"
-                >
-                  ถัดไป
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSelectedBatchForReview(null)}
-                  className="ml-2"
-                >
-                  ปิด
-                </Button>
-              </div>
+                  }
+                }}
+                onPageSizeChange={(newSize) => {
+                  setBatchRecordPageSize(newSize);
+                  setBatchRecordPage(1);
+                  if (selectedBatchForReview) {
+                    loadBatchRecords(selectedBatchForReview.id, 1, newSize, batchRecordSearch);
+                  }
+                }}
+                pageSizeOptions={[10, 20, 50, 100]}
+                className="flex-1"
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedBatchForReview(null)}
+                className="ml-2"
+              >
+                ปิด
+              </Button>
             </div>
           </div>
         </ModalShell>

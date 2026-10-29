@@ -2,8 +2,8 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { TabBar, type TabBarItem } from '@/components/ui';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { TabBar, type TabBarItem, TablePagination } from '@/components/ui';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import AccessDenied from '@/components/common/AccessDenied';
@@ -151,6 +151,8 @@ export default function ReportsPage() {
   const [selectedDivision, setSelectedDivision] = useState<number | 'ALL'>('ALL');
   const [selectedDepartment, setSelectedDepartment] = useState<number | 'ALL'>('ALL');
   const [headcountData, setHeadcountData] = useState<DailyHeadcountSummary | null>(null);
+  const [headcountPage, setHeadcountPage] = useState(1);
+  const [headcountPageSize, setHeadcountPageSize] = useState(10);
   const [isLoadingHeadcount, setIsLoadingHeadcount] = useState(false);
   const headcountPhase = useLoadPhase(isLoadingHeadcount);
   const [isExportingHeadcount, setIsExportingHeadcount] = useState(false);
@@ -163,6 +165,8 @@ export default function ReportsPage() {
   const [latenessDepartment, setLatenessDepartment] = useState<number | 'ALL'>('ALL');
   const [latenessSearch, setLatenessSearch] = useState<string>('');
   const [latenessData, setLatenessData] = useState<MonthlyLatenessReport | null>(null);
+  const [latenessPage, setLatenessPage] = useState(1);
+  const [latenessPageSize, setLatenessPageSize] = useState(10);
   const [isLoadingLateness, setIsLoadingLateness] = useState(false);
   const latenessPhase = useLoadPhase(isLoadingLateness);
   const [isExportingLateness, setIsExportingLateness] = useState(false);
@@ -192,6 +196,8 @@ export default function ReportsPage() {
   const [turnoverDivision, setTurnoverDivision] = useState<number | 'ALL'>('ALL');
   const [turnoverDepartment, setTurnoverDepartment] = useState<number | 'ALL'>('ALL');
   const [turnoverData, setTurnoverData] = useState<MonthlyTurnoverSummary | null>(null);
+  const [turnoverPage, setTurnoverPage] = useState(1);
+  const [turnoverPageSize, setTurnoverPageSize] = useState(10);
   const [isLoadingTurnover, setIsLoadingTurnover] = useState(false);
   const turnoverPhase = useLoadPhase(isLoadingTurnover);
   const [isExportingTurnover, setIsExportingTurnover] = useState(false);
@@ -491,6 +497,27 @@ export default function ReportsPage() {
     currentTaxPage * taxRowsPerPage
   );
 
+  // Paged Headcount Departments
+  const pagedHeadcountDepts = useMemo(() => {
+    if (!headcountData?.departments) return [];
+    const start = (headcountPage - 1) * headcountPageSize;
+    return headcountData.departments.slice(start, start + headcountPageSize);
+  }, [headcountData?.departments, headcountPage, headcountPageSize]);
+
+  // Paged Lateness Items
+  const pagedLatenessItems = useMemo(() => {
+    if (!latenessData?.items) return [];
+    const start = (latenessPage - 1) * latenessPageSize;
+    return latenessData.items.slice(start, start + latenessPageSize);
+  }, [latenessData?.items, latenessPage, latenessPageSize]);
+
+  // Paged Turnover Logs
+  const pagedTurnoverLogs = useMemo(() => {
+    if (!turnoverData?.eventLogs) return [];
+    const start = (turnoverPage - 1) * turnoverPageSize;
+    return turnoverData.eventLogs.slice(start, start + turnoverPageSize);
+  }, [turnoverData?.eventLogs, turnoverPage, turnoverPageSize]);
+
   return (
     <div className="space-y-6 pb-12">
       {/* ─────────────────────────────────────────────────────────────
@@ -728,7 +755,8 @@ export default function ReportsPage() {
                 ไม่พบข้อมูลแผนกตามตัวกรองที่เลือก
               </div>
             ) : (
-              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <>
+                <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <table className="table-standard w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
@@ -746,7 +774,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {headcountData.departments.map((dept) => (
+                    {pagedHeadcountDepts.map((dept) => (
                       <tr key={dept.departmentId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         <td className="py-3 px-4 font-medium text-slate-900 dark:text-slate-100 sticky left-0 bg-white z-[1]">
                           {dept.departmentName}
@@ -796,6 +824,20 @@ export default function ReportsPage() {
                   </tbody>
                 </table>
               </div>
+              <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+                <TablePagination
+                  total={headcountData.departments.length}
+                  page={headcountPage}
+                  pageSize={headcountPageSize}
+                  onPageChange={setHeadcountPage}
+                  onPageSizeChange={(newSize) => {
+                    setHeadcountPageSize(newSize);
+                    setHeadcountPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                />
+              </div>
+              </>
             )}
           </div>
         </div>
@@ -975,7 +1017,8 @@ export default function ReportsPage() {
                 ไม่พบข้อมูลพนักงานตามเงื่อนไขที่เลือก
               </div>
             ) : (
-              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <>
+                <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <table className="table-standard w-full min-w-[850px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
@@ -990,7 +1033,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {latenessData.items.map((item) => (
+                    {pagedLatenessItems.map((item) => (
                       <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         <td className="py-3 px-4 sticky left-0 bg-white z-[1]">
                           <span className="font-semibold text-slate-900 dark:text-slate-100 block dark:text-slate-100">{item.employeeName}</span>
@@ -1056,6 +1099,20 @@ export default function ReportsPage() {
                   </tbody>
                 </table>
               </div>
+              <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+                <TablePagination
+                  total={latenessData.items.length}
+                  page={latenessPage}
+                  pageSize={latenessPageSize}
+                  onPageChange={setLatenessPage}
+                  onPageSizeChange={(newSize) => {
+                    setLatenessPageSize(newSize);
+                    setLatenessPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                />
+              </div>
+              </>
             )}
           </div>
         </div>
@@ -1284,25 +1341,7 @@ export default function ReportsPage() {
                 <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
                   ทั้งหมด {filteredTaxItems.length} รายการ
                 </span>
-                {/* Rows per page */}
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  <span>แสดง</span>
-                  <CustomSelect
-                    value={taxRowsPerPage}
-                    onChange={(e) => {
-                      setTaxRowsPerPage(Number(e.target.value));
-                      setTaxPage(1);
-                    }}
-                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs bg-slate-50 focus:outline-none dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                    <option value={200}>200</option>
-                  </CustomSelect>
-                  <span>แถว</span>
-                </div>
+                
               </div>
             </div>
 
@@ -1421,30 +1460,19 @@ export default function ReportsPage() {
                   )}
                 </table>
 
-                {/* Pagination Controls */}
-                {totalTaxPages > 1 && (
-                  <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 dark:border-slate-700/60 dark:text-slate-400">
-                    <span>
-                      หน้า {currentTaxPage} จาก {totalTaxPages} (ทั้งหมด {filteredTaxItems.length} แถว)
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setTaxPage((p) => Math.max(1, p - 1))}
-                        disabled={currentTaxPage <= 1}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 dark:hover:bg-slate-800/40 dark:border-slate-700"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setTaxPage((p) => Math.min(totalTaxPages, p + 1))}
-                        disabled={currentTaxPage >= totalTaxPages}
-                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 dark:hover:bg-slate-800/40 dark:border-slate-700"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+                  <TablePagination
+                    total={filteredTaxItems.length}
+                    page={currentTaxPage}
+                    pageSize={taxRowsPerPage}
+                    onPageChange={setTaxPage}
+                    onPageSizeChange={(newSize) => {
+                      setTaxRowsPerPage(newSize);
+                      setTaxPage(1);
+                    }}
+                    pageSizeOptions={[10, 20, 50, 100, 200]}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -1757,7 +1785,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {turnoverData.eventLogs.map((ev, idx) => (
+                    {pagedTurnoverLogs.map((ev, idx) => (
                       <tr key={idx} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
                         <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">{ev.eventDate}</td>
                         <td className="py-3 px-4">
@@ -1784,6 +1812,19 @@ export default function ReportsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+              <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+                <TablePagination
+                  total={turnoverData.eventLogs.length}
+                  page={turnoverPage}
+                  pageSize={turnoverPageSize}
+                  onPageChange={setTurnoverPage}
+                  onPageSizeChange={(newSize) => {
+                    setTurnoverPageSize(newSize);
+                    setTurnoverPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100]}
+                />
               </div>
             </div>
           )}

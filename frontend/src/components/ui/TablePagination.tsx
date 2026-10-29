@@ -4,7 +4,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 
-export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 200];
 
 interface Props {
   total: number;
@@ -13,6 +13,8 @@ interface Props {
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   pageSizeOptions?: number[];
+  className?: string;
+  totalLabel?: string;
 }
 
 /** แสดงเลขหน้าแบบย่อ เช่น 1 … 4 5 6 … 12 */
@@ -36,20 +38,26 @@ export const TablePagination: React.FC<Props> = ({
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = PAGE_SIZE_OPTIONS,
+  className = '',
+  totalLabel = 'รายการ',
 }) => {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const current = Math.min(Math.max(1, page), totalPages);
-  const from = total === 0 ? 0 : (current - 1) * pageSize + 1;
-  const to = Math.min(current * pageSize, total);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-xs text-slate-500 dark:text-slate-400">
+    <div className={`flex flex-wrap items-center justify-between gap-3 pt-3 text-xs text-slate-500 dark:text-slate-400 ${className}`}>
+      {/* ซ้ายล่าง: เลือกจำนวนแถวต่อหน้า + สรุปจำนวนทั้งหมด */}
       <div className="flex items-center gap-2">
         <span>แสดง</span>
         <CustomSelect
           value={pageSize}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#0B2046] shadow-2xs cursor-pointer"
+          onChange={(e) => {
+            onPageSizeChange(Number(e.target.value));
+            onPageChange(1);
+          }}
+          numbered={false}
+          size="sm"
+          className="w-[68px] min-w-[64px]"
         >
           {pageSizeOptions.map((n) => (
             <option key={n} value={n}>
@@ -59,23 +67,26 @@ export const TablePagination: React.FC<Props> = ({
         </CustomSelect>
         <span>แถวต่อหน้า</span>
         <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-          ({from}–{to} จากทั้งหมด {total} รายการ)
+          (ทั้งหมด {total.toLocaleString()} {totalLabel})
         </span>
       </div>
 
-      <div className="flex items-center gap-1">
+      {/* ขวาล่าง: Pagination Buttons */}
+      <div className="flex items-center gap-1.5">
         <button
           type="button"
-          onClick={() => onPageChange(current - 1)}
+          onClick={() => onPageChange(Math.max(1, current - 1))}
           disabled={current <= 1}
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+          title="หน้าก่อนหน้า"
           aria-label="หน้าก่อนหน้า"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3.5 h-3.5" />
         </button>
+
         {getPageItems(current, totalPages).map((item, idx) =>
           item === '…' ? (
-            <span key={`gap-${idx}`} className="w-7 text-center text-slate-400">
+            <span key={`gap-${idx}`} className="w-7 text-center text-slate-400 dark:text-slate-500">
               …
             </span>
           ) : (
@@ -83,24 +94,26 @@ export const TablePagination: React.FC<Props> = ({
               key={item}
               type="button"
               onClick={() => onPageChange(item)}
-              className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+              className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 item === current
-                  ? 'bg-[#0B2046] text-white font-bold'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
               {item}
             </button>
           )
         )}
+
         <button
           type="button"
-          onClick={() => onPageChange(current + 1)}
+          onClick={() => onPageChange(Math.min(totalPages, current + 1))}
           disabled={current >= totalPages}
-          className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+          title="หน้าถัดไป"
           aria-label="หน้าถัดไป"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

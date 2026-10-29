@@ -23,6 +23,7 @@ import {
 import { AuditLogItem, UserAccount } from '@/types/settings';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { Button } from '@/components/ui/Button';
 
 interface AuditLogTabProps {
@@ -727,64 +728,18 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
       )}
 
       {/* 4. Footer Pagination */}
-      <div className="py-2.5 px-3.5 bg-white rounded-xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-slate-600">
-          <span>แสดง</span>
-          <CustomSelect
-            value={pageSize}
-            onChange={(e) => {
-              const newSize = Number(e.target.value);
-              if (onPageSizeChange) onPageSizeChange(newSize);
-              onPageChange(1);
-            }}
-            className="px-2 py-0.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 shadow-2xs"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value={200}>200</option>
-          </CustomSelect>
-          <span>แถวต่อหน้า</span>
-          <span className="text-slate-400 text-[11px]">
-            (ทั้งหมด {totalCount.toLocaleString()} รายการ)
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-            disabled={currentPage <= 1}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-
-          {getPageNumbers().map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onPageChange(p)}
-              className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold ${
-                currentPage === p
-                  ? 'bg-primary text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-
-          <button
-            type="button"
-            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage >= totalPages}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-2 shadow-2xs">
+        <TablePagination
+          total={totalCount}
+          page={currentPage}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+          onPageSizeChange={(newSize) => {
+            if (onPageSizeChange) onPageSizeChange(newSize);
+            onPageChange(1);
+          }}
+          pageSizeOptions={[10, 20, 50, 100, 200]}
+        />
       </div>
     </div>
   );
