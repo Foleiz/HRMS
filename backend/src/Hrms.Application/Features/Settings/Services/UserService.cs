@@ -117,9 +117,19 @@ public class UserService : IUserService
             .GroupBy(r => r.EmployeeId)
             .Select(g => new { EmployeeId = g.Key, LastDay = g.Max(r => r.RequestedLastWorkingDate) })
             .ToDictionaryAsync(x => x.EmployeeId, x => x.LastDay, cancellationToken);
+        // กลับเข้าทำงานใหม่ (มีสัญญา ACTIVE ที่เริ่มหลังวันสุดท้าย) → ไม่ใช่คนลาออกแล้ว ไม่ต้องแสดงป้าย
+        // ใช้เงื่อนไขเดียวกับงานปิดบัญชีอัตโนมัติ (ResignationOffboarding)
+        var resignedIds = resignDates.Keys.ToList();
+        var newContracts = await _dbContext.EmploymentContracts
+            .AsNoTracking()
+            .Where(c => resignedIds.Contains(c.EmployeeId) && c.Status == "ACTIVE")
+            .Select(c => new { c.EmployeeId, c.StartDate })
+            .ToListAsync(cancellationToken);
         foreach (var d in dtos)
         {
-            if (resignDates.TryGetValue(d.EmployeeId, out var lastDay)) d.ResignationLastWorkingDate = lastDay;
+            if (!resignDates.TryGetValue(d.EmployeeId, out var lastDay)) continue;
+            var rehired = newContracts.Any(c => c.EmployeeId == d.EmployeeId && c.StartDate > lastDay);
+            if (!rehired) d.ResignationLastWorkingDate = lastDay;
         }
 
         var result = new PagedResult<UserAccountDto>(dtos, totalCount, page, pageSize);
