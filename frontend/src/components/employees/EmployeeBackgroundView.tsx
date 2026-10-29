@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
 import { GraduationCap, Briefcase, ShieldCheck, Landmark } from 'lucide-react';
@@ -10,17 +10,38 @@ const formatDate = (v?: string | null) => {
   return isNaN(d.getTime()) ? v : d.toLocaleDateString('th-TH', { month: 'short', year: 'numeric' });
 };
 
-const duration = (start?: string | null, end?: string | null) => {
-  if (!start) return '';
-  const s = new Date(start);
-  const e = end ? new Date(end) : new Date();
-  if (isNaN(s.getTime()) || isNaN(e.getTime())) return '';
-  const months = (e.getFullYear() - s.getFullYear()) * 12 + (e.getMonth() - s.getMonth());
-  if (months <= 0) return '';
-  const y = Math.floor(months / 12);
-  const m = months % 12;
-  return [y ? `${y} ปี` : '', m ? `${m} เดือน` : ''].filter(Boolean).join(' ');
-};
+/** แถวข้อมูลแบบ 2 คอลัมน์ (ซ้าย: ชื่อหัวข้อ, ขวา: ค่า) */
+function KeyValueRow({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between px-5 py-3.5 text-xs">
+      <span className="text-slate-500 dark:text-slate-400 font-medium shrink-0">{label}</span>
+      <span
+        className={`font-semibold text-slate-800 dark:text-slate-200 text-right ${
+          mono ? 'font-mono' : ''
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/** กล่องการ์ดมีขอบมนและเส้นคั่นแต่ละแถว */
+function SectionCard({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-2xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden">
+      {children}
+    </div>
+  );
+}
 
 /** แท็บการศึกษา & ประวัติการทำงาน ในหน้ารายละเอียดพนักงาน */
 export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
@@ -28,62 +49,70 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
   const works = employee.workExperiences ?? [];
 
   return (
-    <div className="pt-6 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+    <div className="pt-6 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150">
+      {/* ─── ประวัติการศึกษา ─── */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <GraduationCap className="w-4 h-4" />
           </span>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ประวัติการศึกษา</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ประวัติการศึกษา</h3>
         </div>
+
         {educations.length === 0 ? (
-          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 py-6 text-center bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">ยังไม่มีข้อมูล</p>
+          <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+            ยังไม่มีข้อมูล
+          </div>
         ) : (
-          <ol className="relative border-l border-slate-200 dark:border-slate-700 ml-2 space-y-5">
+          <div className="space-y-4">
             {educations.map((e, i) => (
-              <li key={e.id ?? i} className="ml-4">
-                <span className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full bg-primary ring-4 ring-white" />
-                <p className="font-bold text-slate-800 dark:text-slate-200">
-                  {e.educationLevel}
-                  {e.major ? ` · ${e.major}` : ''}
-                </p>
-                <p className="text-slate-600 dark:text-slate-400 mt-0.5">{e.institution}</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">
-                  {e.graduationYear ? `สำเร็จปี ${e.graduationYear}` : 'ไม่ระบุปีที่สำเร็จ'}
-                  {e.gpa ? ` · เกรดเฉลี่ย ${Number(e.gpa).toFixed(2)}` : ''}
-                </p>
-              </li>
+              <SectionCard key={e.id ?? i}>
+                <KeyValueRow label="ระดับการศึกษา" value={e.educationLevel || '-'} />
+                <KeyValueRow label="สถาบัน" value={e.institution || '-'} />
+                <KeyValueRow label="สาขาวิชา" value={e.major || '-'} />
+                <KeyValueRow label="สำเร็จการศึกษาปี" value={e.graduationYear ? String(e.graduationYear) : '-'} />
+                <KeyValueRow label="เกรดเฉลี่ย" value={e.gpa != null ? Number(e.gpa).toFixed(2) : '-'} />
+              </SectionCard>
             ))}
-          </ol>
+          </div>
         )}
       </section>
 
-      <section>
-        <div className="flex items-center gap-2 mb-4">
-          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+      {/* ─── ประวัติการทำงาน ─── */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <Briefcase className="w-4 h-4" />
           </span>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ประวัติการทำงาน</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ประวัติการทำงาน</h3>
         </div>
+
         {works.length === 0 ? (
-          <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 py-6 text-center bg-slate-50 dark:bg-slate-950 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">ยังไม่มีข้อมูล</p>
+          <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+            ยังไม่มีข้อมูล
+          </div>
         ) : (
-          <ol className="relative border-l border-slate-200 dark:border-slate-700 ml-2 space-y-5">
+          <div className="space-y-4">
             {works.map((w, i) => (
-              <li key={w.id ?? i} className="ml-4">
-                <span className="absolute -left-1.5 mt-1 w-3 h-3 rounded-full bg-slate-400 ring-4 ring-white" />
-                <p className="font-bold text-slate-800 dark:text-slate-200">{w.positionName || 'ไม่ระบุตำแหน่ง'}</p>
-                <p className="text-slate-600 dark:text-slate-400 mt-0.5">{w.companyName}</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">
-                  {formatDate(w.startDate)} – {w.endDate ? formatDate(w.endDate) : 'ปัจจุบัน'}
-                  {duration(w.startDate, w.endDate) ? ` · ${duration(w.startDate, w.endDate)}` : ''}
-                  {w.lastSalary ? ` · เงินเดือนล่าสุด ${Number(w.lastSalary).toLocaleString('th-TH')} บาท` : ''}
-                </p>
-                {w.jobDescription && <p className="text-slate-600 dark:text-slate-400 mt-1 whitespace-pre-line break-words">{w.jobDescription}</p>}
-                {w.leavingReason && <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">เหตุผลที่ออก: {w.leavingReason}</p>}
-              </li>
+              <SectionCard key={w.id ?? i}>
+                <KeyValueRow label="ตำแหน่ง" value={w.positionName || '-'} />
+                <KeyValueRow label="บริษัท" value={w.companyName || '-'} />
+                <KeyValueRow
+                  label="ช่วงเวลา"
+                  value={
+                    w.startDate
+                      ? `${formatDate(w.startDate)} – ${w.endDate ? formatDate(w.endDate) : 'ปัจจุบัน'}`
+                      : '-'
+                  }
+                />
+                <KeyValueRow
+                  label="เงินเดือนล่าสุด"
+                  value={w.lastSalary ? `${Number(w.lastSalary).toLocaleString('th-TH')} บาท` : '-'}
+                />
+                <KeyValueRow label="เหตุผลที่ออก" value={w.leavingReason || 'ไม่มี'} />
+              </SectionCard>
             ))}
-          </ol>
+          </div>
         )}
       </section>
     </div>
@@ -92,35 +121,57 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
 
 /** แท็บภาษี & ประกันสังคม ในหน้ารายละเอียดพนักงาน */
 export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
-  const row = (label: string, value: React.ReactNode) => (
-    <div>
-      <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px]">{label}</p>
-      <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{value}</p>
-    </div>
-  );
   return (
-    <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 text-xs animate-in fade-in duration-150">
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+    <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150">
+      {/* ─── ประกันสังคม ─── */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-4 h-4" />
           </span>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ประกันสังคม</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ประกันสังคม</h3>
         </div>
-        {row('เลขประกันสังคม', <span className="font-mono">{employee.socialSecurity?.socialSecurityNoMasked || '-'}</span>)}
-        {row('โรงพยาบาลตามสิทธิ์', employee.socialSecurity?.hospitalName || '-')}
+
+        <SectionCard>
+          <KeyValueRow
+            label="เลขประกันสังคม"
+            value={employee.socialSecurity?.socialSecurityNoMasked || '-'}
+            mono
+          />
+          <KeyValueRow
+            label="โรงพยาบาลตามสิทธิ์"
+            value={employee.socialSecurity?.hospitalName || '-'}
+          />
+        </SectionCard>
       </section>
-      <section className="space-y-4">
-        <div className="flex items-center gap-2">
-          <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+
+      {/* ─── ข้อมูลลดหย่อนภาษี ─── */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <Landmark className="w-4 h-4" />
           </span>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ข้อมูลลดหย่อนภาษี</h3>
+          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ข้อมูลลดหย่อนภาษี</h3>
         </div>
-        {row('คู่สมรสมีเงินได้', employee.spouseHasIncome ? 'มี' : 'ไม่มี / ไม่ระบุ')}
-        {row('จำนวนบุตรที่ใช้ลดหย่อน', `${employee.numberOfChildren ?? 0} คน`)}
-        {row('จำนวนบิดามารดาที่ใช้ลดหย่อน', `${employee.parentDeductionCount ?? 0} คน`)}
-        {row('จำนวนผู้พิการ/ทุพพลภาพที่ดูแล', `${employee.disabilityDeductionCount ?? 0} คน`)}
+
+        <SectionCard>
+          <KeyValueRow
+            label="คู่สมรสมีเงินได้"
+            value={employee.spouseHasIncome ? 'มี' : 'ไม่มี / ไม่ระบุ'}
+          />
+          <KeyValueRow
+            label="จำนวนบุตรที่ใช้ลดหย่อน"
+            value={`${employee.numberOfChildren ?? 0} คน`}
+          />
+          <KeyValueRow
+            label="จำนวนบิดามารดาที่ใช้ลดหย่อน"
+            value={`${employee.parentDeductionCount ?? 0} คน`}
+          />
+          <KeyValueRow
+            label="จำนวนผู้พิการ/ทุพพลภาพที่ดูแล"
+            value={`${employee.disabilityDeductionCount ?? 0} คน`}
+          />
+        </SectionCard>
       </section>
     </div>
   );
