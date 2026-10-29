@@ -156,7 +156,7 @@ export const Navbar: React.FC = () => {
         <button
           onClick={openMobileSidebar}
           title="เปิดเมนู"
-          className="w-9 h-9 rounded-xl bg-[#0B2046] hover:bg-[#081836] text-white flex items-center justify-center transition-all shadow-sm active:scale-95 lg:hidden"
+          className="w-9 h-9 rounded-xl bg-primary hover:bg-primary-hover text-white flex items-center justify-center transition-all shadow-sm active:scale-95 lg:hidden"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -174,7 +174,7 @@ export const Navbar: React.FC = () => {
             }
           }}
           title="ย้อนกลับ"
-          className="w-8 h-8 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white hidden sm:flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer"
+          className="w-8 h-8 rounded-full bg-primary hover:bg-primary-hover text-white hidden sm:flex items-center justify-center transition-all shadow-sm active:scale-95 cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
@@ -251,7 +251,7 @@ export const Navbar: React.FC = () => {
                       return (
                         <span
                           key={r + idx}
-                          className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0B2046]/10 dark:bg-blue-500/20 text-[#0B2046] dark:text-blue-300"
+                          className="px-2 py-0.5 rounded text-[10px] font-semibold bg-primary-soft text-primary dark:text-blue-300"
                         >
                           {displayName}
                         </span>
@@ -296,7 +296,7 @@ export const Navbar: React.FC = () => {
         ) : (
           <Link
             href="/login"
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#0B2046] hover:bg-[#081836] text-white text-xs font-semibold shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary hover:bg-primary-hover text-white text-xs font-semibold shadow-sm transition-colors"
           >
             <LogIn className="w-3.5 h-3.5" />
             เข้าสู่ระบบ

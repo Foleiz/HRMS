@@ -26,7 +26,7 @@ export default function AdminLayout({
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="text-center space-y-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] mx-auto" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
           <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำลังตรวจสอบสิทธิ์การเข้าใช้งาน...</p>
         </div>
       </div>

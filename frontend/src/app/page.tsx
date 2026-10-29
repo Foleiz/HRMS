@@ -112,7 +112,7 @@ export default function HomePage() {
   if (isLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] dark:text-blue-300" aria-label="กำลังตรวจสอบการเข้าสู่ระบบ" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-300" aria-label="กำลังตรวจสอบการเข้าสู่ระบบ" />
       </div>
     );
   }

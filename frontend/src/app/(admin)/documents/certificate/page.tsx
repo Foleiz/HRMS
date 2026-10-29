@@ -140,14 +140,14 @@ export default function CertificatePage() {
                       key={t.id}
                       className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
                         active
-                          ? 'border-2 border-[#0B2046] bg-indigo-50/60 dark:border-blue-400 dark:bg-slate-700/50'
+                          ? 'border-2 border-primary bg-primary-soft dark:border-blue-400 dark:bg-slate-700/50'
                           : 'border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/30 m-px'
                       }`}
                     >
                       <span
                         aria-hidden="true"
                         className={`w-11 h-11 shrink-0 rounded-xl flex items-center justify-center ${
-                          active ? 'bg-[#0B2046] text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
+                          active ? 'bg-primary text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300'
                         }`}
                       >
                         <Icon className="w-5 h-5" />
@@ -162,7 +162,7 @@ export default function CertificatePage() {
                         value={t.id}
                         checked={active}
                         onChange={() => setSelectedTypeId(t.id)}
-                        className="w-4 h-4 shrink-0 accent-[#0B2046]"
+                        className="w-4 h-4 shrink-0 accent-primary"
                       />
                     </label>
                   );
@@ -194,7 +194,7 @@ export default function CertificatePage() {
                       {i < approvalSlots.length - 1 && (
                         <span aria-hidden="true" className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-600" />
                       )}
-                      <span className="w-7 h-7 shrink-0 rounded-full bg-[#0B2046] dark:bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+                      <span className="w-7 h-7 shrink-0 rounded-full bg-primary dark:bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
                         {i + 1}
                       </span>
                       <span className="min-w-0 pt-0.5">

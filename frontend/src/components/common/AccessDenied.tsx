@@ -32,7 +32,7 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
         <button
           type="button"
           onClick={onBackAction}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl transition-all shadow-xs cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-xs cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>{backText}</span>
@@ -40,7 +40,7 @@ export const AccessDenied: React.FC<AccessDeniedProps> = ({
       ) : (
         <Link
           href={backHref}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0B2046] hover:bg-[#112d5e] text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>{backText}</span>

@@ -56,7 +56,7 @@ export default function ProfilePage() {
     return (
       <div className="flex h-[70vh] items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="w-9 h-9 animate-spin text-[#0B2046] mx-auto" />
+          <Loader2 className="w-9 h-9 animate-spin text-primary mx-auto" />
           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">กำลังโหลดข้อมูลโปรไฟล์...</p>
         </div>
       </div>

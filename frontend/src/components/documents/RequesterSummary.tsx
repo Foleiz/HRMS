@@ -28,7 +28,7 @@ export function RequesterSummary({ fullName, positionTitle, departmentName, date
     <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-sm text-slate-600 dark:text-slate-400">
       <span
         aria-hidden="true"
-        className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-[#0B2046] dark:text-slate-100 text-xs font-bold inline-flex items-center justify-center uppercase"
+        className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-primary dark:text-slate-100 text-xs font-bold inline-flex items-center justify-center uppercase"
       >
         {initial}
       </span>

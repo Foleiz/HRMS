@@ -90,12 +90,12 @@ export default function LoginPage() {
       {/* ===== โลโก้มุมซ้ายบน (เหมือน Sidebar) ===== */}
       <header className="relative z-10 px-6 sm:px-10 pt-6">
         <div className="inline-flex items-center gap-3 select-none">
-          <div className="w-10 h-10 rounded-xl bg-[#0B2046] text-white flex items-center justify-center shadow-md shadow-[#0B2046]/25">
+          <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/25">
             <Users className="w-5 h-5" />
           </div>
           <div className="leading-tight">
             <div className="text-[15px] font-bold text-[#0F172A] tracking-tight">Human</div>
-            <div className="text-[15px] font-bold text-[#0B2046] tracking-tight">Resource</div>
+            <div className="text-[15px] font-bold text-primary tracking-tight">Resource</div>
           </div>
         </div>
       </header>
@@ -104,7 +104,7 @@ export default function LoginPage() {
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-10">
         <div className="w-full max-w-[420px] rounded-[28px] border border-white/80 bg-gradient-to-b from-[#DCE8FA] via-[#F4F8FE] to-[#FFFFFF] shadow-[0_24px_60px_-20px_rgba(11,32,70,0.35)] px-6 sm:px-10 pt-10 pb-8">
           {/* ไอคอน */}
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-white shadow-[0_8px_20px_-6px_rgba(11,32,70,0.25)] flex items-center justify-center text-[#0B2046]">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-[#FFFFFF] border border-white shadow-[0_8px_20px_-6px_rgba(11,32,70,0.25)] flex items-center justify-center text-primary">
             <LogIn className="w-6 h-6" />
           </div>
 
@@ -135,7 +135,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="ชื่อผู้ใช้งาน"
-                className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-[#0B2046]/30 focus:ring-4 focus:ring-[#0B2046]/10 transition-all"
+                className="w-full h-12 pl-11 pr-4 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
                 required
               />
             </div>
@@ -152,14 +152,14 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="รหัสผ่าน"
-                className="w-full h-12 pl-11 pr-12 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-[#0B2046]/30 focus:ring-4 focus:ring-[#0B2046]/10 transition-all"
+                className="w-full h-12 pl-11 pr-12 rounded-xl bg-[#EEF2F7] border border-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none focus:bg-[#FFFFFF] focus:border-primary/30 focus:ring-4 focus:ring-primary/10 transition-all"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#94A3B8] hover:text-[#0B2046] transition-colors"
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#94A3B8] hover:text-primary transition-colors"
               >
                 {showPassword ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
@@ -168,7 +168,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-12 mt-3 rounded-xl bg-gradient-to-b from-[#1B3766] to-[#0B2046] text-[#FFFFFF] text-[15px] font-semibold shadow-[0_10px_24px_-8px_rgba(11,32,70,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] hover:from-[#22427A] hover:to-[#0E2852] active:scale-[0.99] transition-all flex items-center justify-center disabled:opacity-60"
+              className="w-full h-12 mt-3 rounded-xl bg-gradient-to-b from-primary-hover to-primary text-[#FFFFFF] text-[15px] font-semibold shadow-[0_10px_24px_-8px_rgba(11,32,70,0.6),inset_0_1px_0_rgba(255,255,255,0.15)] hover:from-[#22427A] hover:to-[#0E2852] active:scale-[0.99] transition-all flex items-center justify-center disabled:opacity-60"
             >
               {isSubmitting ? (
                 <>
@@ -187,7 +187,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowDemo((v) => !v)}
-                className="w-full flex items-center gap-3 text-xs text-[#64748B] hover:text-[#0B2046]"
+                className="w-full flex items-center gap-3 text-xs text-[#64748B] hover:text-primary"
               >
                 <span className="flex-1 border-t border-dotted border-[#CBD5E1]" />
                 <span className="inline-flex items-center gap-1">
@@ -206,7 +206,7 @@ export default function LoginPage() {
                       onClick={() => handleQuickLogin(acc.username, acc.password)}
                       title={`คลิกเพื่อเข้าสู่ระบบเป็น ${acc.label} (${acc.username})`}
                       className={`h-14 px-2.5 py-1.5 rounded-xl border bg-[#FFFFFF] text-left shadow-xs transition-all hover:-translate-y-0.5 hover:shadow-md cursor-pointer active:scale-95 ${
-                        username === acc.username ? 'border-[#0B2046] ring-2 ring-[#0B2046]/15 bg-blue-50/50' : 'border-[#E2E8F0] hover:border-[#0B2046]/30'
+                        username === acc.username ? 'border-primary ring-2 ring-primary/15 bg-blue-50/50' : 'border-[#E2E8F0] hover:border-primary/30'
                       }`}
                     >
                       <div className="text-[12px] font-semibold text-[#0F172A] truncate">{acc.label}</div>

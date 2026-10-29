@@ -64,7 +64,7 @@ export default function MyBenefitsPage() {
   if (isAuthLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-28 text-slate-500 dark:text-slate-400 font-sans">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0B2046] dark:text-cyan-400 mb-2" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-cyan-400 mb-2" />
         <p className="text-xs font-medium">กำลังเตรียมข้อมูลผู้ใช้งาน...</p>
       </div>
     );

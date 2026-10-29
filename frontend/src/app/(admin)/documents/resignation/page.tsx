@@ -34,9 +34,9 @@ import { FormActionBar } from '@/components/documents/FormActionBar';
 const REASON_MAX_LENGTH = 190;
 const LABEL = 'block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2';
 const INPUT =
-  'w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046]';
+  'w-full h-11 px-3.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary focus:border-primary';
 const TEXTAREA =
-  'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-[#0B2046]/20 focus:border-[#0B2046] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
+  'w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm outline-none focus:ring-2 focus:ring-primary focus:border-primary resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]';
 
 // แปลง Date -> string 'YYYY-MM-DD' ตามเวลาท้องถิ่น
 const toInputDate = (d: Date): string => {
@@ -410,7 +410,7 @@ export default function ResignationPage() {
                       onClick={() => setTitlePrefix(p)}
                       className={`h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
                         titlePrefix === p
-                          ? 'bg-white dark:bg-slate-700 text-[#0B2046] dark:text-white font-semibold shadow-xs'
+                          ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-semibold shadow-xs'
                           : 'text-slate-600 dark:text-slate-400 font-medium'
                       }`}
                     >

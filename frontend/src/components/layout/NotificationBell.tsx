@@ -175,7 +175,7 @@ export const NotificationBell: React.FC = () => {
                 type="button"
                 disabled={markingAll}
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-semibold text-[#0B2046] hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
                 {markingAll ? (
                   <Loader2 className="w-3 h-3 animate-spin" />
@@ -191,7 +191,7 @@ export const NotificationBell: React.FC = () => {
           <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
-                <Loader2 className="w-5 h-5 animate-spin text-[#0B2046]" />
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
                 <span>กำลังโหลดการแจ้งเตือน...</span>
               </div>
             ) : notifications.length === 0 ? (
