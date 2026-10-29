@@ -349,7 +349,7 @@ export const AuditLogTab: React.FC<AuditLogTabProps> = ({
             className="h-8.5 px-3.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>ส่งออก (ตามตัวกรอง)</span>
+            <span>ส่งออก</span>
           </button>
         </div>
       </div>
