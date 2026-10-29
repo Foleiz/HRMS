@@ -1196,9 +1196,9 @@ export default function EmployeeDetailView({
                   <span className="w-9 h-9 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
                     <Upload className="w-4 h-4" />
                   </span>
-                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">ลากไฟล์มาวางที่นี่</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    หรือ{' '}
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">ลากไฟล์มาวางที่นี่</span>
+                    {' '}หรือ{' '}
                     <button
                       type="button"
                       onClick={() => sigFileInputRef.current?.click()}
@@ -1206,7 +1206,7 @@ export default function EmployeeDetailView({
                     >
                       เลือกไฟล์จากเครื่อง
                     </button>
-                  </span>
+                  </p>
                 </div>
               ) : (
                 <div className="h-32 rounded-lg border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs text-slate-400">
@@ -1217,7 +1217,7 @@ export default function EmployeeDetailView({
               {canEditSignature && (
                 <p className="flex items-start gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-px" aria-hidden="true" />
-                  <span>รองรับ PNG, JPG ขนาดไม่เกิน 2 MB · แนะนำ PNG พื้นหลังโปร่งใสเพื่อให้ลายเซ็นกลมกลืนกับเอกสาร</span>
+                  <span>รองรับ PNG, JPG ขนาดไม่เกิน 2 MB</span>
                 </p>
               )}
             </div>
