@@ -566,6 +566,91 @@ public class BenefitService : IBenefitService
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<List<BenefitClaimDto>> GetAllClaimsAsync(
+        int? year = null,
+        long? benefitItemId = null,
+        string? search = null,
+        string? status = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _context.EmployeeBenefitClaims
+            .Include(c => c.Employee)
+            .Include(c => c.BenefitItem)
+            .Include(c => c.ApprovedByEmployee)
+            .Include(c => c.ApprovedByUser)
+            .Include(c => c.PayrollPeriod)
+            .AsNoTracking();
+
+        if (year.HasValue)
+        {
+            query = query.Where(c => c.ClaimYear == year.Value);
+        }
+
+        if (benefitItemId.HasValue)
+        {
+            query = query.Where(c => c.BenefitItemId == benefitItemId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status) && status != "ALL")
+        {
+            query = query.Where(c => c.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = search.Trim().ToLower();
+            query = query.Where(c =>
+                c.Employee.EmployeeCode.ToLower().Contains(s) ||
+                (c.Employee.FirstName + " " + c.Employee.LastName).ToLower().Contains(s) ||
+                c.BenefitItem.BenefitName.ToLower().Contains(s) ||
+                (c.RequestNo != null && c.RequestNo.ToLower().Contains(s)) ||
+                (c.ReceiptNumber != null && c.ReceiptNumber.ToLower().Contains(s)) ||
+                (c.ServiceProvider != null && c.ServiceProvider.ToLower().Contains(s))
+            );
+        }
+
+        return await query
+            .OrderByDescending(c => c.ClaimDate)
+            .ThenByDescending(c => c.Id)
+            .Select(c => new BenefitClaimDto
+            {
+                Id = c.Id,
+                EmployeeId = c.EmployeeId,
+                EmployeeCode = c.Employee.EmployeeCode,
+                EmployeeName = ((c.Employee.Prefix ?? "") + " " + c.Employee.FirstName + " " + c.Employee.LastName).Trim(),
+                BenefitItemId = c.BenefitItemId,
+                BenefitCode = c.BenefitItem.BenefitCode,
+                BenefitName = c.BenefitItem.BenefitName,
+                Category = c.BenefitItem.Category,
+                ClaimYear = c.ClaimYear,
+                ClaimDate = c.ClaimDate,
+                Amount = c.Amount,
+                ReceiptNumber = c.ReceiptNumber,
+                ServiceProvider = c.ServiceProvider,
+                Remarks = c.Remarks,
+                AttachmentFileName = c.AttachmentFileName ?? c.FileName,
+                AttachmentUrl = c.AttachmentUrl,
+                Status = c.Status,
+                ApprovedByName = c.ApprovedByEmployee != null
+                    ? ((c.ApprovedByEmployee.Prefix ?? "") + " " + c.ApprovedByEmployee.FirstName + " " + c.ApprovedByEmployee.LastName).Trim()
+                    : (c.ApprovedByUser != null ? c.ApprovedByUser.Username : null),
+                ApprovedAt = c.ApprovedAt,
+                CreatedAt = c.CreatedAt,
+                RequestNo = c.RequestNo,
+                RejectReason = c.RejectReason,
+                FileName = c.FileName,
+                IsSelfRequest = c.RequestedByEmployeeId != null,
+                PaymentStatus = c.PaymentStatus == "IN_PAYROLL" && c.PayrollPeriod != null
+                                && (c.PayrollPeriod.Status == "APPROVED" || c.PayrollPeriod.Status == "PROCESSING"
+                                    || c.PayrollPeriod.Status == "PAID" || c.PayrollPeriod.Status == "CLOSED")
+                    ? "PAID"
+                    : c.PaymentStatus,
+                PayrollPeriodYear = c.PayrollPeriod != null ? (int?)c.PayrollPeriod.Year : null,
+                PayrollPeriodMonth = c.PayrollPeriod != null ? (int?)c.PayrollPeriod.Month : null
+            })
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<BenefitClaimDto> CreateClaimAsync(CreateBenefitClaimRequest request, long? approvedByUserId = null, CancellationToken cancellationToken = default)
     {
         if (request.Amount <= 0)

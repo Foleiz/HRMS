@@ -70,6 +70,20 @@ export const benefitService = {
     return res.data.data;
   },
 
+  // ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการทั้งหมด (สำหรับ HR / ผู้ดูแลระบบ)
+  async getAllClaims(params?: {
+    year?: number;
+    benefitItemId?: number;
+    search?: string;
+    status?: string;
+  }): Promise<import('@/types/benefit').BenefitClaim[]> {
+    const res = await apiClient.get<ApiResponse<import('@/types/benefit').BenefitClaim[]>>(
+      '/benefits/claims',
+      { params }
+    );
+    return res.data.data;
+  },
+
   // บันทึกการขอเบิก/ใช้สิทธิ์สวัสดิการ
   async createClaim(data: import('@/types/benefit').CreateBenefitClaimPayload) {
     const res = await apiClient.post<ApiResponse<import('@/types/benefit').BenefitClaim>>(

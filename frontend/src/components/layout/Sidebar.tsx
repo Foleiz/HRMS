@@ -178,12 +178,14 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        title: 'ยอดสวัสดิการพนักงาน',
+        title: 'สวัสดิการ',
         href: '/benefits/balances',
-        matchPrefix: '/benefits/balances',
+        matchPrefix: '/benefits',
         icon: Gift,
         requiredPermissions: [
           'BENEFIT_BALANCE_VIEW',
+          'BENEFIT_CLAIM_VIEW',
+          'BENEFIT_VIEW',
         ],
       },
       {

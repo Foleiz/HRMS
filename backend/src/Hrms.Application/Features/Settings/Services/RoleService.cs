@@ -60,8 +60,9 @@ public class RoleService : IRoleService
         new("EMP_DOC", "แฟ้มเอกสารพนักงาน", "EMP_DOC", "EMPLOYEE", "พนักงาน", "EMP"),
         new("EMP_HISTORY", "ประวัติการเปลี่ยนแปลง", "EMP_HISTORY", "EMPLOYEE", "พนักงาน", "EMP"),
 
-        // 2.1 ยอดสวัสดิการพนักงาน (BENEFIT_BALANCE)
-        new("BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE", "BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE"),
+        // 2.1 สวัสดิการ (BENEFIT)
+        new("BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE", "BENEFIT", "สวัสดิการ", "BENEFIT"),
+        new("BENEFIT_CLAIM", "ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ", "BENEFIT_CLAIM", "BENEFIT", "สวัสดิการ", "BENEFIT"),
 
         // 3. เงินเดือนของฉัน (MY_SALARY)
         new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "ESS_SALARY", "MY_SALARY", "เงินเดือนของฉัน", "ESS_SALARY"),
@@ -231,7 +232,7 @@ public class RoleService : IRoleService
             }
 
             // Parent permissions for backward compatibility and broad modules
-            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW" };
+            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW" };
             foreach (var pCode in parentCodes)
             {
                 if (!existingPerms.Contains(pCode))

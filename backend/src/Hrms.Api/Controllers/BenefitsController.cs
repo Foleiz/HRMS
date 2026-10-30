@@ -125,6 +125,23 @@ public class BenefitsController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการทั้งหมด (สำหรับ HR / Admin)
+    /// </summary>
+    [HttpGet("claims")]
+    [RequirePermission("BENEFIT_CLAIM_VIEW,BENEFIT_BALANCE_VIEW,BENEFIT_VIEW")]
+    [ProducesResponseType(typeof(ApiResponse<List<BenefitClaimDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<BenefitClaimDto>>>> GetAllClaims(
+        [FromQuery] int? year,
+        [FromQuery] long? benefitItemId,
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        CancellationToken cancellationToken)
+    {
+        var result = await _benefitService.GetAllClaimsAsync(year, benefitItemId, search, status, cancellationToken);
+        return Ok(ApiResponse<List<BenefitClaimDto>>.Ok(result));
+    }
+
+    /// <summary>
     /// ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการของพนักงาน
     /// </summary>
     [HttpGet("claims/{employeeId:long}")]
