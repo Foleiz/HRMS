@@ -723,7 +723,10 @@ export const ApprovalFlowsTab: React.FC = () => {
 
                   {/* Approver display name */}
                   <div className="min-w-0 pr-1">
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      ขั้นตอนที่ {step.stepNo}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
                       {getApproverDisplay(step, employees, roles)}
                     </div>
                   </div>
@@ -961,12 +964,15 @@ export const ApprovalFlowsTab: React.FC = () => {
                             .sort((a, b) => a.stepNo - b.stepNo)
                             .map((step) => (
                               <React.Fragment key={step.id}>
-                                <div className="flex items-center gap-2.5 bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 shadow-2xs shrink-0">
+                                <div className="flex items-center gap-3 bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-4 py-2.5 shadow-2xs shrink-0">
                                   <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                                     {step.stepNo}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                      ขั้นตอนที่ {step.stepNo}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 truncate">
                                       {getApproverDisplay(step, employees, roles)}
                                     </div>
                                   </div>
@@ -1084,7 +1090,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                     {form.steps[editingStepIndex].stepNo}
                   </div>
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    ขั้นตอนที่ {form.steps[editingStepIndex].stepNo}: กำหนดผู้อนุมัติ
+                    ขั้นตอนที่ {form.steps[editingStepIndex].stepNo}
                   </h4>
                 </div>
 
