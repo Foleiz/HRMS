@@ -298,7 +298,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
 
   const borderClass = error
     ? 'border-2 border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/20 text-slate-900 dark:text-slate-100'
-    : 'border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600';
+    : open ? 'border-2 border-[#0B2046] ring-4 ring-[#0B2046]/18 dark:ring-blue-500/30 dark:border-blue-400 bg-blue-50/30 shadow-[0_0_0_3.5px_rgba(11,32,70,0.18)]' : 'border border-[#0B2046] dark:border-blue-500 hover:border-[#0B2046] hover:bg-slate-50/50';
 
   const containerClasses = filterContainerClasses(className);
   const isExplicitWidth =
@@ -322,10 +322,10 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
           disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900' : 'cursor-pointer'
         } dark:text-slate-100 ${buttonClassName}`}
       >
-        <span className={value ? 'text-gray-800 dark:text-slate-200 font-medium' : 'text-gray-400 dark:text-slate-500'}>
+        <span className={value ? 'text-[#0B2046] dark:text-blue-100 font-semibold' : 'text-[#0B2046] dark:text-blue-200 font-medium'}>
           {value ? formatThaiDate(value) : placeholder}
         </span>
-        <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
+        <CalendarIcon className="w-4 h-4 text-[#0B2046] dark:text-blue-300 shrink-0" />
       </button>
 
       {/* Hidden input to support form validation if required */}
@@ -776,16 +776,16 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
         type="button"
         disabled={disabled}
         onClick={handleToggleOpen}
-        className={`w-full flex items-center justify-between ${sizeClasses} border border-gray-200 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 transition-colors ${
+        className={`w-full flex items-center justify-between ${sizeClasses} border border-[#0B2046] dark:border-blue-500 focus:ring-4 focus:ring-[#0B2046]/18 focus:border-[#0B2046] bg-white dark:bg-slate-800 transition-all shadow-2xs ${
           disabled ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-slate-900' : 'cursor-pointer hover:border-gray-300 dark:hover:border-slate-600'
         } dark:text-slate-100 ${buttonClassName}`}
       >
-        <span className={startDate || endDate ? 'text-gray-800 dark:text-slate-200 font-medium' : 'text-gray-400 dark:text-slate-500'}>
+        <span className={startDate || endDate ? 'text-[#0B2046] dark:text-blue-100 font-semibold' : 'text-[#0B2046] dark:text-blue-200 font-medium'}>
           {startDate ? formatThaiDate(startDate) : placeholder}
           <span className="text-gray-300 dark:text-slate-600 mx-1.5">–</span>
           {endDate ? formatThaiDate(endDate) : placeholder}
         </span>
-        <CalendarIcon className="w-4 h-4 text-gray-400 dark:text-slate-500 shrink-0" />
+        <CalendarIcon className="w-4 h-4 text-[#0B2046] dark:text-blue-300 shrink-0" />
       </button>
 
       {open && mounted && createPortal(
