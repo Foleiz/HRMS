@@ -191,7 +191,6 @@ export default function LeaveRequestsApprovalPage() {
   }, [setBreadcrumb]);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<string>('PENDING');
   const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | UnifiedApprovalItem['docType']>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -201,7 +200,7 @@ export default function LeaveRequestsApprovalPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, docTypeFilter, searchTerm]);
+  }, [docTypeFilter, searchTerm]);
 
   // Leave Approval Modals State
   const [selectedForApprove, setSelectedForApprove] = useState<LeaveRequest | null>(null);
@@ -544,10 +543,11 @@ export default function LeaveRequestsApprovalPage() {
 
   const filteredRequests = useMemo(() => {
     return unifiedRequests.filter((item) => {
-      if (docTypeFilter !== 'ALL' && item.docType !== docTypeFilter) {
+      // แสดงเฉพาะเอกสารที่รอการอนุมัติ และถึงคิวเราอนุมัติ และเรายังไม่ได้อนุมัติ
+      if (item.status !== 'PENDING' || !item.isMyTurnToApprove || item.hasAlreadyApproved) {
         return false;
       }
-      if (statusFilter && item.status !== statusFilter && !(statusFilter === 'APPROVED' && item.status === 'ISSUED')) {
+      if (docTypeFilter !== 'ALL' && item.docType !== docTypeFilter) {
         return false;
       }
       if (!searchTerm.trim()) return true;
@@ -562,7 +562,7 @@ export default function LeaveRequestsApprovalPage() {
         item.departmentName?.toLowerCase().includes(q)
       );
     });
-  }, [unifiedRequests, docTypeFilter, statusFilter, searchTerm]);
+  }, [unifiedRequests, docTypeFilter, searchTerm]);
 
   const totalCount = filteredRequests.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -944,12 +944,15 @@ export default function LeaveRequestsApprovalPage() {
 
   // ─── Render ──────────────────────────────────────────────────
 
-  // นับจากทุกประเภทคำขอ (ข้อมูลชุดเดียวกับตาราง) — ไม่ขึ้นกับตัวกรองสถานะ
-  const countStatus = (...statuses: string[]) => unifiedRequests.filter((r) => statuses.includes(r.status)).length;
-  const totalPending = countStatus('PENDING');
-  const totalApproved = countStatus('APPROVED', 'ISSUED');
-  const totalRejected = countStatus('REJECTED');
-  const totalCancelled = countStatus('CANCELLED');
+  // นับจากเอกสารที่รอการอนุมัติจากเรา (แยกตามหมวดหมู่)
+  const pendingForMe = useMemo(
+    () => unifiedRequests.filter((r) => r.status === 'PENDING' && r.isMyTurnToApprove && !r.hasAlreadyApproved),
+    [unifiedRequests]
+  );
+  const totalPendingForMe = pendingForMe.length;
+  const leavePendingCount = pendingForMe.filter((r) => r.docType === 'LEAVE').length;
+  const certPendingCount = pendingForMe.filter((r) => r.docType === 'CERTIFICATE').length;
+  const otherPendingCount = pendingForMe.filter((r) => !['LEAVE', 'CERTIFICATE'].includes(r.docType)).length;
 
   /** เปิดเอกสารของรายการ (ใช้ทั้งปุ่ม "ดูเอกสาร" และเลขที่เอกสาร) */
   const openDocument = (item: UnifiedApprovalItem) => {
@@ -1026,12 +1029,12 @@ export default function LeaveRequestsApprovalPage() {
       {/* Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'รอการอนุมัติ', value: totalPending, color: 'text-amber-600', bg: 'bg-amber-50' },
-          { label: 'อนุมัติแล้ว', value: totalApproved, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-          { label: 'ปฏิเสธแล้ว', value: totalRejected, color: 'text-red-500', bg: 'bg-red-50' },
-          { label: 'ยกเลิกแล้ว', value: totalCancelled, color: 'text-gray-500 dark:text-slate-400', bg: 'bg-gray-50 dark:bg-slate-800' },
+          { label: 'รอคุณอนุมัติทั้งหมด', value: totalPendingForMe, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/20' },
+          { label: 'คำขอลา', value: leavePendingCount, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950/20' },
+          { label: 'หนังสือรับรอง', value: certPendingCount, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950/20' },
+          { label: 'คำขออื่นๆ', value: otherPendingCount, color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-950/20' },
         ].map((s) => (
-          <div key={s.label} className={`${s.bg} rounded-2xl border border-white p-4 shadow-2xs`}>
+          <div key={s.label} className={`${s.bg} rounded-2xl border border-white dark:border-slate-800 p-4 shadow-2xs`}>
             <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
             <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{s.label}</div>
           </div>
@@ -1069,24 +1072,10 @@ export default function LeaveRequestsApprovalPage() {
                 { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
               ]}
             />
-
-            {/* Status filter (ปุ่มกรองสถานะ) */}
-            <CustomSelect
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(String(val))}
-              className="min-w-[150px]"
-              options={[
-                { value: '', label: 'ทุกสถานะ' },
-                { value: 'PENDING', label: 'รอการอนุมัติ' },
-                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                { value: 'REJECTED', label: 'ปฏิเสธแล้ว' },
-                { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
-              ]}
-            />
           </div>
 
           <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
-            พบ {filteredRequests.length} รายการ
+            พบ {filteredRequests.length} รายการที่รอคุณอนุมัติ
           </span>
         </div>
       </div>

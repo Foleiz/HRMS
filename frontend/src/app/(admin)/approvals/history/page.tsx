@@ -38,6 +38,11 @@ import { employeeService } from '@/services/employeeService';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useAuth } from '@/context/AuthContext';
+import { TablePagination } from '@/components/ui';
+import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
+import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
+import { ApprovalActionModal } from '@/components/approvals/ApprovalActionModal';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -49,6 +54,13 @@ const toTs = (v?: string | null) => {
   if (!v) return 0;
   const ts = new Date(v).getTime();
   return Number.isNaN(ts) ? 0 : ts;
+};
+
+const formatTime = (d?: string | null) => {
+  if (!d) return '-';
+  const t = new Date(d);
+  if (isNaN(t.getTime())) return d;
+  return t.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
 };
 
 const formatDate = (d?: string | null) => {
@@ -89,7 +101,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 export interface UnifiedHistoryItem {
   id: string;
   rawId: number | string;
-  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT';
+  docType: 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT' | 'TIME_ADJUST';
   docTypeName: string;
   requestNo: string;
   employeeName: string;
@@ -98,6 +110,7 @@ export interface UnifiedHistoryItem {
   subType: string;
   details: string;
   status: string;
+  hasAlreadyApproved?: boolean;
   approvedByName?: string | null;
   actionAt?: string | null;
   leaveRaw?: LeaveRequest;
@@ -105,6 +118,7 @@ export interface UnifiedHistoryItem {
   resignationRaw?: ResignationRequest;
   generalRaw?: GeneralDocumentRequest;
   benefitRaw?: BenefitClaimRequest;
+  timeAdjustRaw?: AttendanceAdjustment;
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -112,12 +126,16 @@ export interface UnifiedHistoryItem {
 export default function ApprovalHistoryPage() {
   const { setBreadcrumb } = useBreadcrumb();
 
+  const { user } = useAuth();
+
   const [leaveHistory, setLeaveHistory] = useState<LeaveRequest[]>([]);
   const [certHistory, setCertHistory] = useState<CertificateRequest[]>([]);
   const [resignHistory, setResignHistory] = useState<ResignationRequest[]>([]);
   const [generalHistory, setGeneralHistory] = useState<GeneralDocumentRequest[]>([]);
   const [benefitHistory, setBenefitHistory] = useState<BenefitClaimRequest[]>([]);
+  const [timeAdjustHistory, setTimeAdjustHistory] = useState<AttendanceAdjustment[]>([]);
   const [benefitPreview, setBenefitPreview] = useState<BenefitClaimRequest | null>(null);
+  const [timeAdjustReview, setTimeAdjustReview] = useState<AttendanceAdjustment | null>(null);
   const [loading, setLoading] = useState(true);
   const historyPhase = useLoadPhase(loading);
 
@@ -129,11 +147,19 @@ export default function ApprovalHistoryPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('');
-  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT'>('ALL');
+  const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | 'LEAVE' | 'CERTIFICATE' | 'RESIGNATION' | 'GENERAL' | 'BENEFIT' | 'TIME_ADJUST'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
   const { sortField, sortDirection, handleSort } = useTableSort<HistorySortField>();
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, docTypeFilter, searchTerm, departmentFilter, yearFilter]);
 
   // Timeline Modal State (Leave)
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
@@ -160,12 +186,11 @@ export default function ApprovalHistoryPage() {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      const statuses = statusFilter
-        ? [statusFilter]
-        : ['APPROVED', 'REJECTED', 'CANCELLED'];
-
-      const [leaveResults, certResults, resignResults, genResults, benefitResults] = await Promise.all([
-        Promise.all(statuses.map((s) => leaveService.getLeaveRequests({ status: s, pageSize: 200 }))),
+      const [leaveResults, certResults, resignResults, genResults, benefitResults, timeAdjResults] = await Promise.all([
+        leaveService.getLeaveRequests({ pageSize: 500 }).catch((err) => {
+          console.error('Failed to fetch leave history', err);
+          return [] as LeaveRequest[];
+        }),
         certificateService.getAllRequests().catch((err) => {
           console.error('Failed to fetch certificate history', err);
           return [] as CertificateRequest[];
@@ -182,44 +207,30 @@ export default function ApprovalHistoryPage() {
           console.error('Failed to fetch benefit claim history', err);
           return [] as BenefitClaimRequest[];
         }),
+        attendanceAdjustmentService
+          .getAdjustments({ status: 'ALL', pageSize: 500 })
+          .then((r) => r.items ?? [])
+          .catch((err) => {
+            console.error('Failed to fetch time adjustment history', err);
+            return [] as AttendanceAdjustment[];
+          }),
       ]);
 
-      const allLeave = leaveResults.flat();
-
-      const nonPendingCerts = certResults.filter((c) => {
-        if (statusFilter) {
-          return c.status === statusFilter || (statusFilter === 'APPROVED' && c.status === 'ISSUED');
-        }
-        return c.status !== 'PENDING';
-      });
-
-      const nonPendingResigns = resignResults.filter((r) => {
-        if (statusFilter) {
-          return r.status === statusFilter;
-        }
-        return r.status !== 'PENDING';
-      });
-
-      const nonPendingGeneral = genResults.filter((g) => {
-        if (statusFilter) {
-          return g.status === statusFilter;
-        }
-        return g.status !== 'PENDING';
-      });
-
-      setLeaveHistory(allLeave);
-      setCertHistory(nonPendingCerts);
-      setResignHistory(nonPendingResigns);
-      setGeneralHistory(nonPendingGeneral);
-      setBenefitHistory(
-        benefitResults.filter((b) => (statusFilter ? b.status === statusFilter : b.status !== 'PENDING'))
-      );
+      // เอกสารที่อยู่ในประวัติ:
+      // 1) เอกสารที่เสร็จสิ้นแล้ว (APPROVED, ISSUED, REJECTED, CANCELLED)
+      // 2) หรือเอกสารที่ยัง PENDING แต่เราได้อนุมัติไปแล้ว (hasAlreadyApproved === true)
+      setLeaveHistory(leaveResults.filter((r) => r.status !== 'PENDING' || r.hasAlreadyApproved));
+      setCertHistory(certResults.filter((c) => c.status !== 'PENDING' || c.hasAlreadyApproved));
+      setResignHistory(resignResults.filter((r) => r.status !== 'PENDING' || r.hasAlreadyApproved));
+      setGeneralHistory(genResults.filter((g) => g.status !== 'PENDING' || g.hasAlreadyApproved));
+      setBenefitHistory(benefitResults.filter((b) => b.status !== 'PENDING' || b.hasAlreadyApproved));
+      setTimeAdjustHistory(timeAdjResults.filter((t) => t.status !== 'PENDING'));
     } catch (err) {
       console.error('Failed to fetch approval history', err);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     fetchHistory();
@@ -249,6 +260,7 @@ export default function ApprovalHistoryPage() {
         subType: r.leaveTypeName || 'การลา',
         details: `${rangeStr}${daysStr}${r.reason ? ` • ${r.reason}` : ''}`,
         status: r.status,
+        hasAlreadyApproved: !!r.hasAlreadyApproved,
         approvedByName: r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
         actionAt: r.approvedAt ?? r.cancelledAt ?? r.submittedAt ?? r.updatedAt ?? r.createdAt ?? null,
         leaveRaw: r,
@@ -274,6 +286,7 @@ export default function ApprovalHistoryPage() {
             : c.certificateName || 'หนังสือรับรอง',
         details: c.purpose ? `วัตถุประสงค์: ${c.purpose}` : 'ขอหนังสือรับรอง',
         status: c.status,
+        hasAlreadyApproved: !!c.hasAlreadyApproved,
         approvedByName: c.approvedByName ?? (c.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
         actionAt: c.approvedAt ?? c.issuedAt ?? c.requestedAt ?? null,
         certRaw: c,
@@ -295,6 +308,7 @@ export default function ApprovalHistoryPage() {
         subType: r.reasonCategory || r.reason || 'ลาออก',
         details: `วันทำงานวันสุดท้าย: ${effectiveDateStr}${r.handoverNotes ? ` • มอบหมายงาน: ${r.handoverNotes}` : ''}`,
         status: r.status,
+        hasAlreadyApproved: !!r.hasAlreadyApproved,
         approvedByName: r.status === 'REJECTED'
           ? (r.rejectedByName ?? '-')
           : (r.approvedByName ?? (r.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-')),
@@ -317,6 +331,7 @@ export default function ApprovalHistoryPage() {
         subType: g.documentType || 'เอกสารทั่วไป',
         details: g.purpose ? `วัตถุประสงค์: ${g.purpose}` : 'คำร้องเอกสารทั่วไป',
         status: g.status,
+        hasAlreadyApproved: !!g.hasAlreadyApproved,
         approvedByName: g.approvedByName ?? (g.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
         actionAt: g.approvedAt ?? g.submittedAt ?? null,
         generalRaw: g,
@@ -337,9 +352,31 @@ export default function ApprovalHistoryPage() {
         subType: b.benefitName,
         details: `${b.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บาท`,
         status: b.status,
+        hasAlreadyApproved: !!b.hasAlreadyApproved,
         approvedByName: b.approvedByName ?? (b.status === 'CANCELLED' ? 'ระบบ / ผู้ยื่น' : '-'),
         actionAt: b.approvedAt ?? b.submittedAt ?? null,
         benefitRaw: b,
+      });
+    });
+
+    // 6. คำขอปรับเวลาเข้า-ออก
+    timeAdjustHistory.forEach((t) => {
+      list.push({
+        id: `TA-${t.id}`,
+        rawId: t.id,
+        docType: 'TIME_ADJUST',
+        docTypeName: 'คำขอปรับเวลาเข้า-ออก',
+        requestNo: `TA-${t.id}`,
+        employeeName: t.employeeName,
+        employeeCode: t.employeeCode,
+        departmentName: t.departmentName || '-',
+        subType: 'ปรับเวลา',
+        details: `${formatDate(t.workDate)} • เข้า ${formatTime(t.adjustedClockIn)} ออก ${formatTime(t.adjustedClockOut)}${t.reason ? ` • ${t.reason}` : ''}`,
+        status: t.status,
+        hasAlreadyApproved: false,
+        approvedByName: t.reviewedByEmployeeName ?? '-',
+        actionAt: t.reviewedAt ?? t.createdAt ?? null,
+        timeAdjustRaw: t,
       });
     });
 
@@ -350,7 +387,7 @@ export default function ApprovalHistoryPage() {
       if (timeA !== timeB) return timeB - timeA;
       return String(b.rawId).localeCompare(String(a.rawId));
     });
-  }, [leaveHistory, certHistory, resignHistory, generalHistory, benefitHistory]);
+  }, [leaveHistory, certHistory, resignHistory, generalHistory, benefitHistory, timeAdjustHistory]);
 
   // ตัวเลือก แผนก / ปี พ.ศ. จากข้อมูลจริงในประวัติ
   const departmentOptions = useMemo(() => {
@@ -377,6 +414,15 @@ export default function ApprovalHistoryPage() {
     const list = unifiedHistory.filter((item) => {
       if (docTypeFilter !== 'ALL' && item.docType !== docTypeFilter) {
         return false;
+      }
+      if (statusFilter) {
+        if (statusFilter === 'APPROVED') {
+          if (item.status !== 'APPROVED' && item.status !== 'ISSUED' && !item.hasAlreadyApproved) {
+            return false;
+          }
+        } else if (item.status !== statusFilter) {
+          return false;
+        }
       }
       if (departmentFilter !== 'ALL' && item.departmentName !== departmentFilter) return false;
       if (yearFilter !== 'ALL') {
@@ -407,7 +453,15 @@ export default function ApprovalHistoryPage() {
           return compareSortValues(a[sortField] as string | null | undefined, b[sortField] as string | null | undefined, sortDirection);
       }
     });
-  }, [unifiedHistory, docTypeFilter, departmentFilter, yearFilter, searchTerm, sortField, sortDirection]);
+  }, [unifiedHistory, docTypeFilter, statusFilter, departmentFilter, yearFilter, searchTerm, sortField, sortDirection]);
+
+  const totalCount = filteredHistory.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedHistory = useMemo(() => {
+    const startIdx = (safePage - 1) * pageSize;
+    return filteredHistory.slice(startIdx, startIdx + pageSize);
+  }, [filteredHistory, safePage, pageSize]);
 
   const handleOpenLeavePreview = (req: LeaveRequest) => {
     const reqStart = req.startDate ?? req.startDatetime ?? '';
@@ -484,6 +538,8 @@ export default function ApprovalHistoryPage() {
       setIsGeneralPreviewOpen(true);
     } else if (item.docType === 'BENEFIT') {
       setBenefitPreview(item.benefitRaw!);
+    } else if (item.docType === 'TIME_ADJUST') {
+      setTimeAdjustReview(item.timeAdjustRaw!);
     }
   };
 
@@ -520,6 +576,7 @@ export default function ApprovalHistoryPage() {
                 { value: 'RESIGNATION', label: 'คำขอลาออก' },
                 { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
                 { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
+                { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
               ]}
             />
 
@@ -590,8 +647,11 @@ export default function ApprovalHistoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredHistory.map((item) => {
-                  const statusConf = STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
+                {paginatedHistory.map((item) => {
+                  const isPendingApprovedByMe = item.status === 'PENDING' && item.hasAlreadyApproved;
+                  const statusConf = isPendingApprovedByMe
+                    ? { label: 'อนุมัติแล้ว (รอขั้นถัดไป)', color: 'bg-blue-50 text-blue-700 border-blue-200', icon: <Clock className="w-3.5 h-3.5" /> }
+                    : STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
 
                   return (
                     <tr key={item.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
@@ -637,6 +697,12 @@ export default function ApprovalHistoryPage() {
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-100">
                             <FileText className="w-3.5 h-3.5 text-teal-500" />
                             เบิกสวัสดิการ
+                          </span>
+                        )}
+                        {item.docType === 'TIME_ADJUST' && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-cyan-50 text-cyan-700 border border-cyan-100">
+                            <Clock className="w-3.5 h-3.5 text-cyan-500" />
+                            ปรับเวลาเข้า-ออก
                           </span>
                         )}
                       </td>
@@ -688,6 +754,23 @@ export default function ApprovalHistoryPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {filteredHistory.length > 0 && (
+          <div className="border-t border-slate-100 dark:border-slate-700/80 px-4 py-3 bg-white dark:bg-slate-800">
+            <TablePagination
+              total={filteredHistory.length}
+              page={safePage}
+              pageSize={pageSize}
+              pageSizeOptions={[10, 20, 50, 100]}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         )}
       </div>
@@ -781,6 +864,61 @@ export default function ApprovalHistoryPage() {
         onClose={() => setBenefitPreview(null)}
         onDone={() => setBenefitPreview(null)}
       />
+
+      {/* Modal คำขอปรับเวลาเข้า-ออก (ดูอย่างเดียว) */}
+      {timeAdjustReview && (
+        <ApprovalActionModal
+          isOpen={!!timeAdjustReview}
+          onClose={() => setTimeAdjustReview(null)}
+          iconType="time_adjust"
+          title="คำขอปรับเวลาเข้า-ออก"
+          code={`TA-${timeAdjustReview.id}`}
+          requesterName={`${timeAdjustReview.employeeName}${timeAdjustReview.departmentName ? ` (${timeAdjustReview.departmentName})` : ''}`}
+          categoryLabel="การปรับเวลาเข้า-ออก"
+          heroTitle={`วันที่ ${formatDate(timeAdjustReview.workDate)}${timeAdjustReview.shiftName ? ` · ${timeAdjustReview.shiftName}` : ''}`}
+          heroSubtitle={`ขอปรับเป็น: เข้า ${formatTime(timeAdjustReview.adjustedClockIn)} – ออก ${formatTime(timeAdjustReview.adjustedClockOut)}`}
+          detailRows={[
+            {
+              label: 'เวลาเดิม',
+              value: `เข้า ${formatTime(timeAdjustReview.originalClockIn)} – ออก ${formatTime(timeAdjustReview.originalClockOut)}`,
+            },
+            ...(timeAdjustReview.reason
+              ? [
+                  {
+                    label: 'เหตุผล',
+                    value: timeAdjustReview.reason,
+                  },
+                ]
+              : []),
+            {
+              label: 'สถานะ',
+              value:
+                timeAdjustReview.status === 'APPROVED'
+                  ? 'อนุมัติแล้ว'
+                  : timeAdjustReview.status === 'REJECTED'
+                    ? 'ปฏิเสธแล้ว'
+                    : timeAdjustReview.status,
+            },
+            ...(timeAdjustReview.reviewedByEmployeeName
+              ? [
+                  {
+                    label: 'ผู้พิจารณา',
+                    value: timeAdjustReview.reviewedByEmployeeName,
+                  },
+                ]
+              : []),
+            ...(timeAdjustReview.reviewedAt
+              ? [
+                  {
+                    label: 'วันที่พิจารณา',
+                    value: formatDateTime(timeAdjustReview.reviewedAt),
+                  },
+                ]
+              : []),
+          ]}
+          variant="view"
+        />
+      )}
     </div>
   );
 }
