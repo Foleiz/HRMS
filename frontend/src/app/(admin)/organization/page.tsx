@@ -1251,7 +1251,6 @@ export default function OrganizationPage() {
                   value={filterDeptId}
                   onChange={(val) => setFilterDeptId(String(val))}
                   placeholder="ทุกแผนก"
-                  className="min-w-[150px]"
                   options={[
                     { value: 'ALL', label: 'ทุกแผนก' },
                     ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
@@ -1360,7 +1359,6 @@ export default function OrganizationPage() {
                   value={filterDeptId}
                   onChange={(val) => setFilterDeptId(String(val))}
                   placeholder="ทุกแผนก"
-                  className="min-w-[150px]"
                   options={[
                     { value: 'ALL', label: 'ทุกแผนก' },
                     ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
@@ -1464,17 +1462,15 @@ export default function OrganizationPage() {
         {activeTab === 'levels' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                <div className="relative max-w-sm w-full">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                  />
-                </div>
+              <div className="relative max-w-sm w-full">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                />
               </div>
 
               {canCreatePos && (
@@ -1568,8 +1564,8 @@ export default function OrganizationPage() {
         {activeTab === 'benefits' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full sm:w-auto">
-                <div className="relative max-w-sm w-full">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
+                <div className="relative flex-1">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
                   <input
                     type="text"
@@ -1584,7 +1580,6 @@ export default function OrganizationPage() {
                   value={filterBenefitCategory}
                   onChange={(val) => setFilterBenefitCategory(String(val))}
                   placeholder="ทุกหมวดหมู่สวัสดิการ"
-                  className="min-w-[170px]"
                   options={[
                     { value: 'ALL', label: 'ทุกหมวดหมู่สวัสดิการ' },
                     ...Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => ({
@@ -1975,19 +1970,19 @@ export default function OrganizationPage() {
 
         {/* TAB: COMPANY BANK ACCOUNTS (Payroll) */}
         {activeTab === 'bank-accounts' && (
-          <div className="space-y-6">
-            {/* Header / Actions Banner */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100 dark:border-slate-700/60">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 rounded-xl bg-blue-50 text-primary">
-                    <Landmark className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-tight dark:text-slate-100">บัญชีธนาคารบริษัท (สำหรับจ่ายเงินเดือน)</h3>
-                  </div>
-                </div>
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="relative max-w-sm w-full">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                />
               </div>
+
               {canCreateCompany && (
                 <Button onClick={() => handleOpenBankAccountModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
                   เพิ่มบัญชีธนาคาร
@@ -1995,60 +1990,36 @@ export default function OrganizationPage() {
               )}
             </div>
 
-            {/* Search Filter */}
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-1 w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Bank Accounts Table */}
-            {filteredBankAccounts.length === 0 ? (
-              <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 dark:border-slate-700">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400 dark:bg-slate-800 dark:text-slate-500 dark:text-slate-400">
-                  <Landmark className="w-6 h-6" />
-                </div>
-                <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1 dark:text-slate-200">
-                  {searchQuery ? 'ไม่พบข้อมูลบัญชีธนาคารที่ตรงกับคำค้นหา' : 'ยังไม่มีข้อมูลบัญชีธนาคารบริษัท'}
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-4 dark:text-slate-400">
-                  {searchQuery ? 'ลองค้นหาด้วยคำอื่น หรือล้างคำค้นหา' : 'เพิ่มบัญชีธนาคารของบริษัทเพื่อใช้เป็นบัญชีต้นทางในการโอนจ่ายเงินเดือนพนักงาน'}
-                </p>
-                {!searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => handleOpenBankAccountModal()}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary-hover transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    เพิ่มบัญชีแรก
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-sm">
-                <table className="table-standard w-full min-w-[700px] text-left border-collapse text-xs whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
-                      <th className="py-3 px-4">ธนาคาร</th>
-                      <th className="py-3 px-4">เลขที่บัญชี</th>
-                      <th className="py-3 px-4">ชื่อบัญชี</th>
-                      <th className="py-3 px-4 text-center">บัญชีจ่ายเงินเดือน</th>
-                      <th className="py-3 px-4 text-center">สถานะ</th>
-                      <th className="py-3 px-4 text-right">จัดการ</th>
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
+                <thead className="bg-primary text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3.5 px-4 whitespace-nowrap">ธนาคาร</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">เลขที่บัญชี</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">ชื่อบัญชี</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">บัญชีจ่ายเงินเดือน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                        กำลังโหลดข้อมูลบัญชีธนาคาร...
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
-                    {paginate(filteredBankAccounts).map((acc) => (
+                  ) : filteredBankAccounts.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                        ไม่พบข้อมูลบัญชีธนาคาร
+                      </td>
+                    </tr>
+                  ) : (
+                    paginate(filteredBankAccounts).map((acc) => (
                       <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3.5 px-4">
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-primary shrink-0 font-bold text-xs">
                               {acc.bankCode || 'BK'}
@@ -2059,15 +2030,13 @@ export default function OrganizationPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-3.5 px-4">
-                          <span className="font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-100/80 px-2.5 py-1 rounded-md border border-slate-200 dark:text-slate-200 dark:bg-slate-800/80 dark:border-slate-700">
-                            {acc.accountNumber}
-                          </span>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                          {acc.accountNumber}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium dark:text-slate-300">
+                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
                           {acc.accountName || '-'}
                         </td>
-                        <td className="py-3.5 px-4 text-center">
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
                           {acc.isPrimaryPayrollAccount ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs dark:bg-emerald-900/20 dark:text-emerald-400">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -2084,57 +2053,38 @@ export default function OrganizationPage() {
                             </button>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${
-                              acc.status === 'ACTIVE'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200'
-                            }`}
-                          >
-                            {acc.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับการใช้งาน'}
-                          </span>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <ActiveStatus active={acc.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ระงับการใช้งาน" />
                         </td>
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
                           {canEditCompany ? (
-                            <div className="inline-flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenBankAccountModal(acc)}
-                                className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer dark:text-slate-400"
-                                title="แก้ไขข้อมูลบัญชี"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </button>
-                              {/* บัญชีหลักปิดใช้งานไม่ได้ (ต้องตั้งบัญชีอื่นเป็นบัญชีหลักก่อน) / บัญชีที่ปิดแล้วเปิดใหม่ได้ผ่านปุ่มแก้ไข */}
+                            <RowActions>
+                              <RowActionButton action="edit" onClick={() => handleOpenBankAccountModal(acc)} />
                               {acc.isPrimaryPayrollAccount ? (
                                 <span
                                   className="p-1.5 text-slate-300 dark:text-slate-600 cursor-not-allowed"
                                   title="บัญชีหลักปิดใช้งานไม่ได้ — ตั้งบัญชีอื่นเป็นบัญชีหลักก่อน"
                                 >
-                                  <PowerOff className="w-3.5 h-3.5" />
+                                  <PowerOff className="w-4 h-4" />
                                 </span>
-                              ) : acc.status === 'ACTIVE' ? (
-                                <button
-                                  type="button"
+                              ) : (
+                                <RowActionButton
+                                  action="delete"
                                   onClick={() => handleConfirmDelete(acc.id, `${acc.bankName} (${acc.accountNumber})`, 'bank-account')}
-                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                                   title="ปิดใช้งานบัญชี"
-                                >
-                                  <PowerOff className="w-3.5 h-3.5" />
-                                </button>
-                              ) : null}
-                            </div>
+                                />
+                              )}
+                            </RowActions>
                           ) : (
                             <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
                           )}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
             {filteredBankAccounts.length > 0 && renderPagination(filteredBankAccounts.length)}
           </div>
         )}
