@@ -323,16 +323,11 @@ export default function PayrollScheduleTab({
             <div className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center border border-blue-100 dark:border-blue-800/60 shrink-0">
               <CreditCard className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">วิธีการจ่ายเงินเดือนหลัก</h3>
-                <span className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full">
-                  วิธีหลักขององค์กร
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                กำหนดวิธีจ่ายเงินเดือนหลักเมื่อรอบได้รับอนุมัติจาก CEO
-              </p>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">วิธีการจ่ายเงินเดือนหลัก</h3>
+              <span className="text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-full">
+                วิธีหลักขององค์กร
+              </span>
             </div>
           </div>
         </div>
