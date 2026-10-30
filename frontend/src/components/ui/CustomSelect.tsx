@@ -376,8 +376,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
   return (
     <div
-      className={`relative ${isFullWidth ? 'w-full block' : 'inline-block'} ${
-        !hasCustomWidth ? defaultMinWidth : ''
+      className={`relative ${isFullWidth ? 'w-full block' : 'inline-block shrink-0'} ${
+        !hasCustomWidth ? `${defaultMinWidth} w-auto max-w-xs sm:max-w-md` : ''
       } ${containerClasses}`}
     >
       {/* Hidden input for form submission if name is provided */}
@@ -391,14 +391,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         title={title}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-[#0B2046] dark:border-blue-500 flex items-center justify-between gap-2 transition-all duration-200 text-left shadow-2xs ${
+        className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-[#0B2046] dark:border-blue-500 whitespace-nowrap flex items-center justify-between gap-2.5 transition-all duration-200 text-left shadow-2xs ${
           isOpen
             ? 'border-[#0B2046] dark:border-blue-400 ring-4 ring-[#0B2046]/18 dark:ring-blue-500/30 bg-blue-50/40 dark:bg-slate-800/90 shadow-[0_0_0_3.5px_rgba(11,32,70,0.18)]'
             : 'hover:border-[#0B2046] hover:bg-slate-50/60 dark:hover:bg-slate-700/60 focus:outline-none focus:ring-4 focus:ring-[#0B2046]/15 focus:border-[#0B2046]'
         } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700' : 'cursor-pointer'} ${buttonClassName}`}
       >
         <span
-          className={`truncate font-medium text-[#0B2046] dark:text-blue-100 ${
+          title={selectedOption ? selectedOption.label : placeholder}
+          className={`truncate whitespace-nowrap font-medium text-[#0B2046] dark:text-blue-100 ${
             selectedOption && selectedOption.value !== '' && selectedOption.value !== 'ALL'
               ? 'font-semibold'
               : 'font-medium'

@@ -135,7 +135,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           {/* กล่องค้นหา (Search Input) */}
           <div className="p-2.5 border-b border-slate-100 dark:border-slate-700/60 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/70">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-[#0B2046] dark:text-blue-400 absolute left-3 pointer-events-none" />
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
