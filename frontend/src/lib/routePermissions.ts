@@ -187,7 +187,7 @@ export const ROUTE_RULES: RouteRule[] = [
   },
   {
     matchPrefix: '/master',
-    title: 'ข้อมูลหลัก (Master Data)',
+    title: 'ข้อมูลหลัก',
     requiredPermissions: ['MASTER_DATA_VIEW'],
   },
   {
