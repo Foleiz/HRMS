@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
+import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
 export interface SelectOption {
   value: string | number;
@@ -259,9 +260,11 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   title,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const { shouldRender: shouldRenderMenu, isActive: isMenuActive } = useAnimatedMount(isOpen, 150);
 
   // Resolve options from prop or children
   const resolvedOptions: SelectOption[] = React.useMemo(() => {
@@ -294,7 +297,8 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     const rect = triggerRef.current.getBoundingClientRect();
     const dropdownHeight = Math.min(resolvedOptions.length * 40 + 16, 260);
     const spaceBelow = window.innerHeight - rect.bottom;
-    const openUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+    const isUp = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+    setOpenUpward(isUp);
 
     const style: React.CSSProperties = {
       position: 'fixed',
@@ -303,7 +307,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       maxWidth: 'calc(100vw - 16px)',
     };
 
-    if (openUpward) {
+    if (isUp) {
       style.bottom = `${Math.max(8, window.innerHeight - rect.top + 6)}px`;
       style.maxHeight = `${Math.max(120, rect.top - 16)}px`;
     } else {
@@ -321,7 +325,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen && !shouldRenderMenu) return;
     updatePosition();
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
@@ -387,7 +391,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         title={title}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-2 transition-all text-left shadow-2xs ${
+        className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between gap-2 transition-all duration-200 text-left shadow-2xs active:scale-[0.98] ${
           isOpen
             ? 'border-[#0B2046] dark:border-blue-500 ring-2 ring-[#0B2046]/10 dark:ring-blue-500/20'
             : 'hover:border-slate-300 dark:hover:border-slate-600'
@@ -403,18 +407,24 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-400 shrink-0 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-[#0B2046] dark:text-blue-400' : ''
+          className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-400 shrink-0 transition-transform duration-200 ease-in-out ${
+            isOpen ? 'rotate-180 text-[#0B2046] dark:text-blue-400' : 'rotate-0'
           }`}
         />
       </button>
 
       {/* Floating Dropdown Menu (Portal-like Fixed View) */}
-      {isOpen && (
+      {shouldRenderMenu && (
         <div
           ref={menuRef}
           style={menuStyle}
-          className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-y-auto py-1 animate-in fade-in zoom-in-95 duration-150"
+          className={`bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-y-auto py-1 transition-all duration-150 ease-out ${
+            openUpward ? 'origin-bottom' : 'origin-top'
+          } ${
+            isMenuActive
+              ? 'opacity-100 scale-100 translate-y-0'
+              : `opacity-0 scale-95 pointer-events-none ${openUpward ? 'translate-y-1' : '-translate-y-1'}`
+          }`}
         >
           {resolvedOptions.map((opt, idx) => {
             const isSelected = String(opt.value) === String(value);

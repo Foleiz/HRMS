@@ -417,35 +417,35 @@ export const Sidebar: React.FC = () => {
   const sidebarContent = (
     <>
       {/* 1. Header: Logo & System Name */}
-      <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all ${isCollapsed && isDesktop ? 'justify-center px-0' : 'justify-between px-5'}`}>
-        {(!isCollapsed || !isDesktop) && (
+      <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all duration-300 ease-in-out ${isCollapsed && isDesktop ? 'justify-center px-0' : 'justify-between px-5'}`}>
+        <div className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed && isDesktop ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'}`}>
           <Link href="/" onClick={handleSelectMenu} className="flex items-center gap-3 overflow-hidden">
             {/* Logo Badge Icon (3 avatars in navy square) */}
-            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0 transition-transform duration-200 hover:scale-105">
               <Users className="w-5 h-5" />
             </div>
 
-            <div className="leading-tight select-none">
+            <div className="leading-tight select-none whitespace-nowrap">
               <div className="text-[15px] font-bold text-slate-900 dark:text-slate-100 tracking-tight">Human</div>
               <div className="text-[15px] font-bold text-primary dark:text-blue-400 tracking-tight">Resource</div>
             </div>
           </Link>
-        )}
+        </div>
 
         {/* Desktop: Toggle Collapse Button / Mobile: Close Button */}
         {isDesktop ? (
           <button
             onClick={toggleSidebar}
             title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
-            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
+            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 active:scale-90 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all duration-200 shrink-0 cursor-pointer"
           >
-            {isCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            <PanelLeftOpen className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180 text-primary' : 'rotate-0'}`} />
           </button>
         ) : (
           <button
             onClick={closeMobileSidebar}
             title="ปิดเมนู"
-            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors shrink-0"
+            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 active:scale-90 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all duration-200 shrink-0 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -453,22 +453,24 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* 2. Search Input */}
-      {(!isCollapsed || !isDesktop) && (
-        <div className="px-4 pt-4 pb-2">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 dark:text-slate-400">
-              <Search className="w-4 h-4" />
-            </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ค้นหาเมนู..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-            />
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          isCollapsed && isDesktop ? 'max-h-0 opacity-0 pointer-events-none py-0' : 'max-h-16 opacity-100 px-4 pt-4 pb-2'
+        }`}
+      >
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500">
+            <Search className="w-4 h-4" />
           </div>
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="ค้นหาเมนู..."
+            className="w-full pl-9 pr-3 py-2 bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
         </div>
-      )}
+      </div>
 
       {/* 3. Navigation Menu Items Grouped by Category */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
@@ -481,12 +483,17 @@ export const Sidebar: React.FC = () => {
         {filteredGroups.map((group, groupIndex) => (
           <div key={group.category} className="space-y-1">
             {/* Category Header Label */}
-            {(!isCollapsed || !isDesktop) ? (
-              <div className="px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider select-none">
-                {group.category}
-              </div>
-            ) : (
-              groupIndex > 0 && <div className="my-2 border-t border-slate-100 dark:border-slate-700/80 mx-2" />
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden whitespace-nowrap select-none ${
+                isCollapsed && isDesktop
+                  ? 'max-h-0 opacity-0 pointer-events-none'
+                  : 'max-h-8 opacity-100 px-3 pt-2 pb-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider'
+              }`}
+            >
+              {group.category}
+            </div>
+            {isCollapsed && isDesktop && groupIndex > 0 && (
+              <div className="my-2 border-t border-slate-100 dark:border-slate-700/80 mx-2 transition-all duration-300" />
             )}
 
             {/* Menu Items */}
@@ -500,14 +507,20 @@ export const Sidebar: React.FC = () => {
                   href={resolveItemHref(item)}
                   onClick={handleSelectMenu}
                   title={isCollapsed && isDesktop ? item.title : undefined}
-                  className={`flex items-center gap-3.5 px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                  className={`flex items-center px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ease-out active:scale-[0.98] ${
                     active
                       ? 'bg-primary text-white shadow-xs font-semibold'
-                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900'
-                  } ${isCollapsed && isDesktop ? 'justify-center px-0 py-2.5' : ''}`}
+                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 hover:translate-x-0.5'
+                  } ${isCollapsed && isDesktop ? 'justify-center px-0 py-2.5' : 'gap-3.5'}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 ${active ? 'text-white' : 'text-slate-500'}`} />
-                  {(!isCollapsed || !isDesktop) && <span className="truncate">{item.title}</span>}
+                  <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-200 ${active ? 'text-white scale-105' : 'text-slate-500'}`} />
+                  <span
+                    className={`truncate transition-all duration-300 ease-in-out whitespace-nowrap ${
+                      isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0'
+                    }`}
+                  >
+                    {item.title}
+                  </span>
                 </Link>
               );
             })}

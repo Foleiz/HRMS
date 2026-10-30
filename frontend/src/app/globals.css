@@ -407,3 +407,66 @@ html.dark .refresh-indicator__bar::before {
     opacity: 0.6;
   }
 }
+
+/* =========================================================================
+   Universal Menu, Dropdown, Filter, and Popover Animations
+   ========================================================================= */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdownFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+
+@keyframes dropdownFadeInUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdownFadeOutUp {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+}
+
+.animate-menu-in {
+  animation: dropdownFadeIn 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-menu-out {
+  animation: dropdownFadeOut 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.animate-menu-up-in {
+  animation: dropdownFadeInUp 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-menu-up-out {
+  animation: dropdownFadeOutUp 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}

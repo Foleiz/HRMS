@@ -344,7 +344,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
         <div
           ref={popoverRef}
           style={popoverStyle}
-          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-in fade-in zoom-in-95 duration-100"
+          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-menu-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header: เลื่อนเดือน + ตัวเลือกเดือน/ปี */}
@@ -792,7 +792,7 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
         <div
           ref={popoverRef}
           style={popoverStyle}
-          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-in fade-in zoom-in-95 duration-100"
+          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-menu-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
