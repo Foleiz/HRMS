@@ -51,20 +51,15 @@ export default function PayrollScheduleTab({
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Banner & Header */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center shrink-0 shadow-2xs">
             <CalendarClock className="w-6 h-6" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">กำหนดวันตัดรอบและจ่ายเงิน</h2>
-              <span className="text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
-                นำไปใช้สร้างรอบอัตโนมัติ
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              กำหนดช่วงเวลาคำนวณเงินเดือนประจำรอบ กำหนดวันจ่ายเงิน และวันตัดรอบเบิกสวัสดิการ เพื่อให้ระบบสร้างรอบเงินเดือนประจำเดือนให้อัตโนมัติในคลิกเดียว โดยไม่ต้องกรอกวันเริ่ม-สิ้นสุดซ้ำซ้อนในทุกๆ เดือน
-            </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">กำหนดวันตัดรอบและจ่ายเงิน</h2>
+            <span className="text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2.5 py-0.5 rounded-full">
+              นำไปใช้สร้างรอบอัตโนมัติ
+            </span>
           </div>
         </div>
 
