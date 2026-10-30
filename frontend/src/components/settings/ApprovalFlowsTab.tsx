@@ -536,7 +536,7 @@ export const ApprovalFlowsTab: React.FC = () => {
   const renderInlineFlowEditor = (isNew: boolean, existingFlow?: ApprovalFlow) => (
     <div
       key={isNew ? 'flow-editor-new' : `flow-editor-${existingFlow?.id}`}
-      className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-[#0B2046] dark:border-blue-500 ring-4 ring-[#0B2046]/10 dark:ring-blue-500/20 p-5 lg:p-6 shadow-md space-y-5 animate-in fade-in duration-200"
+      className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 lg:p-6 shadow-sm space-y-5 animate-in fade-in duration-200"
     >
       {/* Header */}
       <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-700/60">
