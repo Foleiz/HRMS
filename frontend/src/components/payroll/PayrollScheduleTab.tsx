@@ -5,9 +5,6 @@ import {
   CalendarClock,
   Save,
   CheckCircle2,
-  Sparkles,
-  Info,
-  Clock,
   RotateCcw,
   Building2,
   Banknote,
@@ -97,7 +94,7 @@ export default function PayrollScheduleTab({
       {/* Main Settings Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Card 1: ช่วงเวลาคำนวณรอบเงินเดือน (Calculation Window) */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs flex flex-col justify-between space-y-5">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
               <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
@@ -205,15 +202,10 @@ export default function PayrollScheduleTab({
               </div>
             </div>
           </div>
-
-          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-100 dark:border-slate-700/60 text-[11px] text-slate-500 flex items-start gap-2">
-            <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <span>ระบบจะนำช่วงเวลานี้ไปคำนวณฐานเงินเดือน สถิติการมาทำงาน และรายการได้/หักประจำงวด</span>
-          </div>
         </div>
 
         {/* Card 2: วันกำหนดจ่ายเงินเดือน (Payment Date) */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs flex flex-col justify-between space-y-5">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
               <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-xs">
@@ -261,15 +253,10 @@ export default function PayrollScheduleTab({
               </label>
             </div>
           </div>
-
-          <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-800/60 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
-            <Info className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <span>วันกำหนดจ่ายเงินนี้จะถูกนำไปใช้ในไฟล์โอนเงินธนาคาร และแสดงในสลิปเงินเดือนของพนักงาน</span>
-          </div>
         </div>
 
         {/* Card 3: วันตัดรอบเงินเบิกสวัสดิการ (Benefit Claim Cutoff) */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs flex flex-col justify-between space-y-5">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-6 shadow-xs">
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-700/80">
               <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs">
@@ -330,11 +317,6 @@ export default function PayrollScheduleTab({
                 </label>
               </div>
             </div>
-          </div>
-
-          <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 rounded-xl border border-amber-200/60 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2">
-            <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <span>คำขอเบิกสวัสดิการที่อนุมัติหลังวันตัดรอบนี้ จะถูกยกยอดไปจ่ายในรอบเงินเดือนถัดไปโดยอัตโนมัติ</span>
           </div>
         </div>
       </div>
