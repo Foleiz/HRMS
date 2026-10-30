@@ -203,17 +203,11 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
 
   return (
     <div className="space-y-6">
-      {/* Top Controls: Filter Year & Record Button */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-700/60">
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Gift className="w-4 h-4 text-primary dark:text-cyan-400" />
-            ระบบติดตามการใช้สิทธิ์และโควตาสวัสดิการ
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            ตรวจสอบยอดการใช้สิทธิ์ วงเงินคงเหลือ และสถานะการเบิกจ่ายสวัสดิการรายบุคคล
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <Gift className="w-4 h-4 text-primary dark:text-cyan-400" />
+          ระบบติดตามการใช้สิทธิ์และโควตาสวัสดิการ
+        </h3>
 
         <div className="flex items-center gap-2.5 self-end sm:self-auto">
           {/* Year Selector */}
