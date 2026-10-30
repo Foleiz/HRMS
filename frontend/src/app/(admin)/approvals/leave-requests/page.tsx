@@ -41,7 +41,7 @@ import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
-import { Button } from '@/components/ui';
+import { Button, TablePagination } from '@/components/ui';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
@@ -194,6 +194,14 @@ export default function LeaveRequestsApprovalPage() {
   const [statusFilter, setStatusFilter] = useState<string>('PENDING');
   const [docTypeFilter, setDocTypeFilter] = useState<'ALL' | UnifiedApprovalItem['docType']>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, docTypeFilter, searchTerm]);
 
   // Leave Approval Modals State
   const [selectedForApprove, setSelectedForApprove] = useState<LeaveRequest | null>(null);
@@ -555,6 +563,14 @@ export default function LeaveRequestsApprovalPage() {
       );
     });
   }, [unifiedRequests, docTypeFilter, statusFilter, searchTerm]);
+
+  const totalCount = filteredRequests.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedRequests = useMemo(() => {
+    const startIdx = (safePage - 1) * pageSize;
+    return filteredRequests.slice(startIdx, startIdx + pageSize);
+  }, [filteredRequests, safePage, pageSize]);
 
   // ─── Actions: Leave ─────────────────────────────────────────
 
@@ -1087,7 +1103,7 @@ export default function LeaveRequestsApprovalPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredRequests.map((item) => {
+                {paginatedRequests.map((item) => {
                   const statusConf = getRowStatus(item);
                   const isPending = item.status === 'PENDING';
 
@@ -1280,7 +1296,7 @@ export default function LeaveRequestsApprovalPage() {
 
           {/* Mobile View: Stacked Approval Cards */}
           <div className="lg:hidden divide-y divide-gray-100">
-            {filteredRequests.map((item) => {
+            {paginatedRequests.map((item) => {
               const statusConf = getRowStatus(item);
               const isPending = item.status === 'PENDING';
 
@@ -1477,6 +1493,23 @@ export default function LeaveRequestsApprovalPage() {
               );
             })}
           </div>
+
+          {/* Pagination */}
+          {filteredRequests.length > 0 && (
+            <div className="border-t border-slate-100 dark:border-slate-700/80 px-4 py-3 bg-white dark:bg-slate-800">
+              <TablePagination
+                total={filteredRequests.length}
+                page={safePage}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newSize: number) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
+            </div>
+          )}
         </>
       )
     }
