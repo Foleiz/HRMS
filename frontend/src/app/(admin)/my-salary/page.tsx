@@ -709,7 +709,7 @@ function MySalaryContent() {
           {/* Top Chart: Pie / Donut Chart */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <PieChartIcon className="w-3.5 h-3.5 text-primary" />
+              <PieChartIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               สัดส่วนเงินเดือนงวดล่าสุด
             </h3>
 
@@ -795,7 +795,7 @@ function MySalaryContent() {
           {/* Bottom Chart: Bar Chart */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <TrendingUp className="w-3.5 h-3.5 text-primary" />
+              <TrendingUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               แนวโน้มเงินเดือนสุทธิ
             </h3>
 

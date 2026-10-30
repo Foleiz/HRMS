@@ -31,14 +31,14 @@ interface HeaderCell {
   tooltip?: string;
 }
 interface SheetSample {
-  /** ตัวอักษรคอลัมน์ Excel เริ่มที่ D */
+  /** ตัวอักษรคอลัมน์ Excel เริ่มที่ A */
   columns: string[];
   titleRows: Cell[][];
   headerRows: HeaderCell[][];
   dataRows: Cell[][];
 }
 
-const colLetters = (n: number) => Array.from({ length: n }, (_, i) => String.fromCharCode(68 + i)); // D, E, F, ...
+const colLetters = (n: number) => Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, ...
 
 const DELIY: SheetSample = {
   columns: colLetters(24),
@@ -276,47 +276,32 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
 
           {tab === 'deliy' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-                  เป็นไฟล์ที่มีข้อมูลสรุปของทั้งเดือน (สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของพนักงานทุกคนตลอดทั้งเดือน) เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน
-                </p>
-                <Button
-                  onClick={() => handleDownload('deliy')}
-                  loading={downloadingType === 'deliy'}
-                  icon={<Download className="w-3.5 h-3.5" />}
-                  size="sm"
-                  className="shrink-0 cursor-pointer"
-                >
-                  ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
-                </Button>
-              </div>
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                เป็นไฟล์ที่มีข้อมูลสรุปของทั้งเดือน (สรุปเวลาเข้า-ออก ชั่วโมงทำงาน สาย และขาดงานของพนักงานทุกคนตลอดทั้งเดือน) เหมาะสำหรับนำเข้าทั้งเดือนก่อนคำนวณเงินเดือน
+              </p>
               <SheetPreview sample={DELIY} />
             </div>
           )}
 
           {tab === 'record' && (
             <div className="space-y-4 animate-in fade-in duration-150">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-                  เป็นไฟล์บันทึกการสแกนที่เลือกแบบรายวัน หรือเลือกบางวันมาใส่ (1 แถว = สแกน 1 ครั้ง) ระบบจะรวมการสแกนในวันเดียวกันเป็นรายวันให้อัตโนมัติ โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะการทำงาน
-                </p>
-                <Button
-                  onClick={() => handleDownload('record')}
-                  loading={downloadingType === 'record'}
-                  icon={<Download className="w-3.5 h-3.5" />}
-                  size="sm"
-                  className="shrink-0 cursor-pointer"
-                >
-                  ดาวน์โหลดไฟล์ตัวอย่าง (.xlsx)
-                </Button>
-              </div>
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                เป็นไฟล์บันทึกการสแกนที่เลือกแบบรายวัน หรือเลือกบางวันมาใส่ (1 แถว = สแกน 1 ครั้ง) ระบบจะรวมการสแกนในวันเดียวกันเป็นรายวันให้อัตโนมัติ โดยใช้การสแกนแรกเป็นเวลาเข้า และการสแกนสุดท้ายเป็นเวลาออก แล้วคำนวณสาย/ออกก่อนเทียบกับกะการทำงาน
+              </p>
               <SheetPreview sample={RECORD} />
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/80 flex justify-end shrink-0">
+        <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/80 flex items-center justify-end gap-3 shrink-0">
+          <Button
+            onClick={() => handleDownload(tab)}
+            loading={downloadingType === tab}
+            icon={<Download className="w-4 h-4" />}
+          >
+            ดาวน์โหลดไฟล์ตัวอย่าง
+          </Button>
           <Button
             variant="secondary"
             onClick={onClose}

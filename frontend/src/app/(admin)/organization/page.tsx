@@ -92,7 +92,7 @@ const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon:
 function CompanySectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
   return (
     <h4 className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">
-      <span className="w-7 h-7 rounded-lg bg-primary/5 text-primary dark:bg-blue-500/10 dark:text-blue-300 flex items-center justify-center">
+      <span className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 flex items-center justify-center">
         <Icon className="w-4 h-4" />
       </span>
       {title}

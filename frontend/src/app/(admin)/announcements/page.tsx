@@ -200,6 +200,21 @@ export default function AnnouncementsPage() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Helper to extract department names for targeted announcements
+  const getTargetDepartmentNames = (targets: Announcement['targets']): string[] => {
+    return targets
+      .filter((t) => t.targetType === 'DEPARTMENT')
+      .map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        if (t.targetEntityId) {
+          const found = departments.find((d) => d.id === t.targetEntityId);
+          if (found) return found.departmentName;
+        }
+        return null;
+      })
+      .filter((name): name is string => Boolean(name));
+  };
+
   // Breadcrumb
   useEffect(() => {
     setBreadcrumb({
@@ -555,7 +570,6 @@ export default function AnnouncementsPage() {
                     <th className="py-3 px-4 w-12 text-center">ปักหมุด</th>
                     <th className="py-3 px-4">หัวข้อประกาศ</th>
                     <th className="py-3 px-4">หมวดหมู่</th>
-                    <th className="py-3 px-4">ความสำคัญ</th>
                     <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
                     <th className="py-3 px-4">ยอดเปิดอ่าน</th>
                     <th className="py-3 px-4">สถานะ</th>
@@ -566,7 +580,7 @@ export default function AnnouncementsPage() {
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {listPhase.initialLoading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Loader2 className="w-6 h-6 text-primary animate-spin" />
                           <span>กำลังโหลดข้อมูลประกาศ...</span>
@@ -575,7 +589,7 @@ export default function AnnouncementsPage() {
                     </tr>
                   ) : announcements.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400">
+                      <td colSpan={8} className="py-12 text-center text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-1.5">
                           <Megaphone className="w-8 h-8 text-slate-300 stroke-[1.5]" />
                           <span className="font-semibold text-slate-600 dark:text-slate-400">ไม่พบข้อมูลข่าวประกาศ</span>
@@ -586,11 +600,12 @@ export default function AnnouncementsPage() {
                   ) : (
                     announcements.map((a) => {
                       const cat = CATEGORY_MAP[a.category] || CATEGORY_MAP.GENERAL;
-                      const pri = PRIORITY_MAP[a.priority] || PRIORITY_MAP.NORMAL;
-                      const targetSummary =
-                        a.targets.length === 0 || a.targets.some((t) => t.targetType === 'ALL')
-                          ? 'พนักงานทุกคน (ทั้งบริษัท)'
-                          : `${a.targets.length} แผนกที่กำหนด`;
+                      const isAllTargets =
+                        a.targets.length === 0 || a.targets.some((t) => t.targetType === 'ALL');
+                      const deptNames = !isAllTargets ? getTargetDepartmentNames(a.targets) : [];
+                      const targetSummary = isAllTargets
+                        ? 'พนักงานทุกคน'
+                        : `${a.targets.length} แผนกที่กำหนด`;
 
                       const readPct =
                         a.totalTargetCount > 0 ? Math.round((a.readCount / a.totalTargetCount) * 100) : 0;
@@ -641,19 +656,42 @@ export default function AnnouncementsPage() {
                             </span>
                           </td>
 
-                          {/* Priority */}
-                          <td className="py-3 px-4">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold border ${pri.badge}`}>
-                              {pri.label}
-                            </span>
-                          </td>
-
                           {/* Target */}
                           <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
-                            <div className="flex items-center gap-1.5">
-                              <Users className="w-3.5 h-3.5 text-slate-400" />
-                              <span>{targetSummary}</span>
-                            </div>
+                            {isAllTargets ? (
+                              <div className="flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5 text-slate-400" />
+                                <span>พนักงานทุกคน</span>
+                              </div>
+                            ) : (
+                              <div
+                                className="relative group inline-flex items-center gap-1.5 cursor-help"
+                                title={deptNames.length > 0 ? `แผนกที่กำหนด:\n• ${deptNames.join('\n• ')}` : targetSummary}
+                              >
+                                <Users className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
+                                <span className="font-medium text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 dark:border-slate-600 group-hover:border-primary group-hover:text-primary transition-colors">
+                                  {targetSummary}
+                                </span>
+
+                                {/* Tooltip popover on hover */}
+                                {deptNames.length > 0 && (
+                                  <div className="pointer-events-none absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col gap-1 z-30 min-w-[170px] max-w-xs p-2.5 bg-slate-900/95 dark:bg-slate-800 text-white rounded-xl shadow-xl border border-slate-700/80 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-150">
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-slate-300 pb-1 border-b border-slate-700/60">
+                                      <Building className="w-3 h-3 text-primary" />
+                                      <span>แผนกที่กำหนด ({deptNames.length})</span>
+                                    </div>
+                                    <ul className="space-y-0.5 text-[11px] text-slate-200">
+                                      {deptNames.map((name, idx) => (
+                                        <li key={idx} className="flex items-center gap-1.5 truncate">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                                          <span className="truncate">{name}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </td>
 
                           {/* Read Receipts */}
