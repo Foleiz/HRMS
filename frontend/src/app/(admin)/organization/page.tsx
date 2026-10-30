@@ -1734,20 +1734,10 @@ export default function OrganizationPage() {
             <form onSubmit={handleSaveCompany} className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start">
               {/* ซ้าย: การ์ดสรุปบริษัท (สไตล์เดียวกับหน้าโปรไฟล์) */}
               <div className="lg:sticky lg:top-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col">
-                {/* รหัสบริษัทที่มุมซ้ายบน และสถานะที่มุมขวาบน */}
+                {/* รหัสบริษัทที่มุมซ้ายบน */}
                 <div className="flex items-center justify-between w-full mb-3">
                   <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-full font-mono">
                     {company?.companyCode || 'SIT01'}
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                      companyForm.status === 'ACTIVE'
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${companyForm.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                    {companyForm.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
                   </span>
                 </div>
 
@@ -1875,15 +1865,6 @@ export default function OrganizationPage() {
                   <CompanySectionTitle icon={Building2} title="ข้อมูลทั่วไป" />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className={labelCls}>รหัสบริษัท (Company Code)</label>
-                      <input
-                        type="text"
-                        disabled
-                        value={company?.companyCode || ''}
-                        className="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-500 cursor-not-allowed dark:bg-slate-700 dark:border-slate-700 dark:text-slate-400"
-                      />
-                    </div>
-                    <div>
                       <label className={labelCls}>ชื่อบริษัท (Company Name) <span className="text-rose-500">*</span></label>
                       <input
                         type="text"
@@ -1909,7 +1890,6 @@ export default function OrganizationPage() {
                         required={false}
                       />
                     </div>
-                    <ActiveToggleRow label="เปิดใช้งานบริษัท" checked={companyForm.status === 'ACTIVE'} onChange={(v) => setCompanyForm({ ...companyForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
                   </div>
                 </div>
 
