@@ -417,67 +417,6 @@ export default function EssAttendancePage() {
 
   return (
     <div className="space-y-6 pb-12">
-{/* การ์ดสรุปประจำเดือน (บนสุด) */}
-      {activeTab === 'history' && monthlySummary && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* 1. วันทำงานทั้งหมด */}
-          <div className="bg-slate-100 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
-              <span className="text-xs font-bold">วันทำงานทั้งหมด</span>
-              <div className="w-7 h-7 rounded-full bg-white dark:bg-slate-700 shadow-xs flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
-                <Calendar className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
-              {monthlySummary.totalWorkDays} <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">วัน</span>
-            </div>
-          </div>
-
-          {/* 2. เข้างานตรงเวลา */}
-          <div className="bg-emerald-100 dark:bg-emerald-950/60 p-4 rounded-2xl border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300">
-              <span className="text-xs font-bold">เข้างานตรงเวลา</span>
-              <div className="w-7 h-7 rounded-full bg-white dark:bg-emerald-900/60 shadow-xs flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                <CheckCircle2 className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">
-              {monthlySummary.presentCount} <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">วัน</span>
-            </div>
-          </div>
-
-          {/* 3. มาสาย */}
-          <div className="bg-amber-100 dark:bg-amber-950/60 p-4 rounded-2xl border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-amber-800 dark:text-amber-300">
-              <span className="text-xs font-bold">มาสาย</span>
-              <div className="w-7 h-7 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">
-              {monthlySummary.lateCount} <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">ครั้ง</span>{' '}
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">({monthlySummary.totalLateMinutes} นาที)</span>
-            </div>
-          </div>
-
-          {/* 4. ขาดงาน / ออกก่อน */}
-          <div className="bg-rose-100 dark:bg-rose-950/60 p-4 rounded-2xl border border-rose-300 dark:border-rose-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
-            <div className="flex items-center justify-between text-rose-800 dark:text-rose-300">
-              <span className="text-xs font-bold">ขาดงาน / ออกก่อน</span>
-              <div className="w-7 h-7 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
-                <XCircle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-2 text-2xl font-black text-rose-700 dark:text-rose-300">
-              {monthlySummary.absentCount} <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">วัน</span>{' '}
-              <span className="text-xs font-medium text-rose-700 dark:text-rose-400">
-                (ออกก่อน {monthlySummary.earlyLeaveCount} ครั้ง)
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ─────────────────────────────────────────────────────────────
           Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
       ───────────────────────────────────────────────────────────── */}
@@ -497,6 +436,66 @@ export default function EssAttendancePage() {
       ───────────────────────────────────────────────────────────── */}
       {activeTab === 'history' && (
         <div className="space-y-6">
+          {/* การ์ดสรุปประจำเดือน */}
+          {monthlySummary && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* 1. วันทำงานทั้งหมด */}
+              <div className="bg-slate-100 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                  <span className="text-xs font-bold">วันทำงานทั้งหมด</span>
+                  <div className="w-7 h-7 rounded-full bg-white dark:bg-slate-700 shadow-xs flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+                  {monthlySummary.totalWorkDays} <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">วัน</span>
+                </div>
+              </div>
+
+              {/* 2. เข้างานตรงเวลา */}
+              <div className="bg-emerald-100 dark:bg-emerald-950/60 p-4 rounded-2xl border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300">
+                  <span className="text-xs font-bold">เข้างานตรงเวลา</span>
+                  <div className="w-7 h-7 rounded-full bg-white dark:bg-emerald-900/60 shadow-xs flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">
+                  {monthlySummary.presentCount} <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">วัน</span>
+                </div>
+              </div>
+
+              {/* 3. มาสาย */}
+              <div className="bg-amber-100 dark:bg-amber-950/60 p-4 rounded-2xl border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between text-amber-800 dark:text-amber-300">
+                  <span className="text-xs font-bold">มาสาย</span>
+                  <div className="w-7 h-7 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">
+                  {monthlySummary.lateCount} <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">ครั้ง</span>{' '}
+                  <span className="text-xs font-medium text-amber-700 dark:text-amber-400">({monthlySummary.totalLateMinutes} นาที)</span>
+                </div>
+              </div>
+
+              {/* 4. ขาดงาน / ออกก่อน */}
+              <div className="bg-rose-100 dark:bg-rose-950/60 p-4 rounded-2xl border border-rose-300 dark:border-rose-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+                <div className="flex items-center justify-between text-rose-800 dark:text-rose-300">
+                  <span className="text-xs font-bold">ขาดงาน / ออกก่อน</span>
+                  <div className="w-7 h-7 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                    <XCircle className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-2 text-2xl font-black text-rose-700 dark:text-rose-300">
+                  {monthlySummary.absentCount} <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">วัน</span>{' '}
+                  <span className="text-xs font-medium text-rose-700 dark:text-rose-400">
+                    (ออกก่อน {monthlySummary.earlyLeaveCount} ครั้ง)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
 
 
           {/* History Table */}
