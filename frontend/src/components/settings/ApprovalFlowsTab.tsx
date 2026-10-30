@@ -716,15 +716,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                     aria-hidden="true"
                   />
 
-                  {/* Step number badge */}
-                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs">
-                    {step.stepNo}
-                  </div>
-
-                  {/* Approver display name */}
+                  {/* Approver display name with Step number badge */}
                   <div className="min-w-0 pr-1">
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      ขั้นตอนที่ {step.stepNo}
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                      <span>ขั้นตอนที่</span>
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0 shadow-2xs">
+                        {step.stepNo}
+                      </span>
                     </div>
                     <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
                       {getApproverDisplay(step, employees, roles)}
@@ -964,13 +962,13 @@ export const ApprovalFlowsTab: React.FC = () => {
                             .sort((a, b) => a.stepNo - b.stepNo)
                             .map((step) => (
                               <React.Fragment key={step.id}>
-                                <div className="flex items-center gap-3 bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-4 py-2.5 shadow-2xs shrink-0">
-                                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0">
-                                    {step.stepNo}
-                                  </div>
+                                <div className="bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-4 py-2.5 shadow-2xs shrink-0">
                                   <div className="min-w-0">
-                                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                      ขั้นตอนที่ {step.stepNo}
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+                                      <span>ขั้นตอนที่</span>
+                                      <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0 shadow-2xs">
+                                        {step.stepNo}
+                                      </span>
                                     </div>
                                     <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 truncate">
                                       {getApproverDisplay(step, employees, roles)}
@@ -1085,13 +1083,13 @@ export const ApprovalFlowsTab: React.FC = () => {
             >
               {/* Dropdown Header */}
               <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700/60">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shadow-xs">
-                    {form.steps[editingStepIndex].stepNo}
-                  </div>
+                <div className="flex items-center gap-1.5">
                   <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    ขั้นตอนที่ {form.steps[editingStepIndex].stepNo}
+                    ขั้นตอนที่
                   </h4>
+                  <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold inline-flex items-center justify-center shadow-xs">
+                    {form.steps[editingStepIndex].stepNo}
+                  </span>
                 </div>
 
                 <button
