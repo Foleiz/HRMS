@@ -329,28 +329,7 @@ export default function EmployeeTypesPage() {
         </div>
       )}
 
-      {/* 3. Header Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-          <Layers className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-          ประเภทการจ้างงานและสัญญาจ้าง
-        </h2>
 
-        {canCreateTypes && (
-          <div className="flex items-center gap-2.5 self-start sm:self-auto">
-            <Button
-              size="sm"
-              onClick={() => {
-                setSelectedTypeForEdit(null);
-                setIsCreateModalOpen(true);
-              }}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              เพิ่มประเภทสัญญา/การจ้างงาน
-            </Button>
-          </div>
-        )}
-      </div>
 
       {/* 4. KPI Stat Cards (3 Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -388,46 +367,54 @@ export default function EmployeeTypesPage() {
         </div>
       </div>
 
-      {/* 5. Main Card Container with Filters & Table */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
-        {/* Top Filter Bar */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">รายการประเภทสัญญา</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">({types.length} รายการ)</span>
-          </div>
+      {/* 4. Main Card Container with Filters & Table (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              {/* Search Input มาตรฐานระบบ */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ค้นหาชื่อ หรือรหัสประเภทสัญญา..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ค้นหาชื่อ หรือรหัสประเภท..."
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
+              {/* Status Filter */}
+              <CustomSelect
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(String(val))}
+                placeholder="สถานะทั้งหมด"
+                className="min-w-[140px]"
+                options={[
+                  { value: 'ALL', label: 'สถานะทั้งหมด' },
+                  { value: 'ACTIVE', label: 'เปิดใช้งาน' },
+                  { value: 'INACTIVE', label: 'ปิดการใช้งาน' },
+                ]}
               />
             </div>
 
-            {/* Status Filter */}
-            <CustomSelect
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(String(val))}
-              placeholder="สถานะทั้งหมด"
-              size="sm"
-              className="min-w-[140px]"
-              options={[
-                { value: 'ALL', label: 'สถานะทั้งหมด' },
-                { value: 'ACTIVE', label: 'เปิดใช้งาน' },
-                { value: 'INACTIVE', label: 'ปิดการใช้งาน' },
-              ]}
-            />
+            {canCreateTypes && (
+              <Button
+                onClick={() => {
+                  setSelectedTypeForEdit(null);
+                  setIsCreateModalOpen(true);
+                }}
+                icon={<Plus className="w-4 h-4" />}
+                className="shrink-0 self-start sm:self-auto"
+              >
+                เพิ่มประเภทสัญญา/การจ้างงาน
+              </Button>
+            )}
           </div>
-        </div>
 
-        {/* Data Table */}
-        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[300px]">
+          {/* Data Table */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[300px]">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
               <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
@@ -441,7 +428,7 @@ export default function EmployeeTypesPage() {
             </div>
           ) : (
             <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
+              <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
                   <th className="py-3 px-5 whitespace-nowrap">รหัสประเภท</th>
                   <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทสัญญา / การจ้างงาน</th>
@@ -582,60 +569,19 @@ export default function EmployeeTypesPage() {
           )}
         </div>
 
-        {/* Table Footer with Pagination */}
-        <div className="border-t border-slate-100 dark:border-slate-700/60 px-6 py-3.5 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
-            <span>แสดง</span>
-            <CustomSelect
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
+          {/* Table Footer with TablePagination มาตรฐานระบบ */}
+          {types.length > 0 && (
+            <TablePagination
+              total={types.length}
+              page={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-            </CustomSelect>
-            <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-              (แสดง {types.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} ถึง{' '}
-              {Math.min(currentPage * pageSize, types.length)} จากทั้งหมด {types.length} รายการ)
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-1">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-2.5 py-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
-            >
-              &lt;
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                  page === currentPage
-                    ? 'bg-primary text-white font-bold'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-2.5 py-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 disabled:opacity-40 cursor-pointer"
-            >
-              &gt;
-            </button>
-          </div>
+            />
+          )}
         </div>
       </div>
 

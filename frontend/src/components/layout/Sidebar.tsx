@@ -288,7 +288,7 @@ const menuGroups: MenuGroup[] = [
     category: 'ระบบและการตั้งค่า',
     items: [
       {
-        title: 'ข้อมูลหลัก (Master Data)',
+        title: 'ข้อมูลหลัก',
         href: '/master',
         matchPrefix: '/master',
         icon: Database,

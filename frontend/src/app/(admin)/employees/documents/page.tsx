@@ -176,72 +176,79 @@ export default function ExpiringDocumentsPage() {
         </div>
       </div>
 
-      {/* ตัวกรอง */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="ค้นหาชื่อ รหัสพนักงาน แผนก หรือประเภทเอกสาร"
-              className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            {filterButtons.map((b) => (
-              <button
-                key={b.key}
-                type="button"
-                onClick={() => setStatusFilter(b.key)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border cursor-pointer ${
-                  statusFilter === b.key
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
-                }`}
-              >
-                {b.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <Button
-          variant="secondary"
-          onClick={handleRunCheck}
-          loading={checking}
-          icon={<BellRing className="w-3.5 h-3.5" />}
-          title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
-        >
-          ตรวจและแจ้งเตือนตอนนี้
-        </Button>
-      </div>
+      {/* ตารางและตัวกรอง (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มการทำงานด้านขวา */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              {/* Search Input มาตรฐานระบบ */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="ค้นหาชื่อ, รหัสพนักงาน, แผนก หรือประเภทเอกสาร..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
 
-      {/* ตาราง */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden text-xs">
-        {loading ? (
-          <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลด...
+              {/* Status Filter Buttons */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {filterButtons.map((b) => (
+                  <button
+                    key={b.key}
+                    type="button"
+                    onClick={() => setStatusFilter(b.key)}
+                    className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                      statusFilter === b.key
+                        ? 'bg-primary text-white border-primary shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              variant="secondary"
+              onClick={handleRunCheck}
+              loading={checking}
+              icon={<BellRing className="w-3.5 h-3.5" />}
+              title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
+              className="shrink-0 self-start sm:self-auto"
+            >
+              ตรวจและแจ้งเตือนตอนนี้
+            </Button>
           </div>
-        ) : error ? (
-          <div className="m-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
-        ) : (
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-            <table className="table-standard text-xs w-full min-w-[860px] whitespace-nowrap">
-              <thead className="bg-slate-50 text-slate-500 text-[11px]">
-                <tr className="whitespace-nowrap">
-                  <th className="text-left font-semibold px-4 py-2.5">พนักงาน</th>
-                  <th className="text-left font-semibold px-4 py-2.5">แผนก</th>
-                  <th className="text-left font-semibold px-4 py-2.5">ประเภทเอกสาร</th>
-                  <th className="text-left font-semibold px-4 py-2.5">วันหมดอายุ</th>
-                  <th className="text-left font-semibold px-4 py-2.5">สถานะ</th>
-                  <th className="text-right font-semibold px-4 py-2.5">จัดการ</th>
-                </tr>
-              </thead>
+
+          {/* Table Container */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            {loading ? (
+              <div className="py-16 flex items-center justify-center text-slate-400 dark:text-slate-500 gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" /> กำลังโหลด...
+              </div>
+            ) : error ? (
+              <div className="m-4 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" /> {error}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="py-16 text-center text-slate-400 dark:text-slate-500">ไม่มีเอกสารใกล้หมดอายุหรือหมดอายุแล้ว</div>
+            ) : (
+              <table className="table-standard text-xs w-full min-w-[860px] text-left border-collapse whitespace-nowrap">
+                <thead className="bg-primary text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="font-semibold px-4 py-3.5 whitespace-nowrap">พนักงาน</th>
+                    <th className="font-semibold px-4 py-3.5 whitespace-nowrap">แผนก</th>
+                    <th className="font-semibold px-4 py-3.5 whitespace-nowrap">ประเภทเอกสาร</th>
+                    <th className="font-semibold px-4 py-3.5 whitespace-nowrap">วันหมดอายุ</th>
+                    <th className="font-semibold px-4 py-3.5 whitespace-nowrap">สถานะ</th>
+                    <th className="text-right font-semibold px-4 py-3.5 whitespace-nowrap">จัดการ</th>
+                  </tr>
+                </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((doc) => {
                   const expired = doc.expiryStatus === 'EXPIRED';
@@ -296,8 +303,9 @@ export default function ExpiringDocumentsPage() {
                 })}
               </tbody>
             </table>
-          </div>
-        )}
+          )}
+        </div>
+        </div>
       </div>
     </div>
   );
