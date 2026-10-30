@@ -115,14 +115,26 @@ export default function EmployeeTypesPage() {
       }
     };
 
+    const handleScrollOrResize = (e: Event) => {
+      // Don't close if scrolling inside the popover itself
+      if (popoverRef.current && popoverRef.current.contains(e.target as Node)) {
+        return;
+      }
+      setPopoverData(null);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setPopoverData(null);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [popoverData]);
@@ -141,7 +153,7 @@ export default function EmployeeTypesPage() {
   const getPopoverPosition = (rect: DOMRect) => {
     const popoverWidth = 420;
     const padding = 16;
-    let left = rect.left;
+    let left = rect.left + rect.width / 2 - popoverWidth / 2;
     if (typeof window !== 'undefined') {
       if (left + popoverWidth > window.innerWidth - padding) {
         left = window.innerWidth - popoverWidth - padding;
@@ -149,15 +161,29 @@ export default function EmployeeTypesPage() {
       if (left < padding) left = padding;
     }
 
-    let top = rect.bottom + 8;
-    const estimatedHeight = 360;
-    if (typeof window !== 'undefined') {
-      if (top + estimatedHeight > window.innerHeight - padding && rect.top > estimatedHeight) {
-        top = Math.max(padding, rect.top - estimatedHeight - 8);
-      }
+    const spaceBelow = typeof window !== 'undefined' ? window.innerHeight - rect.bottom - padding : 500;
+    const spaceAbove = typeof window !== 'undefined' ? rect.top - padding : 500;
+    // Prefer placing below unless space below is constrained (< 260px) and space above has more room
+    const placeTop = spaceBelow < 260 && spaceAbove > spaceBelow;
+
+    const style: React.CSSProperties = {
+      left: `${left}px`,
+      width: `${popoverWidth}px`,
+    };
+
+    if (placeTop) {
+      style.bottom = `${(typeof window !== 'undefined' ? window.innerHeight : 800) - rect.top + 8}px`;
+      style.maxHeight = `${Math.min(480, spaceAbove - 16)}px`;
+    } else {
+      style.top = `${rect.bottom + 8}px`;
+      style.maxHeight = `${Math.min(480, spaceBelow - 16)}px`;
     }
 
-    return { top, left };
+    // Arrow pointer position relative to popover left
+    const buttonCenter = rect.left + rect.width / 2;
+    const arrowLeft = Math.max(18, Math.min(popoverWidth - 26, buttonCenter - left - 6));
+
+    return { style, placeTop, arrowLeft };
   };
 
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
@@ -477,22 +503,33 @@ export default function EmployeeTypesPage() {
                           item.hasLeaveEntitlement ||
                           item.hasOvertime ||
                           item.hasProvidentFund ? (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              setPopoverData({
-                                typeName: item.typeName,
-                                typeCode: item.typeCode,
-                                benefits: [],
-                                anchorRect: rect,
-                              });
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 cursor-pointer transition-all shadow-2xs hover:scale-105 whitespace-nowrap"
-                          >
-                            +{((item.hasSocialSecurity ? 1 : 0) + (item.hasLeaveEntitlement ? 1 : 0) + (item.hasOvertime ? 1 : 0) + (item.hasProvidentFund ? 1 : 0))} รายการ
-                          </button>
+                          (() => {
+                            const syntheticBenefits: BenefitItem[] = [
+                              ...(item.hasSocialSecurity ? [{ id: 'ss', benefitName: 'ประกันสังคม', category: 'INSURANCE' } as unknown as BenefitItem] : []),
+                              ...(item.hasLeaveEntitlement ? [{ id: 'lv', benefitName: 'สิทธิวันลาตามกฎหมาย', category: 'OTHER' } as unknown as BenefitItem] : []),
+                              ...(item.hasOvertime ? [{ id: 'ot', benefitName: 'ค่าล่วงเวลา (OT)', category: 'ALLOWANCE' } as unknown as BenefitItem] : []),
+                              ...(item.hasProvidentFund ? [{ id: 'pf', benefitName: 'กองทุนสำรองเลี้ยงชีพ', category: 'INSURANCE' } as unknown as BenefitItem] : []),
+                            ];
+                            return (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setPopoverData({
+                                    typeName: item.typeName,
+                                    typeCode: item.typeCode,
+                                    benefits: syntheticBenefits,
+                                    anchorRect: rect,
+                                  });
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 cursor-pointer transition-all shadow-2xs hover:scale-105 whitespace-nowrap"
+                                title="คลิกเพื่อดูสิทธิประโยชน์ทั้งหมด"
+                              >
+                                +{syntheticBenefits.length} รายการ
+                              </button>
+                            );
+                          })()
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 text-xs">- ไม่มี -</span>
                         )}
@@ -621,83 +658,107 @@ export default function EmployeeTypesPage() {
           (() => {
             const pos = getPopoverPosition(popoverData.anchorRect);
             return (
-              <div
-                ref={popoverRef}
-                style={{ top: `${pos.top}px`, left: `${pos.left}px` }}
-                className="fixed z-50 w-[420px] max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <span className="shrink-0 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                      {popoverData.typeCode}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={popoverData.typeName}>
-                        {popoverData.typeName}
-                      </h4>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
-                        สิทธิประโยชน์และสวัสดิการทั้งหมด
-                      </p>
+              <>
+                {/* Backdrop overlay */}
+                <div
+                  className="fixed inset-0 z-40 bg-slate-900/10 dark:bg-slate-950/20 backdrop-blur-3xs"
+                  onClick={() => setPopoverData(null)}
+                />
+
+                <div
+                  ref={popoverRef}
+                  style={pos.style}
+                  className="fixed z-50 flex flex-col max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
+                >
+                  {/* Arrow pointer indicator */}
+                  <div
+                    style={{ left: `${pos.arrowLeft}px` }}
+                    className={`absolute w-3 h-3 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 transform rotate-45 pointer-events-none z-10 ${
+                      pos.placeTop
+                        ? '-bottom-1.5 border-b border-r'
+                        : '-top-1.5 border-t border-l'
+                    }`}
+                  />
+
+                  {/* Header */}
+                  <div className="shrink-0 flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span className="shrink-0 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                        {popoverData.typeCode}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={popoverData.typeName}>
+                          {popoverData.typeName}
+                        </h4>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
+                          สิทธิประโยชน์และสวัสดิการทั้งหมด
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="whitespace-nowrap inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
+                        {popoverData.benefits.length} รายการ
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPopoverData(null)}
+                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="whitespace-nowrap inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
-                      {popoverData.benefits.length} รายการ
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setPopoverData(null)}
-                      className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
+
+                  {/* Categorized List */}
+                  <div className="mt-3 space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
+                    {Object.keys(groupedPopoverBenefits).length === 0 ? (
+                      <p className="text-center py-6 text-xs text-slate-400 dark:text-slate-500">
+                        ไม่มีรายการสวัสดิการระบุไว้
+                      </p>
+                    ) : (
+                      Object.entries(groupedPopoverBenefits).map(([category, list]) => {
+                        const meta = CATEGORY_META[category] || { label: 'สิทธิประโยชน์อื่นๆ' };
+                        return (
+                          <div key={category} className="space-y-1.5">
+                            <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                              <span>{meta.label}</span>
+                              <span className="text-[10px] font-normal text-slate-400 whitespace-nowrap">
+                                {list.length} รายการ
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {list.map((b) => {
+                                const badgeColor = getBadgeColor(b.category);
+                                const amt = Number(b.coverageAmount) || 0;
+                                const freqLabel =
+                                  b.frequency === 'DAILY'
+                                    ? 'บ./วัน'
+                                    : b.frequency === 'YEARLY'
+                                    ? 'บ./ปี'
+                                    : 'บ./ด.';
+                                return (
+                                  <span
+                                    key={b.id}
+                                    title={b.description || b.benefitName}
+                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium whitespace-nowrap ${badgeColor}`}
+                                  >
+                                    <span>{b.benefitName}</span>
+                                    {amt > 0 && (
+                                      <span className="font-mono font-bold opacity-85 text-[10px]">
+                                        ({amt.toLocaleString()} {freqLabel})
+                                      </span>
+                                    )}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
-
-                {/* Categorized List */}
-                <div className="mt-3 space-y-3 max-h-[360px] overflow-y-auto pr-1">
-                  {Object.entries(groupedPopoverBenefits).map(([category, list]) => {
-                    const meta = CATEGORY_META[category] || { label: 'สิทธิประโยชน์อื่นๆ' };
-                    return (
-                      <div key={category} className="space-y-1.5">
-                        <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                          <span>{meta.label}</span>
-                          <span className="text-[10px] font-normal text-slate-400 whitespace-nowrap">
-                            {list.length} รายการ
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {list.map((b) => {
-                            const badgeColor = getBadgeColor(b.category);
-                            const amt = Number(b.coverageAmount) || 0;
-                            const freqLabel =
-                              b.frequency === 'DAILY'
-                                ? 'บ./วัน'
-                                : b.frequency === 'YEARLY'
-                                ? 'บ./ปี'
-                                : 'บ./ด.';
-                            return (
-                              <span
-                                key={b.id}
-                                title={b.description || b.benefitName}
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium whitespace-nowrap ${badgeColor}`}
-                              >
-                                <span>{b.benefitName}</span>
-                                {amt > 0 && (
-                                  <span className="font-mono font-bold opacity-85 text-[10px]">
-                                    ({amt.toLocaleString()} {freqLabel})
-                                  </span>
-                                )}
-                              </span>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              </>
             );
           })(),
           document.body
