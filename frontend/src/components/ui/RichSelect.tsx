@@ -197,16 +197,16 @@ export function RichSelect<V extends string | number>({
           invalid
             ? 'border-rose-500 dark:border-rose-500'
             : open
-              ? 'border-[#0B2046] ring-4 ring-[#0B2046]/18 dark:ring-blue-500/30 dark:border-blue-400 bg-blue-50/30 shadow-[0_0_0_3.5px_rgba(11,32,70,0.18)]'
-              : 'border-[#0B2046] dark:border-blue-500 hover:border-[#0B2046] hover:bg-slate-50/50'
+              ? 'border-primary ring-2 ring-primary/20 dark:border-blue-500'
+              : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'
         }`}
       >
-        <span className={`truncate ${selected ? 'font-semibold text-[#0B2046] dark:text-blue-100' : 'font-medium text-[#0B2046] dark:text-blue-200'}`}>
+        <span className={`truncate ${selected ? 'font-medium text-slate-900 dark:text-slate-100' : 'text-slate-500 dark:text-slate-400'}`}>
           {selected ? selected.label : placeholder}
         </span>
         <span className="flex items-center gap-2.5 shrink-0">
           {selected?.meta && <span className={`text-xs ${TONE[selected.metaTone ?? 'muted']}`}>{selected.meta}</span>}
-          <ChevronDown className={`w-4 h-4 text-[#0B2046] dark:text-blue-300 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+          <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
         </span>
       </button>
 

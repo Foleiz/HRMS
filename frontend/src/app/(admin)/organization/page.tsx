@@ -1143,7 +1143,7 @@ export default function OrganizationPage() {
                   placeholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                 />
               </div>
 
@@ -1230,7 +1230,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1330,7 +1330,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาชื่อทีม หรือรหัสทีม..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1438,7 +1438,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1556,7 +1556,7 @@ export default function OrganizationPage() {
                   placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                 />
               </div>
 
@@ -1659,7 +1659,7 @@ export default function OrganizationPage() {
                     placeholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -2113,7 +2113,7 @@ export default function OrganizationPage() {
                   placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                 />
               </div>
 

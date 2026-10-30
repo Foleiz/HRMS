@@ -391,25 +391,25 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
         title={title}
         disabled={disabled}
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-[#0B2046] dark:border-blue-500 whitespace-nowrap flex items-center justify-between gap-2.5 transition-all duration-200 text-left shadow-2xs ${
+        className={`w-full ${sizeClasses} bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 whitespace-nowrap flex items-center justify-between gap-2.5 transition-all duration-200 text-left shadow-2xs active:scale-[0.98] ${
           isOpen
-            ? 'border-[#0B2046] dark:border-blue-400 ring-4 ring-[#0B2046]/18 dark:ring-blue-500/30 bg-blue-50/40 dark:bg-slate-800/90 shadow-[0_0_0_3.5px_rgba(11,32,70,0.18)]'
-            : 'hover:border-[#0B2046] hover:bg-slate-50/60 dark:hover:bg-slate-700/60 focus:outline-none focus:ring-4 focus:ring-[#0B2046]/15 focus:border-[#0B2046]'
-        } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700' : 'cursor-pointer'} ${buttonClassName}`}
+            ? 'border-primary dark:border-blue-500 ring-2 ring-primary/20 dark:ring-blue-500/20'
+            : 'hover:border-slate-300 dark:hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary'
+        } ${disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900' : 'cursor-pointer'} ${buttonClassName}`}
       >
         <span
           title={selectedOption ? selectedOption.label : placeholder}
-          className={`truncate whitespace-nowrap font-medium text-[#0B2046] dark:text-blue-100 ${
+          className={`truncate whitespace-nowrap font-medium ${
             selectedOption && selectedOption.value !== '' && selectedOption.value !== 'ALL'
-              ? 'font-semibold'
-              : 'font-medium'
+              ? 'text-slate-800 dark:text-slate-100 font-semibold'
+              : 'text-slate-500 dark:text-slate-400 font-medium'
           }`}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-[#0B2046] dark:text-blue-300 shrink-0 transition-transform duration-200 ease-in-out ${
-            isOpen ? 'rotate-180' : 'rotate-0'
+          className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-400 shrink-0 transition-transform duration-200 ease-in-out ${
+            isOpen ? 'rotate-180 text-primary dark:text-blue-400' : 'rotate-0'
           }`}
         />
       </button>
