@@ -12,6 +12,8 @@ import {
   HelpCircle,
   Loader2,
   Calendar,
+  Sparkles,
+  Layers,
 } from 'lucide-react';
 import { commissionService } from '@/services/commissionService';
 import { useToast } from '@/context/ToastContext';
@@ -145,6 +147,24 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Feature Highlights Banner */}
+        <div className="bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 border-b border-slate-200 dark:border-slate-800 px-6 py-2.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span className="font-semibold text-slate-800 dark:text-slate-100">ตรวจจับอัตโนมัติ</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <Layers className="h-4 w-4 text-blue-600 shrink-0" />
+              <span className="font-semibold text-slate-800 dark:text-slate-100">ทับเฉพาะวันที่ซ้ำ</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
+              <Calendar className="h-4 w-4 text-purple-600 shrink-0" />
+              <span className="font-semibold text-slate-800 dark:text-slate-100">กู้คืนได้เสมอ</span>
+            </div>
+          </div>
         </div>
 
         {/* Tabs Bar */}
