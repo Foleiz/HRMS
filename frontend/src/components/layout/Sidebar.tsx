@@ -437,9 +437,13 @@ export const Sidebar: React.FC = () => {
           <button
             onClick={toggleSidebar}
             title={isCollapsed ? 'ขยายเมนู' : 'ย่อเมนู'}
-            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 active:scale-90 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-all duration-200 shrink-0 cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 active:scale-90 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 flex items-center justify-center transition-all duration-200 shrink-0 cursor-pointer"
           >
-            <PanelLeftOpen className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180 text-primary' : 'rotate-0'}`} />
+            {isCollapsed ? (
+              <PanelLeftOpen className="w-4 h-4 text-primary dark:text-blue-400" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4" />
+            )}
           </button>
         ) : (
           <button
