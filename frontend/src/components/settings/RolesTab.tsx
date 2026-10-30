@@ -86,11 +86,11 @@ const ToggleSwitch: React.FC<{
       disabled={disabled}
       className={`relative inline-flex shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none cursor-pointer ${ isSm ? 'h-5 w-9' : 'h-6 w-11'
       } ${
-        checked ? 'bg-primary' : 'bg-slate-300 hover:bg-slate-400'
+        checked ? 'bg-primary' : 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-600'
       } ${disabled ? 'opacity-40 !cursor-not-allowed' : ''}`}
     >
       <span
-        className={`inline-block transform rounded-full bg-white dark:bg-slate-800 shadow-sm transition-transform duration-200 ${ isSm ? checked ? 'h-3.5 w-3.5 translate-x-4.5' : 'h-3.5 w-3.5 translate-x-1'
+        className={`inline-block transform rounded-full bg-white shadow-sm transition-transform duration-200 ${ isSm ? checked ? 'h-3.5 w-3.5 translate-x-4.5' : 'h-3.5 w-3.5 translate-x-1'
             : checked ? 'h-4.5 w-4.5 translate-x-5.5' : 'h-4.5 w-4.5 translate-x-1'
         }`}
       />

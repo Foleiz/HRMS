@@ -39,7 +39,7 @@
   --color-primary: #0B2046;
   --color-primary-hover: #112d5e;
   --color-primary-soft: #eff4ff;
-  --color-accent: #2563eb;   /* สวิตช์ / ลิงก์ / ตัวเลือกที่เปิดอยู่ */
+  --color-accent: #2563eb;   /* ลิงก์ / ไฮไลต์ */
 }
 
 .theme-light {
