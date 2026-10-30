@@ -139,7 +139,7 @@ export default function EmployeeTypesPage() {
   }, [popoverData]);
 
   const getPopoverPosition = (rect: DOMRect) => {
-    const popoverWidth = 380;
+    const popoverWidth = 420;
     const padding = 16;
     let left = rect.left;
     if (typeof window !== 'undefined') {
@@ -150,7 +150,7 @@ export default function EmployeeTypesPage() {
     }
 
     let top = rect.bottom + 8;
-    const estimatedHeight = 340;
+    const estimatedHeight = 360;
     if (typeof window !== 'undefined') {
       if (top + estimatedHeight > window.innerHeight - padding && rect.top > estimatedHeight) {
         top = Math.max(padding, rect.top - estimatedHeight - 8);
@@ -471,7 +471,7 @@ export default function EmployeeTypesPage() {
                                   <span
                                     key={b.id}
                                     title={b.description || b.benefitName}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium ${badgeColor}`}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium whitespace-nowrap ${badgeColor}`}
                                   >
                                     <span>{b.benefitName}</span>
                                     {amt > 0 && (
@@ -496,7 +496,7 @@ export default function EmployeeTypesPage() {
                                       anchorRect: rect,
                                     });
                                   }}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 cursor-pointer transition-all shadow-2xs hover:scale-105"
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 cursor-pointer transition-all shadow-2xs hover:scale-105 whitespace-nowrap"
                                   title="คลิกเพื่อดูสิทธิประโยชน์ทั้งหมด"
                                 >
                                   +{item.benefits.length - 3} รายการ
@@ -661,25 +661,25 @@ export default function EmployeeTypesPage() {
               <div
                 ref={popoverRef}
                 style={{ top: `${pos.top}px`, left: `${pos.left}px` }}
-                className="fixed z-50 w-96 max-w-[95vw] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
+                className="fixed z-50 w-[420px] max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 animate-in fade-in zoom-in-95 duration-150"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <span className="shrink-0 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                       {popoverData.typeCode}
                     </span>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={popoverData.typeName}>
                         {popoverData.typeName}
                       </h4>
-                      <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
                         สิทธิประโยชน์และสวัสดิการทั้งหมด
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="whitespace-nowrap inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
                       {popoverData.benefits.length} รายการ
                     </span>
                     <button
@@ -700,7 +700,7 @@ export default function EmployeeTypesPage() {
                       <div key={category} className="space-y-1.5">
                         <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
                           <span>{meta.label}</span>
-                          <span className="text-[10px] font-normal text-slate-400">
+                          <span className="text-[10px] font-normal text-slate-400 whitespace-nowrap">
                             {list.length} รายการ
                           </span>
                         </div>
@@ -718,7 +718,7 @@ export default function EmployeeTypesPage() {
                               <span
                                 key={b.id}
                                 title={b.description || b.benefitName}
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium ${badgeColor}`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium whitespace-nowrap ${badgeColor}`}
                               >
                                 <span>{b.benefitName}</span>
                                 {amt > 0 && (
