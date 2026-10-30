@@ -454,85 +454,48 @@ export default function EmployeeTypesPage() {
                       </td>
 
                       {/* สิทธิประโยชน์ */}
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap items-center gap-1.5 max-w-md">
-                          {item.benefits && item.benefits.length > 0 ? (
-                            <>
-                              {item.benefits.slice(0, 3).map((b) => {
-                                const badgeColor = getBadgeColor(b.category);
-                                const amt = Number(b.coverageAmount) || 0;
-                                const freqLabel =
-                                  b.frequency === 'DAILY'
-                                    ? 'บ./วัน'
-                                    : b.frequency === 'YEARLY'
-                                    ? 'บ./ปี'
-                                    : 'บ./ด.';
-                                return (
-                                  <span
-                                    key={b.id}
-                                    title={b.description || b.benefitName}
-                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-medium whitespace-nowrap ${badgeColor}`}
-                                  >
-                                    <span>{b.benefitName}</span>
-                                    {amt > 0 && (
-                                      <span className="font-mono font-semibold opacity-85">
-                                        ({amt.toLocaleString()} {freqLabel})
-                                      </span>
-                                    )}
-                                  </span>
-                                );
-                              })}
-
-                              {item.benefits.length > 3 && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const rect = e.currentTarget.getBoundingClientRect();
-                                    setPopoverData({
-                                      typeName: item.typeName,
-                                      typeCode: item.typeCode,
-                                      benefits: item.benefits || [],
-                                      anchorRect: rect,
-                                    });
-                                  }}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 cursor-pointer transition-all shadow-2xs hover:scale-105 whitespace-nowrap"
-                                  title="คลิกเพื่อดูสิทธิประโยชน์ทั้งหมด"
-                                >
-                                  +{item.benefits.length - 3} รายการ
-                                </button>
-                              )}
-                            </>
-                          ) : item.hasSocialSecurity ||
-                            item.hasLeaveEntitlement ||
-                            item.hasOvertime ||
-                            item.hasProvidentFund ? (
-                            <>
-                              {item.hasSocialSecurity && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 text-[10px]">
-                                  ประกันสังคม
-                                </span>
-                              )}
-                              {item.hasLeaveEntitlement && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px]">
-                                  สิทธิ์วันลา
-                                </span>
-                              )}
-                              {item.hasOvertime && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 text-[10px]">
-                                  คิดโอที (OT)
-                                </span>
-                              )}
-                              {item.hasProvidentFund && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 text-[10px]">
-                                  กองทุนสำรองฯ
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-slate-400 dark:text-slate-500 text-[11px]">- ไม่มี -</span>
-                          )}
-                        </div>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {item.benefits && item.benefits.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setPopoverData({
+                                typeName: item.typeName,
+                                typeCode: item.typeCode,
+                                benefits: item.benefits || [],
+                                anchorRect: rect,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60 cursor-pointer transition-all shadow-2xs hover:scale-105 whitespace-nowrap"
+                            title="คลิกเพื่อดูสิทธิประโยชน์ทั้งหมด"
+                          >
+                            +{item.benefits.length} รายการ
+                          </button>
+                        ) : item.hasSocialSecurity ||
+                          item.hasLeaveEntitlement ||
+                          item.hasOvertime ||
+                          item.hasProvidentFund ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              setPopoverData({
+                                typeName: item.typeName,
+                                typeCode: item.typeCode,
+                                benefits: [],
+                                anchorRect: rect,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 cursor-pointer transition-all shadow-2xs hover:scale-105 whitespace-nowrap"
+                          >
+                            +{((item.hasSocialSecurity ? 1 : 0) + (item.hasLeaveEntitlement ? 1 : 0) + (item.hasOvertime ? 1 : 0) + (item.hasProvidentFund ? 1 : 0))} รายการ
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500 text-xs">- ไม่มี -</span>
+                        )}
                       </td>
 
                       {/* จำนวนสัญญาที่ใช้งาน */}
