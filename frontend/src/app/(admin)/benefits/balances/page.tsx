@@ -217,30 +217,6 @@ export default function EmployeeBenefitBalancesPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Top Banner / Header */}
-      <div className="p-5 md:p-6 rounded-2xl bg-gradient-to-r from-primary via-primary-hover to-blue-900 text-white shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[#0B2046] dark:text-slate-100 shadow-2xs shrink-0 transition-colors">
-              <Gift className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg md:text-xl font-bold tracking-tight">ยอดสวัสดิการพนักงาน</h1>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/15 text-cyan-200 border border-white/20">
-                  HR Management
-                </span>
-              </div>
-              <p className="text-xs text-blue-100/90 mt-0.5">
-                ตรวจสอบโควตาสิทธิประโยชน์ การใช้สิทธิ์ และบันทึกการเบิกจ่ายสวัสดิการของพนักงานแต่ละคน
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-5">
         {/* Filter and Control Bar (Matching leave/page.tsx Tab 3) */}
