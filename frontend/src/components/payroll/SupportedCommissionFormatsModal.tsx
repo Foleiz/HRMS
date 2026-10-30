@@ -7,13 +7,11 @@ import {
   FileSpreadsheet,
   Download,
   Info,
-  Layers,
   FileText,
   CheckCircle2,
   HelpCircle,
   Loader2,
   Calendar,
-  Sparkles,
 } from 'lucide-react';
 import { commissionService } from '@/services/commissionService';
 import { useToast } from '@/context/ToastContext';
@@ -147,24 +145,6 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
-
-        {/* Feature Highlights Banner */}
-        <div className="bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 border-b border-slate-200 dark:border-slate-800 px-6 py-3">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span><strong>ตรวจจับอัตโนมัติ:</strong> ตรวจจากคอลัมน์วันที่ในไฟล์ ไม่ต้องเลือกโหมด</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <Layers className="h-4 w-4 text-blue-600 shrink-0" />
-              <span><strong>ทับเฉพาะวันที่ซ้ำ:</strong> แทนที่เฉพาะวันที่ซ้ำของพนักงานคนนั้น</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <Calendar className="h-4 w-4 text-purple-600 shrink-0" />
-              <span><strong>กู้คืนได้เสมอ:</strong> ยกเลิกชุดนำเข้าและคืนค่ายอดเดิมได้ตลอดเวลา</span>
-            </div>
-          </div>
         </div>
 
         {/* Tabs Bar */}
