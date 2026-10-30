@@ -19,6 +19,7 @@ import {
   Loader2,
   Award,
   UserRound,
+  Database,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -41,7 +42,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
-import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter } from '@/components/ui';
+import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter, PageHeader } from '@/components/ui';
 
 type MasterTab =
   | 'document-types'
@@ -399,34 +400,32 @@ export default function MasterDataHubPage() {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Top Banner */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700/80">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
-            ศูนย์กลางการกำหนดค่าตัวเลือกอ้างอิงและประเภทเอกสารประกอบในระบบ HRMS
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadData}
-            disabled={loading}
-            className="p-2.5 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            title="รีเฟรชข้อมูล"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
-          </button>
-          {canCreateMasterData && (
-            <Button
-              size="sm"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={handleOpenCreate}
+      <PageHeader
+        title="การจัดการข้อมูลหลัก"
+        subtitle="ศูนย์กลางการกำหนดค่าตัวเลือกอ้างอิงและประเภทเอกสารประกอบในระบบ HRMS"
+        icon={Database}
+        actions={
+          <div className="flex items-center gap-3">
+            <button
+              onClick={loadData}
+              disabled={loading}
+              className="p-2.5 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+              title="รีเฟรชข้อมูล"
             >
-              เพิ่มข้อมูลใหม่
-            </Button>
-          )}
-        </div>
-      </div>
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+            </button>
+            {canCreateMasterData && (
+              <Button
+                size="sm"
+                icon={<Plus className="w-4 h-4" />}
+                onClick={handleOpenCreate}
+              >
+                เพิ่มข้อมูลใหม่
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {/* Tabs Bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-700">

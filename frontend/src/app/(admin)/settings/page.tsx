@@ -1,8 +1,8 @@
 'use client';
 
-import { TabBar, type TabBarItem } from '@/components/ui';
+import { TabBar, type TabBarItem, PageHeader } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Users, Shield, History, ArrowLeft } from 'lucide-react';
+import { Users, Shield, History, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
 import { settingsService } from '@/services/settingsService';
@@ -474,8 +474,14 @@ export default function SettingsPage() {
 
   return (
     <div className={`space-y-4 font-sans ${activeTab === 'roles' ? 'pb-2' : 'pb-12'}`}>
+      <PageHeader
+        title="ตั้งค่าระบบ"
+        subtitle="จัดการผู้ใช้งาน กำหนดบทบาทและสิทธิ์ บันทึกการใช้งานระบบ และสายการอนุมัติ"
+        icon={Settings}
+      />
+
       {/* 1. Sub-Navigation Tabs (ตรงตามรูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 rounded-t-2xl">
         <TabBar
           aria-label="เมนูตั้งค่า"
           items={([

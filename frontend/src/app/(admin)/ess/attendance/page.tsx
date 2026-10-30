@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { TabBar, type TabBarItem } from '@/components/ui';
+import { TabBar, type TabBarItem, PageHeader } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -415,6 +415,12 @@ export default function EssAttendancePage() {
 
   return (
     <div className="space-y-6 pb-12">
+      <PageHeader
+        title="บันทึกเวลาของฉัน"
+        subtitle="ตรวจสอบเวลาเข้า-ออกงาน ประวัติการลงเวลา และยื่นคำขอปรับปรุงเวลา"
+        icon={Clock}
+      />
+
       {/* การ์ดสรุปประจำเดือน (บนสุด) */}
       {activeTab === 'history' && monthlySummary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

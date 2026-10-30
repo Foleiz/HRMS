@@ -18,3 +18,4 @@ export * from './MoneyInput';
 export * from './TabBar';
 export * from './RefreshIndicator';
 export * from './TablePagination';
+export * from './PageHeader';

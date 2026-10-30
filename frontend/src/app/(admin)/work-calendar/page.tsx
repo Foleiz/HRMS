@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, Button, TabBar, type TabBarItem } from '@/components/ui';
+import { ModalShell, Button, TabBar, type TabBarItem, PageHeader } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -434,8 +434,14 @@ export default function WorkCalendarPage() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        title="วันทำงานและวันหยุด"
+        subtitle="กำหนดวันทำงานปกติ เวลาเข้า-ออกงานมาตรฐาน และปฏิทินวันหยุดประจำปี"
+        icon={CalendarDays}
+      />
+
       {/* 1. Sub-navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <TabBar
           aria-label="เมนูปฏิทินการทำงาน"
           items={([
@@ -477,7 +483,7 @@ export default function WorkCalendarPage() {
             {/* Time Setting Bar */}
             <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary dark:text-blue-300 flex items-center justify-center shrink-0 dark:bg-primary/30">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-700/80 flex items-center justify-center text-[#0B2046] dark:text-slate-100 shadow-2xs shrink-0 transition-colors">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>

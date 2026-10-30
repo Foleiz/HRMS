@@ -2,12 +2,14 @@
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import { Button } from '@/components/ui/Button';
+import { PageHeader } from '@/components/ui';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Pin,
   Calendar as CalendarIcon,
+  CalendarDays,
   Users,
   X,
   Sparkles,
@@ -326,6 +328,12 @@ export default function MyNewsCalendarPage() {
 
   return (
     <div className="space-y-5 pb-16">
+      <PageHeader
+        title="ข่าวสารสำหรับฉัน"
+        subtitle="ปฏิทินข่าวสาร ประกาศองค์กร และกิจกรรมสำคัญประจำวัน"
+        icon={CalendarDays}
+      />
+
       {/* Main Navigation Controls Card (Identical to mockup) */}
       <div className="bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Month / Week / Day Navigator with Arrows */}

@@ -12,6 +12,7 @@ import {
   MySalarySlipItem,
 } from '@/types/mySalary';
 import {
+  Wallet,
   Search,
   Lock,
   Download,
@@ -23,7 +24,7 @@ import {
   PieChart as PieChartIcon,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Button, StatusBadge, RowActions, RowActionButton, inputClass } from '@/components/ui';
+import { Button, StatusBadge, RowActions, RowActionButton, inputClass, PageHeader } from '@/components/ui';
 import { TablePagination } from '@/components/ui/TablePagination';
 
 export default function MySalaryPage() {
@@ -200,31 +201,30 @@ function MySalaryContent() {
         {/* ========================================================= */}
         {/* B1: TOP HEADER: เหลือชุดเดียว ชื่อพนักงาน · ตำแหน่ง · แผนก และปุ่มดาวน์โหลด */}
         {/* ========================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              {detailData?.employeeName} ({detailData?.employeeCode}) · {detailData?.positionName} · {detailData?.departmentName}
-            </p>
-          </div>
+        <PageHeader
+          title="เงินเดือนของฉัน"
+          subtitle={`${detailData?.employeeName || ''} (${detailData?.employeeCode || ''}) · ${detailData?.positionName || ''} · ${detailData?.departmentName || ''}`}
+          icon={Wallet}
+          actions={
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Download PDF Button */}
+              <Button
+                size="sm"
+                onClick={() => handleDownloadPdf(selectedPayrollId, detailData?.periodMonthName, detailData?.passwordHint)}
+                loading={downloadingId === selectedPayrollId}
+                icon={downloadingId === selectedPayrollId ? undefined : <Download className="w-4 h-4 text-emerald-400" />}
+              >
+                {downloadingId === selectedPayrollId ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดสลิปเงินเดือน (PDF)'}
+              </Button>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Download PDF Button */}
-            <Button
-              size="sm"
-              onClick={() => handleDownloadPdf(selectedPayrollId, detailData?.periodMonthName, detailData?.passwordHint)}
-              loading={downloadingId === selectedPayrollId}
-              icon={downloadingId === selectedPayrollId ? undefined : <Download className="w-4 h-4 text-emerald-400" />}
-            >
-              {downloadingId === selectedPayrollId ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดสลิปเงินเดือน (PDF)'}
-            </Button>
-
-            {/* A3: Top Right Security Notice Pill with dynamic password hint */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium shadow-xs">
-              <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>รหัสเปิดไฟล์: {detailData?.passwordHint || overview?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย'}</span>
+              {/* A3: Top Right Security Notice Pill with dynamic password hint */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium shadow-xs">
+                <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>รหัสเปิดไฟล์: {detailData?.passwordHint || overview?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย'}</span>
+              </div>
             </div>
-          </div>
-        </div>
+          }
+        />
 
         {/* ========================================================= */}
         {/* MAIN SLIP BREAKDOWN CARD                                  */}

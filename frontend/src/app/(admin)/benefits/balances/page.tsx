@@ -214,8 +214,8 @@ export default function EmployeeBenefitBalancesPage() {
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shrink-0 shadow-inner">
-              <Gift className="w-6 h-6 text-cyan-300" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[#0B2046] dark:text-slate-100 shadow-2xs shrink-0 transition-colors">
+              <Gift className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">

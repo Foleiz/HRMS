@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, TabBar, type TabBarItem, TablePagination } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem, TablePagination, PageHeader } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1243,11 +1243,18 @@ function DailyAttendanceContent() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Page Header */}
+      <PageHeader
+        title="ตรวจบันทึกเวลา"
+        subtitle="ตรวจสอบและจัดการเวลาเข้า-ออกงานประจำวัน นำเข้าไฟล์ และคำขอปรับปรุงเวลา"
+        icon={Clock}
+      />
+
       {/* ------------------------------------------------------------- */}
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <TabBar
           aria-label="เมนูลงเวลา"
           items={([
