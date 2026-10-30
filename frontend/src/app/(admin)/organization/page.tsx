@@ -32,6 +32,7 @@ import {
   Phone,
   MapPin,
   Stamp,
+  Camera,
 } from 'lucide-react';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
@@ -302,6 +303,7 @@ export default function OrganizationPage() {
     sealData: null,
     ceoEmployeeId: null,
   });
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
 
   // Company Bank Account states
   const [bankAccounts, setBankAccounts] = useState<CompanyBankAccount[]>([]);
@@ -782,6 +784,10 @@ export default function OrganizationPage() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.warning('กรุณาเลือกไฟล์ภาพที่ถูกต้อง (PNG, JPG, SVG, WebP)');
+      return;
+    }
     if (file.size > 2 * 1024 * 1024) {
       toast.error('ขนาดไฟล์ภาพต้องไม่เกิน 2MB');
       return;
@@ -1726,67 +1732,126 @@ export default function OrganizationPage() {
           const activeEmployees = employees.filter((e) => !e.employmentStatus || e.employmentStatus === 'ACTIVE').length;
           return (
             <form onSubmit={handleSaveCompany} className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start">
-              {/* ซ้าย: การ์ดสรุปบริษัท */}
-              <div className="lg:sticky lg:top-4 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 text-center">
-                <div className="w-28 h-28 mx-auto rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 flex items-center justify-center overflow-hidden">
-                  {companyForm.logoData ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={companyForm.logoData.startsWith('data:') ? companyForm.logoData : `data:image/png;base64,${companyForm.logoData}`}
-                      alt="Company Logo"
-                      className="w-full h-full object-contain p-1.5"
-                    />
-                  ) : (
-                    <Building className="w-10 h-10 text-slate-400" />
-                  )}
+              {/* ซ้าย: การ์ดสรุปบริษัท (สไตล์เดียวกับหน้าโปรไฟล์) */}
+              <div className="lg:sticky lg:top-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col">
+                {/* รหัสบริษัทที่มุมซ้ายบน และสถานะที่มุมขวาบน */}
+                <div className="flex items-center justify-between w-full mb-3">
+                  <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-full font-mono">
+                    {company?.companyCode || 'SIT01'}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                      companyForm.status === 'ACTIVE'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${companyForm.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                    {companyForm.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                  </span>
                 </div>
-                {canEditCompany && (
-                  <div className="flex items-center justify-center gap-2 mt-3">
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer shadow-sm transition-colors">
-                      <Upload className="w-3.5 h-3.5 text-slate-500" />
-                      อัปโหลดโลโก้
-                      <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                    </label>
-                    {companyForm.logoData && (
+
+                {/* โลโก้บริษัท (สไตล์ Avatar โปรไฟล์ พร้อมปุ่มกล้องลอย) */}
+                <div className="flex flex-col items-center">
+                  <div className="relative mb-3 group/logo">
+                    <button
+                      type="button"
+                      onClick={canEditCompany ? () => logoFileInputRef.current?.click() : undefined}
+                      disabled={!canEditCompany}
+                      className={`relative w-28 h-28 rounded-full overflow-hidden ring-4 ring-slate-100 dark:ring-slate-700 shadow-md bg-white dark:bg-slate-900 flex items-center justify-center transition-all duration-300 focus:outline-none block ${
+                        canEditCompany
+                          ? 'cursor-pointer group-hover/logo:ring-primary/40 group-hover/logo:shadow-xl'
+                          : 'cursor-default'
+                      }`}
+                      title={canEditCompany ? 'คลิกเพื่อแก้ไขโลโก้บริษัท' : undefined}
+                    >
+                      {companyForm.logoData ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={companyForm.logoData.startsWith('data:') ? companyForm.logoData : `data:image/png;base64,${companyForm.logoData}`}
+                          alt="Company Logo"
+                          className={`w-full h-full object-contain p-2.5 transition-transform duration-300 ${
+                            canEditCompany ? 'group-hover/logo:scale-105' : ''
+                          }`}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-400">
+                          <Building2 className="w-10 h-10 text-slate-400" />
+                        </div>
+                      )}
+
+                      {/* Overlay แสดงเมื่อโฮเวอร์ */}
+                      {canEditCompany && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] opacity-0 group-hover/logo:opacity-100 transition-all duration-200 flex flex-col items-center justify-center text-white z-10 pointer-events-none">
+                          <Camera className="w-6 h-6 mb-1 text-white drop-shadow animate-in zoom-in-75 duration-150" />
+                          <span className="text-[11px] font-medium text-white tracking-tight drop-shadow">
+                            แก้ไขโลโก้
+                          </span>
+                        </div>
+                      )}
+                    </button>
+
+                    {/* ปุ่มกล้องเล็กที่มุมล่างขวา */}
+                    {canEditCompany && (
                       <button
                         type="button"
-                        onClick={() => setCompanyForm({ ...companyForm, logoData: null })}
-                        className="px-2.5 py-1.5 text-xs text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors cursor-pointer"
+                        onClick={() => logoFileInputRef.current?.click()}
+                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
+                        title="แก้ไขโลโก้บริษัท"
                       >
-                        นำรูปออก
+                        <Camera className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
-                )}
-                <p className="text-[11px] text-slate-400 mt-1.5">PNG / JPG / SVG ไม่เกิน 2MB</p>
 
-                <h3 className="mt-4 text-base font-bold text-slate-900 dark:text-slate-100 break-words">
-                  {companyForm.companyName || company?.companyName || '-'}
-                </h3>
-                <p className="text-xs font-mono text-slate-500 dark:text-slate-400">{company?.companyCode || '-'}</p>
-                <span
-                  className={`inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
-                    companyForm.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${companyForm.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                  {companyForm.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
-                </span>
+                  {/* Hidden input สำหรับอัปโหลดโลโก้ */}
+                  <input
+                    ref={logoFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                  />
 
-                <div className="grid grid-cols-3 gap-2 mt-4">
+                  {/* ปุ่มนำรูปออก (ถ้ามีโลโก้) */}
+                  {companyForm.logoData && canEditCompany && (
+                    <button
+                      type="button"
+                      onClick={() => setCompanyForm({ ...companyForm, logoData: null })}
+                      className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 font-medium hover:underline inline-flex items-center gap-1 mb-2 transition-colors cursor-pointer"
+                      title="นำรูปออก"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      นำรูปออก
+                    </button>
+                  )}
+
+                  {/* Company Name & Subtitle */}
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center tracking-tight break-words">
+                    {companyForm.companyName || company?.companyName || '-'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-0.5">
+                    {ceo?.fullName ? `ผู้บริหาร: ${ceo.fullName}` : 'สำนักงานใหญ่'}
+                  </p>
+                </div>
+
+                <hr className="my-5 border-slate-100 dark:border-slate-700/60" />
+
+                {/* สรุปโครงสร้างองค์กร (ฝ่าย / แผนก / พนักงาน) */}
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { label: 'ฝ่าย', value: divisions.length },
                     { label: 'แผนก', value: departments.length },
                     { label: 'พนักงาน', value: activeEmployees },
                   ].map((s) => (
-                    <div key={s.label} className="rounded-xl bg-slate-50 dark:bg-slate-900/60 py-2.5">
+                    <div key={s.label} className="rounded-xl bg-slate-50 dark:bg-slate-900/60 py-2.5 text-center">
                       <div className="text-lg font-bold text-primary dark:text-blue-300">{s.value}</div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">{s.label}</div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/60 text-left text-xs space-y-1.5">
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/60 text-left text-xs space-y-2">
                   <div className="flex justify-between gap-2">
                     <span className="text-slate-500 dark:text-slate-400">ผู้บริหารสูงสุด</span>
                     <span className="font-semibold text-slate-800 dark:text-slate-200 text-right truncate">{ceo?.fullName || '-'}</span>
