@@ -1791,16 +1791,31 @@ export default function OrganizationPage() {
                       )}
                     </button>
 
-                    {/* ปุ่มกล้องเล็กที่มุมล่างขวา */}
+                    {/* ปุ่มที่มุมล่างขวา: ถ้ามีโลโก้แสดงปุ่มลบ (Trash2) ถ้าไม่มีโลโก้แสดงปุ่มกล้อง (Camera) */}
                     {canEditCompany && (
-                      <button
-                        type="button"
-                        onClick={() => logoFileInputRef.current?.click()}
-                        className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
-                        title="แก้ไขโลโก้บริษัท"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                      </button>
+                      companyForm.logoData ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCompanyForm((prev) => ({ ...prev, logoData: null }));
+                            toast.success('ลบโลโก้บริษัทเรียบร้อย');
+                          }}
+                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-rose-600 text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-rose-700 hover:scale-110 transition-all cursor-pointer z-20"
+                          title="ลบโลโก้บริษัท"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => logoFileInputRef.current?.click()}
+                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
+                          title="เพิ่มโลโก้บริษัท"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                        </button>
+                      )
                     )}
                   </div>
 
@@ -1812,19 +1827,6 @@ export default function OrganizationPage() {
                     onChange={handleLogoUpload}
                     className="hidden"
                   />
-
-                  {/* ปุ่มนำรูปออก (ถ้ามีโลโก้) */}
-                  {companyForm.logoData && canEditCompany && (
-                    <button
-                      type="button"
-                      onClick={() => setCompanyForm({ ...companyForm, logoData: null })}
-                      className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 font-medium hover:underline inline-flex items-center gap-1 mb-2 transition-colors cursor-pointer"
-                      title="นำรูปออก"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      นำรูปออก
-                    </button>
-                  )}
 
                   {/* Company Name & Subtitle */}
                   <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center tracking-tight break-words">

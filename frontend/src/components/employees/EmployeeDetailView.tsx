@@ -239,9 +239,13 @@ export default function EmployeeDetailView({
   const canEditSignature = canEditEmployee || (!!user?.employeeId && user.employeeId === employee.id);
 
   // Custom Avatar
-  const [customAvatar, setCustomAvatar] = useState<string | null>(null);
+  const [customAvatar, setCustomAvatar] = useState<string | null | undefined>(undefined);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setCustomAvatar(undefined);
+  }, [employee.id, employee.avatarUrl]);
 
   // Digital Signature State
   const [customSig, setCustomSig] = useState<string | null>(null);
@@ -299,6 +303,32 @@ export default function EmployeeDetailView({
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    }
+  };
+
+  const handleDeleteAvatar = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canEditEmployee) return;
+
+    const confirmed = await confirmDelete({
+      title: 'ยืนยันการลบรูปโปรไฟล์',
+      text: 'คุณต้องการลบรูปโปรไฟล์นี้ใช่หรือไม่?',
+    });
+    if (!confirmed) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      await employeeService.deleteAvatar(employee.id);
+      setCustomAvatar(null);
+      window.dispatchEvent(new CustomEvent('hrms:avatar-updated', { detail: { employeeId: employee.id } }));
+      const updated = await employeeService.getById(employee.id);
+      onEmployeeUpdate?.(updated);
+      toast.success('ลบรูปโปรไฟล์เรียบร้อยแล้ว');
+    } catch (err: unknown) {
+      const error = err as Error;
+      toast.error(error.message || 'เกิดข้อผิดพลาดในการลบรูปโปรไฟล์');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -457,7 +487,7 @@ export default function EmployeeDetailView({
     employee.bankAccounts?.find((b) => b.status === 'ACTIVE');
   const pendingBank = employee.bankAccounts?.find((b) => b.status === 'PENDING_VERIFY');
   const rejectedBank = employee.bankAccounts?.find((b) => b.status === 'REJECTED');
-  const rawAvatarUrl = customAvatar || employee.avatarUrl;
+  const rawAvatarUrl = customAvatar !== undefined ? customAvatar : employee.avatarUrl;
   const avatarUrl = rawAvatarUrl ? getAvatarUrl(rawAvatarUrl) : null;
   const rawSigUrl = customSig || employee.signatureUrl;
   const signatureUrl = rawSigUrl ? getAvatarUrl(rawSigUrl) : null;
@@ -558,16 +588,29 @@ export default function EmployeeDetailView({
                 )}
               </button>
 
-              {/* ปุ่มกล้องเล็กที่มุมล่างขวา */}
+              {/* ปุ่มที่มุมล่างขวา: ถ้ามีรูปแสดงปุ่มลบ (Trash2) ถ้าไม่มีรูปแสดงปุ่มกล้อง (Camera) */}
               {canEditEmployee && (
-                <button
-                  type="button"
-                  onClick={handleAvatarClick}
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
-                  title="แก้ไขรูปโปรไฟล์"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                </button>
+                avatarUrl ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteAvatar}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-rose-600 text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-rose-700 hover:scale-110 transition-all cursor-pointer z-20"
+                    title="ลบรูปโปรไฟล์"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleAvatarClick}
+                    disabled={isUploadingAvatar}
+                    className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
+                    title="เพิ่มรูปโปรไฟล์"
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                  </button>
+                )
               )}
             </div>
 
