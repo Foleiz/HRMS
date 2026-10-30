@@ -737,7 +737,7 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
-                <BarChart3 className="w-4 h-4 text-[#3F5F8C] dark:text-[#A3B8D8]" />
+                <BarChart3 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 ตารางสรุปอัตรากำลังคนจำแนกตามแผนก
               </h3>
               <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -999,7 +999,7 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
-                <FileSpreadsheet className="w-4 h-4 text-amber-600" />
+                <FileSpreadsheet className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 ตารางสรุปเวลาทำงานและการมาสายรายบุคคล
               </h3>
               <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -1333,7 +1333,7 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                <FileSpreadsheet className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm dark:text-slate-200">
                   ตารางจำแนกภาษีเงินได้หัก ณ ที่จ่าย และเงินสมทบประกันสังคมรายบุคคล
                 </h3>
@@ -1679,7 +1679,7 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
             <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
-                <BarChart3 className="w-4 h-4 text-blue-600" />
+                <BarChart3 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 อัตราการเข้า-ออกของพนักงานจำแนกตามแผนก
               </h3>
               <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">

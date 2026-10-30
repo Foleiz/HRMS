@@ -5046,7 +5046,7 @@ export default function PayrollPage() {
                         ขั้นตอนที่ 4: โอนเงิน & ปิดรอบ
                       </div>
                       <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                        <Wallet className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        <Wallet className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                         <span>การจ่ายเงินเดือนและแนบสลิป</span>
                         {selectedPeriod && (
                           <span className="text-slate-400 font-normal">— {selectedPeriod.periodName}</span>

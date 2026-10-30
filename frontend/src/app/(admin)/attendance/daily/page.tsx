@@ -1619,12 +1619,9 @@ function DailyAttendanceContent() {
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 dark:border-slate-700/60">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
-                  <HardDrive className="w-5 h-5 text-blue-600" />
+                  <HardDrive className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                   อัปโหลดไฟล์ข้อมูลเวลาเข้างาน
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
-                  นำเข้าไฟล์ Excel (.xlsx, .xls) หรือ CSV จากเครื่องสแกนเพื่อคำนวณเวลาเข้า-ออกงานให้อัตโนมัติ
-                </p>
               </div>
               <div className="flex items-center gap-2.5 shrink-0">
                 <Button
@@ -1706,17 +1703,6 @@ function DailyAttendanceContent() {
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
                         รองรับไฟล์ประเภท .xlsx, .xls หรือ .csv (ขนาดไม่เกิน 20MB)
                       </p>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsFormatModalOpen(true);
-                        }}
-                        className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
-                      >
-                        <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                        <span>ดูรูปแบบไฟล์ต้นฉบับ / ดาวน์โหลดไฟล์แม่แบบ</span>
-                      </button>
                     </div>
                   </div>
                 )}
@@ -1749,12 +1735,12 @@ function DailyAttendanceContent() {
             <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4 dark:border-slate-700/60">
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
-                  <FileText className="w-5 h-5 text-blue-600" />
+                  <FileText className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                   ประวัติการนำเข้าไฟล์ย้อนหลัง
+                  <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+                    ({batchTotalCount.toLocaleString()} รายการ)
+                  </span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
-                  รายการชุดข้อมูลไฟล์บันทึกเวลาทั้งหมดที่เคยนำเข้าสู่ระบบ ({batchTotalCount.toLocaleString()} รายการ)
-                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -2422,7 +2408,7 @@ function DailyAttendanceContent() {
             <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50 dark:border-slate-700/60">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
-                  <BarChart3 className="w-4 h-4 text-primary" />
+                  <BarChart3 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                   <span>สรุปเวลาทำงานประจำเดือน {THAI_MONTHS[monthlyMonth - 1]} {monthlyYear + 543}</span>
                 </h3>
                 <p className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
