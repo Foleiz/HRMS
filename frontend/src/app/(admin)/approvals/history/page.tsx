@@ -632,7 +632,7 @@ export default function ApprovalHistoryPage() {
             <p className="text-gray-400 text-sm">ไม่พบประวัติเอกสารสำหรับเงื่อนไขที่เลือก</p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
             <table className="table-standard w-full min-w-[850px] text-xs whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
@@ -645,7 +645,7 @@ export default function ApprovalHistoryPage() {
                   <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">การจัดการ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-900">
                 {paginatedHistory.map((item) => {
                   const isPendingApprovedByMe = item.status === 'PENDING' && item.hasAlreadyApproved;
                   const statusConf = isPendingApprovedByMe
@@ -653,7 +653,7 @@ export default function ApprovalHistoryPage() {
                     : STATUS_CONFIG[item.status] ?? STATUS_CONFIG['PENDING'];
 
                   return (
-                    <tr key={item.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
+                    <tr key={item.id} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
                       {/* 1. เลขที่เอกสาร */}
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <button

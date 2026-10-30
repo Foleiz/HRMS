@@ -1109,7 +1109,7 @@ export default function LeaveRequestsApprovalPage() {
         ) : (
           <>
             {/* Desktop View: Full Approvals Table */}
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 hidden lg:block">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 hidden lg:block bg-white dark:bg-slate-900">
               <table className="table-standard w-full min-w-[850px] text-xs whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
@@ -1131,12 +1131,12 @@ export default function LeaveRequestsApprovalPage() {
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     สถานะ
                   </th>
-                  <th className="sticky right-0 z-10 bg-gray-50 dark:bg-slate-800 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                  <th className="sticky right-0 z-10 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] text-right px-5 py-3.5 text-xs font-semibold uppercase tracking-wide">
                     ดำเนินการ
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-900">
                 {paginatedRequests.map((item) => {
                   const statusConf = getRowStatus(item);
                   const isPending = item.status === 'PENDING';
@@ -1144,11 +1144,7 @@ export default function LeaveRequestsApprovalPage() {
                   return (
                     <tr
                       key={item.id}
-                      className={`transition-colors ${
-                        item.isMyTurnToApprove
-                          ? 'bg-amber-50/30 hover:bg-amber-50/50'
-                          : 'hover:bg-gray-50 dark:bg-slate-800/50'
-                      }`}
+                      className="group bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
                     >
                       {/* 1. เลขที่เอกสาร */}
                       <td className="px-5 py-3.5 whitespace-nowrap">
@@ -1235,7 +1231,7 @@ export default function LeaveRequestsApprovalPage() {
                       </td>
 
                       {/* 7. ดำเนินการ — รวมปุ่มพิจารณา */}
-                      <td className="sticky right-0 z-[1] bg-white dark:bg-slate-800 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] px-5 py-3.5 whitespace-nowrap text-right">
+                      <td className="sticky right-0 z-[1] bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)] px-5 py-3.5 whitespace-nowrap text-right transition-colors">
                         <div className="flex items-center justify-end gap-2">
                           {isPending && item.isMyTurnToApprove ? (
                             <ActionDropdown
