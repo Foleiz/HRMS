@@ -41,7 +41,7 @@ import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
-import { Button, TablePagination } from '@/components/ui';
+import { Button, TablePagination, ActionDropdown } from '@/components/ui';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
@@ -971,6 +971,53 @@ export default function LeaveRequestsApprovalPage() {
     }
   };
 
+  /** ดำเนินการอนุมัติคำขอตามประเภทเอกสาร */
+  const handleApproveItem = (item: UnifiedApprovalItem) => {
+    if (item.docType === 'LEAVE') {
+      openApproveDialog(item.leaveRaw!);
+    } else if (item.docType === 'CERTIFICATE') {
+      openApproveCertDialog(item.certRaw!);
+    } else if (item.docType === 'RESIGNATION') {
+      openApproveResignDialog(item.resignationRaw!);
+    } else if (item.docType === 'GENERAL') {
+      openApproveGeneralDialog(item.generalRaw!);
+    } else if (item.docType === 'TIME_ADJUST') {
+      setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
+    } else if (item.docType === 'BENEFIT') {
+      setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
+    }
+  };
+
+  /** ดำเนินการปฏิเสธคำขอตามประเภทเอกสาร */
+  const handleRejectItem = (item: UnifiedApprovalItem) => {
+    if (item.docType === 'LEAVE') {
+      openRejectDialog(item.leaveRaw!);
+    } else if (item.docType === 'CERTIFICATE') {
+      openRejectCertDialog(item.certRaw!);
+    } else if (item.docType === 'RESIGNATION') {
+      openRejectResignDialog(item.resignationRaw!);
+    } else if (item.docType === 'GENERAL') {
+      openRejectGeneralDialog(item.generalRaw!);
+    } else if (item.docType === 'TIME_ADJUST') {
+      setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
+    } else if (item.docType === 'BENEFIT') {
+      setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
+    }
+  };
+
+  /** ยกเลิกคำขอที่เคยอนุมัติแล้ว */
+  const handleCancelItem = (item: UnifiedApprovalItem) => {
+    if (item.docType === 'LEAVE') {
+      handleCancelLeave(item.leaveRaw!);
+    } else if (item.docType === 'CERTIFICATE') {
+      handleCancelCert(item.certRaw!);
+    } else if (item.docType === 'RESIGNATION') {
+      handleCancelResign(item.resignationRaw!);
+    } else if (item.docType === 'GENERAL') {
+      handleCancelGeneral(item.generalRaw!);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร */}
@@ -1200,90 +1247,70 @@ export default function LeaveRequestsApprovalPage() {
                         </span>
                       </td>
 
-                      {/* 7. ดำเนินการ — ตรึงไว้ขวาสุด ไม่ต้องเลื่อนตารางเพื่อกดอนุมัติ */}
+                      {/* 7. ดำเนินการ — รวมปุ่มพิจารณา */}
                       <td className="sticky right-0 z-[1] bg-white dark:bg-slate-800 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {/* 1. กรณีเป็นคิวของผู้ใช้นี้ในการพิจารณา */}
-                          {isPending && item.isMyTurnToApprove && (
+                          {isPending && item.isMyTurnToApprove ? (
+                            <ActionDropdown
+                              align="right"
+                              menuClassName="w-44 p-1.5 shadow-xl rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                              trigger={
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all shadow-xs cursor-pointer">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>พิจารณา</span>
+                                  <ChevronDown className="w-3 h-3 opacity-80" />
+                                </span>
+                              }
+                              items={[
+                                {
+                                  id: 'view',
+                                  label: 'ดูเอกสาร',
+                                  icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+                                  onClick: () => openDocument(item),
+                                },
+                                { divider: true, label: '' },
+                                {
+                                  id: 'approve',
+                                  label: 'อนุมัติ',
+                                  icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
+                                  className: '!text-emerald-700 dark:!text-emerald-300 hover:!bg-emerald-50 dark:hover:!bg-emerald-950/40 font-semibold',
+                                  onClick: () => handleApproveItem(item),
+                                },
+                                {
+                                  id: 'reject',
+                                  label: 'ปฏิเสธ',
+                                  icon: <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
+                                  className: '!text-rose-700 dark:!text-rose-300 hover:!bg-rose-50 dark:hover:!bg-rose-950/40 font-semibold',
+                                  onClick: () => handleRejectItem(item),
+                                },
+                              ]}
+                            />
+                          ) : (
                             <>
                               <button
-                                onClick={() => {
-                                  if (item.docType === 'LEAVE') {
-                                    openApproveDialog(item.leaveRaw!);
-                                  } else if (item.docType === 'CERTIFICATE') {
-                                    openApproveCertDialog(item.certRaw!);
-                                  } else if (item.docType === 'RESIGNATION') {
-                                    openApproveResignDialog(item.resignationRaw!);
-                                  } else if (item.docType === 'GENERAL') {
-                                    openApproveGeneralDialog(item.generalRaw!);
-                                  } else if (item.docType === 'TIME_ADJUST') {
-                                    setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
-                                  } else if (item.docType === 'BENEFIT') {
-                                    setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 ring-2 ring-emerald-300 ring-offset-1 transition-all shadow-sm cursor-pointer"
-                                title={`อนุมัติเอกสาร${item.docTypeName}`}
+                                type="button"
+                                onClick={() => openDocument(item)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                                title="ดูเอกสาร"
                               >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                อนุมัติ
+                                <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
+                                ดูเอกสาร
                               </button>
-                              <button
-                                onClick={() => {
-                                  if (item.docType === 'LEAVE') {
-                                    openRejectDialog(item.leaveRaw!);
-                                  } else if (item.docType === 'CERTIFICATE') {
-                                    openRejectCertDialog(item.certRaw!);
-                                  } else if (item.docType === 'RESIGNATION') {
-                                    openRejectResignDialog(item.resignationRaw!);
-                                  } else if (item.docType === 'GENERAL') {
-                                    openRejectGeneralDialog(item.generalRaw!);
-                                  } else if (item.docType === 'TIME_ADJUST') {
-                                    setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
-                                  } else if (item.docType === 'BENEFIT') {
-                                    setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-all shadow-sm cursor-pointer"
-                                title={`ปฏิเสธคำขอ${item.docTypeName}`}
-                              >
-                                <XCircle className="w-3.5 h-3.5" />
-                                ปฏิเสธ
-                              </button>
+
+                              {(item.status === 'APPROVED' || item.hasAlreadyApproved) &&
+                                item.docType !== 'BENEFIT' &&
+                                item.docType !== 'TIME_ADJUST' &&
+                                (item.docType !== 'LEAVE' || item.canCancel) && (
+                                  <button
+                                    onClick={() => handleCancelItem(item)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer"
+                                    title="ยกเลิกคำขอ"
+                                  >
+                                    <Ban className="w-3.5 h-3.5" />
+                                    ยกเลิกคำขอ
+                                  </button>
+                                )}
                             </>
-                          )}
-
-                          {/* 4. ดูเอกสาร */}
-                          <button
-                            type="button"
-                            onClick={() => openDocument(item)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-all cursor-pointer"
-                            title="ดูเอกสาร"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                            ดูเอกสาร
-                          </button>
-
-                          {/* 5. ยกเลิกคำขอ — จะขึ้นก็ต่อเมื่อกดอนุมัติไปแล้ว */}
-                          {(item.status === 'APPROVED' || item.hasAlreadyApproved) && !(isPending && item.isMyTurnToApprove) && item.docType !== 'BENEFIT' && item.docType !== 'TIME_ADJUST' && (item.docType !== 'LEAVE' || item.canCancel) && (
-                            <button
-                              onClick={() => {
-                                if (item.docType === 'LEAVE') {
-                                  handleCancelLeave(item.leaveRaw!);
-                                } else if (item.docType === 'CERTIFICATE') {
-                                  handleCancelCert(item.certRaw!);
-                                } else if (item.docType === 'RESIGNATION') {
-                                  handleCancelResign(item.resignationRaw!);
-                                } else if (item.docType === 'GENERAL') {
-                                  handleCancelGeneral(item.generalRaw!);
-                                }
-                              }}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-medium transition-all cursor-pointer"
-                              title="ยกเลิกคำขอ"
-                            >
-                              <Ban className="w-3.5 h-3.5" />
-                              ยกเลิกคำขอ
-                            </button>
                           )}
                         </div>
                       </td>
