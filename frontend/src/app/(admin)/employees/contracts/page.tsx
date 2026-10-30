@@ -182,17 +182,7 @@ export default function ContractsPage() {
         />
       </div>
 
-      {/* 2. Header Action Bar */}
-      {canCreateContracts && (
-        <div className="flex items-center justify-end">
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            icon={<Plus className="w-4 h-4" />}
-          >
-            สร้างสัญญาใหม่
-          </Button>
-        </div>
-      )}
+
 
       {/* 4. KPI Stat Cards (3 Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -230,59 +220,68 @@ export default function ContractsPage() {
         </div>
       </div>
 
-      {/* 5. Sub-Tabs & Filter / Search Controls */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
-        {/* Tab Header ตรงตาม Mockup */}
-        <div className="px-6 pt-5 flex flex-wrap items-center justify-between gap-4">
-          <h3 className="pb-3 text-sm font-bold text-slate-800 dark:text-slate-200">รายการสัญญาจ้างงาน</h3>
+      {/* 5. Main Card Container with Filters & Table (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              {/* Search Input มาตรฐานระบบ */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
 
-          {/* Search & Filter Inputs (ข้อเสนอแนะที่ได้รับอนุมัติ) */}
-          <div className="flex flex-wrap items-center gap-3 pb-3">
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ค้นหาชื่อ หรือ รหัสพนักงาน..."
-                className="w-full h-9 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
+              <CustomSelect
+                value={selectedContractType}
+                onChange={(val) => setSelectedContractType(String(val))}
+                placeholder="ประเภทสัญญาทั้งหมด"
+                className="min-w-[170px]"
+                options={[
+                  { value: 'ALL', label: 'ประเภทสัญญาทั้งหมด' },
+                  { value: 'PROBATION', label: 'ทดลองงาน' },
+                  { value: 'PERMANENT', label: 'ประจำ' },
+                  { value: 'FIXED_TERM', label: 'สัญญาจ้าง' },
+                  { value: 'OTHER', label: 'อื่นๆ / ฝึกงาน' },
+                ]}
+              />
+
+              <CustomSelect
+                value={selectedStatus}
+                onChange={(val) => setSelectedStatus(String(val))}
+                placeholder="สถานะทั้งหมด"
+                className="min-w-[150px]"
+                options={[
+                  { value: 'ALL', label: 'สถานะทั้งหมด' },
+                  { value: 'ACTIVE', label: 'ใช้งาน' },
+                  { value: 'PENDING_APPROVAL', label: 'รออนุมัติ' },
+                  { value: 'TERMINATED', label: 'สิ้นสุดแล้ว' },
+                ]}
               />
             </div>
 
-            <CustomSelect
-              value={selectedContractType}
-              onChange={(val) => setSelectedContractType(String(val))}
-              placeholder="ประเภทสัญญาทั้งหมด"
-              className="min-w-[170px]"
-              options={[
-                { value: 'ALL', label: 'ประเภทสัญญาทั้งหมด' },
-                { value: 'PROBATION', label: 'ทดลองงาน' },
-                { value: 'PERMANENT', label: 'ประจำ' },
-                { value: 'FIXED_TERM', label: 'สัญญาจ้าง' },
-                { value: 'OTHER', label: 'อื่นๆ / ฝึกงาน' },
-              ]}
-            />
-
-            <CustomSelect
-              value={selectedStatus}
-              onChange={(val) => setSelectedStatus(String(val))}
-              placeholder="สถานะทั้งหมด"
-              className="min-w-[150px]"
-              options={[
-                { value: 'ALL', label: 'สถานะทั้งหมด' },
-                { value: 'ACTIVE', label: 'ใช้งาน' },
-                { value: 'PENDING_APPROVAL', label: 'รออนุมัติ' },
-                { value: 'TERMINATED', label: 'สิ้นสุดแล้ว' },
-              ]}
-            />
+            {canCreateContracts && (
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                icon={<Plus className="w-4 h-4" />}
+                className="shrink-0 self-start sm:self-auto"
+              >
+                สร้างสัญญาใหม่
+              </Button>
+            )}
           </div>
-        </div>
 
-        {/* 6. Contracts Table ตรงตาม Mockup 100% พร้อมคอลัมน์เอกสารสัญญา */}
-        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-          <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 text-xs font-normal whitespace-nowrap">
+          {/* Contracts Table */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
+              <thead className="bg-primary text-white font-semibold">
+                <tr className="whitespace-nowrap">
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทสัญญา</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">เริ่มสัญญา</th>
@@ -485,59 +484,19 @@ export default function ContractsPage() {
 
         </div>
 
-        {/* 7. Pagination Footer ตรงตาม Mockup (< 1 2 3 4 >) */}
-        <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
-            <span>แสดง</span>
-            <CustomSelect
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value));
+          {/* Table Footer with TablePagination มาตรฐานระบบ */}
+          {contracts.length > 0 && (
+            <TablePagination
+              total={contracts.length}
+              page={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
                 setCurrentPage(1);
               }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-            </CustomSelect>
-            <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-              (แสดง {paginatedContracts.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} ถึง{' '}
-              {Math.min(currentPage * pageSize, contracts.length)} จาก {contracts.length} รายการ)
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
-                  page === currentPage
-                    ? 'bg-primary text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+            />
+          )}
         </div>
       </div>
 

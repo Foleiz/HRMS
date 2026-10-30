@@ -207,65 +207,61 @@ export default function TransfersPage() {
         </div>
       </div>
 
-      {/* 3. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-xs overflow-hidden">
-        {/* Table Header Controls */}
-        <div className="p-4 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4 flex-1">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-              ประวัติการโยกย้ายตำแหน่ง (รายบุคคล)
-            </h3>
+      {/* 3. Table Container: ตารางประวัติรายบุคคล/การโยกย้ายตำแหน่ง (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              {/* Search Input มาตรฐานระบบ */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="ค้นหาชื่อ, รหัส, ตำแหน่ง หรือเลขที่คำสั่ง..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
 
-            {/* Search & Filter Controls moved to the left */}
-            <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
+              <CustomSelect
+                value={selectedType}
+                onChange={(val) => {
+                  setSelectedType(String(val));
                   setCurrentPage(1);
                 }}
-                placeholder="ค้นหาชื่อ, รหัส, ตำแหน่ง หรือ เลขที่คำสั่ง..."
-                className="w-full h-9 pl-9 pr-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="ประเภททั้งหมด"
+                className="min-w-[170px]"
+                options={[
+                  { value: 'ALL', label: 'ประเภททั้งหมด' },
+                  { value: 'DEPARTMENT_TRANSFER', label: 'ย้ายแผนก' },
+                  { value: 'PROMOTION', label: 'เลื่อนตำแหน่ง' },
+                  { value: 'TRANSFER_AND_PROMOTION', label: 'โอนย้ายและเลื่อนตำแหน่ง' },
+                  { value: 'PROMOTION_AND_SUPERVISOR', label: 'เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน' },
+                ]}
               />
             </div>
 
-            <CustomSelect
-              value={selectedType}
-              onChange={(val) => {
-                setSelectedType(String(val));
-                setCurrentPage(1);
-              }}
-              placeholder="ประเภททั้งหมด"
-              className="min-w-[170px]"
-              options={[
-                { value: 'ALL', label: 'ประเภททั้งหมด' },
-                { value: 'DEPARTMENT_TRANSFER', label: 'ย้ายแผนก' },
-                { value: 'PROMOTION', label: 'เลื่อนตำแหน่ง' },
-                { value: 'TRANSFER_AND_PROMOTION', label: 'โอนย้ายและเลื่อนตำแหน่ง' },
-                { value: 'PROMOTION_AND_SUPERVISOR', label: 'เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน' },
-              ]}
-            />
+            {canCreateTransfers && (
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                icon={<Plus className="w-4 h-4" />}
+                className="shrink-0 self-start sm:self-auto"
+              >
+                บันทึกคำสั่งแต่งตั้ง/โยกย้าย
+              </Button>
+            )}
           </div>
 
-          {/* Action Button moved down into table */}
-          {canCreateTransfers && (
-            <Button
-              size="sm"
-              onClick={() => setIsCreateModalOpen(true)}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              บันทึกคำสั่งแต่งตั้ง/โยกย้าย
-            </Button>
-          )}
-        </div>
-
-        {/* 5. TABLE: เอาไว้ดูว่ามีใครย้ายตำแหน่งไหนไปไหนวันที่เท่าไหร่ */}
-        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-          <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-slate-700 text-slate-400 text-xs font-normal whitespace-nowrap bg-slate-50/50 dark:bg-slate-800/50">
+          {/* TABLE: เอาไว้ดูว่ามีใครย้ายตำแหน่งไหนไปไหนวันที่เท่าไหร่ */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
+              <thead className="bg-primary text-white font-semibold">
+                <tr className="whitespace-nowrap">
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">วันที่มีผล</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">จากตำแหน่ง / แผนกเดิม</th>
@@ -425,62 +421,19 @@ export default function TransfersPage() {
           </table>
         </div>
 
-        {/* 6. Pagination Footer */}
-        <div className="py-4 px-6 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center gap-2">
-            <span>แสดง</span>
-            <CustomSelect
-              value={pageSize}
-              onChange={(val) => {
-                setPageSize(Number(val));
+          {/* Table Footer with TablePagination มาตรฐานระบบ */}
+          {filteredTransfers.length > 0 && (
+            <TablePagination
+              total={filteredTransfers.length}
+              page={currentPage}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
                 setCurrentPage(1);
               }}
-              className="min-w-[70px]"
-              options={[
-                { value: 10, label: '10' },
-                { value: 20, label: '20' },
-                { value: 50, label: '50' },
-                { value: 100, label: '100' },
-                { value: 200, label: '200' },
-              ]}
             />
-            <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 dark:text-slate-500 text-[11px] ml-1">
-              (แสดง {filteredTransfers.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} ถึง {Math.min(currentPage * pageSize, filteredTransfers.length)} จาก {filteredTransfers.length} รายการ)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                  currentPage === page
-                    ? 'bg-primary dark:bg-white text-white dark:text-slate-900 font-bold'
-                    : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          )}
         </div>
       </div>
 

@@ -712,7 +712,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
   }
 
   return (
-    <div className="space-y-4 font-sans pb-12">
+    <div className="space-y-6 font-sans pb-12">
       {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma & Mockup) */}
       <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
         <TabBar
@@ -723,88 +723,88 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
         />
       </div>
 
-      {/* 2. Search Bar, Department Filter & Action Buttons */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          {/* Search Input */}
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ค้นหาพนักงาน"
-              className="w-full pl-9 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs"
-            />
-          </div>
+      {/* 2. Main Content Card (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มมุมมอง & ปุ่มเพิ่มด้านขวา */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              {/* Search Input มาตรฐานระบบ */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="ค้นหาพนักงาน..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
 
-          {/* Department Filter Dropdown - ซ่อนสำหรับ role หัวหน้าแผนก (DEPT_MGR) */}
-          {!isDeptManager && (
-            <div className="shrink-0">
-              <CustomSelect
-                value={selectedDepartment}
-                onChange={(val) => setSelectedDepartment(String(val))}
-                placeholder="ทุกแผนก"
-                className="min-w-[140px]"
-                options={[
-                  { value: 'ALL', label: 'ทุกแผนก' },
-                  ...departments.map((dept) => ({
-                    value: dept.departmentName,
-                    label: dept.departmentName,
-                  })),
-                ]}
-              />
+              {/* Department Filter Dropdown - ซ่อนสำหรับ role หัวหน้าแผนก (DEPT_MGR) */}
+              {!isDeptManager && (
+                <CustomSelect
+                  value={selectedDepartment}
+                  onChange={(val) => setSelectedDepartment(String(val))}
+                  placeholder="ทุกแผนก"
+                  className="min-w-[140px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกแผนก' },
+                    ...departments.map((dept) => ({
+                      value: dept.departmentName,
+                      label: dept.departmentName,
+                    })),
+                  ]}
+                />
+              )}
             </div>
-          )}
-        </div>
 
-        {/* Right Side: View Switcher (List vs Grid) + เพิ่มพนักงาน Button */}
-        <div className="w-full sm:w-auto flex items-center justify-end gap-3">
-          {/* View Mode Switcher Pill matching user mockup */}
-          <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => handleSetViewMode('grid')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
-                viewMode === 'grid'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
-              }`}
-              title="มุมมองการ์ด (Card View)"
-            >
-              <LayoutGrid className="w-4 h-4 shrink-0" />
-              <span>การ์ด</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSetViewMode('table')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
-                viewMode === 'table'
-                  ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
-              }`}
-              title="มุมมองตาราง (Table View)"
-            >
-              <List className="w-4 h-4 shrink-0" />
-              <span>ตาราง</span>
-            </button>
+            {/* Right Side: View Switcher (List vs Grid) + เพิ่มพนักงาน Button */}
+            <div className="w-full sm:w-auto flex items-center justify-end gap-3 shrink-0">
+              {/* View Mode Switcher Pill */}
+              <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => handleSetViewMode('grid')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                    viewMode === 'grid'
+                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                  }`}
+                  title="มุมมองการ์ด (Card View)"
+                >
+                  <LayoutGrid className="w-4 h-4 shrink-0" />
+                  <span>การ์ด</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetViewMode('table')}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                    viewMode === 'table'
+                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                  }`}
+                  title="มุมมองตาราง (Table View)"
+                >
+                  <List className="w-4 h-4 shrink-0" />
+                  <span>ตาราง</span>
+                </button>
+              </div>
+
+              {canCreateEmp && (
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  icon={<Plus className="w-4 h-4" />}
+                  className="shrink-0 self-start sm:self-auto"
+                >
+                  เพิ่มพนักงาน
+                </Button>
+              )}
+            </div>
           </div>
 
-          {canCreateEmp && (
-            <Button
-              size="sm"
-              onClick={() => setIsCreateModalOpen(true)}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              เพิ่มพนักงาน
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* 4. Employee Data Display (Table or Grid View) */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
-        {viewMode === 'grid' ? (
+          {/* 3. Employee Data Display (Table or Grid View) */}
+          {viewMode === 'grid' ? (
           <div>
             {/* Grid Header Info Bar */}
             <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 text-xs">
@@ -1001,7 +1001,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
             </div>
           </div>
         ) : (
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[380px]">
             <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
             {/* Table Header: Dark Navy Theme (Primary) */}
             {(() => {
@@ -1409,19 +1409,20 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
         </div>
         )}
 
-        {/* 5. Footer: Rows per page & Pagination */}
-        <div className="py-3 px-4 border-t border-slate-100 dark:border-slate-700/60">
-          <TablePagination
-            total={filteredEmployees.length}
-            page={currentPage}
-            pageSize={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(newSize) => {
-              setItemsPerPage(newSize);
-              setCurrentPage(1);
-            }}
-            pageSizeOptions={[10, 20, 50, 100, 200]}
-          />
+          {/* 4. Pagination */}
+          {filteredEmployees.length > 0 && (
+            <TablePagination
+              total={filteredEmployees.length}
+              page={currentPage}
+              pageSize={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newSize) => {
+                setItemsPerPage(newSize);
+                setCurrentPage(1);
+              }}
+              pageSizeOptions={[10, 20, 50, 100, 200]}
+            />
+          )}
         </div>
       </div>
 
