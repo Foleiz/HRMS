@@ -11,7 +11,7 @@ import {
   Users,
   UserCheck,
   ArrowRight,
-  ArrowLeft,
+  GripVertical,
   X,
   CheckCircle2,
   Ban,
@@ -194,6 +194,10 @@ export const ApprovalFlowsTab: React.FC = () => {
 
   // Reference for step nodes to anchor the dropdown popover
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Drag and drop state for reordering steps
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Close step settings modal on Escape key
   useEffect(() => {
@@ -626,7 +630,7 @@ export const ApprovalFlowsTab: React.FC = () => {
 
       {/* Visual Workflow Steps Builder */}
       <div className="pt-2">
-        <div className="flex items-center justify-between gap-2 mb-2.5">
+        <div className="flex items-center gap-2.5 mb-2.5">
           <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">ลำดับขั้นตอนการอนุมัติ</h4>
           <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
             {form.steps.length}/{MAX_APPROVAL_STEPS} ขั้นตอน
@@ -655,14 +659,63 @@ export const ApprovalFlowsTab: React.FC = () => {
                   ref={(el) => {
                     stepRefs.current[idx] = el;
                   }}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedIndex(idx);
+                    setEditingStepIndex(null);
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', String(idx));
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragOverIndex !== idx) {
+                      setDragOverIndex(idx);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverIndex === idx) {
+                      setDragOverIndex(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedIndex === null || draggedIndex === idx) {
+                      setDraggedIndex(null);
+                      setDragOverIndex(null);
+                      return;
+                    }
+                    setForm((f) => {
+                      const copy = [...f.steps];
+                      const [moved] = copy.splice(draggedIndex, 1);
+                      copy.splice(idx, 0, moved);
+                      return { ...f, steps: renumberSteps(copy) };
+                    });
+                    setDraggedIndex(null);
+                    setDragOverIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedIndex(null);
+                    setDragOverIndex(null);
+                  }}
                   onClick={() => setEditingStepIndex(editingStepIndex === idx ? null : idx)}
-                  className={`group relative flex items-center gap-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border-2 ${
-                    editingStepIndex === idx
+                  className={`group relative flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border-2 ${
+                    dragOverIndex === idx && draggedIndex !== idx
+                      ? 'border-primary ring-2 ring-primary/40 scale-105 shadow-md bg-primary/5'
+                      : editingStepIndex === idx
                       ? 'border-primary ring-2 ring-primary/20 shadow-md'
                       : 'border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-blue-400 shadow-2xs'
-                  } rounded-xl px-3.5 py-2.5 cursor-pointer transition-all duration-150 shrink-0 select-none`}
-                  title="คลิกเพื่อเลือกผู้อนุมัติ"
+                  } ${
+                    draggedIndex === idx ? 'opacity-40 border-dashed border-primary scale-95' : ''
+                  } rounded-xl px-3 py-2.5 cursor-grab active:cursor-grabbing transition-all duration-150 shrink-0 select-none`}
+                  title="คลิกเพื่อเลือกผู้อนุมัติ หรือคลิกค้างเพื่อลากสลับลำดับ"
                 >
+                  {/* Grip Icon for Drag & Drop */}
+                  <GripVertical
+                    className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 shrink-0"
+                    aria-hidden="true"
+                  />
+
                   {/* Step number badge */}
                   <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs">
                     {step.stepNo}
@@ -707,7 +760,7 @@ export const ApprovalFlowsTab: React.FC = () => {
             <div className="flex items-center gap-2.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3.5 py-2.5 shrink-0">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
               <div>
-                <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">อนุมัติเสร็จสมบูรณ์</div>
+                <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">อนุมัติแล้ว</div>
                 <div className="text-[10px] text-emerald-600/80 dark:text-emerald-400/70 font-medium">เอกสารมีผล</div>
               </div>
             </div>
@@ -927,7 +980,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                           <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                             <div className="min-w-0">
-                              <div className="text-xs font-bold text-emerald-700">อนุมัติเสร็จสมบูรณ์</div>
+                              <div className="text-xs font-bold text-emerald-700">อนุมัติแล้ว</div>
                               <div className="text-[10px] text-emerald-600/80 font-medium mt-0.5">เอกสารมีผล</div>
                             </div>
                           </div>
@@ -1035,44 +1088,14 @@ export const ApprovalFlowsTab: React.FC = () => {
                   </h4>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={editingStepIndex === 0}
-                    onClick={() => moveStep(editingStepIndex, -1)}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                    title="ย้ายไปทางซ้าย"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    disabled={editingStepIndex === form.steps.length - 1}
-                    onClick={() => moveStep(editingStepIndex, 1)}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                    title="ย้ายไปทางขวา"
-                  >
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                  {form.steps.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeStep(editingStepIndex)}
-                      className="w-6 h-6 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
-                      title="ลบขั้นตอนนี้"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setEditingStepIndex(null)}
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer ml-0.5 transition-colors"
-                    title="ปิด"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingStepIndex(null)}
+                  className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                  title="ปิด"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
 
               {/* Field 1: ผู้อนุมัติ */}
