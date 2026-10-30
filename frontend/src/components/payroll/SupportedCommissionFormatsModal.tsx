@@ -203,19 +203,9 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
               </p>
             )}
             {activeTab === 'template' && (
-              <>
-                <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" /> กู้คืนได้เสมอ
-                </p>
-                <Button
-                  onClick={handleDownloadTemplate}
-                  loading={isDownloading}
-                  icon={<Download className="h-4 w-4" />}
-                  className="!bg-emerald-600 hover:!bg-emerald-700 !text-white shrink-0"
-                >
-                  ดาวน์โหลดเทมเพลต Excel (.xlsx)
-                </Button>
-              </>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> กู้คืนได้เสมอ
+              </p>
             )}
           </div>
 
@@ -322,10 +312,12 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
         {/* Footer */}
         <div className="flex items-center justify-end border-t border-slate-200 px-6 py-4 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
           <Button
-            variant="secondary"
-            onClick={onClose}
+            onClick={handleDownloadTemplate}
+            loading={isDownloading}
+            icon={<Download className="h-4 w-4" />}
+            className="!bg-emerald-600 hover:!bg-emerald-700 !text-white cursor-pointer"
           >
-            เข้าใจแล้ว
+            ดาวน์โหลดเทมเพลต Excel (.xlsx)
           </Button>
         </div>
       </div>
