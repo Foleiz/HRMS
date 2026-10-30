@@ -1801,7 +1801,7 @@ export default function OrganizationPage() {
                             setCompanyForm((prev) => ({ ...prev, logoData: null }));
                             toast.success('ลบโลโก้บริษัทเรียบร้อย');
                           }}
-                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-rose-600 text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-rose-700 hover:scale-110 transition-all cursor-pointer z-20"
+                          className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
                           title="ลบโลโก้บริษัท"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
