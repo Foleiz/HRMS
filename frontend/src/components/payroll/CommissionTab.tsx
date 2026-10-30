@@ -1200,9 +1200,6 @@ export default function CommissionTab() {
                   {filteredMonthlyPeriods.length} {filteredMonthlyPeriods.length !== monthlyPeriods.length ? `จาก ${monthlyPeriods.length} ` : ''}งวด
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                รวมข้อมูลทุกไฟล์ที่นำเข้าในแต่ละงวดเดือน (กด &quot;ดูรายการสรุป&quot; เพื่อดูรายละเอียดรวมทุกวันในเดือนนั้น)
-              </p>
             </div>
           </div>
 
@@ -1383,9 +1380,6 @@ export default function CommissionTab() {
                   {batchTotalCount} ชุด
                 </span>
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                สามารถตรวจสอบย้อนหลัง หรือกดยกเลิกชุดนำเข้า (Revert) เพื่อคืนค่ายอดเดิมได้ตลอดเวลา
-              </p>
             </div>
           </div>
 
