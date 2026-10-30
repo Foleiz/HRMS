@@ -6,15 +6,12 @@ import {
   ChevronDown,
   Plus,
   Loader2,
-  Pencil,
   Trash2,
   Users,
   UserCheck,
-  ArrowRight,
   GripVertical,
   X,
   CheckCircle2,
-  Ban,
 } from 'lucide-react';
 import { useToast } from '@/context/ToastContext';
 import { approvalService } from '@/services/approvalService';
@@ -37,15 +34,11 @@ import { Employee } from '@/types/employee';
 import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { ActiveToggleRow, ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { Button } from '@/components/ui';
 
-
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
-// ไม่แสดง "คำขอย้ายแผนก/เลื่อนตำแหน่ง" — HR บันทึกการย้าย/เลื่อนตำแหน่งเอง (ไม่มีสายการอนุมัติ → มีผลทันที)
-// ยังเก็บป้ายชื่อไว้ใน DOCUMENT_TYPE_LABELS เพื่อแสดงสายการอนุมัติเดิมที่มีอยู่แล้วได้ถูกต้อง
 const HIDDEN_DOCUMENT_TYPES = new Set(['TRANSFER_REQUEST']);
-// ลำดับการแสดงประเภทเอกสารในตัวเลือก (แสดงพร้อมเลขกำกับ) — ประเภทที่ไม่อยู่ในรายการนี้จะต่อท้าย
 const DOCUMENT_TYPE_ORDER = [
   'LEAVE_REQUEST',
   'RESIGNATION_REQUEST',
@@ -60,9 +53,7 @@ const DOCUMENT_TYPE_OPTIONS = [
   ...DOCUMENT_TYPE_ORDER.filter((t) => t in DOCUMENT_TYPE_LABELS),
   ...Object.keys(DOCUMENT_TYPE_LABELS).filter((t) => !DOCUMENT_TYPE_ORDER.includes(t)),
 ].filter((t) => !HIDDEN_DOCUMENT_TYPES.has(t));
-/**
- * ประเภทผู้อนุมัติที่เลือกได้ — แบบ "ของผู้ยื่น" ระบบหาคนจากโครงสร้างองค์กรให้เอง จึงใช้สายเดียวได้ทุกแผนก
- */
+
 const APPROVER_TYPE_OPTIONS = ['DEPARTMENT_HEAD', 'DIVISION_HEAD', 'MANAGER', 'ROLE', 'EMPLOYEE', 'HR', 'CEO'];
 const APPROVER_TYPE_HINTS: Record<string, string> = {
   DEPARTMENT_HEAD: 'หัวหน้าแผนกของผู้ยื่นตามที่ตั้งไว้ในโครงสร้างองค์กร (รวมผู้มีบทบาทผู้จัดการแผนกในแผนกเดียวกัน)',
@@ -76,26 +67,6 @@ const APPROVER_SCOPE_HINTS: Record<string, string> = {
   ORG: 'ทุกคนที่มีบทบาทนี้ทั้งบริษัทจะเห็นและอนุมัติคำขอของทุกแผนกได้ — เหมาะกับบทบาทส่วนกลาง เช่น HR, การเงิน',
   DIVISION: 'เฉพาะผู้มีบทบาทนี้ที่อยู่ฝ่ายเดียวกับผู้ยื่น',
   DEPARTMENT: 'เฉพาะผู้มีบทบาทนี้ที่อยู่แผนกเดียวกับผู้ยื่น',
-};
-
-// ตัวช่วยป้ายชื่อประเภทเอกสารและโทนสี
-const getDocTypeBadge = (docType: string) => {
-  switch (docType) {
-    case 'LEAVE_REQUEST':
-      return { label: 'คำขอลา', color: 'bg-blue-50 text-blue-600 border-blue-200' };
-    case 'ATTENDANCE_ADJUSTMENT':
-      return { label: 'ปรับเวลาเข้า-ออก', color: 'bg-emerald-50 text-emerald-600 border-emerald-200' };
-    case 'RESIGNATION_REQUEST':
-      return { label: 'คำขอลาออก', color: 'bg-rose-50 text-rose-600 border-rose-200' };
-    case 'CERTIFICATE_REQUEST':
-      return { label: 'ขอหนังสือรับรอง', color: 'bg-amber-50 text-amber-600 border-amber-200' };
-    case 'EMPLOYMENT_CONTRACT':
-      return { label: 'สัญญาจ้างงาน', color: 'bg-purple-50 text-purple-600 border-purple-200' };
-    case 'PAYROLL_PERIOD':
-      return { label: 'รอบเงินเดือน', color: 'bg-indigo-50 text-indigo-600 border-indigo-200' };
-    default:
-      return { label: DOCUMENT_TYPE_LABELS[docType] ?? docType, color: 'bg-slate-50 text-slate-600 dark:text-slate-400 border-slate-200' };
-  }
 };
 
 // ตัวช่วยแสดงชื่อผู้อนุมัติตามประเภท (Pure Thai - Rule #10)
@@ -129,9 +100,7 @@ const getApproverDisplay = (step: ApprovalStep | ApprovalStepInput, employees: E
 
 const SELECT_CLS =
   'w-full px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer';
-const LABEL_CLS = 'block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1';
 
-/** จำนวนขั้นตอนอนุมัติสูงสุดของทุกสายการอนุมัติ (ต้องตรงกับ backend: ApprovalFlowService.MaxApprovalSteps) */
 const MAX_APPROVAL_STEPS = 4;
 
 const emptyStep = (stepNo: number): ApprovalStepInput => ({
@@ -149,57 +118,111 @@ const emptyStep = (stepNo: number): ApprovalStepInput => ({
   delegateMode: 'WHEN_ABSENT',
 });
 
-/** ข้อความสั้นของผู้อนุมัติแทน เช่น "แทน: นาย ก (เมื่อไม่อยู่)" */
-const getDelegateDisplay = (step: ApprovalStep | ApprovalStepInput, employees: Employee[], roles: RoleSummary[]) => {
-  if (!step.delegateType) return null;
-  let who = '';
-  if (step.delegateType === 'EMPLOYEE') {
-    const name = 'delegateEmployeeName' in step ? step.delegateEmployeeName : null;
-    const emp = employees.find((e) => e.id === step.delegateEmployeeId);
-    who = name || (emp ? `${emp.firstName} ${emp.lastName}` : 'ระบุตัวบุคคล');
-  } else {
-    const name = 'delegateRoleName' in step ? step.delegateRoleName : null;
-    const role = roles.find((r) => r.id === step.delegateRoleId);
-    who = name || role?.roleName || 'ตามบทบาท';
-    if (step.delegateScope && step.delegateScope !== 'ORG') who += ` (${APPROVER_SCOPE_LABELS[step.delegateScope]})`;
-  }
-  return `แทน: ${who}${step.delegateMode === 'ALWAYS' ? '' : ' (เมื่อไม่อยู่)'}`;
-};
+// =========================================================================
+// FlowCardEditor Component (การ์ดสายการอนุมัติแบบเปิดพร้อมแก้ไขทันทีในตัว)
+// =========================================================================
+interface FlowCardEditorProps {
+  flow?: ApprovalFlow;
+  isNew?: boolean;
+  departments: Department[];
+  levels: EmployeeLevel[];
+  employees: Employee[];
+  roles: RoleSummary[];
+  onSave: (data: CreateApprovalFlowPayload, flowId?: number) => Promise<void>;
+  onDelete?: (flow: ApprovalFlow) => void;
+  onCancelNew?: () => void;
+}
 
-export const ApprovalFlowsTab: React.FC = () => {
-  const { success, error } = useToast();
+const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
+  flow,
+  isNew = false,
+  departments,
+  levels,
+  employees,
+  roles,
+  onSave,
+  onDelete,
+  onCancelNew,
+}) => {
+  const { error } = useToast();
 
-  // Active Sub-Tab
+  const [form, setForm] = useState<CreateApprovalFlowPayload>(() => {
+    if (flow) {
+      return {
+        flowCode: flow.flowCode,
+        flowName: flow.flowName,
+        documentType: flow.documentType,
+        departmentId: flow.departmentId ?? null,
+        levelId: flow.levelId ?? null,
+        status: flow.status,
+        steps: flow.steps
+          .slice()
+          .sort((a, b) => a.stepNo - b.stepNo)
+          .map((s) => ({
+            stepNo: s.stepNo,
+            approverType: s.approverType,
+            approverEmployeeId: s.approverEmployeeId,
+            approverRoleId: s.approverRoleId,
+            isRequired: s.isRequired,
+            approverScope: s.approverScope ?? 'ORG',
+            fallbackAction: s.fallbackAction ?? 'HR',
+            delegateType: s.delegateType ?? null,
+            delegateEmployeeId: s.delegateEmployeeId ?? null,
+            delegateRoleId: s.delegateRoleId ?? null,
+            delegateScope: s.delegateScope ?? 'ORG',
+            delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
+          })),
+      };
+    }
+    return {
+      flowCode: '',
+      flowName: '',
+      documentType: 'LEAVE_REQUEST',
+      departmentId: null,
+      levelId: null,
+      status: 'ACTIVE',
+      steps: [emptyStep(1)],
+    };
+  });
 
-  // === Reference Data ===
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [levels, setLevels] = useState<EmployeeLevel[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [roles, setRoles] = useState<RoleSummary[]>([]);
-
-  // === Flows Data ===
-  const [flows, setFlows] = useState<ApprovalFlow[]>([]);
-  const [loadingFlows, setLoadingFlows] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [docTypeFilter, setDocTypeFilter] = useState('');
-  const [deptFilter, setDeptFilter] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-
-  // Inline Editor State (จัดการที่รายการได้เลย ไม่ต้องมี Modal)
-  const [editingFlowId, setEditingFlowId] = useState<number | 'NEW' | null>(null);
-  const [editingFlow, setEditingFlow] = useState<ApprovalFlow | null>(null);
   const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
-  const [isSavingFlow, setIsSavingFlow] = useState(false);
-  const [togglingId, setTogglingId] = useState<number | null>(null);
-
-  // Reference for step nodes to anchor the dropdown popover
-  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
-
-  // Drag and drop state for reordering steps
+  const [isSaving, setIsSaving] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Close step settings modal on Escape key
+  // Sync if flow prop updates from outside
+  useEffect(() => {
+    if (flow) {
+      setForm({
+        flowCode: flow.flowCode,
+        flowName: flow.flowName,
+        documentType: flow.documentType,
+        departmentId: flow.departmentId ?? null,
+        levelId: flow.levelId ?? null,
+        status: flow.status,
+        steps: flow.steps
+          .slice()
+          .sort((a, b) => a.stepNo - b.stepNo)
+          .map((s) => ({
+            stepNo: s.stepNo,
+            approverType: s.approverType,
+            approverEmployeeId: s.approverEmployeeId,
+            approverRoleId: s.approverRoleId,
+            isRequired: s.isRequired,
+            approverScope: s.approverScope ?? 'ORG',
+            fallbackAction: s.fallbackAction ?? 'HR',
+            delegateType: s.delegateType ?? null,
+            delegateEmployeeId: s.delegateEmployeeId ?? null,
+            delegateRoleId: s.delegateRoleId ?? null,
+            delegateScope: s.delegateScope ?? 'ORG',
+            delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
+          })),
+      });
+    }
+  }, [flow]);
+
+  // Close step settings popover on Escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && editingStepIndex !== null) {
@@ -210,178 +233,9 @@ export const ApprovalFlowsTab: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [editingStepIndex]);
 
-  // Flow Form State
-  const [form, setForm] = useState<CreateApprovalFlowPayload>({
-    flowCode: '',
-    flowName: '',
-    documentType: 'LEAVE_REQUEST',
-    departmentId: null,
-    levelId: null,
-    status: 'ACTIVE',
-    steps: [emptyStep(1)],
-  });
-
-  // Common Confirm Modal State
-  const [confirmModalConfig, setConfirmModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  }>({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => {},
-  });
-
-  // 1. Load Reference Data
-  useEffect(() => {
-    const loadRefs = async () => {
-      try {
-        const [deptRes, levelRes, empRes, rolesRes] = await Promise.allSettled([
-          organizationService.getDepartments(),
-          organizationService.getLevels(),
-          employeeService.getAll(),
-          settingsService.getAllRoles(),
-        ]);
-        if (deptRes.status === 'fulfilled') setDepartments(deptRes.value);
-        if (levelRes.status === 'fulfilled') setLevels(levelRes.value);
-        if (empRes.status === 'fulfilled') setEmployees(empRes.value || []);
-        if (rolesRes.status === 'fulfilled') setRoles(rolesRes.value);
-      } catch (e) {
-        console.error('Failed to load reference data', e);
-      }
-    };
-    loadRefs();
-  }, []);
-
-  // 2. Load Flows
-  const loadFlows = useCallback(async () => {
-    try {
-      setLoadingFlows(true);
-      const res = await approvalService.getFlows();
-      setFlows(res);
-    } catch (err: any) {
-      console.error('Failed to load flows', err);
-      error(err?.response?.data?.message || err.message || 'ไม่สามารถโหลดข้อมูลสายการอนุมัติได้');
-    } finally {
-      setLoadingFlows(false);
-    }
-  }, [error]);
-
-  useEffect(() => {
-    loadFlows();
-  }, [loadFlows]);
-
-  // Filtered Flows
-  const filteredFlows = useMemo(() => {
-    return flows.filter((f) => {
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        const matchName = f.flowName.toLowerCase().includes(term);
-        const matchCode = f.flowCode.toLowerCase().includes(term);
-        if (!matchName && !matchCode) return false;
-      }
-      if (docTypeFilter && f.documentType !== docTypeFilter) return false;
-      if (deptFilter && String(f.departmentId) !== deptFilter) return false;
-      if (statusFilter && f.status !== statusFilter) return false;
-      return true;
-    });
-  }, [flows, searchTerm, docTypeFilter, deptFilter, statusFilter]);
-
-  // Quick Toggle Status for Flow
-  const handleToggleStatus = async (flow: ApprovalFlow) => {
-    const nextStatus = flow.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    try {
-      setTogglingId(flow.id);
-      await approvalService.updateFlow(flow.id, {
-        flowName: flow.flowName,
-        documentType: flow.documentType,
-        departmentId: flow.departmentId,
-        levelId: flow.levelId,
-        status: nextStatus,
-        steps: flow.steps.map((s) => ({
-          stepNo: s.stepNo,
-          approverType: s.approverType,
-          approverEmployeeId: s.approverEmployeeId,
-          approverRoleId: s.approverRoleId,
-          isRequired: s.isRequired,
-          approverScope: s.approverScope ?? 'ORG',
-          fallbackAction: s.fallbackAction ?? 'HR',
-          delegateType: s.delegateType ?? null,
-          delegateEmployeeId: s.delegateEmployeeId ?? null,
-          delegateRoleId: s.delegateRoleId ?? null,
-          delegateScope: s.delegateScope ?? 'ORG',
-          delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
-        })),
-      });
-      success(nextStatus === 'ACTIVE' ? `เปิดใช้งาน '${flow.flowName}' สำเร็จ` : `ปิดใช้งาน '${flow.flowName}' สำเร็จ`);
-      loadFlows();
-    } catch (err: any) {
-      error(err?.response?.data?.message || err.message || 'ไม่สามารถเปลี่ยนสถานะสายการอนุมัติได้');
-    } finally {
-      setTogglingId(null);
-    }
-  };
-
-  // Open Create Flow Inline Editor
-  const openCreateEditor = () => {
-    setEditingFlowId('NEW');
-    setEditingFlow(null);
-    setEditingStepIndex(null);
-    setForm({
-      flowCode: '',
-      flowName: '',
-      documentType: 'LEAVE_REQUEST',
-      departmentId: null,
-      levelId: null,
-      status: 'ACTIVE',
-      steps: [emptyStep(1)],
-    });
-  };
-
-  // Open Edit Flow Inline Editor
-  const openEditEditor = (flow: ApprovalFlow) => {
-    setEditingFlowId(flow.id);
-    setEditingFlow(flow);
-    setEditingStepIndex(null);
-    setForm({
-      flowCode: flow.flowCode,
-      flowName: flow.flowName,
-      documentType: flow.documentType,
-      departmentId: flow.departmentId ?? null,
-      levelId: flow.levelId ?? null,
-      status: flow.status,
-      steps: flow.steps
-        .slice()
-        .sort((a, b) => a.stepNo - b.stepNo)
-        .map((s) => ({
-          stepNo: s.stepNo,
-          approverType: s.approverType,
-          approverEmployeeId: s.approverEmployeeId,
-          approverRoleId: s.approverRoleId,
-          isRequired: s.isRequired,
-          approverScope: s.approverScope ?? 'ORG',
-          fallbackAction: s.fallbackAction ?? 'HR',
-          delegateType: s.delegateType ?? null,
-          delegateEmployeeId: s.delegateEmployeeId ?? null,
-          delegateRoleId: s.delegateRoleId ?? null,
-          delegateScope: s.delegateScope ?? 'ORG',
-          delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
-        })),
-    });
-  };
-
-  const closeEditor = () => {
-    setEditingFlowId(null);
-    setEditingFlow(null);
-    setEditingStepIndex(null);
-  };
-
   const renumberSteps = (steps: ApprovalStepInput[]): ApprovalStepInput[] =>
     steps.map((s, idx) => ({ ...s, stepNo: idx + 1 }));
 
-  /** แทรกขั้นใหม่ที่ตำแหน่ง idx (0 = ก่อนขั้นแรก, length = ต่อท้าย) และเปิดหน้าต่างตั้งค่าทันที */
   const insertStep = (idx: number) => {
     if (form.steps.length >= MAX_APPROVAL_STEPS) return;
     setForm((f) => {
@@ -392,7 +246,23 @@ export const ApprovalFlowsTab: React.FC = () => {
     setEditingStepIndex(idx);
   };
 
-  /** เส้นเชื่อมระหว่างการ์ด + ปุ่มแทรกขั้น */
+  const removeStep = (idx: number) => {
+    setForm((f) => ({ ...f, steps: renumberSteps(f.steps.filter((_, i) => i !== idx)) }));
+    if (editingStepIndex === idx) {
+      setEditingStepIndex(null);
+    } else if (editingStepIndex !== null && editingStepIndex > idx) {
+      setEditingStepIndex(editingStepIndex - 1);
+    }
+  };
+
+  const updateStep = (idx: number, patch: Partial<ApprovalStepInput>) => {
+    setForm((f) => {
+      const copy = [...f.steps];
+      copy[idx] = { ...copy[idx], ...patch };
+      return { ...f, steps: copy };
+    });
+  };
+
   const renderConnector = (insertAt: number) => {
     const full = form.steps.length >= MAX_APPROVAL_STEPS;
     return (
@@ -416,65 +286,61 @@ export const ApprovalFlowsTab: React.FC = () => {
     );
   };
 
-  const removeStep = (idx: number) => {
-    setForm((f) => ({ ...f, steps: renumberSteps(f.steps.filter((_, i) => i !== idx)) }));
-    if (editingStepIndex === idx) {
+  const handleReset = () => {
+    if (isNew) {
+      onCancelNew?.();
+      return;
+    }
+    if (flow) {
+      setForm({
+        flowCode: flow.flowCode,
+        flowName: flow.flowName,
+        documentType: flow.documentType,
+        departmentId: flow.departmentId ?? null,
+        levelId: flow.levelId ?? null,
+        status: flow.status,
+        steps: flow.steps
+          .slice()
+          .sort((a, b) => a.stepNo - b.stepNo)
+          .map((s) => ({
+            stepNo: s.stepNo,
+            approverType: s.approverType,
+            approverEmployeeId: s.approverEmployeeId,
+            approverRoleId: s.approverRoleId,
+            isRequired: s.isRequired,
+            approverScope: s.approverScope ?? 'ORG',
+            fallbackAction: s.fallbackAction ?? 'HR',
+            delegateType: s.delegateType ?? null,
+            delegateEmployeeId: s.delegateEmployeeId ?? null,
+            delegateRoleId: s.delegateRoleId ?? null,
+            delegateScope: s.delegateScope ?? 'ORG',
+            delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
+          })),
+      });
       setEditingStepIndex(null);
-    } else if (editingStepIndex !== null && editingStepIndex > idx) {
-      setEditingStepIndex(editingStepIndex - 1);
     }
   };
 
-  const moveStep = (idx: number, direction: -1 | 1) => {
-    setForm((f) => {
-      const target = idx + direction;
-      if (target < 0 || target >= f.steps.length) return f;
-      const copy = [...f.steps];
-      const tmp = copy[idx];
-      copy[idx] = copy[target];
-      copy[target] = tmp;
-      return { ...f, steps: renumberSteps(copy) };
-    });
-    if (editingStepIndex === idx) {
-      setEditingStepIndex(idx + direction);
-    } else if (editingStepIndex === idx + direction) {
-      setEditingStepIndex(idx);
-    }
-  };
-
-  const updateStep = (idx: number, patch: Partial<ApprovalStepInput>) => {
-    setForm((f) => {
-      const copy = [...f.steps];
-      copy[idx] = { ...copy[idx], ...patch };
-      return { ...f, steps: copy };
-    });
-  };
-
-  const handleSaveFlow = async () => {
+  const handleSave = async () => {
     if (!form.flowName.trim()) {
       error('กรุณาระบุชื่อสายการอนุมัติ');
       return;
     }
-    if (!form.steps || form.steps.length === 0) {
-      error('สายการอนุมัติต้องมีอย่างน้อย 1 ขั้นตอน');
+    if (!form.documentType) {
+      error('กรุณาเลือกประเภทเอกสาร');
       return;
     }
-    if (form.steps.length > MAX_APPROVAL_STEPS) {
-      error(`สายการอนุมัติกำหนดได้สูงสุด ${MAX_APPROVAL_STEPS} ขั้นตอน กรุณาลบขั้นตอนที่เกินออก`);
+    if (form.steps.length === 0) {
+      error('ต้องมีขั้นตอนการอนุมัติอย่างน้อย 1 ขั้นตอน');
       return;
     }
-
     for (const step of form.steps) {
-      if (!APPROVER_TYPE_OPTIONS.includes(step.approverType)) {
-        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกประเภทผู้อนุมัติ`);
-        return;
-      }
       if (step.approverType === 'EMPLOYEE' && !step.approverEmployeeId) {
-        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกพนักงานผู้มีอำนาจอนุมัติ`);
+        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกพนักงานผู้อนุมัติ`);
         return;
       }
       if (step.approverType === 'ROLE' && !step.approverRoleId) {
-        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกบทบาทผู้มีอำนาจอนุมัติ`);
+        error(`ขั้นตอนที่ ${step.stepNo}: กรุณาเลือกบทบาทผู้อนุมัติ`);
         return;
       }
       if (step.delegateType === 'EMPLOYEE' && !step.delegateEmployeeId) {
@@ -488,72 +354,63 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
 
     try {
-      setIsSavingFlow(true);
-      if (editingFlow) {
-        await approvalService.updateFlow(editingFlow.id, {
-          flowName: form.flowName,
-          documentType: form.documentType,
-          departmentId: form.departmentId,
-          levelId: form.levelId,
-          status: form.status,
-          steps: form.steps,
-        });
-        success('บันทึกการแก้ไขสายการอนุมัติสำเร็จ');
-      } else {
-        await approvalService.createFlow(form);
-        success('สร้างสายการอนุมัติสำเร็จ');
-      }
-      closeEditor();
-      loadFlows();
-    } catch (err: any) {
-      error(err?.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      setIsSaving(true);
+      await onSave(form, flow?.id);
+      setEditingStepIndex(null);
+    } catch {
+      // Error handled by parent
     } finally {
-      setIsSavingFlow(false);
+      setIsSaving(false);
     }
   };
 
-  const handleDeleteFlow = (flow: ApprovalFlow) => {
-    setConfirmModalConfig({
-      isOpen: true,
-      title: 'ยืนยันการลบสายการอนุมัติ',
-      message: `คุณแน่ใจหรือไม่ว่าต้องการลบสายการอนุมัติ "${flow.flowName}" (${flow.flowCode})? การกระทำนี้ไม่สามารถย้อนกลับได้`,
-      onConfirm: async () => {
-        try {
-          await approvalService.deleteFlow(flow.id);
-          success('ลบสายการอนุมัติสำเร็จ');
-          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
-          loadFlows();
-        } catch (err: any) {
-          error(err?.response?.data?.message || 'ไม่สามารถลบสายการอนุมัติได้');
-        }
-      },
-    });
-  };
+  const currentDeptName = departments.find((d) => d.id === form.departmentId)?.departmentName ?? 'ทุกแผนก';
+  const currentLevelName = levels.find((l) => l.id === form.levelId)?.levelName ?? 'ทุกระดับตำแหน่ง';
 
-  // =========================================================================
-  // In-Place Inline Flow Editor Component (แสดงผลแทนการ์ดเดิมโดยตรง ไม่เปิด Modal)
-  // =========================================================================
-  const renderInlineFlowEditor = (isNew: boolean, existingFlow?: ApprovalFlow) => (
-    <div
-      key={isNew ? 'flow-editor-new' : `flow-editor-${existingFlow?.id}`}
-      className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 lg:p-6 shadow-sm space-y-5 animate-in fade-in duration-200"
-    >
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 lg:p-6 shadow-sm space-y-5 animate-in fade-in duration-200">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-700/60">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-            {isNew ? <Plus className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+      <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-slate-700/60 gap-4">
+        {isNew ? (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+              <Plus className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">
+              เพิ่มสายการอนุมัติใหม่
+            </h3>
           </div>
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">
-            {isNew ? 'เพิ่มสายการอนุมัติใหม่' : `กำลังแก้ไข: ${existingFlow?.flowName}`}
-          </h3>
-        </div>
+        ) : (
+          <div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">
+              {form.flowName || flow?.flowName}
+            </h3>
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <span className="inline-flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                <span>{currentDeptName}</span>
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center gap-1">
+                <UserCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                <span>{currentLevelName}</span>
+              </span>
+            </div>
+          </div>
+        )}
 
+        {/* ปุ่มกากบาทขวาบน: สำหรับสายเดิม = ลบรายการได้เลย, สำหรับเพิ่มใหม่ = ยกเลิกแบบร่าง */}
         <button
           type="button"
-          onClick={closeEditor}
-          className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-          title="ยกเลิกการแก้ไข"
+          onClick={() => {
+            if (isNew) {
+              onCancelNew?.();
+            } else if (flow && onDelete) {
+              onDelete(flow);
+            }
+          }}
+          className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
+          title={isNew ? 'ยกเลิกการเพิ่ม' : 'ลบสายการอนุมัตินี้'}
         >
           <X className="w-4 h-4" />
         </button>
@@ -586,7 +443,7 @@ export const ApprovalFlowsTab: React.FC = () => {
             type="text"
             value={form.flowName}
             onChange={(e) => setForm({ ...form, flowName: e.target.value })}
-            placeholder="เช่น สายอนุมัติการลาทั่วไป"
+            placeholder="เช่น คำขอลา"
             className="w-full h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none dark:text-slate-100 placeholder:text-slate-400"
           />
         </div>
@@ -736,7 +593,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                     }`}
                   />
 
-                  {/* Delete button at top-right corner of the box */}
+                  {/* Delete button at top-right corner of the step node */}
                   {form.steps.length > 1 && (
                     <button
                       type="button"
@@ -769,7 +626,7 @@ export const ApprovalFlowsTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Action Bar */}
+      {/* Action Bar (Footer) */}
       <div className="pt-3.5 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ToggleSwitch
@@ -791,263 +648,22 @@ export const ApprovalFlowsTab: React.FC = () => {
           <Button
             type="button"
             variant="secondary"
-            onClick={closeEditor}
-            disabled={isSavingFlow}
+            onClick={handleReset}
+            disabled={isSaving}
           >
             ยกเลิก
           </Button>
           <Button
             type="button"
-            onClick={handleSaveFlow}
-            loading={isSavingFlow}
+            onClick={handleSave}
+            loading={isSaving}
           >
             {isNew ? 'บันทึกสายการอนุมัติ' : 'บันทึกการแก้ไข'}
           </Button>
         </div>
       </div>
-    </div>
-  );
 
-  return (
-    <div className="space-y-6 pb-16">
-      {/* ========================================================================= */}
-      {/* ผังสายการอนุมัติ (Workflow Templates) */}
-      {/* ========================================================================= */}
-      {(
-        <div className="space-y-6">
-          {/* Top Filter & Action Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Search */}
-              <div className="relative w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาสายการอนุมัติ..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400"
-                />
-              </div>
-
-              {/* Doc Type Filter */}
-              <div className="relative">
-                <CustomSelect
-                  value={docTypeFilter}
-                  onChange={(e) => setDocTypeFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
-                >
-                  <option value="">ประเภทเอกสารทั้งหมด</option>
-                  {DOCUMENT_TYPE_OPTIONS.map((dt) => (
-                    <option key={dt} value={dt}>
-                      {DOCUMENT_TYPE_LABELS[dt]}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              {/* Dept Filter */}
-              <div className="relative">
-                <CustomSelect
-                  value={deptFilter}
-                  onChange={(e) => setDeptFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
-                >
-                  <option value="">ทุกแผนก</option>
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.departmentName}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              {/* Status Filter */}
-              <div className="relative">
-                <CustomSelect
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
-                >
-                  <option value="">สถานะ: ทั้งหมด</option>
-                  <option value="ACTIVE">ใช้งานอยู่</option>
-                  <option value="INACTIVE">ปิดใช้งาน</option>
-                </CustomSelect>
-              </div>
-            </div>
-
-            {/* Add Flow Button */}
-            <Button
-              type="button"
-              onClick={openCreateEditor}
-              disabled={editingFlowId === 'NEW'}
-              icon={<Plus className="w-4 h-4" />}
-            >
-              เพิ่มสายการอนุมัติ
-            </Button>
-          </div>
-
-          {/* Flows Cards List */}
-          {loadingFlows ? (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 shadow-xs">
-              <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลสายการอนุมัติ...
-            </div>
-          ) : filteredFlows.length === 0 && editingFlowId !== 'NEW' ? (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 shadow-xs">
-              ยังไม่มีสายการอนุมัติในระบบ
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* ถ้ากำลังเพิ่มสายการอนุมัติใหม่ ให้แสดงการ์ดตัวแก้ไขแทรกไว้ที่ด้านบนสุด */}
-              {editingFlowId === 'NEW' && renderInlineFlowEditor(true)}
-
-              {filteredFlows.map((flow) => {
-                {/* ถ้าการ์ดนี้อยู่ในสถานะกำลังแก้ไข ให้แสดงตัวแก้ไข Inline แทนการ์ดปกติ */}
-                if (editingFlowId === flow.id) {
-                  return renderInlineFlowEditor(false, flow);
-                }
-                const badge = getDocTypeBadge(flow.documentType);
-                return (
-                  <div
-                    key={flow.id}
-                    className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-xs hover:border-slate-300 transition-all space-y-4"
-                  >
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-bold text-slate-800 text-base">{flow.flowName}</h3>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                          <span className="inline-flex items-center gap-1">
-                            <Users className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                            <span>{flow.departmentName ?? 'ทุกแผนก'}</span>
-                          </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="inline-flex items-center gap-1">
-                            <UserCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                            <span>{flow.levelName ?? 'ทุกระดับตำแหน่ง'}</span>
-                          </span>
-                        </div>
-                      </div>
-
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${badge.color}`}>
-                        {badge.label}
-                      </span>
-                    </div>
-
-                    {/* Step Sequence Visualization */}
-                    <div>
-                      <div className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium mb-2.5">ลำดับขั้นตอนการอนุมัติ</div>
-                      {flow.steps.length === 0 ? (
-                        <div className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-slate-950 border border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-3">
-                          ยังไม่มีขั้นตอนการอนุมัติ
-                        </div>
-                      ) : (
-                        <div className="flex items-center flex-wrap gap-2.5">
-                          {/* จุดเริ่มต้น: ผู้ยื่นคำขอ */}
-                          <div className="flex items-center gap-3 bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl px-4 py-2.5">
-                            <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 flex items-center justify-center shrink-0">
-                              <Users className="w-3 h-3" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-bold text-slate-700 dark:text-slate-300">จุดเริ่มต้น</div>
-                              <div className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium mt-0.5">ผู้ยื่นคำขอ</div>
-                            </div>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
-
-                          {flow.steps
-                            .slice()
-                            .sort((a, b) => a.stepNo - b.stepNo)
-                            .map((step) => (
-                              <React.Fragment key={step.id}>
-                                <div className="bg-slate-50/90 dark:bg-slate-800/80 border border-slate-200/90 dark:border-slate-700/80 rounded-xl px-4 py-2.5 shadow-2xs shrink-0">
-                                  <div className="min-w-0">
-                                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
-                                      <span>ขั้นตอนที่</span>
-                                      <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0 shadow-2xs">
-                                        {step.stepNo}
-                                      </span>
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 truncate">
-                                      {getApproverDisplay(step, employees, roles)}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
-                              </React.Fragment>
-                            ))}
-
-                          {/* จุดสิ้นสุด: อนุมัติครบทุกขั้น */}
-                          <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                            <div className="min-w-0">
-                              <div className="text-xs font-bold text-emerald-700">อนุมัติแล้ว</div>
-                              <div className="text-[10px] text-emerald-600/80 font-medium mt-0.5">เอกสารมีผล</div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Footer Actions */}
-                    <div className="pt-2 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100">
-
-                      <div className="flex items-center gap-4">
-                        {/* Delete Button */}
-                        <Button
-                          type="button"
-                          variant="soft-danger"
-                          size="sm"
-                          onClick={() => handleDeleteFlow(flow)}
-                          icon={<Trash2 className="w-3.5 h-3.5" />}
-                        >
-                          ลบ
-                        </Button>
-
-                        {/* Edit Button */}
-                        <Button
-                          type="button"
-                          variant="soft-warning"
-                          size="sm"
-                          onClick={() => openEditEditor(flow)}
-                          icon={<Pencil className="w-3.5 h-3.5" />}
-                        >
-                          แก้ไข
-                        </Button>
-
-                        {/* Toggle Status */}
-                        <div className="flex items-center gap-2">
-                          <ToggleSwitch
-                            checked={flow.status === 'ACTIVE'}
-                            onChange={() => handleToggleStatus(flow)}
-                            disabled={togglingId === flow.id}
-                            ariaLabel="เปิดใช้งานสายการอนุมัติ"
-                          />
-                          <span
-                            className={`text-xs font-semibold cursor-pointer ${
-                              flow.status === 'ACTIVE' ? 'text-primary dark:text-blue-400' : 'text-slate-400'
-                            }`}
-                            onClick={() => handleToggleStatus(flow)}
-                          >
-                            {flow.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* Dropdown Popover สำหรับตั้งค่าขั้นตอน (เด้งขึ้นมาใต้ขั้นตอนเหมือนปุ่มฟิลเตอร์) */}
-      {/* ========================================================================= */}
+      {/* Dropdown Popover สำหรับตั้งค่าขั้นตอน */}
       {(() => {
         if (editingStepIndex === null || !form.steps[editingStepIndex]) return null;
         const activeEl = stepRefs.current[editingStepIndex];
@@ -1064,7 +680,7 @@ export const ApprovalFlowsTab: React.FC = () => {
 
         return (
           <>
-            {/* Transparent click-outside backdrop (ไม่มีการดรอปความมืด เหมือนกดปุ่มฟิลเตอร์) */}
+            {/* Transparent click-outside backdrop */}
             <div
               className="fixed inset-0 z-40 bg-transparent"
               onClick={() => setEditingStepIndex(null)}
@@ -1328,13 +944,11 @@ export const ApprovalFlowsTab: React.FC = () => {
               </div>
 
               {/* Footer Button */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex justify-end">
                 <Button
                   type="button"
-                  variant="primary"
                   size="sm"
                   onClick={() => setEditingStepIndex(null)}
-                  className="w-full justify-center"
                 >
                   เรียบร้อย
                 </Button>
@@ -1343,19 +957,270 @@ export const ApprovalFlowsTab: React.FC = () => {
           </>
         );
       })()}
+    </div>
+  );
+};
 
-      {/* ========================================================================= */}
-      {/* Common Confirm Modal */}
-      {/* ========================================================================= */}
+// =========================================================================
+// Main Tab Component
+// =========================================================================
+export const ApprovalFlowsTab: React.FC = () => {
+  const { success, error } = useToast();
+
+  // === Reference Data ===
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [levels, setLevels] = useState<EmployeeLevel[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [roles, setRoles] = useState<RoleSummary[]>([]);
+
+  // === Flows Data ===
+  const [flows, setFlows] = useState<ApprovalFlow[]>([]);
+  const [loadingFlows, setLoadingFlows] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [docTypeFilter, setDocTypeFilter] = useState('');
+  const [deptFilter, setDeptFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  // New Flow Draft State
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+
+  // Common Confirm Modal State
+  const [confirmModalConfig, setConfirmModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  // 1. Load Reference Data
+  useEffect(() => {
+    const loadRefs = async () => {
+      try {
+        const [deptRes, levelRes, empRes, rolesRes] = await Promise.allSettled([
+          organizationService.getDepartments(),
+          organizationService.getLevels(),
+          employeeService.getAll(),
+          settingsService.getAllRoles(),
+        ]);
+        if (deptRes.status === 'fulfilled') setDepartments(deptRes.value);
+        if (levelRes.status === 'fulfilled') setLevels(levelRes.value);
+        if (empRes.status === 'fulfilled') setEmployees(empRes.value || []);
+        if (rolesRes.status === 'fulfilled') setRoles(rolesRes.value);
+      } catch (e) {
+        console.error('Failed to load reference data', e);
+      }
+    };
+    loadRefs();
+  }, []);
+
+  // 2. Load Flows
+  const loadFlows = useCallback(async () => {
+    try {
+      setLoadingFlows(true);
+      const res = await approvalService.getFlows();
+      setFlows(res);
+    } catch (err: any) {
+      console.error('Failed to load flows', err);
+      error(err?.response?.data?.message || err.message || 'ไม่สามารถโหลดข้อมูลสายการอนุมัติได้');
+    } finally {
+      setLoadingFlows(false);
+    }
+  }, [error]);
+
+  useEffect(() => {
+    loadFlows();
+  }, [loadFlows]);
+
+  // Filtered Flows
+  const filteredFlows = useMemo(() => {
+    return flows.filter((f) => {
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const matchName = f.flowName.toLowerCase().includes(term);
+        const matchCode = f.flowCode.toLowerCase().includes(term);
+        if (!matchName && !matchCode) return false;
+      }
+      if (docTypeFilter && f.documentType !== docTypeFilter) return false;
+      if (deptFilter && String(f.departmentId) !== deptFilter) return false;
+      if (statusFilter && f.status !== statusFilter) return false;
+      return true;
+    });
+  }, [flows, searchTerm, docTypeFilter, deptFilter, statusFilter]);
+
+  const handleDeleteFlow = (flow: ApprovalFlow) => {
+    setConfirmModalConfig({
+      isOpen: true,
+      title: 'ยืนยันการลบสายการอนุมัติ',
+      message: `คุณแน่ใจหรือไม่ว่าต้องการลบสายการอนุมัติ "${flow.flowName}" (${flow.flowCode})? การกระทำนี้ไม่สามารถย้อนกลับได้`,
+      onConfirm: async () => {
+        try {
+          await approvalService.deleteFlow(flow.id);
+          success('ลบสายการอนุมัติสำเร็จ');
+          setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }));
+          loadFlows();
+        } catch (err: any) {
+          error(err?.response?.data?.message || 'ไม่สามารถลบสายการอนุมัติได้');
+        }
+      },
+    });
+  };
+
+  const handleSaveFlow = async (data: CreateApprovalFlowPayload, flowId?: number) => {
+    try {
+      if (flowId) {
+        await approvalService.updateFlow(flowId, {
+          flowName: data.flowName,
+          documentType: data.documentType,
+          departmentId: data.departmentId,
+          levelId: data.levelId,
+          status: data.status,
+          steps: data.steps,
+        });
+        success('บันทึกการแก้ไขสายการอนุมัติสำเร็จ');
+      } else {
+        await approvalService.createFlow(data);
+        success('สร้างสายการอนุมัติสำเร็จ');
+        setIsCreatingNew(false);
+      }
+      loadFlows();
+    } catch (err: any) {
+      error(err?.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+      throw err;
+    }
+  };
+
+  return (
+    <div className="space-y-6 pb-16">
+      {/* ผังสายการอนุมัติ (Workflow Templates) */}
+      <div className="space-y-6">
+        {/* Top Filter & Action Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative w-64">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="ค้นหาสายการอนุมัติ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              />
+            </div>
+
+            {/* Doc Type Filter */}
+            <div className="relative">
+              <CustomSelect
+                value={docTypeFilter}
+                onChange={(e) => setDocTypeFilter(e.target.value)}
+                className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
+              >
+                <option value="">ประเภทเอกสารทั้งหมด</option>
+                {DOCUMENT_TYPE_OPTIONS.map((dt) => (
+                  <option key={dt} value={dt}>
+                    {DOCUMENT_TYPE_LABELS[dt]}
+                  </option>
+                ))}
+              </CustomSelect>
+            </div>
+
+            {/* Dept Filter */}
+            <div className="relative">
+              <CustomSelect
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
+              >
+                <option value="">ทุกแผนก</option>
+                {departments.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.departmentName}
+                  </option>
+                ))}
+              </CustomSelect>
+            </div>
+
+            {/* Status Filter */}
+            <div className="relative">
+              <CustomSelect
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
+              >
+                <option value="">สถานะทั้งหมด</option>
+                <option value="ACTIVE">ใช้งานอยู่</option>
+                <option value="INACTIVE">ปิดใช้งาน</option>
+              </CustomSelect>
+            </div>
+          </div>
+
+          {/* Action Button: เพิ่มสายการอนุมัติ */}
+          <Button
+            type="button"
+            onClick={() => setIsCreatingNew(true)}
+            disabled={isCreatingNew}
+            icon={<Plus className="w-4 h-4" />}
+          >
+            เพิ่มสายการอนุมัติ
+          </Button>
+        </div>
+
+        {/* Flows Cards List */}
+        {loadingFlows ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 shadow-xs">
+            <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลสายการอนุมัติ...
+          </div>
+        ) : filteredFlows.length === 0 && !isCreatingNew ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 shadow-xs">
+            ยังไม่มีสายการอนุมัติในระบบ
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {/* ถ้ากำลังเพิ่มสายการอนุมัติใหม่ ให้แสดงการ์ดตัวแก้ไขแทรกไว้ที่ด้านบนสุด */}
+            {isCreatingNew && (
+              <FlowCardEditor
+                isNew={true}
+                departments={departments}
+                levels={levels}
+                employees={employees}
+                roles={roles}
+                onSave={handleSaveFlow}
+                onCancelNew={() => setIsCreatingNew(false)}
+              />
+            )}
+
+            {/* หน้ารายการเริ่มแรกแสดงเป็นแบบการ์ดพร้อมแก้ไขได้ทันที ไม่ต้องมีปุ่มเพื่อแก้ไข */}
+            {filteredFlows.map((flow) => (
+              <FlowCardEditor
+                key={flow.id}
+                flow={flow}
+                departments={departments}
+                levels={levels}
+                employees={employees}
+                roles={roles}
+                onSave={handleSaveFlow}
+                onDelete={handleDeleteFlow}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Confirmation Modal */}
       <ConfirmModal
         isOpen={confirmModalConfig.isOpen}
         title={confirmModalConfig.title}
         message={confirmModalConfig.message}
-        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={confirmModalConfig.onConfirm}
-        type="danger"
+        onClose={() => setConfirmModalConfig((prev) => ({ ...prev, isOpen: false }))}
         confirmText="ยืนยันการลบ"
         cancelText="ยกเลิก"
+        type="danger"
       />
     </div>
   );
