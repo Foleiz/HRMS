@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { MoreVertical } from 'lucide-react';
+import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
 export interface ActionDropdownItem {
   id?: string;
@@ -49,6 +50,7 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
 
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+  const { shouldRender: shouldRenderDropdown, isActive: isDropdownActive } = useAnimatedMount(isOpen, 150);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -178,11 +180,17 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
         {trigger || <MoreVertical className="w-4 h-4" />}
       </button>
 
-      {isOpen && mounted && createPortal(
+      {shouldRenderDropdown && mounted && createPortal(
         <div
           ref={menuRef}
           style={menuStyle}
-          className={`bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 py-1.5 text-xs font-sans animate-in fade-in zoom-in-95 duration-100 overflow-y-auto ${menuClassName}`}
+          className={`bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200/80 dark:border-slate-700/80 py-1.5 text-xs font-sans transition-all duration-150 ease-out overflow-y-auto ${menuClassName} ${
+            align === 'left' ? 'origin-top-left' : 'origin-top-right'
+          } ${
+            isDropdownActive
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
+          }`}
           onClick={(e) => e.stopPropagation()}
         >
           {typeof children === 'function' ? (

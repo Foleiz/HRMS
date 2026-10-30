@@ -39,7 +39,7 @@
   --color-primary: #0B2046;
   --color-primary-hover: #112d5e;
   --color-primary-soft: #eff4ff;
-  --color-accent: #2563eb;   /* สวิตช์ / ลิงก์ / ตัวเลือกที่เปิดอยู่ */
+  --color-accent: #2563eb;   /* ลิงก์ / ไฮไลต์ */
 }
 
 .theme-light {
@@ -406,4 +406,129 @@ html.dark .refresh-indicator__bar::before {
     width: 100%;
     opacity: 0.6;
   }
+}
+
+/* =========================================================================
+   Universal Menu, Dropdown, Filter, and Popover Animations
+   ========================================================================= */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdownFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+
+@keyframes dropdownFadeInUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdownFadeOutUp {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+}
+
+.animate-menu-in {
+  animation: dropdownFadeIn 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-menu-out {
+  animation: dropdownFadeOut 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+.animate-menu-up-in {
+  animation: dropdownFadeInUp 160ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-menu-up-out {
+  animation: dropdownFadeOutUp 120ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+
+/* ===== สไตล์กรอบและเอฟเฟกต์สำหรับช่องค้นหาและตัวกรอง (System Navy Theme) ===== */
+/* ช่องค้นหาทุกช่องในระบบ: ขอบสีกรมตลอดเวลา ชัดเจน */
+input[type="text"][placeholder*="ค้นหา"],
+input[type="search"],
+.search-input-navy {
+  border-color: #0B2046 !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* เอฟเฟกต์เมื่อกดเลือกหรือกำลังพิมพ์ช่องค้นหา (Active / Focused Effect) */
+input[type="text"][placeholder*="ค้นหา"]:focus,
+input[type="text"][placeholder*="ค้นหา"]:focus-visible,
+input[type="search"]:focus,
+input[type="search"]:focus-visible,
+.search-input-navy:focus {
+  outline: none !important;
+  border-color: #0B2046 !important;
+  box-shadow: 0 0 0 3.5px rgba(11, 32, 70, 0.18) !important;
+  background-color: rgba(11, 32, 70, 0.02) !important;
+}
+
+/* Dark mode สำหรับช่องค้นหา */
+.dark input[type="text"][placeholder*="ค้นหา"],
+.dark input[type="search"],
+.dark .search-input-navy {
+  border-color: #3b82f6 !important;
+}
+
+.dark input[type="text"][placeholder*="ค้นหา"]:focus,
+.dark input[type="text"][placeholder*="ค้นหา"]:focus-visible,
+.dark input[type="search"]:focus,
+.dark input[type="search"]:focus-visible,
+.dark .search-input-navy:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3.5px rgba(59, 130, 246, 0.25) !important;
+  background-color: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* เอฟเฟกต์สำหรับช่องกรอกข้อมูลทั้งหมดในระบบ เมื่อกดเลือก/โฟกัสช่องข้อมูล (Active Glow) */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):focus,
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none !important;
+  border-color: #0B2046 !important;
+  box-shadow: 0 0 0 3.5px rgba(11, 32, 70, 0.16) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):focus,
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]):focus-visible,
+.dark textarea:focus,
+.dark textarea:focus-visible,
+.dark select:focus,
+.dark select:focus-visible {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3.5px rgba(59, 130, 246, 0.25) !important;
 }

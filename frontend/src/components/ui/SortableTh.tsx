@@ -70,23 +70,29 @@ export function SortableTh<K extends string>({
   return (
     <th
       onClick={() => onSort(field, firstDirection)}
-      className={`cursor-pointer select-none hover:bg-[#122c5e] transition-colors whitespace-nowrap ${
+      className={`cursor-pointer select-none hover:bg-[#122c5e] active:scale-[0.98] transition-all whitespace-nowrap ${
         align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left'
       } ${className}`}
       title="คลิกเพื่อเรียงลำดับ"
       aria-sort={active ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
     >
-      <div className={`flex items-center gap-1 ${justify}`}>
+      <div className={`flex items-center gap-1.5 ${justify}`}>
         <span>{label}</span>
-        {active ? (
-          sortDirection === 'asc' ? (
-            <ArrowUp className="w-3 h-3 text-blue-300" />
+        <span
+          className={`inline-flex items-center justify-center w-4 h-4 rounded transition-all duration-200 ${
+            active ? 'text-blue-300 scale-110 bg-white/10' : 'text-white/40'
+          }`}
+        >
+          {active ? (
+            <ArrowUp
+              className={`w-3.5 h-3.5 transition-transform duration-300 ease-in-out ${
+                sortDirection === 'desc' ? 'rotate-180 text-amber-300' : 'rotate-0 text-blue-300'
+              }`}
+            />
           ) : (
-            <ArrowDown className="w-3 h-3 text-blue-300" />
-          )
-        ) : (
-          <ArrowUpDown className="w-3 h-3 text-white/40" />
-        )}
+            <ArrowUpDown className="w-3.5 h-3.5 transition-transform duration-200 hover:scale-110" />
+          )}
+        </span>
       </div>
     </th>
   );

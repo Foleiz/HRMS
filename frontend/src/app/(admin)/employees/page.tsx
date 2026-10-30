@@ -1012,165 +1012,138 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
           <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto min-h-[380px]">
             <table className="table-standard w-full min-w-[1100px] text-left border-collapse text-xs whitespace-nowrap">
             {/* Table Header: Dark Navy Theme (Primary) */}
-            <thead>
-              <tr className="bg-primary text-white font-medium text-xs whitespace-nowrap">
-                <th
-                  onClick={() => handleSort('employeeCode')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>รหัสพนักงาน</span>
-                    {sortField === 'employeeCode' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
+            {(() => {
+              const renderSortIcon = (field: string) => {
+                const active = sortField === field;
+                return (
+                  <span className={`inline-flex items-center justify-center w-3.5 h-3.5 transition-all duration-200 ${active ? 'scale-110 text-blue-300' : 'text-white/40'}`}>
+                    {active ? (
+                      <ArrowUp className={`w-3 h-3 transition-transform duration-300 ease-in-out ${sortDirection === 'desc' ? 'rotate-180 text-amber-300' : 'rotate-0 text-blue-300'}`} />
                     ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
+                      <ArrowUpDown className="w-3 h-3 transition-transform duration-200 hover:scale-110" />
                     )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('fullName')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px] cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ชื่อ-นามสกุล</span>
-                    {sortField === 'fullName' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('citizenId')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px] cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>รหัสบัตรประชาชน</span>
-                    {sortField === 'citizenId' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('division')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ฝ่าย</span>
-                    {sortField === 'division' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('department')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>แผนก</span>
-                    {sortField === 'department' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('position')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px] cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>ตำแหน่ง</span>
-                    {sortField === 'position' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('birthDate')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>วันเกิด</span>
-                    {sortField === 'birthDate' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('gender')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>เพศ</span>
-                    {sortField === 'gender' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('email')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>อีเมล</span>
-                    {sortField === 'email' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('phone')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>เบอร์โทร</span>
-                    {sortField === 'phone' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th
-                  onClick={() => handleSort('status')}
-                  className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover transition-colors"
-                  title="คลิกเพื่อเรียงลำดับ"
-                >
-                  <div className="flex items-center gap-1">
-                    <span>สถานะ</span>
-                    {sortField === 'status' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3 text-blue-300" /> : <ArrowDown className="w-3 h-3 text-blue-300" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-white/40 hover:text-white" />
-                    )}
-                  </div>
-                </th>
-                <th className="py-3 px-3.5 whitespace-nowrap font-medium text-center">จัดการ</th>
-              </tr>
-            </thead>
+                  </span>
+                );
+              };
+
+              return (
+                <thead>
+                  <tr className="bg-primary text-white font-medium text-xs whitespace-nowrap">
+                    <th
+                      onClick={() => handleSort('employeeCode')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>รหัสพนักงาน</span>
+                        {renderSortIcon('employeeCode')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('fullName')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[160px] cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>ชื่อ-นามสกุล</span>
+                        {renderSortIcon('fullName')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('citizenId')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[150px] cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>รหัสบัตรประชาชน</span>
+                        {renderSortIcon('citizenId')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('division')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>ฝ่าย</span>
+                        {renderSortIcon('division')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('department')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>แผนก</span>
+                        {renderSortIcon('department')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('position')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium min-w-[130px] cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>ตำแหน่ง</span>
+                        {renderSortIcon('position')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('birthDate')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>วันเกิด</span>
+                        {renderSortIcon('birthDate')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('gender')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>เพศ</span>
+                        {renderSortIcon('gender')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('email')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>อีเมล</span>
+                        {renderSortIcon('email')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('phone')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>เบอร์โทร</span>
+                        {renderSortIcon('phone')}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => handleSort('status')}
+                      className="py-3 px-3.5 whitespace-nowrap font-medium cursor-pointer select-none hover:bg-primary-hover active:scale-[0.98] transition-all"
+                      title="คลิกเพื่อเรียงลำดับ"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>สถานะ</span>
+                        {renderSortIcon('status')}
+                      </div>
+                    </th>
+                    <th className="py-3 px-3.5 whitespace-nowrap font-medium text-center">จัดการ</th>
+                  </tr>
+                </thead>
+              );
+            })()}
 
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (

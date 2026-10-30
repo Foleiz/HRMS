@@ -109,11 +109,11 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           hasError
             ? 'border-rose-300 ring-2 ring-rose-500/20'
             : isOpen
-            ? 'border-[#0B2046] ring-2 ring-blue-500/20'
-            : 'border-slate-200 dark:border-slate-700 dark:border-slate-700 hover:border-slate-300 dark:border-slate-600 dark:hover:border-slate-600'
+            ? 'border-[#0B2046] ring-4 ring-[#0B2046]/18 dark:ring-blue-500/30 dark:border-blue-400 bg-blue-50/30 shadow-[0_0_0_3.5px_rgba(11,32,70,0.18)]'
+            : 'border-[#0B2046] dark:border-blue-500 hover:border-[#0B2046] hover:bg-slate-50/50'
         } ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50 dark:bg-slate-900 dark:bg-slate-900' : 'cursor-pointer'} ${buttonClassName}`}
       >
-        <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-slate-800 dark:text-slate-200 dark:text-slate-200 font-medium' : 'text-slate-400 dark:text-slate-500 dark:text-slate-500 dark:text-slate-400'}`}>
+        <span className={`truncate flex items-center gap-2 ${selectedEmployee ? 'text-[#0B2046] dark:text-blue-100 font-semibold' : 'text-[#0B2046] dark:text-blue-200 font-medium'}`}>
           {selectedEmployee ? (
             <span>
               {selectedEmployee.fullName || `${selectedEmployee.firstName} ${selectedEmployee.lastName}`}
@@ -123,7 +123,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           )}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 transition-transform shrink-0 ${
+          className={`w-4 h-4 text-[#0B2046] dark:text-blue-300 transition-transform shrink-0 ${
             isOpen ? 'rotate-180 text-[#0B2046]' : ''
           }`}
         />
@@ -135,14 +135,14 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
           {/* กล่องค้นหา (Search Input) */}
           <div className="p-2.5 border-b border-slate-100 dark:border-slate-700/60 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/70">
             <div className="relative flex items-center">
-              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#0B2046] dark:text-blue-400 absolute left-3 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="พิมพ์ค้นหาชื่อพนักงาน..."
-                className="w-full h-9 pl-9 pr-8 bg-white dark:bg-slate-800 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 dark:text-slate-200 placeholder-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#0B2046] dark:focus:border-blue-500"
+                className="w-full h-9 pl-9 pr-8 bg-white dark:bg-slate-800 border border-[#0B2046] dark:border-blue-500 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-[#0B2046]/18 focus:border-[#0B2046] dark:focus:ring-blue-500/25"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();

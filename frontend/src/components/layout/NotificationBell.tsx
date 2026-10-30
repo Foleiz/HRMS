@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -20,11 +20,13 @@ import {
 import { notificationService } from '@/services/notificationService';
 import { NotificationItem } from '@/types/notification';
 import { useAuth } from '@/context/AuthContext';
+import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
 export const NotificationBell: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const { shouldRender: shouldRenderNotifications, isActive: isNotificationsActive } = useAnimatedMount(isOpen, 150);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -157,8 +159,14 @@ export const NotificationBell: React.FC = () => {
       </button>
 
       {/* Notifications Dropdown Popover */}
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1rem)] bg-white border border-slate-200 rounded-2xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden">
+      {shouldRenderNotifications && (
+        <div
+          className={`absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-2 z-50 origin-top-right transition-all duration-150 ease-out overflow-hidden ${
+            isNotificationsActive
+              ? 'opacity-100 scale-100 translate-y-0'
+              : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
+          }`}
+        >
           {/* Header */}
           <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <div className="flex items-center gap-2">

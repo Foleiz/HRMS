@@ -3,7 +3,7 @@
 import React from 'react';
 
 /**
- * สวิตช์เปิด/ปิด มาตรฐานของระบบ (สีน้ำเงิน bg-blue-600 เมื่อเปิด)
+ * สวิตช์เปิด/ปิด มาตรฐานของระบบ (สีกรม bg-primary เมื่อเปิด)
  * ใช้กับ "เปิดใช้งาน" และตัวเลือกเปิด/ปิดอื่นๆ ให้หน้าตาเหมือนกันทั้งระบบ
  */
 export const ToggleSwitch: React.FC<{
@@ -25,11 +25,11 @@ export const ToggleSwitch: React.FC<{
       if (!disabled) onChange(!checked);
     }}
     className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-      checked ? 'bg-accent' : 'bg-slate-300'
+      checked ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
     } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
   >
     <span
-      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white dark:bg-slate-900 shadow-md ring-0 transition duration-200 ease-in-out ${
+      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
         checked ? 'translate-x-5' : 'translate-x-0'
       }`}
     />
