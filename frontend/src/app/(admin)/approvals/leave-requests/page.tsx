@@ -1131,7 +1131,7 @@ export default function LeaveRequestsApprovalPage() {
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     สถานะ
                   </th>
-                  <th className="sticky right-0 z-10 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.15)] text-right px-5 py-3.5 text-xs font-semibold uppercase tracking-wide">
+                  <th className="text-right px-5 py-3.5 text-xs font-semibold uppercase tracking-wide">
                     ดำเนินการ
                   </th>
                 </tr>
@@ -1231,7 +1231,7 @@ export default function LeaveRequestsApprovalPage() {
                       </td>
 
                       {/* 7. ดำเนินการ — รวมปุ่มพิจารณา */}
-                      <td className="sticky right-0 z-[1] bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/60 shadow-[-8px_0_8px_-8px_rgba(15,23,42,0.12)] px-5 py-3.5 whitespace-nowrap text-right transition-colors">
+                      <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           {isPending && item.isMyTurnToApprove ? (
                             <ActionDropdown
