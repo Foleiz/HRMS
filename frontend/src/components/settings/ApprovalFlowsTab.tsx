@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Search,
   ChevronDown,
@@ -189,9 +189,11 @@ export const ApprovalFlowsTab: React.FC = () => {
   const [editingFlowId, setEditingFlowId] = useState<number | 'NEW' | null>(null);
   const [editingFlow, setEditingFlow] = useState<ApprovalFlow | null>(null);
   const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
-  const [isApproverDropdownOpen, setIsApproverDropdownOpen] = useState(false);
   const [isSavingFlow, setIsSavingFlow] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+
+  // Reference for step nodes to anchor the dropdown popover
+  const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Close step settings modal on Escape key
   useEffect(() => {
@@ -323,7 +325,6 @@ export const ApprovalFlowsTab: React.FC = () => {
     setEditingFlowId('NEW');
     setEditingFlow(null);
     setEditingStepIndex(null);
-    setIsApproverDropdownOpen(false);
     setForm({
       flowCode: '',
       flowName: '',
@@ -340,7 +341,6 @@ export const ApprovalFlowsTab: React.FC = () => {
     setEditingFlowId(flow.id);
     setEditingFlow(flow);
     setEditingStepIndex(null);
-    setIsApproverDropdownOpen(false);
     setForm({
       flowCode: flow.flowCode,
       flowName: flow.flowName,
@@ -372,7 +372,6 @@ export const ApprovalFlowsTab: React.FC = () => {
     setEditingFlowId(null);
     setEditingFlow(null);
     setEditingStepIndex(null);
-    setIsApproverDropdownOpen(false);
   };
 
   const renumberSteps = (steps: ApprovalStepInput[]): ApprovalStepInput[] =>
@@ -653,25 +652,35 @@ export const ApprovalFlowsTab: React.FC = () => {
                 {renderConnector(idx)}
 
                 <div
-                  onClick={() => setEditingStepIndex(idx)}
-                  className="group relative flex items-center gap-3 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border-2 border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-blue-400 rounded-xl px-3.5 py-2.5 shadow-2xs hover:shadow-md cursor-pointer transition-all duration-150 shrink-0 select-none"
-                  title="คลิกเพื่อตั้งค่าผู้อนุมัติ"
+                  ref={(el) => {
+                    stepRefs.current[idx] = el;
+                  }}
+                  onClick={() => setEditingStepIndex(editingStepIndex === idx ? null : idx)}
+                  className={`group relative flex items-center gap-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 border-2 ${
+                    editingStepIndex === idx
+                      ? 'border-primary ring-2 ring-primary/20 shadow-md'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-blue-400 shadow-2xs'
+                  } rounded-xl px-3.5 py-2.5 cursor-pointer transition-all duration-150 shrink-0 select-none`}
+                  title="คลิกเพื่อเลือกผู้อนุมัติ"
                 >
                   {/* Step number badge */}
-                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition-transform">
+                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs">
                     {step.stepNo}
                   </div>
 
-                  {/* Approver display name & edit hint */}
+                  {/* Approver display name */}
                   <div className="min-w-0 pr-1">
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                       {getApproverDisplay(step, employees, roles)}
                     </div>
-                    <div className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 mt-0.5">
-                      <Pencil className="w-2.5 h-2.5 text-primary/70 dark:text-blue-400" />
-                      <span className="text-primary/80 dark:text-blue-300 font-medium">คลิกเพื่อตั้งค่า</span>
-                    </div>
                   </div>
+
+                  {/* Dropdown Chevron เหมือนปุ่มฟิลเตอร์ */}
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 text-slate-400 group-hover:text-primary transition-transform duration-150 ${
+                      editingStepIndex === idx ? 'rotate-180 text-primary' : ''
+                    }`}
+                  />
 
                   {/* Delete button if more than 1 step */}
                   {form.steps.length > 1 && (
@@ -683,7 +692,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                       }}
                       aria-label={`ลบขั้นที่ ${step.stepNo}`}
                       title="ลบขั้นตอนนี้"
-                      className="w-5 h-5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors shrink-0 ml-1 cursor-pointer opacity-60 group-hover:opacity-100"
+                      className="w-5 h-5 rounded-full text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center transition-colors shrink-0 ml-0.5 cursor-pointer opacity-60 group-hover:opacity-100"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -980,171 +989,149 @@ export const ApprovalFlowsTab: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
-      {/* Compact Step Configuration Modal (ลักษณะตามต้นแบบที่ผู้ใช้กำหนด) */}
+      {/* Dropdown Popover สำหรับตั้งค่าขั้นตอน (เด้งขึ้นมาใต้ขั้นตอนเหมือนปุ่มฟิลเตอร์) */}
       {/* ========================================================================= */}
-      {editingStepIndex !== null && form.steps[editingStepIndex] && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150"
-          onClick={() => {
-            setEditingStepIndex(null);
-            setIsApproverDropdownOpen(false);
-          }}
-        >
-          <div
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-emerald-200/90 dark:border-emerald-900/70 shadow-2xl w-full max-w-sm sm:max-w-md overflow-hidden animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header: Mint Green Banner (คล้ายตามต้นแบบในรูป) */}
-            <div className="bg-[#eaf8ef] dark:bg-emerald-950/60 border-b border-emerald-200/80 dark:border-emerald-900/60 px-5 pt-4 pb-3 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug">
-                  ผู้อนุมัติ
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-normal">
-                  {APPROVER_TYPE_LABELS[form.steps[editingStepIndex].approverType] ?? 'เฉพาะตำแหน่ง'}
-                </p>
-              </div>
+      {(() => {
+        if (editingStepIndex === null || !form.steps[editingStepIndex]) return null;
+        const activeEl = stepRefs.current[editingStepIndex];
+        const rect = activeEl?.getBoundingClientRect();
+        if (!rect) return null;
 
-              <div className="flex items-center gap-1 shrink-0 -mt-0.5">
-                <button
-                  type="button"
-                  disabled={editingStepIndex === 0}
-                  onClick={() => moveStep(editingStepIndex, -1)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white/80 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                  title="ย้ายไปซ้าย"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  disabled={editingStepIndex === form.steps.length - 1}
-                  onClick={() => moveStep(editingStepIndex, 1)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white/80 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
-                  title="ย้ายไปขวา"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                {form.steps.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeStep(editingStepIndex)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
-                    title="ลบขั้นตอนนี้"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingStepIndex(null);
-                    setIsApproverDropdownOpen(false);
-                  }}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-800 cursor-pointer ml-1 transition-colors"
-                  title="ปิด"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+        const popoverWidth = 360;
+        const left = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, rect.left));
+        const popoverHeight = 390;
+        let top = rect.bottom + 8;
+        if (top + popoverHeight > window.innerHeight && rect.top > popoverHeight + 16) {
+          top = rect.top - popoverHeight - 8;
+        }
 
-            {/* Modal Body */}
-            <div className="p-5 space-y-4">
-              {/* Field 1: เลือกผู้อนุมัติ (มีกรอบสีฟ้า ป้ายชื่อบนขอบ และ Dropdown สวยงามตรงตามแบบ) */}
-              <div>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsApproverDropdownOpen((prev) => !prev)}
-                    className="w-full h-11 px-3.5 bg-white dark:bg-slate-800 border-2 border-sky-400 dark:border-sky-500 rounded-xl flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-sky-400/20 text-left transition-all"
-                  >
-                    {/* Floating label on top border */}
-                    <span className="absolute -top-2 left-3 bg-white dark:bg-slate-800 px-1 text-[11px] font-semibold text-sky-600 dark:text-sky-400">
-                      ตำแหน่ง
-                    </span>
+        return (
+          <>
+            {/* Transparent click-outside backdrop (ไม่มีการดรอปความมืด เหมือนกดปุ่มฟิลเตอร์) */}
+            <div
+              className="fixed inset-0 z-40 bg-transparent"
+              onClick={() => setEditingStepIndex(null)}
+            />
 
-                    {/* Selected Item Pill Tag */}
-                    <span className="bg-slate-100 dark:bg-slate-700/80 text-slate-800 dark:text-slate-100 text-xs px-2.5 py-1 rounded-md font-medium truncate">
-                      {APPROVER_TYPE_LABELS[form.steps[editingStepIndex].approverType] ?? form.steps[editingStepIndex].approverType}
-                    </span>
-
-                    <ChevronDown
-                      className={`w-4 h-4 text-slate-500 dark:text-slate-400 transition-transform duration-150 ${
-                        isApproverDropdownOpen ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </button>
-
-                  {/* Dropdown Menu Popup (ตรงตามรูปที่แนบมา) */}
-                  {isApproverDropdownOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setIsApproverDropdownOpen(false)}
-                      />
-                      <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 py-1 z-50 max-h-56 overflow-y-auto custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
-                        {APPROVER_TYPE_OPTIONS.map((at) => {
-                          const isSelected = form.steps[editingStepIndex].approverType === at;
-                          return (
-                            <div
-                              key={at}
-                              onClick={() => {
-                                updateStep(editingStepIndex, {
-                                  approverType: at as any,
-                                  approverEmployeeId: null,
-                                  approverRoleId: null,
-                                  approverScope: 'ORG',
-                                });
-                                setIsApproverDropdownOpen(false);
-                              }}
-                              className={`px-3.5 py-2.5 text-xs cursor-pointer flex items-center justify-between transition-colors ${
-                                isSelected
-                                  ? 'bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 font-semibold'
-                                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/60'
-                              }`}
-                            >
-                              <span>{APPROVER_TYPE_LABELS[at]}</span>
-                              {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
+            {/* Anchored Dropdown Card */}
+            <div
+              style={{
+                position: 'fixed',
+                top: `${top}px`,
+                left: `${left}px`,
+                width: `${popoverWidth}px`,
+              }}
+              className="z-50 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 space-y-3.5 animate-in fade-in zoom-in-95 duration-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Dropdown Header */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700/60">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-primary text-white text-[11px] font-bold flex items-center justify-center shadow-xs">
+                    {form.steps[editingStepIndex].stepNo}
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    ขั้นตอนที่ {form.steps[editingStepIndex].stepNo}: กำหนดผู้อนุมัติ
+                  </h4>
                 </div>
 
-                {/* If EMPLOYEE */}
-                {form.steps[editingStepIndex].approverType === 'EMPLOYEE' && (
-                  <div className="mt-2.5">
-                    <CustomSelect
-                      value={form.steps[editingStepIndex].approverEmployeeId ?? ''}
-                      onChange={(e) =>
-                        updateStep(editingStepIndex, {
-                          approverEmployeeId: e.target.value ? Number(e.target.value) : null,
-                        })
-                      }
-                      className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={editingStepIndex === 0}
+                    onClick={() => moveStep(editingStepIndex, -1)}
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                    title="ย้ายไปทางซ้าย"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={editingStepIndex === form.steps.length - 1}
+                    onClick={() => moveStep(editingStepIndex, 1)}
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed transition-colors"
+                    title="ย้ายไปทางขวา"
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                  {form.steps.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeStep(editingStepIndex)}
+                      className="w-6 h-6 rounded-md flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
+                      title="ลบขั้นตอนนี้"
                     >
-                      <option value="">-- เลือกพนักงานผู้อนุมัติ --</option>
-                      {employees
-                        .filter(
-                          (emp) =>
-                            !form.departmentId ||
-                            emp.departmentId === form.departmentId ||
-                            emp.id === form.steps[editingStepIndex].approverEmployeeId
-                        )
-                        .map((emp) => (
-                          <option key={emp.id} value={emp.id}>
-                            {emp.firstName} {emp.lastName} {emp.positionName ? `(${emp.positionName})` : ''}
-                          </option>
-                        ))}
-                    </CustomSelect>
-                  </div>
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingStepIndex(null)}
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer ml-0.5 transition-colors"
+                    title="ปิด"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Field 1: ผู้อนุมัติ */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  ผู้อนุมัติ <span className="text-rose-500">*</span>
+                </label>
+                <CustomSelect
+                  value={form.steps[editingStepIndex].approverType}
+                  onChange={(e) =>
+                    updateStep(editingStepIndex, {
+                      approverType: e.target.value as any,
+                      approverEmployeeId: null,
+                      approverRoleId: null,
+                      approverScope: 'ORG',
+                    })
+                  }
+                  className={SELECT_CLS}
+                >
+                  {!APPROVER_TYPE_OPTIONS.includes(form.steps[editingStepIndex].approverType) && (
+                    <option value={form.steps[editingStepIndex].approverType} disabled>
+                      {APPROVER_TYPE_LABELS[form.steps[editingStepIndex].approverType] ?? form.steps[editingStepIndex].approverType}
+                    </option>
+                  )}
+                  {APPROVER_TYPE_OPTIONS.map((at) => (
+                    <option key={at} value={at}>
+                      {APPROVER_TYPE_LABELS[at]}
+                    </option>
+                  ))}
+                </CustomSelect>
+
+                {form.steps[editingStepIndex].approverType === 'EMPLOYEE' && (
+                  <CustomSelect
+                    value={form.steps[editingStepIndex].approverEmployeeId ?? ''}
+                    onChange={(e) =>
+                      updateStep(editingStepIndex, {
+                        approverEmployeeId: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                    className={`${SELECT_CLS} mt-2`}
+                  >
+                    <option value="">-- เลือกพนักงานผู้อนุมัติ --</option>
+                    {employees
+                      .filter(
+                        (emp) =>
+                          !form.departmentId ||
+                          emp.departmentId === form.departmentId ||
+                          emp.id === form.steps[editingStepIndex].approverEmployeeId
+                      )
+                      .map((emp) => (
+                        <option key={emp.id} value={emp.id}>
+                          {emp.firstName} {emp.lastName} {emp.positionName ? `(${emp.positionName})` : ''}
+                        </option>
+                      ))}
+                  </CustomSelect>
                 )}
 
-                {/* If ROLE */}
                 {form.steps[editingStepIndex].approverType === 'ROLE' && (
-                  <div className="grid grid-cols-2 gap-2 mt-2.5">
+                  <div className="grid grid-cols-2 gap-2 mt-2">
                     <CustomSelect
                       value={form.steps[editingStepIndex].approverRoleId ?? ''}
                       onChange={(e) =>
@@ -1175,7 +1162,7 @@ export const ApprovalFlowsTab: React.FC = () => {
                   </div>
                 )}
 
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
                   {form.steps[editingStepIndex].approverType === 'ROLE'
                     ? APPROVER_SCOPE_HINTS[form.steps[editingStepIndex].approverScope ?? 'ORG']
                     : APPROVER_TYPE_HINTS[form.steps[editingStepIndex].approverType]}
@@ -1183,7 +1170,7 @@ export const ApprovalFlowsTab: React.FC = () => {
               </div>
 
               {/* Field 2: ถ้าหาผู้อนุมัติไม่เจอ */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   ถ้าหาผู้อนุมัติไม่เจอ
                 </label>
@@ -1212,7 +1199,7 @@ export const ApprovalFlowsTab: React.FC = () => {
               </div>
 
               {/* Field 3: ผู้อนุมัติแทน (ไม่บังคับ) */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   ผู้อนุมัติแทน <span className="font-normal text-slate-400">(ไม่บังคับ)</span>
                 </label>
@@ -1312,26 +1299,23 @@ export const ApprovalFlowsTab: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700/60 flex justify-end">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  setEditingStepIndex(null);
-                  setIsApproverDropdownOpen(false);
-                }}
-                className="w-full justify-center"
-              >
-                เรียบร้อย
-              </Button>
+              {/* Footer Button */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setEditingStepIndex(null)}
+                  className="w-full justify-center"
+                >
+                  เรียบร้อย
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        );
+      })()}
 
       {/* ========================================================================= */}
       {/* Common Confirm Modal */}
