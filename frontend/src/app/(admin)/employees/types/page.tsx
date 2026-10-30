@@ -331,37 +331,37 @@ export default function EmployeeTypesPage() {
         )}
       </div>
 
-      {/* 4. KPI Stat Cards (3 Cards matching theme) */}
+      {/* 4. KPI Stat Cards (3 Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: ประเภทสัญญาทั้งหมด */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">ประเภทสัญญาทั้งหมด</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-400">ประเภทการจ้างงานที่กำหนดในระบบ</p>
+            <h4 className="text-xs font-bold text-sky-800 dark:text-sky-300 mb-1">ประเภทสัญญาทั้งหมด</h4>
+            <p className="text-xs text-sky-700/80 dark:text-sky-400">ประเภทการจ้างงานที่กำหนดในระบบ</p>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/60 text-blue-600 dark:text-blue-300 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-white dark:bg-sky-900/60 shadow-xs border border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.totalTypes}
           </div>
         </div>
 
         {/* Card 2: จ่ายค่าจ้างรายเดือน */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">จ่ายค่าจ้างรายเดือน</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-400">สัญญาจ้างรูปแบบเงินเดือนประจำ</p>
+            <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">จ่ายค่าจ้างรายเดือน</h4>
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400">สัญญาจ้างรูปแบบเงินเดือนประจำ</p>
           </div>
-          <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-300 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-white dark:bg-emerald-900/60 shadow-xs border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.monthlyWageCount}
           </div>
         </div>
 
         {/* Card 3: รายวัน / รายชั่วโมง / เบี้ยเลี้ยง */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">รายวัน / รายชั่วโมง / อื่นๆ</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-400">สัญญาจ้างยืดหยุ่นและนักศึกษาฝึกงาน</p>
+            <h4 className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">รายวัน / รายชั่วโมง / อื่นๆ</h4>
+            <p className="text-xs text-purple-700/80 dark:text-purple-400">สัญญาจ้างยืดหยุ่นและนักศึกษาฝึกงาน</p>
           </div>
-          <div className="bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-800/60 text-purple-600 dark:text-purple-300 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-white dark:bg-purple-900/60 shadow-xs border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.otherWageCount}
           </div>
         </div>

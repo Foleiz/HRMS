@@ -168,36 +168,40 @@ export default function TransfersPage() {
       {/* 2. Top Section: 3 Stat KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Card 1: ประวัติการโยกย้ายทั้งหมด */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
+        <div className="bg-slate-100 dark:bg-slate-800/90 rounded-2xl p-6 border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
+            <div className="text-slate-700 dark:text-slate-300 font-bold text-sm">
               ประวัติการโยกย้ายทั้งหมด
             </div>
+            <div className="text-slate-500 dark:text-slate-400 text-xs mt-1">บันทึกทั้งหมดในระบบ</div>
           </div>
-          <div className="bg-slate-100/90 dark:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+          <div className="bg-white dark:bg-slate-700/80 shadow-xs border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-slate-100 text-3xl font-black px-5 py-2 rounded-xl min-w-[56px] text-center">
             {transfers.length}
           </div>
         </div>
 
         {/* Card 2: ย้ายแผนกเดือนนี้ */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <span className="bg-[#fef3c7] dark:bg-amber-950/40 text-[#92400e] dark:text-amber-300 text-xs font-semibold px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
-              ย้ายแผนก
-            </span>
-            <span className="text-slate-600 dark:text-slate-400 font-medium text-sm">เดือนนี้</span>
+        <div className="bg-amber-100 dark:bg-amber-950/60 rounded-2xl p-6 border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
+          <div>
+            <div className="text-amber-800 dark:text-amber-300 font-bold text-sm">
+              ย้ายแผนกเดือนนี้
+            </div>
+            <div className="text-amber-700/80 dark:text-amber-400 text-xs mt-1">สับเปลี่ยนสังกัด/ฝ่าย</div>
           </div>
-          <div className="bg-slate-100/90 dark:bg-slate-700/80 text-slate-800 dark:text-slate-200 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center">
+          <div className="bg-white dark:bg-amber-900/60 shadow-xs border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200 text-3xl font-black px-5 py-2 rounded-xl min-w-[56px] text-center">
             {stats.transfersThisMonthCount}
           </div>
         </div>
 
         {/* Card 3: เลื่อนตำแหน่งเดือนนี้ */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs flex items-center justify-between">
-          <div className="text-slate-600 dark:text-slate-400 font-medium text-sm">
-            เลื่อนตำแหน่งเดือนนี้
+        <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl p-6 border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
+          <div>
+            <div className="text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+              เลื่อนตำแหน่งเดือนนี้
+            </div>
+            <div className="text-emerald-700/80 dark:text-emerald-400 text-xs mt-1">ปรับระดับ/ตำแหน่งใหม่</div>
           </div>
-          <div className="bg-emerald-50 dark:bg-emerald-950/40 text-[#16a34a] dark:text-emerald-400 text-3xl font-semibold px-5 py-2 rounded-xl min-w-[56px] text-center border border-emerald-200 dark:border-emerald-800">
+          <div className="bg-white dark:bg-emerald-900/60 shadow-xs border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-200 text-3xl font-black px-5 py-2 rounded-xl min-w-[56px] text-center">
             {stats.promotionsThisMonthCount}
           </div>
         </div>

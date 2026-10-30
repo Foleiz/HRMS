@@ -635,6 +635,15 @@ public class BenefitService : IBenefitService
             UpdatedAt = DateTime.UtcNow
         };
 
+        if (!string.IsNullOrWhiteSpace(request.AttachmentUrl) && request.AttachmentUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            var (bytes, mime) = FileDataDecoder.Decode(request.AttachmentUrl, request.AttachmentFileName);
+            claim.FileData = bytes;
+            claim.FileSize = bytes.LongLength;
+            claim.FileMimeType = mime;
+            claim.FileName = string.IsNullOrWhiteSpace(request.AttachmentFileName) ? "receipt" : request.AttachmentFileName.Trim();
+        }
+
         _context.EmployeeBenefitClaims.Add(claim);
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -667,6 +676,10 @@ public class BenefitService : IBenefitService
         var claim = await _context.EmployeeBenefitClaims.FirstOrDefaultAsync(c => c.Id == claimId, cancellationToken);
         if (claim == null)
             throw new NotFoundException($"ไม่พบรายการเบิกสวัสดิการรหัส ID: {claimId}");
+
+        // รายการที่อนุมัติแล้ว ลบไม่ได้
+        if (string.Equals(claim.Status, "APPROVED", StringComparison.OrdinalIgnoreCase))
+            throw new ValidationException("ไม่สามารถลบรายการเบิกสวัสดิการที่ได้รับการอนุมัติแล้วได้");
 
         // อยู่ในรอบเงินเดือนที่ล็อกแล้ว = จ่ายไปแล้ว ลบไม่ได้
         if (claim.PaymentStatus == BenefitPayCode.PaymentInPayroll && claim.PayrollPeriodId.HasValue)

@@ -7,6 +7,7 @@ import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
 import { LeaveSummaryReport } from '@/types/leaveInsights';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getSmartYearRange } from '@/lib/yearUtils';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
@@ -98,9 +99,9 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               onChange={(e) => setYear(Number(e.target.value))}
               className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
             >
-              {[0, 1, 2, 3].map((i) => (
-                <option key={i} value={currentYear - i}>
-                  {currentYear - i + 543}
+              {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
+                <option key={y} value={y}>
+                  พ.ศ. {y + 543}
                 </option>
               ))}
             </CustomSelect>

@@ -248,18 +248,49 @@ public class BenefitClaimRequestService : IBenefitClaimRequestService
 
         var me = _currentUser.EmployeeId;
         var allowed = claim.EmployeeId == me || IsHrApprover
+            || _currentUser.HasPermission("BENEFIT_BALANCE_VIEW")
+            || _currentUser.HasPermission("ESS_BENEFIT_VIEW")
+            || _currentUser.HasPermission("BENEFIT_BALANCE_EDIT")
             || (me.HasValue && claim.ApprovalInstanceId.HasValue
                 && await _approvalWorkflow.IsUserInWorkflowAsync(claim.ApprovalInstanceId.Value, me.Value, cancellationToken));
         if (!allowed) throw new ForbiddenException("คุณไม่มีสิทธิ์ดาวน์โหลดไฟล์แนบของคำขอนี้");
 
-        if (claim.FileData == null || claim.FileData.Length == 0)
+        byte[]? fileBytes = claim.FileData;
+        string? mime = claim.FileMimeType;
+        string fileName = claim.FileName ?? claim.AttachmentFileName ?? "receipt";
+
+        if ((fileBytes == null || fileBytes.Length == 0) && !string.IsNullOrWhiteSpace(claim.AttachmentUrl))
+        {
+            if (claim.AttachmentUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                var decoded = FileDataDecoder.Decode(claim.AttachmentUrl, fileName);
+                fileBytes = decoded.Bytes;
+                mime = decoded.Mime;
+            }
+        }
+
+        if (fileBytes == null || fileBytes.Length == 0)
             throw new NotFoundException("คำขอนี้ไม่มีไฟล์แนบ");
+
+        if (string.IsNullOrWhiteSpace(mime) || mime == "application/octet-stream")
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            mime = ext switch
+            {
+                ".pdf" => "application/pdf",
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".gif" => "image/gif",
+                ".webp" => "image/webp",
+                _ => mime ?? "application/octet-stream"
+            };
+        }
 
         return new BenefitClaimAttachment
         {
-            FileName = claim.FileName ?? "receipt",
-            MimeType = claim.FileMimeType ?? "application/octet-stream",
-            Data = claim.FileData
+            FileName = fileName,
+            MimeType = mime,
+            Data = fileBytes
         };
     }
 

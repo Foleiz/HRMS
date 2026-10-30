@@ -23,6 +23,7 @@ import ExportMenu, { ReportExportFormat } from '@/components/reports/ExportMenu'
 import { printReport } from '@/lib/printReport';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { getSmartYearRange } from '@/lib/yearUtils';
 import {
   ChartCard,
   Legend,
@@ -875,7 +876,7 @@ export default function ReportsPage() {
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
-                  {[2024, 2025, 2026, 2027].map((y) => (
+                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
                     <option key={y} value={y}>
                       พ.ศ. {y + 543}
                     </option>
@@ -1135,7 +1136,7 @@ export default function ReportsPage() {
                   onChange={(e) => setTaxYear(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
-                  {[2024, 2025, 2026, 2027].map((y) => (
+                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: taxYear }).map((y) => (
                     <option key={y} value={y}>
                       พ.ศ. {y + 543}
                     </option>
@@ -1501,7 +1502,7 @@ export default function ReportsPage() {
                   onChange={(e) => setTurnoverYear(Number(e.target.value))}
                   className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
                 >
-                  {[2024, 2025, 2026, 2027].map((y) => (
+                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: turnoverYear }).map((y) => (
                     <option key={y} value={y}>
                       พ.ศ. {y + 543}
                     </option>

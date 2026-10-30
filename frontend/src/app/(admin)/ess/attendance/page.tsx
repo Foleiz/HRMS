@@ -10,6 +10,7 @@ import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import AccessDenied from '@/components/common/AccessDenied';
 import { confirmAction } from '@/lib/sweetalert';
+import { getSmartYearRange } from '@/lib/yearUtils';
 import { essAttendanceService } from '@/services/essAttendanceService';
 import { AttendanceDaily, MyAttendanceMonthlySummary } from '@/types/attendance';
 import { AttendanceAdjustment, CreateAttendanceAdjustmentRequest } from '@/types/attendanceAdjustment';
@@ -27,6 +28,7 @@ import {
   X,
   Send,
   Loader2,
+  Calendar,
 } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
@@ -418,29 +420,57 @@ export default function EssAttendancePage() {
       {/* การ์ดสรุปประจำเดือน (บนสุด) */}
       {activeTab === 'history' && monthlySummary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-            <span className="text-xs text-slate-500 dark:text-slate-400">วันทำงานทั้งหมด</span>
-            <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{monthlySummary.totalWorkDays} วัน</div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-            <span className="text-xs text-emerald-600 font-medium">เข้างานตรงเวลา</span>
-            <div className="text-2xl font-bold text-emerald-600">{monthlySummary.presentCount} วัน</div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-            <span className="text-xs text-amber-600 font-medium">มาสาย</span>
-            <div className="text-2xl font-bold text-amber-600">
-              {monthlySummary.lateCount} ครั้ง{' '}
-              <span className="text-xs font-normal text-slate-400">({monthlySummary.totalLateMinutes} นาที)</span>
+          {/* 1. วันทำงานทั้งหมด */}
+          <div className="bg-slate-100 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-bold">วันทำงานทั้งหมด</span>
+              <div className="w-7 h-7 rounded-full bg-white dark:bg-slate-700 shadow-xs flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">
+              {monthlySummary.totalWorkDays} <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">วัน</span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
-            <span className="text-xs text-rose-600 font-medium">ขาดงาน / ออกก่อน</span>
-            <div className="text-2xl font-bold text-rose-600">
-              {monthlySummary.absentCount} วัน{' '}
-              <span className="text-xs font-normal text-slate-400">
+          {/* 2. เข้างานตรงเวลา */}
+          <div className="bg-emerald-100 dark:bg-emerald-950/60 p-4 rounded-2xl border border-emerald-300 dark:border-emerald-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-emerald-800 dark:text-emerald-300">
+              <span className="text-xs font-bold">เข้างานตรงเวลา</span>
+              <div className="w-7 h-7 rounded-full bg-white dark:bg-emerald-900/60 shadow-xs flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                <CheckCircle2 className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 text-2xl font-black text-emerald-700 dark:text-emerald-300">
+              {monthlySummary.presentCount} <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">วัน</span>
+            </div>
+          </div>
+
+          {/* 3. มาสาย */}
+          <div className="bg-amber-100 dark:bg-amber-950/60 p-4 rounded-2xl border border-amber-300 dark:border-amber-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-amber-800 dark:text-amber-300">
+              <span className="text-xs font-bold">มาสาย</span>
+              <div className="w-7 h-7 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 text-2xl font-black text-amber-700 dark:text-amber-300">
+              {monthlySummary.lateCount} <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">ครั้ง</span>{' '}
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">({monthlySummary.totalLateMinutes} นาที)</span>
+            </div>
+          </div>
+
+          {/* 4. ขาดงาน / ออกก่อน */}
+          <div className="bg-rose-100 dark:bg-rose-950/60 p-4 rounded-2xl border border-rose-300 dark:border-rose-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
+            <div className="flex items-center justify-between text-rose-800 dark:text-rose-300">
+              <span className="text-xs font-bold">ขาดงาน / ออกก่อน</span>
+              <div className="w-7 h-7 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                <XCircle className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-2 text-2xl font-black text-rose-700 dark:text-rose-300">
+              {monthlySummary.absentCount} <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">วัน</span>{' '}
+              <span className="text-xs font-medium text-rose-700 dark:text-rose-400">
                 (ออกก่อน {monthlySummary.earlyLeaveCount} ครั้ง)
               </span>
             </div>
@@ -494,7 +524,7 @@ export default function EssAttendancePage() {
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
                   className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {[2024, 2025, 2026, 2027].map((y) => (
+                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
                     <option key={y} value={y}>
                       พ.ศ. {y + 543}
                     </option>

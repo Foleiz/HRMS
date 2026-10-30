@@ -28,6 +28,7 @@ import { useToast } from '@/context/ToastContext';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getSmartYearOptions } from '@/lib/yearUtils';
 import { useAuth } from '@/context/AuthContext';
 import {
   WorkWeekDay,
@@ -618,11 +619,15 @@ export default function WorkCalendarPage() {
                   onChange={(val) => setSelectedYear(parseInt(val, 10))}
                   placeholder="เลือกปี"
                   className="min-w-[170px]"
-                  options={[
-                    { value: 2025, label: 'ปี พ.ศ. 2568' },
-                    { value: 2026, label: 'ปี พ.ศ. 2569' },
-                    { value: 2027, label: 'ปี พ.ศ. 2570' },
-                  ]}
+                  options={getSmartYearOptions(
+                    {
+                      forwardYears: 1,
+                      backYears: 4,
+                      historicalYears: holidays.map((h) => h.holidayDate?.substring(0, 4)),
+                      selectedYear,
+                    },
+                    'ปี พ.ศ. '
+                  )}
                 />
 
                 {/* Type Filter */}

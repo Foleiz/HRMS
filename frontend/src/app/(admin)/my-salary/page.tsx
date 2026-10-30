@@ -420,93 +420,93 @@ function MySalaryContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: เงินเดือนสุทธิ (Net Pay) - Theme Primary Card */}
-          <div className="bg-primary text-white rounded-2xl p-5 shadow-md flex flex-col justify-between min-h-[140px] relative overflow-hidden group">
+          {/* Card 1: เงินเดือนสุทธิ (Net Pay) */}
+          <div className="bg-blue-100 dark:bg-blue-950/60 rounded-2xl border border-blue-300 dark:border-blue-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-200">
+              <span className="text-xs font-bold text-blue-800 dark:text-blue-300">
                 เงินเดือนสุทธิ (Net Pay)
               </span>
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <CreditCard className="w-4 h-4 text-white/80" />
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-blue-900/60 shadow-xs flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-300">
+                <CreditCard className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums text-white">
+                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums text-blue-950 dark:text-blue-100">
                   {formatMoneyInt(overview?.latestNetPay)}
                 </span>
-                <span className="text-xs font-medium text-slate-200">บาท</span>
+                <span className="text-xs font-semibold text-blue-700/80 dark:text-blue-300/80">บาท</span>
               </div>
-              <p className="text-[11px] text-slate-200/80 mt-1 tabular-nums truncate">
+              <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 mt-1 tabular-nums truncate">
                 โอนเข้าบัญชี {overview?.bankAccountMasked || 'xxx-xxx-xxx-x'}
               </p>
             </div>
           </div>
 
-          {/* Card 2: รายได้รวม - White Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+          {/* Card 2: รายได้รวม */}
+          <div className="bg-amber-100 dark:bg-amber-950/60 rounded-2xl border border-amber-300 dark:border-amber-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
                 รายได้รวม
               </span>
-              <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
                 <ArrowUpRight className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums">
+                <span className="text-2xl sm:text-3xl font-extrabold text-amber-900 dark:text-amber-100 tracking-tight tabular-nums">
                   {formatMoneyInt(overview?.latestGrossIncome)}
                 </span>
-                <span className="text-xs font-medium text-slate-400">บาท</span>
+                <span className="text-xs font-semibold text-amber-700/80 dark:text-amber-300/80">บาท</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 truncate" title={overview?.grossSubtext}>
+              <p className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-1 truncate" title={overview?.grossSubtext}>
                 {overview?.grossSubtext || 'เงินเดือน + ค่าตอบแทน'}
               </p>
             </div>
           </div>
 
-          {/* Card 3: รายการหักรวม - White Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+          {/* Card 3: รายการหักรวม */}
+          <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-bold text-rose-800 dark:text-rose-300">
                 รายการหักรวม
               </span>
-              <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
                 <ArrowDownRight className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums">
+                <span className="text-2xl sm:text-3xl font-extrabold text-rose-900 dark:text-rose-100 tracking-tight tabular-nums">
                   {formatMoneyInt(overview?.latestTotalDeductions)}
                 </span>
-                <span className="text-xs font-medium text-slate-400">บาท</span>
+                <span className="text-xs font-semibold text-rose-700/80 dark:text-rose-300/80">บาท</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 truncate" title={overview?.deductionSubtext}>
+              <p className="text-[11px] text-rose-700/80 dark:text-rose-400 mt-1 truncate" title={overview?.deductionSubtext}>
                 {overview?.deductionSubtext || 'ภาษี ประกันสังคม'}
               </p>
             </div>
           </div>
 
-          {/* Card 4: ยอดสะสมทั้งปี (YTD) - White Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between min-h-[140px]">
+          {/* Card 4: ยอดสะสมทั้งปี (YTD) */}
+          <div className="bg-purple-100 dark:bg-purple-950/60 rounded-2xl border border-purple-300 dark:border-purple-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
             <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <span className="text-xs font-bold text-purple-800 dark:text-purple-300">
                 ยอดสะสมทั้งปี (YTD)
               </span>
-              <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-white dark:bg-purple-900/60 shadow-xs flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
             <div className="mt-4">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight tabular-nums">
+                <span className="text-2xl sm:text-3xl font-extrabold text-purple-900 dark:text-purple-100 tracking-tight tabular-nums">
                   {formatMoneyInt(overview?.ytdTotalGross)}
                 </span>
-                <span className="text-xs font-medium text-slate-400">บาท</span>
+                <span className="text-xs font-semibold text-purple-700/80 dark:text-purple-300/80">บาท</span>
               </div>
-              <p className="text-[11px] text-slate-400 mt-1 truncate">
+              <p className="text-[11px] text-purple-700/80 dark:text-purple-400 mt-1 truncate">
                 {overview?.ytdPeriodRange || 'ม.ค. - ปัจจุบัน * ใช้ยื่นภาษีปลายปี'}
               </p>
             </div>
