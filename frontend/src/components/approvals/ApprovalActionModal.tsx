@@ -13,6 +13,7 @@ import {
   XCircle,
   Loader2,
   AlertCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { ModalShell } from '@/components/ui/ModalShell';
 
@@ -263,9 +264,11 @@ export const ApprovalActionModal: React.FC<ApprovalActionModalProps> = ({
                     <button
                       type="button"
                       onClick={att.onOpen}
-                      className="text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-primary hover:underline px-2 py-0.5 rounded transition-colors cursor-pointer shrink-0"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-slate-700 dark:text-slate-300 hover:text-primary hover:underline px-2 py-0.5 rounded transition-colors cursor-pointer shrink-0 group"
+                      title="เปิดดูในแท็บใหม่"
                     >
-                      เปิดดู
+                      <span>เปิดดู</span>
+                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-primary transition-colors" />
                     </button>
                   )}
                 </div>

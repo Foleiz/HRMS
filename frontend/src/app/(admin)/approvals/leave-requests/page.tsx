@@ -54,6 +54,7 @@ import {
 } from '@/components/approvals/ApprovalActionModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
+import { openBlobInNewTab } from '@/lib/filePreview';
 import {
   useLeaveDecisionData,
   LeaveDecisionInsightsPanel,
@@ -1927,18 +1928,12 @@ export default function LeaveRequestsApprovalPage() {
               ? [
                   {
                     name: selectedGeneralForApprove.fileName,
-                    onOpen: async () => {
-                      try {
-                        const blob = await generalDocumentService.downloadAttachment(selectedGeneralForApprove.id);
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = selectedGeneralForApprove.fileName || 'attachment';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                      } catch {
-                        showToast('ไม่สามารถดาวน์โหลดไฟล์แนบได้', 'error');
-                      }
+                    onOpen: () => {
+                      openBlobInNewTab(
+                        () => generalDocumentService.downloadAttachment(selectedGeneralForApprove.id),
+                        selectedGeneralForApprove.fileName,
+                        (msg) => showToast(msg, 'error')
+                      );
                     },
                   },
                 ]

@@ -5,7 +5,7 @@ import { BenefitClaimRequest } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { AlertCircle } from 'lucide-react';
 import { ApprovalActionModal, ApprovalDetailRow } from '@/components/approvals/ApprovalActionModal';
-import BenefitAttachmentPreviewModal from './BenefitAttachmentPreviewModal';
+import { openBlobInNewTab } from '@/lib/filePreview';
 
 export type BenefitClaimReviewMode = 'approve' | 'reject' | 'view';
 
@@ -39,7 +39,6 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (!claim) return null;
 
@@ -47,18 +46,13 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
   const remainingBefore = hasQuota ? Math.max(0, claim.quotaAmount - claim.approvedUsedAmount) : null;
   const overQuota = remainingBefore !== null && claim.amount > remainingBefore;
 
-  const handleDownload = async () => {
-    try {
-      const blob = await benefitService.downloadClaimAttachment(claim.id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = claim.fileName || 'receipt';
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      setError('ดาวน์โหลดไฟล์แนบไม่สำเร็จ');
-    }
+  const handleOpenAttachment = () => {
+    if (!claim) return;
+    openBlobInNewTab(
+      () => benefitService.downloadClaimAttachment(claim.id),
+      claim.fileName,
+      (msg) => setError(msg)
+    );
   };
 
   const handleSubmit = async () => {
@@ -118,7 +112,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
         heroTitle={`${money(claim.amount)} บาท`}
         heroSubtitle={claim.benefitName}
         detailRows={detailRows}
-        attachments={claim.fileName ? [{ name: claim.fileName, onOpen: () => setIsPreviewOpen(true) }] : undefined}
+        attachments={claim.fileName ? [{ name: claim.fileName, onOpen: handleOpenAttachment }] : undefined}
         comment={comment}
         onCommentChange={setComment}
         commentLabel={mode === 'reject' ? 'เหตุผลที่ไม่อนุมัติ' : 'ความคิดเห็นผู้อนุมัติ (ไม่บังคับ)'}
@@ -181,15 +175,7 @@ export const BenefitClaimReviewModal: React.FC<BenefitClaimReviewModalProps> = (
         )}
       </ApprovalActionModal>
 
-      {/* Preview Modal */}
-      {claim && (
-        <BenefitAttachmentPreviewModal
-          isOpen={isPreviewOpen}
-          onClose={() => setIsPreviewOpen(false)}
-          claimId={claim.id}
-          fileName={claim.fileName}
-        />
-      )}
+
     </>
   );
 };
