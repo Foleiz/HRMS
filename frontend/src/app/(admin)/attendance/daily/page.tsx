@@ -2030,7 +2030,6 @@ function DailyAttendanceContent() {
                     <th className="py-3 px-4">วันที่ยื่น / รหัสคำขอ</th>
                     <th className="py-3 px-4">พนักงาน</th>
                     <th className="py-3 px-4">วันที่ทำงาน & กะงาน</th>
-                    <th className="py-3 px-4">เวลาเดิม (เข้า - ออก)</th>
                     <th className="py-3 px-4">เวลาที่ขอปรับ (เข้า - ออก)</th>
                     <th className="py-3 px-4">เหตุผลในการขอปรับ</th>
                     <th className="py-3 px-4">สถานะ</th>
@@ -2041,7 +2040,7 @@ function DailyAttendanceContent() {
                 <tbody className="divide-y divide-slate-100 font-medium dark:divide-slate-700/60">
                   {adjustmentsLoading ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <RefreshCw className="w-6 h-6 animate-spin text-primary" />
                           <span>กำลังโหลดรายการคำขอ...</span>
@@ -2050,7 +2049,7 @@ function DailyAttendanceContent() {
                     </tr>
                   ) : adjustments.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <ClipboardCheck className="w-8 h-8 text-slate-300" />
                           <p className="font-semibold text-slate-700 dark:text-slate-300">ไม่พบคำขอปรับปรุงเวลา</p>
@@ -2081,29 +2080,27 @@ function DailyAttendanceContent() {
                           <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{adj.shiftName || 'ไม่ระบุกะ'}</div>
                         </td>
 
-                        {/* Original Times */}
+                        {/* Adjusted Times (แสดงเทียบเดิม -> ปรับ) */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 text-2xs text-slate-600 dark:text-slate-400">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-                              เข้า: {adj.originalClockIn ? formatTimeStr(adj.originalClockIn) : '-'}
-                            </span>
-                            <span className="text-slate-300">→</span>
-                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-                              ออก: {adj.originalClockOut ? formatTimeStr(adj.originalClockOut) : '-'}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Adjusted Times */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 text-2xs font-bold">
-                            <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
-                              เข้า: {adj.adjustedClockIn ? formatTimeStr(adj.adjustedClockIn) : '-'}
-                            </span>
-                            <span className="text-slate-300">→</span>
-                            <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400">
-                              ออก: {adj.adjustedClockOut ? formatTimeStr(adj.adjustedClockOut) : '-'}
-                            </span>
+                          <div className="flex flex-col gap-1 text-2xs font-medium">
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
+                                เข้า: {adj.originalClockIn ? formatTimeStr(adj.originalClockIn) : '-'}
+                              </span>
+                              <span className="text-slate-400">→</span>
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
+                                เข้า: {adj.adjustedClockIn ? formatTimeStr(adj.adjustedClockIn) : '-'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
+                                ออก: {adj.originalClockOut ? formatTimeStr(adj.originalClockOut) : '-'}
+                              </span>
+                              <span className="text-slate-400">→</span>
+                              <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400">
+                                ออก: {adj.adjustedClockOut ? formatTimeStr(adj.adjustedClockOut) : '-'}
+                              </span>
+                            </div>
                           </div>
                         </td>
 
