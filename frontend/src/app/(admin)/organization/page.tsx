@@ -2744,7 +2744,7 @@ export default function OrganizationPage() {
           </div>
 
           {/* ตั้งเป็นบัญชีจ่ายเงินเดือนหลัก */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
             <input
               type="checkbox"
               id="isPrimaryPayrollAccount"
@@ -2757,15 +2757,10 @@ export default function OrganizationPage() {
                   status: e.target.checked ? 'ACTIVE' : bankAccountForm.status,
                 })
               }
-              className="mt-0.5 rounded text-primary focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded text-primary focus:ring-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
             />
-            <label htmlFor="isPrimaryPayrollAccount" className="text-xs cursor-pointer select-none">
-              <span className="font-semibold text-slate-800 dark:text-slate-200 block dark:text-slate-200">ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน (Primary Payroll Account)</span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5 dark:text-slate-400">
-                {editingBankAccount?.isPrimaryPayrollAccount
-                  ? 'บัญชีนี้เป็นบัญชีหลักอยู่ — ถ้าต้องการเปลี่ยน ให้กด "ตั้งเป็นบัญชีหลัก" ที่บัญชีอื่นแทน'
-                  : 'เมื่อเปิดใช้งาน บัญชีนี้จะถูกเลือกเป็นบัญชีต้นทางอัตโนมัติในการทำรายการจ่ายเงินเดือนพนักงาน'}
-              </span>
+            <label htmlFor="isPrimaryPayrollAccount" className="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer select-none">
+              ใช้เป็นบัญชีหลักสำหรับจ่ายเงินเดือน
             </label>
           </div>
 
