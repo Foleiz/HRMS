@@ -1284,79 +1284,6 @@ function DailyAttendanceContent() {
             </div>
           ) : (
             <>
-              {/* Filter & Toolbar Bar */}
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3 overflow-x-auto dark:bg-slate-800 dark:border-slate-700/80">
-            {/* Left: Search, Filters & Date Stepper */}
-            <div className="flex items-center gap-2.5 shrink-0">
-              {/* Search */}
-              <div className="relative w-56 sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
-                  value={searchKeyword}
-                  onChange={(e) => {
-                    setSearchKeyword(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
-                />
-              </div>
-
-              {/* Department Filter */}
-              <CustomSelect
-                value={selectedDepartment}
-                onChange={(val) => {
-                  setSelectedDepartment(String(val) === 'ALL' ? 'ALL' : Number(val));
-                  setCurrentPage(1);
-                }}
-                placeholder="ทุกแผนก / สังกัด"
-                className="min-w-[160px]"
-                options={[
-                  { value: 'ALL', label: 'ทุกแผนก / สังกัด' },
-                  ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
-                ]}
-              />
-
-              {/* Date Picker */}
-              <div className="flex items-center gap-2">
-                <ThaiDatePicker
-                  value={selectedDate}
-                  onChange={(newDate) => {
-                    setSelectedDate(newDate);
-                    setCurrentPage(1);
-                  }}
-                  size="sm"
-                  className="w-[145px] sm:w-[155px]"
-                />
-
-              </div>
-
-              {/* Recalculate Button */}
-              <button
-                onClick={handleRecalculate}
-                disabled={refreshing}
-                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
-                title="ประมวลผลคำนวณเวลาใหม่"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-primary' : ''}`} />
-              </button>
-            </div>
-
-            {/* Right: Actions */}
-            {canViewImport && (
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  icon={<UploadCloud className="w-4 h-4" />}
-                  onClick={() => handleTabChange('import')}
-                >
-                  นำเข้าไฟล์เวลา
-                </Button>
-              </div>
-            )}
-          </div>
-
           {/* Summary Metric Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* 1. Total Employees */}
@@ -1444,13 +1371,85 @@ function DailyAttendanceContent() {
             </div>
           </div>
 
-          {/* Daily Table with whitespace-nowrap */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+              {/* Filter & Toolbar Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Left: Search, Filters & Date Stepper */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              {/* Search */}
+              <div className="relative w-56 sm:w-64">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
+                  value={searchKeyword}
+                  onChange={(e) => {
+                    setSearchKeyword(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-[#F1F5F9] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
+                />
+              </div>
+
+              {/* Department Filter */}
+              <CustomSelect
+                value={selectedDepartment}
+                onChange={(val) => {
+                  setSelectedDepartment(String(val) === 'ALL' ? 'ALL' : Number(val));
+                  setCurrentPage(1);
+                }}
+                placeholder="ทุกแผนก / สังกัด"
+                className="min-w-[160px]"
+                options={[
+                  { value: 'ALL', label: 'ทุกแผนก / สังกัด' },
+                  ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
+                ]}
+              />
+
+              {/* Date Picker */}
+              <div className="flex items-center gap-2">
+                <ThaiDatePicker
+                  value={selectedDate}
+                  onChange={(newDate) => {
+                    setSelectedDate(newDate);
+                    setCurrentPage(1);
+                  }}
+                  size="sm"
+                  className="w-[145px] sm:w-[155px]"
+                />
+
+              </div>
+
+              {/* Recalculate Button */}
+              <button
+                onClick={handleRecalculate}
+                disabled={refreshing}
+                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-lg transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
+                title="ประมวลผลคำนวณเวลาใหม่"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-primary' : ''}`} />
+              </button>
+            </div>
+
+            {/* Right: Actions */}
+            {canViewImport && (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  icon={<UploadCloud className="w-4 h-4" />}
+                  onClick={() => handleTabChange('import')}
+                >
+                  นำเข้าไฟล์เวลา
+                </Button>
+              </div>
+            )}
+          </div>
+
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <RefreshIndicator active={dailyPhase.refreshing} />
               <table className="table-standard w-full min-w-[1000px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider whitespace-nowrap">
+                  <tr className="bg-primary text-white font-semibold whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อ-นามสกุล</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
@@ -1810,7 +1809,7 @@ function DailyAttendanceContent() {
               <RefreshIndicator active={batchesPhase.refreshing} />
               <table className="table-standard w-full min-w-[1050px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold tracking-wider whitespace-nowrap">
+                  <tr className="bg-primary text-white font-semibold whitespace-nowrap">
                     <th className="py-3.5 px-4 whitespace-nowrap">ชุดที่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">วันที่นำเข้า</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อไฟล์</th>
@@ -2026,7 +2025,7 @@ function DailyAttendanceContent() {
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[950px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-bold uppercase tracking-wider text-2xs whitespace-nowrap">
+                  <tr className="bg-primary text-white font-semibold whitespace-nowrap">
                     <th className="py-3 px-4">วันที่ยื่น / รหัสคำขอ</th>
                     <th className="py-3 px-4">พนักงาน</th>
                     <th className="py-3 px-4">วันที่ทำงาน & กะงาน</th>
@@ -2429,7 +2428,7 @@ function DailyAttendanceContent() {
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[950px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-2xs uppercase tracking-wider whitespace-nowrap">
+                  <tr className="bg-primary text-white font-semibold whitespace-nowrap">
                     <th className="py-3 px-3.5">รหัสพนักงาน</th>
                     <th className="py-3 px-3.5">ชื่อ-นามสกุล</th>
                     <th className="py-3 px-3.5">แผนก / ตำแหน่ง</th>

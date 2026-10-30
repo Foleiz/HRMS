@@ -759,18 +759,18 @@ export default function ReportsPage() {
               <>
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-primary text-white font-semibold">
                     <tr className="whitespace-nowrap">
-                      <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">ชื่อแผนก</th>
+                      <th className="py-3 px-4 sticky left-0 bg-primary text-white z-[1]">ชื่อแผนก</th>
                       <th className="py-3 px-4">รหัสแผนก</th>
                       <th className="py-3 px-4">ฝ่าย</th>
                       <th className="py-3 px-4 text-center">พนักงานทั้งหมด</th>
-                      <th className="py-3 px-4 text-center text-emerald-700">มาทำงาน</th>
-                      <th className="py-3 px-4 text-center text-amber-700">มาสาย</th>
-                      <th className="py-3 px-4 text-center text-orange-700">ออกก่อน</th>
+                      <th className="py-3 px-4 text-center text-emerald-300">มาทำงาน</th>
+                      <th className="py-3 px-4 text-center text-amber-300">มาสาย</th>
+                      <th className="py-3 px-4 text-center text-orange-300">ออกก่อน</th>
                       <th className="py-3 px-4 text-center text-[#2F4C75] dark:text-[#B4C6E2]">ลา</th>
                       <th className="py-3 px-4 text-center text-slate-500">วันหยุด</th>
-                      <th className="py-3 px-4 text-center text-rose-700">ขาดงาน</th>
+                      <th className="py-3 px-4 text-center text-rose-300">ขาดงาน</th>
                       <th className="py-3 px-4 text-center">อัตราการเข้างาน</th>
                     </tr>
                   </thead>
@@ -1021,15 +1021,15 @@ export default function ReportsPage() {
               <>
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[850px] text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-primary text-white font-semibold">
                     <tr className="whitespace-nowrap">
-                      <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">พนักงาน</th>
+                      <th className="py-3 px-4 sticky left-0 bg-primary text-white z-[1]">พนักงาน</th>
                       <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
                       <th className="py-3 px-4 text-center">วันทำงาน</th>
-                      <th className="py-3 px-4 text-center text-emerald-700">ตรงเวลา</th>
-                      <th className="py-3 px-4 text-center text-amber-700">มาสาย</th>
-                      <th className="py-3 px-4 text-center text-orange-700">ออกก่อน</th>
-                      <th className="py-3 px-4 text-center text-rose-700">ขาดงาน</th>
+                      <th className="py-3 px-4 text-center text-emerald-300">ตรงเวลา</th>
+                      <th className="py-3 px-4 text-center text-amber-300">มาสาย</th>
+                      <th className="py-3 px-4 text-center text-orange-300">ออกก่อน</th>
+                      <th className="py-3 px-4 text-center text-rose-300">ขาดงาน</th>
                       <th className="py-3 px-4 text-center">อัตราการเข้างาน</th>
                     </tr>
                   </thead>
@@ -1361,18 +1361,18 @@ export default function ReportsPage() {
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-primary text-white font-semibold">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4 text-center w-12">ลำดับ</th>
-                      <th className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">พนักงาน</th>
+                      <th className="py-3 px-4 sticky left-0 bg-primary text-white z-[1]">พนักงาน</th>
                       <th className="py-3 px-4">เลขประจำตัวประชาชน</th>
                       <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
                       <th className="py-3 px-4 text-right">เงินได้พึงประเมิน</th>
-                      <th className="py-3 px-4 text-right text-rose-700">ภาษี ภ.ง.ด.1</th>
-                      <th className="py-3 px-4 text-right text-blue-700">ปกส. ลูกจ้าง</th>
-                      <th className="py-3 px-4 text-right text-indigo-700">ปกส. นายจ้าง</th>
-                      <th className="py-3 px-4 text-right font-bold text-blue-900">รวมนำส่ง ปกส.</th>
-                      <th className="py-3 px-4 text-right text-emerald-700">เงินได้สุทธิ</th>
+                      <th className="py-3 px-4 text-right text-rose-300">ภาษี ภ.ง.ด.1</th>
+                      <th className="py-3 px-4 text-right text-sky-300">ปกส. ลูกจ้าง</th>
+                      <th className="py-3 px-4 text-right text-indigo-200">ปกส. นายจ้าง</th>
+                      <th className="py-3 px-4 text-right font-bold text-white font-bold">รวมนำส่ง ปกส.</th>
+                      <th className="py-3 px-4 text-right text-emerald-300">เงินได้สุทธิ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -1700,15 +1700,15 @@ export default function ReportsPage() {
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[950px] text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-primary text-white font-semibold">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4">ฝ่าย</th>
                       <th className="py-3 px-4">รหัสแผนก</th>
                       <th className="py-3 px-4">ชื่อแผนก</th>
                       <th className="py-3 px-4 text-center">ต้นงวด (คน)</th>
-                      <th className="py-3 px-4 text-center text-emerald-700">เข้าใหม่</th>
-                      <th className="py-3 px-4 text-center text-rose-700">ลาออก</th>
-                      <th className="py-3 px-4 text-center text-blue-900">สิ้นงวด (คน)</th>
+                      <th className="py-3 px-4 text-center text-emerald-300">เข้าใหม่</th>
+                      <th className="py-3 px-4 text-center text-rose-300">ลาออก</th>
+                      <th className="py-3 px-4 text-center text-white font-bold">สิ้นงวด (คน)</th>
                       <th className="py-3 px-4 text-center">อัตราลาออก (%)</th>
                       <th className="py-3 px-4 text-center">อัตราคงอยู่ (%)</th>
                     </tr>
@@ -1776,7 +1776,7 @@ export default function ReportsPage() {
 
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[800px] text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
+                  <thead className="bg-primary text-white font-semibold">
                     <tr className="whitespace-nowrap">
                       <th className="py-3 px-4">วันที่</th>
                       <th className="py-3 px-4">พนักงาน</th>

@@ -1038,7 +1038,7 @@ function SchedulesContent() {
                   placeholder="ค้นหาชื่อ, รหัส หรือชื่อกะ..."
                   value={assignmentSearch}
                   onChange={(e) => setAssignmentSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full pl-9 pr-4 py-2 text-xs bg-[#F1F5F9] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -1459,7 +1459,7 @@ function SchedulesContent() {
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                   <table className="table-standard w-full min-w-[900px] text-xs text-left border-collapse whitespace-nowrap">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 text-xs font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                      <tr className="bg-primary text-white font-semibold whitespace-nowrap">
                         <th className="p-3.5">รหัส / ชื่อพนักงาน</th>
                         <th className="p-3.5">แผนก / สังกัด</th>
                         <th className="p-3.5">กะการทำงาน</th>
@@ -1583,7 +1583,7 @@ function SchedulesContent() {
                   placeholder="ค้นหารหัส หรือชื่อกะการทำงาน..."
                   value={shiftSearchQuery}
                   onChange={(e) => setShiftSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full pl-9 pr-4 py-2 text-xs bg-[#F1F5F9] border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
                 />
               </div>
 
@@ -1813,7 +1813,7 @@ function SchedulesContent() {
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[280px] pb-8">
                 <table className="table-standard w-full min-w-[900px] text-xs text-left border-collapse whitespace-nowrap">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 dark:text-slate-400 text-xs font-semibold dark:bg-slate-800/60 dark:border-slate-700 dark:text-slate-400">
+                    <tr className="bg-primary text-white font-semibold whitespace-nowrap">
                       <th className="p-3.5">รหัสกะ</th>
                       <th className="p-3.5">ชื่อกะการทำงาน</th>
                       <th className="p-3.5">ประเภทกะ</th>

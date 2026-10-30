@@ -227,10 +227,10 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             {matrix.depts.length === 0 ? (
               <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
             ) : (
-              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <table className="table-standard w-full min-w-[600px] text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
+                    <tr className="bg-primary text-white font-semibold whitespace-nowrap text-xs">
                       <th className="text-left py-2 px-3">แผนก</th>
                       {matrix.types.map((t) => (
                         <th key={t} className="text-right py-2 px-3 whitespace-nowrap">
@@ -274,7 +274,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
                 <table className="table-standard w-full min-w-[500px] text-xs whitespace-nowrap">
                   <thead>
-                    <tr className="text-xs text-slate-500 bg-slate-50 whitespace-nowrap">
+                    <tr className="bg-primary text-white font-semibold whitespace-nowrap text-xs">
                       <th className="text-left py-2 px-3 w-10">#</th>
                       <th className="text-left py-2 px-3">พนักงาน</th>
                       <th className="text-left py-2 px-3">แผนก</th>
