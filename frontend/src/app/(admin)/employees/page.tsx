@@ -39,7 +39,6 @@ import {
   LayoutGrid,
   Star,
   Info,
-  Filter,
   Hash,
   UserCog,
   Armchair,
@@ -815,13 +814,6 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                   {paginatedEmployees.length} / {filteredEmployees.length}
                 </span>{' '}
                 คน
-              </div>
-              <div className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <span>สถานะการจ้าง:</span>
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  ทำงานอยู่
-                </span>
               </div>
             </div>
 
