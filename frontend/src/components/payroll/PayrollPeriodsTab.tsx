@@ -285,16 +285,16 @@ export default function PayrollPeriodsTab({
               <Calendar className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs flex items-center justify-between">
-            <span className="text-purple-700/80 dark:text-purple-300 font-medium">
-              สถานะกำหนดการ
+          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-purple-700/80 dark:text-purple-300 font-medium whitespace-nowrap">สถานะ</span>
               {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-slate-800 text-rose-600 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800 shadow-2xs">
+                <span className="px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-slate-800 text-rose-600 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800 shadow-2xs whitespace-nowrap text-[11px]">
                   ค้าง {overview!.overdueOpenPeriodCount} รอบ
                 </span>
               )}
-            </span>
-            <span className={`font-bold ${
+            </div>
+            <span className={`font-bold whitespace-nowrap shrink-0 ${
               overview?.remainingDays != null && overview.remainingDays < 0
                 ? 'text-rose-600 dark:text-rose-400'
                 : overview?.remainingDays === 0
