@@ -83,7 +83,8 @@ public class RoleService : IRoleService
         new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
 
         // 8.1 สวัสดิการของฉัน (MY_BENEFITS)
-        new("ESS_BENEFIT", "สวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
+        new("ESS_BENEFIT", "ยอดสวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
+        new("ESS_BENEFIT_CLAIM", "ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ", "ESS_BENEFIT_CLAIM", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
 
         // 9. ตรวจบันทึกเวลา (ATTENDANCE_DAILY)
         new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
@@ -232,7 +233,7 @@ public class RoleService : IRoleService
             }
 
             // Parent permissions for backward compatibility and broad modules
-            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW" };
+            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW", "ESS_BENEFIT_VIEW" };
             foreach (var pCode in parentCodes)
             {
                 if (!existingPerms.Contains(pCode))

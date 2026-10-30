@@ -124,7 +124,7 @@ const menuGroups: MenuGroup[] = [
         href: '/ess/benefits',
         matchPrefix: '/ess/benefits',
         icon: Gift,
-        requiredPermissions: ['ESS_BENEFIT_VIEW'],
+        requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
       },
     ],
   },

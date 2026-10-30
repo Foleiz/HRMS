@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { EmployeeBenefitUsageSummary, BenefitClaim, BenefitUsageItem } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { RecordBenefitClaimModal } from './RecordBenefitClaimModal';
@@ -29,6 +29,7 @@ import {
   XCircle,
   Ban,
   Paperclip,
+  Search,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { confirmAction } from '@/lib/sweetalert';
@@ -87,22 +88,25 @@ interface EmployeeBenefitsUsageTabProps {
   employeeName: string;
   /** hr = ฝ่ายบุคคลบันทึก/ลบรายการ / self = พนักงานยื่นเบิกเองผ่านสายการอนุมัติ */
   mode?: 'hr' | 'self';
+  /** 'overview' = โควตาและสิทธิประโยชน์ / 'history' = ประวัติการเบิกจ่าย / 'all' = แสดงทั้งหมด */
+  activeSection?: 'overview' | 'history' | 'all';
 }
 
 export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> = ({
   employeeId,
   employeeName,
   mode = 'hr',
+  activeSection = 'all',
 }) => {
   const isSelf = mode === 'self';
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canCreateClaim = isSelf
-    ? isSuper || hasPermission('ESS_BENEFIT_CREATE')
+    ? isSuper || hasPermission('ESS_BENEFIT_CREATE') || hasPermission('ESS_BENEFIT_CLAIM_CREATE')
     : isSuper || hasPermission('BENEFIT_BALANCE_CREATE') || hasPermission('BENEFIT_BALANCE_EDIT');
   const canDeleteClaim = isSelf
-    ? isSuper || hasPermission('ESS_BENEFIT_EDIT') || hasPermission('ESS_BENEFIT_CREATE')
+    ? isSuper || hasPermission('ESS_BENEFIT_EDIT') || hasPermission('ESS_BENEFIT_CREATE') || hasPermission('ESS_BENEFIT_CLAIM_EDIT')
     : isSuper || hasPermission('BENEFIT_BALANCE_EDIT');
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
@@ -113,6 +117,23 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   const [selectedBenefitForClaim, setSelectedBenefitForClaim] = useState<number | null>(null);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
   const [previewClaim, setPreviewClaim] = useState<BenefitClaim | null>(null);
+  const [searchClaimText, setSearchClaimText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+
+  const filteredClaims: BenefitClaim[] = useMemo(() => {
+    return claims.filter((c: BenefitClaim) => {
+      if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
+      if (searchClaimText.trim()) {
+        const q = searchClaimText.toLowerCase();
+        const matchNo = (c.requestNo || '').toLowerCase().includes(q);
+        const matchName = (c.benefitName || '').toLowerCase().includes(q);
+        const matchProv = (c.serviceProvider || '').toLowerCase().includes(q);
+        const matchRemarks = (c.remarks || '').toLowerCase().includes(q);
+        if (!matchNo && !matchName && !matchProv && !matchRemarks) return false;
+      }
+      return true;
+    });
+  }, [claims, statusFilter, searchClaimText]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -205,8 +226,17 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-          <Gift className="w-4 h-4 text-primary dark:text-cyan-400" />
-          ระบบติดตามการใช้สิทธิ์และโควตาสวัสดิการ
+          {activeSection === 'history' ? (
+            <>
+              <History className="w-4 h-4 text-primary dark:text-cyan-400" />
+              ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ
+            </>
+          ) : (
+            <>
+              <Gift className="w-4 h-4 text-primary dark:text-cyan-400" />
+              ระบบติดตามการใช้สิทธิ์และโควตาสวัสดิการ
+            </>
+          )}
         </h3>
 
         <div className="flex items-center gap-2.5 self-end sm:self-auto">
@@ -249,9 +279,12 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
         </div>
       </div>
 
-      {/* 4 KPI Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+      {/* Overview Section: 4 KPI Summary Cards + Quota Progress Bars */}
+      {activeSection !== 'history' && (
+        <>
+          {/* 4 KPI Summary Cards */}
+          {summary && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {/* Card 1: วงเงินโควตารวม */}
           <div className="p-4 rounded-2xl bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-sky-900/60 text-sky-600 dark:text-sky-300 shadow-xs flex items-center justify-center shrink-0">
@@ -473,23 +506,54 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
             </p>
           </div>
         )}
-      </div>
+        </div>
+        </>
+      )}
 
       {/* Claims History Log Section */}
-      <div className="space-y-3 pt-4">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-            <History className="w-3.5 h-3.5 text-slate-500" />
-            <span>ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ ({claims.length} รายการ)</span>
-          </h4>
-        </div>
+      {activeSection !== 'overview' && (
+        <div className="space-y-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+              <History className="w-3.5 h-3.5 text-slate-500" />
+              <span>ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ ({filteredClaims.length} รายการ)</span>
+            </h4>
 
-        <div className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs overflow-hidden">
-          {claims.length > 0 ? (
-            <>
-              {/* Mobile Card List View (< md) */}
-              <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-700/60">
-                {claims.map((c) => {
+            {/* Search and Status Filter */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 sm:w-60">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchClaimText}
+                  onChange={(e) => setSearchClaimText(e.target.value)}
+                  placeholder="ค้นหาเลขที่คำขอ, ชื่อสวัสดิการ..."
+                  className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+
+              <div className="w-36">
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-xl px-2.5 py-1.5"
+                >
+                  <option value="ALL">สถานะทั้งหมด</option>
+                  <option value="APPROVED">อนุมัติแล้ว</option>
+                  <option value="PENDING">รออนุมัติ</option>
+                  <option value="REJECTED">ไม่อนุมัติ</option>
+                  <option value="CANCELLED">ยกเลิกแล้ว</option>
+                </CustomSelect>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs overflow-hidden">
+            {filteredClaims.length > 0 ? (
+              <>
+                {/* Mobile Card List View (< md) */}
+                <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-700/60">
+                  {filteredClaims.map((c) => {
                   const badge = CLAIM_STATUS_BADGE[c.status] ?? CLAIM_STATUS_BADGE.APPROVED;
                   const Icon =
                     c.status === 'PENDING' ? Clock : c.status === 'REJECTED' ? XCircle : c.status === 'CANCELLED' ? Ban : CheckCircle2;
@@ -610,7 +674,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {claims.map((c) => (
+                    {filteredClaims.map((c) => (
                       <tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition-colors">
                         <td className="py-3 px-4 font-mono font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {c.requestNo || `BC-${String(c.id).padStart(4, '0')}`}
@@ -716,11 +780,16 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
           ) : (
             <div className="py-10 text-center text-slate-400 dark:text-slate-500 text-xs">
               <Receipt className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>ยังไม่มีประวัติการเบิกหรือใช้สิทธิ์สวัสดิการในปี {selectedYear}</p>
+              <p>
+                {searchClaimText || statusFilter !== 'ALL'
+                  ? 'ไม่พบรายการเบิกจ่ายที่ตรงกับเงื่อนไขการค้นหา'
+                  : `ยังไม่มีประวัติการเบิกหรือใช้สิทธิ์สวัสดิการในปี ${selectedYear + 543}`}
+              </p>
             </div>
           )}
         </div>
       </div>
+      )}
 
       {/* Record Claim Modal */}
       {summary && (
