@@ -63,7 +63,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem, PageHeader } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem } from '@/components/ui';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -457,14 +457,8 @@ export default function LeaveManagementPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="การบริหารจัดการวันลา"
-        subtitle="กำหนดประเภทการลา นโยบายสิทธิ์การลา และตรวจสอบยอดวันลาของพนักงาน"
-        icon={CalendarCheck}
-      />
-
       {/* 1. Sub-Navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
         <TabBar
           aria-label="เมนูการลา"
           items={([

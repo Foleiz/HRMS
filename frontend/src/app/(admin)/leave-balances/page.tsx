@@ -11,7 +11,7 @@ import { MyLeaveSummary, LeaveTypeCard } from '@/types/leave';
 import { Calendar, CalendarCheck, Download, Loader2 } from 'lucide-react';
 import { resolveLeaveColor, leaveColorVars } from '@/lib/leaveColors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Button, PageHeader } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { getSmartYearRange, toThaiYear } from '@/lib/yearUtils';
 
 export default function LeaveBalancesPage() {
@@ -124,43 +124,39 @@ export default function LeaveBalancesPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader
-        title="ยอดวันลาคงเหลือ"
-        subtitle={`สรุปสิทธิวันลาและการใช้วันลาประจำปี พ.ศ. ${selectedYear}`}
-        icon={CalendarCheck}
-        actions={
-          <div className="flex items-center gap-3">
-            {/* Thai Buddhist Year Dropdown */}
-            <div className="relative inline-block">
-              <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 transition-colors">
-                <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                <CustomSelect
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer pr-1"
-                >
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-            </div>
-
-            {/* Export Report Button */}
-            <Button
-              onClick={handleExport}
-              disabled={isLoading}
-              loading={isExporting}
-              icon={isExporting ? undefined : <Download className="w-3.5 h-3.5" />}
-              size="sm"
+      {/* ========================================================= */}
+      {/* ACTIONS: Year Filter Selector + Export Button             */}
+      {/* ========================================================= */}
+      <div className="flex items-center justify-end gap-3">
+        {/* Thai Buddhist Year Dropdown */}
+        <div className="relative inline-block">
+          <div className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl shadow-xs text-xs font-semibold text-slate-700 dark:text-slate-300 hover:border-slate-300 transition-colors">
+            <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+            <CustomSelect
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer pr-1"
             >
-              ส่งออกรายงาน (Export)
-            </Button>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
+            </CustomSelect>
           </div>
-        }
-      />
+        </div>
+
+        {/* Export Report Button */}
+        <Button
+          onClick={handleExport}
+          disabled={isLoading}
+          loading={isExporting}
+          icon={isExporting ? undefined : <Download className="w-3.5 h-3.5" />}
+          size="sm"
+        >
+          ส่งออกรายงาน (Export)
+        </Button>
+      </div>
 
       {/* ========================================================= */}
       {/* LEAVE BALANCE CARDS — one per entitled leave type        */}

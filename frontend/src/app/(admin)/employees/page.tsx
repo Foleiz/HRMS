@@ -51,7 +51,7 @@ import {
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
-import { Button, inputClass, TabBar, PageHeader } from '@/components/ui';
+import { Button, inputClass, TabBar } from '@/components/ui';
 
 interface DepartmentItem {
   id: number;
@@ -714,14 +714,8 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
 
   return (
     <div className="space-y-4 font-sans pb-12">
-      <PageHeader
-        title="จัดการข้อมูลพนักงาน"
-        subtitle="ศูนย์กลางข้อมูลประวัติ สัญญาจ้าง และเอกสารสำคัญของบุคลากร"
-        icon={Users}
-      />
-
       {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma & Mockup) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
         <TabBar
           aria-label="เมนูพนักงาน"
           memoryKey="employees-subnav"

@@ -93,7 +93,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
-import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, PageHeader } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton, TabBar } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
@@ -2349,14 +2349,10 @@ export default function PayrollPage() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      <PageHeader
-        title="เงินเดือนและค่าตอบแทน"
-        subtitle="จัดการงวดการจ่ายเงินเดือน โครงสร้างรายได้-รายการหัก และคำนวณภาษี"
-        icon={CreditCard}
-      />
+
 
       {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 rounded-t-2xl">
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
         <TabBar
           aria-label="เมนูเงินเดือน"
           items={visibleNavTabs.map((t) => ({ key: t.id, label: t.label }))}

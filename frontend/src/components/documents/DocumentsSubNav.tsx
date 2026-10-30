@@ -15,9 +15,6 @@ const DOCUMENTS_SUB_NAV_TABS = [
   { title: 'ประวัติเอกสาร', href: '/documents/history' },
 ];
 
-import { FileText } from 'lucide-react';
-import { PageHeader } from '@/components/ui';
-
 export const DocumentsSubNav: React.FC = () => {
   const pathname = usePathname();
 
@@ -32,20 +29,13 @@ export const DocumentsSubNav: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
-      <PageHeader
-        title="ยื่นเอกสาร (บริการตนเอง)"
-        subtitle="ระบบยื่นเอกสารออนไลน์ คำขอลา ลาออก หนังสือรับรอง และคำร้องทั่วไป"
-        icon={FileText}
+    <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
+      <TabBar
+        aria-label="เมนูยื่นเอกสาร"
+        memoryKey="documents-subnav"
+        items={DOCUMENTS_SUB_NAV_TABS.map((tab) => ({ key: tab.href, label: tab.title, href: tab.href }))}
+        activeKey={DOCUMENTS_SUB_NAV_TABS.find((tab) => isTabActive(tab.href))?.href}
       />
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูยื่นเอกสาร"
-          memoryKey="documents-subnav"
-          items={DOCUMENTS_SUB_NAV_TABS.map((tab) => ({ key: tab.href, label: tab.title, href: tab.href }))}
-          activeKey={DOCUMENTS_SUB_NAV_TABS.find((tab) => isTabActive(tab.href))?.href}
-        />
-      </div>
     </div>
   );
 };

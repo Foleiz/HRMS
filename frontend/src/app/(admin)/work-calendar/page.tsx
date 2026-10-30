@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, Button, TabBar, type TabBarItem, PageHeader } from '@/components/ui';
+import { ModalShell, Button, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -435,14 +435,8 @@ export default function WorkCalendarPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="วันทำงานและวันหยุด"
-        subtitle="กำหนดวันทำงานปกติ เวลาเข้า-ออกงานมาตรฐาน และปฏิทินวันหยุดประจำปี"
-        icon={CalendarDays}
-      />
-
       {/* 1. Sub-navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <TabBar
           aria-label="เมนูปฏิทินการทำงาน"
           items={([

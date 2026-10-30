@@ -34,7 +34,6 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button } from '@/components/ui/Button';
-import { PageHeader } from '@/components/ui';
 import { RowActions, RowActionButton } from '@/components/ui/RowActions';
 import { announcementService } from '@/services/announcementService';
 import { organizationService } from '@/services/organizationService';
@@ -417,21 +416,27 @@ export default function AnnouncementsPage() {
       )}
 
       {/* Header Banner */}
-      <PageHeader
-        title="จัดการประกาศองค์กร"
-        subtitle="ศูนย์รวมข่าวสาร ประกาศคำสั่ง และการสื่อสารภายในองค์กร"
-        icon={Megaphone}
-        actions={
-          canCreate ? (
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+            <Megaphone className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">จัดการประกาศองค์กร</h1>
+          </div>
+        </div>
+
+        {canCreate && (
+          <div className="flex items-center gap-2">
             <Button
               onClick={handleOpenCreate}
               icon={<Plus className="w-4 h-4" />}
             >
               สร้างประกาศใหม่
             </Button>
-          ) : undefined
-        }
-      />
+          </div>
+        )}
+      </div>
 
       {/* Admin Management View */}
       <div className="space-y-6">

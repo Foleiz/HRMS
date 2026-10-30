@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell, TabBar, type TabBarItem, PageHeader } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Building2,
@@ -1019,14 +1019,8 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="โครงสร้างองค์กร"
-        subtitle="กำหนดโครงสร้างบริษัท ฝ่าย แผนก ตำแหน่งงาน และสวัสดิการองค์กร"
-        icon={Building2}
-      />
-
       {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <TabBar
           aria-label="เมนูองค์กร"
           items={([

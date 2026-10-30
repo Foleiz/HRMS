@@ -8,7 +8,6 @@ import { Department, Division } from '@/types/organization';
 import { LeaveCalendarItem, LeaveCalendarResult } from '@/types/leaveInsights';
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Loader2, Users, X } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { PageHeader } from '@/components/ui';
 
 type ViewMode = 'month' | 'week';
 
@@ -215,19 +214,20 @@ export default function TeamLeaveCalendarPage() {
   return (
     <div className="space-y-4 pb-12">
       {/* Header */}
-      <PageHeader
-        title="ปฏิทินการลาของทีม"
-        subtitle="ตรวจสอบและติดตามตารางการลาของสมาชิกในทีมและองค์กร"
-        icon={CalendarRange}
-        badge={
-          scope ? (
+      <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-5 h-5 text-primary" />
+            <h1 className="text-base font-bold text-slate-800 dark:text-slate-200">ปฏิทินการลาของทีม</h1>
+          </div>
+          {scope && (
             <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 border border-blue-100 px-2.5 py-0.5 text-xs text-blue-700">
               <Users className="w-3.5 h-3.5" /> {SCOPE_LABEL[scope] ?? scope}
             </span>
-          ) : undefined
-        }
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
           {scope === 'ORG' && (
             <CustomSelect
               value={divisionId}
@@ -276,8 +276,7 @@ export default function TeamLeaveCalendarPage() {
             ))}
           </div>
         </div>
-      }
-    />
+      </div>
 
       {/* Navigation + summary */}
       <div className="flex flex-wrap items-center justify-between gap-3">

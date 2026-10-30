@@ -59,7 +59,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, PageHeader } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem } from '@/components/ui';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1007,16 +1007,10 @@ function SchedulesContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="การจัดตารางงาน"
-        subtitle="จัดการกะการทำงานและมอบหมายกะให้พนักงานเป็นรายบุคคลหรือรายแผนก"
-        icon={CalendarRange}
-      />
-
       {/* ------------------------------------------------------------- */}
       {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
       {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
+      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
         <TabBar
           aria-label="เมนูตารางกะ"
           items={([

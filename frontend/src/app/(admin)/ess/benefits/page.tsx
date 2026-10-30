@@ -7,7 +7,6 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
 import { EmployeeBenefitsUsageTab } from '@/components/employees/EmployeeBenefitsUsageTab';
-import { PageHeader } from '@/components/ui';
 import { Gift, Loader2 } from 'lucide-react';
 
 export default function MyBenefitsPage() {
@@ -76,13 +75,7 @@ export default function MyBenefitsPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      <PageHeader
-        title="สวัสดิการของฉัน"
-        subtitle="ตรวจสอบยอดคงเหลือ สิทธิประโยชน์ และประวัติการเบิกจ่ายสวัสดิการ"
-        icon={Gift}
-      />
-
-      {/* Main Content Area */}
+{/* Main Content Area */}
       {effectiveEmployeeId ? (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-5 md:p-6 shadow-xs">
           <EmployeeBenefitsUsageTab
