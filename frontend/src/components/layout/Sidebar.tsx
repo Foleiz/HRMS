@@ -124,7 +124,7 @@ const menuGroups: MenuGroup[] = [
         href: '/ess/benefits',
         matchPrefix: '/ess/benefits',
         icon: Gift,
-        requiredPermissions: ['ESS_BENEFIT_VIEW'],
+        requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
       },
     ],
   },
@@ -178,12 +178,14 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        title: 'ยอดสวัสดิการพนักงาน',
+        title: 'สวัสดิการ',
         href: '/benefits/balances',
-        matchPrefix: '/benefits/balances',
+        matchPrefix: '/benefits',
         icon: Gift,
         requiredPermissions: [
           'BENEFIT_BALANCE_VIEW',
+          'BENEFIT_CLAIM_VIEW',
+          'BENEFIT_VIEW',
         ],
       },
       {

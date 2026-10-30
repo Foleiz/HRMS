@@ -3,6 +3,7 @@
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { Button, ModalShell } from '@/components/ui';
+import { BenefitsSubNav } from '@/components/benefits/BenefitsSubNav';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -39,8 +40,10 @@ import { getSmartYearRange } from '@/lib/yearUtils';
 
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
-  const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
-  const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
+  const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasPermission('BENEFIT_VIEW') || isSuper;
+  const canViewClaims = hasPermission('BENEFIT_CLAIM_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
 
@@ -60,9 +63,10 @@ export default function EmployeeBenefitBalancesPage() {
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
 
+
   useEffect(() => {
     setBreadcrumb({
-      section: 'การจัดการบุคคล',
+      section: 'สวัสดิการ',
       page: 'ยอดสวัสดิการพนักงาน',
     });
   }, [setBreadcrumb]);
@@ -217,6 +221,9 @@ export default function EmployeeBenefitBalancesPage() {
 
   return (
     <div className="space-y-6 font-sans">
+      {/* Sub-Navigation Tabs matching Design System */}
+      <BenefitsSubNav />
+
       {/* Main Content Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-5">
         {/* Filter and Control Bar (Matching leave/page.tsx Tab 3) */}

@@ -790,27 +790,10 @@ export default function LeaveManagementPage() {
         {activeTab === 'balances' && (
           <div className="p-6 space-y-5">
             {/* Filter & Action Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                {/* Year Select */}
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200">
-                  <Calendar className="w-4 h-4 text-gray-500 dark:text-slate-400" />
-                  <span className="text-xs font-medium text-gray-600 dark:text-slate-400">ประจำปี:</span>
-                  <CustomSelect
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
-                  >
-                    {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
-                      <option key={y} value={y}>
-                        พ.ศ. {y + 543}
-                      </option>
-                    ))}
-                  </CustomSelect>
-                </div>
-
+            <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
                 {/* Search Box */}
-                <div className="relative max-w-sm w-full shrink-0">
+                <div className="relative w-64 sm:w-72 shrink-0">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
@@ -821,17 +804,36 @@ export default function LeaveManagementPage() {
                   />
                 </div>
 
+                {/* Year Select */}
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/90 pl-2.5 pr-1 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">ประจำปี:</span>
+                  <CustomSelect
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(Number(e.target.value))}
+                    size="sm"
+                    buttonClassName="!h-7 !py-0 !px-2 !text-xs !font-bold !rounded-lg !shadow-2xs"
+                    className="min-w-[95px]"
+                  >
+                    {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
+                      <option key={y} value={y}>
+                        พ.ศ. {y + 543}
+                      </option>
+                    ))}
+                  </CustomSelect>
+                </div>
+
                 {/* Expand / Collapse All */}
-                <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
                   <button
                     onClick={expandAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all flex items-center gap-1"
+                    className="px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
-                    <ChevronsUpDown className="w-3.5 h-3.5" /> ขยายทั้งหมด
+                    <ChevronsUpDown className="w-3 h-3 text-slate-400 dark:text-slate-500" /> ขยายทั้งหมด
                   </button>
                   <button
                     onClick={collapseAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100 dark:hover:text-slate-100 rounded-lg hover:bg-white transition-all"
+                    className="px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer whitespace-nowrap"
                   >
                     ยุบทั้งหมด
                   </button>
@@ -839,7 +841,7 @@ export default function LeaveManagementPage() {
               </div>
 
               {canCloseYear && (
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Button
                     onClick={() => setIsYearEndOpen(true)}
                     icon={<Lock className="w-4 h-4" />}

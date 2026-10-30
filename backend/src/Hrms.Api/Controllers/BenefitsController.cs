@@ -125,10 +125,27 @@ public class BenefitsController : ControllerBase
     }
 
     /// <summary>
+    /// ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการทั้งหมด (สำหรับ HR / Admin)
+    /// </summary>
+    [HttpGet("claims")]
+    [RequirePermission("BENEFIT_CLAIM_VIEW,BENEFIT_BALANCE_VIEW,BENEFIT_VIEW")]
+    [ProducesResponseType(typeof(ApiResponse<List<BenefitClaimDto>>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<List<BenefitClaimDto>>>> GetAllClaims(
+        [FromQuery] int? year,
+        [FromQuery] long? benefitItemId,
+        [FromQuery] string? search,
+        [FromQuery] string? status,
+        CancellationToken cancellationToken)
+    {
+        var result = await _benefitService.GetAllClaimsAsync(year, benefitItemId, search, status, cancellationToken);
+        return Ok(ApiResponse<List<BenefitClaimDto>>.Ok(result));
+    }
+
+    /// <summary>
     /// ดึงประวัติรายการเบิกจ่าย/ใช้สิทธิ์สวัสดิการของพนักงาน
     /// </summary>
     [HttpGet("claims/{employeeId:long}")]
-    [SelfOrPermission("employeeId", "BENEFIT_BALANCE_VIEW,EMP_PROFILE_VIEW")]
+    [SelfOrPermission("employeeId", "BENEFIT_BALANCE_VIEW,EMP_PROFILE_VIEW,ESS_BENEFIT_VIEW,ESS_BENEFIT_CLAIM_VIEW")]
     [ProducesResponseType(typeof(ApiResponse<List<BenefitClaimDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse<List<BenefitClaimDto>>>> GetClaims(
         long employeeId,
@@ -175,7 +192,7 @@ public class BenefitsController : ControllerBase
 
     /// <summary>พนักงานยื่นเบิกสวัสดิการของตนเอง (สถานะรออนุมัติ)</summary>
     [HttpPost("claims/request")]
-    [RequirePermission("ESS_BENEFIT_CREATE,BENEFIT_BALANCE_CREATE")]
+    [RequirePermission("ESS_BENEFIT_CREATE,ESS_BENEFIT_CLAIM_CREATE,BENEFIT_BALANCE_CREATE")]
     public async Task<ActionResult<ApiResponse<BenefitClaimRequestDto>>> SubmitClaimRequest(
         [FromBody] SubmitBenefitClaimRequest request, CancellationToken cancellationToken)
     {
@@ -209,7 +226,7 @@ public class BenefitsController : ControllerBase
     }
 
     [HttpPost("claim-requests/{id:long}/cancel")]
-    [RequirePermission("ESS_BENEFIT_EDIT,ESS_BENEFIT_CREATE,BENEFIT_BALANCE_EDIT")]
+    [RequirePermission("ESS_BENEFIT_EDIT,ESS_BENEFIT_CREATE,ESS_BENEFIT_CLAIM_EDIT,ESS_BENEFIT_CLAIM_CREATE,BENEFIT_BALANCE_EDIT")]
     public async Task<ActionResult<ApiResponse<object>>> CancelClaimRequest(long id, CancellationToken cancellationToken)
     {
         await _claimRequests.CancelAsync(id, cancellationToken);

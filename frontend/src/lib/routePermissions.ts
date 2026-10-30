@@ -98,14 +98,24 @@ export const ROUTE_RULES: RouteRule[] = [
     requiredPermissions: ['ESS_TIME_VIEW'],
   },
   {
+    matchPrefix: '/ess/benefits/history',
+    title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ (ESS)',
+    requiredPermissions: ['ESS_BENEFIT_CLAIM_VIEW', 'ESS_BENEFIT_VIEW'],
+  },
+  {
     matchPrefix: '/ess/benefits',
     title: 'สวัสดิการของฉัน (ESS)',
-    requiredPermissions: ['ESS_BENEFIT_VIEW'],
+    requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
   },
   {
     matchPrefix: '/benefits/balances',
     title: 'ยอดสวัสดิการพนักงาน',
-    requiredPermissions: ['BENEFIT_BALANCE_VIEW'],
+    requiredPermissions: ['BENEFIT_BALANCE_VIEW', 'BENEFIT_VIEW'],
+  },
+  {
+    matchPrefix: '/benefits/claims',
+    title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ',
+    requiredPermissions: ['BENEFIT_CLAIM_VIEW', 'BENEFIT_VIEW'],
   },
 
   {
