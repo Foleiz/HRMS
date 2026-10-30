@@ -10,7 +10,6 @@ import {
   Search,
   Calendar,
   CalendarCheck,
-  Sparkles,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -64,6 +63,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem } from '@/components/ui';
+import { TablePagination } from '@/components/ui/TablePagination';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -129,6 +129,16 @@ export default function LeaveManagementPage() {
   // Filters for Balances Tab
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [balanceSearch, setBalanceSearch] = useState<string>('');
+
+  // Filters & Pagination for Types Tab
+  const [typeSearch, setTypeSearch] = useState<string>('');
+  const [typePage, setTypePage] = useState<number>(1);
+  const [typePageSize, setTypePageSize] = useState<number>(10);
+
+  // Filters & Pagination for Policies Tab
+  const [policySearch, setPolicySearch] = useState<string>('');
+  const [policyPage, setPolicyPage] = useState<number>(1);
+  const [policyPageSize, setPolicyPageSize] = useState<number>(10);
 
   // Modals state
   const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
@@ -362,6 +372,40 @@ export default function LeaveManagementPage() {
     showToast('ปรับยอดวันลาสำเร็จ');
   };
 
+  // Filtered & Paged Leave Types
+  const filteredLeaveTypes = useMemo(() => {
+    if (!typeSearch.trim()) return leaveTypes;
+    const q = typeSearch.toLowerCase().trim();
+    return leaveTypes.filter(
+      (t) =>
+        t.leaveName.toLowerCase().includes(q) ||
+        (t.leaveCode && t.leaveCode.toLowerCase().includes(q)) ||
+        (t.formCategory && t.formCategory.toLowerCase().includes(q))
+    );
+  }, [leaveTypes, typeSearch]);
+
+  const pagedLeaveTypes = useMemo(() => {
+    const start = (typePage - 1) * typePageSize;
+    return filteredLeaveTypes.slice(start, start + typePageSize);
+  }, [filteredLeaveTypes, typePage, typePageSize]);
+
+  // Filtered & Paged Leave Policies
+  const filteredLeavePolicies = useMemo(() => {
+    if (!policySearch.trim()) return leavePolicies;
+    const q = policySearch.toLowerCase().trim();
+    return leavePolicies.filter(
+      (p) =>
+        p.leaveTypeName.toLowerCase().includes(q) ||
+        (p.employeeTypeName && p.employeeTypeName.toLowerCase().includes(q)) ||
+        (p.employeeLevelName && p.employeeLevelName.toLowerCase().includes(q))
+    );
+  }, [leavePolicies, policySearch]);
+
+  const pagedLeavePolicies = useMemo(() => {
+    const start = (policyPage - 1) * policyPageSize;
+    return filteredLeavePolicies.slice(start, start + policyPageSize);
+  }, [filteredLeavePolicies, policyPage, policyPageSize]);
+
   // Filtered balances
   const filteredBalances = useMemo(() => {
     if (!balanceSearch.trim()) return leaveBalances;
@@ -483,14 +527,28 @@ export default function LeaveManagementPage() {
 
         {/* Tab 1: ประเภทการลา (Leave Types) */}
         {activeTab === 'types' && (
-          <div className="p-6">
-            {/* Action Bar */}
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">ประเภทการลา</h2>
+          <div className="p-6 space-y-4">
+            {/* Toolbar: ช่องค้นหาด้านซ้าย, ปุ่มเพิ่มด้านขวา มาตรฐานเดียวกับหน้าจัดการฝ่าย */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={typeSearch}
+                  onChange={(e) => {
+                    setTypeSearch(e.target.value);
+                    setTypePage(1);
+                  }}
+                  placeholder="ค้นหาประเภทการลา หรือรหัสการลา..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
+
               {canCreateType && (
                 <Button
                   onClick={handleOpenCreateType}
                   icon={<Plus className="w-4 h-4" />}
+                  className="shrink-0 self-start sm:self-auto"
                 >
                   เพิ่มประเภทการลา
                 </Button>
@@ -498,7 +556,7 @@ export default function LeaveManagementPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto border border-gray-100 rounded-xl">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard text-xs w-full min-w-[650px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
@@ -518,14 +576,14 @@ export default function LeaveManagementPage() {
                         </div>
                       </td>
                     </tr>
-                  ) : leaveTypes.length === 0 ? (
+                  ) : filteredLeaveTypes.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center text-gray-400">
-                        ยังไม่มีประเภทการลาในระบบ
+                        {leaveTypes.length === 0 ? 'ยังไม่มีประเภทการลาในระบบ' : 'ไม่พบประเภทการลาที่ตรงกับการค้นหา'}
                       </td>
                     </tr>
                   ) : (
-                    leaveTypes.map((type) => (
+                    pagedLeaveTypes.map((type) => (
                       <tr key={type.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5 relative">
                           <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: colorOfType(type.id, type.leaveCode) }} />
@@ -573,19 +631,47 @@ export default function LeaveManagementPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination มาตรฐานเดียวกับหน้าจัดการฝ่าย */}
+            {filteredLeaveTypes.length > 0 && (
+              <TablePagination
+                total={filteredLeaveTypes.length}
+                page={typePage}
+                pageSize={typePageSize}
+                onPageChange={setTypePage}
+                onPageSizeChange={(newSize) => {
+                  setTypePageSize(newSize);
+                  setTypePage(1);
+                }}
+              />
+            )}
           </div>
         )}
 
         {/* Tab 2: สิทธิ์การลา (Leave Policies) */}
         {activeTab === 'policies' && (
-          <div className="p-6">
-            {/* Action Bar */}
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">สิทธิ์การลา</h2>
+          <div className="p-6 space-y-4">
+            {/* Toolbar: ช่องค้นหาด้านซ้าย, ปุ่มเพิ่มด้านขวา มาตรฐานเดียวกับหน้าจัดการฝ่าย */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  value={policySearch}
+                  onChange={(e) => {
+                    setPolicySearch(e.target.value);
+                    setPolicyPage(1);
+                  }}
+                  placeholder="ค้นหาสิทธิ์การลา หรือประเภทการลา..."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+                />
+              </div>
+
               {canCreatePolicy && (
                 <Button
                   onClick={handleOpenCreatePolicy}
                   icon={<Plus className="w-4 h-4" />}
+                  className="shrink-0 self-start sm:self-auto"
                 >
                   เพิ่มสิทธิ์การลา
                 </Button>
@@ -593,7 +679,7 @@ export default function LeaveManagementPage() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto border border-gray-100 rounded-xl">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
@@ -616,14 +702,14 @@ export default function LeaveManagementPage() {
                         </div>
                       </td>
                     </tr>
-                  ) : leavePolicies.length === 0 ? (
+                  ) : filteredLeavePolicies.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-gray-400">
-                        ยังไม่มีนโยบายสิทธิ์การลาในระบบ
+                        {leavePolicies.length === 0 ? 'ยังไม่มีนโยบายสิทธิ์การลาในระบบ' : 'ไม่พบนโยบายสิทธิ์การลาที่ตรงกับการค้นหา'}
                       </td>
                     </tr>
                   ) : (
-                    leavePolicies.map((policy) => (
+                    pagedLeavePolicies.map((policy) => (
                       <tr key={policy.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
                         <td className="py-4 px-5">
                           <LeaveTypeChip name={policy.leaveTypeName} color={colorOfType(policy.leaveTypeId)} />
@@ -683,6 +769,20 @@ export default function LeaveManagementPage() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination มาตรฐานเดียวกับหน้าจัดการฝ่าย */}
+            {filteredLeavePolicies.length > 0 && (
+              <TablePagination
+                total={filteredLeavePolicies.length}
+                page={policyPage}
+                pageSize={policyPageSize}
+                onPageChange={setPolicyPage}
+                onPageSizeChange={(newSize) => {
+                  setPolicyPageSize(newSize);
+                  setPolicyPage(1);
+                }}
+              />
+            )}
           </div>
         )}
 
@@ -710,14 +810,14 @@ export default function LeaveManagementPage() {
                 </div>
 
                 {/* Search Box */}
-                <div className="relative w-64">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <div className="relative max-w-sm w-full shrink-0">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อ, รหัส, แผนก..."
                     value={balanceSearch}
                     onChange={(e) => setBalanceSearch(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 text-sm focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -738,12 +838,8 @@ export default function LeaveManagementPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {/* สิทธิ์ปีนี้คำนวณอัตโนมัติจากสิทธิ์การลา (ไม่ต้องกดจัดสรรยอดประจำปี) */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 border border-blue-100 text-xs text-blue-700 whitespace-nowrap">
-                  <Sparkles className="w-4 h-4" /> สิทธิ์ปีนี้คำนวณอัตโนมัติตามแท็บสิทธิ์การลา
-                </div>
-                {canCloseYear && (
+              {canCloseYear && (
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     onClick={() => setIsYearEndOpen(true)}
                     icon={<Lock className="w-4 h-4" />}
@@ -751,8 +847,8 @@ export default function LeaveManagementPage() {
                   >
                     ปิดยอดปี {selectedYear + 543}
                   </Button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Subheader info count */}
