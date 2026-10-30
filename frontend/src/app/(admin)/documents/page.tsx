@@ -73,10 +73,6 @@ export default function DocumentsHubPage() {
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
       <DocumentsSubNav />
 
-      {/* Page Header */}
-      <div>
-        <p className="text-sm text-gray-500 dark:text-slate-400">เลือกประเภทคำขอที่ต้องการยื่นให้ฝ่ายบุคคลพิจารณา</p>
-      </div>
 
       {/* Option Cards — ตาราง 2 x 2 เต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป (สไตล์การ์ดเดียวกับทั้งระบบ) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
