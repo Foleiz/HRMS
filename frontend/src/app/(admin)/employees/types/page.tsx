@@ -305,15 +305,10 @@ export default function EmployeeTypesPage() {
 
       {/* 3. Header Action Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
-            <Layers className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-            ประเภทการจ้างงานและสัญญาจ้าง
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            กำหนดประเภทสัญญาจ้าง รูปแบบการจ่ายค่าตอบแทน และสิทธิประโยชน์พนักงานในองค์กร
-          </p>
-        </div>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-2">
+          <Layers className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          ประเภทการจ้างงานและสัญญาจ้าง
+        </h2>
 
         {canCreateTypes && (
           <div className="flex items-center gap-2.5 self-start sm:self-auto">
