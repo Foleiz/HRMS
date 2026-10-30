@@ -805,13 +805,15 @@ export default function LeaveManagementPage() {
                 </div>
 
                 {/* Year Select */}
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 shrink-0">
-                  <Calendar className="w-4 h-4 text-gray-500 dark:text-slate-400" />
-                  <span className="text-xs font-medium text-gray-600 dark:text-slate-400 whitespace-nowrap">ประจำปี:</span>
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/90 pl-2.5 pr-1 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">ประจำปี:</span>
                   <CustomSelect
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                    size="sm"
+                    buttonClassName="!h-7 !py-0 !px-2 !text-xs !font-bold !rounded-lg !shadow-2xs"
+                    className="min-w-[95px]"
                   >
                     {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
                       <option key={y} value={y}>
@@ -822,16 +824,16 @@ export default function LeaveManagementPage() {
                 </div>
 
                 {/* Expand / Collapse All */}
-                <div className="flex items-center gap-1 bg-gray-50 dark:bg-slate-800 p-1 rounded-xl border border-gray-200 dark:border-slate-700 shrink-0">
+                <div className="flex items-center gap-0.5 bg-slate-50 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
                   <button
                     onClick={expandAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100 dark:hover:text-slate-100 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                    className="px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
-                    <ChevronsUpDown className="w-3.5 h-3.5" /> ขยายทั้งหมด
+                    <ChevronsUpDown className="w-3 h-3 text-slate-400 dark:text-slate-500" /> ขยายทั้งหมด
                   </button>
                   <button
                     onClick={collapseAllEmployees}
-                    className="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:text-slate-100 dark:hover:text-slate-100 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer whitespace-nowrap"
+                    className="px-2 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-lg hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer whitespace-nowrap"
                   >
                     ยุบทั้งหมด
                   </button>
