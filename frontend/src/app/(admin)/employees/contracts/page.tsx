@@ -194,37 +194,37 @@ export default function ContractsPage() {
         </div>
       )}
 
-      {/* 4. KPI Stat Cards (3 Cards ตรงตาม Mockup) */}
+      {/* 4. KPI Stat Cards (3 Cards) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: ทดลองงาน */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">ทดลองงาน</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-400">พนักงานที่อยู่ระหว่างทดลองงาน</p>
+            <h4 className="text-sm font-bold text-sky-800 dark:text-sky-300 mb-1">ทดลองงาน</h4>
+            <p className="text-xs text-sky-700/80 dark:text-sky-400">พนักงานที่อยู่ระหว่างทดลองงาน</p>
           </div>
-          <div className="bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/60 text-blue-600 dark:text-blue-300 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-white dark:bg-sky-900/60 shadow-xs border border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.probationCount}
           </div>
         </div>
 
         {/* Card 2: ประจำ */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">ประจำ</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-400">พนักงานประจำที่ได้รับการบรรจุ</p>
+            <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">ประจำ</h4>
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400">พนักงานประจำที่ได้รับการบรรจุ</p>
           </div>
-          <div className="bg-rose-50 dark:bg-rose-950/60 border border-rose-100 dark:border-rose-800/60 text-rose-500 dark:text-rose-300 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-white dark:bg-emerald-900/60 shadow-xs border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.permanentCount}
           </div>
         </div>
 
         {/* Card 3: ใกล้ครบทดลองงาน (7 วัน) */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700/80 rounded-2xl p-5 shadow-2xs flex items-center justify-between">
+        <div className="bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
           <div>
-            <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">ใกล้ครบทดลองงาน (7 วัน)</h4>
-            <p className="text-xs text-slate-400 dark:text-slate-400">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
+            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-1">ใกล้ครบทดลองงาน (7 วัน)</h4>
+            <p className="text-xs text-amber-700/80 dark:text-amber-400">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
           </div>
-          <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-300 px-4 py-1.5 rounded-xl font-bold text-2xl tracking-tight">
+          <div className="bg-white dark:bg-amber-900/60 shadow-xs border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.probationExpiring7DaysCount}
           </div>
         </div>

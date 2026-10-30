@@ -40,6 +40,7 @@ import { LeaveTypeModal, LEAVE_FORM_CATEGORIES, inferFormCategory } from '@/comp
 import { LeavePolicyModal } from '@/components/leave/LeavePolicyModal';
 import { AdjustBalanceModal } from '@/components/leave/AdjustBalanceModal';
 import { resolveLeaveColor, leaveColorVars } from '@/lib/leaveColors';
+import { getSmartYearRange } from '@/lib/yearUtils';
 
 /** ป้ายชื่อประเภทการลาตามสีที่ตั้งไว้ในประเภทการลา */
 function LeaveTypeChip({ name, color, size = 'md' }: { name: string; color: string; size?: 'sm' | 'md' }) {
@@ -706,7 +707,7 @@ export default function LeaveManagementPage() {
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
                     className="bg-transparent text-sm font-semibold text-gray-800 dark:text-slate-200 focus:outline-none cursor-pointer"
                   >
-                    {[2025, 2026, 2027].map((y) => (
+                    {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
                       <option key={y} value={y}>
                         พ.ศ. {y + 543}
                       </option>

@@ -55,6 +55,7 @@ import { confirmAction, hrmsSwal, showError } from '@/lib/sweetalert';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { getSmartYearRange } from '@/lib/yearUtils';
 import SupportedCommissionFormatsModal from './SupportedCommissionFormatsModal';
 
 const THAI_MONTHS = [
@@ -818,7 +819,12 @@ export default function CommissionTab() {
                 className="w-full text-xs font-bold"
                 title="เลือกปี พ.ศ."
               >
-                {[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map((y) => (
+                {getSmartYearRange({
+                  forwardYears: 1,
+                  backYears: 4,
+                  historicalYears: monthlyPeriods.map((p) => p.year),
+                  selectedYear,
+                }).map((y) => (
                   <option key={y} value={y}>
                     ปี {y + 543}
                   </option>

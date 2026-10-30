@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { useToast } from '@/context/ToastContext';
-import { X, Receipt, Building2, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
+import { X, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { inputClass } from '@/components/ui';
@@ -326,36 +326,6 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               value={claimDate}
               onChange={(val) => setClaimDate(val)}
               required
-            />
-          </div>
-
-          {/* เลขที่ใบเสร็จ / ใบแจ้งหนี้ */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Receipt className="w-3.5 h-3.5 text-slate-400" />
-              เลขที่ใบเสร็จ / เลขที่อ้างอิง
-            </label>
-            <input
-              type="text"
-              value={receiptNumber}
-              onChange={(e) => setReceiptNumber(e.target.value)}
-              placeholder="เช่น RCP-2026-0012"
-              className={inputClass}
-            />
-          </div>
-
-          {/* สถานพยาบาล / ผู้ให้บริการ */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-slate-400" />
-              สถานพยาบาล / คลินิก / ผู้ให้บริการ
-            </label>
-            <input
-              type="text"
-              value={serviceProvider}
-              onChange={(e) => setServiceProvider(e.target.value)}
-              placeholder="เช่น รพ.กรุงเทพ, คลินิกทันตกรรมสยาม"
-              className={inputClass}
             />
           </div>
 

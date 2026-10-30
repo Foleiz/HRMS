@@ -28,6 +28,7 @@ import {
 import { EmploymentContract } from '@/types/contract';
 import { contractService } from '@/services/contractService';
 import { useToast } from '@/context/ToastContext';
+import { confirmAction } from '@/lib/sweetalert';
 
 interface ContractDetailModalProps {
   contract: EmploymentContract | null;
@@ -137,9 +138,14 @@ export default function ContractDetailModal({
 
   // Handle Delete Document
   const handleDeleteDocument = async () => {
-    if (!window.confirm('คุณต้องการลบไฟล์เอกสารสัญญาจ้างนี้ออกจากระบบใช่หรือไม่?')) {
-      return;
-    }
+    const isConfirmed = await confirmAction({
+      title: 'ลบไฟล์เอกสารสัญญาจ้าง',
+      text: 'คุณต้องการลบไฟล์เอกสารสัญญาจ้างนี้ออกจากระบบใช่หรือไม่?',
+      confirmButtonText: 'ใช่, ลบเอกสาร',
+      cancelButtonText: 'ยกเลิก',
+      isDestructive: true,
+    });
+    if (!isConfirmed) return;
 
     try {
       setIsDeletingDoc(true);

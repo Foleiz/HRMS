@@ -317,17 +317,17 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full min-w-[820px] text-left border-collapse text-xs whitespace-nowrap">
                     <thead>
                       <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-500 dark:text-slate-400">
-                        <th className="py-2.5 px-3">รหัส</th>
-                        <th className="py-2.5 px-3">พนักงาน</th>
-                        <th className="py-2.5 px-3 text-right">เงินได้รวม</th>
-                        <th className="py-2.5 px-3 text-right">รายการหัก</th>
-                        <th className="py-2.5 px-3 text-right">ประกันสังคม</th>
-                        <th className="py-2.5 px-3 text-right">ภาษี</th>
-                        <th className="py-2.5 px-3 text-right font-bold">ยอดสุทธิ</th>
-                        <th className="py-2.5 px-3 text-center">สถานะ</th>
+                        <th className="py-2.5 px-3 min-w-[85px] whitespace-nowrap">รหัส</th>
+                        <th className="py-2.5 px-3 min-w-[200px] whitespace-nowrap">พนักงาน</th>
+                        <th className="py-2.5 px-3 min-w-[110px] text-right whitespace-nowrap">เงินได้รวม</th>
+                        <th className="py-2.5 px-3 min-w-[100px] text-right whitespace-nowrap">รายการหัก</th>
+                        <th className="py-2.5 px-3 min-w-[95px] text-right whitespace-nowrap">ประกันสังคม</th>
+                        <th className="py-2.5 px-3 min-w-[85px] text-right whitespace-nowrap">ภาษี</th>
+                        <th className="py-2.5 px-3 min-w-[110px] text-right font-bold whitespace-nowrap">ยอดสุทธิ</th>
+                        <th className="py-2.5 px-3 min-w-[90px] text-center whitespace-nowrap">สถานะ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-200">
@@ -336,50 +336,50 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
                           key={p.id}
                           className="hover:bg-slate-50/60 dark:hover:bg-slate-700/40 transition-colors"
                         >
-                          <td className="py-2.5 px-3 font-mono font-medium text-slate-600 dark:text-slate-300">
+                          <td className="py-2.5 px-3 font-mono font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
                             {p.employeeCode}
                           </td>
-                          <td className="py-2.5 px-3">
-                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                          <td className="py-2.5 px-3 min-w-[200px] whitespace-nowrap">
+                            <div className="font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                               {p.employeeName}
                             </div>
-                            <span className="text-[11px] text-slate-400">
+                            <span className="text-[11px] text-slate-400 block whitespace-nowrap">
                               {p.departmentName || '-'}
                             </span>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 font-medium">
+                          <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                             ฿{(p.totalGrossIncome ?? 0).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400 font-medium">
+                          <td className="py-2.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400 font-medium whitespace-nowrap">
                             ฿{(p.totalDeductionAmount ?? 0).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300">
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                             ฿{(p.ssoAmount ?? 0).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300">
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
                             ฿{(p.taxAmount ?? 0).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                          <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                             ฿{(p.netPayableSalary ?? 0).toLocaleString(undefined, {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })}
                           </td>
-                          <td className="py-2.5 px-3 text-center">
+                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${
                                 p.paymentStatus === 'TRANSFERRED'
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
                                   : p.status === 'CALCULATED'

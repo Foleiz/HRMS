@@ -12,6 +12,7 @@ import { Calendar, CalendarCheck, Download, Loader2 } from 'lucide-react';
 import { resolveLeaveColor, leaveColorVars } from '@/lib/leaveColors';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, PageHeader } from '@/components/ui';
+import { getSmartYearRange, toThaiYear } from '@/lib/yearUtils';
 
 export default function LeaveBalancesPage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -28,13 +29,12 @@ export default function LeaveBalancesPage() {
   const balancePhase = useLoadPhase(isLoading);
   const [isExporting, setIsExporting] = useState<boolean>(false);
 
-  // Available Thai Buddhist Years for dropdown (current year, and past 3 years)
-  const availableYears = [
-    currentThaiYear,
-    currentThaiYear - 1,
-    currentThaiYear - 2,
-    currentThaiYear - 3,
-  ];
+  // Available Thai Buddhist Years for dropdown (dynamic & future-proof)
+  const availableYears = getSmartYearRange({
+    forwardYears: 1,
+    backYears: 5,
+    selectedYear,
+  }).map(toThaiYear);
 
   // Set breadcrumbs
   useEffect(() => {
