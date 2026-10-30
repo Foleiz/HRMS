@@ -2588,8 +2588,8 @@ export default function PayrollPage() {
                             </td>
                             <td className="py-3.5 px-4">
                               {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
-                                <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                                  ฿{emp.salaryStructureMin.toLocaleString()} - ฿{emp.salaryStructureMax.toLocaleString()}
+                                <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg whitespace-nowrap font-mono">
+                                  ฿{emp.salaryStructureMin.toLocaleString()} – ฿{emp.salaryStructureMax.toLocaleString()}
                                 </span>
                               ) : (
                                 <span className="text-xs text-slate-400 dark:text-slate-400">-</span>
