@@ -370,9 +370,6 @@ export default function PayrollPeriodsTab({
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          ปี {p.year + 543} / เดือน {p.month} ({THAI_MONTH_NAMES[p.month - 1] || ''})
-                        </span>
                       </td>
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {formatDateSlash(p.startDate)} - {formatDateSlash(p.endDate)}
