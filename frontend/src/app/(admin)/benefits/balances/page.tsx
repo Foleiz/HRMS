@@ -2,7 +2,8 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { Button, ModalShell, TabBar } from '@/components/ui';
+import { Button, ModalShell } from '@/components/ui';
+import { BenefitsSubNav } from '@/components/benefits/BenefitsSubNav';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -62,10 +63,6 @@ export default function EmployeeBenefitBalancesPage() {
   const [loadingClaims, setLoadingClaims] = useState(false);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
 
-  const subNavTabs = [
-    { title: 'ยอดสวัสดิการพนักงาน', href: '/benefits/balances', active: true, show: canView },
-    { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ', href: '/benefits/claims', active: false, show: canViewClaims },
-  ].filter((t) => t.show);
 
   useEffect(() => {
     setBreadcrumb({
@@ -225,14 +222,7 @@ export default function EmployeeBenefitBalancesPage() {
   return (
     <div className="space-y-6 font-sans">
       {/* Sub-Navigation Tabs matching Design System */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <TabBar
-          aria-label="เมนูสวัสดิการ"
-          memoryKey="benefits-subnav"
-          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href }))}
-          activeKey="/benefits/balances"
-        />
-      </div>
+      <BenefitsSubNav />
 
       {/* Main Content Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-5">

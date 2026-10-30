@@ -5,7 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import AccessDenied from '@/components/common/AccessDenied';
-import { Button, TabBar, TablePagination } from '@/components/ui';
+import { Button, TablePagination } from '@/components/ui';
+import { BenefitsSubNav } from '@/components/benefits/BenefitsSubNav';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { benefitService } from '@/services/benefitService';
 import { BenefitClaim } from '@/types/benefit';
@@ -104,10 +105,6 @@ export default function BenefitClaimsHistoryPage() {
   // Attachment Preview modal
   const [previewClaim, setPreviewClaim] = useState<BenefitClaim | null>(null);
 
-  const subNavTabs = [
-    { title: 'ยอดสวัสดิการพนักงาน', href: '/benefits/balances', active: false, show: canViewBalances },
-    { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ', href: '/benefits/claims', active: true, show: canView },
-  ].filter((t) => t.show);
 
   useEffect(() => {
     setBreadcrumb({
@@ -209,14 +206,7 @@ export default function BenefitClaimsHistoryPage() {
   return (
     <div className="space-y-6 font-sans">
       {/* 1. Sub-Navigation Tabs matching Design System */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <TabBar
-          aria-label="เมนูสวัสดิการ"
-          memoryKey="benefits-subnav"
-          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href }))}
-          activeKey="/benefits/claims"
-        />
-      </div>
+      <BenefitsSubNav />
 
       {/* 2. KPI Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
