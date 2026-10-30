@@ -39,7 +39,7 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ActiveToggleRow, ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { Button, ModalShell } from '@/components/ui';
+import { Button } from '@/components/ui';
 
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
@@ -186,8 +186,8 @@ export const ApprovalFlowsTab: React.FC = () => {
   const [deptFilter, setDeptFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  // Drawer Editor State
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  // Inline Editor State (จัดการที่รายการได้เลย ไม่ต้องมี Modal)
+  const [editingFlowId, setEditingFlowId] = useState<number | 'NEW' | null>(null);
   const [editingFlow, setEditingFlow] = useState<ApprovalFlow | null>(null);
   const [isSavingFlow, setIsSavingFlow] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
@@ -306,8 +306,9 @@ export const ApprovalFlowsTab: React.FC = () => {
     }
   };
 
-  // Open Create Flow Editor
+  // Open Create Flow Inline Editor
   const openCreateEditor = () => {
+    setEditingFlowId('NEW');
     setEditingFlow(null);
     setForm({
       flowCode: '',
@@ -318,11 +319,11 @@ export const ApprovalFlowsTab: React.FC = () => {
       status: 'ACTIVE',
       steps: [emptyStep(1)],
     });
-    setIsEditorOpen(true);
   };
 
-  // Open Edit Flow Editor
+  // Open Edit Flow Inline Editor
   const openEditEditor = (flow: ApprovalFlow) => {
+    setEditingFlowId(flow.id);
     setEditingFlow(flow);
     setForm({
       flowCode: flow.flowCode,
@@ -349,11 +350,10 @@ export const ApprovalFlowsTab: React.FC = () => {
           delegateMode: s.delegateMode ?? 'WHEN_ABSENT',
         })),
     });
-    setIsEditorOpen(true);
   };
 
   const closeEditor = () => {
-    setIsEditorOpen(false);
+    setEditingFlowId(null);
     setEditingFlow(null);
   };
 
@@ -540,6 +540,439 @@ export const ApprovalFlowsTab: React.FC = () => {
     });
   };
 
+  // =========================================================================
+  // In-Place Inline Flow Editor Component (แสดงผลแทนการ์ดเดิมโดยตรง ไม่เปิด Modal)
+  // =========================================================================
+  const renderInlineFlowEditor = (isNew: boolean, existingFlow?: ApprovalFlow) => (
+    <div
+      key={isNew ? 'flow-editor-new' : `flow-editor-${existingFlow?.id}`}
+      className="bg-white dark:bg-slate-800 rounded-2xl border-2 border-[#0B2046] dark:border-blue-500 ring-4 ring-[#0B2046]/10 dark:ring-blue-500/20 p-5 lg:p-6 shadow-md space-y-5 animate-in fade-in duration-200"
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-700/60">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            {isNew ? <Plus className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">
+                {isNew ? 'เพิ่มสายการอนุมัติใหม่' : `กำลังแก้ไข: ${existingFlow?.flowName}`}
+              </h3>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50">
+                โหมดจัดการบนการ์ด
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              กำหนดข้อมูลทั่วไปและปรับผังขั้นตอนการอนุมัติด้านล่างได้โดยตรง
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={closeEditor}
+          className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+          title="ยกเลิกการแก้ไข"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Form Fields: Grid 4 columns on large screens */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 bg-slate-50/70 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            ประเภทเอกสาร <span className="text-rose-500">*</span>
+          </label>
+          <CustomSelect
+            value={form.documentType}
+            onChange={(e) => setForm({ ...form, documentType: e.target.value })}
+            className={SELECT_CLS}
+          >
+            {DOCUMENT_TYPE_OPTIONS.map((dt, idx) => (
+              <option key={dt} value={dt}>
+                {idx + 1}. {DOCUMENT_TYPE_LABELS[dt]}
+              </option>
+            ))}
+          </CustomSelect>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            ชื่อสายการอนุมัติ <span className="text-rose-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={form.flowName}
+            onChange={(e) => setForm({ ...form, flowName: e.target.value })}
+            placeholder="เช่น สายอนุมัติการลาทั่วไป"
+            className="w-full h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none dark:text-slate-100 placeholder:text-slate-400"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            แผนกที่บังคับใช้
+          </label>
+          <CustomSelect
+            value={form.departmentId ?? ''}
+            onChange={(e) => setForm({ ...form, departmentId: e.target.value ? Number(e.target.value) : null })}
+            className={SELECT_CLS}
+          >
+            <option value="">ทุกแผนก (ใช้ร่วมกัน)</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.departmentName}
+              </option>
+            ))}
+          </CustomSelect>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            ระดับตำแหน่งที่บังคับใช้
+          </label>
+          <CustomSelect
+            value={form.levelId ?? ''}
+            onChange={(e) => setForm({ ...form, levelId: e.target.value ? Number(e.target.value) : null })}
+            className={SELECT_CLS}
+          >
+            <option value="">ทุกระดับตำแหน่ง</option>
+            {levels.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.levelName}
+              </option>
+            ))}
+          </CustomSelect>
+        </div>
+      </div>
+
+      {/* Preset Templates */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" /> แม่แบบด่วน:
+        </span>
+        <button
+          type="button"
+          onClick={() => applyPreset('TWO_TIER')}
+          className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+        >
+          2 ลำดับขั้น (หัวหน้าแผนก → HR)
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset('THREE_TIER')}
+          className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+        >
+          3 ลำดับขั้น (หัวหน้าแผนก → หัวหน้าฝ่าย → CEO)
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset('DIRECT_HR')}
+          className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+        >
+          ฝ่ายทรัพยากรบุคคลโดยตรง (HR)
+        </button>
+      </div>
+
+      {/* Visual Workflow Steps Builder */}
+      <div className="pt-2">
+        <div className="flex flex-wrap items-end justify-between gap-2 mb-2.5">
+          <div>
+            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">ผังลำดับขั้นตอนการอนุมัติ</h4>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              คำขอวิ่งจากซ้ายไปขวา · กด + ระหว่างขั้นเพื่อแทรก · สูงสุด {MAX_APPROVAL_STEPS} ขั้น
+            </p>
+          </div>
+          <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+            {form.steps.length}/{MAX_APPROVAL_STEPS} ขั้นตอน
+          </span>
+        </div>
+
+        {/* Workflow Canvas */}
+        <div className="overflow-x-auto pb-3 custom-scrollbar bg-slate-50/60 dark:bg-slate-900/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <div className="flex items-stretch min-w-max">
+            {/* Start Node */}
+            <div className="w-36 shrink-0 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-3 flex flex-col justify-center items-center text-center">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center mb-1.5">
+                <Users className="w-4 h-4 text-slate-600 dark:text-slate-300" aria-hidden="true" />
+              </div>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-100">ผู้ยื่นคำขอ</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">พนักงานที่ยื่นเอกสาร</div>
+            </div>
+
+            {form.steps.map((step, idx) => {
+              const fallback = step.fallbackAction ?? 'HR';
+              const isLast = idx === form.steps.length - 1;
+              return (
+                <React.Fragment key={idx}>
+                  {renderConnector(idx)}
+                  <div className="w-72 shrink-0 self-stretch rounded-2xl border border-emerald-300 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/30 flex flex-col shadow-2xs">
+                    {/* Header of step */}
+                    <div className="px-4 pt-3.5 pb-2.5 flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">ขั้นที่ {step.stepNo}</div>
+                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={getApproverDisplay(step, employees, roles)}>
+                          {getApproverDisplay(step, employees, roles)}
+                        </div>
+                      </div>
+                      <div className="flex items-center shrink-0 -mr-1">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveStep(idx, -1)}
+                          aria-label={`ย้ายขั้นที่ ${step.stepNo} ไปทางซ้าย`}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white/80 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          <ArrowLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isLast}
+                          onClick={() => moveStep(idx, 1)}
+                          aria-label={`ย้ายขั้นที่ ${step.stepNo} ไปทางขวา`}
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white/80 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                        {form.steps.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeStep(idx)}
+                            aria-label={`ลบขั้นที่ ${step.stepNo}`}
+                            className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Body of step card */}
+                    <div className="mx-2 mb-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-slate-700 p-3 space-y-3 flex-1">
+                      {/* ผู้อนุมัติ */}
+                      <div>
+                        <label className={LABEL_CLS}>ผู้อนุมัติ</label>
+                        <CustomSelect
+                          value={step.approverType}
+                          onChange={(e) =>
+                            updateStep(idx, { approverType: e.target.value, approverEmployeeId: null, approverRoleId: null, approverScope: 'ORG' })
+                          }
+                          className={SELECT_CLS}
+                        >
+                          {!APPROVER_TYPE_OPTIONS.includes(step.approverType) && (
+                            <option value={step.approverType} disabled>
+                              {APPROVER_TYPE_LABELS[step.approverType] ?? step.approverType} (รูปแบบเดิม — กรุณาเปลี่ยน)
+                            </option>
+                          )}
+                          {APPROVER_TYPE_OPTIONS.map((at) => (
+                            <option key={at} value={at}>
+                              {APPROVER_TYPE_LABELS[at]}
+                            </option>
+                          ))}
+                        </CustomSelect>
+                        {step.approverType === 'EMPLOYEE' && (
+                          <CustomSelect
+                            value={step.approverEmployeeId ?? ''}
+                            onChange={(e) => updateStep(idx, { approverEmployeeId: e.target.value ? Number(e.target.value) : null })}
+                            className={`${SELECT_CLS} mt-2`}
+                          >
+                            <option value="">-- เลือกพนักงาน --</option>
+                            {employees
+                              .filter((emp) => !form.departmentId || emp.departmentId === form.departmentId || emp.id === step.approverEmployeeId)
+                              .map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                  {emp.firstName} {emp.lastName} {emp.positionName ? `(${emp.positionName})` : ''}
+                                </option>
+                              ))}
+                          </CustomSelect>
+                        )}
+                        {step.approverType === 'ROLE' && (
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <CustomSelect
+                              value={step.approverRoleId ?? ''}
+                              onChange={(e) => updateStep(idx, { approverRoleId: e.target.value ? Number(e.target.value) : null })}
+                              className={SELECT_CLS}
+                            >
+                              <option value="">-- บทบาท --</option>
+                              {roles.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.roleName}
+                                </option>
+                              ))}
+                            </CustomSelect>
+                            <CustomSelect
+                              value={step.approverScope ?? 'ORG'}
+                              onChange={(e) => updateStep(idx, { approverScope: e.target.value })}
+                              className={SELECT_CLS}
+                            >
+                              {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ))}
+                            </CustomSelect>
+                          </div>
+                        )}
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                          {step.approverType === 'ROLE'
+                            ? APPROVER_SCOPE_HINTS[step.approverScope ?? 'ORG']
+                            : APPROVER_TYPE_HINTS[step.approverType]}
+                        </p>
+                      </div>
+
+                      {/* ถ้าหาผู้อนุมัติไม่เจอ */}
+                      <div>
+                        <label className={LABEL_CLS}>ถ้าหาผู้อนุมัติไม่เจอ</label>
+                        <CustomSelect
+                          value={fallback}
+                          onChange={(e) => updateStep(idx, { fallbackAction: e.target.value, isRequired: e.target.value !== 'SKIP' })}
+                          className={SELECT_CLS}
+                        >
+                          {Object.entries(FALLBACK_ACTION_LABELS).map(([key, label]) => (
+                            <option key={key} value={key}>
+                              {label}
+                            </option>
+                          ))}
+                        </CustomSelect>
+                        {fallback === 'SKIP' && isLast && (
+                          <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1">ขั้นสุดท้ายจะไม่ถูกข้าม — ส่งให้ฝ่ายบุคคลแทน</p>
+                        )}
+                      </div>
+
+                      {/* ผู้อนุมัติแทน */}
+                      <div className="pt-2.5 border-t border-dashed border-slate-200 dark:border-slate-700">
+                        <label className={LABEL_CLS}>
+                          ผู้อนุมัติแทน <span className="font-normal text-slate-400">(ไม่บังคับ)</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <CustomSelect
+                            value={step.delegateType ?? ''}
+                            onChange={(e) =>
+                              updateStep(idx, { delegateType: e.target.value || null, delegateEmployeeId: null, delegateRoleId: null, delegateScope: 'ORG' })
+                            }
+                            className={SELECT_CLS}
+                          >
+                            <option value="">ไม่มี</option>
+                            <option value="EMPLOYEE">ระบุตัวบุคคล</option>
+                            <option value="ROLE">ตามบทบาท</option>
+                          </CustomSelect>
+                          {step.delegateType ? (
+                            <CustomSelect
+                              value={step.delegateMode ?? 'WHEN_ABSENT'}
+                              onChange={(e) => updateStep(idx, { delegateMode: e.target.value })}
+                              className={SELECT_CLS}
+                            >
+                              {Object.entries(DELEGATE_MODE_LABELS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ))}
+                            </CustomSelect>
+                          ) : (
+                            <span />
+                          )}
+                        </div>
+                        {step.delegateType === 'EMPLOYEE' && (
+                          <CustomSelect
+                            value={step.delegateEmployeeId ?? ''}
+                            onChange={(e) => updateStep(idx, { delegateEmployeeId: e.target.value ? Number(e.target.value) : null })}
+                            className={`${SELECT_CLS} mt-2`}
+                          >
+                            <option value="">-- เลือกผู้อนุมัติแทน --</option>
+                            {employees
+                              .filter(
+                                (emp) =>
+                                  !(step.approverType === 'EMPLOYEE' && emp.id === step.approverEmployeeId) &&
+                                  (!form.departmentId || emp.departmentId === form.departmentId || emp.id === step.delegateEmployeeId)
+                              )
+                              .map((emp) => (
+                                <option key={emp.id} value={emp.id}>
+                                  {emp.firstName} {emp.lastName} {emp.positionName ? `(${emp.positionName})` : ''}
+                                </option>
+                              ))}
+                          </CustomSelect>
+                        )}
+                        {step.delegateType === 'ROLE' && (
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            <CustomSelect
+                              value={step.delegateRoleId ?? ''}
+                              onChange={(e) => updateStep(idx, { delegateRoleId: e.target.value ? Number(e.target.value) : null })}
+                              className={SELECT_CLS}
+                            >
+                              <option value="">-- บทบาท --</option>
+                              {roles.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.roleName}
+                                </option>
+                              ))}
+                            </CustomSelect>
+                            <CustomSelect
+                              value={step.delegateScope ?? 'ORG'}
+                              onChange={(e) => updateStep(idx, { delegateScope: e.target.value })}
+                              className={SELECT_CLS}
+                            >
+                              {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ))}
+                            </CustomSelect>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+
+            {renderConnector(form.steps.length)}
+
+            {/* End Node */}
+            <div className="w-36 shrink-0 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-800 px-3.5 py-3 flex flex-col justify-center items-center text-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center mb-1.5 shadow-xs">
+                <CheckCircle2 className="w-4 h-4 text-white" aria-hidden="true" />
+              </div>
+              <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">อนุมัติสำเร็จ</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">แจ้งผลผู้ยื่นอัตโนมัติ</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Bar */}
+      <div className="pt-3.5 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <ActiveToggleRow
+            label="เปิดใช้งานสายการอนุมัตินี้"
+            checked={form.status === 'ACTIVE'}
+            onChange={(v) => setForm({ ...form, status: v ? 'ACTIVE' : 'INACTIVE' })}
+          />
+        </div>
+
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={closeEditor}
+            disabled={isSavingFlow}
+          >
+            ยกเลิก
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSaveFlow}
+            loading={isSavingFlow}
+          >
+            {isNew ? 'บันทึกสายการอนุมัติ' : 'บันทึกการแก้ไข'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6 pb-16">
       {/* ========================================================================= */}
@@ -612,6 +1045,7 @@ export const ApprovalFlowsTab: React.FC = () => {
             <Button
               type="button"
               onClick={openCreateEditor}
+              disabled={editingFlowId === 'NEW'}
               icon={<Plus className="w-4 h-4" />}
             >
               เพิ่มสายการอนุมัติ
@@ -623,13 +1057,20 @@ export const ApprovalFlowsTab: React.FC = () => {
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 shadow-xs">
               <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> กำลังโหลดข้อมูลสายการอนุมัติ...
             </div>
-          ) : filteredFlows.length === 0 ? (
+          ) : filteredFlows.length === 0 && editingFlowId !== 'NEW' ? (
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 shadow-xs">
               ยังไม่มีสายการอนุมัติในระบบ
             </div>
           ) : (
             <div className="space-y-4">
+              {/* ถ้ากำลังเพิ่มสายการอนุมัติใหม่ ให้แสดงการ์ดตัวแก้ไขแทรกไว้ที่ด้านบนสุด */}
+              {editingFlowId === 'NEW' && renderInlineFlowEditor(true)}
+
               {filteredFlows.map((flow) => {
+                {/* ถ้าการ์ดนี้อยู่ในสถานะกำลังแก้ไข ให้แสดงตัวแก้ไข Inline แทนการ์ดปกติ */}
+                if (editingFlowId === flow.id) {
+                  return renderInlineFlowEditor(false, flow);
+                }
                 const badge = getDocTypeBadge(flow.documentType);
                 return (
                   <div
@@ -771,391 +1212,6 @@ export const ApprovalFlowsTab: React.FC = () => {
             </div>
           )}
         </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* Slide-Over Drawer สำหรับสร้าง / แก้ไข สายการอนุมัติ (Visual Builder) */}
-      {/* ========================================================================= */}
-      {isEditorOpen && (
-        <ModalShell
-          onBackdropClick={closeEditor}
-          innerClassName="p-0"
-          className="z-50 bg-slate-900/40 backdrop-blur-xs transition-opacity"
-        >
-          <div className="w-full min-h-screen h-full bg-white dark:bg-slate-900 flex flex-col">
-              {/* Drawer Header */}
-              <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50">
-                <div>
-                  <h2 className="text-base font-bold text-slate-800 dark:text-slate-200">
-                    {editingFlow ? 'แก้ไขสายการอนุมัติ' : 'เพิ่มสายการอนุมัติใหม่'}
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    กำหนดลำดับขั้นตอนและผู้มีสิทธิ์อนุมัติเอกสารในระบบ
-                  </p>
-                </div>
-                <button
-                  onClick={closeEditor}
-                  className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Drawer Content */}
-              <div className="flex-1 overflow-y-auto p-6 lg:px-10 space-y-6">
-                {/* 1. ข้อมูลทั่วไป — แถวเดียว กระชับ */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      ประเภทเอกสาร <span className="text-rose-500">*</span>
-                    </label>
-                    <CustomSelect
-                      value={form.documentType}
-                      onChange={(e) => setForm({ ...form, documentType: e.target.value })}
-                      className={SELECT_CLS}
-                    >
-                      {DOCUMENT_TYPE_OPTIONS.map((dt, idx) => (
-                        <option key={dt} value={dt}>
-                          {idx + 1}. {DOCUMENT_TYPE_LABELS[dt]}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      ชื่อสายการอนุมัติ <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={form.flowName}
-                      onChange={(e) => setForm({ ...form, flowName: e.target.value })}
-                      placeholder="เช่น สายอนุมัติการลาทั่วไป"
-                      className="w-full h-10 px-3 text-sm border border-slate-200 dark:border-slate-700 dark:bg-slate-800 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">แผนกที่บังคับใช้</label>
-                    <CustomSelect
-                      value={form.departmentId ?? ''}
-                      onChange={(e) => setForm({ ...form, departmentId: e.target.value ? Number(e.target.value) : null })}
-                      className={SELECT_CLS}
-                    >
-                      <option value="">ทุกแผนก (ใช้ร่วมกัน)</option>
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.id}>
-                          {d.departmentName}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">ระดับตำแหน่งที่บังคับใช้</label>
-                    <CustomSelect
-                      value={form.levelId ?? ''}
-                      onChange={(e) => setForm({ ...form, levelId: e.target.value ? Number(e.target.value) : null })}
-                      className={SELECT_CLS}
-                    >
-                      <option value="">ทุกระดับตำแหน่ง</option>
-                      {levels.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.levelName}
-                        </option>
-                      ))}
-                    </CustomSelect>
-                  </div>
-                </div>
-                <ActiveToggleRow
-                  label="เปิดใช้งานสายการอนุมัตินี้"
-                  checked={form.status === 'ACTIVE'}
-                  onChange={(v) => setForm({ ...form, status: v ? 'ACTIVE' : 'INACTIVE' })}
-                />
-
-                {/* 2. ผังสายอนุมัติ — แก้ไขในการ์ดของแต่ละขั้นได้เลย กด + ระหว่างการ์ดเพื่อแทรกขั้น */}
-                <div className="pt-5 border-t border-slate-100 dark:border-slate-700/60">
-                  <div className="flex flex-wrap items-end justify-between gap-2 mb-3">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">ขั้นตอนการอนุมัติ</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        คำขอวิ่งจากซ้ายไปขวา · กด + ระหว่างขั้นเพื่อแทรก · สูงสุด {MAX_APPROVAL_STEPS} ขั้น
-                      </p>
-                    </div>
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {form.steps.length}/{MAX_APPROVAL_STEPS} ขั้น
-                    </span>
-                  </div>
-
-                  <div className="overflow-x-auto pb-3 -mx-1 px-1">
-                    <div className="flex items-center min-w-max">
-                      {/* จุดเริ่ม */}
-                      <div className="w-36 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-3">
-                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center mb-1.5">
-                          <Users className="w-4 h-4 text-slate-500 dark:text-slate-300" aria-hidden="true" />
-                        </div>
-                        <div className="text-sm font-bold text-slate-800 dark:text-slate-100">ผู้ยื่นคำขอ</div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">พนักงานที่ยื่นเอกสาร</div>
-                      </div>
-
-                      {form.steps.map((step, idx) => {
-                        const fallback = step.fallbackAction ?? 'HR';
-                        const isLast = idx === form.steps.length - 1;
-                        return (
-                          <React.Fragment key={idx}>
-                            {renderConnector(idx)}
-                            <div className="w-72 shrink-0 self-stretch rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/30 flex flex-col">
-                              {/* หัวการ์ด */}
-                              <div className="px-4 pt-3.5 pb-3 flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">ขั้นที่ {step.stepNo}</div>
-                                  <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={getApproverDisplay(step, employees, roles)}>
-                                    {getApproverDisplay(step, employees, roles)}
-                                  </div>
-                                </div>
-                                <div className="flex items-center shrink-0 -mr-1">
-                                  <button
-                                    type="button"
-                                    disabled={idx === 0}
-                                    onClick={() => moveStep(idx, -1)}
-                                    aria-label={`ย้ายขั้นที่ ${step.stepNo} ไปทางซ้าย`}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white/80 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-                                  >
-                                    <ArrowLeft className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={isLast}
-                                    onClick={() => moveStep(idx, 1)}
-                                    aria-label={`ย้ายขั้นที่ ${step.stepNo} ไปทางขวา`}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-white/80 dark:hover:bg-slate-800 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
-                                  >
-                                    <ArrowRight className="w-3.5 h-3.5" />
-                                  </button>
-                                  {form.steps.length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeStep(idx)}
-                                      aria-label={`ลบขั้นที่ ${step.stepNo}`}
-                                      className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* เนื้อการ์ด */}
-                              <div className="mx-2 mb-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-100 dark:border-slate-700 p-3 space-y-3 flex-1">
-                                {/* ผู้อนุมัติ */}
-                                <div>
-                                  <label className={LABEL_CLS}>ผู้อนุมัติ</label>
-                                  <CustomSelect
-                                    value={step.approverType}
-                                    onChange={(e) =>
-                                      updateStep(idx, { approverType: e.target.value, approverEmployeeId: null, approverRoleId: null, approverScope: 'ORG' })
-                                    }
-                                    className={SELECT_CLS}
-                                  >
-                                    {!APPROVER_TYPE_OPTIONS.includes(step.approverType) && (
-                                      <option value={step.approverType} disabled>
-                                        {APPROVER_TYPE_LABELS[step.approverType] ?? step.approverType} (รูปแบบเดิม — กรุณาเปลี่ยน)
-                                      </option>
-                                    )}
-                                    {APPROVER_TYPE_OPTIONS.map((at) => (
-                                      <option key={at} value={at}>
-                                        {APPROVER_TYPE_LABELS[at]}
-                                      </option>
-                                    ))}
-                                  </CustomSelect>
-                                  {step.approverType === 'EMPLOYEE' && (
-                                    <CustomSelect
-                                      value={step.approverEmployeeId ?? ''}
-                                      onChange={(e) => updateStep(idx, { approverEmployeeId: e.target.value ? Number(e.target.value) : null })}
-                                      className={`${SELECT_CLS} mt-2`}
-                                    >
-                                      <option value="">-- เลือกพนักงาน --</option>
-                                      {employees
-                                        .filter((emp) => !form.departmentId || emp.departmentId === form.departmentId || emp.id === step.approverEmployeeId)
-                                        .map((emp) => (
-                                          <option key={emp.id} value={emp.id}>
-                                            {emp.firstName} {emp.lastName} {emp.positionName ? `(${emp.positionName})` : ''}
-                                          </option>
-                                        ))}
-                                    </CustomSelect>
-                                  )}
-                                  {step.approverType === 'ROLE' && (
-                                    <div className="grid grid-cols-2 gap-2 mt-2">
-                                      <CustomSelect
-                                        value={step.approverRoleId ?? ''}
-                                        onChange={(e) => updateStep(idx, { approverRoleId: e.target.value ? Number(e.target.value) : null })}
-                                        className={SELECT_CLS}
-                                      >
-                                        <option value="">-- บทบาท --</option>
-                                        {roles.map((r) => (
-                                          <option key={r.id} value={r.id}>
-                                            {r.roleName}
-                                          </option>
-                                        ))}
-                                      </CustomSelect>
-                                      <CustomSelect
-                                        value={step.approverScope ?? 'ORG'}
-                                        onChange={(e) => updateStep(idx, { approverScope: e.target.value })}
-                                        className={SELECT_CLS}
-                                      >
-                                        {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
-                                          <option key={key} value={key}>
-                                            {label}
-                                          </option>
-                                        ))}
-                                      </CustomSelect>
-                                    </div>
-                                  )}
-                                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                                    {step.approverType === 'ROLE'
-                                      ? APPROVER_SCOPE_HINTS[step.approverScope ?? 'ORG']
-                                      : APPROVER_TYPE_HINTS[step.approverType]}
-                                  </p>
-                                </div>
-
-                                {/* ถ้าหาผู้อนุมัติไม่เจอ */}
-                                <div>
-                                  <label className={LABEL_CLS}>ถ้าหาผู้อนุมัติไม่เจอ</label>
-                                  <CustomSelect
-                                    value={fallback}
-                                    onChange={(e) => updateStep(idx, { fallbackAction: e.target.value, isRequired: e.target.value !== 'SKIP' })}
-                                    className={SELECT_CLS}
-                                  >
-                                    {Object.entries(FALLBACK_ACTION_LABELS).map(([key, label]) => (
-                                      <option key={key} value={key}>
-                                        {label}
-                                      </option>
-                                    ))}
-                                  </CustomSelect>
-                                  {fallback === 'SKIP' && isLast && (
-                                    <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-1">ขั้นสุดท้ายจะไม่ถูกข้าม — ส่งให้ฝ่ายบุคคลแทน</p>
-                                  )}
-                                </div>
-
-                                {/* ผู้อนุมัติแทน */}
-                                <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-700">
-                                  <label className={LABEL_CLS}>
-                                    ผู้อนุมัติแทน <span className="font-normal text-slate-400">(ไม่บังคับ)</span>
-                                  </label>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <CustomSelect
-                                      value={step.delegateType ?? ''}
-                                      onChange={(e) =>
-                                        updateStep(idx, { delegateType: e.target.value || null, delegateEmployeeId: null, delegateRoleId: null, delegateScope: 'ORG' })
-                                      }
-                                      className={SELECT_CLS}
-                                    >
-                                      <option value="">ไม่มี</option>
-                                      <option value="EMPLOYEE">ระบุตัวบุคคล</option>
-                                      <option value="ROLE">ตามบทบาท</option>
-                                    </CustomSelect>
-                                    {step.delegateType ? (
-                                      <CustomSelect
-                                        value={step.delegateMode ?? 'WHEN_ABSENT'}
-                                        onChange={(e) => updateStep(idx, { delegateMode: e.target.value })}
-                                        className={SELECT_CLS}
-                                      >
-                                        {Object.entries(DELEGATE_MODE_LABELS).map(([key, label]) => (
-                                          <option key={key} value={key}>
-                                            {label}
-                                          </option>
-                                        ))}
-                                      </CustomSelect>
-                                    ) : (
-                                      <span />
-                                    )}
-                                  </div>
-                                  {step.delegateType === 'EMPLOYEE' && (
-                                    <CustomSelect
-                                      value={step.delegateEmployeeId ?? ''}
-                                      onChange={(e) => updateStep(idx, { delegateEmployeeId: e.target.value ? Number(e.target.value) : null })}
-                                      className={`${SELECT_CLS} mt-2`}
-                                    >
-                                      <option value="">-- เลือกผู้อนุมัติแทน --</option>
-                                      {employees
-                                        .filter(
-                                          (emp) =>
-                                            !(step.approverType === 'EMPLOYEE' && emp.id === step.approverEmployeeId) &&
-                                            (!form.departmentId || emp.departmentId === form.departmentId || emp.id === step.delegateEmployeeId)
-                                        )
-                                        .map((emp) => (
-                                          <option key={emp.id} value={emp.id}>
-                                            {emp.firstName} {emp.lastName} {emp.positionName ? `(${emp.positionName})` : ''}
-                                          </option>
-                                        ))}
-                                    </CustomSelect>
-                                  )}
-                                  {step.delegateType === 'ROLE' && (
-                                    <div className="grid grid-cols-2 gap-2 mt-2">
-                                      <CustomSelect
-                                        value={step.delegateRoleId ?? ''}
-                                        onChange={(e) => updateStep(idx, { delegateRoleId: e.target.value ? Number(e.target.value) : null })}
-                                        className={SELECT_CLS}
-                                      >
-                                        <option value="">-- บทบาท --</option>
-                                        {roles.map((r) => (
-                                          <option key={r.id} value={r.id}>
-                                            {r.roleName}
-                                          </option>
-                                        ))}
-                                      </CustomSelect>
-                                      <CustomSelect
-                                        value={step.delegateScope ?? 'ORG'}
-                                        onChange={(e) => updateStep(idx, { delegateScope: e.target.value })}
-                                        className={SELECT_CLS}
-                                      >
-                                        {Object.entries(APPROVER_SCOPE_LABELS).map(([key, label]) => (
-                                          <option key={key} value={key}>
-                                            {label}
-                                          </option>
-                                        ))}
-                                      </CustomSelect>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </React.Fragment>
-                        );
-                      })}
-
-                      {renderConnector(form.steps.length)}
-
-                      {/* จุดสิ้นสุด */}
-                      <div className="w-36 shrink-0 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-white dark:bg-slate-900 px-3.5 py-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center mb-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-white" aria-hidden="true" />
-                        </div>
-                        <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">อนุมัติสำเร็จ</div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">แจ้งผลผู้ยื่นอัตโนมัติ</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Drawer Footer */}
-              <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 flex items-center justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={closeEditor}
-                  disabled={isSavingFlow}
-                >
-                  ยกเลิก
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleSaveFlow}
-                  loading={isSavingFlow}
-                >
-                  {editingFlow ? 'บันทึกการแก้ไข' : 'สร้างสายการอนุมัติ'}
-                </Button>
-              </div>
-          </div>
-        </ModalShell>
       )}
 
       {/* ========================================================================= */}
