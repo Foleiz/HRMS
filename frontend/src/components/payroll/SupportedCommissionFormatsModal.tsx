@@ -137,16 +137,9 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 shadow-sm">
               <FileSpreadsheet className="h-6 w-6" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                  รูปแบบไฟล์ที่รองรับ & ระบบตรวจจับอัตโนมัติ
-                </h3>
-              </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                นำเข้าไฟล์ Excel (.xls, .xlsx) หรือ CSV ได้ทันที ระบบจะตรวจจับ วันเดียว / ช่วงวัน / ทั้งเดือน ให้เองโดยอัตโนมัติ
-              </p>
-            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              รูปแบบไฟล์ที่รองรับ & ระบบตรวจจับอัตโนมัติ
+            </h3>
           </div>
           <button
             onClick={onClose}
@@ -218,38 +211,23 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Active Tab Explanation */}
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 text-xs text-slate-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-slate-300">
+          {/* Active Tab Header */}
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-xs text-slate-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-slate-300 flex items-center justify-between gap-4">
             {activeTab === 'transaction' && (
-              <div className="space-y-1">
-                <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4" /> ไฟล์ที่มีคอลัมน์วันที่ (เช่น วันที่ขาย, วันที่ทำรายการ, Date)
-                </p>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                  ระบบจะตรวจจับวันที่ในไฟล์ทันที: หากข้อมูลในไฟล์เป็นวันเดียวกันทั้งหมด ระบบจะบันทึกเป็นยอด <strong>รายวัน (Day)</strong> หากข้อมูลครอบคลุมหลายวันจะบันทึกเป็น <strong>ช่วงวัน (Date Range)</strong> และนำยอดไปบวกสะสมรวมเป็นยอดรายเดือนให้โดยอัตโนมัติ หากนำเข้าไฟล์ของวันที่เคยมีอยู่แล้ว ระบบจะ <strong>แทนที่เฉพาะวันที่นั้น</strong> ให้โดยไม่กระทบวันอื่น
-                </p>
-              </div>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> ไฟล์ที่มีคอลัมน์วันที่ (เช่น วันที่ขาย, วันที่ทำรายการ, Date)
+              </p>
             )}
             {activeTab === 'summary' && (
-              <div className="space-y-1">
-                <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4" /> ไฟล์สรุปยอดรวมที่ไม่ระบุคอลัมน์วันที่
-                </p>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                  หากในไฟล์ไม่มีคอลัมน์วันที่ ระบบจะถือว่าเป็นยอด <strong>ทั้งเดือน (Full Month)</strong> ของงวดเดือนและปีที่ท่านกำลังเลือกดูอยู่ในขณะนั้นโดยอัตโนมัติ
-                </p>
-              </div>
+              <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0" /> ไฟล์สรุปยอดรวมที่ไม่ระบุคอลัมน์วันที่
+              </p>
             )}
             {activeTab === 'template' && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                    <FileText className="h-4 w-4" /> เทมเพลตมาตรฐาน HRMS พร้อมรายชื่อพนักงาน
-                  </p>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                    ดาวน์โหลดไฟล์ Excel เปล่าที่มีคอลัมน์วันที่และรายชื่อพนักงานในระบบ กรอกยอดขายแล้วอัปโหลดกลับเข้ามาได้ทันที
-                  </p>
-                </div>
+              <>
+                <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 shrink-0" /> เทมเพลตมาตรฐาน HRMS พร้อมรายชื่อพนักงาน
+                </p>
                 <Button
                   onClick={handleDownloadTemplate}
                   loading={isDownloading}
@@ -258,7 +236,7 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
                 >
                   ดาวน์โหลดเทมเพลต Excel (.xlsx)
                 </Button>
-              </div>
+              </>
             )}
           </div>
 
@@ -363,11 +341,7 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-slate-200 px-6 py-4 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <Info className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <span>คอลัมน์สีเขียวเข้มคือคอลัมน์ที่ระบบอ่านค่าเป็นหลัก (คอลัมน์อื่นสามารถมีหรือไม่มีก็ได้)</span>
-          </div>
+        <div className="flex items-center justify-end border-t border-slate-200 px-6 py-4 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
           <Button
             variant="secondary"
             onClick={onClose}
