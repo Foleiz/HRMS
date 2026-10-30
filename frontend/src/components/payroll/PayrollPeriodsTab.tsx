@@ -145,19 +145,14 @@ export default function PayrollPeriodsTab({
             <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center font-bold">
               <Calendar className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                  รอบเงินเดือน
-                  {yearFilter !== 'ALL' ? ` ประจำปี พ.ศ. ${Number(yearFilter) + 543}` : ' ทั้งหมด'}
-                </h3>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                  {filteredPeriods.length} รอบ
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
-                รายการรอบเงินเดือนในระบบ พร้อมสถานะการประมวลผลและการจ่ายเงิน
-              </p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">
+                รอบเงินเดือน
+                {yearFilter !== 'ALL' ? ` ประจำปี พ.ศ. ${Number(yearFilter) + 543}` : ' ทั้งหมด'}
+              </h3>
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                {filteredPeriods.length} รอบ
+              </span>
             </div>
           </div>
 
