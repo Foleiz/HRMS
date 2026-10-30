@@ -42,7 +42,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
-import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter } from '@/components/ui';
+import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter, TabBar, TablePagination } from '@/components/ui';
 
 type MasterTab =
   | 'document-types'
@@ -52,6 +52,16 @@ type MasterTab =
   | 'marital-statuses'
   | 'genders'
   | 'banks';
+
+const TAB_NAME_MAP: Record<MasterTab, string> = {
+  'document-types': 'ประเภทเอกสารแนบ',
+  'certificate-types': 'ประเภทหนังสือรับรอง',
+  nationalities: 'สัญชาติ',
+  religions: 'ศาสนา',
+  'marital-statuses': 'สถานภาพสมรส',
+  genders: 'เพศ',
+  banks: 'ข้อมูลธนาคาร',
+};
 
 export default function MasterDataHubPage() {
   const toast = useToast();
@@ -68,6 +78,12 @@ export default function MasterDataHubPage() {
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, searchQuery]);
 
   // Data states
   const [docTypes, setDocTypes] = useState<DocumentTypeItem[]>([]);
@@ -112,16 +128,7 @@ export default function MasterDataHubPage() {
 
   // Sync breadcrumb
   useEffect(() => {
-    const tabNameMap: Record<MasterTab, string> = {
-      'document-types': 'ประเภทเอกสารแนบ',
-      'certificate-types': 'ประเภทหนังสือรับรอง',
-      nationalities: 'สัญชาติ',
-      religions: 'ศาสนา',
-      'marital-statuses': 'สถานภาพสมรส',
-      genders: 'เพศ',
-      banks: 'ข้อมูลธนาคาร',
-    };
-    setBreadcrumb({ section: 'ข้อมูลหลัก', page: tabNameMap[activeTab] });
+    setBreadcrumb({ section: 'ข้อมูลหลัก', page: TAB_NAME_MAP[activeTab] });
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
 
@@ -388,6 +395,14 @@ export default function MasterDataHubPage() {
     (b) => !q || b.bankCode.toLowerCase().includes(q) || b.bankName.toLowerCase().includes(q)
   );
 
+  const pagedDocTypes = filteredDocTypes.slice((page - 1) * pageSize, page * pageSize);
+  const pagedNationalities = filteredNationalities.slice((page - 1) * pageSize, page * pageSize);
+  const pagedReligions = filteredReligions.slice((page - 1) * pageSize, page * pageSize);
+  const pagedMaritalStatuses = filteredMaritalStatuses.slice((page - 1) * pageSize, page * pageSize);
+  const pagedGenders = filteredGenders.slice((page - 1) * pageSize, page * pageSize);
+  const pagedCertTypes = filteredCertTypes.slice((page - 1) * pageSize, page * pageSize);
+  const pagedBanks = filteredBanks.slice((page - 1) * pageSize, page * pageSize);
+
   if (!canViewMasterData) {
     return (
       <AccessDenied
@@ -398,135 +413,64 @@ export default function MasterDataHubPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      {/* Top Banner */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700/80">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={loadData}
-            disabled={loading}
-            className="p-2.5 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-            title="รีเฟรชข้อมูล"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
-          </button>
-          {canCreateMasterData && (
-            <Button
-              size="sm"
-              icon={<Plus className="w-4 h-4" />}
-              onClick={handleOpenCreate}
-            >
-              เพิ่มข้อมูลใหม่
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-700">
-        <button
-          onClick={() => setActiveTab('document-types')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'document-types'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          ประเภทเอกสารแนบ
-        </button>
-
-        <button
-          onClick={() => setActiveTab('certificate-types')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'certificate-types'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <Award className="w-4 h-4" />
-          ประเภทหนังสือรับรอง
-        </button>
-
-        <button
-          onClick={() => setActiveTab('nationalities')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'nationalities'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <Globe className="w-4 h-4" />
-          สัญชาติ
-        </button>
-
-        <button
-          onClick={() => setActiveTab('religions')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'religions'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <Heart className="w-4 h-4" />
-          ศาสนา
-        </button>
-
-        <button
-          onClick={() => setActiveTab('marital-statuses')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'marital-statuses'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <Users2 className="w-4 h-4" />
-          สถานภาพสมรส
-        </button>
-
-        <button
-          onClick={() => setActiveTab('genders')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'genders'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <UserRound className="w-4 h-4" />
-          เพศ
-        </button>
-
-        <button
-          onClick={() => setActiveTab('banks')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-            activeTab === 'banks'
-              ? 'bg-primary text-white shadow-sm'
-              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700'
-          }`}
-        >
-          <Landmark className="w-4 h-4" />
-          ธนาคาร
-        </button>
-      </div>
-
-      {/* Search Input Bar */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-        <input
-          type="text"
-          placeholder="พิมพ์คำค้นหา..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+    <div className="space-y-6 pb-12">
+      {/* 1. Sub-Navigation Tabs */}
+      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
+        <TabBar
+          aria-label="เมนูข้อมูลหลัก"
+          items={[
+            { key: 'document-types', label: 'ประเภทเอกสารแนบ', onClick: () => setActiveTab('document-types') },
+            { key: 'certificate-types', label: 'ประเภทหนังสือรับรอง', onClick: () => setActiveTab('certificate-types') },
+            { key: 'nationalities', label: 'สัญชาติ', onClick: () => setActiveTab('nationalities') },
+            { key: 'religions', label: 'ศาสนา', onClick: () => setActiveTab('religions') },
+            { key: 'marital-statuses', label: 'สถานภาพสมรส', onClick: () => setActiveTab('marital-statuses') },
+            { key: 'genders', label: 'เพศ', onClick: () => setActiveTab('genders') },
+            { key: 'banks', label: 'ธนาคาร', onClick: () => setActiveTab('banks') },
+          ]}
+          activeKey={activeTab}
         />
       </div>
 
-      {/* Tab 1: Document Types Table */}
+      {/* 2. Main Card Container (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหาด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative max-w-sm w-full shrink-0">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                placeholder={`ค้นหา${TAB_NAME_MAP[activeTab] || 'ข้อมูล'}...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              <button
+                onClick={loadData}
+                disabled={loading}
+                className="p-2 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+                title="รีเฟรชข้อมูล"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+              </button>
+              {canCreateMasterData && (
+                <Button
+                  icon={<Plus className="w-4 h-4" />}
+                  onClick={handleOpenCreate}
+                >
+                  เพิ่มข้อมูลใหม่
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Tab 1: Document Types Table */}
       {activeTab === 'document-types' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[700px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -548,7 +492,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredDocTypes.map((item) => (
+                  pagedDocTypes.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4">
@@ -589,13 +533,26 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredDocTypes.length > 0 && (
+            <TablePagination
+              total={filteredDocTypes.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Tab 2: Nationalities Table */}
       {activeTab === 'nationalities' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -612,7 +569,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredNationalities.map((item) => (
+                  pagedNationalities.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.nationalityName}</td>
@@ -632,13 +589,26 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredNationalities.length > 0 && (
+            <TablePagination
+              total={filteredNationalities.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Tab 3: Religions Table */}
       {activeTab === 'religions' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -655,7 +625,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredReligions.map((item) => (
+                  pagedReligions.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.religionName}</td>
@@ -675,13 +645,26 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredReligions.length > 0 && (
+            <TablePagination
+              total={filteredReligions.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Tab 4: Marital Statuses Table */}
       {activeTab === 'marital-statuses' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[400px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -698,7 +681,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredMaritalStatuses.map((item) => (
+                  pagedMaritalStatuses.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">{item.maritalStatusName}</td>
@@ -718,13 +701,26 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredMaritalStatuses.length > 0 && (
+            <TablePagination
+              total={filteredMaritalStatuses.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Tab: Certificate Types */}
       {activeTab === 'certificate-types' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -743,7 +739,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredCertTypes.map((item) => (
+                  pagedCertTypes.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4">
@@ -771,13 +767,26 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredCertTypes.length > 0 && (
+            <TablePagination
+              total={filteredCertTypes.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Tab: Genders */}
       {activeTab === 'genders' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -795,7 +804,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredGenders.map((item) => (
+                  pagedGenders.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4">
@@ -820,13 +829,26 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredGenders.length > 0 && (
+            <TablePagination
+              total={filteredGenders.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
 
       {/* Tab 5: Banks Table */}
       {activeTab === 'banks' && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        <>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
             <table className="table-standard w-full min-w-[500px] text-left text-xs border-collapse whitespace-nowrap">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-semibold whitespace-nowrap">
@@ -847,7 +869,7 @@ export default function MasterDataHubPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredBanks.map((item) => (
+                  pagedBanks.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{item.id}</td>
                       <td className="py-3.5 px-4">
@@ -879,8 +901,24 @@ export default function MasterDataHubPage() {
               </tbody>
             </table>
           </div>
-        </div>
+
+          {filteredBanks.length > 0 && (
+            <TablePagination
+              total={filteredBanks.length}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={(newSize) => {
+                setPageSize(newSize);
+                setPage(1);
+              }}
+            />
+          )}
+        </>
       )}
+
+        </div>
+      </div>
 
       {/* Modal Dialog for Create & Edit */}
       {modalOpen && (

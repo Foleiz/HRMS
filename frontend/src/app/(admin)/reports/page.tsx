@@ -757,7 +757,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <>
-                <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
@@ -1019,7 +1019,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <>
-                <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[850px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
@@ -1359,7 +1359,7 @@ export default function ReportsPage() {
                   : 'ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา'}
               </div>
             ) : (
-              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
@@ -1698,7 +1698,7 @@ export default function ReportsPage() {
                 ไม่พบข้อมูลแผนกตามเงื่อนไขที่เลือก
               </div>
             ) : (
-              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[950px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">
@@ -1774,7 +1774,7 @@ export default function ReportsPage() {
                 </span>
               </div>
 
-              <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                 <table className="table-standard w-full min-w-[800px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200">
                     <tr className="whitespace-nowrap">

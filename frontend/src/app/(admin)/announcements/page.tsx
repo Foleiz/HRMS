@@ -475,85 +475,85 @@ export default function AnnouncementsPage() {
             </div>
           </div>
 
-          {/* Filter Bar */}
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs space-y-4">
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 flex-1">
-                {/* Search */}
-                <div className="relative xl:col-span-2">
-                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาหัวข้อประกาศ หรือเนื้อหา..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          {/* Main Card Container (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+            <div className="space-y-4">
+              {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | สร้างประกาศ (ขวา) */}
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 flex-1">
+                  {/* Search */}
+                  <div className="relative xl:col-span-2">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหาหัวข้อประกาศ หรือเนื้อหา..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                    />
+                  </div>
+
+                  {/* Status */}
+                  <CustomSelect
+                    value={statusFilter}
+                    onChange={(val) => setStatusFilter(String(val))}
+                    placeholder="สถานะทั้งหมด"
+                    className="w-full"
+                    options={[
+                      { value: '', label: 'สถานะทั้งหมด' },
+                      { value: 'PUBLISHED', label: 'เผยแพร่แล้ว' },
+                      { value: 'DRAFT', label: 'ฉบับร่าง' },
+                      { value: 'ARCHIVED', label: 'จัดเก็บ/ลบ' },
+                    ]}
+                  />
+
+                  {/* Category */}
+                  <CustomSelect
+                    value={categoryFilter}
+                    onChange={(val) => setCategoryFilter(String(val))}
+                    placeholder="หมวดหมู่ทั้งหมด"
+                    className="w-full"
+                    options={[
+                      { value: '', label: 'หมวดหมู่ทั้งหมด' },
+                      { value: 'GENERAL', label: 'ข่าวทั่วไป' },
+                      { value: 'POLICY', label: 'นโยบายองค์กร' },
+                      { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
+                      { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
+                      { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
+                    ]}
+                  />
+
+                  {/* Priority */}
+                  <CustomSelect
+                    value={priorityFilter}
+                    onChange={(val) => setPriorityFilter(String(val))}
+                    placeholder="ความสำคัญทั้งหมด"
+                    className="w-full"
+                    options={[
+                      { value: '', label: 'ความสำคัญทั้งหมด' },
+                      { value: 'LOW', label: 'ทั่วไป' },
+                      { value: 'NORMAL', label: 'ปกติ' },
+                      { value: 'HIGH', label: 'สำคัญ' },
+                      { value: 'URGENT', label: 'ด่วนที่สุด' },
+                    ]}
                   />
                 </div>
 
-                {/* Status */}
-                <CustomSelect
-                  value={statusFilter}
-                  onChange={(val) => setStatusFilter(String(val))}
-                  placeholder="สถานะทั้งหมด"
-                  className="w-full"
-                  options={[
-                    { value: '', label: 'สถานะทั้งหมด' },
-                    { value: 'PUBLISHED', label: 'เผยแพร่แล้ว' },
-                    { value: 'DRAFT', label: 'ฉบับร่าง' },
-                    { value: 'ARCHIVED', label: 'จัดเก็บ/ลบ' },
-                  ]}
-                />
-
-                {/* Category */}
-                <CustomSelect
-                  value={categoryFilter}
-                  onChange={(val) => setCategoryFilter(String(val))}
-                  placeholder="หมวดหมู่ทั้งหมด"
-                  className="w-full"
-                  options={[
-                    { value: '', label: 'หมวดหมู่ทั้งหมด' },
-                    { value: 'GENERAL', label: 'ข่าวทั่วไป' },
-                    { value: 'POLICY', label: 'นโยบายองค์กร' },
-                    { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
-                    { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
-                    { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
-                  ]}
-                />
-
-                {/* Priority */}
-                <CustomSelect
-                  value={priorityFilter}
-                  onChange={(val) => setPriorityFilter(String(val))}
-                  placeholder="ความสำคัญทั้งหมด"
-                  className="w-full"
-                  options={[
-                    { value: '', label: 'ความสำคัญทั้งหมด' },
-                    { value: 'LOW', label: 'ทั่วไป' },
-                    { value: 'NORMAL', label: 'ปกติ' },
-                    { value: 'HIGH', label: 'สำคัญ' },
-                    { value: 'URGENT', label: 'ด่วนที่สุด' },
-                  ]}
-                />
+                {canCreate && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      onClick={handleOpenCreate}
+                      icon={<Plus className="w-4 h-4" />}
+                      className="shrink-0 self-start xl:self-auto"
+                    >
+                      สร้างประกาศใหม่
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              {canCreate && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    onClick={handleOpenCreate}
-                    icon={<Plus className="w-4 h-4" />}
-                    className="shrink-0 self-start xl:self-auto"
-                  >
-                    สร้างประกาศใหม่
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Announcements Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
-            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+              {/* Announcements Table (no m-4) */}
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <RefreshIndicator active={listPhase.refreshing} />
               <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
                 <thead>
@@ -759,19 +759,20 @@ export default function AnnouncementsPage() {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
-              <TablePagination
-                total={totalCount}
-                page={page}
-                pageSize={pageSize}
-                onPageChange={setPage}
-                onPageSizeChange={(newSize) => {
-                  setPageSize(newSize);
-                  setPage(1);
-                }}
-                pageSizeOptions={[10, 20, 50, 100, 200]}
-              />
+              {/* Pagination */}
+              <div className="pt-2">
+                <TablePagination
+                  total={totalCount}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100, 200]}
+                />
+              </div>
             </div>
           </div>
         </div>

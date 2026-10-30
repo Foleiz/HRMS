@@ -522,20 +522,10 @@ function MySalaryContent() {
         {/* LEFT COLUMN: ประวัติสลิปเงินเดือน (8 Cols) */}
         <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
           <div className="space-y-5 flex-1">
-            {/* Table Header with Search */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  ประวัติสลิปเงินเดือน
-                </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  แสดงเฉพาะรายการของคุณย้อนหลัง 12 เดือน
-                </p>
-              </div>
-
-              {/* Search Input Box */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            {/* Toolbar: ช่องค้นหาด้านซ้ายตามต้นแบบระบบ */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   value={searchTerm}
@@ -543,8 +533,8 @@ function MySalaryContent() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="ค้นหาเดือน / พ.ศ."
-                  className={`${inputClass} sm:w-56 !py-1.5 pl-8`}
+                  placeholder="ค้นหาเดือน / พ.ศ...."
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
                 />
               </div>
             </div>

@@ -500,16 +500,13 @@ export default function EssAttendancePage() {
 
           {/* History Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
+            {/* Toolbar: ตัวกรองซ้าย (เดือน, ปี) + รีเฟรช/คำนวณใหม่ขวา */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-baseline gap-2">
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ตารางบันทึกเวลาประจำวัน</h3>
-                <span className="text-xs text-slate-400">{historyList.length} รายการ</span>
-              </div>
               <div className="flex items-center gap-2">
                 <CustomSelect
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-xs font-medium bg-[#F1F5F9] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -521,7 +518,7 @@ export default function EssAttendancePage() {
                 <CustomSelect
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-xs font-medium bg-[#F1F5F9] border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
                     <option key={y} value={y}>
@@ -529,13 +526,15 @@ export default function EssAttendancePage() {
                     </option>
                   ))}
                 </CustomSelect>
+              </div>
 
+              <div className="flex items-center gap-2">
                 {/* Recalculate Button (รูปแบบเดียวกับหน้าตรวจบันทึกเวลา) */}
                 <button
                   type="button"
                   onClick={handleRecalculate}
                   disabled={isRecalculating || isLoadingHistory}
-                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-lg transition disabled:opacity-50 cursor-pointer"
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-xl transition disabled:opacity-50 cursor-pointer"
                   title="ประมวลผลคำนวณเวลาใหม่สำหรับเดือนนี้"
                 >
                   <RotateCcw className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin text-primary dark:text-blue-400' : ''}`} />

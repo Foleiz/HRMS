@@ -1041,45 +1041,6 @@ export default function LeaveRequestsApprovalPage() {
         ))}
       </div>
 
-      {/* Filters & Control Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4">
-        <div className="flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex flex-wrap gap-3 items-center">
-            {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
-            <div className="relative w-full sm:w-72 md:w-80">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-primary transition-all"
-              />
-            </div>
-
-            {/* Document Type filter (ตัวกรองประเภทเอกสาร) */}
-            <CustomSelect
-              value={docTypeFilter}
-              onChange={(val) => setDocTypeFilter(String(val) as any)}
-              className="min-w-[170px]"
-              options={[
-                { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
-                { value: 'LEAVE', label: 'คำขอลา' },
-                { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
-                { value: 'RESIGNATION', label: 'คำขอลาออก' },
-                { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
-                { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
-                { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
-              ]}
-            />
-          </div>
-
-          <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
-            พบ {filteredRequests.length} รายการที่รอคุณอนุมัติ
-          </span>
-        </div>
-      </div>
-
       {/* Toast */}
       {toast && (
         <div
@@ -1093,9 +1054,45 @@ export default function LeaveRequestsApprovalPage() {
         </div>
       )}
 
-      {/* Table Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
-        <RefreshIndicator active={listPhase.refreshing} />
+      {/* Main Card Container (ตามต้นแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                />
+              </div>
+
+              <CustomSelect
+                value={docTypeFilter}
+                onChange={(val) => setDocTypeFilter(String(val) as any)}
+                className="min-w-[170px]"
+                options={[
+                  { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
+                  { value: 'LEAVE', label: 'คำขอลา' },
+                  { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
+                  { value: 'RESIGNATION', label: 'คำขอลาออก' },
+                  { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
+                  { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
+                  { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
+                ]}
+              />
+            </div>
+
+            <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
+              พบ {filteredRequests.length} รายการที่รอคุณอนุมัติ
+            </span>
+          </div>
+
+          <RefreshIndicator active={listPhase.refreshing} />
         {listPhase.initialLoading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
@@ -1111,7 +1108,7 @@ export default function LeaveRequestsApprovalPage() {
         ) : (
           <>
             {/* Desktop View: Full Approvals Table */}
-            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 hidden lg:block overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 hidden lg:block">
               <table className="table-standard w-full min-w-[850px] text-xs whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
@@ -1512,7 +1509,7 @@ export default function LeaveRequestsApprovalPage() {
 
           {/* Pagination */}
           {filteredRequests.length > 0 && (
-            <div className="border-t border-slate-100 dark:border-slate-700/80 px-4 py-3 bg-white dark:bg-slate-800">
+            <div className="pt-2">
               <TablePagination
                 total={filteredRequests.length}
                 page={safePage}
@@ -1529,6 +1526,7 @@ export default function LeaveRequestsApprovalPage() {
         </>
       )
     }
+        </div>
       </div>
 
       {/* ─── Modal ยืนยันการอนุมัติคำขอลา ─── */}

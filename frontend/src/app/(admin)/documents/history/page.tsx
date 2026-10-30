@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
+  Search,
   ChevronRight,
   Loader2,
   AlertCircle,
@@ -39,7 +40,7 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
-import { Button } from '@/components/ui';
+import { Button, TablePagination } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 
@@ -299,6 +300,7 @@ export default function DocumentHistoryPage() {
   }, [documents]);
 
   // ─── ตัวกรอง (dropdown) + เรียงตามหัวคอลัมน์ ───
+  const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
@@ -321,6 +323,13 @@ export default function DocumentHistoryPage() {
 
   const visibleDocuments = useMemo(() => {
     const list = documents.filter((d) => {
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchCode = d.code?.toLowerCase().includes(q);
+        const matchType = d.documentType?.toLowerCase().includes(q);
+        const matchDetail = d.detailDate?.toLowerCase().includes(q);
+        if (!matchCode && !matchType && !matchDetail) return false;
+      }
       if (sourceFilter !== 'ALL' && d.source !== sourceFilter) return false;
       if (statusFilter !== 'ALL' && normalizeStatus(d.status) !== statusFilter) return false;
       if (yearFilter !== 'ALL') {
@@ -344,13 +353,13 @@ export default function DocumentHistoryPage() {
           return 0;
       }
     });
-  }, [documents, sourceFilter, statusFilter, yearFilter, sortField, sortDirection]);
+  }, [documents, searchQuery, sourceFilter, statusFilter, yearFilter, sortField, sortDirection]);
 
-  const hasActiveFilter = sourceFilter !== 'ALL' || statusFilter !== 'ALL' || yearFilter !== 'ALL';
+  const hasActiveFilter = !!searchQuery.trim() || sourceFilter !== 'ALL' || statusFilter !== 'ALL' || yearFilter !== 'ALL';
 
   useEffect(() => {
     setPage(1);
-  }, [sourceFilter, statusFilter, yearFilter]);
+  }, [searchQuery, sourceFilter, statusFilter, yearFilter]);
 
   const totalPages = Math.max(1, Math.ceil(visibleDocuments.length / pageSize));
   const pagedDocuments = visibleDocuments.slice((page - 1) * pageSize, page * pageSize);
@@ -737,62 +746,6 @@ export default function DocumentHistoryPage() {
         ))}
       </div>
 
-      {/* Toolbar: ตัวกรอง (ซ้าย) + ส่งออก/รีเฟรช (ขวา) */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <CustomSelect
-            value={sourceFilter}
-            onChange={(val) => setSourceFilter(String(val))}
-            className="min-w-[170px]"
-            options={SOURCE_FILTER_OPTIONS}
-          />
-          <CustomSelect
-            value={statusFilter}
-            onChange={(val) => setStatusFilter(String(val))}
-            className="min-w-[140px]"
-            options={STATUS_FILTER_OPTIONS}
-          />
-          <CustomSelect
-            value={yearFilter}
-            onChange={(val) => setYearFilter(String(val))}
-            className="min-w-[120px]"
-            numbered={false}
-            options={yearOptions}
-          />
-          {hasActiveFilter && (
-            <button
-              type="button"
-              onClick={() => {
-                setSourceFilter('ALL');
-                setStatusFilter('ALL');
-                setYearFilter('ALL');
-              }}
-              className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline-offset-2 hover:underline cursor-pointer"
-            >
-              ล้างตัวกรอง
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-        <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleExport}
-            icon={<Download className="w-3.5 h-3.5" />}
-          >
-            ส่งออก
-          </Button>
-        <Button
-            variant="secondary"
-            size="sm"
-            onClick={fetchData}
-            icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
-          >
-            รีเฟรช
-          </Button>
-        </div>
-      </div>
-
       {/* Toast */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-slate-900 text-white rounded-xl text-sm shadow-lg flex items-center gap-2">
@@ -801,202 +754,231 @@ export default function DocumentHistoryPage() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="py-20 text-center text-gray-400">
-            <div className="inline-flex items-center gap-2 text-sm">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              กำลังโหลดประวัติเอกสาร...
+      {/* 2. Main Card Container (ตามต้นแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | ส่งออก/รีเฟรช (ขวา) */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* Search */}
+              <div className="relative max-w-xs w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหารหัส หรือประเภทเอกสาร..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
+                />
+              </div>
+
+              <CustomSelect
+                value={sourceFilter}
+                onChange={(val) => setSourceFilter(String(val))}
+                className="min-w-[170px]"
+                options={SOURCE_FILTER_OPTIONS}
+              />
+              <CustomSelect
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(String(val))}
+                className="min-w-[140px]"
+                options={STATUS_FILTER_OPTIONS}
+              />
+              <CustomSelect
+                value={yearFilter}
+                onChange={(val) => setYearFilter(String(val))}
+                className="min-w-[120px]"
+                numbered={false}
+                options={yearOptions}
+              />
+              {hasActiveFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSourceFilter('ALL');
+                    setStatusFilter('ALL');
+                    setYearFilter('ALL');
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline-offset-2 hover:underline cursor-pointer"
+                >
+                  ล้างตัวกรอง
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleExport}
+                icon={<Download className="w-3.5 h-3.5" />}
+              >
+                ส่งออก
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={fetchData}
+                icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+              >
+                รีเฟรช
+              </Button>
             </div>
           </div>
-        ) : documents.length === 0 ? (
-          <div className="py-20 text-center">
-            <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">คุณยังไม่เคยยื่นเอกสาร</p>
-          </div>
-        ) : visibleDocuments.length === 0 ? (
-          <div className="py-20 text-center">
-            <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm">ไม่พบเอกสารตามตัวกรองที่เลือก</p>
-          </div>
-        ) : (
-          <>
-            {/* Desktop View: Full Table */}
-            <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">
-              <table className="table-standard w-full min-w-[750px] text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
-                    <SortableTh label="รหัสเอกสาร" field="code" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
-                    <SortableTh label="วันที่ยื่นเอกสาร" field="submittedDate" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
-                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
-                    <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
-                    <SortableTh label="สถานะเอกสาร" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
-                    <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {pagedDocuments.map((doc) => {
-                    const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
-                    return (
-                      <tr key={doc.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
-                        <td className="px-5 py-4 font-medium whitespace-nowrap">
+
+          {/* Table Content */}
+          {loading ? (
+            <div className="py-20 text-center text-gray-400">
+              <div className="inline-flex items-center gap-2 text-sm">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                กำลังโหลดประวัติเอกสาร...
+              </div>
+            </div>
+          ) : documents.length === 0 ? (
+            <div className="py-20 text-center">
+              <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm">คุณยังไม่เคยยื่นเอกสาร</p>
+            </div>
+          ) : visibleDocuments.length === 0 ? (
+            <div className="py-20 text-center">
+              <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm">ไม่พบเอกสารตามตัวกรองที่เลือก</p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop View: Full Table (no m-4) */}
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block">
+                <table className="table-standard w-full min-w-[750px] text-xs whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/60 whitespace-nowrap">
+                      <SortableTh label="รหัสเอกสาร" field="code" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                      <SortableTh label="วันที่ยื่นเอกสาร" field="submittedDate" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                      <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">วันที่ลา / รายละเอียด</th>
+                      <SortableTh label="ประเภทเอกสาร" field="documentType" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                      <SortableTh label="สถานะเอกสาร" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap" />
+                      <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">การจัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {pagedDocuments.map((doc) => {
+                      const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                      return (
+                        <tr key={doc.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
+                          <td className="px-5 py-4 font-medium whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDocumentPreview(doc)}
+                              className="text-primary dark:text-blue-300 hover:text-primary-hover hover:underline font-semibold transition-colors cursor-pointer text-left"
+                              title="คลิกเพื่อดูตัวอย่างเอกสาร"
+                            >
+                              {doc.code}
+                            </button>
+                          </td>
+                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
+                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{doc.detailDate}</td>
+                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400">{doc.documentType}</td>
+                          <td className="px-4 py-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                              {statusConf.icon}
+                              {statusConf.label}
+                            </span>
+                            {doc.status === 'REJECTED' && doc.rejectReason && (
+                              <span className="block mt-1 text-[11px] text-rose-500 max-w-[14rem] truncate" title={doc.rejectReason}>
+                                เหตุผล: {doc.rejectReason}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <div className="flex items-center justify-end">
+                              <ActionDropdown
+                                align="right"
+                                menuClassName="w-52"
+                                triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
+                                items={getDocumentActionItems(doc)}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile View: Stacked Cards */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {pagedDocuments.map((doc) => {
+                  const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                  return (
+                    <div key={doc.id} className="p-4 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
                           <button
                             type="button"
                             onClick={() => handleOpenDocumentPreview(doc)}
-                            className="text-primary dark:text-blue-300 hover:text-primary-hover hover:underline font-semibold transition-colors cursor-pointer text-left"
-                            title="คลิกเพื่อดูตัวอย่างเอกสาร"
+                            className="text-primary dark:text-blue-300 hover:text-primary-hover font-bold text-sm text-left flex items-center gap-1.5"
                           >
-                            {doc.code}
+                            <span>{doc.code}</span>
+                            <Eye className="w-3.5 h-3.5 text-slate-400" />
                           </button>
-                        </td>
-                        <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
-                        <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{doc.detailDate}</td>
-                        <td className="px-4 py-4 text-gray-600 dark:text-slate-400">{doc.documentType}</td>
-                        <td className="px-4 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
-                            {statusConf.icon}
-                            {statusConf.label}
+                          <span className="text-2xs text-slate-400 block mt-0.5">
+                            ยื่นเมื่อ: {formatShortDate(doc.submittedDate)}
                           </span>
-                          {doc.status === 'REJECTED' && doc.rejectReason && (
-                            <span className="block mt-1 text-[11px] text-rose-500 max-w-[14rem] truncate" title={doc.rejectReason}>
-                              เหตุผล: {doc.rejectReason}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 text-right">
-                          <div className="flex items-center justify-end">
-                            <ActionDropdown
-                              align="right"
-                              menuClassName="w-52"
-                              triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
-                              items={getDocumentActionItems(doc)}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile View: Stacked Cards */}
-            <div className="md:hidden divide-y divide-gray-100">
-              {pagedDocuments.map((doc) => {
-                const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
-                const hasAttachments = !!doc.documents && doc.documents.length > 0;
-                const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
-                const hasCancel = doc.status === 'PENDING';
-                const hasDelete = doc.status === 'DRAFT';
-
-                return (
-                  <div key={doc.id} className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDocumentPreview(doc)}
-                          className="text-primary dark:text-blue-300 hover:text-primary-hover font-bold text-sm text-left flex items-center gap-1.5"
-                        >
-                          <span>{doc.code}</span>
-                          <Eye className="w-3.5 h-3.5 text-slate-400" />
-                        </button>
-                        <span className="text-2xs text-slate-400 block mt-0.5">
-                          ยื่นเมื่อ: {formatShortDate(doc.submittedDate)}
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                          {statusConf.icon}
+                          {statusConf.label}
                         </span>
                       </div>
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
-                        {statusConf.icon}
-                        {statusConf.label}
-                      </span>
-                    </div>
 
-                    <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-400">ประเภท:</span>
-                        <span className="font-semibold text-slate-800">{doc.documentType}</span>
-                      </div>
-                      {doc.detailDate && doc.detailDate.trim() !== '' && doc.detailDate !== '-' && (
+                      <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-400">
-                            {doc.source === 'LEAVE' ? 'ช่วงวันที่:' : 'รายละเอียด:'}
-                          </span>
-                          <span className="font-medium text-slate-700">{doc.detailDate}</span>
+                          <span className="text-slate-400">ประเภท:</span>
+                          <span className="font-semibold text-slate-800">{doc.documentType}</span>
                         </div>
-                      )}
+                        {doc.detailDate && doc.detailDate.trim() !== '' && doc.detailDate !== '-' && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">รายละเอียด:</span>
+                            <span className="text-slate-700">{doc.detailDate}</span>
+                          </div>
+                        )}
+                        {doc.status === 'REJECTED' && doc.rejectReason && (
+                          <div className="text-rose-500 pt-1 border-t border-rose-100">
+                            เหตุผล: {doc.rejectReason}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <ActionDropdown
+                          align="right"
+                          menuClassName="w-52"
+                          triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
+                          items={getDocumentActionItems(doc)}
+                        />
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        type="button"
-                        onClick={() => handleOpenDocumentPreview(doc)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium active:scale-95 transition-all cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        ดูเอกสาร
-                      </button>
-
-                      <ActionDropdown
-                        align="right"
-                        menuClassName="w-52"
-                        triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
-                        items={getDocumentActionItems(doc)}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-gray-100">
-              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
-                แสดง
-                <CustomSelect
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
+              {/* Standard TablePagination */}
+              <div className="pt-2">
+                <TablePagination
+                  total={visibleDocuments.length}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
                     setPage(1);
                   }}
-                  className="px-2 py-1 rounded-lg border border-gray-200 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  {PAGE_SIZE_OPTIONS.map((n) => (
-                    <option key={n} value={n}>{n}</option>
-                  ))}
-                </CustomSelect>
-                เอกสาร (ทั้งหมด {visibleDocuments.length} รายการ)
+                />
               </div>
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" /> ก่อนหน้า
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-7 h-7 rounded-lg text-xs font-medium transition-all ${
-                      p === page ? 'bg-primary text-white shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                >
-                  ถัดไป <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* ─── Modal ดูตัวอย่างเอกสารใบลาทางการ (Leave Document Preview) ─── */}

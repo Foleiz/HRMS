@@ -548,78 +548,77 @@ export default function ApprovalHistoryPage() {
       {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร */}
       <ApprovalNavTabs currentSubTitle="ประวัติเอกสาร" />
 
-      {/* Filters & Control Bar */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-4">
-        <div className="flex flex-wrap gap-3 items-center justify-between">
-          <div className="flex flex-wrap gap-3 items-center">
-            {/* Search (อยู่ซ้ายสุด กำหนดความกว้างพอดีๆ) */}
-            <div className="relative w-full sm:w-72 md:w-80">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ, ผู้อนุมัติ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-gray-50 dark:bg-slate-800 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-primary transition-all"
+      {/* Main Card Container (ตามต้นแบบหน้าจัดการฝ่าย) */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+        <div className="space-y-4">
+          {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) */}
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              {/* Search */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                />
+              </div>
+
+              {/* Document Type filter */}
+              <CustomSelect
+                value={docTypeFilter}
+                onChange={(val) => setDocTypeFilter(String(val) as any)}
+                className="min-w-[170px]"
+                options={[
+                  { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
+                  { value: 'LEAVE', label: 'คำขอลา' },
+                  { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
+                  { value: 'RESIGNATION', label: 'คำขอลาออก' },
+                  { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
+                  { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
+                  { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
+                ]}
+              />
+
+              {/* Status filter */}
+              <CustomSelect
+                value={statusFilter}
+                onChange={(val) => setStatusFilter(String(val))}
+                className="min-w-[190px]"
+                options={[
+                  { value: '', label: 'ทุกสถานะ (ที่ดำเนินการแล้ว)' },
+                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                  { value: 'REJECTED', label: 'ปฏิเสธแล้ว' },
+                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
+                ]}
+              />
+
+              {/* Department filter */}
+              <CustomSelect
+                value={departmentFilter}
+                onChange={(val) => setDepartmentFilter(String(val))}
+                className="min-w-[160px]"
+                options={departmentOptions}
+              />
+
+              {/* Year filter (ปีที่ดำเนินการ) */}
+              <CustomSelect
+                value={yearFilter}
+                onChange={(val) => setYearFilter(String(val))}
+                className="min-w-[120px]"
+                numbered={false}
+                options={yearOptions}
               />
             </div>
 
-            {/* Document Type filter (ตัวกรองประเภทเอกสาร) */}
-            <CustomSelect
-              value={docTypeFilter}
-              onChange={(val) => setDocTypeFilter(String(val) as any)}
-              className="min-w-[170px]"
-              options={[
-                { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
-                { value: 'LEAVE', label: 'คำขอลา' },
-                { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
-                { value: 'RESIGNATION', label: 'คำขอลาออก' },
-                { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
-                { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
-                { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
-              ]}
-            />
-
-            {/* Status filter */}
-            <CustomSelect
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(String(val))}
-              className="min-w-[190px]"
-              options={[
-                { value: '', label: 'ทุกสถานะ (ที่ดำเนินการแล้ว)' },
-                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                { value: 'REJECTED', label: 'ปฏิเสธแล้ว' },
-                { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
-              ]}
-            />
-
-            {/* Department filter */}
-            <CustomSelect
-              value={departmentFilter}
-              onChange={(val) => setDepartmentFilter(String(val))}
-              className="min-w-[160px]"
-              options={departmentOptions}
-            />
-
-            {/* Year filter (ปีที่ดำเนินการ) */}
-            <CustomSelect
-              value={yearFilter}
-              onChange={(val) => setYearFilter(String(val))}
-              className="min-w-[120px]"
-              numbered={false}
-              options={yearOptions}
-            />
+            <span className="text-xs text-gray-400 font-medium whitespace-nowrap shrink-0">
+              พบ {filteredHistory.length} รายการ
+            </span>
           </div>
 
-          <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
-            พบ {filteredHistory.length} รายการ
-          </span>
-        </div>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
-        <RefreshIndicator active={historyPhase.refreshing} />
+          <RefreshIndicator active={historyPhase.refreshing} />
         {historyPhase.initialLoading ? (
           <div className="py-20 text-center text-gray-400">
             <div className="inline-flex items-center gap-2 text-sm">
@@ -633,7 +632,7 @@ export default function ApprovalHistoryPage() {
             <p className="text-gray-400 text-sm">ไม่พบประวัติเอกสารสำหรับเงื่อนไขที่เลือก</p>
           </div>
         ) : (
-          <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
             <table className="table-standard w-full min-w-[850px] text-xs whitespace-nowrap">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
@@ -757,22 +756,23 @@ export default function ApprovalHistoryPage() {
           </div>
         )}
 
-        {/* Pagination */}
-        {filteredHistory.length > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-700/80 px-4 py-3 bg-white dark:bg-slate-800">
-            <TablePagination
-              total={filteredHistory.length}
-              page={safePage}
-              pageSize={pageSize}
-              pageSizeOptions={[10, 20, 50, 100]}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(newSize) => {
-                setPageSize(newSize);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        )}
+          {/* Pagination */}
+          {filteredHistory.length > 0 && (
+            <div className="pt-2">
+              <TablePagination
+                total={filteredHistory.length}
+                page={safePage}
+                pageSize={pageSize}
+                pageSizeOptions={[10, 20, 50, 100]}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Timeline Modal (คำขอลา) */}

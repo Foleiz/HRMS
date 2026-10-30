@@ -123,64 +123,64 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* 1. Filter Bar & Action Header */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/70 shadow-xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1">
-          {/* Search Input */}
-          <form onSubmit={handleSearchSubmit} className="relative min-w-[240px] flex-1 max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="ค้นหาผู้ใช้งาน, อีเมล..."
-              className="w-full h-10 pl-9 pr-3 bg-slate-50/70 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+      <div className="space-y-4">
+        {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | เพิ่มผู้ใช้งาน (ขวา) */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 flex-1">
+            {/* Search Input */}
+            <form onSubmit={handleSearchSubmit} className="relative min-w-[240px] flex-1 max-w-sm">
+              <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="ค้นหาผู้ใช้งาน, อีเมล..."
+                className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 transition-all"
+              />
+            </form>
+
+            {/* Status Dropdown */}
+            <CustomSelect
+              value={selectedStatus}
+              onChange={handleStatusSelect}
+              className="min-w-[140px]"
+              options={[
+                { value: 'ทั้งหมด', label: 'สถานะทั้งหมด' },
+                { value: 'ACTIVE', label: 'ใช้งานอยู่' },
+                { value: 'INACTIVE', label: 'ไม่ได้ใช้งาน' },
+                { value: 'LOCKED', label: 'ถูกระงับ/ล็อก' },
+              ]}
             />
-          </form>
 
-          {/* Status Dropdown */}
-          <CustomSelect
-            value={selectedStatus}
-            onChange={handleStatusSelect}
-            className="min-w-[140px]"
-            options={[
-              { value: 'ทั้งหมด', label: 'สถานะทั้งหมด' },
-              { value: 'ACTIVE', label: 'ใช้งานอยู่' },
-              { value: 'INACTIVE', label: 'ไม่ได้ใช้งาน' },
-              { value: 'LOCKED', label: 'ถูกระงับ/ล็อก' },
-            ]}
-          />
+            {/* Role Dropdown */}
+            <CustomSelect
+              value={selectedRole}
+              onChange={handleRoleSelect}
+              className="min-w-[150px]"
+              options={[
+                { value: 'ทั้งหมด', label: 'บทบาททั้งหมด' },
+                ...roles.map((r) => ({
+                  value: r.roleCode,
+                  label: r.roleName || formatRoleName(r.roleCode),
+                })),
+              ]}
+            />
+          </div>
 
-          {/* Role Dropdown */}
-          <CustomSelect
-            value={selectedRole}
-            onChange={handleRoleSelect}
-            className="min-w-[150px]"
-            options={[
-              { value: 'ทั้งหมด', label: 'บทบาททั้งหมด' },
-              ...roles.map((r) => ({
-                value: r.roleCode,
-                label: r.roleName || formatRoleName(r.roleCode),
-              })),
-            ]}
-          />
+          {/* Add User Button */}
+          {canCreateUser && (
+            <Button
+              onClick={onAddUserClick}
+              icon={<Plus className="w-4 h-4" />}
+            >
+              เพิ่มผู้ใช้งาน
+            </Button>
+          )}
         </div>
 
-        {/* Add User Button */}
-        {canCreateUser && (
-          <Button
-            onClick={onAddUserClick}
-            icon={<Plus className="w-4 h-4" />}
-          >
-            เพิ่มผู้ใช้งาน
-          </Button>
-        )}
-      </div>
-
-      {/* 2. User Accounts Table */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
-        <div className="m-4 rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+        {/* User Accounts Table (no m-4) */}
+        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
           <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
             <thead>
               <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 tracking-wider uppercase whitespace-nowrap">
@@ -345,72 +345,21 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           </table>
         </div>
 
-        {/* 3. Footer: Rows per page (ซ้ายล่าง) & Pagination (ขวาล่าง) */}
-        <div className="py-3 px-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs bg-white dark:bg-slate-800">
-          {/* ซ้ายล่าง: Rows per page selector */}
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-            <span>แสดง</span>
-            <CustomSelect
-              value={pageSize}
-              onChange={(e) => {
-                const newSize = Number(e.target.value);
-                if (onPageSizeChange) {
-                  onPageSizeChange(newSize);
-                }
-                onPageChange(1);
-              }}
-              className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs cursor-pointer"
-            >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-            </CustomSelect>
-            <span>แถวต่อหน้า</span>
-            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400 text-[11px] ml-1">
-              (ทั้งหมด {totalCount.toLocaleString()} บัญชีผู้ใช้งาน)
-            </span>
-          </div>
-
-          {/* ขวาล่าง: Pagination Buttons */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-              disabled={currentPage <= 1}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-              title="หน้าก่อนหน้า"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-
-            {getPageNumbers().map((p, idx) =>
-              typeof p === 'number' ? (
-                <button
-                  key={idx}
-                  onClick={() => onPageChange(p)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-semibold transition-all cursor-pointer ${ p === currentPage ? 'bg-primary text-white shadow-xs'
-                      : 'border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {p}
-                </button>
-              ) : (
-                <span key={idx} className="w-6 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 select-none">
-                  ...
-                </span>
-              )
-            )}
-
-            <button
-              onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage >= totalPages}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-900 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
-              title="หน้าถัดไป"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+        {/* Standard Table Pagination */}
+        <div className="pt-2">
+          <TablePagination
+            total={totalCount}
+            page={currentPage}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            onPageSizeChange={(newSize) => {
+              if (onPageSizeChange) {
+                onPageSizeChange(newSize);
+              }
+              onPageChange(1);
+            }}
+            pageSizeOptions={[10, 20, 50, 100, 200]}
+          />
         </div>
       </div>
     </div>
