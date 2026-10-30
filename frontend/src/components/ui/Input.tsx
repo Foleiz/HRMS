@@ -4,8 +4,8 @@ import React from 'react';
 
 /** class ช่องกรอกมาตรฐาน — ใช้กับ input / textarea ที่ยังไม่ได้ย้ายมาใช้ component */
 export const inputClass =
-  'w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl ' +
-  'focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary transition-all duration-200 text-slate-800 dark:text-slate-200 placeholder-slate-400 ' +
+  'w-full text-xs px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl ' +
+  'focus:outline-none focus:ring-2 focus:ring-primary transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400 ' +
   'disabled:bg-slate-50 disabled:text-slate-500 dark:disabled:bg-slate-900';
 
 /** หัวช่อง + ช่อง + คำอธิบาย/ข้อผิดพลาด */

@@ -1,7 +1,7 @@
 'use client';
 
 import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Building2,
   GitFork,
@@ -48,6 +48,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   Division,
   Department,
@@ -815,17 +816,103 @@ export default function OrganizationPage() {
     e.target.value = '';
   };
 
-  // Handler for Company Profile Save
-  const handleSaveCompany = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // States and Handlers for Company Profile Save
+  const [showSaveCompanyConfirm, setShowSaveCompanyConfirm] = useState(false);
+  const [savingCompany, setSavingCompany] = useState(false);
+
+  const isCompanyDirty = useMemo(() => {
+    if (!company) return false;
+    const origName = (company.companyName || '').trim();
+    const origAddress = (company.address || '').trim();
+    const origPhone = (company.phone || '').trim();
+    const origEmail = (company.email || '').trim();
+    const origCeo = company.ceoEmployeeId || null;
+    const origLogo = company.logoData || null;
+    const origSeal = company.sealData || null;
+
+    const currName = (companyForm.companyName || '').trim();
+    const currAddress = (companyForm.address || '').trim();
+    const currPhone = (companyForm.phone || '').trim();
+    const currEmail = (companyForm.email || '').trim();
+    const currCeo = companyForm.ceoEmployeeId || null;
+    const currLogo = companyForm.logoData || null;
+    const currSeal = companyForm.sealData ? companyForm.sealData : null;
+
+    return (
+      currName !== origName ||
+      currAddress !== origAddress ||
+      currPhone !== origPhone ||
+      currEmail !== origEmail ||
+      currCeo !== origCeo ||
+      currLogo !== origLogo ||
+      currSeal !== origSeal
+    );
+  }, [company, companyForm]);
+
+  const handleCancelCompanyEdit = () => {
+    if (!company) return;
+    setCompanyForm({
+      companyName: company.companyName || '',
+      address: company.address || '',
+      phone: company.phone || '',
+      email: company.email || '',
+      status: company.status || 'ACTIVE',
+      logoData: company.logoData || null,
+      sealData: company.sealData || null,
+      ceoEmployeeId: company.ceoEmployeeId || null,
+    });
+    toast.info('ยกเลิกการเปลี่ยนแปลงข้อมูลบริษัทแล้ว');
+  };
+
+  const handleSaveCompanyClick = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!companyForm.companyName.trim()) {
+      toast.error('กรุณาระบุชื่อบริษัท');
+      return;
+    }
+    if (!isCompanyDirty) {
+      toast.info('ยังไม่มีการเปลี่ยนแปลงข้อมูลบริษัท');
+      return;
+    }
+    setShowSaveCompanyConfirm(true);
+  };
+
+  const executeSaveCompany = async () => {
+    setSavingCompany(true);
     try {
       await organizationService.updateCompany(companyForm);
       showSuccess('บันทึกข้อมูลบริษัทเรียบร้อยแล้ว');
-      loadData();
+      setShowSaveCompanyConfirm(false);
+      await loadData();
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } }; message?: string };
       toast.error(error.response?.data?.message || (err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการบันทึก'));
+    } finally {
+      setSavingCompany(false);
     }
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (activeTab === 'company' && isCompanyDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [activeTab, isCompanyDirty]);
+
+  const handleTabClick = (tabKey: TabType) => {
+    if (activeTab === 'company' && isCompanyDirty && tabKey !== 'company') {
+      const confirmLeave = window.confirm(
+        'คุณมีการแก้ไขข้อมูลบริษัทที่ยังไม่ได้บันทึก หากสลับแท็บข้อมูลที่แก้ไขจะไม่ถูกบันทึก\n\nต้องการดำเนินการต่อหรือไม่?'
+      );
+      if (!confirmLeave) return;
+      handleCancelCompanyEdit();
+    }
+    setActiveTab(tabKey);
+    setSearchQuery('');
   };
 
   // Handlers for Company Bank Accounts
@@ -1030,14 +1117,14 @@ export default function OrganizationPage() {
         <TabBar
           aria-label="เมนูองค์กร"
           items={([
-            canViewStruct ? { key: 'divisions', label: 'จัดการฝ่าย', onClick: () => { setActiveTab('divisions'); setSearchQuery(''); } } : null,
-            canViewStruct ? { key: 'departments', label: 'จัดการแผนก', onClick: () => { setActiveTab('departments'); setSearchQuery(''); } } : null,
-            canViewStruct ? { key: 'teams', label: 'จัดการทีม', onClick: () => { setActiveTab('teams'); setSearchQuery(''); } } : null,
-            canViewPos ? { key: 'positions', label: 'จัดการตำแหน่ง', onClick: () => { setActiveTab('positions'); setSearchQuery(''); } } : null,
-            canViewPos ? { key: 'levels', label: 'ระดับพนักงาน', onClick: () => { setActiveTab('levels'); setSearchQuery(''); } } : null,
-            canViewBenefits ? { key: 'benefits', label: 'สวัสดิการและสิทธิประโยชน์', onClick: () => { setActiveTab('benefits'); setSearchQuery(''); } } : null,
-            canViewCompany ? { key: 'company', label: 'ข้อมูลบริษัท', onClick: () => { setActiveTab('company'); setSearchQuery(''); } } : null,
-            canViewCompany ? { key: 'bank-accounts', label: 'บัญชีธนาคารบริษัท', onClick: () => { setActiveTab('bank-accounts'); setSearchQuery(''); } } : null,
+            canViewStruct ? { key: 'divisions', label: 'จัดการฝ่าย', onClick: () => handleTabClick('divisions') } : null,
+            canViewStruct ? { key: 'departments', label: 'จัดการแผนก', onClick: () => handleTabClick('departments') } : null,
+            canViewStruct ? { key: 'teams', label: 'จัดการทีม', onClick: () => handleTabClick('teams') } : null,
+            canViewPos ? { key: 'positions', label: 'จัดการตำแหน่ง', onClick: () => handleTabClick('positions') } : null,
+            canViewPos ? { key: 'levels', label: 'ระดับพนักงาน', onClick: () => handleTabClick('levels') } : null,
+            canViewBenefits ? { key: 'benefits', label: 'สวัสดิการและสิทธิประโยชน์', onClick: () => handleTabClick('benefits') } : null,
+            canViewCompany ? { key: 'company', label: 'ข้อมูลบริษัท', onClick: () => handleTabClick('company') } : null,
+            canViewCompany ? { key: 'bank-accounts', label: 'บัญชีธนาคารบริษัท', onClick: () => handleTabClick('bank-accounts') } : null,
           ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
           activeKey={(activeTab === 'divisions') ? 'divisions' : (activeTab === 'departments') ? 'departments' : (activeTab === 'teams') ? 'teams' : (activeTab === 'positions') ? 'positions' : (activeTab === 'levels') ? 'levels' : (activeTab === 'benefits') ? 'benefits' : (activeTab === 'company') ? 'company' : (activeTab === 'bank-accounts') ? 'bank-accounts' : null}
         />
@@ -1049,14 +1136,14 @@ export default function OrganizationPage() {
         {activeTab === 'divisions' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                 />
               </div>
 
@@ -1135,15 +1222,15 @@ export default function OrganizationPage() {
         {activeTab === 'departments' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                <div className="relative max-w-sm w-full shrink-0">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1235,15 +1322,15 @@ export default function OrganizationPage() {
         {activeTab === 'teams' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                <div className="relative max-w-sm w-full shrink-0">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อทีม หรือรหัสทีม..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1343,15 +1430,15 @@ export default function OrganizationPage() {
         {activeTab === 'positions' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                <div className="relative max-w-sm w-full shrink-0">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1462,14 +1549,14 @@ export default function OrganizationPage() {
         {activeTab === 'levels' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                 />
               </div>
 
@@ -1564,15 +1651,15 @@ export default function OrganizationPage() {
         {activeTab === 'benefits' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-lg w-full">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                <div className="relative max-w-sm w-full shrink-0">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                   />
                 </div>
 
@@ -1726,7 +1813,15 @@ export default function OrganizationPage() {
           const ceo = employees.find((e) => e.id === companyForm.ceoEmployeeId);
           const activeEmployees = employees.filter((e) => !e.employmentStatus || e.employmentStatus === 'ACTIVE').length;
           return (
-            <form onSubmit={handleSaveCompany} className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start">
+            <form
+              onSubmit={handleSaveCompanyClick}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.target as HTMLElement).tagName === 'INPUT') {
+                  e.preventDefault();
+                }
+              }}
+              className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 items-start"
+            >
               {/* ซ้าย: การ์ดสรุปบริษัท (สไตล์เดียวกับหน้าโปรไฟล์) */}
               <div className="lg:sticky lg:top-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col">
                 {/* รหัสบริษัทที่มุมซ้ายบน */}
@@ -1784,7 +1879,6 @@ export default function OrganizationPage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setCompanyForm((prev) => ({ ...prev, logoData: null }));
-                            toast.success('ลบโลโก้บริษัทเรียบร้อย');
                           }}
                           className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-white border-2 border-white dark:border-slate-800 shadow-md flex items-center justify-center hover:bg-primary-hover hover:scale-110 transition-all cursor-pointer z-20"
                           title="ลบโลโก้บริษัท"
@@ -1812,6 +1906,13 @@ export default function OrganizationPage() {
                     onChange={handleLogoUpload}
                     className="hidden"
                   />
+
+                  {/* Badge สถานะโลโก้รอการบันทึก */}
+                  {companyForm.logoData !== (company?.logoData || null) && (
+                    <span className="mb-2 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 animate-in fade-in">
+                      {companyForm.logoData ? 'โลโก้ใหม่ (รอการบันทึก)' : 'นำโลโก้ออกแล้ว (รอการบันทึก)'}
+                    </span>
+                  )}
 
                   {/* Company Name & Subtitle */}
                   <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 text-center tracking-tight break-words">
@@ -1952,17 +2053,50 @@ export default function OrganizationPage() {
                               นำรูปออก
                             </button>
                           )}
+                          {(companyForm.sealData ? companyForm.sealData : null) !== (company?.sealData || null) && (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-700/50 animate-in fade-in">
+                              {companyForm.sealData ? 'ตราประทับใหม่ (รอการบันทึก)' : 'นำตราประทับออกแล้ว (รอการบันทึก)'}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {canEditCompany && (
-                  <div className="flex justify-end">
-                    <Button type="submit">บันทึกข้อมูลบริษัท</Button>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <div className="text-xs">
+                    {isCompanyDirty ? (
+                      <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>มีการแก้ไขข้อมูลที่ยังไม่ได้บันทึก — ต้องกดปุ่ม &quot;บันทึกข้อมูลบริษัท&quot; ก่อน ข้อมูลถึงจะถูกบันทึก</span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-400 dark:text-slate-500">ข้อมูลบริษัทเป็นปัจจุบันแล้ว</span>
+                    )}
                   </div>
-                )}
+                  {canEditCompany && (
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      {isCompanyDirty && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={handleCancelCompanyEdit}
+                          disabled={savingCompany}
+                        >
+                          ยกเลิกการแก้ไข
+                        </Button>
+                      )}
+                      <Button
+                        type="submit"
+                        disabled={!isCompanyDirty || savingCompany}
+                        loading={savingCompany}
+                      >
+                        บันทึกข้อมูลบริษัท
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
             </form>
           );
@@ -1972,14 +2106,14 @@ export default function OrganizationPage() {
         {activeTab === 'bank-accounts' && (
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#0B2046] dark:text-blue-400" />
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-white border border-[#0B2046] rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-primary/18 focus:border-primary dark:bg-slate-800 dark:border-blue-500 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/25 dark:focus:border-blue-400 transition-all duration-200 shadow-2xs"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
                 />
               </div>
 
@@ -2816,6 +2950,19 @@ export default function OrganizationPage() {
           </div>
         </ModalShell>
       )}
+
+      {/* Confirm Save Company Modal */}
+      <ConfirmModal
+        isOpen={showSaveCompanyConfirm}
+        onClose={() => setShowSaveCompanyConfirm(false)}
+        onConfirm={executeSaveCompany}
+        title="ยืนยันการบันทึกข้อมูลบริษัท"
+        message="คุณต้องการบันทึกการแก้ไขข้อมูลบริษัทใช่หรือไม่?\nข้อมูลที่แก้ไขจะมีผลกับการแสดงผลในระบบและเอกสารทั้งหมด"
+        confirmText="บันทึกข้อมูล"
+        cancelText="ยกเลิก"
+        type="question"
+        isLoading={savingCompany}
+      />
     </div>
   );
 }
