@@ -179,18 +179,30 @@ export const AdjustSalaryModal: React.FC<Props> = ({
               {/* Reference Structure Banner */}
               {(employee.salaryStructureMin != null || employee.salaryStructureMax != null) && (
                 <div
-                  className={`text-[11px] px-2.5 py-1.5 rounded-lg border flex items-center justify-between transition-colors ${
+                  className={`text-xs px-3 py-2 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
                     isOutOfRange
-                      ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
-                      : 'text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                      ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  <span className="flex items-center gap-1 font-medium">
-                    {isOutOfRange && <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
-                    {employee.levelName ? `กรอบเงินเดือนตามระดับ (${employee.levelName}):` : 'กรอบเงินเดือนอ้างอิง:'}
-                  </span>
-                  <span className={`font-semibold ${isOutOfRange ? 'text-rose-700 dark:text-rose-300 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>
-                    ฿{employee.salaryStructureMin?.toLocaleString()} - ฿{employee.salaryStructureMax?.toLocaleString()}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {isOutOfRange && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />}
+                    <span className={`shrink-0 text-xs ${isOutOfRange ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                      กรอบเงินเดือน:
+                    </span>
+                    <span
+                      className={`font-semibold text-xs truncate ${isOutOfRange ? 'text-rose-900 dark:text-rose-200' : 'text-slate-800 dark:text-slate-200'}`}
+                      title={employee.levelName || undefined}
+                    >
+                      {employee.levelName || 'ตามโครงสร้าง'}
+                    </span>
+                  </div>
+                  <span
+                    className={`font-bold font-mono text-xs whitespace-nowrap shrink-0 ${
+                      isOutOfRange ? 'text-rose-700 dark:text-rose-300' : 'text-slate-700 dark:text-slate-200'
+                    }`}
+                  >
+                    ฿{employee.salaryStructureMin?.toLocaleString()} – ฿{employee.salaryStructureMax?.toLocaleString()}
                   </span>
                 </div>
               )}
