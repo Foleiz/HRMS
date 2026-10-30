@@ -401,12 +401,7 @@ export default function MasterDataHubPage() {
     <div className="max-w-6xl mx-auto space-y-6 pb-12">
       {/* Top Banner */}
       <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700/80">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 dark:text-slate-400">
-            ศูนย์กลางการกำหนดค่าตัวเลือกอ้างอิงและประเภทเอกสารประกอบในระบบ HRMS
-          </p>
-        </div>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight dark:text-slate-100">การจัดการข้อมูลหลัก</h1>
 
         <div className="flex items-center gap-3">
           <button
