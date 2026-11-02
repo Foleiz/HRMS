@@ -1959,13 +1959,15 @@ function DailyAttendanceContent() {
       {/* ========================================================= */}
       {activeTab === 'adjustments' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Toolbar & Filters */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700">
+          {/* Unified Card Container */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+            {/* Toolbar & Filters */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             {/* Left: Search & Status Filter */}
             <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
               {/* Search */}
               <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   type="text"
                   placeholder="ค้นหาชื่อ, รหัส หรือเหตุผล..."
@@ -1974,7 +1976,7 @@ function DailyAttendanceContent() {
                     setAdjustmentSearch(e.target.value);
                     setAdjustmentsPage(1);
                   }}
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200"
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
                 />
               </div>
 
@@ -2010,19 +2012,18 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Right: Quick Stats */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 self-end md:self-auto dark:text-slate-400">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
               <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                 <span>รอพิจารณา: {pendingAdjustmentsCount} รายการ</span>
               </span>
-              <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">|</span>
+              <span className="text-slate-400 dark:text-slate-500">|</span>
               <span>ทั้งหมด {adjustmentsTotalCount} รายการ</span>
             </div>
           </div>
 
-          {/* Adjustments Table Card */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+          {/* Adjustments Table */}
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[950px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
                   <tr className="bg-primary text-white font-semibold whitespace-nowrap">
@@ -2182,7 +2183,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
+            <div className="pt-2">
               <TablePagination
                 total={adjustmentsTotalCount}
                 page={adjustmentsPage}
@@ -2204,105 +2205,6 @@ function DailyAttendanceContent() {
       {/* ========================================================= */}
       {activeTab === 'monthly' && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Filter & Action Toolbar */}
-          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 dark:bg-slate-800 dark:border-slate-700/80">
-            {/* Left: Month, Year, Department, Search */}
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Month Selector */}
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300">
-                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <CustomSelect
-                  value={monthlyMonth}
-                  onChange={(e) => setMonthlyMonth(Number(e.target.value))}
-                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold dark:text-slate-200"
-                >
-                  {THAI_MONTHS.map((name, idx) => (
-                    <option key={idx + 1} value={idx + 1}>
-                      {name}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              {/* Year Selector */}
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-300">
-                <span>ปี</span>
-                <CustomSelect
-                  value={monthlyYear}
-                  onChange={(e) => setMonthlyYear(Number(e.target.value))}
-                  className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold dark:text-slate-200"
-                >
-                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: monthlyYear }).map((y) => (
-                    <option key={y} value={y}>
-                      พ.ศ. {y + 543}
-                    </option>
-                  ))}
-                </CustomSelect>
-              </div>
-
-              {/* Department Filter */}
-              <CustomSelect
-                value={monthlyDepartment}
-                onChange={(val) => {
-                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-                  setMonthlyDepartment(parsed);
-                }}
-                placeholder="ทุกแผนก"
-                className="min-w-[150px]"
-                options={[
-                  { value: 'ALL', label: 'ทุกแผนก' },
-                  ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
-                ]}
-              />
-
-              {/* Search */}
-              <div className="relative w-48 sm:w-56">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
-                  value={monthlySearch}
-                  onChange={(e) => setMonthlySearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500/20 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
-                />
-              </div>
-
-              {/* Refresh Button */}
-              <button
-                onClick={loadMonthlySummary}
-                disabled={monthlyLoading}
-                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
-                title="รีเฟรชข้อมูล"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${monthlyLoading ? 'animate-spin text-primary' : ''}`} />
-              </button>
-            </div>
-
-            {/* Right: Process & Export Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2 self-end md:self-auto">
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />}
-                disabled={monthlyExporting || !monthlyData || monthlyData.employees.length === 0}
-                loading={monthlyExporting}
-                onClick={handleExportMonthlyCsv}
-              >
-                ดาวน์โหลด CSV
-              </Button>
-
-              <Button
-                size="sm"
-                icon={monthlyProcessing ? undefined : <Zap className="w-3.5 h-3.5 text-amber-400" />}
-                loading={monthlyProcessing}
-                disabled={monthlyLoading}
-                onClick={handleProcessMonthlySummary}
-              >
-                {monthlyProcessing ? 'กำลังประมวลผล...' : 'ประมวลผลสรุปยอด'}
-              </Button>
-            </div>
-          </div>
-
           {/* Overview Metric Cards (6 Cards) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {/* Card 1: Total Employees */}
@@ -2399,32 +2301,126 @@ function DailyAttendanceContent() {
               <p className="text-3xs text-rose-700 dark:text-rose-400 mt-0.5 font-medium">ไม่รวมวันลาอนุมัติ</p>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-            {/* Table Header / Subtitle */}
-            <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/50 dark:border-slate-700/60">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
-                  <BarChart3 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                  <span>สรุปเวลาทำงานประจำเดือน {THAI_MONTHS[monthlyMonth - 1]} {monthlyYear + 543}</span>
-                </h3>
-                <p className="text-2xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                  {monthlyData?.lastProcessedAt ? (
-                    <span className="text-emerald-700 font-semibold">
-                      ✓ ประมวลผลล่าสุดเมื่อ {new Date(monthlyData.lastProcessedAt).toLocaleString('th-TH')}
-                    </span>
-                  ) : (
-                    <span className="text-amber-700 font-semibold">
-                      * แสดงผลพรีวิวสดจากบันทึกเวลา (คลิก &quot;ประมวลผลสรุปยอด&quot; เพื่อบันทึกส่งให้ฝ่าย Payroll)
-                    </span>
-                  )}
-                </p>
+
+          {/* Unified Card Container */}
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+            {/* Filter & Action Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Left: Search leftmost, Month, Year, Department, Refresh */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                {/* Search */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                  <input
+                    type="text"
+                    placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                    value={monthlySearch}
+                    onChange={(e) => setMonthlySearch(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+                  />
+                </div>
+
+                {/* Month Selector */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                  <CustomSelect
+                    value={monthlyMonth}
+                    onChange={(e) => setMonthlyMonth(Number(e.target.value))}
+                    className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold"
+                  >
+                    {THAI_MONTHS.map((name, idx) => (
+                      <option key={idx + 1} value={idx + 1}>
+                        {name}
+                      </option>
+                    ))}
+                  </CustomSelect>
+                </div>
+
+                {/* Year Selector */}
+                <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
+                  <span>ปี</span>
+                  <CustomSelect
+                    value={monthlyYear}
+                    onChange={(e) => setMonthlyYear(Number(e.target.value))}
+                    className="bg-transparent focus:outline-none cursor-pointer text-slate-800 dark:text-slate-200 font-bold"
+                  >
+                    {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: monthlyYear }).map((y) => (
+                      <option key={y} value={y}>
+                        พ.ศ. {y + 543}
+                      </option>
+                    ))}
+                  </CustomSelect>
+                </div>
+
+                {/* Department Filter */}
+                <CustomSelect
+                  value={monthlyDepartment}
+                  onChange={(val) => {
+                    const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+                    setMonthlyDepartment(parsed);
+                  }}
+                  placeholder="ทุกแผนก"
+                  className="min-w-[150px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกแผนก' },
+                    ...departments.map((d) => ({ value: d.id, label: d.departmentName })),
+                  ]}
+                />
+
+                {/* Refresh Button */}
+                <button
+                  onClick={loadMonthlySummary}
+                  disabled={monthlyLoading}
+                  className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
+                  title="รีเฟรชข้อมูล"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${monthlyLoading ? 'animate-spin text-primary' : ''}`} />
+                </button>
               </div>
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+
+              {/* Right: Process & Export Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={<Download className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />}
+                  disabled={monthlyExporting || !monthlyData || monthlyData.employees.length === 0}
+                  loading={monthlyExporting}
+                  onClick={handleExportMonthlyCsv}
+                >
+                  ดาวน์โหลด CSV
+                </Button>
+
+                <Button
+                  size="sm"
+                  icon={monthlyProcessing ? undefined : <Zap className="w-3.5 h-3.5 text-amber-400" />}
+                  loading={monthlyProcessing}
+                  disabled={monthlyLoading}
+                  onClick={handleProcessMonthlySummary}
+                >
+                  {monthlyProcessing ? 'กำลังประมวลผล...' : 'ประมวลผลสรุปยอด'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Context Subtitle line */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400 pt-1">
+              <div>
+                {monthlyData?.lastProcessedAt ? (
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                    ✓ ประมวลผลล่าสุดเมื่อ {new Date(monthlyData.lastProcessedAt).toLocaleString('th-TH')}
+                  </span>
+                ) : (
+                  <span className="text-amber-700 dark:text-amber-400 font-semibold">
+                    * แสดงผลพรีวิวสดจากบันทึกเวลา (คลิก &quot;ประมวลผลสรุปยอด&quot; เพื่อบันทึกส่งให้ฝ่าย Payroll)
+                  </span>
+                )}
+              </div>
+              <div>
                 จำนวนพนักงาน: <span className="font-bold text-primary">{filteredMonthlyEmployees.length}</span> คน
               </div>
             </div>
 
-            {/* Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[950px] text-left border-collapse text-xs whitespace-nowrap">
                 <thead>
@@ -2565,7 +2561,6 @@ function DailyAttendanceContent() {
           </div>
         </div>
       )}
-
       {/* Edit Record Modal */}
       {editModalOpen && editingRecord && (
         <Modal

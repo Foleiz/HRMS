@@ -585,8 +585,7 @@ export default function LeaveManagementPage() {
                   ) : (
                     pagedLeaveTypes.map((type) => (
                       <tr key={type.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
-                        <td className="py-4 px-5 relative">
-                          <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full" style={{ backgroundColor: colorOfType(type.id, type.leaveCode) }} />
+                        <td className="py-4 px-5">
                           <LeaveTypeChip name={type.leaveName} color={colorOfType(type.id, type.leaveCode)} />
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600 dark:text-slate-400">
