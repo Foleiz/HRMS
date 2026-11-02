@@ -51,6 +51,7 @@ import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { confirmAction } from '@/context/ConfirmContext';
 import {
   Division,
   Department,
@@ -905,11 +906,15 @@ export default function OrganizationPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [activeTab, isCompanyDirty]);
 
-  const handleTabClick = (tabKey: TabType) => {
+  const handleTabClick = async (tabKey: TabType) => {
     if (activeTab === 'company' && isCompanyDirty && tabKey !== 'company') {
-      const confirmLeave = window.confirm(
-        'คุณมีการแก้ไขข้อมูลบริษัทที่ยังไม่ได้บันทึก หากสลับแท็บข้อมูลที่แก้ไขจะไม่ถูกบันทึก\n\nต้องการดำเนินการต่อหรือไม่?'
-      );
+      const confirmLeave = await confirmAction({
+        title: 'ยืนยันการสลับแท็บ?',
+        message: 'คุณมีการแก้ไขข้อมูลบริษัทที่ยังไม่ได้บันทึก หากสลับแท็บข้อมูลที่แก้ไขจะไม่ถูกบันทึก\n\nต้องการดำเนินการต่อหรือไม่?',
+        confirmButtonText: 'สลับแท็บ (ละทิ้งการแก้ไข)',
+        cancelButtonText: 'แก้ไขต่อ',
+        type: 'warning',
+      });
       if (!confirmLeave) return;
       handleCancelCompanyEdit();
     }

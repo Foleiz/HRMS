@@ -6,6 +6,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { SidebarProvider } from "@/context/SidebarContext";
 import { BreadcrumbProvider } from "@/context/BreadcrumbContext";
 import { ToastProvider } from "@/context/ToastContext";
+import { ConfirmProvider } from "@/context/ConfirmContext";
 
 const prompt = Prompt({
   weight: ["300", "400", "500", "600", "700"],
@@ -31,7 +32,9 @@ export default function RootLayout({
           <AuthProvider>
             <SidebarProvider>
               <BreadcrumbProvider>
-                <ToastProvider>{children}</ToastProvider>
+                <ToastProvider>
+                  <ConfirmProvider>{children}</ConfirmProvider>
+                </ToastProvider>
               </BreadcrumbProvider>
             </SidebarProvider>
           </AuthProvider>
