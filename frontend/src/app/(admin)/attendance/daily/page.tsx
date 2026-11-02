@@ -61,7 +61,6 @@ import {
   MonthlyEmployeeAttendance,
 } from '@/types/attendance';
 import {
-  AttendanceAdjustment,
   CreateAttendanceAdjustmentRequest,
   ReviewAttendanceAdjustmentRequest,
   AdjustmentStatus,
@@ -103,10 +102,10 @@ function DailyAttendanceContent() {
   const canCreateImport = hasPermission('TIME_IMPORT_CREATE') || hasPermission('TIME_IMPORT_EDIT') || isSuper;
   const canEditImport = hasPermission('TIME_IMPORT_EDIT') || isSuper;
 
-  // Active Tab: 'daily' | 'import' | 'adjustments' | 'monthly'
-  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'adjustments' | 'monthly') || (canViewDaily ? 'daily' : 'import');
-  const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'adjustments' | 'monthly'>(
-    initialTab === 'import' || initialTab === 'adjustments' || initialTab === 'monthly' ? initialTab : (canViewDaily ? 'daily' : 'import')
+  // Active Tab: 'daily' | 'import' | 'monthly' (คำขอปรับปรุงเวลาย้ายไปพิจารณาที่เมนูอนุมัติเอกสาร)
+  const initialTab = (searchParams.get('tab') as 'daily' | 'import' | 'monthly') || (canViewDaily ? 'daily' : 'import');
+  const [activeTab, setActiveTab] = useState<'daily' | 'import' | 'monthly'>(
+    initialTab === 'import' || initialTab === 'monthly' ? initialTab : (canViewDaily ? 'daily' : 'import')
   );
 
   useEffect(() => {
@@ -125,8 +124,6 @@ function DailyAttendanceContent() {
           return 'ตรวจบันทึกเวลาประจำวัน';
         case 'import':
           return 'นำเข้าไฟล์บันทึกเวลา';
-        case 'adjustments':
-          return 'คำขอปรับปรุงเวลา';
         default:
           return 'ตรวจบันทึกเวลาประจำวัน';
       }
@@ -135,7 +132,7 @@ function DailyAttendanceContent() {
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
 
-  const handleTabChange = (tab: 'daily' | 'import' | 'adjustments' | 'monthly') => {
+  const handleTabChange = (tab: 'daily' | 'import' | 'monthly') => {
     setActiveTab(tab);
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
@@ -156,8 +153,8 @@ function DailyAttendanceContent() {
   // Sync state if URL searchParams change externally
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'import' || tabParam === 'daily' || tabParam === 'adjustments' || tabParam === 'monthly') {
-      setActiveTab(tabParam as 'daily' | 'import' | 'adjustments' | 'monthly');
+    if (tabParam === 'import' || tabParam === 'daily' || tabParam === 'monthly') {
+      setActiveTab(tabParam as 'daily' | 'import' | 'monthly');
     }
     const dateParam = searchParams.get('date');
     if (dateParam) {
@@ -269,17 +266,6 @@ function DailyAttendanceContent() {
   const [batchRecordTotalPages, setBatchRecordTotalPages] = useState<number>(1);
   const [batchRecordTotalCount, setBatchRecordTotalCount] = useState<number>(0);
 
-  // Attendance Adjustment Requests State (Sprint 7)
-  const [adjustments, setAdjustments] = useState<AttendanceAdjustment[]>([]);
-  const [adjustmentsTotalCount, setAdjustmentsTotalCount] = useState(0);
-  const [adjustmentsTotalPages, setAdjustmentsTotalPages] = useState(1);
-  const [adjustmentsPage, setAdjustmentsPage] = useState(1);
-  const [adjustmentsPageSize, setAdjustmentsPageSize] = useState(10);
-  const [adjustmentsLoading, setAdjustmentsLoading] = useState(false);
-  const [pendingAdjustmentsCount, setPendingAdjustmentsCount] = useState(0);
-  const [filterAdjustmentStatus, setFilterAdjustmentStatus] = useState<string>('ALL');
-  const [adjustmentSearch, setAdjustmentSearch] = useState('');
-
   // Adjustment Create Modal
   const [adjustmentModalOpen, setAdjustmentModalOpen] = useState(false);
   const [targetRecordForAdjustment, setTargetRecordForAdjustment] = useState<AttendanceDaily | null>(null);
@@ -287,13 +273,6 @@ function DailyAttendanceContent() {
   const [adjustmentOutTime, setAdjustmentOutTime] = useState('');
   const [adjustmentReason, setAdjustmentReason] = useState('');
   const [isSubmittingAdjustment, setIsSubmittingAdjustment] = useState(false);
-
-  // Adjustment Review Modal
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [selectedAdjustmentForReview, setSelectedAdjustmentForReview] = useState<AttendanceAdjustment | null>(null);
-  const [reviewAction, setReviewAction] = useState<'APPROVED' | 'REJECTED'>('APPROVED');
-  const [reviewNote, setReviewNote] = useState('');
-  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -883,48 +862,6 @@ function DailyAttendanceContent() {
   // -------------------------------------------------------------
   // Attendance Adjustments Handlers (Sprint 7)
   // -------------------------------------------------------------
-  const loadPendingCount = useCallback(async () => {
-    try {
-      const count = await attendanceAdjustmentService.getPendingCount();
-      setPendingAdjustmentsCount(count);
-    } catch (err) {
-      console.error('Failed to load pending adjustment count:', err);
-    }
-  }, []);
-
-  const loadAdjustments = useCallback(async () => {
-    try {
-      setAdjustmentsLoading(true);
-      const res = await attendanceAdjustmentService.getAdjustments({
-        status: filterAdjustmentStatus === 'ALL' ? undefined : filterAdjustmentStatus,
-        search: adjustmentSearch.trim() || undefined,
-        page: adjustmentsPage,
-        pageSize: adjustmentsPageSize,
-      });
-      setAdjustments(res.items || []);
-      setAdjustmentsTotalPages(res.totalPages || 1);
-      setAdjustmentsTotalCount(res.totalCount || 0);
-    } catch (err) {
-      console.error('Failed to load adjustments:', err);
-      toast.error('ไม่สามารถโหลดรายการคำขอปรับปรุงเวลาได้');
-    } finally {
-      setAdjustmentsLoading(false);
-    }
-  }, [filterAdjustmentStatus, adjustmentSearch, adjustmentsPage, adjustmentsPageSize]);
-
-  // Trigger loads on tab change or filter
-  useEffect(() => {
-    if (canViewDaily) {
-      loadPendingCount();
-    }
-  }, [loadPendingCount, canViewDaily]);
-
-  useEffect(() => {
-    if (activeTab === 'adjustments') {
-      loadAdjustments();
-    }
-  }, [activeTab, loadAdjustments]);
-
   // Open Create Adjustment Modal
   const handleOpenAdjustmentModal = (rec: AttendanceDaily) => {
     setTargetRecordForAdjustment(rec);
@@ -980,78 +917,12 @@ function DailyAttendanceContent() {
       toast.success('ยื่นคำขอปรับปรุงเวลาเข้า-ออกงานเรียบร้อยแล้ว รอการอนุมัติ');
       setAdjustmentModalOpen(false);
       setTargetRecordForAdjustment(null);
-      await loadPendingCount();
-      if (activeTab === 'adjustments') {
-        await loadAdjustments();
-      }
     } catch (err: any) {
       console.error('Failed to submit adjustment:', err);
       const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการยื่นคำขอ';
       toast.error(msg);
     } finally {
       setIsSubmittingAdjustment(false);
-    }
-  };
-
-  // Open Review Modal
-  const handleOpenReviewModal = (adj: AttendanceAdjustment, action: 'APPROVED' | 'REJECTED') => {
-    setSelectedAdjustmentForReview(adj);
-    setReviewAction(action);
-    setReviewNote('');
-    setReviewModalOpen(true);
-  };
-
-  // Submit Review (Approve / Reject)
-  const handleReviewSubmit = async () => {
-    if (!selectedAdjustmentForReview) return;
-    try {
-      setIsSubmittingReview(true);
-      await attendanceAdjustmentService.reviewAdjustment(selectedAdjustmentForReview.id, {
-        status: reviewAction,
-        reviewNote: reviewNote.trim() || undefined,
-      });
-      const msg =
-        reviewAction === 'APPROVED'
-          ? 'อนุมัติคำขอปรับปรุงเวลาและคำนวณเวลาใหม่อัตโนมัติเรียบร้อยแล้ว'
-          : 'ปฏิเสธคำขอปรับปรุงเวลาเรียบร้อยแล้ว';
-      if (reviewAction === 'APPROVED') {
-        toast.success(msg);
-      } else {
-        toast.info(msg);
-      }
-      setReviewModalOpen(false);
-      setSelectedAdjustmentForReview(null);
-      await loadAdjustments();
-      await loadPendingCount();
-      await fetchData();
-    } catch (err: any) {
-      console.error('Failed to review adjustment:', err);
-      const msg = err.response?.data?.message || err.message || 'เกิดข้อผิดพลาดในการดำเนินการ';
-      toast.error(msg);
-    } finally {
-      setIsSubmittingReview(false);
-    }
-  };
-
-  // Cancel Adjustment
-  const handleCancelAdjustment = async (id: number) => {
-    const isConfirmed = await confirmAction({
-      title: 'ยืนยันการยกเลิกคำขอ',
-      text: 'คุณต้องการยกเลิกคำขอนี้ใช่หรือไม่?',
-      confirmButtonText: 'ยกเลิกคำขอ',
-      cancelButtonText: 'ปิด',
-      isDestructive: true,
-    });
-    if (!isConfirmed) return;
-    try {
-      await attendanceAdjustmentService.cancelAdjustment(id);
-      toast.success('ยกเลิกคำขอปรับปรุงเวลาเรียบร้อยแล้ว');
-      await loadAdjustments();
-      await loadPendingCount();
-    } catch (err: any) {
-      console.error('Failed to cancel adjustment:', err);
-      const msg = err.response?.data?.message || err.message || 'ไม่สามารถยกเลิกได้';
-      toast.error(msg);
     }
   };
 
@@ -1254,10 +1125,9 @@ function DailyAttendanceContent() {
           items={([
             canViewDaily ? { key: 'daily', label: 'ตรวจบันทึกเวลาประจำวัน', onClick: () => handleTabChange('daily') } : null,
             canViewImport ? { key: 'import', label: 'นำเข้าไฟล์บันทึกเวลา', onClick: () => handleTabChange('import') } : null,
-            canViewDaily ? { key: 'adjustments', label: <><span>คำขอปรับปรุงเวลา</span> {pendingAdjustmentsCount > 0 && ( <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse"> {pendingAdjustmentsCount} </span> )}</>, onClick: () => handleTabChange('adjustments') } : null,
             canViewDaily ? { key: 'monthly', label: 'สรุปสถิติประจำเดือน', onClick: () => handleTabChange('monthly') } : null,
           ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'daily') ? 'daily' : (activeTab === 'import') ? 'import' : (activeTab === 'adjustments') ? 'adjustments' : (activeTab === 'monthly') ? 'monthly' : null}
+          activeKey={(activeTab === 'daily') ? 'daily' : (activeTab === 'import') ? 'import' : (activeTab === 'monthly') ? 'monthly' : null}
         />
       </div>
 
@@ -1940,252 +1810,6 @@ function DailyAttendanceContent() {
                   setBatchPage(1);
                 }}
                 pageSizeOptions={[10, 20, 50, 100]}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* TAB 3: คำขอปรับปรุงเวลาเข้า-ออกงาน (ATTENDANCE ADJUSTMENTS) */}
-      {/* ========================================================= */}
-      {activeTab === 'adjustments' && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          {/* Unified Card Container */}
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
-            {/* Toolbar & Filters */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            {/* Left: Search & Status Filter */}
-            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-              {/* Search */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อ, รหัส หรือเหตุผล..."
-                  value={adjustmentSearch}
-                  onChange={(e) => {
-                    setAdjustmentSearch(e.target.value);
-                    setAdjustmentsPage(1);
-                  }}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-800 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                />
-              </div>
-
-              {/* Status Filter */}
-              <CustomSelect
-                value={filterAdjustmentStatus}
-                onChange={(val) => {
-                  setFilterAdjustmentStatus(String(val));
-                  setAdjustmentsPage(1);
-                }}
-                className="min-w-[170px]"
-                options={[
-                  { value: 'ALL', label: 'สถานะทั้งหมด' },
-                  { value: 'PENDING', label: 'รอพิจารณา' },
-                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                  { value: 'REJECTED', label: 'ไม่อนุมัติ' },
-                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
-                ]}
-              />
-
-              {/* Refresh Button */}
-              <button
-                onClick={() => {
-                  loadAdjustments();
-                  loadPendingCount();
-                }}
-                disabled={adjustmentsLoading}
-                className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 hover:bg-slate-100 border border-slate-200 rounded-xl transition disabled:opacity-50 cursor-pointer dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 dark:border-slate-700"
-                title="รีเฟรชข้อมูล"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${adjustmentsLoading ? 'animate-spin text-primary' : ''}`} />
-              </button>
-            </div>
-
-            {/* Right: Quick Stats */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
-              <span className="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                <span>รอพิจารณา: {pendingAdjustmentsCount} รายการ</span>
-              </span>
-              <span className="text-slate-400 dark:text-slate-500">|</span>
-              <span>ทั้งหมด {adjustmentsTotalCount} รายการ</span>
-            </div>
-          </div>
-
-          {/* Adjustments Table */}
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="table-standard w-full min-w-[950px] text-left border-collapse text-xs whitespace-nowrap">
-                <thead>
-                  <tr className="bg-primary text-white font-semibold whitespace-nowrap">
-                    <th className="py-3 px-4">วันที่ยื่น / รหัสคำขอ</th>
-                    <th className="py-3 px-4">พนักงาน</th>
-                    <th className="py-3 px-4">วันที่ทำงาน & กะงาน</th>
-                    <th className="py-3 px-4">เวลาที่ขอปรับ (เข้า - ออก)</th>
-                    <th className="py-3 px-4">เหตุผลในการขอปรับ</th>
-                    <th className="py-3 px-4">สถานะ</th>
-                    <th className="py-3 px-4">การพิจารณา</th>
-                    <th className="py-3 px-4 text-right">จัดการ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-medium dark:divide-slate-700/60">
-                  {adjustmentsLoading ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <RefreshCw className="w-6 h-6 animate-spin text-primary" />
-                          <span>กำลังโหลดรายการคำขอ...</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : adjustments.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <ClipboardCheck className="w-8 h-8 text-slate-300" />
-                          <p className="font-semibold text-slate-700 dark:text-slate-300">ไม่พบคำขอปรับปรุงเวลา</p>
-                          <p className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">ยังไม่มีคำขอปรับปรุงเวลาที่ตรงตามเงื่อนไขค้นหา</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    adjustments.map((adj) => (
-                      <tr key={adj.id} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
-                        {/* ID & Submitted At */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-900 dark:text-slate-100">REQ-{adj.id.toString().padStart(5, '0')}</div>
-                          <div className="text-2xs text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">{formatDateTimeThai(adj.createdAt)}</div>
-                        </td>
-
-                        {/* Employee */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-800 dark:text-slate-200">{adj.employeeName}</div>
-                          <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                            {adj.employeeCode} {adj.departmentName ? `• ${adj.departmentName}` : ''}
-                          </div>
-                        </td>
-
-                        {/* Work Date & Shift */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">{formatThaiDate(adj.workDate)}</div>
-                          <div className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{adj.shiftName || 'ไม่ระบุกะ'}</div>
-                        </td>
-
-                        {/* Adjusted Times (แสดงเทียบเดิม -> ปรับ) */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1 text-2xs font-medium">
-                            <div className="flex items-center gap-1.5">
-                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
-                                เข้า: {adj.originalClockIn ? formatTimeStr(adj.originalClockIn) : '-'}
-                              </span>
-                              <span className="text-slate-400">→</span>
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
-                                เข้า: {adj.adjustedClockIn ? formatTimeStr(adj.adjustedClockIn) : '-'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400">
-                                ออก: {adj.originalClockOut ? formatTimeStr(adj.originalClockOut) : '-'}
-                              </span>
-                              <span className="text-slate-400">→</span>
-                              <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-bold border border-purple-200 dark:bg-purple-900/20 dark:text-purple-400">
-                                ออก: {adj.adjustedClockOut ? formatTimeStr(adj.adjustedClockOut) : '-'}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        {/* Reason */}
-                        <td className="py-3.5 px-4 max-w-xs">
-                          <p className="text-xs text-slate-700 dark:text-slate-300 truncate dark:text-slate-300" title={adj.reason}>
-                            {adj.reason}
-                          </p>
-                        </td>
-
-                        {/* Status Badge */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {adj.status === 'PENDING' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              <span>รอพิจารณา</span>
-                            </span>
-                          )}
-                          {adj.status === 'APPROVED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400">
-                              <Check className="w-3 h-3 text-emerald-600" />
-                              <span>อนุมัติแล้ว</span>
-                            </span>
-                          )}
-                          {adj.status === 'REJECTED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-900/20 dark:text-rose-400">
-                              <X className="w-3 h-3 text-rose-600" />
-                              <span>ไม่อนุมัติ</span>
-                            </span>
-                          )}
-                          {adj.status === 'CANCELLED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:text-slate-400 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
-                              <span>ยกเลิกแล้ว</span>
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Reviewer / Review Note */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-2xs text-slate-500 dark:text-slate-400">
-                          {adj.reviewedAt ? (
-                            <div>
-                              <div className="font-semibold text-slate-700 dark:text-slate-300">{adj.reviewedByEmployeeName || 'ผู้ดูแลระบบ'}</div>
-                              <div className="text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">{formatDateTimeThai(adj.reviewedAt)}</div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          {adj.status === 'PENDING' ? (
-                            <div className="inline-flex items-center gap-1.5">
-                              <button
-                                onClick={() => handleOpenReviewModal(adj, 'APPROVED')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-xs cursor-pointer"
-                                title="อนุมัติคำขอ"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                                <span>อนุมัติ</span>
-                              </button>
-                              <button
-                                onClick={() => handleOpenReviewModal(adj, 'REJECTED')}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition cursor-pointer dark:bg-rose-900/20 dark:text-rose-400"
-                                title="ปฏิเสธคำขอ"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                                <span>ปฏิเสธ</span>
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-2xs text-slate-400 font-medium dark:text-slate-500 dark:text-slate-400">สิ้นสุดแล้ว</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination Footer */}
-            <div className="pt-2">
-              <TablePagination
-                total={adjustmentsTotalCount}
-                page={adjustmentsPage}
-                pageSize={adjustmentsPageSize}
-                onPageChange={setAdjustmentsPage}
-                onPageSizeChange={(newSize) => {
-                  setAdjustmentsPageSize(newSize);
-                  setAdjustmentsPage(1);
-                }}
-                pageSizeOptions={[10, 20, 50, 100, 200]}
               />
             </div>
           </div>
@@ -3216,125 +2840,6 @@ function DailyAttendanceContent() {
         </Modal>
       )}
 
-      {/* ------------------------------------------------------------- */}
-      {/* Modal: พิจารณาคำขอปรับปรุงเวลา (Approve / Reject)             */}
-      {/* ------------------------------------------------------------- */}
-      {reviewModalOpen && selectedAdjustmentForReview && (
-        <Modal
-          isOpen={reviewModalOpen}
-          onClose={() => {
-            setReviewModalOpen(false);
-            setSelectedAdjustmentForReview(null);
-          }}
-          title={reviewAction === 'APPROVED' ? 'ยืนยันอนุมัติคำขอปรับปรุงเวลา' : 'ยืนยันปฏิเสธคำขอปรับปรุงเวลา'}
-          subtitle={`คำขอ REQ-${selectedAdjustmentForReview.id.toString().padStart(5, '0')} • ${selectedAdjustmentForReview.employeeName}`}
-          footer={
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => {
-                  setReviewModalOpen(false);
-                  setSelectedAdjustmentForReview(null);
-                }}
-              >
-                ยกเลิก
-              </Button>
-              <Button
-                variant={reviewAction === 'APPROVED' ? 'primary' : 'danger'}
-                type="button"
-                loading={isSubmittingReview}
-                onClick={handleReviewSubmit}
-              >
-                {isSubmittingReview
-                  ? 'กำลังบันทึก...'
-                  : reviewAction === 'APPROVED'
-                  ? 'ยืนยันอนุมัติคำขอ'
-                  : 'ยืนยันปฏิเสธคำขอ'}
-              </Button>
-            </div>
-          }
-        >
-
-            {/* Request Summary Box */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/80 space-y-2.5 text-xs dark:bg-slate-950 dark:border-slate-700/80">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 dark:text-slate-400">พนักงาน:</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">
-                  {selectedAdjustmentForReview.employeeCode} - {selectedAdjustmentForReview.employeeName}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 dark:text-slate-400">วันที่ทำงาน:</span>
-                <span className="font-semibold text-slate-800 dark:text-slate-200">
-                  {formatThaiDate(selectedAdjustmentForReview.workDate)}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 dark:text-slate-400">เวลาเดิม:</span>
-                <span className="text-slate-600 dark:text-slate-400 font-medium dark:text-slate-400">
-                  {selectedAdjustmentForReview.originalClockIn
-                    ? formatTimeStr(selectedAdjustmentForReview.originalClockIn)
-                    : '-'}{' '}
-                  -{' '}
-                  {selectedAdjustmentForReview.originalClockOut
-                    ? formatTimeStr(selectedAdjustmentForReview.originalClockOut)
-                    : '-'}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-500 dark:text-slate-400">เวลาใหม่ที่ขอปรับ:</span>
-                <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400">
-                  {selectedAdjustmentForReview.adjustedClockIn
-                    ? formatTimeStr(selectedAdjustmentForReview.adjustedClockIn)
-                    : '-'}{' '}
-                  -{' '}
-                  {selectedAdjustmentForReview.adjustedClockOut
-                    ? formatTimeStr(selectedAdjustmentForReview.adjustedClockOut)
-                    : '-'}
-                </span>
-              </div>
-              <div className="pt-2 border-t border-slate-200/60">
-                <span className="text-slate-500 dark:text-slate-400 block mb-1 dark:text-slate-400">เหตุผลที่ยื่น:</span>
-                <p className="text-slate-800 dark:text-slate-200 bg-white p-2.5 rounded-lg border border-slate-200 text-xs italic dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200">
-                  &ldquo;{selectedAdjustmentForReview.reason}&rdquo;
-                </p>
-              </div>
-            </div>
-
-            {/* Review Note */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                หมายเหตุ / คำชี้แจงจากผู้อนุมัติ (Optional)
-              </label>
-              <textarea
-                rows={2}
-                value={reviewNote}
-                onChange={(e) => setReviewNote(e.target.value)}
-                placeholder="ระบุข้อความหรือบันทึกเพิ่มเติมประกอบการพิจารณา..."
-                className={inputClass}
-              />
-            </div>
-
-            {/* Warning / Notice Box */}
-            {reviewAction === 'APPROVED' ? (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  เมื่ออนุมัติแล้ว ระบบจะบันทึกเวลาใหม่ลงในตารางบันทึกเวลาประจำวัน และคำนวณชั่วโมงทำงาน นาทีสาย ออกก่อนเวลา และสถานะการเข้างานใหม่อัตโนมัติทันที
-                </p>
-              </div>
-            ) : (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                <p className="leading-relaxed">
-                  คำขอนี้จะถูกปฏิเสธ และเวลาทำงานเดิมของพนักงานในระบบจะไม่ถูกเปลี่ยนแปลง
-                </p>
-              </div>
-            )}
-
-        </Modal>
-      )}
 
       {/* Modal: ยืนยันการนำเข้าไฟล์เดือน/ปีที่ซ้ำซ้อน (เลือกใช้ไฟล์ใหม่หรือไฟล์เก่า) */}
       {overlapModalOpen && overlapData && (
