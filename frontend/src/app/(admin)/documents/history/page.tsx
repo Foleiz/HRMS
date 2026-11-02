@@ -48,6 +48,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
+import { openBlobInNewTab } from '@/lib/filePreview';
 import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 import { ApprovalReviewModal, type ReviewResult } from '@/components/approvals/ApprovalReviewModal';
 import { useLeaveDecisionData, LeaveDecisionInsightsPanel } from '@/components/approvals/LeaveDecisionInsights';
@@ -633,6 +634,27 @@ export default function DocumentHistoryPage() {
     });
   };
 
+  const handleViewAttachment = async (doc: MyDocumentRow, docId?: number, fileName?: string) => {
+    const targetDoc = doc.documents?.[0];
+    const targetId = docId ?? targetDoc?.id ?? 0;
+    const targetName = fileName ?? targetDoc?.fileName ?? 'attachment';
+
+    await openBlobInNewTab(
+      async () => {
+        const blob =
+          doc.source === 'LEAVE' && doc.rawLeave
+            ? await leaveService.downloadLeaveDocument(doc.rawLeave.id, targetId)
+            : doc.source === 'GENERAL' && doc.rawGeneral
+              ? await generalDocumentService.downloadAttachment(doc.rawGeneral.id)
+              : null;
+        if (!blob) throw new Error('ไม่พบไฟล์แนบ');
+        return blob;
+      },
+      targetName,
+      (errMsg) => showToast(errMsg)
+    );
+  };
+
   const handleDownloadDoc = async (doc: MyDocumentRow, docId: number, fileName: string) => {
     try {
       const blob =
@@ -772,22 +794,17 @@ export default function DocumentHistoryPage() {
         onClick: () => setDetailDoc(doc),
       },
       {
-        label: 'ดูเอกสาร',
-        icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
-        onClick: () => handleOpenDocumentPreview(doc),
+        label: 'ดูไฟล์แนบ',
+        icon: <Paperclip className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+        disabled: !hasAttachments,
+        onClick: () => {
+          if (!hasAttachments) {
+            showToast('ยังไม่มีไฟล์แนบในเอกสารนี้');
+            return;
+          }
+          handleViewAttachment(doc);
+        },
       },
-      ...(doc.rawLeave?.documentStatus
-        ? [
-            {
-              label: 'แนบเอกสารเพิ่ม',
-              icon: <Paperclip className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />,
-              onClick: () => {
-                setUploadDoc(doc);
-                setUploadFile(null);
-              },
-            },
-          ]
-        : []),
     ];
 
     if (hasEdit && doc.editUrl) {
@@ -1009,6 +1026,7 @@ export default function DocumentHistoryPage() {
                   <tbody className="divide-y divide-gray-50">
                     {pagedDocuments.map((doc) => {
                       const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                      const hasAttachments = !!doc.documents && doc.documents.length > 0;
                       return (
                         <tr key={doc.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
                           <td className="px-5 py-4 font-medium whitespace-nowrap">
@@ -1040,8 +1058,22 @@ export default function DocumentHistoryPage() {
                               {statusConf.icon}
                               {statusConf.label}
                             </span>
-                            <div>
-                              <DocumentDueBadge leave={doc.rawLeave} />
+                            <div className="mt-1">
+                              <DocumentDueBadge
+                                leave={doc.rawLeave}
+                                hasAttachments={hasAttachments}
+                                onClick={
+                                  hasAttachments
+                                    ? () => handleViewAttachment(doc)
+                                    : doc.rawLeave?.documentStatus
+                                      ? () => {
+                                          setUploadDoc(doc);
+                                          setUploadFile(null);
+                                        }
+                                      : undefined
+                                }
+                                className=""
+                              />
                             </div>
                           </td>
                           <td className="px-5 py-4 text-right">
@@ -1065,6 +1097,7 @@ export default function DocumentHistoryPage() {
               <div className="md:hidden divide-y divide-gray-100">
                 {pagedDocuments.map((doc) => {
                   const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                  const hasAttachments = !!doc.documents && doc.documents.length > 0;
                   return (
                     <div key={doc.id} className="p-4 space-y-3">
                       <div className="flex items-start justify-between gap-2">
@@ -1086,7 +1119,21 @@ export default function DocumentHistoryPage() {
                             {statusConf.icon}
                             {statusConf.label}
                           </span>
-                          <DocumentDueBadge leave={doc.rawLeave} className="" />
+                          <DocumentDueBadge
+                            leave={doc.rawLeave}
+                            hasAttachments={hasAttachments}
+                            onClick={
+                              hasAttachments
+                                ? () => handleViewAttachment(doc)
+                                : doc.rawLeave?.documentStatus
+                                  ? () => {
+                                      setUploadDoc(doc);
+                                      setUploadFile(null);
+                                    }
+                                  : undefined
+                            }
+                            className=""
+                          />
                         </div>
                       </div>
 
