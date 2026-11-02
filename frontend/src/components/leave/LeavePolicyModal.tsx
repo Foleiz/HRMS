@@ -280,7 +280,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">{isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">กำหนดว่าใครได้ลาประเภทนี้กี่วัน และมีเงื่อนไขอะไร — ระบบบังคับใช้ตอนยื่นลาจริง</p>
           </div>
           <button onClick={onClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
