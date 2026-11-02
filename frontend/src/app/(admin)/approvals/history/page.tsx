@@ -51,6 +51,7 @@ import {
   TimeAdjustReviewInfo,
 } from '@/components/approvals/ReviewInfoPanels';
 import { openBlobInNewTab } from '@/lib/filePreview';
+import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
 import { ApprovalActionModal } from '@/components/approvals/ApprovalActionModal';
@@ -787,6 +788,9 @@ export default function ApprovalHistoryPage() {
                           {statusConf.icon}
                           {statusConf.label}
                         </span>
+                        <div>
+                          <DocumentDueBadge leave={item.leaveRaw} />
+                        </div>
                       </td>
 
                       {/* 8. การจัดการ — เมนูจุดสามจุด */}

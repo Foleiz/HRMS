@@ -43,6 +43,7 @@ interface PolicyForm {
   maxLifetimeOccurrences: NumInput;
   isDocumentRequired: boolean;
   documentRequiredAfterDays: NumInput;
+  documentGraceDays: NumInput;
   isCarryForwardAllowed: boolean;
   carryForwardMaxDays: NumInput;
   carryForwardExpiryMonths: NumInput;
@@ -54,28 +55,28 @@ const TEMPLATES: Record<LeaveFormCategory, PolicyForm> = {
     entitlementDays: 30, prorationMethod: 'FULL', minimumServiceDays: 0,
     advanceRequestDays: 0,
     maxLifetimeOccurrences: '',
-    isDocumentRequired: true, documentRequiredAfterDays: 3,
+    isDocumentRequired: true, documentRequiredAfterDays: 3, documentGraceDays: 7,
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   PERSONAL: {
     entitlementDays: 3, prorationMethod: 'FULL', minimumServiceDays: 0,
     advanceRequestDays: 1,
     maxLifetimeOccurrences: '',
-    isDocumentRequired: false, documentRequiredAfterDays: '',
+    isDocumentRequired: false, documentRequiredAfterDays: '', documentGraceDays: '',
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   VACATION: {
     entitlementDays: 6, prorationMethod: 'PRORATA_MONTHLY', minimumServiceDays: 365,
     advanceRequestDays: 7,
     maxLifetimeOccurrences: '',
-    isDocumentRequired: false, documentRequiredAfterDays: '',
+    isDocumentRequired: false, documentRequiredAfterDays: '', documentGraceDays: '',
     isCarryForwardAllowed: true, carryForwardMaxDays: 6, carryForwardExpiryMonths: 3,
   },
   SPECIAL: {
     entitlementDays: 0, prorationMethod: 'FULL', minimumServiceDays: 0,
     advanceRequestDays: 7,
     maxLifetimeOccurrences: '',
-    isDocumentRequired: true, documentRequiredAfterDays: '',
+    isDocumentRequired: true, documentRequiredAfterDays: '', documentGraceDays: 7,
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
 };
@@ -96,6 +97,7 @@ const policyToForm = (p: LeavePolicy): PolicyForm => ({
   maxLifetimeOccurrences: fromNum(p.maxLifetimeOccurrences),
   isDocumentRequired: p.isDocumentRequired,
   documentRequiredAfterDays: p.documentRequiredAfterDays ? p.documentRequiredAfterDays : '',
+  documentGraceDays: p.documentGraceDays ? p.documentGraceDays : '',
   isCarryForwardAllowed: p.isCarryForwardAllowed,
   carryForwardMaxDays: fromNum(p.carryForwardMaxDays ?? (p.isCarryForwardAllowed ? p.carryForwardMaxMonths : null)),
   carryForwardExpiryMonths: fromNum(p.carryForwardExpiryMonths),
@@ -233,7 +235,10 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
     parts.push(Number(form.advanceRequestDays) > 0 ? `ต้องยื่นล่วงหน้า ${form.advanceRequestDays} วัน` : 'ยื่นวันเดียวกันได้');
     if (form.maxLifetimeOccurrences !== '') parts.push(`ไม่เกิน ${form.maxLifetimeOccurrences} ครั้งตลอดอายุงาน`);
     if (form.isDocumentRequired)
-      parts.push(Number(form.documentRequiredAfterDays) > 0 ? `แนบเอกสารเมื่อลา ${form.documentRequiredAfterDays} วันขึ้นไป` : 'แนบเอกสารทุกครั้ง');
+      parts.push(
+        (Number(form.documentRequiredAfterDays) > 0 ? `แนบเอกสารเมื่อลา ${form.documentRequiredAfterDays} วันขึ้นไป` : 'แนบเอกสารทุกครั้ง') +
+          (Number(form.documentGraceDays) > 0 ? ` (แนบภายหลังได้ภายใน ${form.documentGraceDays} วัน)` : ' (ต้องแนบตอนยื่น)')
+      );
     if (form.isCarryForwardAllowed)
       parts.push(
         `ยกยอดไปปีถัดไปได้สูงสุด ${form.carryForwardMaxDays === '' ? form.entitlementDays || 0 : form.carryForwardMaxDays} วัน` +
@@ -274,6 +279,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         maxLifetimeOccurrences: toNum(form.maxLifetimeOccurrences),
         isDocumentRequired: form.isDocumentRequired,
         documentRequiredAfterDays: form.isDocumentRequired ? toNum(form.documentRequiredAfterDays) : null,
+        documentGraceDays: form.isDocumentRequired && Number(form.documentGraceDays) > 0 ? toNum(form.documentGraceDays) : null,
         isCarryForwardAllowed: form.isCarryForwardAllowed,
         carryForwardMaxDays: form.isCarryForwardAllowed ? toNum(form.carryForwardMaxDays) : null,
         carryForwardExpiryMonths: form.isCarryForwardAllowed ? toNum(form.carryForwardExpiryMonths) : null,
@@ -390,11 +396,18 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 <Toggle checked={form.isDocumentRequired} onChange={(v) => set('isDocumentRequired', v)} />
               </div>
               {form.isDocumentRequired && (
-                <Field label="เมื่อลาตั้งแต่" hint="เว้นว่าง = ต้องแนบทุกครั้ง">
-                  <div className="w-44">
-                    <NumberBox value={form.documentRequiredAfterDays} onChange={(v) => set('documentRequiredAfterDays', v)} unit="วันขึ้นไป" step="0.5" placeholder="ทุกครั้ง" />
-                  </div>
-                </Field>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Field label="เมื่อลาตั้งแต่" hint="เว้นว่าง = ต้องแนบทุกครั้ง">
+                    <div className="w-44">
+                      <NumberBox value={form.documentRequiredAfterDays} onChange={(v) => set('documentRequiredAfterDays', v)} unit="วันขึ้นไป" step="0.5" placeholder="ทุกครั้ง" />
+                    </div>
+                  </Field>
+                  <Field label="แนบภายหลังได้ภายใน" hint="นับจากวันสุดท้ายที่ลา · เว้นว่าง = ต้องแนบตอนยื่น">
+                    <div className="w-44">
+                      <NumberBox value={form.documentGraceDays} onChange={(v) => set('documentGraceDays', v)} unit="วัน" placeholder="ตอนยื่น" />
+                    </div>
+                  </Field>
+                </div>
               )}
             </div>
           </Section>

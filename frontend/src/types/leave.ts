@@ -74,6 +74,8 @@ export interface LeavePolicy {
   carryForwardMaxDays?: number | null;
   /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
   maxBackdateDays?: number | null;
+  /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
+  documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
 }
 
@@ -99,6 +101,8 @@ export interface CreateLeavePolicyPayload {
   carryForwardMaxDays?: number | null;
   /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
   maxBackdateDays?: number | null;
+  /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
+  documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
 }
 
@@ -123,6 +127,8 @@ export interface UpdateLeavePolicyPayload {
   carryForwardMaxDays?: number | null;
   /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
   maxBackdateDays?: number | null;
+  /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
+  documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
 }
 
@@ -237,6 +243,10 @@ export interface LeaveRequest {
   currentApproverDisplay?: string | null;
   isMyTurnToApprove?: boolean;
   hasAlreadyApproved?: boolean;
+  /** กำหนดแนบเอกสารภายหลัง (YYYY-MM-DD) */
+  documentDueDate?: string | null;
+  /** AWAITING = รอเอกสาร, OVERDUE = เกินกำหนดแนบ */
+  documentStatus?: 'AWAITING' | 'OVERDUE' | null;
   documents?: {
     id: number;
     leaveRequestId: number;
@@ -343,4 +353,6 @@ export interface LeaveValidationResult {
   errors: string[];
   requiresDocument: boolean;
   policySummary?: string | null;
+  /** ยังไม่แนบ แต่แนบภายหลังได้ถึงวันนี้ (YYYY-MM-DD) */
+  documentDueDate?: string | null;
 }

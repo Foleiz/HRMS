@@ -29,6 +29,8 @@ public class LeavePolicy : BaseEntity
     public decimal? CarryForwardMaxDays { get; set; }
     /// <summary>ยื่นลาย้อนหลังได้ไม่เกินกี่วัน (null = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง)</summary>
     public int? MaxBackdateDays { get; set; }
+    /// <summary>แนบเอกสารภายหลังได้ภายในกี่วัน (null/0 = ต้องแนบตอนยื่น) — นับจากวันสุดท้ายที่ลาหรือวันที่ยื่น แล้วแต่อันไหนช้ากว่า</summary>
+    public int? DocumentGraceDays { get; set; }
     /// <summary>วิธีคิดสิทธิ์ปีแรกของพนักงานใหม่: FULL (เต็มปี) หรือ PRORATA_MONTHLY (ตามสัดส่วนเดือนที่เหลือ)</summary>
     public string ProrationMethod { get; set; } = "FULL";
 

@@ -22,6 +22,8 @@ public class LeaveRequest : BaseEntity
     public DateTime? CancelledAt { get; set; }
     public string? CancelReason { get; set; }
     public long? ApprovalInstanceId { get; set; }
+    /// <summary>กำหนดแนบเอกสารภายหลัง (null = ไม่มีค้างแนบ)</summary>
+    public DateOnly? DocumentDueDate { get; set; }
 
     // Navigation Properties
     public virtual Employee? Employee { get; set; }

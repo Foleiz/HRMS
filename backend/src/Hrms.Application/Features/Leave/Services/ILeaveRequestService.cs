@@ -45,6 +45,9 @@ public interface ILeaveRequestService
     /// </summary>
     Task<LeaveRequestDto> CancelAsync(long id, string? reason = null, long? cancelledBy = null, bool revertToDraftIfPending = false, CancellationToken cancellationToken = default);
 
+    /// <summary>[ESS] แนบเอกสารเพิ่มให้คำขอลาของตนเอง (รออนุมัติ / อนุมัติแล้ว)</summary>
+    Task<LeaveRequestDto> AddMyDocumentAsync(long id, long employeeId, string? fileName, byte[]? fileData, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// ดึงไฟล์เอกสารแนบ (เช่น ใบรับรองแพทย์) ของคำร้องขอลาตามรหัสเอกสาร
     /// </summary>

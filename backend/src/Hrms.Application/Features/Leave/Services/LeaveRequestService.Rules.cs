@@ -152,7 +152,13 @@ public partial class LeaveRequestService
         // 6) เอกสารแนบ
         var docAfter = policy.DocumentRequiredAfterDays ?? 0m;
         result.RequiresDocument = policy.IsDocumentRequired && (docAfter <= 0 || calc.LeaveDays >= docAfter);
-        if (result.RequiresDocument && !hasAttachment)
+        if (result.RequiresDocument && !hasAttachment && policy.DocumentGraceDays is > 0)
+        {
+            // แนบภายหลังได้ — นับจากวันสุดท้ายที่ลาหรือวันนี้ แล้วแต่อันไหนช้ากว่า
+            var baseDate = endDate > today ? endDate : today;
+            result.DocumentDueDate = baseDate.AddDays(policy.DocumentGraceDays.Value);
+        }
+        else if (result.RequiresDocument && !hasAttachment)
         {
             result.Errors.Add(docAfter > 0
                 ? $"ลาตั้งแต่ {Days(docAfter)} วันขึ้นไป ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)"
@@ -163,7 +169,7 @@ public partial class LeaveRequestService
     }
 
     /// <summary>ตรวจกฎก่อนยื่นจริง — ไม่ผ่านจะแจ้งทุกข้อพร้อมกัน</summary>
-    private async Task EnsureLeaveRulesAsync(
+    private async Task<LeaveValidationResultDto> EnsureLeaveRulesAsync(
         long employeeId, long leaveTypeId, DateTime start, DateTime end, decimal requestedDays,
         bool hasAttachment, long? excludeRequestId, CancellationToken cancellationToken)
     {
@@ -171,6 +177,7 @@ public partial class LeaveRequestService
             employeeId, leaveTypeId, start, end, requestedDays, hasAttachment, excludeRequestId, cancellationToken);
         if (!validation.IsValid)
             throw new InvalidOperationException(string.Join("\n", validation.Errors));
+        return validation;
     }
 
     /// <summary>สรุปนโยบายเป็นประโยคอ่านง่าย</summary>
@@ -181,7 +188,8 @@ public partial class LeaveRequestService
         parts.Add(p.AdvanceRequestDays > 0 ? $"ยื่นล่วงหน้า {p.AdvanceRequestDays} วัน" : "ยื่นวันเดียวกันได้");
         if (p.MaxLifetimeOccurrences.HasValue) parts.Add($"ไม่เกิน {p.MaxLifetimeOccurrences.Value} ครั้งตลอดอายุงาน");
         if (p.IsDocumentRequired)
-            parts.Add(p.DocumentRequiredAfterDays is > 0 ? $"แนบเอกสารเมื่อลา {Days(p.DocumentRequiredAfterDays.Value)} วันขึ้นไป" : "แนบเอกสารทุกครั้ง");
+            parts.Add((p.DocumentRequiredAfterDays is > 0 ? $"แนบเอกสารเมื่อลา {Days(p.DocumentRequiredAfterDays.Value)} วันขึ้นไป" : "แนบเอกสารทุกครั้ง")
+                + (p.DocumentGraceDays is > 0 ? $" (แนบภายหลังได้ภายใน {p.DocumentGraceDays} วัน)" : ""));
         return string.Join(" · ", parts);
     }
 }

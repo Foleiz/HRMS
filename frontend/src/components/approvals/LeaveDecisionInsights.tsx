@@ -6,6 +6,7 @@ import { leaveService } from '@/services/leaveService';
 import { LeaveBalance, LeaveRequest } from '@/types/leave';
 import { useAuth } from '@/context/AuthContext';
 import { RequestSummaryCard } from '@/components/approvals/ReviewInfoPanels';
+import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -304,7 +305,9 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false, app
           },
           ...(request.documents && request.documents.length > 0
             ? [{ label: 'เอกสารแนบ', value: `${request.documents.length} ไฟล์` }]
-            : []),
+            : request.documentStatus
+              ? [{ label: 'เอกสารแนบ', value: <DocumentDueBadge leave={request} className="" /> }]
+              : []),
         ]}
         noteLabel="เหตุผลการลา"
         note={request.reason}
