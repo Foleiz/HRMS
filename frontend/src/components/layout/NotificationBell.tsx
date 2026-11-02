@@ -1,37 +1,104 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Bell,
   CheckCheck,
+  Settings,
+  AlertTriangle,
   CalendarCheck,
-  CheckCircle2,
-  Megaphone,
-  CreditCard,
+  PlusSquare,
   Clock,
-  ChevronRight,
-  Loader2,
-  Inbox,
+  CreditCard,
+  FileText,
   AlertCircle,
-  FileClock,
-  UserCheck,
+  Inbox,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { NotificationItem } from '@/types/notification';
 import { useAuth } from '@/context/AuthContext';
 import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
+type TabKey = 'ALL' | 'QUEUE' | 'UNREAD' | 'OTHER';
+
+function formatNotificationDate(dateStr: string, fallbackTimeAgo?: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return fallbackTimeAgo || dateStr;
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${month} ${year} ${hours}:${mins}`;
+  } catch {
+    return fallbackTimeAgo || dateStr;
+  }
+}
+
 export const NotificationBell: React.FC = () => {
   const router = useRouter();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const { shouldRender: shouldRenderNotifications, isActive: isNotificationsActive } = useAnimatedMount(isOpen, 150);
+  const { shouldRender: shouldRenderNotifications, isActive: isNotificationsActive } =
+    useAnimatedMount(isOpen, 150);
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('ALL');
+
+  // Settings popover
+  const [showSettings, setShowSettings] = useState(false);
+  const [muteWeb, setMuteWeb] = useState(false);
+  const [muteSound, setMuteSound] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
+  // Load preferences from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setMuteWeb(localStorage.getItem('hrms_mute_web_notif') === 'true');
+      setMuteSound(localStorage.getItem('hrms_mute_sound_notif') === 'true');
+    }
+  }, []);
+
+  const toggleMuteWeb = () => {
+    const val = !muteWeb;
+    setMuteWeb(val);
+    localStorage.setItem('hrms_mute_web_notif', String(val));
+  };
+
+  const toggleMuteSound = () => {
+    const val = !muteSound;
+    setMuteSound(val);
+    localStorage.setItem('hrms_mute_sound_notif', String(val));
+  };
+
+  const handleRequestBrowserPermission = async () => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          new Notification('เปิดการแจ้งเตือนสำเร็จ', {
+            body: 'ระบบ HRMS จะส่งการแจ้งเตือนผ่านบราวเซอร์ให้คุณเมื่อมีกิจกรรมใหม่',
+            icon: '/syaco-logo.png',
+          });
+        }
+      } catch (e) {
+        console.warn('Browser notification permission error:', e);
+      }
+    }
+  };
 
   // Fetch summary
   const fetchSummary = useCallback(async () => {
@@ -52,11 +119,16 @@ export const NotificationBell: React.FC = () => {
     return () => clearInterval(interval);
   }, [fetchSummary]);
 
-  // Close when clicking outside
+  // Close dropdown or settings when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (settingsRef.current && !settingsRef.current.contains(target)) {
+        setShowSettings(false);
+      }
+      if (dropdownRef.current && !dropdownRef.current.contains(target)) {
         setIsOpen(false);
+        setShowSettings(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -81,6 +153,7 @@ export const NotificationBell: React.FC = () => {
   // Handle item click
   const handleItemClick = async (item: NotificationItem) => {
     setIsOpen(false);
+    setShowSettings(false);
 
     if (!item.isRead) {
       try {
@@ -99,44 +172,135 @@ export const NotificationBell: React.FC = () => {
     }
   };
 
-  // Icon based on type
-  const getIcon = (type: string) => {
-    const t = type.toUpperCase();
-    if (t.includes('LEAVE')) {
-      return <CalendarCheck className="w-4 h-4 text-blue-600" />;
+  // Filtered notifications by active tab
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === 'ALL') return notifications;
+    if (activeTab === 'UNREAD') return notifications.filter((n) => !n.isRead);
+
+    if (activeTab === 'QUEUE') {
+      return notifications.filter((n) => {
+        const t = (n.notificationType || '').toUpperCase();
+        const text = (n.title + ' ' + (n.message || '')).toLowerCase();
+        return (
+          t.includes('APPROVAL') ||
+          t.includes('LEAVE') ||
+          t.includes('TIME') ||
+          text.includes('อนุมัติ') ||
+          text.includes('คำขอ') ||
+          text.includes('รอ')
+        );
+      });
     }
-    if (t.includes('APPROVAL')) {
-      return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
+
+    // OTHER
+    return notifications.filter((n) => {
+      const t = (n.notificationType || '').toUpperCase();
+      return (
+        t.includes('ANNOUNCEMENT') ||
+        t.includes('PAYROLL') ||
+        t.includes('GENERAL') ||
+        t.includes('DOCUMENT') ||
+        t.includes('PROBATION') ||
+        t.includes('CONTRACT')
+      );
+    });
+  }, [notifications, activeTab]);
+
+  // Group notifications by date (วันนี้ / เมื่อวาน / ก่อนหน้านี้)
+  const groupedNotifications = useMemo(() => {
+    if (filteredNotifications.length === 0) return [];
+
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const isSameDay = (d1: Date, d2: Date) =>
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
+
+    const todayItems: NotificationItem[] = [];
+    const yesterdayItems: NotificationItem[] = [];
+    const earlierItems: NotificationItem[] = [];
+
+    for (const item of filteredNotifications) {
+      const d = new Date(item.createdAt);
+      if (isNaN(d.getTime())) {
+        earlierItems.push(item);
+      } else if (isSameDay(d, today)) {
+        todayItems.push(item);
+      } else if (isSameDay(d, yesterday)) {
+        yesterdayItems.push(item);
+      } else {
+        earlierItems.push(item);
+      }
     }
-    if (t.includes('ANNOUNCEMENT')) {
-      return <Megaphone className="w-4 h-4 text-amber-600" />;
+
+    const groups: { title: string; items: NotificationItem[] }[] = [];
+    if (todayItems.length > 0) groups.push({ title: 'วันนี้', items: todayItems });
+    if (yesterdayItems.length > 0) groups.push({ title: 'เมื่อวาน', items: yesterdayItems });
+    if (earlierItems.length > 0) {
+      groups.push({
+        title: groups.length === 0 ? 'วันนี้' : 'ก่อนหน้านี้',
+        items: earlierItems,
+      });
     }
-    if (t.includes('PAYROLL')) {
-      return <CreditCard className="w-4 h-4 text-indigo-600" />;
+
+    return groups;
+  }, [filteredNotifications]);
+
+  // Item styling helper (Matches reference screenshot color themes)
+  const getItemTheme = (item: NotificationItem) => {
+    const t = (item.notificationType || '').toUpperCase();
+    const text = (item.title + ' ' + (item.message || '')).toLowerCase();
+
+    // 1. Warning / Alert Theme (e.g. Stock low, Expiry, Urgent Alert)
+    if (
+      t.includes('ANNOUNCEMENT') ||
+      t.includes('DOCUMENT') ||
+      t.includes('PROBATION') ||
+      text.includes('หมด') ||
+      text.includes('ด่วน') ||
+      text.includes('เตือน') ||
+      text.includes('สำคัญ')
+    ) {
+      return {
+        bg: 'bg-[#FFFDF5] dark:bg-amber-950/20 hover:bg-[#FFF9E6] dark:hover:bg-amber-950/30',
+        icon: <AlertTriangle className="w-4 h-4 text-[#D97706] shrink-0" />,
+        titleColor: 'text-[#D97706] dark:text-amber-400',
+      };
     }
-    if (t.includes('TIME') || t.includes('ATTENDANCE')) {
-      return <Clock className="w-4 h-4 text-purple-600" />;
+
+    // 2. Check-in / Attendance / Activity Blue Theme
+    if (
+      t.includes('ATTENDANCE') ||
+      t.includes('TIME') ||
+      text.includes('เช็คอิน') ||
+      text.includes('ลงเวลา') ||
+      text.includes('มาทำงาน')
+    ) {
+      return {
+        bg: 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750',
+        icon: <CalendarCheck className="w-4 h-4 text-[#0284C7] shrink-0" />,
+        titleColor: 'text-[#0284C7] dark:text-sky-400',
+      };
     }
-    if (t.includes('DOCUMENT_EXPIRY')) {
-      return <FileClock className="w-4 h-4 text-orange-600" />;
-    }
-    if (t.includes('PROBATION') || t.includes('CONTRACT')) {
-      return <UserCheck className="w-4 h-4 text-teal-600" />;
-    }
-    return <AlertCircle className="w-4 h-4 text-slate-600 dark:text-slate-400" />;
+
+    // 3. New Booking / Request / Approval / Financial Purple Theme
+    return {
+      bg: 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750',
+      icon: <PlusSquare className="w-4 h-4 text-[#6D28D9] dark:text-purple-400 shrink-0" />,
+      titleColor: 'text-[#6D28D9] dark:text-purple-300',
+    };
   };
 
-  const getBgColor = (type: string) => {
-    const t = type.toUpperCase();
-    if (t.includes('LEAVE')) return 'bg-blue-50 dark:bg-blue-900/20';
-    if (t.includes('APPROVAL')) return 'bg-emerald-50';
-    if (t.includes('ANNOUNCEMENT')) return 'bg-amber-50 dark:bg-amber-900/20';
-    if (t.includes('PAYROLL')) return 'bg-indigo-50';
-    if (t.includes('TIME') || t.includes('ATTENDANCE')) return 'bg-purple-50';
-    if (t.includes('DOCUMENT_EXPIRY')) return 'bg-orange-50';
-    if (t.includes('PROBATION') || t.includes('CONTRACT')) return 'bg-teal-50';
-    return 'bg-slate-100 dark:bg-slate-800';
+  const handleViewAll = () => {
+    setIsOpen(false);
+    setShowSettings(false);
+    router.push('/announcements');
   };
+
+  const badgeText = unreadCount > 50 ? '50+' : unreadCount > 0 ? String(unreadCount) : '0';
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -146,121 +310,242 @@ export const NotificationBell: React.FC = () => {
         title="การแจ้งเตือน"
         onClick={() => {
           setIsOpen(!isOpen);
+          setShowSettings(false);
           if (!isOpen) fetchSummary();
         }}
-        className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 dark:hover:text-slate-100 dark:text-slate-100 flex items-center justify-center transition-colors relative cursor-pointer"
+        className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition-colors relative cursor-pointer"
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white">
-            {unreadCount > 9 ? '9+' : unreadCount}
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#6D28D9] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-800">
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Notifications Dropdown Popover */}
+      {/* Notifications Popover Dropdown */}
       {shouldRenderNotifications && (
         <div
-          className={`absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1rem)] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl py-2 z-50 origin-top-right transition-all duration-150 ease-out overflow-hidden ${
+          className={`absolute right-0 mt-2.5 w-[360px] sm:w-[440px] max-w-[calc(100vw-1rem)] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl z-50 origin-top-right transition-all duration-150 ease-out overflow-visible font-sans ${
             isNotificationsActive
               ? 'opacity-100 scale-100 translate-y-0'
               : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
           }`}
         >
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+          {/* Top Pointer Arrow */}
+          <div className="absolute -top-1.5 right-3 w-3 h-3 bg-white dark:bg-slate-900 border-t border-l border-slate-200/90 dark:border-slate-800 rotate-45 z-10" />
+
+          {/* 1. Header Bar */}
+          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 relative z-20">
+            {/* Title & Badge */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-900 dark:text-slate-100">การแจ้งเตือน</span>
-              {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
-                  {unreadCount} รายการใหม่
-                </span>
-              )}
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                แจ้งเตือน
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#EDE9FE] dark:bg-purple-950/70 text-[#6D28D9] dark:text-purple-300">
+                {badgeText}
+              </span>
             </div>
 
-            {unreadCount > 0 && (
+            {/* Actions: Mark all as read & Settings Cog */}
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                disabled={markingAll}
+                disabled={unreadCount === 0 || markingAll}
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-[#6D28D9] dark:hover:text-purple-400 underline underline-offset-2 transition-colors cursor-pointer disabled:opacity-40 disabled:no-underline"
               >
                 {markingAll ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <CheckCheck className="w-3.5 h-3.5" />
                 )}
-                <span>อ่านทั้งหมด</span>
+                <span>ทำเครื่องหมายอ่านแล้วทั้งหมด</span>
               </button>
-            )}
+
+              <button
+                type="button"
+                title="ตั้งค่าการแจ้งเตือน"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSettings((prev) => !prev);
+                }}
+                className={`p-1 rounded-lg transition-all cursor-pointer ${
+                  showSettings
+                    ? 'text-[#6D28D9] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50'
+                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          {/* List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
-            {loading ? (
-              <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 dark:text-slate-400 text-xs">
-                <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                <span>กำลังโหลดการแจ้งเตือน...</span>
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="py-12 px-4 text-center">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 dark:text-slate-400 flex items-center justify-center mx-auto mb-2">
-                  <Inbox className="w-5 h-5 stroke-[1.5]" />
-                </div>
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">ไม่มีการแจ้งเตือนในขณะนี้</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">คุณจะได้รับการแจ้งเตือนเมื่อมีคำขอหรือข่าวสารใหม่</p>
-              </div>
-            ) : (
-              notifications.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleItemClick(item)}
-                  className={`p-3.5 hover:bg-slate-50/90 transition-colors cursor-pointer flex gap-3 items-start relative group ${
-                    !item.isRead ? 'bg-blue-50 dark:bg-blue-900/20/30' : ''
+          {/* Settings Floating Sub-menu */}
+          {showSettings && (
+            <div
+              ref={settingsRef}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute top-14 right-4 z-40 w-72 bg-white dark:bg-slate-800 border border-purple-200/90 dark:border-purple-800/80 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
+            >
+              {/* Header Action Banner */}
+              <button
+                type="button"
+                onClick={handleRequestBrowserPermission}
+                className="w-full py-2 px-3 rounded-xl bg-[#6D28D9] hover:bg-[#5B21B6] text-white font-bold text-xs text-center transition-colors shadow-xs cursor-pointer"
+              >
+                เปิดการแจ้งเตือน
+              </button>
+
+              {/* Option 1: Mute Website Notifications */}
+              <div className="p-2.5 rounded-xl border border-purple-300 dark:border-purple-700/70 bg-purple-50/20 dark:bg-purple-950/20 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  ปิดการแจ้งเตือนเว็บไซต์
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleMuteWeb}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
+                    muteWeb ? 'bg-[#6D28D9]' : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 >
-                  {/* Unread indicator dot */}
-                  {!item.isRead && (
-                    <span className="absolute top-4 left-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 ring-2 ring-white" />
-                  )}
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                      muteWeb ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
 
-                  {/* Icon */}
-                  <div className={`w-8 h-8 rounded-xl ${getBgColor(item.notificationType)} flex items-center justify-center shrink-0 mt-0.5`}>
-                    {getIcon(item.notificationType)}
+              {/* Option 2: Mute Sound */}
+              <div className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  ปิดเสียงการแจ้งเตือน
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleMuteSound}
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
+                    muteSound ? 'bg-[#6D28D9]' : 'bg-slate-300 dark:bg-slate-600'
+                  }`}
+                >
+                  <div
+                    className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
+                      muteSound ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Filter Pill Tabs */}
+          <div className="px-5 py-2.5 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto">
+            {(
+              [
+                { key: 'ALL', label: 'ทั้งหมด' },
+                { key: 'QUEUE', label: 'คิว' },
+                { key: 'UNREAD', label: 'ยังไม่ได้อ่าน' },
+                { key: 'OTHER', label: 'อื่นๆ' },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.key
+                    ? 'bg-[#EDE9FE] dark:bg-purple-950/70 text-[#6D28D9] dark:text-purple-300 shadow-2xs'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 3. Notification List Items */}
+          <div className="max-h-[420px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+            {loading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
+                <Loader2 className="w-5 h-5 animate-spin text-[#6D28D9]" />
+                <span>กำลังโหลดการแจ้งเตือน...</span>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
+              <div className="py-12 px-4 text-center">
+                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 flex items-center justify-center mx-auto mb-2">
+                  <Inbox className="w-5 h-5 stroke-[1.5]" />
+                </div>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  ไม่มีการแจ้งเตือนในขณะนี้
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  เมื่อมีคำขอหรือข่าวสารใหม่ ระบบจะแสดงที่นี่
+                </p>
+              </div>
+            ) : (
+              groupedNotifications.map((group) => (
+                <div key={group.title}>
+                  {/* Group Date Header */}
+                  <div className="px-5 py-2 text-xs font-bold text-slate-800 dark:text-slate-200 bg-slate-50/70 dark:bg-slate-900/60 border-y border-slate-100 dark:border-slate-800">
+                    {group.title}
                   </div>
 
-                  {/* Details */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className={`text-xs ${!item.isRead ? 'font-bold text-slate-900 dark:text-slate-100' : 'font-medium text-slate-700 dark:text-slate-300'} leading-tight line-clamp-1`}>
-                      {item.title}
-                    </h4>
-                    {item.message && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
-                        {item.message}
-                      </p>
-                    )}
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1.5 block">
-                      {item.timeAgo}
-                    </span>
-                  </div>
+                  {/* Items in this group */}
+                  {group.items.map((item) => {
+                    const theme = getItemTheme(item);
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleItemClick(item)}
+                        className={`p-4 transition-all cursor-pointer flex items-start gap-3 relative ${theme.bg}`}
+                      >
+                        {/* Icon */}
+                        <div className="mt-0.5 shrink-0">{theme.icon}</div>
 
-                  {/* Arrow on hover */}
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 dark:text-slate-400 transition-colors shrink-0 mt-1" />
+                        {/* Text Details */}
+                        <div className="flex-1 min-w-0 pr-2">
+                          <h4 className={`text-xs font-bold ${theme.titleColor} leading-snug line-clamp-1`}>
+                            {item.title}
+                          </h4>
+                          {item.message && (
+                            <p className="text-xs text-slate-700 dark:text-slate-300 line-clamp-2 mt-1 leading-relaxed">
+                              {item.message}
+                            </p>
+                          )}
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 block">
+                            {formatNotificationDate(item.createdAt, item.timeAgo)}
+                          </span>
+                        </div>
+
+                        {/* Unread Purple Dot on the right */}
+                        {!item.isRead && (
+                          <div className="mt-1.5 shrink-0">
+                            <span className="w-2 h-2 rounded-full bg-[#6D28D9] dark:bg-purple-400 block" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               ))
             )}
           </div>
 
-          {/* Footer Link */}
-          {notifications.length > 0 && (
-            <div className="p-2 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/50 text-center">
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                คลิกที่รายการแจ้งเตือนเพื่อเปิดดูข้อมูลและนำทางไปยังหน้าที่เกี่ยวข้อง
-              </span>
-            </div>
-          )}
+          {/* 4. Footer Link */}
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-white dark:bg-slate-900 rounded-b-3xl">
+            <button
+              type="button"
+              onClick={handleViewAll}
+              className="text-xs font-bold text-[#2563EB] dark:text-blue-400 hover:text-[#1D4ED8] dark:hover:text-blue-300 transition-colors cursor-pointer"
+            >
+              ดูการแจ้งเตือนทั้งหมด
+            </button>
+          </div>
         </div>
       )}
     </div>
   );
 };
+
+export default NotificationBell;
