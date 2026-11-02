@@ -137,56 +137,7 @@ export default function PayrollPeriodsTab({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Top Card: Toolbar มาตรฐานระบบ (ค้นหาซ้าย -> ฟิลเตอร์ -> ปุ่มขวา) */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-xs">
-        <TableToolbar
-          searchValue={searchQuery}
-          onSearchChange={(val) => {
-            setSearchQuery(val);
-            setPage(1);
-          }}
-          searchPlaceholder="ค้นหารอบเงินเดือน..."
-          filters={
-            <div className="w-full sm:w-44">
-              <CustomSelect
-                value={yearFilter}
-                onChange={(e) => handleYearSelect(String(e.target.value))}
-                numbered={false}
-                className="w-full text-xs font-bold"
-                title="เลือกปี พ.ศ."
-              >
-                <option value="ALL">ปีทั้งหมด</option>
-                {availableYears.map((y) => (
-                  <option key={y} value={String(y)}>
-                    ปี พ.ศ. {y + 543}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-          }
-          actions={
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                {filteredPeriods.length} รอบ
-              </span>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={onRefresh}
-                disabled={isLoading}
-                icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
-                title="รีเฟรชข้อมูล"
-                className="!h-9"
-              >
-                <span className="hidden sm:inline">รีเฟรช</span>
-              </Button>
-            </div>
-          }
-        />
-      </div>
-
-      {/* 4 Summary Stat Cards (Image 1) - ต่อจากแถบเครื่องมือ (Image 2) */}
+      {/* 4 Summary Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ (Solid Blue Panel) */}
         <div className="bg-blue-100/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/80 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between">
@@ -286,10 +237,58 @@ export default function PayrollPeriodsTab({
         </div>
       </div>
 
-      {/* Table Card */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs overflow-hidden">
+      {/* Table Card (มาตรฐานระบบ: Toolbar อยู่บนหัวตาราง) */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5 space-y-4">
+        {/* TableToolbar directly on top of table header */}
+        <TableToolbar
+          searchValue={searchQuery}
+          onSearchChange={(val) => {
+            setSearchQuery(val);
+            setPage(1);
+          }}
+          searchPlaceholder="ค้นหารอบเงินเดือน..."
+          filters={
+            <div className="w-full sm:w-44">
+              <CustomSelect
+                value={yearFilter}
+                onChange={(e) => handleYearSelect(String(e.target.value))}
+                numbered={false}
+                className="w-full text-xs font-bold"
+                title="เลือกปี พ.ศ."
+              >
+                <option value="ALL">ปีทั้งหมด</option>
+                {availableYears.map((y) => (
+                  <option key={y} value={String(y)}>
+                    ปี พ.ศ. {y + 543}
+                  </option>
+                ))}
+              </CustomSelect>
+            </div>
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                {filteredPeriods.length} รอบ
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
+                title="รีเฟรชข้อมูล"
+                className="!h-9"
+              >
+                <span className="hidden sm:inline">รีเฟรช</span>
+              </Button>
+            </div>
+          }
+        />
+
+        {/* Table or Empty State Container */}
         {paginatedPeriods.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 py-16 text-center">
             <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700 text-slate-400 mx-auto flex items-center justify-center mb-3">
               <Calendar className="w-6 h-6" />
             </div>
@@ -310,10 +309,11 @@ export default function PayrollPeriodsTab({
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="table-standard w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-500 dark:text-slate-400">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="table-standard w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-primary text-white font-semibold">
                   <th className="py-3 px-4">รอบเงินเดือน</th>
                   <th className="py-3 px-4">ช่วงเวลาคำนวณ</th>
                   <th className="py-3 px-4">กำหนดวันจ่าย</th>
@@ -396,25 +396,26 @@ export default function PayrollPeriodsTab({
               </tbody>
             </table>
           </div>
-        )}
 
-        {/* Pagination */}
-        {filteredPeriods.length > 0 && (
-          <div className="border-t border-slate-100 dark:border-slate-700 p-3">
-            <TablePagination
-              total={totalCount}
-              page={safePage}
-              pageSize={pageSize}
-              onPageChange={setPage}
-              onPageSizeChange={(newSize: number) => {
-                setPageSize(newSize);
-                setPage(1);
-              }}
-              pageSizeOptions={[10, 20, 50, 100]}
-            />
-          </div>
-        )}
-      </div>
+          {/* Pagination */}
+          {filteredPeriods.length > 0 && (
+            <div className="border-t border-slate-100 dark:border-slate-700 p-3">
+              <TablePagination
+                total={totalCount}
+                page={safePage}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize: number) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
 
       {/* Detail Modal (Popup) */}
       <PayrollPeriodDetailModal
