@@ -132,7 +132,7 @@ export default function CertificatePage() {
               <p aria-hidden="true" className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
                 เลือกประเภทหนังสือรับรอง
               </p>
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 {types.map((t) => {
                   const active = t.id === selectedTypeId;
                   const Icon = isSalaryType(t) ? Wallet : Briefcase;
@@ -142,7 +142,7 @@ export default function CertificatePage() {
                       className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 cursor-pointer transition-colors ${
                         active
                           ? 'border-2 border-primary bg-primary-soft dark:border-blue-400 dark:bg-slate-700/50'
-                          : 'border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/30 m-px'
+                          : 'border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/30'
                       }`}
                     >
                       <span
