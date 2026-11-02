@@ -226,11 +226,6 @@ export function useLeaveDecisionData(
 
 // ─── Stylings ─────────────────────────────────────────────────
 
-const LEVEL_STYLE: Record<InsightLevel, string> = {
-  danger: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-900/50',
-  warning: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/50',
-  info: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-900/50',
-};
 
 // ─── 1. Leave Decision Panel ──────────────────────────────────
 
@@ -242,7 +237,7 @@ interface LeavePanelProps {
 
 export function LeaveDecisionInsightsPanel({ request, data, compact = false }: LeavePanelProps) {
   const reqDays = daysOf(request);
-  const { balance, remainingAfter, noticeDays, overlaps, warnings, loading } = data;
+  const { balance, remainingAfter, noticeDays, overlaps, loading } = data;
 
   return (
     <div className="space-y-3 text-xs">
@@ -310,26 +305,6 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
         </div>
       ) : (
         <>
-          {/* 1.2 ข้อควรพิจารณา / ป้ายเตือน */}
-          {warnings.length > 0 ? (
-            <div className="flex flex-wrap gap-1.5">
-              {warnings.map((w) => (
-                <span
-                  key={w.key}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold ${LEVEL_STYLE[w.level]}`}
-                >
-                  <AlertTriangle className="w-3 h-3" />
-                  {w.text}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50">
-              <CheckCircle2 className="w-3 h-3" />
-              ไม่พบประเด็นที่ต้องระวัง สิทธิ์และช่วงเวลาเป็นไปตามเกณฑ์
-            </div>
-          )}
-
           <div className="grid grid-cols-2 gap-2">
             {/* 1.3 สิทธิ์วันลา */}
             <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">

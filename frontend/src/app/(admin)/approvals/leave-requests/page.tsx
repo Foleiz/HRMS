@@ -47,24 +47,18 @@ import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import {
   ApprovalActionModal,
-  ApprovalDetailRow,
   formatThaiDate,
-  formatThaiDateRange,
-  getNoticeDaysText,
 } from '@/components/approvals/ApprovalActionModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { openBlobInNewTab } from '@/lib/filePreview';
+import { ApprovalReviewModal, type ReviewDecision } from '@/components/approvals/ApprovalReviewModal';
 import {
   useLeaveDecisionData,
   LeaveDecisionInsightsPanel,
-  LeaveRejectReasonChips,
   CertDecisionInsightsPanel,
-  CertRejectReasonChips,
   ResignDecisionInsightsPanel,
-  ResignRejectReasonChips,
   GeneralDecisionInsightsPanel,
-  GeneralRejectReasonChips,
 } from '@/components/approvals/LeaveDecisionInsights';
 
 // ─── ฟังก์ชันช่วย & โครงสร้างข้อมูล ──────────────────────────────
@@ -139,6 +133,9 @@ export interface UnifiedApprovalItem {
   timeAdjustRaw?: AttendanceAdjustment;
 }
 
+/** ประเภทเอกสารที่พิจารณาผ่านหน้าตรวจสอบรวม (ซ้ายข้อมูลพิจารณา · ขวาบันทึกผล) */
+const REVIEW_DOC_TYPES: UnifiedApprovalItem['docType'][] = ['LEAVE', 'CERTIFICATE', 'RESIGNATION', 'GENERAL'];
+
 /**
  * ตัดวงเล็บภาษาอังกฤษต่อท้ายออกจากชื่อผู้อนุมัติ เช่น
  * "หัวหน้าทีมของผู้ยื่น (Team Lead)" -> "หัวหน้าทีมของผู้ยื่น"
@@ -203,18 +200,11 @@ export default function LeaveRequestsApprovalPage() {
     setCurrentPage(1);
   }, [docTypeFilter, searchTerm]);
 
-  // Leave Approval Modals State
-  const [selectedForApprove, setSelectedForApprove] = useState<LeaveRequest | null>(null);
-  const [approveComment, setApproveComment] = useState('');
-  const [isSubmittingApprove, setIsSubmittingApprove] = useState(false);
-
-  const [selectedForReject, setSelectedForReject] = useState<LeaveRequest | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [isSubmittingReject, setIsSubmittingReject] = useState(false);
-
-  // Leave Decision Data Hooks
-  const approveLeaveDecisionData = useLeaveDecisionData(selectedForApprove, leaveRequests);
-  const rejectLeaveDecisionData = useLeaveDecisionData(selectedForReject, leaveRequests);
+  // หน้าตรวจสอบรวม: อนุมัติ/ปฏิเสธในหน้าเดียวกับข้อมูลประกอบการพิจารณา
+  const [review, setReview] = useState<{ item: UnifiedApprovalItem; decision: ReviewDecision } | null>(null);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const reviewLeaveDecisionData = useLeaveDecisionData(review?.item.leaveRaw ?? null, leaveRequests);
 
   // Leave Timeline Modal State
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
@@ -224,40 +214,13 @@ export default function LeaveRequestsApprovalPage() {
   const [selectedLeaveForPreview, setSelectedLeaveForPreview] = useState<LeavePreviewData | null>(null);
   const [isLeavePreviewOpen, setIsLeavePreviewOpen] = useState(false);
 
-  // Certificate Approval Modals State
-  const [selectedCertForApprove, setSelectedCertForApprove] = useState<CertificateRequest | null>(null);
-  const [approveCertComment, setApproveCertComment] = useState('');
-  const [isSubmittingCertApprove, setIsSubmittingCertApprove] = useState(false);
-
-  const [selectedCertForReject, setSelectedCertForReject] = useState<CertificateRequest | null>(null);
-  const [rejectCertReason, setRejectCertReason] = useState('');
-  const [isSubmittingCertReject, setIsSubmittingCertReject] = useState(false);
-
   // Certificate Preview Modal State
   const [selectedCertForPreview, setSelectedCertForPreview] = useState<CertificateRequest | null>(null);
   const [isCertPreviewOpen, setIsCertPreviewOpen] = useState(false);
 
-  // Resignation Approval Modals State
-  const [selectedResignForApprove, setSelectedResignForApprove] = useState<ResignationRequest | null>(null);
-  const [approveResignComment, setApproveResignComment] = useState('');
-  const [isSubmittingResignApprove, setIsSubmittingResignApprove] = useState(false);
-
-  const [selectedResignForReject, setSelectedResignForReject] = useState<ResignationRequest | null>(null);
-  const [rejectResignReason, setRejectResignReason] = useState('');
-  const [isSubmittingResignReject, setIsSubmittingResignReject] = useState(false);
-
   // Resignation Preview Modal State
   const [selectedResignForPreview, setSelectedResignForPreview] = useState<ResignationRequest | null>(null);
   const [isResignPreviewOpen, setIsResignPreviewOpen] = useState(false);
-
-  // General Document Approval Modals State
-  const [selectedGeneralForApprove, setSelectedGeneralForApprove] = useState<GeneralDocumentRequest | null>(null);
-  const [approveGeneralComment, setApproveGeneralComment] = useState('');
-  const [isSubmittingGeneralApprove, setIsSubmittingGeneralApprove] = useState(false);
-
-  const [selectedGeneralForReject, setSelectedGeneralForReject] = useState<GeneralDocumentRequest | null>(null);
-  const [rejectGeneralReason, setRejectGeneralReason] = useState('');
-  const [isSubmittingGeneralReject, setIsSubmittingGeneralReject] = useState(false);
 
   // General Document Preview Modal State
   const [selectedGeneralForPreview, setSelectedGeneralForPreview] = useState<GeneralDocumentRequest | null>(null);
@@ -575,49 +538,9 @@ export default function LeaveRequestsApprovalPage() {
 
   // ─── Actions: Leave ─────────────────────────────────────────
 
-  const openApproveDialog = (req: LeaveRequest) => {
-    setSelectedForApprove(req);
-    setApproveComment('');
-  };
 
-  const submitApprove = async () => {
-    if (!selectedForApprove) return;
-    setIsSubmittingApprove(true);
-    try {
-      await leaveService.approveLeaveRequest(selectedForApprove.id, approveComment.trim() || undefined);
-      setSelectedForApprove(null);
-      showToast('อนุมัติคำขอลาสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติ', 'error');
-    } finally {
-      setIsSubmittingApprove(false);
-    }
-  };
 
-  const openRejectDialog = (req: LeaveRequest) => {
-    setSelectedForReject(req);
-    setRejectReason('');
-  };
 
-  const submitReject = async () => {
-    if (!selectedForReject) return;
-    if (!rejectReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
-      return;
-    }
-    setIsSubmittingReject(true);
-    try {
-      await leaveService.rejectLeaveRequest(selectedForReject.id, rejectReason.trim());
-      setSelectedForReject(null);
-      showToast('ปฏิเสธคำขอลาสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธ', 'error');
-    } finally {
-      setIsSubmittingReject(false);
-    }
-  };
 
   const handleCancelLeave = (req: LeaveRequest) => {
     setConfirmConfig({
@@ -718,49 +641,9 @@ export default function LeaveRequestsApprovalPage() {
 
   // ─── Actions: Certificate ───────────────────────────────────
 
-  const openApproveCertDialog = (req: CertificateRequest) => {
-    setSelectedCertForApprove(req);
-    setApproveCertComment('');
-  };
 
-  const submitCertApprove = async () => {
-    if (!selectedCertForApprove) return;
-    setIsSubmittingCertApprove(true);
-    try {
-      await certificateService.approveRequest(selectedCertForApprove.id, approveCertComment.trim() || undefined);
-      setSelectedCertForApprove(null);
-      showToast('อนุมัติคำขอหนังสือรับรองสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ', 'error');
-    } finally {
-      setIsSubmittingCertApprove(false);
-    }
-  };
 
-  const openRejectCertDialog = (req: CertificateRequest) => {
-    setSelectedCertForReject(req);
-    setRejectCertReason('');
-  };
 
-  const submitCertReject = async () => {
-    if (!selectedCertForReject) return;
-    if (!rejectCertReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
-      return;
-    }
-    setIsSubmittingCertReject(true);
-    try {
-      await certificateService.rejectRequest(selectedCertForReject.id, rejectCertReason.trim());
-      setSelectedCertForReject(null);
-      showToast('ปฏิเสธคำขอหนังสือรับรองสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ', 'error');
-    } finally {
-      setIsSubmittingCertReject(false);
-    }
-  };
 
   const handleCancelCert = (req: CertificateRequest) => {
     setConfirmConfig({
@@ -788,49 +671,9 @@ export default function LeaveRequestsApprovalPage() {
 
   // ─── Actions: Resignation ───────────────────────────────────
 
-  const openApproveResignDialog = (req: ResignationRequest) => {
-    setSelectedResignForApprove(req);
-    setApproveResignComment('');
-  };
 
-  const submitResignApprove = async () => {
-    if (!selectedResignForApprove) return;
-    setIsSubmittingResignApprove(true);
-    try {
-      await resignationService.approveRequest(selectedResignForApprove.id, approveResignComment.trim() || undefined);
-      setSelectedResignForApprove(null);
-      showToast('อนุมัติคำขอลาออกสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการอนุมัติคำขอ', 'error');
-    } finally {
-      setIsSubmittingResignApprove(false);
-    }
-  };
 
-  const openRejectResignDialog = (req: ResignationRequest) => {
-    setSelectedResignForReject(req);
-    setRejectResignReason('');
-  };
 
-  const submitResignReject = async () => {
-    if (!selectedResignForReject) return;
-    if (!rejectResignReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
-      return;
-    }
-    setIsSubmittingResignReject(true);
-    try {
-      await resignationService.rejectRequest(selectedResignForReject.id, rejectResignReason.trim());
-      setSelectedResignForReject(null);
-      showToast('ปฏิเสธคำขอลาออกสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการปฏิเสธคำขอ', 'error');
-    } finally {
-      setIsSubmittingResignReject(false);
-    }
-  };
 
   const handleCancelResign = (req: ResignationRequest) => {
     setConfirmConfig({
@@ -858,49 +701,9 @@ export default function LeaveRequestsApprovalPage() {
 
   // ─── Actions: General Document ──────────────────────────────
 
-  const openApproveGeneralDialog = (req: GeneralDocumentRequest) => {
-    setSelectedGeneralForApprove(req);
-    setApproveGeneralComment('');
-  };
 
-  const submitGeneralApprove = async () => {
-    if (!selectedGeneralForApprove) return;
-    setIsSubmittingGeneralApprove(true);
-    try {
-      await generalDocumentService.approveRequest(selectedGeneralForApprove.id);
-      setSelectedGeneralForApprove(null);
-      showToast('อนุมัติคำร้องเอกสารทั่วไปสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast('เกิดข้อผิดพลาดในการอนุมัติคำร้อง', 'error');
-    } finally {
-      setIsSubmittingGeneralApprove(false);
-    }
-  };
 
-  const openRejectGeneralDialog = (req: GeneralDocumentRequest) => {
-    setSelectedGeneralForReject(req);
-    setRejectGeneralReason('');
-  };
 
-  const submitGeneralReject = async () => {
-    if (!selectedGeneralForReject) return;
-    if (!rejectGeneralReason.trim()) {
-      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
-      return;
-    }
-    setIsSubmittingGeneralReject(true);
-    try {
-      await generalDocumentService.rejectRequest(selectedGeneralForReject.id, rejectGeneralReason.trim());
-      setSelectedGeneralForReject(null);
-      showToast('ปฏิเสธคำร้องเอกสารทั่วไปสำเร็จ');
-      fetchData();
-    } catch (err: any) {
-      showToast('เกิดข้อผิดพลาดในการปฏิเสธคำร้อง', 'error');
-    } finally {
-      setIsSubmittingGeneralReject(false);
-    }
-  };
 
   const handleCancelGeneral = (req: GeneralDocumentRequest) => {
     setConfirmConfig({
@@ -975,16 +778,107 @@ export default function LeaveRequestsApprovalPage() {
     }
   };
 
+  // ─── หน้าตรวจสอบรวม ─────────────────────────────────────────
+
+  const openReview = (item: UnifiedApprovalItem, decision: ReviewDecision = 'approve') => {
+    setReview({ item, decision });
+    setReviewComment('');
+  };
+
+  const closeReview = () => {
+    if (!isSubmittingReview) setReview(null);
+  };
+
+  const submitReview = async () => {
+    if (!review) return;
+    const { item, decision } = review;
+    const approve = decision === 'approve';
+    const text = reviewComment.trim();
+    if (!approve && !text) {
+      showToast('กรุณาระบุเหตุผลในการปฏิเสธ', 'error');
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      if (item.docType === 'LEAVE' && item.leaveRaw) {
+        if (approve) await leaveService.approveLeaveRequest(item.leaveRaw.id, text || undefined);
+        else await leaveService.rejectLeaveRequest(item.leaveRaw.id, text);
+      } else if (item.docType === 'CERTIFICATE' && item.certRaw) {
+        if (approve) await certificateService.approveRequest(item.certRaw.id, text || undefined);
+        else await certificateService.rejectRequest(item.certRaw.id, text);
+      } else if (item.docType === 'RESIGNATION' && item.resignationRaw) {
+        if (approve) await resignationService.approveRequest(item.resignationRaw.id, text || undefined);
+        else await resignationService.rejectRequest(item.resignationRaw.id, text);
+      } else if (item.docType === 'GENERAL' && item.generalRaw) {
+        if (approve) await generalDocumentService.approveRequest(item.generalRaw.id);
+        else await generalDocumentService.rejectRequest(item.generalRaw.id, text);
+      } else {
+        return;
+      }
+      setReview(null);
+      showToast(`${approve ? 'อนุมัติ' : 'ปฏิเสธ'}${item.docTypeName} ${item.requestNo} สำเร็จ`);
+      fetchData();
+    } catch (err: any) {
+      showToast(err?.response?.data?.message || (approve ? 'เกิดข้อผิดพลาดในการอนุมัติ' : 'เกิดข้อผิดพลาดในการปฏิเสธ'), 'error');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  /** ข้อมูลประกอบการพิจารณา (ฝั่งซ้าย) และเหตุผลปฏิเสธสำเร็จรูป ตามประเภทเอกสาร */
+  const renderReviewInfo = (item: UnifiedApprovalItem) => {
+    if (item.docType === 'LEAVE' && item.leaveRaw) {
+      return {
+        info: <LeaveDecisionInsightsPanel request={item.leaveRaw} data={reviewLeaveDecisionData} />,
+        attachments: (item.leaveRaw.documents ?? []).map((d) => ({
+          name: d.fileName || 'ไฟล์แนบ',
+          onOpen: () =>
+            openBlobInNewTab(
+              () => leaveService.downloadLeaveDocument(item.leaveRaw!.id, d.id),
+              d.fileName || 'ไฟล์แนบ',
+              (msg) => showToast(msg, 'error')
+            ),
+        })),
+        documentLabel: 'ดูใบลา',
+      };
+    }
+    if (item.docType === 'CERTIFICATE' && item.certRaw) {
+      return {
+        info: <CertDecisionInsightsPanel request={item.certRaw} onPreview={() => openDocument(item)} />,
+        attachments: [],
+        documentLabel: 'ดูตัวอย่างหนังสือรับรอง',
+      };
+    }
+    if (item.docType === 'RESIGNATION' && item.resignationRaw) {
+      return {
+        info: <ResignDecisionInsightsPanel request={item.resignationRaw} onPreview={() => openDocument(item)} />,
+        attachments: [],
+        documentLabel: 'ดูหนังสือขอลาออก',
+      };
+    }
+    if (item.docType === 'GENERAL' && item.generalRaw) {
+      const g = item.generalRaw;
+      const openAttachment = g.fileName
+        ? () =>
+            openBlobInNewTab(
+              () => generalDocumentService.downloadAttachment(g.id),
+              g.fileName,
+              (msg) => showToast(msg, 'error')
+            )
+        : undefined;
+      return {
+        info: <GeneralDecisionInsightsPanel request={g} onDownloadAttachment={openAttachment} />,
+        attachments: g.fileName ? [{ name: g.fileName, onOpen: openAttachment }] : [],
+        documentLabel: 'ดูคำร้อง',
+      };
+    }
+    return null;
+  };
+
   /** ดำเนินการอนุมัติคำขอตามประเภทเอกสาร */
   const handleApproveItem = (item: UnifiedApprovalItem) => {
-    if (item.docType === 'LEAVE') {
-      openApproveDialog(item.leaveRaw!);
-    } else if (item.docType === 'CERTIFICATE') {
-      openApproveCertDialog(item.certRaw!);
-    } else if (item.docType === 'RESIGNATION') {
-      openApproveResignDialog(item.resignationRaw!);
-    } else if (item.docType === 'GENERAL') {
-      openApproveGeneralDialog(item.generalRaw!);
+    if (REVIEW_DOC_TYPES.includes(item.docType)) {
+      openReview(item, 'approve');
     } else if (item.docType === 'TIME_ADJUST') {
       setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
     } else if (item.docType === 'BENEFIT') {
@@ -994,14 +888,8 @@ export default function LeaveRequestsApprovalPage() {
 
   /** ดำเนินการปฏิเสธคำขอตามประเภทเอกสาร */
   const handleRejectItem = (item: UnifiedApprovalItem) => {
-    if (item.docType === 'LEAVE') {
-      openRejectDialog(item.leaveRaw!);
-    } else if (item.docType === 'CERTIFICATE') {
-      openRejectCertDialog(item.certRaw!);
-    } else if (item.docType === 'RESIGNATION') {
-      openRejectResignDialog(item.resignationRaw!);
-    } else if (item.docType === 'GENERAL') {
-      openRejectGeneralDialog(item.generalRaw!);
+    if (REVIEW_DOC_TYPES.includes(item.docType)) {
+      openReview(item, 'reject');
     } else if (item.docType === 'TIME_ADJUST') {
       setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
     } else if (item.docType === 'BENEFIT') {
@@ -1233,7 +1121,16 @@ export default function LeaveRequestsApprovalPage() {
                       {/* 7. ดำเนินการ — รวมปุ่มพิจารณา */}
                       <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {isPending && item.isMyTurnToApprove ? (
+                          {isPending && item.isMyTurnToApprove && REVIEW_DOC_TYPES.includes(item.docType) ? (
+                            <button
+                              type="button"
+                              onClick={() => openReview(item)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all shadow-xs cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>พิจารณา</span>
+                            </button>
+                          ) : isPending && item.isMyTurnToApprove ? (
                             <ActionDropdown
                               align="right"
                               menuClassName="w-44 p-1.5 shadow-xl rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
@@ -1423,42 +1320,14 @@ export default function LeaveRequestsApprovalPage() {
                     {isPending && item.isMyTurnToApprove && (
                       <div className="grid grid-cols-2 gap-2">
                         <button
-                          onClick={() => {
-                            if (item.docType === 'LEAVE') {
-                              openApproveDialog(item.leaveRaw!);
-                            } else if (item.docType === 'CERTIFICATE') {
-                              openApproveCertDialog(item.certRaw!);
-                            } else if (item.docType === 'RESIGNATION') {
-                              openApproveResignDialog(item.resignationRaw!);
-                            } else if (item.docType === 'GENERAL') {
-                              openApproveGeneralDialog(item.generalRaw!);
-                            } else if (item.docType === 'TIME_ADJUST') {
-                              setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
-                            } else if (item.docType === 'BENEFIT') {
-                              setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
-                            }
-                          }}
+                          onClick={() => handleApproveItem(item)}
                           className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                           อนุมัติ
                         </button>
                         <button
-                          onClick={() => {
-                            if (item.docType === 'LEAVE') {
-                              openRejectDialog(item.leaveRaw!);
-                            } else if (item.docType === 'CERTIFICATE') {
-                              openRejectCertDialog(item.certRaw!);
-                            } else if (item.docType === 'RESIGNATION') {
-                              openRejectResignDialog(item.resignationRaw!);
-                            } else if (item.docType === 'GENERAL') {
-                              openRejectGeneralDialog(item.generalRaw!);
-                            } else if (item.docType === 'TIME_ADJUST') {
-                              setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
-                            } else if (item.docType === 'BENEFIT') {
-                              setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
-                            }
-                          }}
+                          onClick={() => handleRejectItem(item)}
                           className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-xs transition-all"
                         >
                           <XCircle className="w-4 h-4" />
@@ -1526,217 +1395,40 @@ export default function LeaveRequestsApprovalPage() {
         </div>
       </div>
 
-      {/* ─── Modal ยืนยันการอนุมัติคำขอลา ─── */}
-      {selectedForApprove && (
-        <ApprovalActionModal
-          isOpen={!!selectedForApprove}
-          onClose={() => setSelectedForApprove(null)}
-          iconType="leave"
-          title="อนุมัติคำขอลา"
-          code={selectedForApprove.requestNo}
-          requesterName={`${selectedForApprove.employeeName}${selectedForApprove.employeeCode ? ` (${selectedForApprove.employeeCode})` : ''}`}
-          categoryLabel="การลา"
-          heroTitle={`${selectedForApprove.leaveTypeName} · ${Number(selectedForApprove.leaveDays ?? selectedForApprove.totalDays ?? 1)} วัน`}
-          heroSubtitle={formatThaiDateRange(
-            selectedForApprove.startDate ?? selectedForApprove.startDatetime,
-            selectedForApprove.endDate ?? selectedForApprove.endDatetime
-          )}
-          detailRows={[
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: `${formatThaiDate(selectedForApprove.submittedAt)}${getNoticeDaysText(
-                selectedForApprove.startDate ?? selectedForApprove.startDatetime,
-                selectedForApprove.submittedAt
-              )}`,
-            },
-            ...(selectedForApprove.reason
-              ? [
-                  {
-                    label: 'เหตุผล',
-                    value: selectedForApprove.reason,
-                  },
-                ]
-              : []),
-            ...(selectedForApprove.contactDuringLeave
-              ? [
-                  {
-                    label: 'ติดต่อระหว่างลา',
-                    value: selectedForApprove.contactDuringLeave,
-                  },
-                ]
-              : []),
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedForApprove.departmentName || '-'}${selectedForApprove.positionName ? ` · ${selectedForApprove.positionName}` : ''}`,
-            },
-          ]}
-          comment={approveComment}
-          onCommentChange={setApproveComment}
-          onSubmit={submitApprove}
-          isSubmitting={isSubmittingApprove}
-          variant="approve"
-        />
-      )}
-
-      {/* ─── Modal ปฏิเสธคำขอลา ─── */}
-      {selectedForReject && (
-        <ApprovalActionModal
-          isOpen={!!selectedForReject}
-          onClose={() => setSelectedForReject(null)}
-          iconType="leave"
-          title="ปฏิเสธคำขอลา"
-          code={selectedForReject.requestNo}
-          requesterName={`${selectedForReject.employeeName}${selectedForReject.employeeCode ? ` (${selectedForReject.employeeCode})` : ''}`}
-          categoryLabel="การลา"
-          heroTitle={`${selectedForReject.leaveTypeName} · ${Number(selectedForReject.leaveDays ?? selectedForReject.totalDays ?? 1)} วัน`}
-          heroSubtitle={formatThaiDateRange(
-            selectedForReject.startDate ?? selectedForReject.startDatetime,
-            selectedForReject.endDate ?? selectedForReject.endDatetime
-          )}
-          detailRows={[
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: `${formatThaiDate(selectedForReject.submittedAt)}${getNoticeDaysText(
-                selectedForReject.startDate ?? selectedForReject.startDatetime,
-                selectedForReject.submittedAt
-              )}`,
-            },
-            ...(selectedForReject.reason
-              ? [
-                  {
-                    label: 'เหตุผล',
-                    value: selectedForReject.reason,
-                  },
-                ]
-              : []),
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedForReject.departmentName || '-'}${selectedForReject.positionName ? ` · ${selectedForReject.positionName}` : ''}`,
-            },
-          ]}
-          quickRejectSlot={
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  เลือกเหตุผลแบบรวดเร็ว
-                </label>
-                {rejectReason && (
-                  <button
-                    type="button"
-                    onClick={() => setRejectReason('')}
-                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
-                  >
-                    ล้างข้อความ
-                  </button>
-                )}
-              </div>
-              <LeaveRejectReasonChips
-                warnings={rejectLeaveDecisionData.warnings}
-                value={rejectReason}
-                onChange={setRejectReason}
-              />
-            </div>
-          }
-          comment={rejectReason}
-          onCommentChange={setRejectReason}
-          commentLabel="เหตุผลในการปฏิเสธ"
-          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
-          commentRequired
-          onSubmit={submitReject}
-          isSubmitting={isSubmittingReject}
-          variant="reject"
-          submitText="ยืนยันการปฏิเสธ"
-        />
-      )}
-
-      {/* ─── Modal ยืนยันการอนุมัติคำขอหนังสือรับรอง ─── */}
-      {selectedCertForApprove && (
-        <ApprovalActionModal
-          isOpen={!!selectedCertForApprove}
-          onClose={() => setSelectedCertForApprove(null)}
-          iconType="certificate"
-          title="อนุมัติคำขอหนังสือรับรอง"
-          code={`CERT-${String(selectedCertForApprove.id).padStart(4, '0')}`}
-          requesterName={`${selectedCertForApprove.employeeName}${selectedCertForApprove.employeeCode ? ` (${selectedCertForApprove.employeeCode})` : ''}`}
-          categoryLabel="เอกสารที่ขอ"
-          heroTitle={selectedCertForApprove.certificateName || 'หนังสือรับรอง'}
-          detailRows={[
-            {
-              label: 'วัตถุประสงค์',
-              value: selectedCertForApprove.purpose || '[วัตถุประสงค์ที่ผู้ขอระบุ]',
-            },
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedCertForApprove.departmentName || '-'}${selectedCertForApprove.positionName ? ` · ${selectedCertForApprove.positionName}` : ''}`,
-            },
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: formatThaiDate(selectedCertForApprove.requestedAt),
-            },
-          ]}
-          comment={approveCertComment}
-          onCommentChange={setApproveCertComment}
-          onSubmit={submitCertApprove}
-          isSubmitting={isSubmittingCertApprove}
-          variant="approve"
-        />
-      )}
-
-      {/* ─── Modal ปฏิเสธคำขอหนังสือรับรอง ─── */}
-      {selectedCertForReject && (
-        <ApprovalActionModal
-          isOpen={!!selectedCertForReject}
-          onClose={() => setSelectedCertForReject(null)}
-          iconType="certificate"
-          title="ปฏิเสธคำขอหนังสือรับรอง"
-          code={`CERT-${String(selectedCertForReject.id).padStart(4, '0')}`}
-          requesterName={`${selectedCertForReject.employeeName}${selectedCertForReject.employeeCode ? ` (${selectedCertForReject.employeeCode})` : ''}`}
-          categoryLabel="เอกสารที่ขอ"
-          heroTitle={selectedCertForReject.certificateName || 'หนังสือรับรอง'}
-          detailRows={[
-            {
-              label: 'วัตถุประสงค์',
-              value: selectedCertForReject.purpose || '[วัตถุประสงค์ที่ผู้ขอระบุ]',
-            },
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedCertForReject.departmentName || '-'}${selectedCertForReject.positionName ? ` · ${selectedCertForReject.positionName}` : ''}`,
-            },
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: formatThaiDate(selectedCertForReject.requestedAt),
-            },
-          ]}
-          quickRejectSlot={
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  เลือกเหตุผลแบบรวดเร็ว
-                </label>
-                {rejectCertReason && (
-                  <button
-                    type="button"
-                    onClick={() => setRejectCertReason('')}
-                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
-                  >
-                    ล้างข้อความ
-                  </button>
-                )}
-              </div>
-              <CertRejectReasonChips value={rejectCertReason} onChange={setRejectCertReason} />
-            </div>
-          }
-          comment={rejectCertReason}
-          onCommentChange={setRejectCertReason}
-          commentLabel="เหตุผลในการปฏิเสธ"
-          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำขอ เพื่อแจ้งให้พนักงานทราบ..."
-          commentRequired
-          onSubmit={submitCertReject}
-          isSubmitting={isSubmittingCertReject}
-          variant="reject"
-          submitText="ยืนยันการปฏิเสธ"
-        />
-      )}
+      {/* ─── หน้าตรวจสอบรวม: ซ้ายข้อมูลประกอบการพิจารณา · ขวาบันทึกผล (วางก่อน modal ดูเอกสาร เพื่อให้เอกสารเปิดทับได้) ─── */}
+      {review &&
+        (() => {
+          const { item } = review;
+          const parts = renderReviewInfo(item);
+          if (!parts) return null;
+          const meta = [item.positionName, item.departmentName, item.submittedAt ? `ยื่นเมื่อ ${formatThaiDate(item.submittedAt)}` : null]
+            .filter(Boolean)
+            .join(' · ');
+          return (
+            <ApprovalReviewModal
+              isOpen
+              onClose={closeReview}
+              title={`ตรวจสอบ${item.docTypeName}`}
+              typeLabel={item.subType || undefined}
+              code={item.requestNo}
+              employeeId={item.employeeId}
+              employeeName={item.employeeName}
+              meta={meta}
+              decision={review.decision}
+              onDecisionChange={(d) => setReview((prev) => (prev ? { ...prev, decision: d } : prev))}
+              comment={reviewComment}
+              onCommentChange={setReviewComment}
+              onViewDocument={() => openDocument(item)}
+              documentLabel={parts.documentLabel}
+              attachments={parts.attachments}
+              approveCommentDisabled={item.docType === 'GENERAL'}
+              onSubmit={submitReview}
+              isSubmitting={isSubmittingReview}
+            >
+              {parts.info}
+            </ApprovalReviewModal>
+          );
+        })()}
 
       {/* ─── Modal ผังขั้นตอนการอนุมัติคำขอลา (Leave Approval Timeline) ─── */}
       <ApprovalTimelineModal
@@ -1766,107 +1458,6 @@ export default function LeaveRequestsApprovalPage() {
         canApproveCurrentStep={!!selectedCertForPreview?.isMyTurnToApprove}
       />
 
-      {/* ─── Modal ยืนยันการอนุมัติคำขอลาออก ─── */}
-      {selectedResignForApprove && (
-        <ApprovalActionModal
-          isOpen={!!selectedResignForApprove}
-          onClose={() => setSelectedResignForApprove(null)}
-          iconType="resignation"
-          title="อนุมัติคำขอลาออก"
-          code={selectedResignForApprove.requestNo || `RESIGN-${String(selectedResignForApprove.id).padStart(4, '0')}`}
-          requesterName={`${selectedResignForApprove.employeeName}${selectedResignForApprove.employeeCode ? ` (${selectedResignForApprove.employeeCode})` : ''}`}
-          categoryLabel="การลาออก"
-          heroTitle={`วันทำงานสุดท้าย: ${formatThaiDate(selectedResignForApprove.requestedLastWorkingDate)}`}
-          detailRows={[
-            {
-              label: 'เหตุผลการลาออก',
-              value: selectedResignForApprove.reason || '-',
-            },
-            ...(selectedResignForApprove.noticePeriodDays !== undefined && selectedResignForApprove.noticePeriodDays !== null
-              ? [
-                  {
-                    label: 'แจ้งล่วงหน้า',
-                    value: `${selectedResignForApprove.noticePeriodDays} วัน`,
-                  },
-                ]
-              : []),
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedResignForApprove.departmentName || '-'}${selectedResignForApprove.positionName ? ` · ${selectedResignForApprove.positionName}` : ''}`,
-            },
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: formatThaiDate(selectedResignForApprove.submittedAt),
-            },
-          ]}
-          comment={approveResignComment}
-          onCommentChange={setApproveResignComment}
-          onSubmit={submitResignApprove}
-          isSubmitting={isSubmittingResignApprove}
-          variant="approve"
-        />
-      )}
-
-      {/* ─── Modal ปฏิเสธคำขอลาออก ─── */}
-      {selectedResignForReject && (
-        <ApprovalActionModal
-          isOpen={!!selectedResignForReject}
-          onClose={() => setSelectedResignForReject(null)}
-          iconType="resignation"
-          title="ปฏิเสธคำขอลาออก"
-          code={selectedResignForReject.requestNo || `RESIGN-${String(selectedResignForReject.id).padStart(4, '0')}`}
-          requesterName={`${selectedResignForReject.employeeName}${selectedResignForReject.employeeCode ? ` (${selectedResignForReject.employeeCode})` : ''}`}
-          categoryLabel="การลาออก"
-          heroTitle={`วันทำงานสุดท้าย: ${formatThaiDate(selectedResignForReject.requestedLastWorkingDate)}`}
-          detailRows={[
-            {
-              label: 'เหตุผลการลาออก',
-              value: selectedResignForReject.reason || '-',
-            },
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedResignForReject.departmentName || '-'}${selectedResignForReject.positionName ? ` · ${selectedResignForReject.positionName}` : ''}`,
-            },
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: formatThaiDate(selectedResignForReject.submittedAt),
-            },
-          ]}
-          quickRejectSlot={
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  เลือกเหตุผลแบบรวดเร็ว
-                </label>
-                {rejectResignReason && (
-                  <button
-                    type="button"
-                    onClick={() => setRejectResignReason('')}
-                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
-                  >
-                    ล้างข้อความ
-                  </button>
-                )}
-              </div>
-              <ResignRejectReasonChips
-                isShortNotice={(selectedResignForReject.noticePeriodDays ?? 30) < 30}
-                value={rejectResignReason}
-                onChange={setRejectResignReason}
-              />
-            </div>
-          }
-          comment={rejectResignReason}
-          onCommentChange={setRejectResignReason}
-          commentLabel="เหตุผลในการปฏิเสธ"
-          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำขอลาออก..."
-          commentRequired
-          onSubmit={submitResignReject}
-          isSubmitting={isSubmittingResignReject}
-          variant="reject"
-          submitText="ยืนยันการปฏิเสธ"
-        />
-      )}
-
       {/* ─── Modal ดูตัวอย่างหนังสือขอลาออก (Resignation Preview) ─── */}
       <ResignationPreviewModal
         isOpen={isResignPreviewOpen}
@@ -1892,113 +1483,6 @@ export default function LeaveRequestsApprovalPage() {
           noticeDays: selectedResignForPreview.noticePeriodDays,
         } : null}
       />
-
-      {/* ─── Modal ยืนยันการอนุมัติคำร้องเอกสารทั่วไป ─── */}
-      {selectedGeneralForApprove && (
-        <ApprovalActionModal
-          isOpen={!!selectedGeneralForApprove}
-          onClose={() => setSelectedGeneralForApprove(null)}
-          iconType="general"
-          title="อนุมัติคำร้องเอกสารทั่วไป"
-          code={selectedGeneralForApprove.requestNo || `DOC-${String(selectedGeneralForApprove.id).padStart(4, '0')}`}
-          requesterName={`${selectedGeneralForApprove.employeeName}${selectedGeneralForApprove.employeeCode ? ` (${selectedGeneralForApprove.employeeCode})` : ''}`}
-          categoryLabel="ประเภทคำร้อง"
-          heroTitle={selectedGeneralForApprove.documentType || 'คำร้องทั่วไป'}
-          heroSubtitle={undefined}
-          detailRows={[
-            {
-              label: 'วัตถุประสงค์ / รายละเอียด',
-              value: selectedGeneralForApprove.purpose || selectedGeneralForApprove.notes || '-',
-            },
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedGeneralForApprove.departmentName || '-'}${selectedGeneralForApprove.positionName ? ` · ${selectedGeneralForApprove.positionName}` : ''}`,
-            },
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: formatThaiDate(selectedGeneralForApprove.submittedAt),
-            },
-          ]}
-          attachments={
-            selectedGeneralForApprove.fileName
-              ? [
-                  {
-                    name: selectedGeneralForApprove.fileName,
-                    onOpen: () => {
-                      openBlobInNewTab(
-                        () => generalDocumentService.downloadAttachment(selectedGeneralForApprove.id),
-                        selectedGeneralForApprove.fileName,
-                        (msg) => showToast(msg, 'error')
-                      );
-                    },
-                  },
-                ]
-              : undefined
-          }
-          comment={approveGeneralComment}
-          onCommentChange={setApproveGeneralComment}
-          onSubmit={submitGeneralApprove}
-          isSubmitting={isSubmittingGeneralApprove}
-          variant="approve"
-        />
-      )}
-
-      {/* ─── Modal ปฏิเสธคำร้องเอกสารทั่วไป ─── */}
-      {selectedGeneralForReject && (
-        <ApprovalActionModal
-          isOpen={!!selectedGeneralForReject}
-          onClose={() => setSelectedGeneralForReject(null)}
-          iconType="general"
-          title="ปฏิเสธคำร้องเอกสารทั่วไป"
-          code={selectedGeneralForReject.requestNo || `DOC-${String(selectedGeneralForReject.id).padStart(4, '0')}`}
-          requesterName={`${selectedGeneralForReject.employeeName}${selectedGeneralForReject.employeeCode ? ` (${selectedGeneralForReject.employeeCode})` : ''}`}
-          categoryLabel="ประเภทคำร้อง"
-          heroTitle={selectedGeneralForReject.documentType || 'คำร้องทั่วไป'}
-          heroSubtitle={undefined}
-          detailRows={[
-            {
-              label: 'วัตถุประสงค์ / รายละเอียด',
-              value: selectedGeneralForReject.purpose || selectedGeneralForReject.notes || '-',
-            },
-            {
-              label: 'สังกัด / ตำแหน่ง',
-              value: `${selectedGeneralForReject.departmentName || '-'}${selectedGeneralForReject.positionName ? ` · ${selectedGeneralForReject.positionName}` : ''}`,
-            },
-            {
-              label: 'ยื่นคำขอเมื่อ',
-              value: formatThaiDate(selectedGeneralForReject.submittedAt),
-            },
-          ]}
-          quickRejectSlot={
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  เลือกเหตุผลแบบรวดเร็ว
-                </label>
-                {rejectGeneralReason && (
-                  <button
-                    type="button"
-                    onClick={() => setRejectGeneralReason('')}
-                    className="text-[11px] text-slate-400 hover:text-rose-600 cursor-pointer"
-                  >
-                    ล้างข้อความ
-                  </button>
-                )}
-              </div>
-              <GeneralRejectReasonChips value={rejectGeneralReason} onChange={setRejectGeneralReason} />
-            </div>
-          }
-          comment={rejectGeneralReason}
-          onCommentChange={setRejectGeneralReason}
-          commentLabel="เหตุผลในการปฏิเสธ"
-          commentPlaceholder="ระบุเหตุผลในการปฏิเสธคำร้อง..."
-          commentRequired
-          onSubmit={submitGeneralReject}
-          isSubmitting={isSubmittingGeneralReject}
-          variant="reject"
-          submitText="ยืนยันการปฏิเสธ"
-        />
-      )}
 
       {/* ─── Modal ดูตัวอย่างคำร้องเอกสารทั่วไป (General Document Preview) ─── */}
       <GeneralDocumentPreviewModal
