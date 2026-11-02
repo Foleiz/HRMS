@@ -1,10 +1,11 @@
 'use client';
 
+import { openDocumentInNewTab } from '@/lib/filePreview';
 import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Printer, FileText } from 'lucide-react';
+import { X, Printer, FileText, ExternalLink } from 'lucide-react';
 import { organizationService } from '@/services/organizationService';
 import { getAvatarUrl } from '@/lib/api-client';
 import { approvalService } from '@/services/approvalService';
@@ -559,13 +560,35 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
               <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มใบลาออก (ต้นฉบับ PDF)</h3>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => openDocumentInNewTab('.resignation-paper', 'ตัวอย่างแบบฟอร์มใบลาออก')}
+                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="เปิดในแท็บใหม่"
+                aria-label="เปิดในแท็บใหม่"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="พิมพ์เอกสาร"
+                aria-label="พิมพ์เอกสาร"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* พื้นที่แสดงกระดาษ A4 เต็มหน้า (เลื่อนดูได้) */}
@@ -585,14 +608,6 @@ export const ResignationPreviewModal: React.FC<ResignationPreviewModalProps> = (
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-gray-100">
-            <button
-              type="button"
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              พิมพ์เอกสาร
-            </button>
             <Button
                 variant="secondary"
                 type="button"
