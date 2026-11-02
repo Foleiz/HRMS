@@ -1,12 +1,12 @@
-﻿'use client';
+'use client';
 
 import { ModalShell } from './ModalShell';
 import React from 'react';
-import { X, AlertTriangle, CheckCircle2, HelpCircle, Info, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { X, AlertTriangle, AlertCircle, CheckCircle2, HelpCircle, Info, Trash2, Loader2 } from 'lucide-react';
 
-export type ConfirmType = 'question' | 'warning' | 'danger' | 'success' | 'info';
+export type ConfirmType = 'question' | 'warning' | 'danger' | 'success' | 'info' | 'error';
 
-interface ConfirmModalProps {
+export interface ConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm?: () => void | Promise<void>;
@@ -15,6 +15,7 @@ interface ConfirmModalProps {
   confirmText?: string;
   cancelText?: string;
   type?: ConfirmType;
+  icon?: React.ReactNode;
   isLoading?: boolean;
   singleButton?: boolean; // When true, behaves like an alert dialog (only OK button)
   zIndexClassName?: string;
@@ -29,6 +30,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   confirmText = 'ยืนยัน',
   cancelText = 'ยกเลิก',
   type = 'question',
+  icon,
   isLoading = false,
   singleButton = false,
   zIndexClassName = 'z-50',
@@ -47,34 +49,40 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     switch (type) {
       case 'danger':
         return {
-          icon: <Trash2 className="w-6 h-6 text-rose-600" />,
-          bg: 'bg-rose-100',
-          confirmBtn: 'bg-rose-600 hover:bg-rose-700 text-white',
+          icon: <Trash2 className="w-6 h-6 text-rose-600 dark:text-rose-400" />,
+          bg: 'bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50',
+          confirmBtn: 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs',
+        };
+      case 'error':
+        return {
+          icon: <AlertCircle className="w-6 h-6 text-rose-600 dark:text-rose-400" />,
+          bg: 'bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/50',
+          confirmBtn: 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-xs',
         };
       case 'warning':
         return {
-          icon: <AlertTriangle className="w-6 h-6 text-amber-600" />,
-          bg: 'bg-amber-100',
-          confirmBtn: 'bg-amber-600 hover:bg-amber-700 text-white',
+          icon: <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
+          bg: 'bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/50',
+          confirmBtn: 'bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white shadow-xs',
         };
       case 'success':
         return {
-          icon: <CheckCircle2 className="w-6 h-6 text-emerald-600" />,
-          bg: 'bg-emerald-100',
-          confirmBtn: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+          icon: <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />,
+          bg: 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/50',
+          confirmBtn: 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-xs',
         };
       case 'info':
         return {
-          icon: <Info className="w-6 h-6 text-blue-600" />,
-          bg: 'bg-blue-100',
-          confirmBtn: 'bg-blue-600 hover:bg-blue-700 text-white',
+          icon: <Info className="w-6 h-6 text-primary dark:text-blue-400" />,
+          bg: 'bg-primary-soft dark:bg-primary/20 border border-blue-100 dark:border-blue-900/40',
+          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-[#081a3e] text-white shadow-xs',
         };
       case 'question':
       default:
         return {
-          icon: <Sparkles className="w-6 h-6 text-blue-600" />,
-          bg: 'bg-blue-100',
-          confirmBtn: 'bg-blue-600 hover:bg-blue-700 text-white',
+          icon: <HelpCircle className="w-6 h-6 text-primary dark:text-blue-400" />,
+          bg: 'bg-primary-soft dark:bg-primary/20 border border-blue-100 dark:border-blue-900/40',
+          confirmBtn: 'bg-primary hover:bg-primary-hover active:bg-[#081a3e] text-white shadow-xs',
         };
     }
   };
@@ -82,13 +90,14 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const config = getIconConfig();
 
   return (
-    <ModalShell className={`${zIndexClassName} bg-black/45 backdrop-blur-sm animate-in fade-in duration-150`}>
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-gray-100 dark:border-slate-700 p-6 animate-in zoom-in-95 duration-200">
+    <ModalShell className={`${zIndexClassName} bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-150`}>
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 p-6 sm:p-7 animate-in zoom-in-95 duration-200">
         {/* Close icon button */}
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="absolute top-5 right-5 text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          aria-label="Close"
         >
           <X className="w-4 h-4" />
         </button>
@@ -96,17 +105,17 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         {/* Content */}
         <div className="flex flex-col items-center text-center">
           {/* Icon Badge */}
-          <div className={`w-14 h-14 rounded-2xl ${config.bg} flex items-center justify-center mb-4 shadow-sm`}>
-            {config.icon}
+          <div className={`w-14 h-14 rounded-2xl ${config.bg} flex items-center justify-center mb-4 shadow-2xs`}>
+            {icon || config.icon}
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 mb-2 leading-snug px-2">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug px-2">
             {title}
           </h3>
 
           {/* Message (supports multiline / paragraphs) */}
-          <div className="text-sm text-gray-500 dark:text-slate-400 mb-6 leading-relaxed whitespace-pre-line px-2">
+          <div className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed whitespace-pre-line px-2">
             {message}
           </div>
 
@@ -117,7 +126,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 px-4 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-all cursor-pointer disabled:cursor-not-allowed border border-slate-200 dark:border-slate-600"
               >
                 {cancelText}
               </button>
@@ -126,8 +135,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               type="button"
               onClick={handleConfirm}
               disabled={isLoading}
-              className={`flex-1 py-2.5 px-4 text-sm font-medium rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
-                singleButton ? 'w-full bg-slate-900 hover:bg-slate-800 text-white' : config.confirmBtn
+              className={`flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed ${
+                singleButton ? `w-full ${config.confirmBtn}` : config.confirmBtn
               }`}
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
