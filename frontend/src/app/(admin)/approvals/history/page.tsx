@@ -709,7 +709,6 @@ export default function ApprovalHistoryPage() {
                   <SortableTh label="เลขที่เอกสาร" field="requestNo" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="ประเภทเอกสาร" field="docTypeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="พนักงาน" field="employeeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">รายละเอียดคำขอ</th>
                   <SortableTh label="สถานะ" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="วันที่ดำเนินการ" field="actionAt" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">การจัดการ</th>
@@ -784,13 +783,6 @@ export default function ApprovalHistoryPage() {
                             <span className="text-[11px] text-slate-500 dark:text-slate-400">• {item.departmentName}</span>
                           )}
                         </div>
-                      </td>
-
-                      {/* 4. รายละเอียดคำขอ */}
-                      <td className="px-4 py-3.5 text-xs">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                          {item.subType}
-                        </span>
                       </td>
 
                       {/* 5. สถานะ */}
