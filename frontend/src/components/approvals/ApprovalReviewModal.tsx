@@ -371,7 +371,7 @@ export function ApprovalReviewModal({
                   type="button"
                   onClick={onClose}
                   disabled={isSubmitting}
-                  className="h-12 rounded-xl border border-primary dark:border-slate-500 text-primary dark:text-slate-100 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer disabled:opacity-50"
+                  className="h-12 rounded-xl border border-slate-300 dark:border-slate-600 text-primary dark:text-slate-100 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer disabled:opacity-50"
                 >
                   ปิด
                 </button>
