@@ -10,6 +10,8 @@ public record LeaveRequestDto
     public string? EmployeePrefix { get; init; }
     public string EmployeeName { get; init; } = string.Empty;
     public string DepartmentName { get; init; } = string.Empty;
+    /// <summary>ฝ่าย (Division) ณ วันที่ยื่น</summary>
+    public string? DivisionName { get; init; }
     public string PositionName { get; init; } = string.Empty;
 
     public long LeaveTypeId { get; init; }

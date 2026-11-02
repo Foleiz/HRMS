@@ -71,7 +71,8 @@ public partial class LeaveRequestService : ILeaveRequestService
         // ประวัติตำแหน่งทั้งหมด — เอกสารแสดงตำแหน่ง/แผนก ณ วันที่ยื่น ไม่เปลี่ยนตามการย้ายภายหลัง
         var assignments = (await _context.EmployeeAssignments
                 .AsNoTracking()
-                .Include(a => a.Department)
+                .Include(a => a.Department).ThenInclude(d => d!.Division)
+                .Include(a => a.Division)
                 .Include(a => a.Position)
                 .Where(a => empIds.Contains(a.EmployeeId))
                 .ToListAsync(cancellationToken))
@@ -253,7 +254,8 @@ public partial class LeaveRequestService : ILeaveRequestService
         // ตำแหน่ง/แผนก ณ วันที่ยื่น
         var empAssignments = await _context.EmployeeAssignments
             .AsNoTracking()
-            .Include(a => a.Department)
+            .Include(a => a.Department).ThenInclude(d => d!.Division)
+            .Include(a => a.Division)
             .Include(a => a.Position)
             .Where(a => a.EmployeeId == r.EmployeeId)
             .ToListAsync(cancellationToken);
@@ -835,6 +837,7 @@ public partial class LeaveRequestService : ILeaveRequestService
             EmployeePrefix = emp?.Prefix,
             EmployeeName = empName,
             DepartmentName = assign?.Department?.DepartmentName ?? "-",
+            DivisionName = assign?.Division?.DivisionName ?? assign?.Department?.Division?.DivisionName,
             PositionName = assign?.Position?.PositionName ?? "-",
             LeaveTypeId = r.LeaveTypeId,
             LeaveTypeCode = r.LeaveType?.LeaveCode ?? string.Empty,
