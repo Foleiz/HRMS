@@ -1158,9 +1158,6 @@ export default function AnnouncementsPage() {
                     placeholder="เลือกวันที่เผยแพร่"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
                   />
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    กำหนดวันที่ประกาศจะแสดงผลบนปฏิทินข่าวสาร
-                  </span>
                 </div>
 
                 <div>
@@ -1174,9 +1171,6 @@ export default function AnnouncementsPage() {
                     placeholder="เลือกวันที่สิ้นสุด"
                     className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
                   />
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    จัดเก็บประกาศอัตโนมัติเมื่อพ้นกำหนด
-                  </span>
                 </div>
               </div>
 
@@ -1261,7 +1255,6 @@ export default function AnnouncementsPage() {
                   />
                   <div>
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">ปักหมุดประกาศนี้</span>
-                    <span className="text-[11px] text-slate-400 block">แสดงข่าวนี้อยู่บนสุดของฟีดพนักงานเสมอ</span>
                   </div>
                 </label>
 
