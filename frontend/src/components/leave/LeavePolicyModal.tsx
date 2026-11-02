@@ -2,7 +2,7 @@
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Loader2, Sparkles, FileCheck2 } from 'lucide-react';
+import { X, Loader2, FileCheck2 } from 'lucide-react';
 import {
   LeaveType,
   LeavePolicy,
@@ -280,7 +280,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
           <div>
             <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">{isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">กำหนดว่าใครได้ลาประเภทนี้กี่วัน และมีเงื่อนไขอะไร — ระบบบังคับใช้ตอนยื่นลาจริง</p>
           </div>
           <button onClick={onClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
             <X className="w-5 h-5" />
@@ -292,7 +291,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 1. ใช้กับใคร */}
           <Section no={1} title="ใช้กับใคร">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="ประเภทการลา *">
                 <CustomSelect
                   value={leaveTypeId}
@@ -307,6 +306,14 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                     </option>
                   ))}
                 </CustomSelect>
+              </Field>
+              <Field label="เริ่มมีผลตั้งแต่วันที่ *">
+                <ThaiDatePicker
+                  value={effectiveFrom}
+                  onChange={setEffectiveFrom}
+                  placeholder="เลือกวันที่มีผล"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
               </Field>
               <Field label="ประเภทพนักงาน">
                 <CustomSelect value={employeeTypeId} onChange={(e) => setEmployeeTypeId(e.target.value === '' ? '' : Number(e.target.value))} className={selectCls}>
@@ -325,16 +332,11 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 </CustomSelect>
               </Field>
             </div>
-            {!isEditing && (
-              <p className="flex items-center gap-1.5 text-[11px] text-blue-700">
-                <Sparkles className="w-3.5 h-3.5" /> เติมค่าแนะนำตามหมวดของประเภทการลาให้แล้ว ปรับได้ทุกช่อง
-              </p>
-            )}
           </Section>
 
           {/* 2. สิทธิ์ */}
           <Section no={2} title="สิทธิ์ที่ได้รับ">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label="จำนวนวันลาต่อปี *">
                 <NumberBox value={form.entitlementDays} onChange={(v) => set('entitlementDays', v)} unit="วัน/ปี" step="0.5" />
               </Field>
@@ -344,7 +346,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                   <option value="PRORATA_MONTHLY">คิดตามสัดส่วนเดือนที่เหลือ</option>
                 </CustomSelect>
               </Field>
-              <Field label="อายุงานขั้นต่ำก่อนใช้สิทธิ์" hint="0 = ใช้ได้ตั้งแต่วันแรก · 365 = ทำงานครบ 1 ปี">
+              <Field label="อายุงานขั้นต่ำก่อนใช้สิทธิ์" hint="0 = วันแรก · 365 = 1 ปี">
                 <NumberBox value={form.minimumServiceDays} onChange={(v) => set('minimumServiceDays', v)} unit="วัน" />
               </Field>
             </div>
@@ -386,30 +388,23 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 4. ยกยอด */}
           <Section no={4} title="ยกยอดวันลาข้ามปี">
-            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <span className="text-sm text-gray-700 dark:text-slate-300">วันลาที่เหลือยกไปใช้ปีถัดไปได้</span>
-              <Toggle checked={form.isCarryForwardAllowed} onChange={(v) => set('isCarryForwardAllowed', v)} />
-            </div>
-            {form.isCarryForwardAllowed && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="ยกไปได้สูงสุด" hint="เว้นว่าง = เท่าจำนวนวันลาต่อปี">
-                  <NumberBox value={form.carryForwardMaxDays} onChange={(v) => set('carryForwardMaxDays', v)} unit="วัน" step="0.5" placeholder={String(form.entitlementDays || 0)} />
-                </Field>
-                <Field label="ต้องใช้ให้หมดภายใน" hint="นับจาก 1 มกราคมของปีถัดไป (เว้นว่าง = 3 เดือน)">
-                  <NumberBox value={form.carryForwardExpiryMonths} onChange={(v) => set('carryForwardExpiryMonths', v)} unit="เดือน" placeholder="3" />
-                </Field>
+            <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">วันลาที่เหลือยกไปใช้ปีถัดไปได้</span>
+                <Toggle checked={form.isCarryForwardAllowed} onChange={(v) => set('isCarryForwardAllowed', v)} />
               </div>
-            )}
+              {form.isCarryForwardAllowed && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+                  <Field label="ยกไปได้สูงสุด" hint="เว้นว่าง = เท่าจำนวนวันลาต่อปี">
+                    <NumberBox value={form.carryForwardMaxDays} onChange={(v) => set('carryForwardMaxDays', v)} unit="วัน" step="0.5" placeholder={String(form.entitlementDays || 0)} />
+                  </Field>
+                  <Field label="ต้องใช้ให้หมดภายใน" hint="นับจาก 1 ม.ค. ของปีถัดไป (เว้นว่าง = 3 เดือน)">
+                    <NumberBox value={form.carryForwardExpiryMonths} onChange={(v) => set('carryForwardExpiryMonths', v)} unit="เดือน" placeholder="3" />
+                  </Field>
+                </div>
+              )}
+            </div>
           </Section>
-
-          <Field label="เริ่มมีผลตั้งแต่วันที่">
-            <ThaiDatePicker
-              value={effectiveFrom}
-              onChange={setEffectiveFrom}
-              placeholder="เลือกวันที่มีผล"
-              className="w-48 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </Field>
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <Button
