@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
@@ -10,6 +11,7 @@ import {
   Upload,
   FileText,
   Trash2,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
@@ -193,19 +195,11 @@ export default function CreateTransferModal({
     <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="relative px-14 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 inline-flex flex-wrap items-center justify-center gap-2">
-            บันทึกคำสั่งแต่งตั้ง / โยกย้ายพนักงาน
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="ปิดหน้าต่าง"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={ArrowRightLeft}
+          title="บันทึกคำสั่งแต่งตั้ง / โยกย้ายพนักงาน"
+          onClose={onClose}
+        />
 
         {/* Content Form */}
         <form onSubmit={handleSubmit} className="p-7 space-y-4 overflow-y-auto flex-1">

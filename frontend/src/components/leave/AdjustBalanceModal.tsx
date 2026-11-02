@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowRightLeft } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { LeaveBalance, LeaveBalanceAdjustmentPayload } from '@/types/leave';
 import { Modal, ModalFooter, inputClass } from '@/components/ui';
 
@@ -64,6 +67,7 @@ export const AdjustBalanceModal: React.FC<AdjustBalanceModalProps> = ({
 
   return (
     <Modal
+      icon={SlidersHorizontal}
       isOpen={isOpen}
       onClose={onClose}
       title={

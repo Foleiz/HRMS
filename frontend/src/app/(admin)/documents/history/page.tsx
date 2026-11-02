@@ -1183,6 +1183,7 @@ export default function DocumentHistoryPage() {
 
       {/* ─── แนบเอกสารเพิ่ม ─── */}
       <Modal
+        icon={Paperclip}
         isOpen={!!uploadDoc}
         onClose={() => !uploading && setUploadDoc(null)}
         title="แนบเอกสารเพิ่ม"

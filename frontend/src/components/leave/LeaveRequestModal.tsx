@@ -1,8 +1,14 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Loader2, Paperclip } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  Paperclip,
+  CalendarPlus,
+} from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateLeaveRequestPayload } from '@/types/leave';
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
@@ -136,15 +142,11 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
     <ModalShell className="z-50 bg-black/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between shrink-0">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-slate-200 text-center flex-1">ยื่นคำขอลา</h3>
-          <button
-            onClick={onClose}
-            className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={CalendarPlus}
+          title="ยื่นคำขอลา"
+          onClose={onClose}
+        />
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto">

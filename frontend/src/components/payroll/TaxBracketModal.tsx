@@ -1,4 +1,5 @@
 ﻿'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
@@ -11,7 +12,8 @@ import {
   Save,
   HelpCircle,
   ShieldAlert,
-  Info
+  Info,
+  Percent,
 } from 'lucide-react';
 import { TaxBracket, UpdateTaxBracketPayload } from '@/types/payroll';
 import { Button } from '@/components/ui';
@@ -214,24 +216,11 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in" innerClassName="items-center justify-center p-4">
       <div className="relative bg-white dark:bg-slate-800 rounded-2xl max-w-5xl w-full shadow-2xl border border-slate-100 dark:border-slate-700/60 overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-3">
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <span>จัดการโครงสร้างอัตราภาษีเงินได้บุคคลธรรมดา (ภ.ง.ด.)</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold font-mono">
-                  {localBrackets.length} ขั้นบันได
-                </span>
-              </h3>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Percent}
+          title={<><span>จัดการโครงสร้างอัตราภาษีเงินได้บุคคลธรรมดา (ภ.ง.ด.)</span> <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold font-mono"> {localBrackets.length} ขั้นบันได </span></>}
+          onClose={onClose}
+        />
 
         {/* Body (Scrollable) */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">

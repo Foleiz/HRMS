@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button, TabBar } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
@@ -1109,20 +1110,11 @@ export default function EmployeeDetailView({
         <ModalShell onBackdropClick={closeSignatureModal}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-6 pt-5">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ลายเซ็น</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ใช้ประทับในเอกสารที่ต้องลงนาม</p>
-              </div>
-              <button
-                type="button"
-                aria-label="ปิด"
-                onClick={closeSignatureModal}
-                className="p-1.5 -mr-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={FileSignature}
+              title="ลายเซ็น"
+              onClose={closeSignatureModal}
+            />
 
             <div className="px-6 pt-4 pb-5 space-y-3">
               {signatureUrl || pendingSig ? (
@@ -1242,21 +1234,11 @@ export default function EmployeeDetailView({
         <ModalShell className="z-50 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-400 flex items-center justify-center">
-                  <KeyRound className="w-4 h-4" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">เปลี่ยนรหัสผ่าน</h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPasswordModalOpen(false)}
-                className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={KeyRound}
+              title="เปลี่ยนรหัสผ่าน"
+              onClose={() => setIsPasswordModalOpen(false)}
+            />
 
             {/* Modal Form */}
             <form onSubmit={handleChangePasswordSubmit} className="p-6 space-y-4">

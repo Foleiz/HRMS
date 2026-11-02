@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -28,7 +29,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Building,
-  Tag
+  Tag,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -883,24 +884,12 @@ export default function AnnouncementsPage() {
       {statsModalOpen && (
         <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <BarChart2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">สถิติและรายชื่อผู้เปิดอ่าน</h3>
-                  <p className="text-[11px] text-slate-400 truncate max-w-sm">{readStats?.title || 'กำลังโหลด...'}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setStatsModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={BarChart2}
+              title="สถิติและรายชื่อผู้เปิดอ่าน"
+              subtitle={<>{readStats?.title || 'กำลังโหลด...'}</>}
+              onClose={() => setStatsModalOpen(false)}
+            />
 
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
               {loadingStats ? (
@@ -1078,25 +1067,11 @@ export default function AnnouncementsPage() {
       {isFormOpen && (
         <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
-                  <Megaphone className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                    {editingAnnouncement ? 'แก้ไขข่าวสารและประกาศ' : 'สร้างข่าวสารและประกาศใหม่'}
-                  </h3>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsFormOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={Megaphone}
+              title={editingAnnouncement ? 'แก้ไขข่าวสารและประกาศ' : 'สร้างข่าวสารและประกาศใหม่'}
+              onClose={() => setIsFormOpen(false)}
+            />
 
             <form onSubmit={handleSave} className="overflow-y-auto p-5 space-y-4 flex-1">
               {/* Title */}

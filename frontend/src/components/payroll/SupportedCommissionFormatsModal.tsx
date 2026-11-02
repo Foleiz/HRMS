@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState } from 'react';
@@ -132,22 +133,11 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
     <ModalShell className="z-50 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
       <div className="relative flex max-h-[92vh] w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 shadow-sm">
-              <FileSpreadsheet className="h-6 w-6" />
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-              รูปแบบไฟล์ที่รองรับ & ระบบตรวจจับอัตโนมัติ
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors cursor-pointer"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={FileSpreadsheet}
+          title="รูปแบบไฟล์ที่รองรับ & ระบบตรวจจับอัตโนมัติ"
+          onClose={onClose}
+        />
 
         {/* Tabs Bar */}
         <div className="flex border-b border-slate-200 bg-slate-100/70 p-2 dark:border-slate-800 dark:bg-slate-950/40 gap-2">

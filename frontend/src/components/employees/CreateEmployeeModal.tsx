@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button, TabBar } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
@@ -12,6 +13,7 @@ import {
   Landmark,
   Plus,
   AlertCircle,
+  UserPlus,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
@@ -664,19 +666,11 @@ export default function CreateEmployeeModal({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header (ตรงตามสไตล์เดียวกับ EditEmployeeModal) */}
-        <div className="relative px-14 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 inline-flex flex-wrap items-center justify-center gap-2">
-            เพิ่มพนักงานใหม่
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="ปิดหน้าต่าง"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={UserPlus}
+          title="เพิ่มพนักงานใหม่"
+          onClose={onClose}
+        />
 
         {/* Modal Tab Switcher — แถบแท็บมาตรฐานของระบบ */}
         <div className="border-b border-slate-200 dark:border-slate-700 px-6 shrink-0">

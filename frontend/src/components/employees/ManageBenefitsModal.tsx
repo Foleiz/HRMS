@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
@@ -216,25 +217,11 @@ export const ManageBenefitsModal: React.FC<ManageBenefitsModalProps> = ({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700/60 my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-primary text-white">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/10 rounded-xl">
-              <Gift className="w-5 h-5 text-cyan-300" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold">จัดการสิทธิประโยชน์และสวัสดิการบริษัท</h2>
-              <p className="text-xs text-slate-300">
-                กำหนดรายการสวัสดิการ เพื่อนำไปเลือกผูกกับสัญญาจ้างงานแต่ละประเภทแบบไดนามิก
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Gift}
+          title="จัดการสิทธิประโยชน์และสวัสดิการบริษัท"
+          onClose={onClose}
+        />
 
         {/* Feedback Alerts */}
         {successMessage && (

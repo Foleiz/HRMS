@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useRef, useMemo } from 'react';
@@ -48,6 +49,7 @@ import {
   Folder,
   Contact,
   Briefcase,
+  MessageSquare,
 } from 'lucide-react';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
@@ -1421,22 +1423,11 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
       {commentModalEmp && (
         <ModalShell className="z-50 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold ring-2 ring-white/60">
-                  !
-                </div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  คอมเมนต์สำหรับ: {commentModalEmp.fullName}
-                </h3>
-              </div>
-              <button
-                onClick={() => setCommentModalEmp(null)}
-                className="text-slate-400 hover:text-slate-600 dark:text-slate-400"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={MessageSquare}
+              title={<>คอมเมนต์สำหรับ: {commentModalEmp.fullName}</>}
+              onClose={() => setCommentModalEmp(null)}
+            />
 
             <div className="space-y-1.5">
               <textarea

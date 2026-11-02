@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -830,20 +831,11 @@ export default function EssAttendancePage() {
       {isModalOpen && (
         <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-150 animate-in fade-in zoom-in duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-blue-50 text-[#0052CC]">
-                  <FileEdit className="w-5 h-5" />
-                </div>
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base">ยื่นคำขอปรับปรุงเวลาเข้า-ออก</h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={FileEdit}
+              title="ยื่นคำขอปรับปรุงเวลาเข้า-ออก"
+              onClose={() => setIsModalOpen(false)}
+            />
 
             <form onSubmit={handleSubmitAdjustment} className="mt-4 space-y-4">
               <div>

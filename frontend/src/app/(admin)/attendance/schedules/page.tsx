@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -1923,6 +1924,7 @@ function SchedulesContent() {
       {/* MODAL 1: Single Assign Shift Modal */}
       {/* ============================================================= */}
       <Modal
+        icon={UserCheck}
         isOpen={assignModalOpen}
         onClose={() => setAssignModalOpen(false)}
         title={assignModalMode === 'create' ? 'มอบหมายกะเดี่ยว' : 'แก้ไขการมอบหมายกะ'}
@@ -2294,15 +2296,11 @@ function SchedulesContent() {
       {batchModalOpen && (
         <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-fade-in" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col dark:bg-slate-800 dark:border-slate-700">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base dark:text-slate-100">มอบหมายกะแบบกลุ่ม</h3>
-              <button
-                onClick={() => setBatchModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:text-slate-400 rounded-lg transition dark:text-slate-500 dark:text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={Users}
+              title="มอบหมายกะแบบกลุ่ม"
+              onClose={() => setBatchModalOpen(false)}
+            />
 
             <div className="p-5 overflow-y-auto space-y-4 flex-1">
               {/* Batch Result Report */}
@@ -2672,6 +2670,7 @@ function SchedulesContent() {
       {/* MODAL 3: Create / Edit Shift Master Modal */}
       {/* ============================================================= */}
       <Modal
+        icon={Clock}
         isOpen={shiftModalOpen}
         onClose={() => setShiftModalOpen(false)}
         title={shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
@@ -2893,6 +2892,7 @@ function SchedulesContent() {
       {/* ============================================================= */}
       {employeeModalOpen && selectedShiftForEmployees && (
         <Modal
+          icon={Users}
           isOpen={employeeModalOpen}
           onClose={() => setEmployeeModalOpen(false)}
           title={`พนักงานในกะ: ${selectedShiftForEmployees.shiftName}`}

@@ -33,6 +33,8 @@ import {
   MapPin,
   Stamp,
   Camera,
+  Network,
+  Users,
 } from 'lucide-react';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
@@ -2181,6 +2183,7 @@ export default function OrganizationPage() {
       {/* 5. Create / Edit Modal (Division) */}
       {modalOpen && activeTab === 'divisions' && (
         <Modal
+          icon={Building2}
           isOpen
           size="sm"
           onClose={() => setModalOpen(false)}
@@ -2242,6 +2245,7 @@ export default function OrganizationPage() {
       {/* 6. Create / Edit Modal (Department) */}
       {modalOpen && activeTab === 'departments' && (
         <Modal
+          icon={Network}
           isOpen
           size="sm"
           onClose={() => setModalOpen(false)}
@@ -2332,6 +2336,7 @@ export default function OrganizationPage() {
       {/* Create / Edit Modal (Team) */}
       {modalOpen && activeTab === 'teams' && (
         <Modal
+          icon={Users}
           isOpen
           size="sm"
           onClose={() => setModalOpen(false)}
@@ -2439,6 +2444,7 @@ export default function OrganizationPage() {
       {/* 7. Create / Edit Modal (Position) */}
       {modalOpen && activeTab === 'positions' && (
         <Modal
+          icon={Briefcase}
           isOpen
           size="sm"
           onClose={() => setModalOpen(false)}
@@ -2523,6 +2529,7 @@ export default function OrganizationPage() {
       {/* 7. Create / Edit Modal (Benefit) */}
       {modalOpen && activeTab === 'benefits' && (
         <Modal
+          icon={Gift}
           isOpen
           size="md"
           onClose={() => setModalOpen(false)}
@@ -2677,6 +2684,7 @@ export default function OrganizationPage() {
       {/* 8. Create / Edit Modal (Employee Level) */}
       {modalOpen && activeTab === 'levels' && (
         <Modal
+          icon={Layers}
           isOpen
           size="sm"
           onClose={() => setModalOpen(false)}
@@ -2758,6 +2766,7 @@ export default function OrganizationPage() {
       {/* Modal: Create / Edit Company Bank Account */}
       {bankAccountModalOpen && (
         <Modal
+          icon={Landmark}
           isOpen
           size="sm"
           onClose={() => setBankAccountModalOpen(false)}

@@ -1,8 +1,16 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, History, PlusCircle, MinusCircle, RefreshCw } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  History,
+  PlusCircle,
+  MinusCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { LeaveBalance, LeaveBalanceTransaction } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { Button } from '@/components/ui';
@@ -92,23 +100,12 @@ export const LeaveTransactionsModal: React.FC<LeaveTransactionsModalProps> = ({
     <ModalShell className="z-50 bg-black/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <History className="w-5 h-5 text-indigo-600" />
-            <div>
-              <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">ประวัติความเคลื่อนไหวยอดวันลา</h3>
-              <p className="text-xs text-gray-500 dark:text-slate-400">
-                {balance.employeeName} ({balance.employeeCode}) · {balance.leaveTypeName}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={History}
+          title="ประวัติความเคลื่อนไหวยอดวันลา"
+          subtitle={<>{balance.employeeName} ({balance.employeeCode}) · {balance.leaveTypeName}</>}
+          onClose={onClose}
+        />
 
         {/* Content */}
         <div className="p-6 overflow-y-auto flex-1 space-y-4">

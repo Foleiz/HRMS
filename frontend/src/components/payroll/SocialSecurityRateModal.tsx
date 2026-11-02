@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button, Input } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import {
   Info,
   Sparkles,
   Calculator,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
 import { SocialSecurityRate, UpdateSocialSecurityRatePayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -151,28 +152,11 @@ export const SocialSecurityRateModal: React.FC<SocialSecurityRateModalProps> = (
     <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-2xl w-full flex flex-col max-h-[92vh] overflow-hidden">
         {/* Header */}
-        <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-white dark:bg-slate-900 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center shrink-0 shadow-2xs">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <span>{rate ? 'แก้ไขเกณฑ์และอัตราเงินสมทบประกันสังคม' : 'เพิ่มเกณฑ์อัตราเงินสมทบประกันสังคม'}</span>
-                <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
-                  {status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับการใช้'}
-                </span>
-              </h2>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={ShieldCheck}
+          title={<><span>{rate ? 'แก้ไขเกณฑ์และอัตราเงินสมทบประกันสังคม' : 'เพิ่มเกณฑ์อัตราเงินสมทบประกันสังคม'}</span> <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200"> {status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับการใช้'} </span></>}
+          onClose={onClose}
+        />
 
         {/* Content Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
