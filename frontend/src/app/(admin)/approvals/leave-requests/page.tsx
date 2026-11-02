@@ -1028,6 +1028,9 @@ export default function LeaveRequestsApprovalPage() {
                     เลขที่เอกสาร
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                    วันที่ยื่น
+                  </th>
+                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     ประเภทเอกสาร
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
@@ -1035,9 +1038,6 @@ export default function LeaveRequestsApprovalPage() {
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     รายละเอียดคำขอ
-                  </th>
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                    วันที่ยื่น
                   </th>
                   <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                     สถานะ
@@ -1067,6 +1067,11 @@ export default function LeaveRequestsApprovalPage() {
                         >
                           {item.requestNo}
                         </button>
+                      </td>
+
+                      {/* 5. วันที่ยื่น */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+                        {formatDate(item.submittedAt)}
                       </td>
 
                       {/* 2. ประเภทเอกสาร */}
@@ -1124,11 +1129,6 @@ export default function LeaveRequestsApprovalPage() {
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
                           {item.subType}
                         </span>
-                      </td>
-
-                      {/* 5. วันที่ยื่น */}
-                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
-                        {formatDate(item.submittedAt)}
                       </td>
 
                       {/* 6. สถานะ */}

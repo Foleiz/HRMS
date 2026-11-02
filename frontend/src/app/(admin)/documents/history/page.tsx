@@ -18,6 +18,8 @@ import {
   Pencil,
   Trash2,
   Eye,
+  FileSearch,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -43,6 +45,9 @@ import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/
 import { Button, TablePagination , TableToolbar } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
+import { ApprovalReviewModal, type ReviewResult } from '@/components/approvals/ApprovalReviewModal';
+import { useLeaveDecisionData, LeaveDecisionInsightsPanel } from '@/components/approvals/LeaveDecisionInsights';
+import { CertificateReviewInfo, ResignationReviewInfo, GeneralReviewInfo } from '@/components/approvals/ReviewInfoPanels';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -63,6 +68,25 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 dark:text-slate-400 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
 
+// ป้ายประเภทเอกสาร — รูปแบบเดียวกับเมนูการอนุมัติ
+const SOURCE_BADGE: Record<'LEAVE' | 'RESIGNATION' | 'CERTIFICATE' | 'GENERAL', { label: string; cls: string; iconCls: string; icon: 'leave' | 'doc' }> = {
+  LEAVE: { label: 'คำขอลา', cls: 'bg-indigo-50 text-indigo-700 border-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-900/60', iconCls: 'text-indigo-500', icon: 'leave' },
+  CERTIFICATE: { label: 'หนังสือรับรอง', cls: 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60', iconCls: 'text-emerald-500', icon: 'doc' },
+  RESIGNATION: { label: 'คำขอลาออก', cls: 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60', iconCls: 'text-rose-500', icon: 'doc' },
+  GENERAL: { label: 'เอกสารทั่วไป', cls: 'bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60', iconCls: 'text-amber-500', icon: 'doc' },
+};
+
+function SourceBadge({ source }: { source: keyof typeof SOURCE_BADGE }) {
+  const b = SOURCE_BADGE[source];
+  const Icon = b.icon === 'leave' ? ClipboardList : FileText;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border whitespace-nowrap ${b.cls}`}>
+      <Icon className={`w-3.5 h-3.5 ${b.iconCls}`} />
+      {b.label}
+    </span>
+  );
+}
+
 // เอกสารทุกประเภทที่พนักงานยื่นได้จากเมนู "ยื่นเอกสาร" (การลา, ลาออก, หนังสือรับรอง, เอกสารทั่วไป)
 interface MyDocumentRow {
   id: string;
@@ -70,6 +94,8 @@ interface MyDocumentRow {
   submittedDate?: string | null;
   detailDate: string;
   documentType: string;
+  /** ประเภทย่อย เช่น ลาป่วย / หนังสือรับรองเงินเดือน */
+  subType?: string;
   status: string;
   /** เวลาที่มีความเคลื่อนไหวล่าสุด (ยื่น/อนุมัติ/ไม่อนุมัติ/ยกเลิก/แก้ไข) — ใช้เรียงรายการล่าสุดไว้บนสุด */
   lastActivityAt?: string | null;
@@ -224,6 +250,7 @@ export default function DocumentHistoryPage() {
           ? formatShortDate(r.startDatetime)
           : `${formatShortDate(r.startDatetime)} - ${formatShortDate(r.endDatetime)}`,
       documentType: `เอกสารการลา (${r.leaveTypeName || '-'})`,
+      subType: r.leaveTypeName || undefined,
       status: r.status,
       rejectReason: r.rejectReason,
       documents: r.documents,
@@ -265,6 +292,7 @@ export default function DocumentHistoryPage() {
         submittedDate: r.requestedAt,
         detailDate: r.purpose ? `วัตถุประสงค์: ${r.purpose}` : docName,
         documentType: `หนังสือรับรอง (${docName})`,
+        subType: docName,
         status: r.status,
         source: 'CERTIFICATE',
         rawCertificate: r,
@@ -279,6 +307,7 @@ export default function DocumentHistoryPage() {
       submittedDate: r.submittedAt,
       detailDate: `วัตถุประสงค์: ${r.purpose}`,
       documentType: `คำร้องเอกสารทั่วไป (${r.documentType})`,
+      subType: r.documentType,
       status: r.status,
       documents: r.fileName ? [{ id: 1, fileName: r.fileName }] : undefined,
       source: 'GENERAL',
@@ -624,6 +653,69 @@ export default function DocumentHistoryPage() {
     URL.revokeObjectURL(url);
   };
 
+  // ─── รายละเอียดเอกสาร (ดูอย่างเดียว) — รูปแบบเดียวกับหน้าตรวจสอบของเมนูการอนุมัติ
+  const [detailDoc, setDetailDoc] = useState<MyDocumentRow | null>(null);
+  const detailLeaveData = useLeaveDecisionData(detailDoc?.rawLeave ?? null, []);
+
+  const renderDetail = (doc: MyDocumentRow) => {
+    const applied = doc.status === 'APPROVED';
+    let info: React.ReactNode = null;
+    let byName: string | null | undefined;
+    let at: string | null | undefined;
+    let employeeId: number | undefined;
+    let employeeName = '';
+    let meta = '';
+    if (doc.rawLeave) {
+      const r = doc.rawLeave;
+      info = <LeaveDecisionInsightsPanel request={r} data={detailLeaveData} applied={applied} />;
+      byName = r.approvedByName;
+      at = r.approvedAt ?? r.cancelledAt;
+      employeeId = r.employeeId;
+      employeeName = r.employeeName;
+      meta = [r.positionName, r.departmentName].filter(Boolean).join(' · ');
+    } else if (doc.rawCertificate) {
+      const r = doc.rawCertificate;
+      info = <CertificateReviewInfo request={r} />;
+      byName = r.approvedByName;
+      at = r.approvedAt ?? r.issuedAt;
+      employeeId = r.employeeId;
+      employeeName = r.employeeName;
+      meta = [r.positionName, r.departmentName].filter(Boolean).join(' · ');
+    } else if (doc.rawResignation) {
+      const r = doc.rawResignation;
+      info = <ResignationReviewInfo request={r} />;
+      byName = r.status === 'REJECTED' ? r.rejectedByName : r.approvedByName;
+      at = r.status === 'REJECTED' ? r.rejectedAt : (r.approvedAt ?? r.cancelledAt);
+      employeeId = r.employeeId;
+      employeeName = r.employeeName;
+      meta = [r.positionName, r.departmentName].filter(Boolean).join(' · ');
+    } else if (doc.rawGeneral) {
+      const r = doc.rawGeneral;
+      info = <GeneralReviewInfo request={r} />;
+      byName = r.approvedByName;
+      at = r.approvedAt;
+      employeeId = r.employeeId;
+      employeeName = r.employeeName;
+      meta = [r.positionName, r.departmentName].filter(Boolean).join(' · ');
+    }
+    const result: ReviewResult = {
+      label: STATUS_CONFIG[doc.status]?.label ?? doc.status,
+      tone:
+        doc.status === 'APPROVED'
+          ? 'approve'
+          : doc.status === 'REJECTED'
+            ? 'reject'
+            : doc.status === 'PENDING'
+              ? 'pending'
+              : 'neutral',
+      byName,
+      at,
+      note: doc.rejectReason,
+      noteLabel: doc.status === 'CANCELLED' ? 'เหตุผลที่ยกเลิก' : 'เหตุผลที่ไม่อนุมัติ',
+    };
+    return { info, result, employeeId, employeeName, meta };
+  };
+
   const getDocumentActionItems = (doc: MyDocumentRow): ActionDropdownItem[] => {
     const hasAttachments = !!doc.documents && doc.documents.length > 0;
     const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
@@ -632,8 +724,13 @@ export default function DocumentHistoryPage() {
 
     const items: ActionDropdownItem[] = [
       {
+        label: 'ดูรายละเอียด',
+        icon: <FileSearch className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+        onClick: () => setDetailDoc(doc),
+      },
+      {
         label: 'ดูเอกสาร',
-        icon: <Eye className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+        icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
         onClick: () => handleOpenDocumentPreview(doc),
       },
     ];
@@ -641,7 +738,7 @@ export default function DocumentHistoryPage() {
     if (hasEdit && doc.editUrl) {
       items.push({
         label: 'แก้ไขต่อ',
-        icon: <Pencil className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+        icon: <Pencil className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
         href: doc.editUrl,
       });
     }
@@ -651,7 +748,7 @@ export default function DocumentHistoryPage() {
       doc.documents!.forEach((d) => {
         items.push({
           label: d.fileName ? `ดาวน์โหลด ${d.fileName}` : 'ดาวน์โหลดเอกสารแนบ',
-          icon: <Download className="w-3.5 h-3.5 text-blue-500 shrink-0" />,
+          icon: <Download className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
           onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
         });
       });
@@ -662,7 +759,7 @@ export default function DocumentHistoryPage() {
       if (hasCancel) {
         items.push({
           label: 'ถอนคำขอ',
-          icon: <Ban className="w-3.5 h-3.5 text-rose-600 shrink-0" />,
+          icon: <Ban className="w-4 h-4 text-rose-600 shrink-0" />,
           danger: true,
           onClick: () => handleCancel(doc),
         });
@@ -670,7 +767,7 @@ export default function DocumentHistoryPage() {
       if (hasDelete) {
         items.push({
           label: 'ลบ',
-          icon: <Trash2 className="w-3.5 h-3.5 text-rose-600 shrink-0" />,
+          icon: <Trash2 className="w-4 h-4 text-rose-600 shrink-0" />,
           danger: true,
           onClick: () => handleDelete(doc),
         });
@@ -870,8 +967,19 @@ export default function DocumentHistoryPage() {
                             </button>
                           </td>
                           <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
-                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{doc.detailDate}</td>
-                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400">{doc.documentType}</td>
+                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {doc.subType && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                  {doc.subType}
+                                </span>
+                              )}
+                              <span className="whitespace-nowrap">{doc.detailDate}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
+                            <SourceBadge source={doc.source} />
+                          </td>
                           <td className="px-4 py-4">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
                               {statusConf.icon}
@@ -974,6 +1082,29 @@ export default function DocumentHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* ─── รายละเอียดเอกสาร (ดูอย่างเดียว) — วางก่อน modal เอกสาร เพื่อให้เอกสารเปิดทับได้ ─── */}
+      {detailDoc &&
+        (() => {
+          const d = renderDetail(detailDoc);
+          return (
+            <ApprovalReviewModal
+              isOpen
+              readOnly
+              onClose={() => setDetailDoc(null)}
+              title={`รายละเอียด${SOURCE_BADGE[detailDoc.source].label}`}
+              typeLabel={detailDoc.subType}
+              code={detailDoc.code}
+              employeeId={d.employeeId}
+              employeeName={d.employeeName}
+              meta={d.meta}
+              result={d.result}
+              onViewDocument={() => handleOpenDocumentPreview(detailDoc)}
+            >
+              {d.info}
+            </ApprovalReviewModal>
+          );
+        })()}
 
       {/* ─── Modal ดูตัวอย่างเอกสารใบลาทางการ (Leave Document Preview) ─── */}
       <LeavePreviewModal
