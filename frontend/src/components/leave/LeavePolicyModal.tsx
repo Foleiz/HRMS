@@ -2,7 +2,7 @@
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Loader2, Sparkles, FileCheck2 } from 'lucide-react';
+import { X, Loader2, FileCheck2 } from 'lucide-react';
 import {
   LeaveType,
   LeavePolicy,
@@ -324,11 +324,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 </CustomSelect>
               </Field>
             </div>
-            {!isEditing && (
-              <p className="flex items-center gap-1.5 text-[11px] text-blue-700">
-                <Sparkles className="w-3.5 h-3.5" /> เติมค่าแนะนำตามหมวดของประเภทการลาให้แล้ว ปรับได้ทุกช่อง
-              </p>
-            )}
           </Section>
 
           {/* 2. สิทธิ์ */}
