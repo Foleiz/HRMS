@@ -56,13 +56,9 @@ import { ApprovalReviewModal, type ReviewDecision } from '@/components/approvals
 import {
   useLeaveDecisionData,
   LeaveDecisionInsightsPanel,
-  LeaveRejectReasonChips,
   CertDecisionInsightsPanel,
-  CertRejectReasonChips,
   ResignDecisionInsightsPanel,
-  ResignRejectReasonChips,
   GeneralDecisionInsightsPanel,
-  GeneralRejectReasonChips,
 } from '@/components/approvals/LeaveDecisionInsights';
 
 // ─── ฟังก์ชันช่วย & โครงสร้างข้อมูล ──────────────────────────────
@@ -834,7 +830,6 @@ export default function LeaveRequestsApprovalPage() {
     if (item.docType === 'LEAVE' && item.leaveRaw) {
       return {
         info: <LeaveDecisionInsightsPanel request={item.leaveRaw} data={reviewLeaveDecisionData} />,
-        chips: <LeaveRejectReasonChips warnings={reviewLeaveDecisionData.warnings} value={reviewComment} onChange={setReviewComment} />,
         attachments: (item.leaveRaw.documents ?? []).map((d) => ({
           name: d.fileName || 'ไฟล์แนบ',
           onOpen: () =>
@@ -850,7 +845,6 @@ export default function LeaveRequestsApprovalPage() {
     if (item.docType === 'CERTIFICATE' && item.certRaw) {
       return {
         info: <CertDecisionInsightsPanel request={item.certRaw} onPreview={() => openDocument(item)} />,
-        chips: <CertRejectReasonChips value={reviewComment} onChange={setReviewComment} />,
         attachments: [],
         documentLabel: 'ดูตัวอย่างหนังสือรับรอง',
       };
@@ -858,13 +852,6 @@ export default function LeaveRequestsApprovalPage() {
     if (item.docType === 'RESIGNATION' && item.resignationRaw) {
       return {
         info: <ResignDecisionInsightsPanel request={item.resignationRaw} onPreview={() => openDocument(item)} />,
-        chips: (
-          <ResignRejectReasonChips
-            isShortNotice={item.resignationRaw.noticePeriodDays < 30}
-            value={reviewComment}
-            onChange={setReviewComment}
-          />
-        ),
         attachments: [],
         documentLabel: 'ดูหนังสือขอลาออก',
       };
@@ -881,7 +868,6 @@ export default function LeaveRequestsApprovalPage() {
         : undefined;
       return {
         info: <GeneralDecisionInsightsPanel request={g} onDownloadAttachment={openAttachment} />,
-        chips: <GeneralRejectReasonChips value={reviewComment} onChange={setReviewComment} />,
         attachments: g.fileName ? [{ name: g.fileName, onOpen: openAttachment }] : [],
         documentLabel: 'ดูคำร้อง',
       };
@@ -1432,7 +1418,6 @@ export default function LeaveRequestsApprovalPage() {
               onDecisionChange={(d) => setReview((prev) => (prev ? { ...prev, decision: d } : prev))}
               comment={reviewComment}
               onCommentChange={setReviewComment}
-              rejectReasons={parts.chips}
               onViewDocument={() => openDocument(item)}
               documentLabel={parts.documentLabel}
               attachments={parts.attachments}

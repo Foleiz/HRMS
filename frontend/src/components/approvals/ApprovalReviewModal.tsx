@@ -31,8 +31,6 @@ export interface ApprovalReviewModalProps {
   onDecisionChange: (d: ReviewDecision) => void;
   comment: string;
   onCommentChange: (v: string) => void;
-  /** เหตุผลสำเร็จรูป แสดงเมื่อเลือก "ปฏิเสธ" */
-  rejectReasons?: React.ReactNode;
   onViewDocument?: () => void;
   documentLabel?: string;
   attachments?: ApprovalReviewAttachment[];
@@ -79,7 +77,6 @@ export function ApprovalReviewModal({
   onDecisionChange,
   comment,
   onCommentChange,
-  rejectReasons,
   onViewDocument,
   documentLabel = 'ดูเอกสาร',
   attachments,
@@ -219,13 +216,6 @@ export function ApprovalReviewModal({
                 </button>
               </div>
 
-              {isReject && rejectReasons && (
-                <div className="space-y-1.5">
-                  <span className="block text-xs font-semibold text-rose-700 dark:text-rose-300">เลือกเหตุผลแบบรวดเร็ว</span>
-                  {rejectReasons}
-                </div>
-              )}
-
               {showComment && (
                 <label className="block space-y-1.5">
                   <span
@@ -250,17 +240,6 @@ export function ApprovalReviewModal({
                     }`}
                   />
                 </label>
-              )}
-
-              {onViewDocument && (
-                <button
-                  type="button"
-                  onClick={onViewDocument}
-                  className="w-full h-11 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-primary dark:text-slate-100 text-sm font-semibold inline-flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer"
-                >
-                  <FileText className="w-4.5 h-4.5" />
-                  {documentLabel}
-                </button>
               )}
 
               {attachments && attachments.length > 0 && (
@@ -306,14 +285,26 @@ export function ApprovalReviewModal({
                 {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 {isReject ? 'ยืนยันปฏิเสธคำขอ' : 'ยืนยันอนุมัติคำขอ'}
               </button>
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="w-full h-12 rounded-xl border border-primary dark:border-slate-500 text-primary dark:text-slate-100 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer disabled:opacity-50"
-              >
-                ปิด
-              </button>
+              <div className={`grid gap-2.5 ${onViewDocument ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {onViewDocument && (
+                  <button
+                    type="button"
+                    onClick={onViewDocument}
+                    className="h-12 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-primary dark:text-slate-100 text-sm font-semibold inline-flex items-center justify-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer"
+                  >
+                    <FileText className="w-4.5 h-4.5" />
+                    {documentLabel}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="h-12 rounded-xl border border-primary dark:border-slate-500 text-primary dark:text-slate-100 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer disabled:opacity-50"
+                >
+                  ปิด
+                </button>
+              </div>
             </div>
           </aside>
         </div>
