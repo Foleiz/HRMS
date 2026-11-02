@@ -1,6 +1,6 @@
-import { TableToolbar } from '@/components/ui';
 'use client';
 
+import { TableToolbar } from '@/components/ui';
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Search,
