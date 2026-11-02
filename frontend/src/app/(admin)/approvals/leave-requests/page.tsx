@@ -41,7 +41,7 @@ import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
-import { Button, TablePagination, ActionDropdown } from '@/components/ui';
+import { Button, TablePagination, ActionDropdown , TableToolbar } from '@/components/ui';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
@@ -947,19 +947,11 @@ export default function LeaveRequestsApprovalPage() {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                />
-              </div>
-
+          <TableToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
+            filters={
               <CustomSelect
                 value={docTypeFilter}
                 onChange={(val) => setDocTypeFilter(String(val) as any)}
@@ -974,12 +966,13 @@ export default function LeaveRequestsApprovalPage() {
                   { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
                 ]}
               />
-            </div>
-
-            <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
-              พบ {filteredRequests.length} รายการที่รอคุณอนุมัติ
-            </span>
-          </div>
+            }
+            actions={
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap">
+                พบ {filteredRequests.length} รายการที่รอคุณอนุมัติ
+              </span>
+            }
+          />
 
           <RefreshIndicator active={listPhase.refreshing} />
         {listPhase.initialLoading ? (

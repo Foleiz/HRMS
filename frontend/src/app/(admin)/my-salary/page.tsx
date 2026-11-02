@@ -24,7 +24,7 @@ import {
   PieChart as PieChartIcon,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
-import { Button, StatusBadge, RowActions, RowActionButton, inputClass } from '@/components/ui';
+import { Button, StatusBadge, RowActions, RowActionButton, inputClass, TableToolbar } from '@/components/ui';
 import { TablePagination } from '@/components/ui/TablePagination';
 
 export default function MySalaryPage() {
@@ -545,21 +545,14 @@ function MySalaryContent() {
         <div className="lg:col-span-8 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6 flex flex-col justify-between min-h-[580px]">
           <div className="space-y-5 flex-1">
             {/* Toolbar: ช่องค้นหาด้านซ้ายตามต้นแบบระบบ */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="ค้นหาเดือน / พ.ศ...."
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
-                />
-              </div>
-            </div>
+            <TableToolbar
+              searchValue={searchTerm}
+              onSearchChange={(val: string) => {
+                setSearchTerm(val);
+                setCurrentPage(1);
+              }}
+              searchPlaceholder="ค้นหาเดือน / พ.ศ...."
+            />
 
             {/* Desktop View: Slips History Table */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">

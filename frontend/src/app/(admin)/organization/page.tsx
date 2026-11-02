@@ -76,7 +76,7 @@ import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
-import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton } from '@/components/ui';
+import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar } from '@/components/ui';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
@@ -1135,24 +1135,18 @@ export default function OrganizationPage() {
         {/* TAB 1: DIVISIONS */}
         {activeTab === 'divisions' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {canCreateStruct && (
-                <Button onClick={() => handleOpenDivisionModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                  เพิ่มฝ่าย
-                </Button>
-              )}
-            </div>
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาชื่อฝ่าย หรือรหัสฝ่าย..."
+              actions={
+                canCreateStruct && (
+                  <Button onClick={() => handleOpenDivisionModal()} icon={<Plus className="w-4 h-4" />}>
+                    เพิ่มฝ่าย
+                  </Button>
+                )
+              }
+            />
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
@@ -1221,19 +1215,11 @@ export default function OrganizationPage() {
         {/* TAB 2: DEPARTMENTS */}
         {activeTab === 'departments' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                <div className="relative max-w-sm w-full shrink-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                  />
-                </div>
-
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
+              filters={
                 <CustomSelect
                   value={filterDivisionId}
                   onChange={(val) => setFilterDivisionId(String(val))}
@@ -1243,14 +1229,15 @@ export default function OrganizationPage() {
                     ...divisions.map((d) => ({ value: String(d.id), label: d.divisionName })),
                   ]}
                 />
-              </div>
-
-              {canCreateStruct && (
-                <Button onClick={() => handleOpenDeptModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                  เพิ่มแผนก
-                </Button>
-              )}
-            </div>
+              }
+              actions={
+                canCreateStruct && (
+                  <Button onClick={() => handleOpenDeptModal()} icon={<Plus className="w-4 h-4" />}>
+                    เพิ่มแผนก
+                  </Button>
+                )
+              }
+            />
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
@@ -1321,19 +1308,11 @@ export default function OrganizationPage() {
         {/* TAB: TEAMS */}
         {activeTab === 'teams' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                <div className="relative max-w-sm w-full shrink-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาชื่อทีม หรือรหัสทีม..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                  />
-                </div>
-
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาชื่อทีม หรือรหัสทีม..."
+              filters={
                 <CustomSelect
                   value={filterDeptId}
                   onChange={(val) => setFilterDeptId(String(val))}
@@ -1343,12 +1322,13 @@ export default function OrganizationPage() {
                     ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
                   ]}
                 />
-              </div>
-
-              <Button onClick={() => handleOpenTeamModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                เพิ่มทีม
-              </Button>
-            </div>
+              }
+              actions={
+                <Button onClick={() => handleOpenTeamModal()} icon={<Plus className="w-4 h-4" />}>
+                  เพิ่มทีม
+                </Button>
+              }
+            />
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
@@ -1429,19 +1409,11 @@ export default function OrganizationPage() {
         {/* TAB 3: POSITIONS */}
         {activeTab === 'positions' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                <div className="relative max-w-sm w-full shrink-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                  />
-                </div>
-
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาชื่อตำแหน่ง หรือรหัสตำแหน่ง..."
+              filters={
                 <CustomSelect
                   value={filterDeptId}
                   onChange={(val) => setFilterDeptId(String(val))}
@@ -1451,14 +1423,15 @@ export default function OrganizationPage() {
                     ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
                   ]}
                 />
-              </div>
-
-              {canCreatePos && (
-                <Button onClick={() => handleOpenPosModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                  เพิ่มตำแหน่ง
-                </Button>
-              )}
-            </div>
+              }
+              actions={
+                canCreatePos && (
+                  <Button onClick={() => handleOpenPosModal()} icon={<Plus className="w-4 h-4" />}>
+                    เพิ่มตำแหน่ง
+                  </Button>
+                )
+              }
+            />
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
@@ -1548,24 +1521,18 @@ export default function OrganizationPage() {
         {/* TAB 4: EMPLOYEE LEVELS */}
         {activeTab === 'levels' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {canCreatePos && (
-                <Button onClick={() => handleOpenLevelModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                  เพิ่มระดับพนักงาน
-                </Button>
-              )}
-            </div>
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาระดับพนักงาน, รหัส หรือชื่อ..."
+              actions={
+                canCreatePos && (
+                  <Button onClick={() => handleOpenLevelModal()} icon={<Plus className="w-4 h-4" />}>
+                    เพิ่มระดับพนักงาน
+                  </Button>
+                )
+              }
+            />
 
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -1650,19 +1617,11 @@ export default function OrganizationPage() {
         {/* TAB 5: BENEFITS */}
         {activeTab === 'benefits' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                <div className="relative max-w-sm w-full shrink-0">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                  />
-                </div>
-
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
+              filters={
                 <CustomSelect
                   value={filterBenefitCategory}
                   onChange={(val) => setFilterBenefitCategory(String(val))}
@@ -1675,14 +1634,15 @@ export default function OrganizationPage() {
                     })),
                   ]}
                 />
-              </div>
-
-              {canCreateBenefit && (
-                <Button onClick={() => handleOpenBenefitModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                  เพิ่มสวัสดิการใหม่
-                </Button>
-              )}
-            </div>
+              }
+              actions={
+                canCreateBenefit && (
+                  <Button onClick={() => handleOpenBenefitModal()} icon={<Plus className="w-4 h-4" />}>
+                    เพิ่มสวัสดิการใหม่
+                  </Button>
+                )
+              }
+            />
 
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -2105,24 +2065,18 @@ export default function OrganizationPage() {
         {/* TAB: COMPANY BANK ACCOUNTS (Payroll) */}
         {activeTab === 'bank-accounts' && (
           <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {canCreateCompany && (
-                <Button onClick={() => handleOpenBankAccountModal()} icon={<Plus className="w-4 h-4" />} className="shrink-0 self-start sm:self-auto">
-                  เพิ่มบัญชีธนาคาร
-                </Button>
-              )}
-            </div>
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาด้วยชื่อธนาคาร, รหัสธนาคาร, เลขที่บัญชี หรือชื่อบัญชี..."
+              actions={
+                canCreateCompany && (
+                  <Button onClick={() => handleOpenBankAccountModal()} icon={<Plus className="w-4 h-4" />}>
+                    เพิ่มบัญชีธนาคาร
+                  </Button>
+                )
+              }
+            />
 
             <div className="overflow-x-auto rounded-xl border border-slate-200">
               <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">

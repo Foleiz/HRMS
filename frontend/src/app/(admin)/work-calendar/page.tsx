@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, Button, TabBar, type TabBarItem } from '@/components/ui';
+import { ModalShell, Button, TabBar, type TabBarItem , TableToolbar } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -594,88 +594,79 @@ export default function WorkCalendarPage() {
         {activeTab === 'holidays' && (
           <div className="space-y-4">
             {/* Top Toolbar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl w-full">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="ค้นหาชื่อวันหยุด หรือวันที่..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+            <TableToolbar
+              searchValue={searchQuery}
+              onSearchChange={setSearchQuery}
+              searchPlaceholder="ค้นหาชื่อวันหยุด หรือวันที่..."
+              filters={
+                <>
+                  <CustomSelect
+                    value={selectedYear}
+                    onChange={(val) => setSelectedYear(parseInt(val, 10))}
+                    placeholder="เลือกปี"
+                    className="min-w-[170px]"
+                    options={getSmartYearOptions(
+                      {
+                        forwardYears: 1,
+                        backYears: 4,
+                        historicalYears: holidays.map((h) => h.holidayDate?.substring(0, 4)),
+                        selectedYear,
+                      },
+                      'ปี พ.ศ. '
+                    )}
                   />
-                </div>
+                  <CustomSelect
+                    value={filterType}
+                    onChange={(val) => setFilterType(String(val))}
+                    placeholder="ทุกประเภทวันหยุด"
+                    className="min-w-[170px]"
+                    options={[
+                      { value: 'ALL', label: 'ทุกประเภทวันหยุด' },
+                      { value: 'PUBLIC', label: 'วันหยุดตามประเพณี' },
+                      { value: 'COMPANY_SPECIAL', label: 'วันหยุดพิเศษบริษัท' },
+                      { value: 'SUBSTITUTE', label: 'วันหยุดชดเชย' },
+                    ]}
+                  />
+                </>
+              }
+              actions={
+                <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+                  {/* สลับมุมมอง รายการ / ปฏิทิน */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800">
+                    {([
+                      { key: 'list', label: 'รายการ', icon: List },
+                      { key: 'calendar', label: 'ปฏิทิน', icon: Calendar },
+                    ] as const).map(({ key, label, icon: Icon }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setHolidayView(key)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap cursor-pointer ${
+                          holidayView === key
+                            ? 'bg-white dark:bg-slate-700 text-primary dark:text-blue-300 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span>{label}</span>
+                      </button>
+                    ))}
+                  </div>
 
-                {/* Year Filter */}
-                <CustomSelect
-                  value={selectedYear}
-                  onChange={(val) => setSelectedYear(parseInt(val, 10))}
-                  placeholder="เลือกปี"
-                  className="min-w-[170px]"
-                  options={getSmartYearOptions(
-                    {
-                      forwardYears: 1,
-                      backYears: 4,
-                      historicalYears: holidays.map((h) => h.holidayDate?.substring(0, 4)),
-                      selectedYear,
-                    },
-                    'ปี พ.ศ. '
+                  {/* Add Holiday Button */}
+                  {canCreateCalendar && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleOpenCreateModal()}
+                      icon={<Plus className="w-4 h-4" />}
+                    >
+                      เพิ่มวันหยุดประจำปี
+                    </Button>
                   )}
-                />
-
-                {/* Type Filter */}
-                <CustomSelect
-                  value={filterType}
-                  onChange={(val) => setFilterType(String(val))}
-                  placeholder="ทุกประเภทวันหยุด"
-                  className="min-w-[170px]"
-                  options={[
-                    { value: 'ALL', label: 'ทุกประเภทวันหยุด' },
-                    { value: 'PUBLIC', label: 'วันหยุดตามประเพณี' },
-                    { value: 'COMPANY_SPECIAL', label: 'วันหยุดพิเศษบริษัท' },
-                    { value: 'SUBSTITUTE', label: 'วันหยุดชดเชย' },
-                  ]}
-                />
-              </div>
-
-              <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-              {/* สลับมุมมอง รายการ / ปฏิทิน */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800">
-                {([
-                  { key: 'list', label: 'รายการ', icon: List },
-                  { key: 'calendar', label: 'ปฏิทิน', icon: Calendar },
-                ] as const).map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setHolidayView(key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition whitespace-nowrap cursor-pointer ${
-                      holidayView === key
-                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-blue-300 shadow-sm'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{label}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Add Holiday Button */}
-              {canCreateCalendar && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => handleOpenCreateModal()}
-                  icon={<Plus className="w-4 h-4" />}
-                >
-                  เพิ่มวันหยุดประจำปี
-                </Button>
-              )}
-              </div>
-            </div>
+                </div>
+              }
+            />
 
             {/* มุมมองปฏิทิน */}
             {holidayView === 'calendar' && (

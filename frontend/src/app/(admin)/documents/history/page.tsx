@@ -40,7 +40,7 @@ import { ResignationPreviewModal } from '@/components/documents/ResignationPrevi
 import { CertificatePreviewModal } from '@/components/documents/CertificatePreviewModal';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
-import { Button, TablePagination } from '@/components/ui';
+import { Button, TablePagination , TableToolbar } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 
@@ -758,74 +758,68 @@ export default function DocumentHistoryPage() {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | ส่งออก/รีเฟรช (ขวา) */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 flex-1">
-              {/* Search */}
-              <div className="relative max-w-xs w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหารหัส หรือประเภทเอกสาร..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500"
+          <TableToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="ค้นหารหัส หรือประเภทเอกสาร..."
+            filters={
+              <>
+                <CustomSelect
+                  value={sourceFilter}
+                  onChange={(val) => setSourceFilter(String(val))}
+                  className="min-w-[170px]"
+                  options={SOURCE_FILTER_OPTIONS}
                 />
-              </div>
-
-              <CustomSelect
-                value={sourceFilter}
-                onChange={(val) => setSourceFilter(String(val))}
-                className="min-w-[170px]"
-                options={SOURCE_FILTER_OPTIONS}
-              />
-              <CustomSelect
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(String(val))}
-                className="min-w-[140px]"
-                options={STATUS_FILTER_OPTIONS}
-              />
-              <CustomSelect
-                value={yearFilter}
-                onChange={(val) => setYearFilter(String(val))}
-                className="min-w-[120px]"
-                numbered={false}
-                options={yearOptions}
-              />
-              {hasActiveFilter && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSourceFilter('ALL');
-                    setStatusFilter('ALL');
-                    setYearFilter('ALL');
-                  }}
-                  className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline-offset-2 hover:underline cursor-pointer"
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={(val) => setStatusFilter(String(val))}
+                  className="min-w-[140px]"
+                  options={STATUS_FILTER_OPTIONS}
+                />
+                <CustomSelect
+                  value={yearFilter}
+                  onChange={(val) => setYearFilter(String(val))}
+                  className="min-w-[120px]"
+                  numbered={false}
+                  options={yearOptions}
+                />
+                {hasActiveFilter && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSourceFilter('ALL');
+                      setStatusFilter('ALL');
+                      setYearFilter('ALL');
+                    }}
+                    className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline-offset-2 hover:underline cursor-pointer"
+                  >
+                    ล้างตัวกรอง
+                  </button>
+                )}
+              </>
+            }
+            actions={
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleExport}
+                  icon={<Download className="w-3.5 h-3.5" />}
                 >
-                  ล้างตัวกรอง
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleExport}
-                icon={<Download className="w-3.5 h-3.5" />}
-              >
-                ส่งออก
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={fetchData}
-                icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
-              >
-                รีเฟรช
-              </Button>
-            </div>
-          </div>
+                  ส่งออก
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={fetchData}
+                  icon={<RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />}
+                >
+                  รีเฟรช
+                </Button>
+              </div>
+            }
+          />
 
           {/* Table Content */}
           {loading ? (

@@ -15,7 +15,7 @@ import { PayrollOverview, PayrollPeriod } from '@/types/payroll';
 import { THAI_MONTH_NAMES } from '@/services/payrollScheduleService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Button } from '@/components/ui';
+import { Button, TableToolbar } from '@/components/ui';
 import { PayrollPeriodDetailModal } from './PayrollPeriodDetailModal';
 
 interface PayrollPeriodsTabProps {
@@ -137,44 +137,17 @@ export default function PayrollPeriodsTab({
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
-      {/* Top Card: Title, Filters & Toolbar */}
+      {/* Top Card: Toolbar มาตรฐานระบบ (ค้นหาซ้าย -> ฟิลเตอร์ -> ปุ่มขวา) */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 p-4 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          {/* Left: Title & Counter */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center font-bold">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                รอบเงินเดือน
-                {yearFilter !== 'ALL' ? ` ประจำปี พ.ศ. ${Number(yearFilter) + 543}` : ' ทั้งหมด'}
-              </h3>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                {filteredPeriods.length} รอบ
-              </span>
-            </div>
-          </div>
-
-          {/* Right: Search, Year Filter & Refresh */}
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Search */}
-            <div className="relative min-w-[160px] sm:min-w-[190px]">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="ค้นหารอบเงินเดือน..."
-                className="w-full pl-9 pr-3 h-9 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            {/* Year Selector */}
-            <div className="w-36">
+        <TableToolbar
+          searchValue={searchQuery}
+          onSearchChange={(val) => {
+            setSearchQuery(val);
+            setPage(1);
+          }}
+          searchPlaceholder="ค้นหารอบเงินเดือน..."
+          filters={
+            <div className="w-full sm:w-44">
               <CustomSelect
                 value={yearFilter}
                 onChange={(e) => handleYearSelect(String(e.target.value))}
@@ -190,22 +163,27 @@ export default function PayrollPeriodsTab({
                 ))}
               </CustomSelect>
             </div>
-
-            {/* Refresh Button */}
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isLoading}
-              icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
-              title="รีเฟรชข้อมูล"
-              className="!h-9"
-            >
-              <span className="hidden sm:inline">รีเฟรช</span>
-            </Button>
-          </div>
-        </div>
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                {filteredPeriods.length} รอบ
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                icon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />}
+                title="รีเฟรชข้อมูล"
+                className="!h-9"
+              >
+                <span className="hidden sm:inline">รีเฟรช</span>
+              </Button>
+            </div>
+          }
+        />
       </div>
 
       {/* 4 Summary Stat Cards (Image 1) - ต่อจากแถบเครื่องมือ (Image 2) */}

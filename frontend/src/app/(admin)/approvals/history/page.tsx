@@ -39,7 +39,7 @@ import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
-import { TablePagination } from '@/components/ui';
+import { TablePagination , TableToolbar } from '@/components/ui';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
 import { ApprovalActionModal } from '@/components/approvals/ApprovalActionModal';
@@ -552,71 +552,58 @@ export default function ApprovalHistoryPage() {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2 flex-1">
-              {/* Search */}
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
+          <TableToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="ค้นหาชื่อพนักงาน, เลขที่เอกสาร, ประเภทคำขอ..."
+            filters={
+              <>
+                <CustomSelect
+                  value={docTypeFilter}
+                  onChange={(val) => setDocTypeFilter(String(val) as any)}
+                  className="min-w-[170px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
+                    { value: 'LEAVE', label: 'คำขอลา' },
+                    { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
+                    { value: 'RESIGNATION', label: 'คำขอลาออก' },
+                    { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
+                    { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
+                    { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
+                  ]}
                 />
-              </div>
-
-              {/* Document Type filter */}
-              <CustomSelect
-                value={docTypeFilter}
-                onChange={(val) => setDocTypeFilter(String(val) as any)}
-                className="min-w-[170px]"
-                options={[
-                  { value: 'ALL', label: 'ทุกประเภทเอกสาร' },
-                  { value: 'LEAVE', label: 'คำขอลา' },
-                  { value: 'CERTIFICATE', label: 'คำขอหนังสือรับรอง' },
-                  { value: 'RESIGNATION', label: 'คำขอลาออก' },
-                  { value: 'GENERAL', label: 'คำร้องเอกสารทั่วไป' },
-                  { value: 'BENEFIT', label: 'คำขอเบิกสวัสดิการ' },
-                  { value: 'TIME_ADJUST', label: 'คำขอปรับเวลาเข้า-ออก' },
-                ]}
-              />
-
-              {/* Status filter */}
-              <CustomSelect
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(String(val))}
-                className="min-w-[190px]"
-                options={[
-                  { value: '', label: 'ทุกสถานะ (ที่ดำเนินการแล้ว)' },
-                  { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                  { value: 'REJECTED', label: 'ปฏิเสธแล้ว' },
-                  { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
-                ]}
-              />
-
-              {/* Department filter */}
-              <CustomSelect
-                value={departmentFilter}
-                onChange={(val) => setDepartmentFilter(String(val))}
-                className="min-w-[160px]"
-                options={departmentOptions}
-              />
-
-              {/* Year filter (ปีที่ดำเนินการ) */}
-              <CustomSelect
-                value={yearFilter}
-                onChange={(val) => setYearFilter(String(val))}
-                className="min-w-[120px]"
-                numbered={false}
-                options={yearOptions}
-              />
-            </div>
-
-            <span className="text-xs text-gray-400 font-medium whitespace-nowrap shrink-0">
-              พบ {filteredHistory.length} รายการ
-            </span>
-          </div>
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={(val) => setStatusFilter(String(val))}
+                  className="min-w-[190px]"
+                  options={[
+                    { value: 'ALL', label: 'ทุกสถานะ' },
+                    { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                    { value: 'REJECTED', label: 'ปฏิเสธ' },
+                    { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
+                  ]}
+                />
+                <CustomSelect
+                  value={departmentFilter}
+                  onChange={(val) => setDepartmentFilter(String(val))}
+                  className="min-w-[160px]"
+                  options={departmentOptions}
+                />
+                <CustomSelect
+                  value={yearFilter}
+                  onChange={(val) => setYearFilter(String(val))}
+                  className="min-w-[120px]"
+                  numbered={false}
+                  options={yearOptions}
+                />
+              </>
+            }
+            actions={
+              <span className="text-xs text-gray-400 font-medium whitespace-nowrap shrink-0">
+                พบ {filteredHistory.length} รายการ
+              </span>
+            }
+          />
 
           <RefreshIndicator active={historyPhase.refreshing} />
         {historyPhase.initialLoading ? (
