@@ -17,6 +17,8 @@ import {
   Eye,
   FileText,
   FileSearch,
+  Paperclip,
+  Download,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
@@ -40,7 +42,7 @@ import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
-import { TablePagination, TableToolbar, ActionDropdown } from '@/components/ui';
+import { TablePagination, TableToolbar, ActionDropdown, type ActionDropdownItem } from '@/components/ui';
 import { ApprovalReviewModal, type ReviewResult } from '@/components/approvals/ApprovalReviewModal';
 import { useLeaveDecisionData, LeaveDecisionInsightsPanel } from '@/components/approvals/LeaveDecisionInsights';
 import {
@@ -559,6 +561,121 @@ export default function ApprovalHistoryPage() {
     }
   };
 
+  const handleViewAttachment = async (item: UnifiedHistoryItem, docId?: number, fileName?: string) => {
+    if (item.docType === 'LEAVE' && item.leaveRaw) {
+      const targetDoc = item.leaveRaw.documents?.[0];
+      const targetId = docId ?? targetDoc?.id ?? 0;
+      const targetName = fileName ?? targetDoc?.fileName ?? 'attachment';
+      await openBlobInNewTab(
+        async () => {
+          const blob = await leaveService.downloadLeaveDocument(item.leaveRaw!.id, targetId);
+          if (!blob) throw new Error('ไม่พบไฟล์แนบ');
+          return blob;
+        },
+        targetName
+      );
+    } else if (item.docType === 'GENERAL' && item.generalRaw?.fileName) {
+      const g = item.generalRaw;
+      await openBlobInNewTab(
+        async () => {
+          const blob = await generalDocumentService.downloadAttachment(g.id);
+          if (!blob) throw new Error('ไม่พบไฟล์แนบ');
+          return blob;
+        },
+        g.fileName
+      );
+    } else if (item.docType === 'BENEFIT' && item.benefitRaw?.fileName) {
+      const c = item.benefitRaw;
+      await openBlobInNewTab(
+        async () => {
+          const blob = await benefitService.downloadClaimAttachment(c.id);
+          if (!blob) throw new Error('ไม่พบไฟล์แนบ');
+          return blob;
+        },
+        c.fileName
+      );
+    }
+  };
+
+  const handleDownloadAttachment = async (item: UnifiedHistoryItem, docId?: number, fileName?: string) => {
+    try {
+      let blob: Blob | null = null;
+      let targetName = fileName || 'attachment';
+
+      if (item.docType === 'LEAVE' && item.leaveRaw) {
+        const targetDoc = item.leaveRaw.documents?.[0];
+        const targetId = docId ?? targetDoc?.id ?? 0;
+        targetName = fileName ?? targetDoc?.fileName ?? 'attachment';
+        blob = await leaveService.downloadLeaveDocument(item.leaveRaw.id, targetId);
+      } else if (item.docType === 'GENERAL' && item.generalRaw) {
+        targetName = item.generalRaw.fileName || 'attachment';
+        blob = await generalDocumentService.downloadAttachment(item.generalRaw.id);
+      } else if (item.docType === 'BENEFIT' && item.benefitRaw) {
+        targetName = item.benefitRaw.fileName || 'attachment';
+        blob = await benefitService.downloadClaimAttachment(item.benefitRaw.id);
+      }
+
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = targetName;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      // download error ignored
+    }
+  };
+
+  const getHistoryActionItems = (item: UnifiedHistoryItem): ActionDropdownItem[] => {
+    const attachments: { id: number; fileName: string }[] = [];
+    if (item.docType === 'LEAVE' && item.leaveRaw?.documents) {
+      item.leaveRaw.documents.forEach((d) => {
+        attachments.push({ id: d.id, fileName: d.fileName || 'ไฟล์แนบ' });
+      });
+    } else if (item.docType === 'GENERAL' && item.generalRaw?.fileName) {
+      attachments.push({ id: 1, fileName: item.generalRaw.fileName });
+    } else if (item.docType === 'BENEFIT' && item.benefitRaw?.fileName) {
+      attachments.push({ id: 1, fileName: item.benefitRaw.fileName });
+    }
+
+    const hasAttachments = attachments.length > 0;
+
+    const items: ActionDropdownItem[] = [
+      {
+        id: 'detail',
+        label: 'ดูรายละเอียด',
+        icon: <FileSearch className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+        onClick: () => setDetailItem(item),
+      },
+      {
+        id: 'attachment',
+        label: 'ดูไฟล์แนบ',
+        icon: <Paperclip className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+        disabled: !hasAttachments,
+        onClick: () => {
+          if (!hasAttachments) return;
+          handleViewAttachment(item);
+        },
+      },
+    ];
+
+    if (hasAttachments) {
+      items.push({ divider: true, label: '' });
+      attachments.forEach((att, idx) => {
+        items.push({
+          id: `download-${att.id}-${idx}`,
+          label: attachments.length > 1 ? `ดาวน์โหลดไฟล์แนบ (${att.fileName})` : 'ดาวน์โหลดไฟล์แนบ',
+          icon: <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+          onClick: () => handleDownloadAttachment(item, att.id, att.fileName),
+        });
+      });
+    }
+
+    return items;
+  };
+
   /** รายการมีเอกสารให้เปิดดูหรือไม่ (ปรับเวลาไม่มีเอกสาร / สวัสดิการดูไฟล์แนบ) */
   const hasDocument = (item: UnifiedHistoryItem) =>
     item.docType === 'TIME_ADJUST' ? false : item.docType === 'BENEFIT' ? !!item.benefitRaw?.fileName : true;
@@ -789,34 +906,35 @@ export default function ApprovalHistoryPage() {
                           {statusConf.label}
                         </span>
                         <div>
-                          <DocumentDueBadge leave={item.leaveRaw} />
+                          <DocumentDueBadge
+                            leave={item.leaveRaw}
+                            hasAttachments={
+                              item.docType === 'LEAVE'
+                                ? !!item.leaveRaw?.documents && item.leaveRaw.documents.length > 0
+                                : item.docType === 'GENERAL'
+                                  ? !!item.generalRaw?.fileName
+                                  : item.docType === 'BENEFIT'
+                                    ? !!item.benefitRaw?.fileName
+                                    : false
+                            }
+                            onClick={
+                              (item.docType === 'LEAVE' && !!item.leaveRaw?.documents && item.leaveRaw.documents.length > 0) ||
+                              (item.docType === 'GENERAL' && !!item.generalRaw?.fileName) ||
+                              (item.docType === 'BENEFIT' && !!item.benefitRaw?.fileName)
+                                ? () => handleViewAttachment(item)
+                                : undefined
+                            }
+                          />
                         </div>
                       </td>
 
                       {/* 8. การจัดการ — เมนูจุดสามจุด */}
                       <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <ActionDropdown
-                          menuClassName="w-48"
+                          menuClassName="w-52"
                           title="การจัดการ"
                           triggerClassName="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 inline-flex items-center justify-center transition-colors cursor-pointer"
-                          items={[
-                            {
-                              id: 'detail',
-                              label: 'ดูรายละเอียด',
-                              icon: <FileSearch className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-                              onClick: () => setDetailItem(item),
-                            },
-                            ...(hasDocument(item)
-                              ? [
-                                  {
-                                    id: 'document',
-                                    label: 'ดูเอกสาร',
-                                    icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-                                    onClick: () => viewDocument(item),
-                                  },
-                                ]
-                              : []),
-                          ]}
+                          items={getHistoryActionItems(item)}
                         />
                       </td>
                     </tr>
