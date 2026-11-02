@@ -6,7 +6,7 @@ import { Search, Download, Loader2, AlertTriangle, BellRing, FileClock, FileX2, 
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
-import { Button, TabBar } from '@/components/ui';
+import { Button, TabBar , TableToolbar } from '@/components/ui';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
 import { EmployeeDocument } from '@/types/employeeDocument';
 
@@ -180,21 +180,11 @@ export default function ExpiringDocumentsPage() {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มการทำงานด้านขวา */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-              {/* Search Input มาตรฐานระบบ */}
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="ค้นหาชื่อ, รหัสพนักงาน, แผนก หรือประเภทเอกสาร..."
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {/* Status Filter Buttons */}
+          <TableToolbar
+            searchValue={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="ค้นหาชื่อ, รหัสพนักงาน, แผนก หรือประเภทเอกสาร..."
+            filters={
               <div className="flex items-center gap-1.5 flex-wrap">
                 {filterButtons.map((b) => (
                   <button
@@ -211,19 +201,20 @@ export default function ExpiringDocumentsPage() {
                   </button>
                 ))}
               </div>
-            </div>
-
-            <Button
-              variant="secondary"
-              onClick={handleRunCheck}
-              loading={checking}
-              icon={<BellRing className="w-3.5 h-3.5" />}
-              title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
-              className="shrink-0 self-start sm:self-auto"
-            >
-              ตรวจและแจ้งเตือนตอนนี้
-            </Button>
-          </div>
+            }
+            actions={
+              <Button
+                variant="secondary"
+                onClick={handleRunCheck}
+                loading={checking}
+                icon={<BellRing className="w-3.5 h-3.5" />}
+                title="ปกติระบบตรวจและแจ้งเตือนเองทุก 6 ชั่วโมง"
+                className="shrink-0 self-start sm:self-auto"
+              >
+                ตรวจและแจ้งเตือนตอนนี้
+              </Button>
+            }
+          />
 
           {/* Table Container */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">

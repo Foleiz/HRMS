@@ -42,7 +42,7 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
-import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter, TabBar, TablePagination } from '@/components/ui';
+import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter, TabBar, TablePagination , TableToolbar } from '@/components/ui';
 
 type MasterTab =
   | 'document-types'
@@ -435,37 +435,31 @@ export default function MasterDataHubPage() {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหาด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative max-w-sm w-full shrink-0">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              <input
-                type="text"
-                placeholder={`ค้นหา${TAB_NAME_MAP[activeTab] || 'ข้อมูล'}...`}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-              <button
-                onClick={loadData}
-                disabled={loading}
-                className="p-2 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
-                title="รีเฟรชข้อมูล"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
-              </button>
-              {canCreateMasterData && (
-                <Button
-                  icon={<Plus className="w-4 h-4" />}
-                  onClick={handleOpenCreate}
+          <TableToolbar
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder={`ค้นหา${TAB_NAME_MAP[activeTab] || 'ข้อมูล'}...`}
+            actions={
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={loadData}
+                  disabled={loading}
+                  className="p-2 text-slate-600 dark:text-slate-400 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:hover:bg-slate-800"
+                  title="รีเฟรชข้อมูล"
                 >
-                  เพิ่มข้อมูลใหม่
-                </Button>
-              )}
-            </div>
-          </div>
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+                </button>
+                {canCreateMasterData && (
+                  <Button
+                    icon={<Plus className="w-4 h-4" />}
+                    onClick={handleOpenCreate}
+                  >
+                    เพิ่มข้อมูลใหม่
+                  </Button>
+                )}
+              </div>
+            }
+          />
 
           {/* Tab 1: Document Types Table */}
       {activeTab === 'document-types' && (

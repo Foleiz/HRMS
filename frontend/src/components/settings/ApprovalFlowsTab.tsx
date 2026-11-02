@@ -35,7 +35,7 @@ import { RoleSummary } from '@/types/settings';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { Button } from '@/components/ui';
+import { Button , TableToolbar } from '@/components/ui';
 
 // ประเภทเอกสารที่เลือกได้ตอนสร้าง/แก้สายการอนุมัติ
 const HIDDEN_DOCUMENT_TYPES = new Set(['TRANSFER_REQUEST']);
@@ -1099,76 +1099,66 @@ export const ApprovalFlowsTab: React.FC = () => {
       {/* ผังสายการอนุมัติ (Workflow Templates) */}
       <div className="space-y-6">
         {/* Top Filter & Action Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search */}
-            <div className="relative w-64">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="ค้นหาสายการอนุมัติ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
-              />
-            </div>
+        <TableToolbar
+          searchValue={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="ค้นหาสายการอนุมัติ..."
+          filters={
+            <>
+              <div className="w-full sm:w-48">
+                <CustomSelect
+                  value={docTypeFilter}
+                  onChange={(e) => setDocTypeFilter(e.target.value)}
+                  className="w-full"
+                >
+                  <option value="">ประเภทเอกสารทั้งหมด</option>
+                  {DOCUMENT_TYPE_OPTIONS.map((dt) => (
+                    <option key={dt} value={dt}>
+                      {DOCUMENT_TYPE_LABELS[dt]}
+                    </option>
+                  ))}
+                </CustomSelect>
+              </div>
 
-            {/* Doc Type Filter */}
-            <div className="relative">
-              <CustomSelect
-                value={docTypeFilter}
-                onChange={(e) => setDocTypeFilter(e.target.value)}
-                className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
-              >
-                <option value="">ประเภทเอกสารทั้งหมด</option>
-                {DOCUMENT_TYPE_OPTIONS.map((dt) => (
-                  <option key={dt} value={dt}>
-                    {DOCUMENT_TYPE_LABELS[dt]}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
+              <div className="w-full sm:w-44">
+                <CustomSelect
+                  value={deptFilter}
+                  onChange={(e) => setDeptFilter(e.target.value)}
+                  className="w-full"
+                >
+                  <option value="">ทุกแผนก</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.departmentName}
+                    </option>
+                  ))}
+                </CustomSelect>
+              </div>
 
-            {/* Dept Filter */}
-            <div className="relative">
-              <CustomSelect
-                value={deptFilter}
-                onChange={(e) => setDeptFilter(e.target.value)}
-                className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
-              >
-                <option value="">ทุกแผนก</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.departmentName}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-
-            {/* Status Filter */}
-            <div className="relative">
-              <CustomSelect
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-3 pr-8 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
-              >
-                <option value="">สถานะทั้งหมด</option>
-                <option value="ACTIVE">ใช้งานอยู่</option>
-                <option value="INACTIVE">ปิดใช้งาน</option>
-              </CustomSelect>
-            </div>
-          </div>
-
-          {/* Action Button: เพิ่มสายการอนุมัติ */}
-          <Button
-            type="button"
-            onClick={() => setIsCreatingNew(true)}
-            disabled={isCreatingNew}
-            icon={<Plus className="w-4 h-4" />}
-          >
-            เพิ่มสายการอนุมัติ
-          </Button>
-        </div>
+              <div className="w-full sm:w-36">
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full"
+                >
+                  <option value="">สถานะทั้งหมด</option>
+                  <option value="ACTIVE">ใช้งานอยู่</option>
+                  <option value="INACTIVE">ปิดใช้งาน</option>
+                </CustomSelect>
+              </div>
+            </>
+          }
+          actions={
+            <Button
+              type="button"
+              onClick={() => setIsCreatingNew(true)}
+              disabled={isCreatingNew}
+              icon={<Plus className="w-4 h-4" />}
+            >
+              เพิ่มสายการอนุมัติ
+            </Button>
+          }
+        />
 
         {/* Flows Cards List */}
         {loadingFlows ? (

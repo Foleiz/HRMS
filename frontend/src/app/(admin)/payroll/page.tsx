@@ -93,7 +93,7 @@ import { PayrollItemModal } from '@/components/payroll/PayrollItemModal';
 import { TaxBracketModal } from '@/components/payroll/TaxBracketModal';
 import { SocialSecurityRateModal } from '@/components/payroll/SocialSecurityRateModal';
 import { getAutoPullSource } from '@/components/payroll/autoPullItems';
-import { Button, ActiveStatus, RowActions, RowActionButton, TabBar } from '@/components/ui';
+import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, TableToolbar } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
@@ -2521,31 +2521,25 @@ export default function PayrollPage() {
             return (
               <div className="space-y-4">
                 {/* Filter Toolbar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 min-h-9">
-                  <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
-                    <div className="relative flex-1 sm:max-w-xs">
-                      <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="ค้นหารหัส หรือชื่อพนักงาน..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-9 pl-9 pr-3.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white dark:focus:bg-slate-800 transition-all text-slate-800 dark:text-slate-200"
+                <TableToolbar
+                  searchValue={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  searchPlaceholder="ค้นหารหัส หรือชื่อพนักงาน..."
+                  filters={
+                    <div className="w-full sm:w-48">
+                      <CustomSelect
+                        value={selectedDeptId}
+                        onChange={(val) => setSelectedDeptId(String(val))}
+                        placeholder="ทุกแผนก"
+                        className="w-full"
+                        options={[
+                          { value: '', label: 'ทุกแผนก' },
+                          ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
+                        ]}
                       />
                     </div>
-
-                    <CustomSelect
-                      value={selectedDeptId}
-                      onChange={(val) => setSelectedDeptId(String(val))}
-                      placeholder="ทุกแผนก"
-                      className="min-w-[150px]"
-                      options={[
-                        { value: '', label: 'ทุกแผนก' },
-                        ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
-                      ]}
-                    />
-                  </div>
-                </div>
+                  }
+                />
 
                 {/* Table */}
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">

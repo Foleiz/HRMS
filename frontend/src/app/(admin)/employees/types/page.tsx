@@ -31,7 +31,7 @@ import {
 import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
-import { Button, TabBar } from '@/components/ui';
+import { Button, TabBar , TableToolbar } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -371,21 +371,11 @@ export default function EmployeeTypesPage() {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-              {/* Search Input มาตรฐานระบบ */}
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="ค้นหาชื่อ หรือรหัสประเภทสัญญา..."
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {/* Status Filter */}
+          <TableToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="ค้นหาประเภทพนักงาน..."
+            filters={
               <CustomSelect
                 value={statusFilter}
                 onChange={(val) => setStatusFilter(String(val))}
@@ -394,24 +384,25 @@ export default function EmployeeTypesPage() {
                 options={[
                   { value: 'ALL', label: 'สถานะทั้งหมด' },
                   { value: 'ACTIVE', label: 'เปิดใช้งาน' },
-                  { value: 'INACTIVE', label: 'ปิดการใช้งาน' },
+                  { value: 'INACTIVE', label: 'ปิดใช้งาน' },
                 ]}
               />
-            </div>
-
-            {canCreateTypes && (
-              <Button
-                onClick={() => {
-                  setSelectedTypeForEdit(null);
-                  setIsCreateModalOpen(true);
-                }}
-                icon={<Plus className="w-4 h-4" />}
-                className="shrink-0 self-start sm:self-auto"
-              >
-                เพิ่มประเภทสัญญา/การจ้างงาน
-              </Button>
-            )}
-          </div>
+            }
+            actions={
+              canCreateTypes ? (
+                <Button
+                  onClick={() => {
+                    setSelectedTypeForEdit(null);
+                    setIsCreateModalOpen(true);
+                  }}
+                  icon={<Plus className="w-4 h-4" />}
+                  className="shrink-0 self-start sm:self-auto"
+                >
+                  เพิ่มประเภทสัญญา/การจ้างงาน
+                </Button>
+              ) : null
+            }
+          />
 
           {/* Data Table */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[300px]">

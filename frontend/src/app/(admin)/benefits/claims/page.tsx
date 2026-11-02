@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import AccessDenied from '@/components/common/AccessDenied';
-import { Button, TablePagination } from '@/components/ui';
+import { Button, TablePagination , TableToolbar } from '@/components/ui';
 import { BenefitsSubNav } from '@/components/benefits/BenefitsSubNav';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { benefitService } from '@/services/benefitService';
@@ -260,69 +260,65 @@ export default function BenefitClaimsHistoryPage() {
       {/* 3. Main Card: Toolbar + Data Table */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-5">
         {/* Toolbar: Search, Year, Status */}
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Search Box */}
-            <div className="relative w-64 sm:w-80 shrink-0">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="ค้นหาเลขที่คำขอ, ชื่อพนักงาน, สวัสดิการ, ใบเสร็จ..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-              />
+        <TableToolbar
+          searchValue={search}
+          onSearchChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          searchPlaceholder="ค้นหาเลขที่คำขอ, ชื่อพนักงาน, สวัสดิการ, ใบเสร็จ..."
+          filters={
+            <>
+              {/* Year Select */}
+              <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/90 pl-2.5 pr-1 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
+                <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">ประจำปี:</span>
+                <CustomSelect
+                  value={selectedYear}
+                  onChange={(e) => {
+                    setSelectedYear(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  size="sm"
+                  buttonClassName="!h-7 !py-0 !px-2 !text-xs !font-bold !rounded-lg !shadow-2xs"
+                  className="min-w-[95px]"
+                >
+                  {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
+                    <option key={y} value={y}>
+                      พ.ศ. {y + 543}
+                    </option>
+                  ))}
+                </CustomSelect>
+              </div>
+
+              {/* Status Filter */}
+              <div className="min-w-[130px]">
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={(val) => {
+                    setStatusFilter(String(val));
+                    setPage(1);
+                  }}
+                  size="sm"
+                  placeholder="สถานะทั้งหมด"
+                  className="w-full"
+                  options={[
+                    { value: 'ALL', label: 'สถานะทั้งหมด' },
+                    { value: 'APPROVED', label: 'อนุมัติแล้ว' },
+                    { value: 'PENDING', label: 'รออนุมัติ' },
+                    { value: 'REJECTED', label: 'ไม่อนุมัติ' },
+                    { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
+                  ]}
+                />
+              </div>
+            </>
+          }
+          actions={
+            <div className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
+              ทั้งหมด <span className="font-bold text-slate-800 dark:text-slate-200">{claims.length}</span> รายการ
             </div>
-
-            {/* Year Select */}
-            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/90 pl-2.5 pr-1 py-1 rounded-xl border border-slate-200 dark:border-slate-700 shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-              <span className="text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">ประจำปี:</span>
-              <CustomSelect
-                value={selectedYear}
-                onChange={(e) => {
-                  setSelectedYear(Number(e.target.value));
-                  setPage(1);
-                }}
-                size="sm"
-                buttonClassName="!h-7 !py-0 !px-2 !text-xs !font-bold !rounded-lg !shadow-2xs"
-                className="min-w-[95px]"
-              >
-                {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
-                  <option key={y} value={y}>
-                    พ.ศ. {y + 543}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-
-            {/* Status Select */}
-            <CustomSelect
-              value={statusFilter}
-              onChange={(val) => {
-                setStatusFilter(String(val));
-                setPage(1);
-              }}
-              size="sm"
-              placeholder="สถานะทั้งหมด"
-              className="min-w-[130px]"
-              options={[
-                { value: 'ALL', label: 'สถานะทั้งหมด' },
-                { value: 'APPROVED', label: 'อนุมัติแล้ว' },
-                { value: 'PENDING', label: 'รออนุมัติ' },
-                { value: 'REJECTED', label: 'ไม่อนุมัติ' },
-                { value: 'CANCELLED', label: 'ยกเลิกแล้ว' },
-              ]}
-            />
-          </div>
-
-          <div className="text-xs text-slate-500 dark:text-slate-400 shrink-0">
-            ทั้งหมด <span className="font-bold text-slate-800 dark:text-slate-200">{claims.length}</span> รายการ
-          </div>
-        </div>
+          }
+        />
 
         {/* Data Table */}
         <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[300px]">
