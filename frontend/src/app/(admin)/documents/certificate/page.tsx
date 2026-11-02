@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Briefcase, Wallet, Maximize2, Clock3 } from 'lucide-react';
+import { AlertCircle, Briefcase, Wallet, ExternalLink, Clock3 } from 'lucide-react';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { CertificateType } from '@/types/certificates';
@@ -224,11 +224,14 @@ export default function CertificatePage() {
               <Button
                 variant="secondary"
                 type="button"
-                onClick={() => setIsPreviewOpen(true)}
+                onClick={() => {
+                  if (!selectedTypeId) return;
+                  window.open(`/preview/certificate?typeId=${selectedTypeId}`, '_blank');
+                }}
                 disabled={!selectedTypeId}
-                icon={<Maximize2 className="w-3.5 h-3.5" />}
+                icon={<ExternalLink className="w-3.5 h-3.5" />}
               >
-                ขยายเต็มจอ
+                เปิดในแท็บใหม่
               </Button>
             </div>
             <div className="rounded-xl bg-slate-200/70 dark:bg-slate-900/60 p-3 sm:p-5">

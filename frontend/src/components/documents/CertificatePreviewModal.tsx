@@ -72,7 +72,7 @@ const V: React.FC<{ children?: React.ReactNode }> = ({ children }) => <span styl
  * · เงินเดือน: หนังสือฉบับนี้ออกให้เพื่อรับรองว่า (พนักงาน + อัตราเงินเดือน) · ใช้เพื่อ · ออกให้ ณ วันที่
  * · ลงชื่อผู้ยื่นเรื่อง (ชิดขวา) · ผลการพิจารณาตามสายอนุมัติ · หมายเหตุ · ที่อยู่บริษัทท้ายกระดาษ
  */
-const CertificatePaper: React.FC<{
+export const CertificatePaper: React.FC<{
   doc: CertificateDocument;
   companyLogo: string | null;
   companyAddress: string;
