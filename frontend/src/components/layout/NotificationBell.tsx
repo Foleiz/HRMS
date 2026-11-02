@@ -15,14 +15,13 @@ import {
   AlertCircle,
   Inbox,
   Loader2,
-  CheckCircle2,
 } from 'lucide-react';
 import { notificationService } from '@/services/notificationService';
 import { NotificationItem } from '@/types/notification';
 import { useAuth } from '@/context/AuthContext';
 import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
-type TabKey = 'ALL' | 'QUEUE' | 'UNREAD' | 'OTHER';
+type TabKey = 'ALL' | 'UNREAD' | 'OTHER';
 
 function formatNotificationDate(dateStr: string, fallbackTimeAgo?: string): string {
   try {
@@ -172,27 +171,12 @@ export const NotificationBell: React.FC = () => {
     }
   };
 
-  // Filtered notifications by active tab
+  // Filtered notifications by active tab (ทั้งหมด, ยังไม่ได้อ่าน, อื่นๆ)
   const filteredNotifications = useMemo(() => {
     if (activeTab === 'ALL') return notifications;
     if (activeTab === 'UNREAD') return notifications.filter((n) => !n.isRead);
 
-    if (activeTab === 'QUEUE') {
-      return notifications.filter((n) => {
-        const t = (n.notificationType || '').toUpperCase();
-        const text = (n.title + ' ' + (n.message || '')).toLowerCase();
-        return (
-          t.includes('APPROVAL') ||
-          t.includes('LEAVE') ||
-          t.includes('TIME') ||
-          text.includes('อนุมัติ') ||
-          text.includes('คำขอ') ||
-          text.includes('รอ')
-        );
-      });
-    }
-
-    // OTHER
+    // OTHER: ข่าวสาร ประกาศ สัญญา หรือการแจ้งเตือนทั่วไป
     return notifications.filter((n) => {
       const t = (n.notificationType || '').toUpperCase();
       return (
@@ -249,7 +233,7 @@ export const NotificationBell: React.FC = () => {
     return groups;
   }, [filteredNotifications]);
 
-  // Item styling helper (Matches reference screenshot color themes)
+  // Item styling helper (Uses System Theme Palette)
   const getItemTheme = (item: NotificationItem) => {
     const t = (item.notificationType || '').toUpperCase();
     const text = (item.title + ' ' + (item.message || '')).toLowerCase();
@@ -266,8 +250,8 @@ export const NotificationBell: React.FC = () => {
     ) {
       return {
         bg: 'bg-[#FFFDF5] dark:bg-amber-950/20 hover:bg-[#FFF9E6] dark:hover:bg-amber-950/30',
-        icon: <AlertTriangle className="w-4 h-4 text-[#D97706] shrink-0" />,
-        titleColor: 'text-[#D97706] dark:text-amber-400',
+        icon: <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />,
+        titleColor: 'text-amber-700 dark:text-amber-400',
       };
     }
 
@@ -281,16 +265,16 @@ export const NotificationBell: React.FC = () => {
     ) {
       return {
         bg: 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750',
-        icon: <CalendarCheck className="w-4 h-4 text-[#0284C7] shrink-0" />,
-        titleColor: 'text-[#0284C7] dark:text-sky-400',
+        icon: <CalendarCheck className="w-4 h-4 text-accent dark:text-sky-400 shrink-0" />,
+        titleColor: 'text-accent dark:text-sky-400',
       };
     }
 
-    // 3. New Booking / Request / Approval / Financial Purple Theme
+    // 3. New Booking / Request / Approval / Financial Primary Theme
     return {
       bg: 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750',
-      icon: <PlusSquare className="w-4 h-4 text-[#6D28D9] dark:text-purple-400 shrink-0" />,
-      titleColor: 'text-[#6D28D9] dark:text-purple-300',
+      icon: <PlusSquare className="w-4 h-4 text-primary dark:text-blue-400 shrink-0" />,
+      titleColor: 'text-primary dark:text-blue-300',
     };
   };
 
@@ -317,7 +301,7 @@ export const NotificationBell: React.FC = () => {
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#6D28D9] text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-800">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary dark:bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-slate-800">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -342,7 +326,7 @@ export const NotificationBell: React.FC = () => {
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                 แจ้งเตือน
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[#EDE9FE] dark:bg-purple-950/70 text-[#6D28D9] dark:text-purple-300">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/70 text-primary dark:text-blue-300 border border-blue-200/60 dark:border-blue-800">
                 {badgeText}
               </span>
             </div>
@@ -353,7 +337,7 @@ export const NotificationBell: React.FC = () => {
                 type="button"
                 disabled={unreadCount === 0 || markingAll}
                 onClick={handleMarkAllAsRead}
-                className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-[#6D28D9] dark:hover:text-purple-400 underline underline-offset-2 transition-colors cursor-pointer disabled:opacity-40 disabled:no-underline"
+                className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer disabled:opacity-40 disabled:no-underline"
               >
                 {markingAll ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -372,8 +356,8 @@ export const NotificationBell: React.FC = () => {
                 }}
                 className={`p-1 rounded-lg transition-all cursor-pointer ${
                   showSettings
-                    ? 'text-[#6D28D9] dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50'
-                    : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                    ? 'text-primary dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50'
+                    : 'text-slate-400 hover:text-primary dark:hover:text-blue-400'
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -386,19 +370,19 @@ export const NotificationBell: React.FC = () => {
             <div
               ref={settingsRef}
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-14 right-4 z-40 w-72 bg-white dark:bg-slate-800 border border-purple-200/90 dark:border-purple-800/80 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
+              className="absolute top-14 right-4 z-40 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
             >
               {/* Header Action Banner */}
               <button
                 type="button"
                 onClick={handleRequestBrowserPermission}
-                className="w-full py-2 px-3 rounded-xl bg-[#6D28D9] hover:bg-[#5B21B6] text-white font-bold text-xs text-center transition-colors shadow-xs cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-xs text-center transition-colors shadow-xs cursor-pointer"
               >
                 เปิดการแจ้งเตือน
               </button>
 
               {/* Option 1: Mute Website Notifications */}
-              <div className="p-2.5 rounded-xl border border-purple-300 dark:border-purple-700/70 bg-purple-50/20 dark:bg-purple-950/20 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/80 bg-blue-50/40 dark:bg-blue-950/30 flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   ปิดการแจ้งเตือนเว็บไซต์
                 </span>
@@ -406,7 +390,7 @@ export const NotificationBell: React.FC = () => {
                   type="button"
                   onClick={toggleMuteWeb}
                   className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
-                    muteWeb ? 'bg-[#6D28D9]' : 'bg-slate-300 dark:bg-slate-600'
+                    muteWeb ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 >
                   <div
@@ -426,7 +410,7 @@ export const NotificationBell: React.FC = () => {
                   type="button"
                   onClick={toggleMuteSound}
                   className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
-                    muteSound ? 'bg-[#6D28D9]' : 'bg-slate-300 dark:bg-slate-600'
+                    muteSound ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 >
                   <div
@@ -439,12 +423,11 @@ export const NotificationBell: React.FC = () => {
             </div>
           )}
 
-          {/* 2. Filter Pill Tabs */}
+          {/* 2. Filter Pill Tabs (ตัดหัวข้อ "คิว" ออกตามที่ขอ) */}
           <div className="px-5 py-2.5 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto">
             {(
               [
                 { key: 'ALL', label: 'ทั้งหมด' },
-                { key: 'QUEUE', label: 'คิว' },
                 { key: 'UNREAD', label: 'ยังไม่ได้อ่าน' },
                 { key: 'OTHER', label: 'อื่นๆ' },
               ] as const
@@ -455,7 +438,7 @@ export const NotificationBell: React.FC = () => {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === tab.key
-                    ? 'bg-[#EDE9FE] dark:bg-purple-950/70 text-[#6D28D9] dark:text-purple-300 shadow-2xs'
+                    ? 'bg-blue-50 dark:bg-blue-950/70 text-primary dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60'
                 }`}
               >
@@ -468,7 +451,7 @@ export const NotificationBell: React.FC = () => {
           <div className="max-h-[420px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
-                <Loader2 className="w-5 h-5 animate-spin text-[#6D28D9]" />
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
                 <span>กำลังโหลดการแจ้งเตือน...</span>
               </div>
             ) : filteredNotifications.length === 0 ? (
@@ -518,10 +501,10 @@ export const NotificationBell: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Unread Purple Dot on the right */}
+                        {/* Unread Dot on the right (System Primary Color) */}
                         {!item.isRead && (
                           <div className="mt-1.5 shrink-0">
-                            <span className="w-2 h-2 rounded-full bg-[#6D28D9] dark:bg-purple-400 block" />
+                            <span className="w-2 h-2 rounded-full bg-primary dark:bg-blue-400 block" />
                           </div>
                         )}
                       </div>
@@ -537,7 +520,7 @@ export const NotificationBell: React.FC = () => {
             <button
               type="button"
               onClick={handleViewAll}
-              className="text-xs font-bold text-[#2563EB] dark:text-blue-400 hover:text-[#1D4ED8] dark:hover:text-blue-300 transition-colors cursor-pointer"
+              className="text-xs font-bold text-accent dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors cursor-pointer"
             >
               ดูการแจ้งเตือนทั้งหมด
             </button>
