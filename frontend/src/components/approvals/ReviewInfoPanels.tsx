@@ -313,7 +313,7 @@ export function BenefitReviewInfo({ claim }: { claim: BenefitClaimRequest }) {
         </div>
         {hasQuota ? (
           <>
-            <div className="grid grid-cols-3 gap-2.5 text-center">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center">
               <div className="rounded-xl border border-sky-200 bg-sky-50/70 dark:border-sky-900/60 dark:bg-sky-950/30 px-2 py-3">
                 <div className="text-xs font-semibold text-sky-600 dark:text-sky-400">วงเงิน</div>
                 <div className="mt-1 text-base font-bold font-mono text-sky-700 dark:text-sky-300 truncate">{money(claim.quotaAmount)}</div>
@@ -324,6 +324,11 @@ export function BenefitReviewInfo({ claim }: { claim: BenefitClaimRequest }) {
                 <div className="mt-1 text-base font-bold font-mono text-amber-700 dark:text-amber-300 truncate">{money(claim.approvedUsedAmount)}</div>
                 <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80">บาท</div>
               </div>
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30 px-2 py-3">
+                <div className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">เบิกครั้งนี้</div>
+                <div className="mt-1 text-base font-bold font-mono text-indigo-700 dark:text-indigo-300 truncate">{money(claim.amount)}</div>
+                <div className="text-[11px] text-indigo-600/80 dark:text-indigo-400/80">บาท</div>
+              </div>
               <div
                 className={`rounded-xl border px-2 py-3 ${
                   overQuota
@@ -331,17 +336,13 @@ export function BenefitReviewInfo({ claim }: { claim: BenefitClaimRequest }) {
                     : 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/30'
                 }`}
               >
-                <div className={`text-xs font-semibold ${overQuota ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>คงเหลือ</div>
+                <div className={`text-xs font-semibold ${overQuota ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>คงเหลือหลังอนุมัติ</div>
                 <div className={`mt-1 text-base font-bold font-mono truncate ${overQuota ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'}`}>
-                  {money(remainingBefore ?? 0)}
+                  {money(remainingAfter ?? 0)}
                 </div>
                 <div className={`text-[11px] ${overQuota ? 'text-rose-600/80 dark:text-rose-400/80' : 'text-emerald-600/80 dark:text-emerald-400/80'}`}>บาท</div>
               </div>
             </div>
-            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-              เบิกครั้งนี้ <b className="text-amber-700 dark:text-amber-300">{money(claim.amount)}</b> บาท → คงเหลือหลังอนุมัติ{' '}
-              <b className={overQuota ? 'text-rose-600' : 'text-emerald-600 dark:text-emerald-400'}>{money(remainingAfter ?? 0)}</b> บาท
-            </p>
           </>
         ) : (
           <p className="text-[11px] text-slate-400">สวัสดิการนี้ไม่ได้กำหนดวงเงินต่อปี</p>
