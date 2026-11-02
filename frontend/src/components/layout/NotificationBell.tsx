@@ -247,7 +247,7 @@ export const NotificationBell: React.FC = () => {
     }
 
     return groups;
-  }, [filteredNotifications]);
+  }, [displayedNotifications]);
 
   // Item styling helper (Uses System Theme Palette)
   const getItemTheme = (item: NotificationItem) => {
@@ -468,7 +468,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           {/* 3. Notification List Items */}
-          <div className={`${showAll ? 'max-h-[420px] overflow-y-auto' : 'overflow-hidden'} divide-y divide-slate-100 dark:divide-slate-800 transition-all duration-200`}>
+          <div className={`${showAll ? 'max-h-[360px] overflow-y-auto' : 'overflow-hidden'} divide-y divide-slate-100 dark:divide-slate-800 transition-all duration-200`}>
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
