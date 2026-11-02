@@ -850,21 +850,21 @@ export default function LeaveRequestsApprovalPage() {
               (msg) => showToast(msg, 'error')
             ),
         })),
-        documentLabel: 'ดูใบลา',
+        documentLabel: 'ดูเอกสาร',
       };
     }
     if (item.docType === 'CERTIFICATE' && item.certRaw) {
       return {
         info: <CertificateReviewInfo request={item.certRaw} />,
         attachments: [],
-        documentLabel: 'ดูตัวอย่างหนังสือรับรอง',
+        documentLabel: 'ดูเอกสาร',
       };
     }
     if (item.docType === 'RESIGNATION' && item.resignationRaw) {
       return {
         info: <ResignationReviewInfo request={item.resignationRaw} />,
         attachments: [],
-        documentLabel: 'ดูหนังสือขอลาออก',
+        documentLabel: 'ดูเอกสาร',
       };
     }
     if (item.docType === 'GENERAL' && item.generalRaw) {
@@ -880,7 +880,7 @@ export default function LeaveRequestsApprovalPage() {
       return {
         info: <GeneralReviewInfo request={g} />,
         attachments: g.fileName ? [{ name: g.fileName, onOpen: openAttachment }] : [],
-        documentLabel: 'ดูคำร้อง',
+        documentLabel: 'ดูเอกสาร',
       };
     }
     if (item.docType === 'BENEFIT' && item.benefitRaw) {

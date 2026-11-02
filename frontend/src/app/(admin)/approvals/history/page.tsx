@@ -571,15 +571,6 @@ export default function ApprovalHistoryPage() {
     openDocument(item);
   };
 
-  const DOC_LABEL: Record<UnifiedHistoryItem['docType'], string> = {
-    LEAVE: 'ดูใบลา',
-    CERTIFICATE: 'ดูหนังสือรับรอง',
-    RESIGNATION: 'ดูหนังสือขอลาออก',
-    GENERAL: 'ดูคำร้อง',
-    BENEFIT: 'ดูไฟล์แนบ',
-    TIME_ADJUST: 'ดูเอกสาร',
-  };
-
   /** ข้อมูลประกอบ (ซ้าย) + ผลการพิจารณา (ขวา) ของรายการในประวัติ */
   const renderDetail = (item: UnifiedHistoryItem) => {
     const raw = item.leaveRaw ?? item.certRaw ?? item.resignationRaw ?? item.generalRaw ?? item.benefitRaw ?? item.timeAdjustRaw;
@@ -709,7 +700,6 @@ export default function ApprovalHistoryPage() {
                   <SortableTh label="เลขที่เอกสาร" field="requestNo" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="ประเภทเอกสาร" field="docTypeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="พนักงาน" field="employeeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
-                  <th className="text-left px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">รายละเอียดคำขอ</th>
                   <SortableTh label="สถานะ" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="วันที่ดำเนินการ" field="actionAt" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">การจัดการ</th>
@@ -786,13 +776,6 @@ export default function ApprovalHistoryPage() {
                         </div>
                       </td>
 
-                      {/* 4. รายละเอียดคำขอ */}
-                      <td className="px-4 py-3.5 text-xs">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                          {item.subType}
-                        </span>
-                      </td>
-
                       {/* 5. สถานะ */}
                       <td className="px-4 py-3.5 whitespace-nowrap">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
@@ -823,7 +806,7 @@ export default function ApprovalHistoryPage() {
                               ? [
                                   {
                                     id: 'document',
-                                    label: DOC_LABEL[item.docType],
+                                    label: 'ดูเอกสาร',
                                     icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
                                     onClick: () => viewDocument(item),
                                   },
@@ -876,7 +859,6 @@ export default function ApprovalHistoryPage() {
               meta={d.meta}
               result={d.result}
               onViewDocument={hasDocument(detailItem) ? () => viewDocument(detailItem) : undefined}
-              documentLabel={DOC_LABEL[detailItem.docType]}
             >
               {d.info}
             </ApprovalReviewModal>
