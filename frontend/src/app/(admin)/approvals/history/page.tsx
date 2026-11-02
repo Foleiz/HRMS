@@ -16,6 +16,7 @@ import {
   Filter,
   Eye,
   FileText,
+  FileSearch,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { LeaveRequest } from '@/types/leave';
@@ -39,7 +40,17 @@ import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
-import { TablePagination , TableToolbar } from '@/components/ui';
+import { TablePagination, TableToolbar, ActionDropdown } from '@/components/ui';
+import { ApprovalReviewModal, type ReviewResult } from '@/components/approvals/ApprovalReviewModal';
+import { useLeaveDecisionData, LeaveDecisionInsightsPanel } from '@/components/approvals/LeaveDecisionInsights';
+import {
+  CertificateReviewInfo,
+  ResignationReviewInfo,
+  GeneralReviewInfo,
+  BenefitReviewInfo,
+  TimeAdjustReviewInfo,
+} from '@/components/approvals/ReviewInfoPanels';
+import { openBlobInNewTab } from '@/lib/filePreview';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
 import { ApprovalActionModal } from '@/components/approvals/ApprovalActionModal';
@@ -160,6 +171,10 @@ export default function ApprovalHistoryPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter, docTypeFilter, searchTerm, departmentFilter, yearFilter]);
+
+  // หน้ารายละเอียด (ดูอย่างเดียว) — รูปแบบเดียวกับหน้าตรวจสอบของเมนูอนุมัติ
+  const [detailItem, setDetailItem] = useState<UnifiedHistoryItem | null>(null);
+  const detailLeaveData = useLeaveDecisionData(detailItem?.leaveRaw ?? null, []);
 
   // Timeline Modal State (Leave)
   const [selectedForTimeline, setSelectedForTimeline] = useState<LeaveRequest | null>(null);
@@ -543,6 +558,74 @@ export default function ApprovalHistoryPage() {
     }
   };
 
+  /** รายการมีเอกสารให้เปิดดูหรือไม่ (ปรับเวลาไม่มีเอกสาร / สวัสดิการดูไฟล์แนบ) */
+  const hasDocument = (item: UnifiedHistoryItem) =>
+    item.docType === 'TIME_ADJUST' ? false : item.docType === 'BENEFIT' ? !!item.benefitRaw?.fileName : true;
+
+  const viewDocument = (item: UnifiedHistoryItem) => {
+    if (item.docType === 'BENEFIT' && item.benefitRaw?.fileName) {
+      const c = item.benefitRaw;
+      openBlobInNewTab(() => benefitService.downloadClaimAttachment(c.id), c.fileName, () => undefined);
+      return;
+    }
+    openDocument(item);
+  };
+
+  const DOC_LABEL: Record<UnifiedHistoryItem['docType'], string> = {
+    LEAVE: 'ดูใบลา',
+    CERTIFICATE: 'ดูหนังสือรับรอง',
+    RESIGNATION: 'ดูหนังสือขอลาออก',
+    GENERAL: 'ดูคำร้อง',
+    BENEFIT: 'ดูไฟล์แนบ',
+    TIME_ADJUST: 'ดูเอกสาร',
+  };
+
+  /** ข้อมูลประกอบ (ซ้าย) + ผลการพิจารณา (ขวา) ของรายการในประวัติ */
+  const renderDetail = (item: UnifiedHistoryItem) => {
+    const raw = item.leaveRaw ?? item.certRaw ?? item.resignationRaw ?? item.generalRaw ?? item.benefitRaw ?? item.timeAdjustRaw;
+    const applied = item.status === 'APPROVED' || item.status === 'ISSUED';
+    let info: React.ReactNode = null;
+    let note: string | null | undefined;
+    if (item.leaveRaw) {
+      info = <LeaveDecisionInsightsPanel request={item.leaveRaw} data={detailLeaveData} applied={applied} />;
+      note = item.status === 'CANCELLED' ? item.leaveRaw.cancelReason : item.leaveRaw.rejectReason;
+    } else if (item.certRaw) {
+      info = <CertificateReviewInfo request={item.certRaw} />;
+      note = item.certRaw.rejectReason;
+    } else if (item.resignationRaw) {
+      info = <ResignationReviewInfo request={item.resignationRaw} />;
+      note = item.status === 'CANCELLED' ? item.resignationRaw.cancelReason : item.resignationRaw.rejectionReason ?? item.resignationRaw.rejectReason;
+    } else if (item.generalRaw) {
+      info = <GeneralReviewInfo request={item.generalRaw} />;
+      note = item.generalRaw.rejectReason;
+    } else if (item.benefitRaw) {
+      info = <BenefitReviewInfo claim={item.benefitRaw} applied={applied} />;
+      note = item.benefitRaw.rejectReason;
+    } else if (item.timeAdjustRaw) {
+      info = <TimeAdjustReviewInfo adj={item.timeAdjustRaw} />;
+    }
+    const isPendingApprovedByMe = item.status === 'PENDING' && item.hasAlreadyApproved;
+    const result: ReviewResult = {
+      label: isPendingApprovedByMe ? 'อนุมัติแล้ว (รอขั้นถัดไป)' : (STATUS_CONFIG[item.status]?.label ?? item.status),
+      tone: isPendingApprovedByMe
+        ? 'pending'
+        : item.status === 'REJECTED'
+          ? 'reject'
+          : item.status === 'CANCELLED'
+            ? 'neutral'
+            : applied
+              ? 'approve'
+              : 'pending',
+      byName: item.approvedByName,
+      at: item.actionAt,
+      note,
+      noteLabel: item.status === 'CANCELLED' ? 'เหตุผลที่ยกเลิก' : 'เหตุผลที่ปฏิเสธ',
+    };
+    const position = (raw as { positionName?: string | null } | undefined)?.positionName;
+    const meta = [position, item.departmentName].filter(Boolean).join(' · ');
+    return { info, result, employeeId: raw?.employeeId, meta };
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Sub-menu Tabs: เอกสารรอดำเนินการ | ประวัติเอกสาร */}
@@ -723,17 +806,31 @@ export default function ApprovalHistoryPage() {
                         {formatDateTime(item.actionAt)}
                       </td>
 
-                      {/* 8. ดำเนินการ (ดูเอกสาร) */}
+                      {/* 8. การจัดการ — เมนูจุดสามจุด */}
                       <td className="px-5 py-3.5 whitespace-nowrap text-right">
-                        <button
-                          type="button"
-                          onClick={() => openDocument(item)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium transition-all cursor-pointer"
-                          title="ดูเอกสาร"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                          ดูเอกสาร
-                        </button>
+                        <ActionDropdown
+                          menuClassName="w-48"
+                          title="การจัดการ"
+                          triggerClassName="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 inline-flex items-center justify-center transition-colors cursor-pointer"
+                          items={[
+                            {
+                              id: 'detail',
+                              label: 'ดูรายละเอียด',
+                              icon: <FileSearch className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+                              onClick: () => setDetailItem(item),
+                            },
+                            ...(hasDocument(item)
+                              ? [
+                                  {
+                                    id: 'document',
+                                    label: DOC_LABEL[item.docType],
+                                    icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
+                                    onClick: () => viewDocument(item),
+                                  },
+                                ]
+                              : []),
+                          ]}
+                        />
                       </td>
                     </tr>
                   );
@@ -761,6 +858,30 @@ export default function ApprovalHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* รายละเอียดคำขอ (ดูอย่างเดียว) — วางก่อน modal เอกสาร เพื่อให้เอกสารเปิดทับได้ */}
+      {detailItem &&
+        (() => {
+          const d = renderDetail(detailItem);
+          return (
+            <ApprovalReviewModal
+              isOpen
+              readOnly
+              onClose={() => setDetailItem(null)}
+              title={`รายละเอียด${detailItem.docTypeName}`}
+              typeLabel={detailItem.subType || undefined}
+              code={detailItem.requestNo}
+              employeeId={d.employeeId}
+              employeeName={detailItem.employeeName}
+              meta={d.meta}
+              result={d.result}
+              onViewDocument={hasDocument(detailItem) ? () => viewDocument(detailItem) : undefined}
+              documentLabel={DOC_LABEL[detailItem.docType]}
+            >
+              {d.info}
+            </ApprovalReviewModal>
+          );
+        })()}
 
       {/* Timeline Modal (คำขอลา) */}
       <ApprovalTimelineModal

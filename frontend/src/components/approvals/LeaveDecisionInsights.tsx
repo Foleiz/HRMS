@@ -247,9 +247,11 @@ interface LeavePanelProps {
   request: LeaveRequest;
   data: LeaveDecisionData;
   compact?: boolean;
+  /** ใบนี้ถูกหักสิทธิ์ไปแล้ว (อนุมัติแล้ว) — แสดงยอดตามจริงโดยไม่หักซ้ำ */
+  applied?: boolean;
 }
 
-export function LeaveDecisionInsightsPanel({ request, data, compact = false }: LeavePanelProps) {
+export function LeaveDecisionInsightsPanel({ request, data, compact = false, applied = false }: LeavePanelProps) {
   const reqDays = daysOf(request);
   const { balances, remainingAfter, noticeDays, overlaps, loading, monthlyDays, requestMonthlyDays } = data;
   const thYear = data.year + 543;
@@ -338,11 +340,12 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {typeBalances.map((b) => {
                       const isThis = b.leaveTypeId === request.leaveTypeId;
-                      const left = isThis && remainingAfter !== null ? remainingAfter : b.netRemainingLeaveDays;
+                      const left = isThis && remainingAfter !== null && !applied ? remainingAfter : b.netRemainingLeaveDays;
+                      const usedBefore = applied && isThis ? Math.max(0, b.usedDays - reqDays) : b.usedDays;
                       return (
                         <tr key={b.leaveTypeId}>
                           <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{fmtDays(b.netRemainingLeaveDays + b.usedDays)}</td>
-                          <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{fmtDays(b.usedDays)}</td>
+                          <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{fmtDays(usedBefore)}</td>
                           <td className="px-3 py-2 text-right font-semibold text-amber-700 dark:text-amber-300">{isThis ? fmtDays(reqDays) : '-'}</td>
                           <td
                             className={`px-3 py-2 text-right font-bold ${
