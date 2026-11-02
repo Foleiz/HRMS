@@ -372,14 +372,10 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
               {form.isDocumentRequired && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <Field label="เมื่อลาตั้งแต่" hint="เว้นว่าง = ต้องแนบทุกครั้ง">
-                    <div className="w-44">
-                      <NumberBox value={form.documentRequiredAfterDays} onChange={(v) => set('documentRequiredAfterDays', v)} unit="วันขึ้นไป" step="0.5" placeholder="ทุกครั้ง" />
-                    </div>
+                    <NumberBox value={form.documentRequiredAfterDays} onChange={(v) => set('documentRequiredAfterDays', v)} unit="วันขึ้นไป" step="0.5" placeholder="ทุกครั้ง" />
                   </Field>
                   <Field label="แนบภายหลังได้ภายใน" hint="นับจากวันสุดท้ายที่ลา · เว้นว่าง = ต้องแนบตอนยื่น">
-                    <div className="w-44">
-                      <NumberBox value={form.documentGraceDays} onChange={(v) => set('documentGraceDays', v)} unit="วัน" placeholder="ตอนยื่น" />
-                    </div>
+                    <NumberBox value={form.documentGraceDays} onChange={(v) => set('documentGraceDays', v)} unit="วัน" placeholder="ตอนยื่น" />
                   </Field>
                 </div>
               )}
