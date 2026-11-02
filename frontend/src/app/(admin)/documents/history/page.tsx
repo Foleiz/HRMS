@@ -819,7 +819,7 @@ export default function DocumentHistoryPage() {
       items.push({ divider: true, label: '' });
       doc.documents!.forEach((d) => {
         items.push({
-          label: d.fileName ? `ดาวน์โหลด ${d.fileName}` : 'ดาวน์โหลดเอกสารแนบ',
+          label: doc.documents!.length > 1 && d.fileName ? `ดาวน์โหลดไฟล์แนบ (${d.fileName})` : 'ดาวน์โหลดไฟล์แนบ',
           icon: <Download className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
           onClick: () => handleDownloadDoc(doc, d.id, d.fileName ?? 'attachment'),
         });
