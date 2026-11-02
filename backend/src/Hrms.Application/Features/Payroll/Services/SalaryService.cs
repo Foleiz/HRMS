@@ -1403,50 +1403,66 @@ public class SalaryService : ISalaryService
             payrolls = payrolls.Where(p => permittedIds.Contains(p.EmployeeId)).ToList();
         }
 
-        var existingEmployeeIds = payrolls.Select(p => p.EmployeeId).ToHashSet();
-        var missingEmployees = activeEmployees.Where(e => !existingEmployeeIds.Contains(e.Id)).ToList();
-
-        if (missingEmployees.Any() && period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
+        if (period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
         {
-            // แสดงเฉพาะพนักงานที่อยู่ในรอบนี้จริง (ไม่รวมคนที่ลาออกไปแล้ว / ยังไม่เริ่มงาน)
-            var windows = await LoadEmploymentWindowsAsync(missingEmployees, cancellationToken);
+            var windows = await LoadEmploymentWindowsAsync(activeEmployees, cancellationToken);
+
+            // นำ payroll ของพนักงานที่ไม่มีสัญญาจ้าง หรือไม่อยู่ในรอบนี้แล้วออก
+            var ineligiblePayrolls = payrolls
+                .Where(p => { var emp = p.Employee ?? activeEmployees.FirstOrDefault(e => e.Id == p.EmployeeId); return emp == null || !IsEligibleForPeriod(emp, windows.TryGetValue(p.EmployeeId, out var w) ? w : new EmploymentWindow(null, null), period); })
+                .ToList();
+
+            if (ineligiblePayrolls.Any())
+            {
+                foreach (var ip in ineligiblePayrolls)
+                {
+                    if (ip.Details.Any())
+                        _context.PayrollDetails.RemoveRange(ip.Details);
+                    _context.Payrolls.Remove(ip);
+                    payrolls.Remove(ip);
+                }
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            var existingEmployeeIds = payrolls.Select(p => p.EmployeeId).ToHashSet();
+            var missingEmployees = activeEmployees.Where(e => !existingEmployeeIds.Contains(e.Id)).ToList();
             missingEmployees = missingEmployees
                 .Where(e => IsEligibleForPeriod(e, windows.TryGetValue(e.Id, out var w) ? w : new EmploymentWindow(null, null), period))
                 .ToList();
-        }
 
-        if (missingEmployees.Any() && period != null && (period.Status == "DRAFT" || period.Status == "REVIEW"))
-        {
-            var newPayrolls = missingEmployees.Select(emp =>
+            if (missingEmployees.Any())
             {
-                var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
-                return new Domain.Entities.Payroll
+                var newPayrolls = missingEmployees.Select(emp =>
                 {
-                    PeriodId = period.Id,
-                    EmployeeId = emp.Id,
-                    TotalGrossIncome = 0,
-                    TotalDeductionAmount = 0,
-                    NetPayableSalary = 0,
-                    Status = "DRAFT",
-                    SnapshotEmployeeName = $"{emp.Prefix} {emp.FirstName} {emp.LastName}".Trim(),
-                    SnapshotDepartmentName = curAssign?.Department?.DepartmentName ?? "-"
-                };
-            }).ToList();
+                    var curAssign = emp.Assignments.FirstOrDefault(a => a.IsCurrent) ?? emp.Assignments.FirstOrDefault();
+                    return new Domain.Entities.Payroll
+                    {
+                        PeriodId = period.Id,
+                        EmployeeId = emp.Id,
+                        TotalGrossIncome = 0,
+                        TotalDeductionAmount = 0,
+                        NetPayableSalary = 0,
+                        Status = "DRAFT",
+                        SnapshotEmployeeName = $"{emp.Prefix} {emp.FirstName} {emp.LastName}".Trim(),
+                        SnapshotDepartmentName = curAssign?.Department?.DepartmentName ?? "-"
+                    };
+                }).ToList();
 
-            _context.Payrolls.AddRange(newPayrolls);
-            await _context.SaveChangesAsync(cancellationToken);
+                _context.Payrolls.AddRange(newPayrolls);
+                await _context.SaveChangesAsync(cancellationToken);
 
-            payrolls = await _context.Payrolls
-                .Include(p => p.Employee)
-                .Include(p => p.Details).ThenInclude(d => d.PayrollItem)
-                .Where(p => p.PeriodId == periodId)
-                .OrderBy(p => p.Id)
-                .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                payrolls = await _context.Payrolls
+                    .Include(p => p.Employee)
+                    .Include(p => p.Details).ThenInclude(d => d.PayrollItem)
+                    .Where(p => p.PeriodId == periodId)
+                    .OrderBy(p => p.Id)
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken);
 
-            if (permittedIds != null)
-            {
-                payrolls = payrolls.Where(p => permittedIds.Contains(p.EmployeeId)).ToList();
+                if (permittedIds != null)
+                {
+                    payrolls = payrolls.Where(p => permittedIds.Contains(p.EmployeeId)).ToList();
+                }
             }
         }
 
@@ -3153,8 +3169,10 @@ public class SalaryService : ISalaryService
         var result = new Dictionary<long, EmploymentWindow>();
         if (!ids.Any()) return result;
 
+        // สัญญาจ้างที่ถูกต้อง: ต้องมีสถานะที่มีผลทางกฎหมาย (ไม่รวม CANCELLED หรือ PENDING_APPROVAL)
+        var validStatuses = new[] { "ACTIVE", "COMPLETED", "TERMINATED" };
         var contracts = await _context.EmploymentContracts
-            .Where(c => ids.Contains(c.EmployeeId) && c.Status != "CANCELLED")
+            .Where(c => ids.Contains(c.EmployeeId) && validStatuses.Contains(c.Status))
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -3167,18 +3185,44 @@ public class SalaryService : ISalaryService
         {
             var empContracts = contracts.Where(c => c.EmployeeId == emp.Id).ToList();
 
-            DateOnly? start = empContracts.Any()
-                ? empContracts.Min(c => c.StartDate)
-                : (emp.Assignments.Any() ? emp.Assignments.Min(a => a.EffectiveFrom) : (DateOnly?)null);
+            if (!empContracts.Any())
+            {
+                // ไม่มีสัญญาจ้างงานเลย -> Start เป็น null (ไม่มีสิทธิ์คิดเงินเดือน)
+                result[emp.Id] = new EmploymentWindow(null, null);
+                continue;
+            }
 
-            // วันทำงานวันสุดท้าย: จากประวัติสถานะลาออก/เลิกจ้าง หรือวันสิ้นสุดสัญญาที่ถูกยกเลิก
+            DateOnly? start = empContracts.Min(c => c.StartDate);
+
+            // วันทำงานวันสุดท้าย: จากประวัติสถานะลาออก/เลิกจ้าง หรือวันสิ้นสุดสัญญา/เลิกจ้าง
             DateOnly? end = exits.Where(h => h.EmployeeId == emp.Id).Select(h => (DateOnly?)h.EffectiveFrom).Max();
             var terminationDate = empContracts.Where(c => c.TerminationDate.HasValue).Select(c => c.TerminationDate).Max();
             if (terminationDate.HasValue && (!end.HasValue || terminationDate.Value > end.Value))
                 end = terminationDate;
 
+            // ตรวจสอบวันสิ้นสุดสัญญาจ้าง (ContractEndDate):
+            var activeContracts = empContracts.Where(c => c.Status == "ACTIVE").ToList();
+            if (activeContracts.Any())
+            {
+                // ถ้าสัญญาทั้งหมดมี ContractEndDate (เช่น สัญญาจ้างชั่วคราว/รายปีที่หมดอายุ)
+                bool allHaveEndDate = activeContracts.All(c => c.ContractEndDate.HasValue);
+                if (allHaveEndDate)
+                {
+                    var latestContractEnd = activeContracts.Select(c => c.ContractEndDate!.Value).Max();
+                    if (!end.HasValue || latestContractEnd < end.Value)
+                        end = latestContractEnd;
+                }
+            }
+            else
+            {
+                // ไม่มีสัญญาที่ ACTIVE อยู่เลย (เช่น สัญญาเดิม COMPLETED หรือ TERMINATED ไปหมดแล้ว)
+                var maxContractEnd = empContracts.Where(c => c.ContractEndDate.HasValue).Select(c => c.ContractEndDate).Max();
+                if (maxContractEnd.HasValue && (!end.HasValue || maxContractEnd.Value < end.Value))
+                    end = maxContractEnd;
+            }
+
             // กรณีกลับเข้ามาทำงานใหม่ (มีสัญญา ACTIVE ที่เริ่มหลังวันออก) ให้ถือว่ายังทำงานอยู่
-            if (end.HasValue && empContracts.Any(c => c.Status == "ACTIVE" && c.StartDate > end.Value))
+            if (end.HasValue && empContracts.Any(c => c.Status == "ACTIVE" && (!c.ContractEndDate.HasValue || c.ContractEndDate.Value > end.Value) && c.StartDate > end.Value))
                 end = null;
 
             result[emp.Id] = new EmploymentWindow(start, end);
@@ -3189,10 +3233,16 @@ public class SalaryService : ISalaryService
 
     private static bool IsEligibleForPeriod(Employee emp, EmploymentWindow window, PayrollPeriod period)
     {
-        if (window.Start.HasValue && window.Start.Value > period.EndDate) return false; // ยังไม่เริ่มงาน
-        if (window.End.HasValue && window.End.Value < period.StartDate) return false;   // ออกก่อนเริ่มรอบ
+        // 1. ต้องมีสัญญาจ้างงาน (ถ้า window.Start เป็น null แสดงว่าไม่มีสัญญาจ้าง)
+        if (!window.Start.HasValue) return false;
 
-        // พนักงานที่ปิดสถานะแล้ว (INACTIVE) โดยไม่ทราบวันออก จะไม่ถูกนำมาคิดเงินเดือน
+        // 2. สัญญาจ้างต้องเริ่มก่อนหรือภายในรอบเงินเดือนนี้ (ถ้าเริ่มหลังวันสิ้นสุดรอบ = ยังไม่ถึงกำหนดเริ่มงาน)
+        if (window.Start.Value > period.EndDate) return false;
+
+        // 3. ถ้าสัญญาสิ้นสุดลง หรือลาออก/เลิกจ้าง ก่อนวันเริ่มรอบเงินเดือน = ไม่อยู่ในรอบนี้แล้ว
+        if (window.End.HasValue && window.End.Value < period.StartDate) return false;
+
+        // 4. พนักงานที่ปิดสถานะแล้ว (INACTIVE) โดยไม่ทราบวันออก จะไม่ถูกนำมาคิดเงินเดือน
         bool isActive = string.Equals(emp.EmploymentStatus, "ACTIVE", StringComparison.OrdinalIgnoreCase);
         if (!isActive && !window.End.HasValue) return false;
 
