@@ -52,13 +52,16 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { openBlobInNewTab } from '@/lib/filePreview';
 import { ApprovalReviewModal, type ReviewDecision } from '@/components/approvals/ApprovalReviewModal';
-import { TimeAdjustReviewInfo, BenefitReviewInfo } from '@/components/approvals/ReviewInfoPanels';
+import {
+  TimeAdjustReviewInfo,
+  BenefitReviewInfo,
+  CertificateReviewInfo,
+  ResignationReviewInfo,
+  GeneralReviewInfo,
+} from '@/components/approvals/ReviewInfoPanels';
 import {
   useLeaveDecisionData,
   LeaveDecisionInsightsPanel,
-  CertDecisionInsightsPanel,
-  ResignDecisionInsightsPanel,
-  GeneralDecisionInsightsPanel,
 } from '@/components/approvals/LeaveDecisionInsights';
 
 // ─── ฟังก์ชันช่วย & โครงสร้างข้อมูล ──────────────────────────────
@@ -852,14 +855,14 @@ export default function LeaveRequestsApprovalPage() {
     }
     if (item.docType === 'CERTIFICATE' && item.certRaw) {
       return {
-        info: <CertDecisionInsightsPanel request={item.certRaw} onPreview={() => openDocument(item)} />,
+        info: <CertificateReviewInfo request={item.certRaw} />,
         attachments: [],
         documentLabel: 'ดูตัวอย่างหนังสือรับรอง',
       };
     }
     if (item.docType === 'RESIGNATION' && item.resignationRaw) {
       return {
-        info: <ResignDecisionInsightsPanel request={item.resignationRaw} onPreview={() => openDocument(item)} />,
+        info: <ResignationReviewInfo request={item.resignationRaw} />,
         attachments: [],
         documentLabel: 'ดูหนังสือขอลาออก',
       };
@@ -875,7 +878,7 @@ export default function LeaveRequestsApprovalPage() {
             )
         : undefined;
       return {
-        info: <GeneralDecisionInsightsPanel request={g} onDownloadAttachment={openAttachment} />,
+        info: <GeneralReviewInfo request={g} />,
         attachments: g.fileName ? [{ name: g.fileName, onOpen: openAttachment }] : [],
         documentLabel: 'ดูคำร้อง',
       };
