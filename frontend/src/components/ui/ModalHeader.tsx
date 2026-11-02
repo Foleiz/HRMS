@@ -4,8 +4,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 
 /**
- * หัวหน้าต่างมาตรฐานของระบบ — ไอคอนในกล่อง + หัวข้อชิดซ้าย + ปุ่มปิดมุมขวา
- * (ต้นแบบ: หน้าต่าง "สร้างข่าวสารและประกาศใหม่")
+ * หัวหน้าต่างมาตรฐานของระบบ — ไอคอนในกล่อง + หัวข้ออยู่กึ่งกลาง + ปุ่มปิดมุมขวา
  *
  *   <ModalHeader icon={Megaphone} title="สร้างข่าวสารและประกาศใหม่" onClose={close} />
  */
@@ -15,7 +14,7 @@ export interface ModalHeaderProps {
   /** ข้อมูลประกอบบรรทัดรอง (ใช้เฉพาะข้อมูลที่เปลี่ยนตามรายการ เช่น ชื่อพนักงาน / เลขที่ชุดข้อมูล) */
   subtitle?: React.ReactNode;
   onClose?: () => void;
-  /** ปุ่มเพิ่มเติมก่อนปุ่มปิด */
+  /** ปุ่มเพิ่มเติมก่อนปุ่มปิด (มุมขวา) */
   actions?: React.ReactNode;
   className?: string;
 }
@@ -23,21 +22,19 @@ export interface ModalHeaderProps {
 export function ModalHeader({ title, icon: Icon, subtitle, onClose, actions, className = '' }: ModalHeaderProps) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shrink-0 ${className}`}
+      className={`relative px-14 py-4 text-center border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shrink-0 ${className}`}
     >
-      <div className="flex items-center gap-2.5 min-w-0">
+      <div className="flex items-center justify-center gap-2.5 min-w-0">
         {Icon && (
           <span className="w-8 h-8 rounded-lg bg-primary/10 dark:bg-blue-400/10 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <Icon className="w-4 h-4" />
           </span>
         )}
-        <div className="min-w-0">
-          <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug">{title}</h3>
-          {subtitle && <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">{subtitle}</div>}
-        </div>
+        <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm leading-snug min-w-0">{title}</h3>
       </div>
+      {subtitle && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{subtitle}</div>}
       {(actions || onClose) && (
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {actions}
           {onClose && (
             <button

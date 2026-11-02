@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState } from 'react';
@@ -224,27 +225,11 @@ export const AttendanceFileFormatModal: React.FC<Props> = ({ isOpen, onClose }) 
     <ModalShell className="z-50 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-3 sm:p-6">
       <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center border border-emerald-100 dark:border-emerald-800">
-              <FileSpreadsheet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">รูปแบบไฟล์ที่รองรับ</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                อัปโหลดไฟล์ .xls / .xlsx ที่ส่งออกจากเครื่องสแกนได้ทันที
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            title="ปิดหน้าต่าง"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={FileSpreadsheet}
+          title="รูปแบบไฟล์ที่รองรับ"
+          onClose={onClose}
+        />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-slate-700 dark:text-slate-300">

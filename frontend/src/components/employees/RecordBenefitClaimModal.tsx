@@ -1,11 +1,21 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState } from 'react';
 import { BenefitUsageItem, CreateBenefitClaimPayload } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { useToast } from '@/context/ToastContext';
-import { X, Calendar, FileText, AlertCircle, CheckCircle2, Loader2, Sparkles, Paperclip } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  FileText,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  Sparkles,
+  Paperclip,
+} from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { inputClass } from '@/components/ui';
@@ -189,28 +199,12 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/70 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-                {isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์ / เบิกสวัสดิการ'}
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                พนักงาน: {employeeName}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Sparkles}
+          title={isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์ / เบิกสวัสดิการ'}
+          subtitle={<>พนักงาน: {employeeName}</>}
+          onClose={onClose}
+        />
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">

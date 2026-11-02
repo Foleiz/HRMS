@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -496,35 +497,15 @@ export default function EmployeeBenefitBalancesPage() {
         <ModalShell className="z-50 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-2xl w-full border border-gray-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
             {/* Header */}
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-cyan-300 flex items-center justify-center font-bold">
-                  <Receipt className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-slate-100 text-sm md:text-base">
-                    ประวัติการเบิก{historyBenefit ? `: ${historyBenefit.benefitName}` : 'สวัสดิการ'} — {historyEmp.employeeName}
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    รหัส {historyEmp.employeeCode} · ประจำปี {selectedYear + 543}
-                    {historyBenefit && (
-                      <span className="ml-2 font-medium text-blue-600 dark:text-cyan-400">
-                        ({historyBenefit.benefitCode})
-                      </span>
-                    )}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
+            <ModalHeader
+              icon={Receipt}
+              title={<>ประวัติการเบิก{historyBenefit ? `: ${historyBenefit.benefitName}` : 'สวัสดิการ'} — {historyEmp.employeeName}</>}
+              subtitle={<>รหัส {historyEmp.employeeCode} · ประจำปี {selectedYear + 543} {historyBenefit && ( <span className="ml-2 font-medium text-blue-600 dark:text-cyan-400"> ({historyBenefit.benefitCode}) </span> )}</>}
+              onClose={() => {
                   setIsClaimsHistoryOpen(false);
                   setHistoryBenefit(null);
                 }}
-                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            />
 
             {/* Content */}
             <div className="p-6 overflow-y-auto flex-1">
