@@ -163,15 +163,9 @@ export default function ContractsPage() {
     { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewDocs },
   ].filter((t) => t.show);
 
-  const handleViewAttachment = async (contract: EmploymentContract) => {
-    await openBlobInNewTab(
-      async () => {
-        const res = await contractService.getDocumentBlob(contract.id, true);
-        return res.blob;
-      },
-      contract.documentFileName || `contract_${contract.id}`,
-      (errMsg) => toast.error(errMsg)
-    );
+  const handleViewAttachment = (contract: EmploymentContract) => {
+    setSelectedContractForDocPreview(contract);
+    setIsDocPreviewModalOpen(true);
   };
 
   const handleDownloadAttachment = async (contract: EmploymentContract) => {
@@ -450,24 +444,28 @@ export default function ContractsPage() {
                       {contract.hasDocument ? (
                         <button
                           type="button"
-                          onClick={() => handleViewAttachment(contract)}
-                          title={contract.documentFileName ? `คลิกเพื่อดูไฟล์แนบ: ${contract.documentFileName}` : 'คลิกเพื่อดูไฟล์แนบ'}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 hover:bg-emerald-100 hover:border-emerald-300 transition cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewAttachment(contract);
+                          }}
+                          title={contract.documentFileName ? `คลิกเพื่อดูตัวอย่างไฟล์แนบ: ${contract.documentFileName}` : 'คลิกเพื่อดูตัวอย่างไฟล์แนบ'}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 dark:hover:bg-emerald-900/50 transition cursor-pointer shadow-2xs"
                         >
-                          <Paperclip className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <Paperclip className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>มีไฟล์แนบแล้ว</span>
                         </button>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedContractForAttach(contract);
                             setIsAttachModalOpen(true);
                           }}
                           title={`คลิกเพื่อแนบเอกสารสัญญาสำหรับ ${contract.employeeName}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 hover:bg-sky-100 hover:border-sky-300 transition cursor-pointer hover:shadow-xs"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 hover:border-sky-300 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/50 transition cursor-pointer hover:shadow-xs"
                         >
-                          <Paperclip className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                          <Paperclip className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
                           <span>รอไฟล์แนบ</span>
                         </button>
                       )}
