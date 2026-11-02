@@ -72,7 +72,15 @@ public class MySalaryService : IMySalaryService
         var currentYearPayrolls = allPayrolls.Where(p => p.Period != null && p.Period.Year == selectedYear).ToList();
 
         // 3. Calculate Summary Cards
+        var targetPayrolls = currentYearPayrolls.Any() ? currentYearPayrolls : allPayrolls;
+        decimal totalNetPay = targetPayrolls.Sum(p => p.NetPayableSalary);
+        decimal totalGrossIncome = targetPayrolls.Sum(p => p.TotalGrossIncome);
+        decimal totalDeductions = targetPayrolls.Sum(p => p.TotalDeductionAmount);
+
         decimal latestNetPay = latestPayroll?.NetPayableSalary ?? 0m;
+        string latestPeriodMonthName = latestPayroll != null
+            ? GetThaiMonthName(latestPayroll.Period?.Month ?? 1, latestPayroll.Period?.Year ?? selectedYear)
+            : "-";
         decimal latestGross = latestPayroll?.TotalGrossIncome ?? 0m;
         decimal latestDeductions = latestPayroll?.TotalDeductionAmount ?? 0m;
 
@@ -149,6 +157,10 @@ public class MySalaryService : IMySalaryService
 
         return new MySalaryOverviewDto
         {
+            TotalNetPay = totalNetPay,
+            TotalGrossIncome = totalGrossIncome,
+            TotalDeductions = totalDeductions,
+            LatestPeriodMonthName = latestPeriodMonthName,
             LatestNetPay = latestNetPay,
             LatestGrossIncome = latestGross,
             LatestTotalDeductions = latestDeductions,

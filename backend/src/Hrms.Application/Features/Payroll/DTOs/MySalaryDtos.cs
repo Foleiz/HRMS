@@ -2,6 +2,10 @@ namespace Hrms.Application.Features.Payroll.DTOs;
 
 public class MySalaryOverviewDto
 {
+    public decimal TotalNetPay { get; set; }
+    public decimal TotalGrossIncome { get; set; }
+    public decimal TotalDeductions { get; set; }
+    public string LatestPeriodMonthName { get; set; } = string.Empty;
     public decimal LatestNetPay { get; set; }
     public decimal LatestGrossIncome { get; set; }
     public decimal LatestTotalDeductions { get; set; }

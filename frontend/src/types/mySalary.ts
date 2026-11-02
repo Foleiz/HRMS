@@ -1,4 +1,8 @@
 export interface MySalaryOverview {
+  totalNetPay?: number;
+  totalGrossIncome?: number;
+  totalDeductions?: number;
+  latestPeriodMonthName?: string;
   latestNetPay: number;
   latestGrossIncome: number;
   latestTotalDeductions: number;
