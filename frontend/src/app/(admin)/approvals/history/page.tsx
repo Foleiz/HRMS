@@ -698,10 +698,10 @@ export default function ApprovalHistoryPage() {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50 dark:bg-slate-800/60 whitespace-nowrap">
                   <SortableTh label="เลขที่เอกสาร" field="requestNo" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
+                  <SortableTh label="วันที่ดำเนินการ" field="actionAt" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="ประเภทเอกสาร" field="docTypeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="พนักงาน" field="employeeName" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <SortableTh label="สถานะ" field="status" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
-                  <SortableTh label="วันที่ดำเนินการ" field="actionAt" firstDirection="desc" sortField={sortField} sortDirection={sortDirection} onSort={handleSort} className="px-4 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide" />
                   <th className="text-right px-5 py-3.5 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">การจัดการ</th>
                 </tr>
               </thead>
@@ -724,6 +724,11 @@ export default function ApprovalHistoryPage() {
                         >
                           {item.requestNo}
                         </button>
+                      </td>
+
+                      {/* 7. วันที่ดำเนินการ */}
+                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+                        {formatDateTime(item.actionAt)}
                       </td>
 
                       {/* 2. ประเภทเอกสาร */}
@@ -782,11 +787,6 @@ export default function ApprovalHistoryPage() {
                           {statusConf.icon}
                           {statusConf.label}
                         </span>
-                      </td>
-
-                      {/* 7. วันที่ดำเนินการ */}
-                      <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
-                        {formatDateTime(item.actionAt)}
                       </td>
 
                       {/* 8. การจัดการ — เมนูจุดสามจุด */}
