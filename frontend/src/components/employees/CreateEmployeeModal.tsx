@@ -1,6 +1,6 @@
 'use client';
 
-import { ModalShell, Button } from '@/components/ui';
+import { ModalShell, Button, TabBar } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
@@ -664,62 +664,48 @@ export default function CreateEmployeeModal({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header (ตรงตามสไตล์เดียวกับ EditEmployeeModal) */}
-        <div className="flex items-center justify-between px-6 py-4 bg-primary text-white shrink-0">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold">เพิ่มพนักงานใหม่</h2>
-              {formData.employeeCode && (
-                <span className="text-xs px-2 py-0.5 rounded-md bg-white/20 font-mono font-bold">
-                  {formData.employeeCode}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-300">กรอกข้อมูลพนักงานเพื่อบันทึกประวัติเข้าสู่ระบบ</p>
-          </div>
+        <div className="relative px-14 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 inline-flex flex-wrap items-center justify-center gap-2">
+            เพิ่มพนักงานใหม่
+            {formData.employeeCode && (<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-mono font-bold">{formData.employeeCode}</span>)}
+          </h3>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
             aria-label="ปิดหน้าต่าง"
+            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Tab Switcher */}
-        <div className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90 px-6 shrink-0">
-          <nav className="flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar py-2 text-xs font-semibold">
-            {[
+        {/* Modal Tab Switcher — แถบแท็บมาตรฐานของระบบ */}
+        <div className="border-b border-slate-200 dark:border-slate-700 px-6 shrink-0">
+          <TabBar
+            aria-label="หมวดข้อมูลพนักงาน"
+            className="gap-6 text-xs"
+            itemClassName="py-3"
+            activeKey={activeTab}
+            onChange={(k) => setActiveTab(k as CreateModalTab)}
+            items={[
               { id: 'personal', label: 'ข้อมูลส่วนตัว', icon: User, errCount: personalErrorsCount },
               { id: 'family', label: 'ข้อมูลครอบครัว', icon: Users, errCount: familyErrorsCount },
               { id: 'emergency', label: 'ผู้ติดต่อฉุกเฉิน', icon: Phone, errCount: emergencyErrorsCount },
               { id: 'background', label: 'การศึกษา & ประวัติการทำงาน', icon: GraduationCap, errCount: 0 },
               { id: 'tax', label: 'ภาษี & ประกันสังคม', icon: Landmark, errCount: 0 },
-            ].map((tab) => {
-              const isActive = activeTab === tab.id;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id as CreateModalTab)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-                    isActive
-                      ? 'bg-primary text-white shadow-xs font-bold'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  <span>{tab.label}</span>
-                  {hasAttemptedSubmit && tab.errCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white animate-pulse">
-                      {tab.errCount}
-                    </span>
-                  )}
-                </button>
-              );
+            ].map((t) => {
+              const Icon = t.icon;
+              return {
+                key: t.id,
+                label: t.label,
+                icon: <Icon className="w-3.5 h-3.5" />,
+                badge:
+                  hasAttemptedSubmit && t.errCount > 0 ? (
+                    <span className="px-1.5 rounded-full text-[10px] font-bold bg-rose-500 text-white">{t.errCount}</span>
+                  ) : undefined,
+              };
             })}
-          </nav>
+          />
         </div>
 
         {/* Form Body */}
