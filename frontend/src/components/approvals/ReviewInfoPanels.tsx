@@ -283,9 +283,11 @@ export function TimeAdjustReviewInfo({ adj }: { adj: AttendanceAdjustment }) {
 
 // ─── คำขอเบิกสวัสดิการ ─────────────────────────────────────────
 
-export function BenefitReviewInfo({ claim }: { claim: BenefitClaimRequest }) {
+export function BenefitReviewInfo({ claim, applied = false }: { claim: BenefitClaimRequest; applied?: boolean }) {
   const hasQuota = claim.quotaAmount > 0;
-  const remainingBefore = hasQuota ? Math.max(0, claim.quotaAmount - claim.approvedUsedAmount) : null;
+  // อนุมัติแล้ว: ยอดใช้ไปแล้วรวมใบนี้อยู่ — หักออกเพื่อแสดงก่อน/หลังให้ถูก
+  const usedBefore = applied ? Math.max(0, claim.approvedUsedAmount - claim.amount) : claim.approvedUsedAmount;
+  const remainingBefore = hasQuota ? Math.max(0, claim.quotaAmount - usedBefore) : null;
   const remainingAfter = remainingBefore !== null ? remainingBefore - claim.amount : null;
   const overQuota = remainingAfter !== null && remainingAfter < 0;
 
@@ -321,7 +323,7 @@ export function BenefitReviewInfo({ claim }: { claim: BenefitClaimRequest }) {
               </div>
               <div className="rounded-xl border border-amber-200 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/30 px-2 py-3">
                 <div className="text-xs font-semibold text-amber-600 dark:text-amber-400">ใช้ไปแล้ว</div>
-                <div className="mt-1 text-base font-bold font-mono text-amber-700 dark:text-amber-300 truncate">{money(claim.approvedUsedAmount)}</div>
+                <div className="mt-1 text-base font-bold font-mono text-amber-700 dark:text-amber-300 truncate">{money(usedBefore)}</div>
                 <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80">บาท</div>
               </div>
               <div className="rounded-xl border border-indigo-200 bg-indigo-50/70 dark:border-indigo-900/60 dark:bg-indigo-950/30 px-2 py-3">
