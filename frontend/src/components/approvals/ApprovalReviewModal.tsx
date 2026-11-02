@@ -149,7 +149,7 @@ export function ApprovalReviewModal({
             <div className="min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <h2 className="text-base sm:text-lg font-bold text-primary dark:text-slate-100 leading-snug">
-                  {title} — {employeeName}
+                  {title}
                 </h2>
                 {typeLabel && (
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold">

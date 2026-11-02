@@ -108,18 +108,18 @@ export function RequestSummaryCard({
       <div className={reviewTitleCls}>
         <ClipboardList className="w-3.5 h-3.5 text-slate-500" /> รายละเอียดคำขอ
       </div>
-      <div className="grid gap-x-6 md:grid-cols-2">
-        <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60">
-          {people.map((r) => (
-            <SummaryRowItem key={r.label} r={r} />
-          ))}
-        </dl>
-        <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60 md:border-l md:border-slate-100 md:dark:border-slate-700/60 md:pl-6">
+      <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60">
+        {people.map((r) => (
+          <SummaryRowItem key={r.label} r={r} />
+        ))}
+      </dl>
+      {rows.length > 0 && (
+        <dl className="m-0 mt-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700/60">
           {rows.map((r) => (
             <SummaryRowItem key={r.label} r={r} />
           ))}
         </dl>
-      </div>
+      )}
       {note && (
         <div className="mt-2.5 pt-2.5 border-t border-slate-200 dark:border-slate-700">
           <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1 mb-1">
