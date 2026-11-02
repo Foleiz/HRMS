@@ -30,7 +30,7 @@ const thaiTime = (d?: string | null) => {
 
 const money = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function EmployeeCard({ name, department, position }: { name: string; department?: string | null; position?: string | null }) {
+function EmployeeCard({ name, department }: { name: string; department?: string | null }) {
   return (
     <div className={cardCls}>
       <div className={titleCls}>
@@ -44,10 +44,6 @@ function EmployeeCard({ name, department, position }: { name: string; department
         <div className={rowCls}>
           <span className={labelCls}>แผนก</span>
           <span className={valueCls}>{department || '-'}</span>
-        </div>
-        <div className={rowCls}>
-          <span className={labelCls}>ตำแหน่ง</span>
-          <span className={valueCls}>{position || '-'}</span>
         </div>
       </div>
     </div>
@@ -76,7 +72,7 @@ export function TimeAdjustReviewInfo({ adj }: { adj: AttendanceAdjustment }) {
   return (
     <div className="space-y-3 text-xs">
       <div className="grid gap-3 lg:grid-cols-2">
-        <EmployeeCard name={adj.employeeName} department={adj.departmentName} position={adj.positionName} />
+        <EmployeeCard name={adj.employeeName} department={adj.departmentName} />
         <div className={cardCls}>
           <div className={titleCls}>
             <Clock className="w-3.5 h-3.5 text-slate-500" /> รายละเอียดคำขอ
@@ -152,7 +148,7 @@ export function BenefitReviewInfo({ claim }: { claim: BenefitClaimRequest }) {
   return (
     <div className="space-y-3 text-xs">
       <div className="grid gap-3 lg:grid-cols-2">
-        <EmployeeCard name={claim.employeeName} department={claim.departmentName} position={claim.positionName} />
+        <EmployeeCard name={claim.employeeName} department={claim.departmentName} />
         <div className={cardCls}>
           <div className={titleCls}>
             <Gift className="w-3.5 h-3.5 text-slate-500" /> รายละเอียดการเบิก

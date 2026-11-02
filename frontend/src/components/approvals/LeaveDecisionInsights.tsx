@@ -274,12 +274,14 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
   const reqDays = daysOf(request);
   const { balances, remainingAfter, noticeDays, overlaps, loading, monthlyDays, requestMonthlyDays } = data;
   const thYear = data.year + 543;
-  const yearTotal = monthlyDays.reduce((s, d) => s + d, 0);
-  const requestTotal = requestMonthlyDays.reduce((s, d) => s + d, 0);
   const roundDays = (n: number) => Math.round(n * 2) / 2;
-  const sortedBalances = [...balances].sort(
-    (a, b) => Number(b.leaveTypeId === request.leaveTypeId) - Number(a.leaveTypeId === request.leaveTypeId)
-  );
+  const typeBalances = balances.filter((b) => b.leaveTypeId === request.leaveTypeId);
+  // เดือนของใบลานี้ (ใช้เดือนที่เริ่มลา)
+  const reqStartDate = toDateOnly(startOf(request));
+  const monthIdx = reqStartDate?.getMonth() ?? new Date().getMonth();
+  const monthLabel = `${MONTHS_TH[monthIdx]} ${(reqStartDate?.getFullYear() ?? data.year) + 543}`;
+  const monthUsed = roundDays(monthlyDays[monthIdx] ?? 0);
+  const monthThis = roundDays(requestMonthlyDays[monthIdx] ?? 0);
 
   const cardCls = 'p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800';
   const titleCls = 'flex items-center gap-1.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 mb-2.5';
@@ -307,10 +309,6 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
             <div className={rowCls}>
               <span className={labelCls}>แผนก</span>
               <span className={valueCls}>{request.departmentName || '-'}</span>
-            </div>
-            <div className={rowCls}>
-              <span className={labelCls}>ตำแหน่ง</span>
-              <span className={valueCls}>{request.positionName || '-'}</span>
             </div>
           </div>
         </div>
@@ -371,9 +369,9 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
           {/* 1.3 สิทธิ์การลาคงเหลือ แยกตามประเภท */}
           <div className={cardCls}>
             <div className={titleCls}>
-              <Wallet className="w-3.5 h-3.5 text-slate-500" /> สิทธิ์การลาคงเหลือ ปี {thYear}
+              <Wallet className="w-3.5 h-3.5 text-slate-500" /> สิทธิ์{request.leaveTypeName}คงเหลือ ปี {thYear}
             </div>
-            {sortedBalances.length === 0 ? (
+            {typeBalances.length === 0 ? (
               <p className="text-[11px] text-slate-400">
                 {data.balanceAvailable ? 'ไม่พบยอดสิทธิ์การลาของปีนี้' : 'ไม่มีสิทธิ์ดูยอดวันลาคงเหลือ'}
               </p>
@@ -382,7 +380,6 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
                 <table className="w-full text-xs">
                   <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
                     <tr>
-                      <th className="text-left font-medium px-3 py-2">ประเภทการลา</th>
                       <th className="text-right font-medium px-3 py-2">สิทธิ์ทั้งปี</th>
                       <th className="text-right font-medium px-3 py-2">ใช้ไปแล้ว</th>
                       <th className="text-right font-medium px-3 py-2">ลาครั้งนี้</th>
@@ -390,14 +387,11 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {sortedBalances.map((b) => {
+                    {typeBalances.map((b) => {
                       const isThis = b.leaveTypeId === request.leaveTypeId;
                       const left = isThis && remainingAfter !== null ? remainingAfter : b.netRemainingLeaveDays;
                       return (
-                        <tr key={b.leaveTypeId} className={isThis ? 'bg-amber-50/70 dark:bg-amber-950/20' : ''}>
-                          <td className={`px-3 py-2 ${isThis ? 'font-bold text-slate-900 dark:text-slate-100' : 'text-slate-700 dark:text-slate-300'}`}>
-                            {b.leaveTypeName}
-                          </td>
+                        <tr key={b.leaveTypeId}>
                           <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{fmtDays(b.netRemainingLeaveDays + b.usedDays)}</td>
                           <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{fmtDays(b.usedDays)}</td>
                           <td className="px-3 py-2 text-right font-semibold text-amber-700 dark:text-amber-300">{isThis ? fmtDays(reqDays) : '-'}</td>
@@ -415,45 +409,34 @@ export function LeaveDecisionInsightsPanel({ request, data, compact = false }: L
                 </table>
               </div>
             )}
-            {sortedBalances.length > 0 && (
-              <p className="mt-1.5 text-[11px] text-slate-400">แถวที่ไฮไลต์คือประเภทของใบนี้ · คงเหลือของแถวนี้หักวันลาครั้งนี้แล้ว</p>
+            {typeBalances.length > 0 && (
+              <p className="mt-1.5 text-[11px] text-slate-400">คงเหลือหักวันลาครั้งนี้แล้ว</p>
             )}
           </div>
 
-          {/* 1.4 วันลารวมทุกประเภท รายเดือน */}
+          {/* 1.4 วันลารวมทุกประเภทในเดือนที่ลา */}
           <div className={cardCls}>
-            <div className="flex items-center justify-between gap-2 mb-2.5">
-              <span className={titleCls.replace('mb-2.5', '')}>
-                <History className="w-3.5 h-3.5 text-slate-500" /> วันลารวมทุกประเภท รายเดือน ปี {thYear}
-              </span>
-              <span className="text-slate-500 dark:text-slate-400 shrink-0">
-                รวม <b className="text-slate-800 dark:text-slate-100">{fmtDays(roundDays(yearTotal))}</b> วัน
-                {requestTotal > 0 && <span className="text-amber-700 dark:text-amber-300"> (+{fmtDays(roundDays(requestTotal))} ใบนี้)</span>}
-              </span>
+            <div className={titleCls}>
+              <History className="w-3.5 h-3.5 text-slate-500" /> วันลารวมทุกประเภท เดือน {monthLabel}
             </div>
-            <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
-              {MONTHS_TH.map((m, i) => {
-                const used = roundDays(monthlyDays[i]);
-                const mine = roundDays(requestMonthlyDays[i]);
-                return (
-                  <div
-                    key={m}
-                    className={`rounded-lg border px-1 py-1.5 text-center ${
-                      mine > 0
-                        ? 'border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'
-                        : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/30'
-                    }`}
-                  >
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">{m}</div>
-                    <div className={`text-sm font-bold ${used > 0 ? 'text-slate-800 dark:text-slate-100' : 'text-slate-300 dark:text-slate-600'}`}>
-                      {fmtDays(used)}
-                    </div>
-                    {mine > 0 && <div className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">+{fmtDays(mine)}</div>}
-                  </div>
-                );
-              })}
+            <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
+                  <tr>
+                    <th className="text-right font-medium px-3 py-2">ลาไปแล้ว (อนุมัติ)</th>
+                    <th className="text-right font-medium px-3 py-2">ลาครั้งนี้</th>
+                    <th className="text-right font-medium px-3 py-2">รวมหลังอนุมัติ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="px-3 py-2 text-right text-slate-700 dark:text-slate-300">{fmtDays(monthUsed)} วัน</td>
+                    <td className="px-3 py-2 text-right font-semibold text-amber-700 dark:text-amber-300">{fmtDays(monthThis)} วัน</td>
+                    <td className="px-3 py-2 text-right font-bold text-slate-900 dark:text-slate-100">{fmtDays(roundDays(monthUsed + monthThis))} วัน</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <p className="mt-1.5 text-[11px] text-slate-400">ตัวเลขคือวันลาที่อนุมัติแล้ว · กรอบสีส้มคือเดือนของใบนี้ (+ จำนวนวันที่ขอ)</p>
           </div>
 
           {/* 1.5 คนในแผนกที่ลาช่วงเดียวกัน */}
