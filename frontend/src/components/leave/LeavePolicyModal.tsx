@@ -334,7 +334,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 2. สิทธิ์ */}
           <Section no={2} title="สิทธิ์ที่ได้รับ">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Field label="จำนวนวันลาต่อปี *">
                 <NumberBox value={form.entitlementDays} onChange={(v) => set('entitlementDays', v)} unit="วัน/ปี" step="0.5" />
               </Field>
@@ -344,7 +344,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                   <option value="PRORATA_MONTHLY">คิดตามสัดส่วนเดือนที่เหลือ</option>
                 </CustomSelect>
               </Field>
-              <Field label="อายุงานขั้นต่ำก่อนใช้สิทธิ์" hint="0 = ใช้ได้ตั้งแต่วันแรก · 365 = ทำงานครบ 1 ปี">
+              <Field label="อายุงานขั้นต่ำก่อนใช้สิทธิ์" hint="0 = วันแรก · 365 = 1 ปี">
                 <NumberBox value={form.minimumServiceDays} onChange={(v) => set('minimumServiceDays', v)} unit="วัน" />
               </Field>
             </div>
@@ -386,20 +386,22 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 4. ยกยอด */}
           <Section no={4} title="ยกยอดวันลาข้ามปี">
-            <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <span className="text-sm text-gray-700 dark:text-slate-300">วันลาที่เหลือยกไปใช้ปีถัดไปได้</span>
-              <Toggle checked={form.isCarryForwardAllowed} onChange={(v) => set('isCarryForwardAllowed', v)} />
-            </div>
-            {form.isCarryForwardAllowed && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Field label="ยกไปได้สูงสุด" hint="เว้นว่าง = เท่าจำนวนวันลาต่อปี">
-                  <NumberBox value={form.carryForwardMaxDays} onChange={(v) => set('carryForwardMaxDays', v)} unit="วัน" step="0.5" placeholder={String(form.entitlementDays || 0)} />
-                </Field>
-                <Field label="ต้องใช้ให้หมดภายใน" hint="นับจาก 1 มกราคมของปีถัดไป (เว้นว่าง = 3 เดือน)">
-                  <NumberBox value={form.carryForwardExpiryMonths} onChange={(v) => set('carryForwardExpiryMonths', v)} unit="เดือน" placeholder="3" />
-                </Field>
+            <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-300">วันลาที่เหลือยกไปใช้ปีถัดไปได้</span>
+                <Toggle checked={form.isCarryForwardAllowed} onChange={(v) => set('isCarryForwardAllowed', v)} />
               </div>
-            )}
+              {form.isCarryForwardAllowed && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-100 dark:border-slate-700/60">
+                  <Field label="ยกไปได้สูงสุด" hint="เว้นว่าง = เท่าจำนวนวันลาต่อปี">
+                    <NumberBox value={form.carryForwardMaxDays} onChange={(v) => set('carryForwardMaxDays', v)} unit="วัน" step="0.5" placeholder={String(form.entitlementDays || 0)} />
+                  </Field>
+                  <Field label="ต้องใช้ให้หมดภายใน" hint="นับจาก 1 ม.ค. ของปีถัดไป (เว้นว่าง = 3 เดือน)">
+                    <NumberBox value={form.carryForwardExpiryMonths} onChange={(v) => set('carryForwardExpiryMonths', v)} unit="เดือน" placeholder="3" />
+                  </Field>
+                </div>
+              )}
+            </div>
           </Section>
 
           <Field label="เริ่มมีผลตั้งแต่วันที่">
