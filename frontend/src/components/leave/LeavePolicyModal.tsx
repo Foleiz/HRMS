@@ -291,7 +291,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 1. ใช้กับใคร */}
           <Section no={1} title="ใช้กับใคร">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="ประเภทการลา *">
                 <CustomSelect
                   value={leaveTypeId}
@@ -306,6 +306,14 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                     </option>
                   ))}
                 </CustomSelect>
+              </Field>
+              <Field label="เริ่มมีผลตั้งแต่วันที่ *">
+                <ThaiDatePicker
+                  value={effectiveFrom}
+                  onChange={setEffectiveFrom}
+                  placeholder="เลือกวันที่มีผล"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
               </Field>
               <Field label="ประเภทพนักงาน">
                 <CustomSelect value={employeeTypeId} onChange={(e) => setEmployeeTypeId(e.target.value === '' ? '' : Number(e.target.value))} className={selectCls}>
@@ -397,15 +405,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
               )}
             </div>
           </Section>
-
-          <Field label="เริ่มมีผลตั้งแต่วันที่">
-            <ThaiDatePicker
-              value={effectiveFrom}
-              onChange={setEffectiveFrom}
-              placeholder="เลือกวันที่มีผล"
-              className="w-48 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-            />
-          </Field>
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <Button
