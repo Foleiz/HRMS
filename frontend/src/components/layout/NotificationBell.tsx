@@ -54,6 +54,14 @@ export const NotificationBell: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('ALL');
+  const [showAll, setShowAll] = useState(false);
+
+  // Reset showAll when closing dropdown
+  useEffect(() => {
+    if (!isOpen) {
+      setShowAll(false);
+    }
+  }, [isOpen]);
 
   // Settings popover
   const [showSettings, setShowSettings] = useState(false);
@@ -190,9 +198,17 @@ export const NotificationBell: React.FC = () => {
     });
   }, [notifications, activeTab]);
 
+  // Slice to 3 items initially unless showAll is true
+  const displayedNotifications = useMemo(() => {
+    if (showAll || filteredNotifications.length <= 3) {
+      return filteredNotifications;
+    }
+    return filteredNotifications.slice(0, 3);
+  }, [filteredNotifications, showAll]);
+
   // Group notifications by date (วันนี้ / เมื่อวาน / ก่อนหน้านี้)
   const groupedNotifications = useMemo(() => {
-    if (filteredNotifications.length === 0) return [];
+    if (displayedNotifications.length === 0) return [];
 
     const today = new Date();
     const yesterday = new Date();
@@ -207,7 +223,7 @@ export const NotificationBell: React.FC = () => {
     const yesterdayItems: NotificationItem[] = [];
     const earlierItems: NotificationItem[] = [];
 
-    for (const item of filteredNotifications) {
+    for (const item of displayedNotifications) {
       const d = new Date(item.createdAt);
       if (isNaN(d.getTime())) {
         earlierItems.push(item);
@@ -439,7 +455,7 @@ export const NotificationBell: React.FC = () => {
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key)}
+                onClick={() => { setActiveTab(tab.key); setShowAll(false); }}
                 className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === tab.key
                     ? 'bg-blue-50 dark:bg-blue-950/70 text-primary dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs'
@@ -452,7 +468,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           {/* 3. Notification List Items */}
-          <div className="max-h-[420px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+          <div className={`${showAll ? 'max-h-[420px] overflow-y-auto' : 'overflow-hidden'} divide-y divide-slate-100 dark:divide-slate-800 transition-all duration-200`}>
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -521,13 +537,31 @@ export const NotificationBell: React.FC = () => {
 
           {/* 4. Footer Link */}
           <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-white dark:bg-slate-900 rounded-b-3xl">
-            <button
-              type="button"
-              onClick={handleViewAll}
-              className="text-xs font-bold text-accent dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors cursor-pointer"
-            >
-              ดูการแจ้งเตือนทั้งหมด
-            </button>
+            {filteredNotifications.length > 3 && !showAll ? (
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className="text-xs font-bold text-accent dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                ดูการแจ้งเตือนทั้งหมด
+              </button>
+            ) : showAll && filteredNotifications.length > 3 ? (
+              <button
+                type="button"
+                onClick={() => setShowAll(false)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                ย่อการแจ้งเตือน
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleViewAll}
+                className="text-xs font-bold text-accent dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors cursor-pointer"
+              >
+                ดูการแจ้งเตือนทั้งหมด
+              </button>
+            )}
           </div>
         </div>
       )}
