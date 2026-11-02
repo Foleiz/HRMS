@@ -35,9 +35,17 @@ function KeyValueRow({
 }
 
 /** กล่องการ์ดมีขอบมนและเส้นคั่นแต่ละแถว */
-function SectionCard({ children }: { children: React.ReactNode }) {
+function SectionCard({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-2xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden">
+    <div
+      className={`rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-2xs divide-y divide-slate-100 dark:divide-slate-700/60 overflow-hidden ${className}`}
+    >
       {children}
     </div>
   );
@@ -122,9 +130,9 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
 /** แท็บภาษี & ประกันสังคม ในหน้ารายละเอียดพนักงาน */
 export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
   return (
-    <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150">
+    <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150 items-stretch">
       {/* ─── ประกันสังคม ─── */}
-      <section className="space-y-3">
+      <section className="space-y-3 flex flex-col h-full">
         <div className="flex items-center gap-2.5">
           <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-4 h-4" />
@@ -132,21 +140,34 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ประกันสังคม</h3>
         </div>
 
-        <SectionCard>
+        <SectionCard className="flex-1">
           <KeyValueRow
             label="เลขประกันสังคม"
-            value={employee.socialSecurity?.socialSecurityNoMasked || '-'}
+            value={employee.socialSecurity?.socialSecurityNoMasked || employee.citizenIdMasked || '-'}
             mono
           />
           <KeyValueRow
             label="โรงพยาบาลตามสิทธิ์"
             value={employee.socialSecurity?.hospitalName || '-'}
           />
+          <KeyValueRow
+            label="สถานะผู้ประกันตน"
+            value={
+              <span className="inline-flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                ผู้ประกันตน มาตรา 33
+              </span>
+            }
+          />
+          <KeyValueRow
+            label="อัตราเงินสมทบ"
+            value="5% (สูงสุด 750 บาท/เดือน)"
+          />
         </SectionCard>
       </section>
 
       {/* ─── ข้อมูลลดหย่อนภาษี ─── */}
-      <section className="space-y-3">
+      <section className="space-y-3 flex flex-col h-full">
         <div className="flex items-center gap-2.5">
           <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <Landmark className="w-4 h-4" />
@@ -154,7 +175,7 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ข้อมูลลดหย่อนภาษี</h3>
         </div>
 
-        <SectionCard>
+        <SectionCard className="flex-1">
           <KeyValueRow
             label="คู่สมรสมีเงินได้"
             value={employee.spouseHasIncome ? 'มี' : 'ไม่มี / ไม่ระบุ'}
