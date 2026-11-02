@@ -1,10 +1,11 @@
 'use client';
 
+import { openDocumentInNewTab } from '@/lib/filePreview';
 import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Printer, FileText, Download, Paperclip } from 'lucide-react';
+import { X, Printer, FileText, Download, Paperclip, ExternalLink } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { employeeService } from '@/services/employeeService';
 import {
@@ -386,13 +387,35 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
               <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างแบบฟอร์มใบลา</h3>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => openDocumentInNewTab('.leave-paper', 'ตัวอย่างแบบฟอร์มใบลา')}
+                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="เปิดในแท็บใหม่"
+                aria-label="เปิดในแท็บใหม่"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="พิมพ์เอกสาร"
+                aria-label="พิมพ์เอกสาร"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
@@ -433,14 +456,6 @@ export const LeavePreviewModal: React.FC<LeavePreviewModalProps> = ({ isOpen, on
             ) : <div />}
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-              >
-                <Printer className="w-4 h-4" />
-                พิมพ์เอกสาร
-              </button>
               <Button
                 variant="secondary"
                 type="button"

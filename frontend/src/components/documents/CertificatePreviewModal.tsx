@@ -1,10 +1,12 @@
-﻿'use client';
+'use client';
 
+import { openDocumentInNewTab } from '@/lib/filePreview';
+﻿
 import { Button } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Printer, FileText, Loader2 } from 'lucide-react';
+import { X, Printer, FileText, Loader2, ExternalLink } from 'lucide-react';
 import { CertificateDocument } from '@/types/certificates';
 import { certificateService } from '@/services/certificateService';
 import {
@@ -549,13 +551,35 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
               <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างหนังสือรับรอง</h3>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => openDocumentInNewTab('.cert-paper', doc?.certificateTitle || 'ตัวอย่างหนังสือรับรอง')}
+                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="เปิดในแท็บใหม่"
+                aria-label="เปิดในแท็บใหม่"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="p-1.5 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="พิมพ์เอกสาร"
+                aria-label="พิมพ์เอกสาร"
+              >
+                <Printer className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                title="ปิดหน้าต่าง"
+                aria-label="ปิดหน้าต่าง"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
@@ -575,14 +599,6 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
 
           <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-gray-100 flex-wrap">
             <div className="flex items-center gap-2">
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => window.print()}
-                icon={<Printer className="w-4 h-4" />}
-              >
-                พิมพ์เอกสาร
-              </Button>
               <Button
                 variant="secondary"
                 type="button"
