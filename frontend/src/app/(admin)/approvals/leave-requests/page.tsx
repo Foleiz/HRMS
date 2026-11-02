@@ -14,7 +14,6 @@ import {
   Download,
   Clock,
   AlertCircle,
-  ChevronDown,
   Filter,
   Check,
   MessageSquare,
@@ -41,7 +40,7 @@ import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
 import { employeeService } from '@/services/employeeService';
-import { Button, TablePagination, ActionDropdown } from '@/components/ui';
+import { Button, TablePagination } from '@/components/ui';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { ApprovalNavTabs } from '@/components/approvals/ApprovalNavTabs';
 import { ApprovalTimelineModal } from '@/components/approvals/ApprovalTimelineModal';
@@ -53,6 +52,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { openBlobInNewTab } from '@/lib/filePreview';
 import { ApprovalReviewModal, type ReviewDecision } from '@/components/approvals/ApprovalReviewModal';
+import { TimeAdjustReviewInfo, BenefitReviewInfo } from '@/components/approvals/ReviewInfoPanels';
 import {
   useLeaveDecisionData,
   LeaveDecisionInsightsPanel,
@@ -134,7 +134,7 @@ export interface UnifiedApprovalItem {
 }
 
 /** ประเภทเอกสารที่พิจารณาผ่านหน้าตรวจสอบรวม (ซ้ายข้อมูลพิจารณา · ขวาบันทึกผล) */
-const REVIEW_DOC_TYPES: UnifiedApprovalItem['docType'][] = ['LEAVE', 'CERTIFICATE', 'RESIGNATION', 'GENERAL'];
+const REVIEW_DOC_TYPES: UnifiedApprovalItem['docType'][] = ['LEAVE', 'CERTIFICATE', 'RESIGNATION', 'GENERAL', 'BENEFIT', 'TIME_ADJUST'];
 
 /**
  * ตัดวงเล็บภาษาอังกฤษต่อท้ายออกจากชื่อผู้อนุมัติ เช่น
@@ -770,11 +770,11 @@ export default function LeaveRequestsApprovalPage() {
       setIsResignPreviewOpen(true);
     } else if (item.docType === 'GENERAL') {
       setSelectedGeneralForPreview(item.generalRaw!);
+      setIsGeneralPreviewOpen(true);
     } else if (item.docType === 'TIME_ADJUST') {
       setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'view' });
     } else if (item.docType === 'BENEFIT') {
       setBenefitReview({ claim: item.benefitRaw!, mode: 'view' });
-      setIsGeneralPreviewOpen(true);
     }
   };
 
@@ -812,6 +812,14 @@ export default function LeaveRequestsApprovalPage() {
       } else if (item.docType === 'GENERAL' && item.generalRaw) {
         if (approve) await generalDocumentService.approveRequest(item.generalRaw.id);
         else await generalDocumentService.rejectRequest(item.generalRaw.id, text);
+      } else if (item.docType === 'BENEFIT' && item.benefitRaw) {
+        if (approve) await benefitService.approveClaimRequest(item.benefitRaw.id, text || undefined);
+        else await benefitService.rejectClaimRequest(item.benefitRaw.id, text);
+      } else if (item.docType === 'TIME_ADJUST' && item.timeAdjustRaw) {
+        await attendanceAdjustmentService.reviewAdjustment(item.timeAdjustRaw.id, {
+          status: approve ? 'APPROVED' : 'REJECTED',
+          reviewNote: text || undefined,
+        });
       } else {
         return;
       }
@@ -872,6 +880,33 @@ export default function LeaveRequestsApprovalPage() {
         documentLabel: 'ดูคำร้อง',
       };
     }
+    if (item.docType === 'BENEFIT' && item.benefitRaw) {
+      const c = item.benefitRaw;
+      return {
+        info: <BenefitReviewInfo claim={c} />,
+        attachments: c.fileName
+          ? [
+              {
+                name: c.fileName,
+                onOpen: () =>
+                  openBlobInNewTab(
+                    () => benefitService.downloadClaimAttachment(c.id),
+                    c.fileName,
+                    (msg) => showToast(msg, 'error')
+                  ),
+              },
+            ]
+          : [],
+        documentLabel: undefined,
+      };
+    }
+    if (item.docType === 'TIME_ADJUST' && item.timeAdjustRaw) {
+      return {
+        info: <TimeAdjustReviewInfo adj={item.timeAdjustRaw} />,
+        attachments: [],
+        documentLabel: undefined,
+      };
+    }
     return null;
   };
 
@@ -879,10 +914,6 @@ export default function LeaveRequestsApprovalPage() {
   const handleApproveItem = (item: UnifiedApprovalItem) => {
     if (REVIEW_DOC_TYPES.includes(item.docType)) {
       openReview(item, 'approve');
-    } else if (item.docType === 'TIME_ADJUST') {
-      setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'approve' });
-    } else if (item.docType === 'BENEFIT') {
-      setBenefitReview({ claim: item.benefitRaw!, mode: 'approve' });
     }
   };
 
@@ -890,10 +921,6 @@ export default function LeaveRequestsApprovalPage() {
   const handleRejectItem = (item: UnifiedApprovalItem) => {
     if (REVIEW_DOC_TYPES.includes(item.docType)) {
       openReview(item, 'reject');
-    } else if (item.docType === 'TIME_ADJUST') {
-      setTimeAdjustReview({ adj: item.timeAdjustRaw!, mode: 'reject' });
-    } else if (item.docType === 'BENEFIT') {
-      setBenefitReview({ claim: item.benefitRaw!, mode: 'reject' });
     }
   };
 
@@ -1121,7 +1148,7 @@ export default function LeaveRequestsApprovalPage() {
                       {/* 7. ดำเนินการ — รวมปุ่มพิจารณา */}
                       <td className="px-5 py-3.5 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {isPending && item.isMyTurnToApprove && REVIEW_DOC_TYPES.includes(item.docType) ? (
+                          {isPending && item.isMyTurnToApprove ? (
                             <button
                               type="button"
                               onClick={() => openReview(item)}
@@ -1130,41 +1157,6 @@ export default function LeaveRequestsApprovalPage() {
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span>พิจารณา</span>
                             </button>
-                          ) : isPending && item.isMyTurnToApprove ? (
-                            <ActionDropdown
-                              align="right"
-                              menuClassName="w-44 p-1.5 shadow-xl rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                              trigger={
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-white rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition-all shadow-xs cursor-pointer">
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>พิจารณา</span>
-                                  <ChevronDown className="w-3 h-3 opacity-80" />
-                                </span>
-                              }
-                              items={[
-                                {
-                                  id: 'view',
-                                  label: 'ดูเอกสาร',
-                                  icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
-                                  onClick: () => openDocument(item),
-                                },
-                                { divider: true, label: '' },
-                                {
-                                  id: 'approve',
-                                  label: 'อนุมัติ',
-                                  icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
-                                  className: '!text-emerald-700 dark:!text-emerald-300 hover:!bg-emerald-50 dark:hover:!bg-emerald-950/40 font-semibold',
-                                  onClick: () => handleApproveItem(item),
-                                },
-                                {
-                                  id: 'reject',
-                                  label: 'ปฏิเสธ',
-                                  icon: <XCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />,
-                                  className: '!text-rose-700 dark:!text-rose-300 hover:!bg-rose-50 dark:hover:!bg-rose-950/40 font-semibold',
-                                  onClick: () => handleRejectItem(item),
-                                },
-                              ]}
-                            />
                           ) : (
                             <>
                               <button
@@ -1418,7 +1410,7 @@ export default function LeaveRequestsApprovalPage() {
               onDecisionChange={(d) => setReview((prev) => (prev ? { ...prev, decision: d } : prev))}
               comment={reviewComment}
               onCommentChange={setReviewComment}
-              onViewDocument={() => openDocument(item)}
+              onViewDocument={parts.documentLabel ? () => openDocument(item) : undefined}
               documentLabel={parts.documentLabel}
               attachments={parts.attachments}
               approveCommentDisabled={item.docType === 'GENERAL'}
