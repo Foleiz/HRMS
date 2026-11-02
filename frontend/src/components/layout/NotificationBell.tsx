@@ -235,6 +235,10 @@ export const NotificationBell: React.FC = () => {
 
   // Item styling helper (Uses System Theme Palette)
   const getItemTheme = (item: NotificationItem) => {
+    // พื้นหลัง: ถ้ายังไม่ได้อ่านเป็นสีเหลืองนวล ถ้าอ่านแล้วเป็นสีขาว
+    const bg = !item.isRead
+      ? 'bg-[#FFFDF5] dark:bg-amber-950/30 hover:bg-[#FFF9E6] dark:hover:bg-amber-950/40'
+      : 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750';
     const t = (item.notificationType || '').toUpperCase();
     const text = (item.title + ' ' + (item.message || '')).toLowerCase();
 
@@ -249,7 +253,7 @@ export const NotificationBell: React.FC = () => {
       text.includes('สำคัญ')
     ) {
       return {
-        bg: 'bg-[#FFFDF5] dark:bg-amber-950/20 hover:bg-[#FFF9E6] dark:hover:bg-amber-950/30',
+        bg,
         icon: <AlertTriangle className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />,
         titleColor: 'text-amber-700 dark:text-amber-400',
       };
@@ -264,7 +268,7 @@ export const NotificationBell: React.FC = () => {
       text.includes('มาทำงาน')
     ) {
       return {
-        bg: 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750',
+        bg,
         icon: <CalendarCheck className="w-4 h-4 text-accent dark:text-sky-400 shrink-0" />,
         titleColor: 'text-accent dark:text-sky-400',
       };
@@ -272,7 +276,7 @@ export const NotificationBell: React.FC = () => {
 
     // 3. New Booking / Request / Approval / Financial Primary Theme
     return {
-      bg: 'bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-750',
+      bg,
       icon: <PlusSquare className="w-4 h-4 text-primary dark:text-blue-400 shrink-0" />,
       titleColor: 'text-primary dark:text-blue-300',
     };
