@@ -571,15 +571,6 @@ export default function ApprovalHistoryPage() {
     openDocument(item);
   };
 
-  const DOC_LABEL: Record<UnifiedHistoryItem['docType'], string> = {
-    LEAVE: 'ดูใบลา',
-    CERTIFICATE: 'ดูหนังสือรับรอง',
-    RESIGNATION: 'ดูหนังสือขอลาออก',
-    GENERAL: 'ดูคำร้อง',
-    BENEFIT: 'ดูไฟล์แนบ',
-    TIME_ADJUST: 'ดูเอกสาร',
-  };
-
   /** ข้อมูลประกอบ (ซ้าย) + ผลการพิจารณา (ขวา) ของรายการในประวัติ */
   const renderDetail = (item: UnifiedHistoryItem) => {
     const raw = item.leaveRaw ?? item.certRaw ?? item.resignationRaw ?? item.generalRaw ?? item.benefitRaw ?? item.timeAdjustRaw;
@@ -815,7 +806,7 @@ export default function ApprovalHistoryPage() {
                               ? [
                                   {
                                     id: 'document',
-                                    label: DOC_LABEL[item.docType],
+                                    label: 'ดูเอกสาร',
                                     icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400" />,
                                     onClick: () => viewDocument(item),
                                   },
@@ -868,7 +859,6 @@ export default function ApprovalHistoryPage() {
               meta={d.meta}
               result={d.result}
               onViewDocument={hasDocument(detailItem) ? () => viewDocument(detailItem) : undefined}
-              documentLabel={DOC_LABEL[detailItem.docType]}
             >
               {d.info}
             </ApprovalReviewModal>
