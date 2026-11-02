@@ -99,10 +99,13 @@ export default function ContractDocumentPreviewModal({
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header Toolbar */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <FileText className="w-5 h-5 text-blue-500 shrink-0" />
-            <h3 className="text-base font-bold text-slate-800 dark:text-slate-100 truncate">
-              {actualFileName}
+          <div
+            className="flex items-center gap-2.5 min-w-0"
+            title={actualFileName ? `ดูไฟล์แนบ: ${actualFileName}` : 'ดูไฟล์แนบ'}
+          >
+            <FileText className="w-5 h-5 text-primary dark:text-blue-400 shrink-0" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+              ดูไฟล์แนบ
             </h3>
           </div>
 
@@ -121,7 +124,7 @@ export default function ContractDocumentPreviewModal({
                   type="button"
                   onClick={handleDownload}
                   className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
-                  title="ดาวน์โหลดไฟล์"
+                  title={actualFileName ? `ดาวน์โหลดไฟล์ (${actualFileName})` : "ดาวน์โหลดไฟล์"}
                 >
                   <Download className="w-5 h-5" />
                 </button>

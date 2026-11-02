@@ -442,18 +442,13 @@ export default function ContractsPage() {
                     {/* เอกสารสัญญา: มีไฟล์แนบแล้ว (เขียว) หรือ รอไฟล์แนบ (ฟ้า) */}
                     <td className="py-4 px-6 whitespace-nowrap">
                       {contract.hasDocument ? (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewAttachment(contract);
-                          }}
-                          title={contract.documentFileName ? `คลิกเพื่อดูตัวอย่างไฟล์แนบ: ${contract.documentFileName}` : 'คลิกเพื่อดูตัวอย่างไฟล์แนบ'}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 dark:hover:bg-emerald-900/50 transition cursor-pointer shadow-2xs"
+                        <span
+                          title={contract.documentFileName ? `มีไฟล์แนบแล้ว: ${contract.documentFileName}` : 'มีไฟล์แนบแล้ว'}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 shadow-2xs select-none cursor-default"
                         >
                           <Paperclip className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>มีไฟล์แนบแล้ว</span>
-                        </button>
+                        </span>
                       ) : (
                         <button
                           type="button"
