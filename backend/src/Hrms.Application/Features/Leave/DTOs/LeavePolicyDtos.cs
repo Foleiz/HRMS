@@ -29,6 +29,7 @@ public record LeavePolicyDto
     public int? MaxOccurrencesPerYear { get; init; }
     public decimal? CarryForwardMaxDays { get; init; }
     public int? MaxBackdateDays { get; init; }
+    public int? DocumentGraceDays { get; init; }
     public string ProrationMethod { get; init; } = "FULL";
 }
 
@@ -53,6 +54,7 @@ public record CreateLeavePolicyRequest
     public int? MaxOccurrencesPerYear { get; init; }
     public decimal? CarryForwardMaxDays { get; init; }
     public int? MaxBackdateDays { get; init; }
+    public int? DocumentGraceDays { get; init; }
     public string ProrationMethod { get; init; } = "FULL";
 }
 
@@ -77,5 +79,6 @@ public record UpdateLeavePolicyRequest
     public int? MaxOccurrencesPerYear { get; init; }
     public decimal? CarryForwardMaxDays { get; init; }
     public int? MaxBackdateDays { get; init; }
+    public int? DocumentGraceDays { get; init; }
     public string ProrationMethod { get; init; } = "FULL";
 }

@@ -237,6 +237,13 @@ export const leaveService = {
     return res.data.data;
   },
 
+  /** [ESS] แนบเอกสารเพิ่มให้คำขอลาของตนเอง (รออนุมัติ / อนุมัติแล้ว) — fileData เป็น Base64 */
+  async addMyLeaveDocument(id: number, fileName: string, fileData: string): Promise<LeaveRequest> {
+    const res = await apiClient.post<ApiResponse<LeaveRequest>>(`/leave-requests/my/${id}/documents`, { fileName, fileData });
+    clearMyLeaveRequestsCache();
+    return res.data.data;
+  },
+
   /** [ESS] ลบคำขอลาที่ยังเป็นแบบร่างของตนเองแบบถาวร (เฉพาะที่เป็นเจ้าของและยังเป็น DRAFT เท่านั้น) */
   async deleteMyLeaveRequest(id: number): Promise<void> {
     await apiClient.delete<ApiResponse<object>>(`/leave-requests/my/${id}`);

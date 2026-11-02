@@ -20,6 +20,7 @@ import {
   Eye,
   FileSearch,
   ClipboardList,
+  Paperclip,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -44,6 +45,9 @@ import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocum
 import { ApprovalTimelineModal, GenericApprovalRequestInfo } from '@/components/approvals/ApprovalTimelineModal';
 import { Button, TablePagination , TableToolbar } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { Modal, ModalFooter } from '@/components/ui/Modal';
+import { FileDropzone } from '@/components/ui/FileDropzone';
+import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
 import { SortableTh, useTableSort, compareSortValues } from '@/components/ui/SortableTh';
 import { ApprovalReviewModal, type ReviewResult } from '@/components/approvals/ApprovalReviewModal';
 import { useLeaveDecisionData, LeaveDecisionInsightsPanel } from '@/components/approvals/LeaveDecisionInsights';
@@ -67,6 +71,22 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   REJECTED: { label: 'ไม่อนุมัติ', color: 'bg-red-50 text-red-700 border-red-200', icon: <XCircle className="w-3.5 h-3.5" /> },
   CANCELLED: { label: 'ยกเลิกแล้ว', color: 'bg-gray-100 text-gray-500 dark:text-slate-400 border-gray-200', icon: <Ban className="w-3.5 h-3.5" /> },
 };
+
+/** 'YYYY-MM-DD' → '7 พ.ย. 2569' */
+const thaiDay = (d?: string | null) => {
+  if (!d) return '-';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  const dt = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const fileToBase64 = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์ที่แนบได้'));
+    reader.readAsDataURL(file);
+  });
 
 // ป้ายประเภทเอกสาร — รูปแบบเดียวกับเมนูการอนุมัติ
 const SOURCE_BADGE: Record<'LEAVE' | 'RESIGNATION' | 'CERTIFICATE' | 'GENERAL', { label: string; cls: string; iconCls: string; icon: 'leave' | 'doc' }> = {
@@ -716,6 +736,29 @@ export default function DocumentHistoryPage() {
     return { info, result, employeeId, employeeName, meta };
   };
 
+  // ─── แนบเอกสารเพิ่ม (ใบลาที่ให้แนบเอกสารภายหลังได้) ───
+  const [uploadDoc, setUploadDoc] = useState<MyDocumentRow | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const submitUpload = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!uploadDoc?.rawLeave || !uploadFile) return;
+    setUploading(true);
+    try {
+      await leaveService.addMyLeaveDocument(uploadDoc.rawLeave.id, uploadFile.name, await fileToBase64(uploadFile));
+      setUploadDoc(null);
+      setUploadFile(null);
+      showToast('แนบเอกสารเรียบร้อยแล้ว');
+      fetchData();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      showToast(msg || 'แนบเอกสารไม่สำเร็จ');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const getDocumentActionItems = (doc: MyDocumentRow): ActionDropdownItem[] => {
     const hasAttachments = !!doc.documents && doc.documents.length > 0;
     const hasEdit = doc.status === 'DRAFT' && !!doc.editUrl;
@@ -733,6 +776,18 @@ export default function DocumentHistoryPage() {
         icon: <Eye className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
         onClick: () => handleOpenDocumentPreview(doc),
       },
+      ...(doc.rawLeave?.documentStatus
+        ? [
+            {
+              label: 'แนบเอกสารเพิ่ม',
+              icon: <Paperclip className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />,
+              onClick: () => {
+                setUploadDoc(doc);
+                setUploadFile(null);
+              },
+            },
+          ]
+        : []),
     ];
 
     if (hasEdit && doc.editUrl) {
@@ -985,6 +1040,9 @@ export default function DocumentHistoryPage() {
                               {statusConf.icon}
                               {statusConf.label}
                             </span>
+                            <div>
+                              <DocumentDueBadge leave={doc.rawLeave} />
+                            </div>
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end">
@@ -1023,10 +1081,13 @@ export default function DocumentHistoryPage() {
                             ยื่นเมื่อ: {formatShortDate(doc.submittedDate)}
                           </span>
                         </div>
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
-                          {statusConf.icon}
-                          {statusConf.label}
-                        </span>
+                        <div className="flex flex-col items-end gap-1">
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                            {statusConf.icon}
+                            {statusConf.label}
+                          </span>
+                          <DocumentDueBadge leave={doc.rawLeave} className="" />
+                        </div>
                       </div>
 
                       <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
@@ -1072,6 +1133,27 @@ export default function DocumentHistoryPage() {
           )}
         </div>
       </div>
+
+      {/* ─── แนบเอกสารเพิ่ม ─── */}
+      <Modal
+        isOpen={!!uploadDoc}
+        onClose={() => !uploading && setUploadDoc(null)}
+        title="แนบเอกสารเพิ่ม"
+        subtitle={uploadDoc ? `${uploadDoc.code} · ${uploadDoc.subType ?? ''}` : undefined}
+        onSubmit={submitUpload}
+        footer={<ModalFooter onCancel={() => setUploadDoc(null)} submitText="แนบเอกสาร" loading={uploading} loadingText="กำลังอัปโหลด..." />}
+      >
+        <div className="space-y-3">
+          {uploadDoc?.rawLeave?.documentDueDate && (
+            <p className={`text-xs ${uploadDoc.rawLeave.documentStatus === 'OVERDUE' ? 'text-rose-600' : 'text-slate-600 dark:text-slate-300'}`}>
+              {uploadDoc.rawLeave.documentStatus === 'OVERDUE'
+                ? `เกินกำหนดแนบเอกสารแล้ว (กำหนด ${thaiDay(uploadDoc.rawLeave.documentDueDate)}) — แนบได้ แต่ฝ่ายบุคคลจะเห็นว่าแนบช้า`
+                : `กำหนดแนบภายใน ${thaiDay(uploadDoc.rawLeave.documentDueDate)}`}
+            </p>
+          )}
+          <FileDropzone file={uploadFile} onChange={setUploadFile} required />
+        </div>
+      </Modal>
 
       {/* ─── รายละเอียดเอกสาร (ดูอย่างเดียว) — วางก่อน modal เอกสาร เพื่อให้เอกสารเปิดทับได้ ─── */}
       {detailDoc &&

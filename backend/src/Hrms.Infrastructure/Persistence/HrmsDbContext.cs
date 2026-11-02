@@ -1362,6 +1362,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.MaxOccurrencesPerYear).HasColumnName("max_occurrences_per_year");
             entity.Property(e => e.CarryForwardMaxDays).HasColumnName("carry_forward_max_days").HasPrecision(8, 2);
             entity.Property(e => e.MaxBackdateDays).HasColumnName("max_backdate_days");
+            entity.Property(e => e.DocumentGraceDays).HasColumnName("document_grace_days");
             entity.Property(e => e.ProrationMethod).HasColumnName("proration_method").HasMaxLength(20).IsRequired();
 
             entity.HasOne(e => e.LeaveType)
@@ -1475,6 +1476,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.CancelledAt).HasColumnName("cancelled_at");
             entity.Property(e => e.CancelReason).HasColumnName("cancel_reason");
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
+            entity.Property(e => e.DocumentDueDate).HasColumnName("document_due_date");
 
             entity.HasOne(e => e.Employee)
                 .WithMany()

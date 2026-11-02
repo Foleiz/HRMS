@@ -42,6 +42,11 @@ public record LeaveRequestDto
     public DateTime? ApprovedAt { get; init; }
 
     public List<LeaveRequestDocumentDto> Documents { get; init; } = new();
+
+    /// <summary>กำหนดแนบเอกสารภายหลัง (null = ไม่มีค้างแนบ)</summary>
+    public DateOnly? DocumentDueDate { get; init; }
+    /// <summary>AWAITING = รอเอกสาร, OVERDUE = เกินกำหนดแนบ, null = ไม่มีค้าง</summary>
+    public string? DocumentStatus { get; init; }
 }
 
 public record ApproveLeaveRequestPayload
@@ -117,6 +122,8 @@ public class LeaveValidationResultDto
     public List<string> Errors { get; set; } = new();
     /// <summary>ต้องแนบเอกสารประกอบสำหรับคำขอนี้หรือไม่ (ตามนโยบาย)</summary>
     public bool RequiresDocument { get; set; }
+    /// <summary>ยังไม่แนบแต่นโยบายให้แนบภายหลังได้ — กำหนดวันสุดท้ายที่ต้องแนบ</summary>
+    public DateOnly? DocumentDueDate { get; set; }
     /// <summary>สรุปนโยบายที่ใช้กับพนักงาน (แสดงในฟอร์ม)</summary>
     public string? PolicySummary { get; set; }
 }

@@ -45,6 +45,13 @@ type LeaveFormat = 'FULL_DAY' | 'HALF_DAY';
 const REASON_MAX_LENGTH = 100;
 const CONTACT_MAX_LENGTH = 225;
 
+/** 'YYYY-MM-DD' → '7 พ.ย. 2569' */
+const thaiShortDate = (d: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  const dt = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 // แปลงไฟล์ที่แนบให้เป็น Base64 String (ตัด header "data:...;base64," ออก)
 const fileToBase64 = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -646,9 +653,13 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               disabledText={hasSelectedType ? 'การลาประเภทนี้ไม่ต้องแนบเอกสาร' : 'เลือกประเภทการลาก่อน'}
               aria-labelledby="leave-attachment-label"
             />
-            {isDocumentRecommended && (
+            {isDocumentRecommended && !attachment && currentValidation?.documentDueDate ? (
+              <p className="mt-1.5 text-xs text-sky-700 dark:text-sky-300">
+                ยื่นก่อนได้ แล้วแนบเอกสารภายหลังภายใน {thaiShortDate(currentValidation.documentDueDate)} (เมนู ประวัติเอกสาร → ⋮ → แนบเอกสารเพิ่ม)
+              </p>
+            ) : isDocumentRecommended ? (
               <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">การลาประเภทนี้ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)</p>
-            )}
+            ) : null}
           </div>
         </div>
 

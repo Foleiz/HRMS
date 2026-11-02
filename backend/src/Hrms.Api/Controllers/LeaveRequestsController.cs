@@ -481,6 +481,39 @@ public class LeaveRequestsController : ControllerBase
     }
 
     /// <summary>
+    /// [ESS] แนบเอกสารเพิ่มให้คำขอลาของตนเองหลังยื่นแล้ว (รออนุมัติ / อนุมัติแล้ว)
+    /// </summary>
+    [HttpPost("my/{id:long}/documents")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> AddMyDocument(long id, [FromBody] AddLeaveDocumentModel model, CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        if (employeeId <= 0)
+            return Unauthorized(ApiResponse<LeaveRequestDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
+
+        try
+        {
+            var result = await _requestService.AddMyDocumentAsync(id, employeeId, model.FileName, model.FileData, cancellationToken);
+            return Ok(ApiResponse<LeaveRequestDto>.Ok(result, "แนบเอกสารเรียบร้อยแล้ว"));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ApiResponse<LeaveRequestDto>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
     /// [ESS] ลบคำขอลาที่ยังเป็นแบบร่างของตนเองแบบถาวร (เฉพาะคำขอที่เป็นเจ้าของและยังเป็น DRAFT เท่านั้น)
     /// </summary>
     [HttpDelete("my/{id:long}")]
@@ -553,6 +586,12 @@ public class ValidateMyLeaveRequestModel
     public bool HasAttachment { get; set; }
     /// <summary>กำลังยื่นจากแบบร่างใบเดิม (ไม่นับใบนี้ตอนตรวจลาซ้อน/จำนวนครั้ง)</summary>
     public long? DraftId { get; set; }
+}
+
+public class AddLeaveDocumentModel
+{
+    public string? FileName { get; set; }
+    public byte[]? FileData { get; set; }
 }
 
 public class CreateMyLeaveRequestModel

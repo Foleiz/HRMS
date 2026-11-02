@@ -51,6 +51,7 @@ import {
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { openBlobInNewTab } from '@/lib/filePreview';
+import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
 import { ApprovalReviewModal, type ReviewDecision } from '@/components/approvals/ApprovalReviewModal';
 import {
   TimeAdjustReviewInfo,
@@ -1139,6 +1140,9 @@ export default function LeaveRequestsApprovalPage() {
                           {statusConf.icon}
                           {statusConf.label}
                         </span>
+                        <div>
+                          <DocumentDueBadge leave={item.leaveRaw} />
+                        </div>
                       </td>
 
                       {/* 7. ดำเนินการ — รวมปุ่มพิจารณา */}

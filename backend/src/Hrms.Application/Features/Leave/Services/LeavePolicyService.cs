@@ -55,6 +55,7 @@ public class LeavePolicyService : ILeavePolicyService
                 MaxOccurrencesPerYear = p.MaxOccurrencesPerYear,
                 CarryForwardMaxDays = p.CarryForwardMaxDays,
                 MaxBackdateDays = p.MaxBackdateDays,
+                DocumentGraceDays = p.DocumentGraceDays,
                 ProrationMethod = p.ProrationMethod
             })
             .ToListAsync(cancellationToken);
@@ -97,6 +98,7 @@ public class LeavePolicyService : ILeavePolicyService
             MaxOccurrencesPerYear = p.MaxOccurrencesPerYear,
             CarryForwardMaxDays = p.CarryForwardMaxDays,
             MaxBackdateDays = p.MaxBackdateDays,
+            DocumentGraceDays = p.DocumentGraceDays,
             ProrationMethod = p.ProrationMethod
         };
     }
@@ -136,6 +138,7 @@ public class LeavePolicyService : ILeavePolicyService
             MaxDaysPerOccurrence = request.MaxDaysPerOccurrence,
             MaxOccurrencesPerYear = request.MaxOccurrencesPerYear,
             MaxBackdateDays = request.MaxBackdateDays,
+            DocumentGraceDays = request.DocumentGraceDays is > 0 ? request.DocumentGraceDays : null,
             ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod)
         };
 
@@ -180,6 +183,7 @@ public class LeavePolicyService : ILeavePolicyService
         policy.MaxDaysPerOccurrence = request.MaxDaysPerOccurrence;
         policy.MaxOccurrencesPerYear = request.MaxOccurrencesPerYear;
         policy.MaxBackdateDays = request.MaxBackdateDays;
+        policy.DocumentGraceDays = request.DocumentGraceDays is > 0 ? request.DocumentGraceDays : null;
         policy.ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod);
 
         await _context.SaveChangesAsync(cancellationToken);

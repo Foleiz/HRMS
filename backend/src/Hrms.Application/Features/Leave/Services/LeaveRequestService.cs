@@ -292,14 +292,16 @@ public partial class LeaveRequestService : ILeaveRequestService
         var year = ToThaiDate(request.StartDatetime).Year;
 
         // ตรวจโควตา (ยื่นจริงเท่านั้น) — สร้างยอดวันลาให้อัตโนมัติถ้ายังไม่มี และหักยอดที่รออนุมัติของใบอื่นก่อน
+        DateOnly? documentDueDate = null;
         if (!request.IsDraft)
         {
             // Period Lock Guard (R2-04): ห้ามยื่นลาในงวดเงินเดือนที่ปิดรอบ/จ่ายเงินแล้ว
             await EnsurePayrollPeriodOpenAsync(request.StartDatetime, request.EndDatetime, "ยื่น", cancellationToken);
 
             // กฎการลาตามนโยบาย (ลาซ้อน, ทดลองงาน, อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ)
-            await EnsureLeaveRulesAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
+            var rules = await EnsureLeaveRulesAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
                 request.LeaveDays, request.AttachmentData is { Length: > 0 }, null, cancellationToken);
+            documentDueDate = rules.DocumentDueDate;
 
             var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(request.EmployeeId, request.LeaveTypeId, year, request.EmployeeId, cancellationToken);
             await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: null, cancellationToken);
@@ -319,7 +321,8 @@ public partial class LeaveRequestService : ILeaveRequestService
             Reason = request.Reason,
             ContactDuringLeave = request.ContactDuringLeave,
             Status = request.IsDraft ? "DRAFT" : "PENDING",
-            SubmittedAt = request.IsDraft ? null : DateTime.UtcNow
+            SubmittedAt = request.IsDraft ? null : DateTime.UtcNow,
+            DocumentDueDate = documentDueDate
         };
 
         if (request.AttachmentData != null && request.AttachmentData.Length > 0)
@@ -376,6 +379,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         // คำนวณวันลาใหม่ฝั่ง server (ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท)
         var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
 
+        DateOnly? draftDocumentDueDate = null;
         if (!request.IsDraft)
         {
             // Period Lock Guard: ส่งแบบร่างเข้าอนุมัติก็ต้องตรวจเหมือนยื่นใหม่ (เดิมไม่ได้ตรวจ ทำให้ยื่นเข้างวดที่ปิดแล้วได้)
@@ -384,8 +388,9 @@ public partial class LeaveRequestService : ILeaveRequestService
             var year = ToThaiDate(request.StartDatetime).Year;
             var hasAttachment = request.AttachmentData is { Length: > 0 }
                 || await _context.LeaveRequestDocuments.AnyAsync(d => d.LeaveRequestId == leaveRequest.Id, cancellationToken);
-            await EnsureLeaveRulesAsync(leaveRequest.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
+            var rules = await EnsureLeaveRulesAsync(leaveRequest.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime,
                 request.LeaveDays, hasAttachment, leaveRequest.Id, cancellationToken);
+            draftDocumentDueDate = rules.DocumentDueDate;
 
             var (balance, isQuotaControlled) = await EnsureLeaveBalanceAsync(leaveRequest.EmployeeId, request.LeaveTypeId, year, leaveRequest.EmployeeId, cancellationToken);
             await EnsureQuotaAvailableAsync(balance, isQuotaControlled, calc.LeaveDays, includePending: true, excludeRequestId: leaveRequest.Id, cancellationToken);
@@ -403,6 +408,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         {
             leaveRequest.Status = "PENDING";
             leaveRequest.SubmittedAt = DateTime.UtcNow;
+            leaveRequest.DocumentDueDate = draftDocumentDueDate;
 
             var instanceId = await _approvalWorkflow.StartWorkflowAsync("LEAVE_REQUEST", leaveRequest.Id, leaveRequest.EmployeeId, cancellationToken);
             if (instanceId.HasValue)
@@ -862,7 +868,42 @@ public partial class LeaveRequestService : ILeaveRequestService
             HasAlreadyApproved = hasAlreadyApproved,
             ApprovedByName = operatorName ?? finalApproveAction?.ApproverEmployee?.FullName,
             ApprovedAt = operatorAt ?? instance?.CompletedAt ?? finalApproveAction?.ActionAt,
-            Documents = docs
+            Documents = docs,
+            DocumentDueDate = r.DocumentDueDate,
+            DocumentStatus = r.DocumentDueDate.HasValue && docs.Count == 0 && (r.Status == "PENDING" || r.Status == "APPROVED")
+                ? (LeavePolicyRules.ThaiToday() > r.DocumentDueDate.Value ? "OVERDUE" : "AWAITING")
+                : null
         };
+    }
+
+    private const int MaxLeaveDocumentBytes = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// [ESS] แนบเอกสารเพิ่มให้คำขอลาของตนเองหลังยื่นแล้ว (รออนุมัติ หรือ อนุมัติแล้ว)
+    /// ใช้กับนโยบายที่ให้แนบเอกสารภายหลังได้ เช่น ใบรับรองแพทย์ที่ได้มาหลังกลับมาทำงาน
+    /// </summary>
+    public async Task<LeaveRequestDto> AddMyDocumentAsync(long id, long employeeId, string? fileName, byte[]? fileData, CancellationToken cancellationToken = default)
+    {
+        var leaveRequest = await _context.LeaveRequests.FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+            ?? throw new KeyNotFoundException($"ไม่พบคำขอลารหัส ID {id}");
+        if (leaveRequest.EmployeeId != employeeId)
+            throw new UnauthorizedAccessException("คุณไม่มีสิทธิ์แนบเอกสารให้คำขอลานี้");
+        if (leaveRequest.Status != "PENDING" && leaveRequest.Status != "APPROVED")
+            throw new InvalidOperationException("แนบเอกสารเพิ่มได้เฉพาะคำขอที่รออนุมัติหรืออนุมัติแล้ว");
+        if (fileData == null || fileData.Length == 0)
+            throw new InvalidOperationException("กรุณาเลือกไฟล์ที่จะแนบ");
+        if (fileData.Length > MaxLeaveDocumentBytes)
+            throw new InvalidOperationException("ไฟล์มีขนาดเกิน 10 MB");
+
+        _context.LeaveRequestDocuments.Add(new LeaveRequestDocument
+        {
+            LeaveRequestId = leaveRequest.Id,
+            FileName = string.IsNullOrWhiteSpace(fileName) ? "attachment.pdf" : fileName.Trim(),
+            FileData = fileData,
+            UploadedAt = DateTime.UtcNow
+        });
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return (await GetByIdAsync(leaveRequest.Id, employeeId, cancellationToken))!;
     }
 }
