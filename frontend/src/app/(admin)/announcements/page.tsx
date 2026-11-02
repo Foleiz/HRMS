@@ -479,72 +479,78 @@ export default function AnnouncementsPage() {
           <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
             <div className="space-y-4">
               {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | สร้างประกาศ (ขวา) */}
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 w-full sm:w-auto flex-1">
                   {/* Search */}
-                  <div className="relative xl:col-span-2">
-                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="relative max-w-sm w-full shrink-0">
+                    <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     <input
                       type="text"
                       placeholder="ค้นหาหัวข้อประกาศ หรือเนื้อหา..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
+                      className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
 
                   {/* Status */}
-                  <CustomSelect
-                    value={statusFilter}
-                    onChange={(val) => setStatusFilter(String(val))}
-                    placeholder="สถานะทั้งหมด"
-                    className="w-full"
-                    options={[
-                      { value: '', label: 'สถานะทั้งหมด' },
-                      { value: 'PUBLISHED', label: 'เผยแพร่แล้ว' },
-                      { value: 'DRAFT', label: 'ฉบับร่าง' },
-                      { value: 'ARCHIVED', label: 'จัดเก็บ/ลบ' },
-                    ]}
-                  />
+                  <div className="w-full sm:w-44">
+                    <CustomSelect
+                      value={statusFilter}
+                      onChange={(val) => setStatusFilter(String(val))}
+                      placeholder="สถานะทั้งหมด"
+                      className="w-full"
+                      options={[
+                        { value: '', label: 'สถานะทั้งหมด' },
+                        { value: 'PUBLISHED', label: 'เผยแพร่แล้ว' },
+                        { value: 'DRAFT', label: 'ฉบับร่าง' },
+                        { value: 'ARCHIVED', label: 'จัดเก็บ/ลบ' },
+                      ]}
+                    />
+                  </div>
 
                   {/* Category */}
-                  <CustomSelect
-                    value={categoryFilter}
-                    onChange={(val) => setCategoryFilter(String(val))}
-                    placeholder="หมวดหมู่ทั้งหมด"
-                    className="w-full"
-                    options={[
-                      { value: '', label: 'หมวดหมู่ทั้งหมด' },
-                      { value: 'GENERAL', label: 'ข่าวทั่วไป' },
-                      { value: 'POLICY', label: 'นโยบายองค์กร' },
-                      { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
-                      { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
-                      { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
-                    ]}
-                  />
+                  <div className="w-full sm:w-48">
+                    <CustomSelect
+                      value={categoryFilter}
+                      onChange={(val) => setCategoryFilter(String(val))}
+                      placeholder="หมวดหมู่ทั้งหมด"
+                      className="w-full"
+                      options={[
+                        { value: '', label: 'หมวดหมู่ทั้งหมด' },
+                        { value: 'GENERAL', label: 'ข่าวทั่วไป' },
+                        { value: 'POLICY', label: 'นโยบายองค์กร' },
+                        { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
+                        { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
+                        { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
+                      ]}
+                    />
+                  </div>
 
                   {/* Priority */}
-                  <CustomSelect
-                    value={priorityFilter}
-                    onChange={(val) => setPriorityFilter(String(val))}
-                    placeholder="ความสำคัญทั้งหมด"
-                    className="w-full"
-                    options={[
-                      { value: '', label: 'ความสำคัญทั้งหมด' },
-                      { value: 'LOW', label: 'ทั่วไป' },
-                      { value: 'NORMAL', label: 'ปกติ' },
-                      { value: 'HIGH', label: 'สำคัญ' },
-                      { value: 'URGENT', label: 'ด่วนที่สุด' },
-                    ]}
-                  />
+                  <div className="w-full sm:w-44">
+                    <CustomSelect
+                      value={priorityFilter}
+                      onChange={(val) => setPriorityFilter(String(val))}
+                      placeholder="ความสำคัญทั้งหมด"
+                      className="w-full"
+                      options={[
+                        { value: '', label: 'ความสำคัญทั้งหมด' },
+                        { value: 'LOW', label: 'ทั่วไป' },
+                        { value: 'NORMAL', label: 'ปกติ' },
+                        { value: 'HIGH', label: 'สำคัญ' },
+                        { value: 'URGENT', label: 'ด่วนที่สุด' },
+                      ]}
+                    />
+                  </div>
                 </div>
 
                 {canCreate && (
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="w-full sm:w-auto flex items-center justify-end gap-2.5 shrink-0">
                     <Button
                       onClick={handleOpenCreate}
                       icon={<Plus className="w-4 h-4" />}
-                      className="shrink-0 self-start xl:self-auto"
+                      className="w-full sm:w-auto"
                     >
                       สร้างประกาศใหม่
                     </Button>

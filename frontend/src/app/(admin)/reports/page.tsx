@@ -850,15 +850,27 @@ export default function ReportsPage() {
       {activeTab === 'lateness' && canViewLateness && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Month Selector */}
+          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1">
+              {/* 1. Search Box (ขึ้นก่อนทางซ้ายสุด) */}
+              <div className="relative max-w-sm w-full sm:w-64 shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+                  value={latenessSearch}
+                  onChange={(e) => setLatenessSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 transition-all"
+                />
+              </div>
+
+              {/* 2. Month Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">เดือน:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0">เดือน:</span>
                 <CustomSelect
                   value={selectedMonth}
                   onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -868,13 +880,13 @@ export default function ReportsPage() {
                 </CustomSelect>
               </div>
 
-              {/* Year Selector */}
+              {/* 3. Year Selector */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">ปี:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0">ปี:</span>
                 <CustomSelect
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none"
                 >
                   {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
                     <option key={y} value={y}>
@@ -884,7 +896,7 @@ export default function ReportsPage() {
                 </CustomSelect>
               </div>
 
-              {/* Department Selector */}
+              {/* 4. Department Selector */}
               <CustomSelect
                 value={latenessDepartment}
                 onChange={(val) => {
@@ -898,32 +910,20 @@ export default function ReportsPage() {
                   ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
                 ]}
               />
+            </div>
 
-              {/* Search Box */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
-                  value={latenessSearch}
-                  onChange={(e) => setLatenessSearch(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-48 sm:w-56 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100"
-                />
-              </div>
-
-              {/* Refresh Button */}
+            {/* Right Actions: Refresh + Export */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
               <button
                 onClick={loadMonthlyLateness}
                 disabled={isLoadingLateness}
-                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingLateness ? 'animate-spin text-[#3F5F8C] dark:text-[#A3B8D8]' : ''}`} />
               </button>
+              {canExportLateness && <ExportMenu onExport={handleExportMonthlyLateness} disabled={isExportingLateness || !latenessData} />}
             </div>
-
-            {/* Export Button */}
-            {canExportLateness && <ExportMenu onExport={handleExportMonthlyLateness} disabled={isExportingLateness || !latenessData} />}
           </div>
 
           {/* 4 Summary KPI Cards */}
@@ -1125,16 +1125,31 @@ export default function ReportsPage() {
       {activeTab === 'tax' && canViewTax && (
         <div className="space-y-6 animate-in fade-in duration-200">
           {/* Filter Bar */}
-          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Year Select */}
+          <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center gap-2.5 flex-1">
+              {/* 1. Search Box (ขึ้นก่อนทางซ้ายสุด) */}
+              <div className="relative max-w-sm w-full sm:w-64 shrink-0">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อ/รหัส/บัตรประชาชน..."
+                  value={taxSearch}
+                  onChange={(e) => {
+                    setTaxSearch(e.target.value);
+                    setTaxPage(1);
+                  }}
+                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 transition-all"
+                />
+              </div>
+
+              {/* 2. Year Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
                 <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">ปี:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0">ปี:</span>
                 <CustomSelect
                   value={taxYear}
                   onChange={(e) => setTaxYear(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none"
                 >
                   {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: taxYear }).map((y) => (
                     <option key={y} value={y}>
@@ -1144,14 +1159,14 @@ export default function ReportsPage() {
                 </CustomSelect>
               </div>
 
-              {/* Month Select */}
+              {/* 3. Month Select */}
               <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 shrink-0">
                 <CalendarDays className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0 dark:text-slate-400">งวดเดือน:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap shrink-0">งวดเดือน:</span>
                 <CustomSelect
                   value={taxMonth}
                   onChange={(e) => setTaxMonth(Number(e.target.value))}
-                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none dark:text-slate-200"
+                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none"
                 >
                   {thaiMonths.map((m, idx) => (
                     <option key={idx + 1} value={idx + 1}>
@@ -1161,7 +1176,7 @@ export default function ReportsPage() {
                 </CustomSelect>
               </div>
 
-              {/* Department Select */}
+              {/* 4. Department Select */}
               <CustomSelect
                 value={taxDepartment}
                 onChange={(val) => {
@@ -1175,54 +1190,35 @@ export default function ReportsPage() {
                   ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
                 ]}
               />
+            </div>
 
-              {/* Search Box */}
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100">
-                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อ/รหัส/บัตรประชาชน..."
-                  value={taxSearch}
-                  onChange={(e) => {
-                    setTaxSearch(e.target.value);
-                    setTaxPage(1);
-                  }}
-                  className="text-xs text-slate-800 dark:text-slate-200 bg-transparent focus:outline-none w-44 dark:text-slate-200"
-                />
-              </div>
-
-              {/* Refresh Button */}
+            {/* Right Actions: Refresh + Export Buttons */}
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
               <button
                 onClick={loadPayrollTax}
                 disabled={isLoadingTax}
-                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:text-slate-400 dark:hover:bg-slate-800 dark:border-slate-700"
+                className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 border border-slate-200 transition-colors dark:hover:bg-slate-800 dark:border-slate-700"
                 title="รีเฟรชข้อมูล"
               >
                 <RefreshCw className={`w-4 h-4 ${isLoadingTax ? 'animate-spin text-[#3F5F8C] dark:text-[#A3B8D8]' : ''}`} />
               </button>
+              {canExportTax && (
+                <ExportMenu
+                  label="ภ.ง.ด.1"
+                  onExport={handleExportPayrollTax}
+                  disabled={isExportingTax || !taxData || taxData.items.length === 0}
+                />
+              )}
+
+              {canExportSso && (
+                <ExportMenu
+                  label="สปส. 1-10"
+                  formats={['xlsx', 'csv']}
+                  onExport={handleExportSso}
+                  disabled={isExportingSso || !taxData || taxData.items.length === 0}
+                />
+              )}
             </div>
-
-            {/* Export Buttons */}
-            {(canExportTax || canExportSso) && (
-              <div className="flex flex-wrap items-center gap-2">
-                {canExportTax && (
-                  <ExportMenu
-                    label="ภ.ง.ด.1"
-                    onExport={handleExportPayrollTax}
-                    disabled={isExportingTax || !taxData || taxData.items.length === 0}
-                  />
-                )}
-
-                {canExportSso && (
-                  <ExportMenu
-                    label="สปส. 1-10"
-                    formats={['xlsx', 'csv']}
-                    onExport={handleExportSso}
-                    disabled={isExportingSso || !taxData || taxData.items.length === 0}
-                  />
-                )}
-              </div>
-            )}
           </div>
 
           {/* 4 Summary KPI Cards */}

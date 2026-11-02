@@ -892,9 +892,31 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               </div>
             </div>
 
-            {/* 2. Top Toolbar */}
+            {/* 2. Top Toolbar: Search (Left) | Actions (Right) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-              <div className="flex flex-wrap items-center gap-2">
+              {/* Left: Search Bar */}
+              <div className="relative max-w-sm w-full shrink-0">
+                <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchModuleQuery}
+                  onChange={(e) => setSearchModuleQuery(e.target.value)}
+                  placeholder="ค้นหากลุ่มหรือสิทธิ์..."
+                  className="w-full pl-9 pr-8 py-2 bg-[#F1F5F9] dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                />
+                {searchModuleQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchModuleQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Right: Action Buttons */}
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <Button
                   type="button"
                   variant="secondary"
@@ -929,27 +951,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 >
                   ยกเลิกทั้งหมด
                 </Button>
-              </div>
-
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-64">
-                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchModuleQuery}
-                  onChange={(e) => setSearchModuleQuery(e.target.value)}
-                  placeholder="ค้นหากลุ่มหรือสิทธิ์..."
-                  className="w-full h-9 pl-8 pr-3 bg-slate-50 dark:bg-slate-950 hover:bg-white focus:bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/90 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                />
-                {searchModuleQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchModuleQuery('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-0.5"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
               </div>
             </div>
 

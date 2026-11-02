@@ -1730,20 +1730,11 @@ function DailyAttendanceContent() {
           )}
 
           {/* Batch History Table */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
-            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4 dark:border-slate-700/60">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 dark:text-slate-100">
-                  <FileText className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                  ประวัติการนำเข้าไฟล์ย้อนหลัง
-                  <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
-                    ({batchTotalCount.toLocaleString()} รายการ)
-                  </span>
-                </h2>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="relative">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2.5 flex-1">
+                <div className="relative max-w-sm w-full sm:w-64 shrink-0">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 dark:text-slate-500 pointer-events-none" />
                   <input
                     type="text"
                     placeholder="ค้นหาชื่อไฟล์, อุปกรณ์..."
@@ -1755,9 +1746,8 @@ function DailyAttendanceContent() {
                         loadBatches();
                       }
                     }}
-                    className="pl-9 pr-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-56 dark:border-slate-600 dark:text-slate-200 dark:placeholder:text-slate-500 dark:text-slate-400"
+                    className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 transition-all"
                   />
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 dark:text-slate-500 dark:text-slate-400" />
                 </div>
 
                 <CustomSelect
@@ -1791,13 +1781,15 @@ function DailyAttendanceContent() {
                     { value: 'REVERTED', label: 'ยกเลิกแล้ว' },
                   ]}
                 />
+              </div>
 
+              <div className="flex items-center justify-end gap-2 shrink-0">
                 <button
                   onClick={() => {
                     setBatchPage(1);
                     loadBatches();
                   }}
-                  className="p-2 rounded-xl border border-slate-300 text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-600 dark:text-slate-400"
+                  className="p-2 rounded-xl border border-slate-200 text-slate-600 dark:text-slate-400 hover:bg-slate-50 transition-colors dark:hover:bg-slate-800/40 dark:border-slate-700"
                   title="รีเฟรชตาราง"
                 >
                   <RefreshCw className={`w-4 h-4 ${isLoadingBatches ? 'animate-spin' : ''}`} />

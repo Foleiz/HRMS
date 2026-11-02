@@ -20,6 +20,7 @@ import { Button, Modal, ModalFooter, FormField, Input, NumberInput,
 | สวิตช์เปิด/ปิด, แถว "เปิดใช้งาน" | `ToggleSwitch` / `ActiveToggleRow` |
 | ตัวเลือกแบบการ์ด (ติ๊ก + คำอธิบาย) | `OptionCheckCard` |
 | ปุ่มไอคอน แก้ไข / ลบ / ดู ในคอลัมน์จัดการ | `RowActions` + `RowActionButton` |
+| แถบเครื่องมือตาราง (ช่องค้นหาซ้ายสุด -> ฟิลเตอร์ -> ปุ่มคำสั่งขวาสุด) | `TableToolbar` + `SearchInput` |
 
 สีที่ใช้ใน class: `bg-primary`, `hover:bg-primary-hover`, `text-primary`, `border-primary`,
 `focus:ring-primary`, `bg-primary-soft`, `bg-accent` — หลีกเลี่ยงการพิมพ์ `#0B2046` ตรงๆ

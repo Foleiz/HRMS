@@ -15,6 +15,7 @@ import { confirmDelete } from '@/lib/sweetalert';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
   Users,
   Search,
@@ -727,22 +728,12 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มมุมมอง & ปุ่มเพิ่มด้านขวา */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-              {/* Search Input มาตรฐานระบบ */}
-              <div className="relative max-w-sm w-full shrink-0">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="ค้นหาพนักงาน..."
-                  className="w-full pl-9 pr-4 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 dark:focus:border-blue-500 transition-all"
-                />
-              </div>
-
-              {/* Department Filter Dropdown - ซ่อนสำหรับ role หัวหน้าแผนก (DEPT_MGR) */}
-              {!isDeptManager && (
+          <TableToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="ค้นหาพนักงาน..."
+            filters={
+              !isDeptManager ? (
                 <CustomSelect
                   value={selectedDepartment}
                   onChange={(val) => setSelectedDepartment(String(val))}
@@ -756,52 +747,52 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                     })),
                   ]}
                 />
-              )}
-            </div>
+              ) : null
+            }
+            actions={
+              <>
+                {/* View Mode Switcher Pill */}
+                <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => handleSetViewMode('grid')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                      viewMode === 'grid'
+                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                    }`}
+                    title="มุมมองการ์ด (Card View)"
+                  >
+                    <LayoutGrid className="w-4 h-4 shrink-0" />
+                    <span>การ์ด</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetViewMode('table')}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
+                      viewMode === 'table'
+                        ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                    }`}
+                    title="มุมมองตาราง (Table View)"
+                  >
+                    <List className="w-4 h-4 shrink-0" />
+                    <span>ตาราง</span>
+                  </button>
+                </div>
 
-            {/* Right Side: View Switcher (List vs Grid) + เพิ่มพนักงาน Button */}
-            <div className="w-full sm:w-auto flex items-center justify-end gap-3 shrink-0">
-              {/* View Mode Switcher Pill */}
-              <div className="inline-flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
-                <button
-                  type="button"
-                  onClick={() => handleSetViewMode('grid')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
-                    viewMode === 'grid'
-                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
-                  }`}
-                  title="มุมมองการ์ด (Card View)"
-                >
-                  <LayoutGrid className="w-4 h-4 shrink-0" />
-                  <span>การ์ด</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSetViewMode('table')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer select-none ${
-                    viewMode === 'table'
-                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
-                  }`}
-                  title="มุมมองตาราง (Table View)"
-                >
-                  <List className="w-4 h-4 shrink-0" />
-                  <span>ตาราง</span>
-                </button>
-              </div>
-
-              {canCreateEmp && (
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  icon={<Plus className="w-4 h-4" />}
-                  className="shrink-0 self-start sm:self-auto"
-                >
-                  เพิ่มพนักงาน
-                </Button>
-              )}
-            </div>
-          </div>
+                {canCreateEmp && (
+                  <Button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    icon={<Plus className="w-4 h-4" />}
+                    className="shrink-0 self-start sm:self-auto"
+                  >
+                    เพิ่มพนักงาน
+                  </Button>
+                )}
+              </>
+            }
+          />
 
           {/* 3. Employee Data Display (Table or Grid View) */}
           {viewMode === 'grid' ? (
