@@ -50,16 +50,16 @@ export default function EmployeeTimelineModal({
     <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header ตรงตาม Mockup: ไทม์ไลน์ตำแหน่งของ {ชื่อ} · {รหัส} */}
-        <div className="flex items-center justify-between px-7 py-5 border-b border-slate-100 dark:border-slate-700/60">
-          <h3 className="text-base font-medium text-slate-800 dark:text-slate-200">
-            ไทม์ไลน์ตำแหน่งของ{' '}
-            <span className="text-[#16a34a] font-semibold">
-              {employeeName} · {employeeCode}
-            </span>
+        <div className="relative px-14 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 inline-flex flex-wrap items-center justify-center gap-2">
+            <span>ไทม์ไลน์ตำแหน่งของ</span>
+<span className="text-[#16a34a]">{employeeName} · {employeeCode}</span>
           </h3>
           <button
+            type="button"
             onClick={onClose}
-            className="text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="ปิดหน้าต่าง"
+            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

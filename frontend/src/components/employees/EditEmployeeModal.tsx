@@ -11,9 +11,6 @@ import {
   GraduationCap,
   Landmark,
   Plus,
-  Briefcase,
-  MapPin,
-  CreditCard,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { organizationService } from '@/services/organizationService';
@@ -554,25 +551,16 @@ export default function EditEmployeeModal({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shrink-0">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-bold text-primary dark:text-slate-100">แก้ไขข้อมูลพนักงาน</h2>
-              {employeeInfo?.code && (
-                <span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 font-mono font-bold">
-                  {employeeInfo.code}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {employeeInfo?.name ? employeeInfo.name : 'แก้ไขข้อมูลและบันทึกการเปลี่ยนแปลงได้ทันที'}
-            </p>
-          </div>
+        <div className="relative px-14 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 inline-flex flex-wrap items-center justify-center gap-2">
+            แก้ไขข้อมูลพนักงาน
+            {employeeInfo?.code && (<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-mono font-bold">{employeeInfo.code}</span>)}
+          </h3>
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-xl border border-slate-300 dark:border-slate-600 text-primary dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 inline-flex items-center justify-center shrink-0 transition-colors cursor-pointer"
             aria-label="ปิดหน้าต่าง"
+            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -595,9 +583,9 @@ export default function EditEmployeeModal({
             ].map((t) => {
               const Icon = t.icon;
               return {
-              key: t.id,
-              label: t.label,
-              icon: <Icon className="w-3.5 h-3.5" />,
+                key: t.id,
+                label: t.label,
+                icon: <Icon className="w-3.5 h-3.5" />,
               };
             })}
           />
@@ -614,15 +602,9 @@ export default function EditEmployeeModal({
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {/* TAB 1: ข้อมูลส่วนตัว (Personal) */}
               {activeTab === 'personal' && (
-                <div className="space-y-7 text-xs animate-in fade-in duration-150">
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-                        <Briefcase className="w-4 h-4" />
-                      </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลการจ้างงาน</h3>
-                    </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-xs animate-in fade-in duration-150">
+                  {/* --- Column 1 --- */}
+                  <div className="space-y-4">
                     {/* รหัสพนักงาน */}
                     <div>
                       <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
@@ -652,39 +634,6 @@ export default function EditEmployeeModal({
                         onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
                         className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
-                    </div>
-
-                    {/* ประเภทพนักงาน */}
-                    <div>
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
-                        <span>ประเภทพนักงาน</span>
-                        <FieldInfoTooltip
-                          text={
-                            canEditEmployeeType
-                              ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
-                              : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'
-                          }
-                        />
-                      </label>
-                      {canEditEmployeeType ? (
-                        <CustomSelect
-                          value={formData.employeeType || ''}
-                          onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
-                          className="w-full cursor-pointer"
-                          buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
-                        >
-                          {!formData.employeeType && <option value="">เลือกประเภท</option>}
-                          {employeeTypeOptions.map((name) => (
-                            <option key={name} value={name}>
-                              {name}
-                            </option>
-                          ))}
-                        </CustomSelect>
-                      ) : (
-                        <div className="w-full h-10 px-3.5 flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
-                          {formData.employeeType || '-'}
-                        </div>
-                      )}
                     </div>
 
                     {/* ทีมที่สังกัด */}
@@ -727,17 +676,40 @@ export default function EditEmployeeModal({
                         );
                       })()}
                     </div>
-                  </div>
-                  </section>
 
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-                        <User className="w-4 h-4" />
-                      </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลส่วนบุคคล</h3>
+                    {/* ประเภทพนักงาน */}
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                        <span>ประเภทพนักงาน</span>
+                        <FieldInfoTooltip
+                          text={
+                            canEditEmployeeType
+                              ? 'เมื่อสัญญาจ้างฉบับใหม่มีผล ระบบจะอัปเดตประเภทตามสัญญาให้อัตโนมัติ'
+                              : 'ไม่มีสิทธิ์แก้ไข — ประเภทจะอัปเดตตามสัญญาจ้างที่มีผล'
+                          }
+                        />
+                      </label>
+                      {canEditEmployeeType ? (
+                        <CustomSelect
+                          value={formData.employeeType || ''}
+                          onChange={(e) => setFormData({ ...formData, employeeType: e.target.value })}
+                          className="w-full cursor-pointer"
+                          buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
+                        >
+                          {!formData.employeeType && <option value="">เลือกประเภท</option>}
+                          {employeeTypeOptions.map((name) => (
+                            <option key={name} value={name}>
+                              {name}
+                            </option>
+                          ))}
+                        </CustomSelect>
+                      ) : (
+                        <div className="w-full h-10 px-3.5 flex items-center bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-600 dark:text-slate-400">
+                          {formData.employeeType || '-'}
+                        </div>
+                      )}
                     </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+
                     {/* คำนำหน้า */}
                     <div>
                       <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
@@ -798,7 +770,10 @@ export default function EditEmployeeModal({
                         className={`${inputClass} h-10`}
                       />
                     </div>
+                  </div>
 
+                  {/* --- Column 2 --- */}
+                  <div className="space-y-4">
                     {/* เลขบัตรประชาชน */}
                     <div>
                       <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
@@ -931,16 +906,9 @@ export default function EditEmployeeModal({
                       </CustomSelect>
                     </div>
                   </div>
-                  </section>
 
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-                        <Phone className="w-4 h-4" />
-                      </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ช่องทางติดต่อ</h3>
-                    </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                  {/* --- Column 3 --- */}
+                  <div className="space-y-4">
                     {/* อีเมลส่วนตัว */}
                     <div>
                       <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
@@ -989,202 +957,194 @@ export default function EditEmployeeModal({
                         className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
-                  </div>
-                  </section>
 
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-                        <MapPin className="w-4 h-4" />
-                      </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ที่อยู่ <span className="text-rose-500">*</span></h3>
-                    </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    <div className="sm:col-span-2 lg:col-span-3">
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1.5">
-                        ประเภทที่อยู่
-                      </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                          <label key={t} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="addressType"
-                              value={t}
-                              checked={formData.addressType === t}
-                              onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-                              className="text-primary focus:ring-primary"
-                            />
-                            <span>{t}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
+                    {/* ข้อมูลที่อยู่ */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 block text-xs">
+                        ที่อยู่ (Address) <span className="text-rose-500">*</span>
+                      </label>
 
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1">
-                        บ้านเลขที่ / อาคาร <span className="text-rose-500">*</span>
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="บ้านเลขที่ 4"
-                        value={formData.addressLine}
-                        onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                        className={`${inputClass} h-10`}
-                      />
-                    </div>
-
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1">
-                        ตำบล / แขวง <span className="text-rose-500">*</span>
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="แขวงหัวหมาก"
-                        value={formData.subDistrict}
-                        onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                        className={`${inputClass} h-10`}
-                      />
-                    </div>
-
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1">
-                        อำเภอ / เขต <span className="text-rose-500">*</span>
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="บางกะปิ"
-                        value={formData.district}
-                        onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                        className={`${inputClass} h-10`}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1">
-                          จังหวัด <span className="text-rose-500">*</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">
+                          ประเภทที่อยู่
+                        </span>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
+                            <label key={t} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="addressType"
+                                value={t}
+                                checked={formData.addressType === t}
+                                onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
+                                className="text-primary focus:ring-primary"
+                              />
+                              <span>{t}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                          บ้านเลขที่ / อาคาร <span className="text-rose-500">*</span>
                         </span>
                         <input
                           type="text"
-                          placeholder="กรุงเทพมหานคร"
-                          value={formData.province}
-                          onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                          placeholder="บ้านเลขที่ 4"
+                          value={formData.addressLine}
+                          onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
                           className={`${inputClass} h-10`}
                         />
                       </div>
+
                       <div>
-                        <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1">
-                          รหัสไปรษณีย์ <span className="text-rose-500">*</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                          ตำบล / แขวง <span className="text-rose-500">*</span>
                         </span>
                         <input
                           type="text"
-                          maxLength={5}
-                          placeholder="10240"
-                          value={formData.postalCode}
-                          onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                          placeholder="แขวงหัวหมาก"
+                          value={formData.subDistrict}
+                          onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
+                          className={`${inputClass} h-10`}
+                        />
+                      </div>
+
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                          อำเภอ / เขต <span className="text-rose-500">*</span>
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="บางกะปิ"
+                          value={formData.district}
+                          onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                          className={`${inputClass} h-10`}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                            จังหวัด <span className="text-rose-500">*</span>
+                          </span>
+                          <input
+                            type="text"
+                            placeholder="กรุงเทพมหานคร"
+                            value={formData.province}
+                            onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                            className={`${inputClass} h-10`}
+                          />
+                        </div>
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                            รหัสไปรษณีย์ <span className="text-rose-500">*</span>
+                          </span>
+                          <input
+                            type="text"
+                            maxLength={5}
+                            placeholder="10240"
+                            value={formData.postalCode}
+                            onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+                            className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ข้อมูลบัญชีธนาคาร */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center text-xs">
+                        <span>บัญชีธนาคาร (Bank Account)</span>
+                        <FieldInfoTooltip
+                          text="เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)"
+                          align="right"
+                        />
+                      </label>
+                      {pendingBank && (
+                        <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
+                          มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
+                          {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
+                        </div>
+                      )}
+                      {!pendingBank && rejectedBank && (
+                        <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
+                          คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
+                          {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+                          ชื่อธนาคาร
+                        </span>
+                        <CustomSelect
+                          value={formData.bankId ?? ''}
+                          onChange={(e) => {
+                            const id = e.target.value ? Number(e.target.value) : undefined;
+                            const bank = banks.find((b) => b.id === id);
+                            const maxDigits = bank?.accountDigits ?? 10;
+                            const currentAcc = formData.accountNumber || '';
+                            const isMasked = currentAcc.toLowerCase().includes('x') || currentAcc.includes('*');
+                            const updatedAcc = isMasked ? currentAcc : currentAcc.replace(/\D/g, '').slice(0, maxDigits);
+                            setFormData({
+                              ...formData,
+                              bankId: id,
+                              bankName: bank?.bankName || '',
+                              accountNumber: updatedAcc,
+                            });
+                          }}
+                          className="w-full cursor-pointer"
+                          buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
+                        >
+                          <option value="">เลือกธนาคาร</option>
+                          {banks.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.bankName}
+                            </option>
+                          ))}
+                        </CustomSelect>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center mb-1">
+                          <span>
+                            เลขที่บัญชี
+                            {banks.find((b) => b.id === formData.bankId)?.accountDigits
+                              ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
+                              : ' (10 หลัก)'}
+                          </span>
+                          <FieldInfoTooltip
+                            text="เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม"
+                            align="right"
+                          />
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={banks.find((b) => b.id === formData.bankId)?.accountDigits ?? 10}
+                          placeholder={
+                            banks.find((b) => b.id === formData.bankId)?.accountDigits
+                              ? `ระบุตัวเลข ${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก`
+                              : 'กรอกเฉพาะตัวเลข 10 หลัก'
+                          }
+                          value={formData.accountNumber || ''}
+                          onFocus={() => {
+                            if ((formData.accountNumber || '').toLowerCase().includes('x')) {
+                              setFormData({ ...formData, accountNumber: '' });
+                            }
+                          }}
+                          onChange={(e) => {
+                            const maxDigits = banks.find((b) => b.id === formData.bankId)?.accountDigits ?? 10;
+                            setFormData({
+                              ...formData,
+                              accountNumber: e.target.value.replace(/\D/g, '').slice(0, maxDigits),
+                            });
+                          }}
                           className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                         />
                       </div>
                     </div>
                   </div>
-                  </section>
-
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-                        <CreditCard className="w-4 h-4" />
-                      </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">บัญชีธนาคาร <span className="text-rose-500">*</span></h3>
-                      <FieldInfoTooltip
-                          text="เปลี่ยนบัญชีแล้วต้องให้ HR หรือฝ่ายการเงินอีกคนยืนยันก่อน จึงจะใช้รับเงินเดือน (ระหว่างรอ ยังจ่ายเข้าบัญชีเดิม)"
-                          align="right"
-                        />
-                    </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-                    {pendingBank && (
-                      <div className="text-[11px] px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300">
-                        มีบัญชีใหม่รอยืนยัน: {pendingBank.bankName} {pendingBank.accountNumber}
-                        {pendingBank.requestedAt ? ` (ขอเมื่อ ${new Date(pendingBank.requestedAt).toLocaleDateString('th-TH')})` : ''}
-                      </div>
-                    )}
-                    {!pendingBank && rejectedBank && (
-                      <div className="text-[11px] px-3 py-2 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300">
-                        คำขอเปลี่ยนเป็นบัญชี {rejectedBank.accountNumber} ไม่ได้รับอนุมัติ
-                        {rejectedBank.rejectReason ? `: ${rejectedBank.rejectReason}` : ''}
-                      </div>
-                    )}
-                    <div>
-                      <span className="font-semibold text-slate-700 dark:text-slate-300 text-xs block mb-1">
-                        ชื่อธนาคาร
-                      </span>
-                      <CustomSelect
-                        value={formData.bankId ?? ''}
-                        onChange={(e) => {
-                          const id = e.target.value ? Number(e.target.value) : undefined;
-                          const bank = banks.find((b) => b.id === id);
-                          const maxDigits = bank?.accountDigits ?? 10;
-                          const currentAcc = formData.accountNumber || '';
-                          const isMasked = currentAcc.toLowerCase().includes('x') || currentAcc.includes('*');
-                          const updatedAcc = isMasked ? currentAcc : currentAcc.replace(/\D/g, '').slice(0, maxDigits);
-                          setFormData({
-                            ...formData,
-                            bankId: id,
-                            bankName: bank?.bankName || '',
-                            accountNumber: updatedAcc,
-                          });
-                        }}
-                        className="w-full cursor-pointer"
-                        buttonClassName="!h-10 !rounded-lg !text-xs !px-3.5"
-                      >
-                        <option value="">เลือกธนาคาร</option>
-                        {banks.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.bankName}
-                          </option>
-                        ))}
-                      </CustomSelect>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center mb-1">
-                        <span>
-                          เลขที่บัญชี
-                          {banks.find((b) => b.id === formData.bankId)?.accountDigits
-                            ? ` (${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก)`
-                            : ' (10 หลัก)'}
-                        </span>
-                        <FieldInfoTooltip
-                          text="เว้นว่างหรือไม่แก้ = ใช้บัญชีเดิม"
-                          align="right"
-                        />
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={banks.find((b) => b.id === formData.bankId)?.accountDigits ?? 10}
-                        placeholder={
-                          banks.find((b) => b.id === formData.bankId)?.accountDigits
-                            ? `ระบุตัวเลข ${banks.find((b) => b.id === formData.bankId)?.accountDigits} หลัก`
-                            : 'กรอกเฉพาะตัวเลข 10 หลัก'
-                        }
-                        value={formData.accountNumber || ''}
-                        onFocus={() => {
-                          if ((formData.accountNumber || '').toLowerCase().includes('x')) {
-                            setFormData({ ...formData, accountNumber: '' });
-                          }
-                        }}
-                        onChange={(e) => {
-                          const maxDigits = banks.find((b) => b.id === formData.bankId)?.accountDigits ?? 10;
-                          setFormData({
-                            ...formData,
-                            accountNumber: e.target.value.replace(/\D/g, '').slice(0, maxDigits),
-                          });
-                        }}
-                        className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                      />
-                    </div>
-                  </div>
-                  </section>
                 </div>
               )}
 
