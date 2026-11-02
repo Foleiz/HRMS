@@ -1,9 +1,7 @@
-import {
-  CalendarRange,
-} from 'lucide-react';
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { CalendarRange } from 'lucide-react';
 import { LEAVE_COLOR_PRESETS, resolveLeaveColor } from '@/lib/leaveColors';
 import { LeaveType, LeaveFormCategory, CreateLeaveTypePayload, UpdateLeaveTypePayload } from '@/types/leave';
 import { CodeInput } from '@/components/ui/CodeInput';
