@@ -34,15 +34,12 @@ interface LeavePolicyModalProps {
 }
 
 type NumInput = number | '';
-type BackdateMode = 'UNLIMITED' | 'LIMIT' | 'NONE';
 
 interface PolicyForm {
   entitlementDays: NumInput;
   prorationMethod: LeaveProrationMethod;
   minimumServiceDays: NumInput;
   advanceRequestDays: NumInput;
-  backdateMode: BackdateMode;
-  maxBackdateDays: NumInput;
   maxLifetimeOccurrences: NumInput;
   isDocumentRequired: boolean;
   documentRequiredAfterDays: NumInput;
@@ -55,28 +52,28 @@ interface PolicyForm {
 const TEMPLATES: Record<LeaveFormCategory, PolicyForm> = {
   SICK: {
     entitlementDays: 30, prorationMethod: 'FULL', minimumServiceDays: 0,
-    advanceRequestDays: 0, backdateMode: 'LIMIT', maxBackdateDays: 7,
+    advanceRequestDays: 0,
     maxLifetimeOccurrences: '',
     isDocumentRequired: true, documentRequiredAfterDays: 3,
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   PERSONAL: {
     entitlementDays: 3, prorationMethod: 'FULL', minimumServiceDays: 0,
-    advanceRequestDays: 1, backdateMode: 'LIMIT', maxBackdateDays: 3,
+    advanceRequestDays: 1,
     maxLifetimeOccurrences: '',
     isDocumentRequired: false, documentRequiredAfterDays: '',
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   VACATION: {
     entitlementDays: 6, prorationMethod: 'PRORATA_MONTHLY', minimumServiceDays: 365,
-    advanceRequestDays: 7, backdateMode: 'NONE', maxBackdateDays: '',
+    advanceRequestDays: 7,
     maxLifetimeOccurrences: '',
     isDocumentRequired: false, documentRequiredAfterDays: '',
     isCarryForwardAllowed: true, carryForwardMaxDays: 6, carryForwardExpiryMonths: 3,
   },
   SPECIAL: {
     entitlementDays: 0, prorationMethod: 'FULL', minimumServiceDays: 0,
-    advanceRequestDays: 7, backdateMode: 'UNLIMITED', maxBackdateDays: '',
+    advanceRequestDays: 7,
     maxLifetimeOccurrences: '',
     isDocumentRequired: true, documentRequiredAfterDays: '',
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
@@ -96,8 +93,6 @@ const policyToForm = (p: LeavePolicy): PolicyForm => ({
   prorationMethod: (p.prorationMethod as LeaveProrationMethod) || 'FULL',
   minimumServiceDays: p.minimumServiceDays,
   advanceRequestDays: p.advanceRequestDays,
-  backdateMode: p.maxBackdateDays === null || p.maxBackdateDays === undefined ? 'UNLIMITED' : p.maxBackdateDays === 0 ? 'NONE' : 'LIMIT',
-  maxBackdateDays: p.maxBackdateDays ? p.maxBackdateDays : '',
   maxLifetimeOccurrences: fromNum(p.maxLifetimeOccurrences),
   isDocumentRequired: p.isDocumentRequired,
   documentRequiredAfterDays: p.documentRequiredAfterDays ? p.documentRequiredAfterDays : '',
@@ -236,8 +231,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
     if (form.prorationMethod === 'PRORATA_MONTHLY') parts.push('ปีแรกคิดตามสัดส่วนเดือนที่เหลือ');
     if (Number(form.minimumServiceDays) > 0) parts.push(`เมื่อทำงานครบ ${form.minimumServiceDays} วัน`);
     parts.push(Number(form.advanceRequestDays) > 0 ? `ต้องยื่นล่วงหน้า ${form.advanceRequestDays} วัน` : 'ยื่นวันเดียวกันได้');
-    if (form.backdateMode === 'NONE') parts.push('ห้ามยื่นย้อนหลัง');
-    if (form.backdateMode === 'LIMIT' && form.maxBackdateDays !== '') parts.push(`ยื่นย้อนหลังได้ ${form.maxBackdateDays} วัน`);
     if (form.maxLifetimeOccurrences !== '') parts.push(`ไม่เกิน ${form.maxLifetimeOccurrences} ครั้งตลอดอายุงาน`);
     if (form.isDocumentRequired)
       parts.push(Number(form.documentRequiredAfterDays) > 0 ? `แนบเอกสารเมื่อลา ${form.documentRequiredAfterDays} วันขึ้นไป` : 'แนบเอกสารทุกครั้ง');
@@ -261,8 +254,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
     e.preventDefault();
     if (!leaveTypeId) return setError('กรุณาเลือกประเภทการลา');
     if (form.entitlementDays === '' || Number(form.entitlementDays) < 0) return setError('กรุณาระบุจำนวนวันลาที่ได้รับต่อปี');
-    if (form.backdateMode === 'LIMIT' && (form.maxBackdateDays === '' || Number(form.maxBackdateDays) <= 0))
-      return setError('กรุณาระบุจำนวนวันที่ยื่นย้อนหลังได้ (มากกว่า 0)');
     if (!effectiveFrom) return setError('กรุณาระบุวันที่เริ่มมีผล');
 
     setLoading(true);
@@ -276,7 +267,8 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         minimumServiceDays: toNum(form.minimumServiceDays) ?? 0,
         isAllowedDuringProbation: true,
         advanceRequestDays: toNum(form.advanceRequestDays) ?? 0,
-        maxBackdateDays: form.backdateMode === 'UNLIMITED' ? null : form.backdateMode === 'NONE' ? 0 : toNum(form.maxBackdateDays),
+        // ยื่นย้อนหลังได้เสมอ — กันด้วยการลาซ้อนวันและงวดเงินเดือนที่ปิดรอบแล้วแทน
+        maxBackdateDays: null,
         maxDaysPerOccurrence: null,
         maxOccurrencesPerYear: null,
         maxLifetimeOccurrences: toNum(form.maxLifetimeOccurrences),
@@ -383,22 +375,8 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           {/* 3. เงื่อนไขการยื่น */}
           <Section no={3} title="เงื่อนไขการยื่นลา">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="ต้องยื่นล่วงหน้าอย่างน้อย" hint="0 = ยื่นวันเดียวกับวันลาได้">
+              <Field label="ต้องยื่นล่วงหน้าอย่างน้อย" hint="0 = ยื่นวันเดียวกับวันลาได้ · ยื่นย้อนหลังได้เสมอ (ห้ามลาซ้อนวัน และห้ามลาในงวดเงินเดือนที่ปิดรอบแล้ว)">
                 <NumberBox value={form.advanceRequestDays} onChange={(v) => set('advanceRequestDays', v)} unit="วัน" />
-              </Field>
-              <Field label="การยื่นย้อนหลัง">
-                <div className="flex gap-2">
-                  <CustomSelect value={form.backdateMode} onChange={(e) => set('backdateMode', e.target.value as BackdateMode)} className={selectCls}>
-                    <option value="UNLIMITED">ยื่นได้ตลอด</option>
-                    <option value="LIMIT">กำหนดวัน</option>
-                    <option value="NONE">ยื่นไม่ได้</option>
-                  </CustomSelect>
-                  {form.backdateMode === 'LIMIT' && (
-                    <div className="w-32 shrink-0">
-                      <NumberBox value={form.maxBackdateDays} onChange={(v) => set('maxBackdateDays', v)} unit="วัน" />
-                    </div>
-                  )}
-                </div>
               </Field>
               <Field label="จำนวนครั้งตลอดอายุงาน" hint="เช่น ลาบวช = 1">
                 <NumberBox value={form.maxLifetimeOccurrences} onChange={(v) => set('maxLifetimeOccurrences', v)} unit="ครั้ง" placeholder="ไม่จำกัด" />

@@ -136,20 +136,12 @@ public partial class LeaveRequestService
             }
         }
 
-        // 4) ยื่นล่วงหน้า / ย้อนหลัง
+        // 4) ยื่นล่วงหน้า — ยื่นย้อนหลังได้เสมอ (กันด้วยการลาซ้อนวันในข้อ 1 และงวดเงินเดือนที่ปิดรอบแล้วด้านบน)
         if (startDate >= today)
         {
             var noticeDays = startDate.DayNumber - today.DayNumber;
             if (noticeDays < policy.AdvanceRequestDays)
                 result.Errors.Add($"ต้องยื่นล่วงหน้าอย่างน้อย {policy.AdvanceRequestDays} วัน (ลาได้ตั้งแต่วันที่ {ThaiDate(today.AddDays(policy.AdvanceRequestDays))})");
-        }
-        else if (policy.MaxBackdateDays.HasValue)
-        {
-            var backDays = today.DayNumber - startDate.DayNumber;
-            if (policy.MaxBackdateDays.Value == 0)
-                result.Errors.Add("ประเภทการลานี้ไม่อนุญาตให้ยื่นย้อนหลัง");
-            else if (backDays > policy.MaxBackdateDays.Value)
-                result.Errors.Add($"ยื่นลาย้อนหลังได้ไม่เกิน {policy.MaxBackdateDays.Value} วัน");
         }
 
         // 5) จำนวนครั้งตลอดอายุงาน (นับคำขอที่รออนุมัติและอนุมัติแล้ว)
@@ -187,8 +179,6 @@ public partial class LeaveRequestService
         var parts = new List<string> { $"สิทธิ์ {Days(p.EntitlementDays)} วัน/ปี" };
         if (p.MinimumServiceDays > 0) parts.Add($"อายุงานครบ {p.MinimumServiceDays} วัน");
         parts.Add(p.AdvanceRequestDays > 0 ? $"ยื่นล่วงหน้า {p.AdvanceRequestDays} วัน" : "ยื่นวันเดียวกันได้");
-        if (p.MaxBackdateDays.HasValue)
-            parts.Add(p.MaxBackdateDays.Value == 0 ? "ห้ามยื่นย้อนหลัง" : $"ยื่นย้อนหลังได้ {p.MaxBackdateDays.Value} วัน");
         if (p.MaxLifetimeOccurrences.HasValue) parts.Add($"ไม่เกิน {p.MaxLifetimeOccurrences.Value} ครั้งตลอดอายุงาน");
         if (p.IsDocumentRequired)
             parts.Add(p.DocumentRequiredAfterDays is > 0 ? $"แนบเอกสารเมื่อลา {Days(p.DocumentRequiredAfterDays.Value)} วันขึ้นไป" : "แนบเอกสารทุกครั้ง");
