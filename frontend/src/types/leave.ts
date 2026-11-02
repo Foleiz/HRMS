@@ -202,6 +202,8 @@ export interface LeaveRequest {
   employeePrefix?: string | null;
   employeeName: string;
   departmentName: string;
+  /** ฝ่าย ณ วันที่ยื่น */
+  divisionName?: string | null;
   positionName?: string;
   formCategory?: string | null;
   leaveTypeId: number;
