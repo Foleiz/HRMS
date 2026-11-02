@@ -223,31 +223,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [policyToEdit, isOpen]);
 
-  // สรุปเป็นประโยคให้ HR อ่านทวนก่อนบันทึก
-  const summary = useMemo(() => {
-    const typeName = leaveTypes.find((t) => t.id === leaveTypeId)?.leaveName || 'ประเภทการลานี้';
-    const empType = employeeTypes.find((t) => t.id === employeeTypeId)?.typeName;
-    const level = employeeLevels.find((l) => l.id === employeeLevelId)?.levelName;
-    const who = `${empType ? `พนักงาน${empType}` : 'พนักงานทุกประเภท'} ${level ? `ระดับ ${level}` : 'ทุกระดับ'}`;
-    const parts: string[] = [`${who} ได้${typeName} ${form.entitlementDays || 0} วัน/ปี`];
-    if (form.prorationMethod === 'PRORATA_MONTHLY') parts.push('ปีแรกคิดตามสัดส่วนเดือนที่เหลือ');
-    if (Number(form.minimumServiceDays) > 0) parts.push(`เมื่อทำงานครบ ${form.minimumServiceDays} วัน`);
-    parts.push(Number(form.advanceRequestDays) > 0 ? `ต้องยื่นล่วงหน้า ${form.advanceRequestDays} วัน` : 'ยื่นวันเดียวกันได้');
-    if (form.maxLifetimeOccurrences !== '') parts.push(`ไม่เกิน ${form.maxLifetimeOccurrences} ครั้งตลอดอายุงาน`);
-    if (form.isDocumentRequired)
-      parts.push(
-        (Number(form.documentRequiredAfterDays) > 0 ? `แนบเอกสารเมื่อลา ${form.documentRequiredAfterDays} วันขึ้นไป` : 'แนบเอกสารทุกครั้ง') +
-          (Number(form.documentGraceDays) > 0 ? ` (แนบภายหลังได้ภายใน ${form.documentGraceDays} วัน)` : ' (ต้องแนบตอนยื่น)')
-      );
-    if (form.isCarryForwardAllowed)
-      parts.push(
-        `ยกยอดไปปีถัดไปได้สูงสุด ${form.carryForwardMaxDays === '' ? form.entitlementDays || 0 : form.carryForwardMaxDays} วัน` +
-          ` ใช้ภายใน ${form.carryForwardExpiryMonths === '' ? 3 : form.carryForwardExpiryMonths} เดือน`
-      );
-    else parts.push('ไม่ยกยอดข้ามปี');
-    return parts.join(' · ');
-  }, [form, leaveTypeId, employeeTypeId, employeeLevelId, leaveTypes, employeeTypes, employeeLevels]);
-
   if (!isOpen) return null;
 
   const handleLeaveTypeChange = (id: number) => {
@@ -350,9 +325,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
                 </CustomSelect>
               </Field>
             </div>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500 dark:text-slate-400">
-              ถ้ามีหลายรายการตรงกับพนักงาน ระบบใช้รายการที่เจาะจงที่สุด (ระบุประเภท/ระดับ) ก่อน · ประเภทการลา + กลุ่มพนักงานเดียวกันสร้างซ้ำไม่ได้
-            </p>
             {!isEditing && (
               <p className="flex items-center gap-1.5 text-[11px] text-blue-700">
                 <Sparkles className="w-3.5 h-3.5" /> เติมค่าแนะนำตามหมวดของประเภทการลาให้แล้ว ปรับได้ทุกช่อง
@@ -381,7 +353,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
           {/* 3. เงื่อนไขการยื่น */}
           <Section no={3} title="เงื่อนไขการยื่นลา">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label="ต้องยื่นล่วงหน้าอย่างน้อย" hint="0 = ยื่นวันเดียวกับวันลาได้ · ยื่นย้อนหลังได้เสมอ (ห้ามลาซ้อนวัน และห้ามลาในงวดเงินเดือนที่ปิดรอบแล้ว)">
+              <Field label="ต้องยื่นล่วงหน้าอย่างน้อย">
                 <NumberBox value={form.advanceRequestDays} onChange={(v) => set('advanceRequestDays', v)} unit="วัน" />
               </Field>
               <Field label="จำนวนครั้งตลอดอายุงาน" hint="เช่น ลาบวช = 1">
@@ -438,12 +410,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
               className="w-48 px-3 py-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </Field>
-
-          {/* สรุป */}
-          <div className="rounded-2xl bg-blue-50/70 border border-blue-100 p-4">
-            <p className="text-xs font-semibold text-blue-800 mb-1">สรุปสิทธิ์ที่จะบันทึก</p>
-            <p className="text-sm text-blue-900 leading-relaxed">{summary}</p>
-          </div>
 
           <div className="flex items-center justify-end gap-3 pt-2">
             <Button
