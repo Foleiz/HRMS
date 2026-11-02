@@ -985,11 +985,6 @@ export default function DocumentHistoryPage() {
                               {statusConf.icon}
                               {statusConf.label}
                             </span>
-                            {doc.status === 'REJECTED' && doc.rejectReason && (
-                              <span className="block mt-1 text-[11px] text-rose-500 max-w-[14rem] truncate" title={doc.rejectReason}>
-                                เหตุผล: {doc.rejectReason}
-                              </span>
-                            )}
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex items-center justify-end">
@@ -1043,11 +1038,6 @@ export default function DocumentHistoryPage() {
                           <div className="flex items-center justify-between">
                             <span className="text-slate-400">รายละเอียด:</span>
                             <span className="text-slate-700">{doc.detailDate}</span>
-                          </div>
-                        )}
-                        {doc.status === 'REJECTED' && doc.rejectReason && (
-                          <div className="text-rose-500 pt-1 border-t border-rose-100">
-                            เหตุผล: {doc.rejectReason}
                           </div>
                         )}
                       </div>
