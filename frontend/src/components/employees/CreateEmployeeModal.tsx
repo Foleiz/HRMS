@@ -667,7 +667,6 @@ export default function CreateEmployeeModal({
         <div className="relative px-14 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 inline-flex flex-wrap items-center justify-center gap-2">
             เพิ่มพนักงานใหม่
-            {formData.employeeCode && (<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-mono font-bold">{formData.employeeCode}</span>)}
           </h3>
           <button
             type="button"
