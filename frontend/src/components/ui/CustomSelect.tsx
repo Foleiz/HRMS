@@ -292,6 +292,15 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       ? 'lg'
       : 'md');
 
+
+  const containerClasses = filterContainerClasses(className);
+  const isFullWidth = containerClasses.includes('w-full') || className.includes('w-full');
+  const hasCustomWidth =
+    isFullWidth ||
+    containerClasses.includes('w-') ||
+    containerClasses.includes('min-w-') ||
+    className.includes('min-w-');
+
   const updatePosition = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
@@ -303,8 +312,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 99999,
-      minWidth: `${Math.max(rect.width, 140)}px`,
-      maxWidth: 'calc(100vw - 16px)',
     };
 
     if (isUp) {
@@ -315,10 +322,24 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       style.maxHeight = `${Math.max(120, window.innerHeight - rect.bottom - 16)}px`;
     }
 
-    if (align === 'right') {
-      style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
-    } else {
+    if (isFullWidth) {
+      // เมนูเต็มความกว้าง input พอดี ไม่เลยขอบ modal หรือ container
       style.left = `${Math.max(8, rect.left)}px`;
+      style.width = `${rect.width}px`;
+      style.maxWidth = `${rect.width}px`;
+    } else {
+      const menuMinWidth = Math.max(rect.width, 140);
+      style.minWidth = `${menuMinWidth}px`;
+      style.maxWidth = 'calc(100vw - 16px)';
+
+      const shouldAlignRight =
+        align === 'right' || rect.left + menuMinWidth > window.innerWidth - 16;
+
+      if (shouldAlignRight) {
+        style.right = `${Math.max(8, window.innerWidth - rect.right)}px`;
+      } else {
+        style.left = `${Math.max(8, rect.left)}px`;
+      }
     }
 
     setMenuStyle(style);
@@ -356,7 +377,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleScroll);
     };
-  }, [isOpen, resolvedOptions.length, align]);
+  }, [isOpen, shouldRenderMenu, resolvedOptions.length, align, isFullWidth]);
 
   const sizeClasses = {
     sm: 'h-8 px-2.5 text-xs rounded-lg',
@@ -364,13 +385,6 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
     lg: 'h-10 px-3.5 text-sm rounded-xl',
   }[effectiveSize];
 
-  const containerClasses = filterContainerClasses(className);
-  const isFullWidth = containerClasses.includes('w-full') || className.includes('w-full');
-  const hasCustomWidth =
-    isFullWidth ||
-    containerClasses.includes('w-') ||
-    containerClasses.includes('min-w-') ||
-    className.includes('min-w-');
 
   const defaultMinWidth = effectiveSize === 'sm' ? 'min-w-[85px]' : 'min-w-[120px]';
 
@@ -399,7 +413,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
       >
         <span
           title={selectedOption ? selectedOption.label : placeholder}
-          className={`truncate whitespace-nowrap font-medium ${
+          className={`truncate min-w-0 flex-1 whitespace-nowrap font-medium ${
             selectedOption && selectedOption.value !== '' && selectedOption.value !== 'ALL'
               ? 'text-slate-800 dark:text-slate-100 font-semibold'
               : 'text-slate-500 dark:text-slate-400 font-medium'
@@ -447,7 +461,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                     : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60 font-medium'
                 } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
-                <span className="truncate">{opt.label}</span>
+                <span className="truncate min-w-0 flex-1" title={opt.label}>{opt.label}</span>
                 {opt.hint && (
                   <span
                     className={`ml-auto pl-4 shrink-0 text-[11px] font-normal ${

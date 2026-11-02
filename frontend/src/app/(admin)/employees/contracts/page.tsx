@@ -23,7 +23,9 @@ import {
   Paperclip,
   Download,
   Upload,
+  FileSearch,
 } from 'lucide-react';
+import { openBlobInNewTab } from '@/lib/filePreview';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -37,7 +39,7 @@ import ContractDetailModal from '@/components/contracts/ContractDetailModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 import AttachContractModal from '@/components/contracts/AttachContractModal';
 import ContractDocumentPreviewModal from '@/components/contracts/ContractDocumentPreviewModal';
-import { ActionDropdown } from '@/components/ui/ActionDropdown';
+import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
 import { Button, TabBar , TableToolbar } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
@@ -160,6 +162,91 @@ export default function ContractsPage() {
     { title: 'สัญญาจ้าง', href: '/employees/contracts', active: true, show: canViewContracts },
     { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', show: canViewDocs },
   ].filter((t) => t.show);
+
+  const handleViewAttachment = (contract: EmploymentContract) => {
+    setSelectedContractForDocPreview(contract);
+    setIsDocPreviewModalOpen(true);
+  };
+
+  const handleDownloadAttachment = async (contract: EmploymentContract) => {
+    try {
+      const res = await contractService.getDocumentBlob(contract.id, false);
+      const url = URL.createObjectURL(res.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = contract.documentFileName || res.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('ดาวน์โหลดไฟล์แนบเรียบร้อยแล้ว');
+    } catch {
+      toast.error('ไม่สามารถดาวน์โหลดเอกสารได้');
+    }
+  };
+
+  const getContractActionItems = (contract: EmploymentContract): ActionDropdownItem[] => {
+    const items: ActionDropdownItem[] = [
+      {
+        label: 'ดูรายละเอียด',
+        icon: <FileSearch className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+        onClick: () => {
+          setSelectedContract(contract);
+          setIsDetailModalOpen(true);
+        },
+      },
+      {
+        label: 'ดูไฟล์แนบ',
+        icon: <Paperclip className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+        disabled: !contract.hasDocument,
+        onClick: () => {
+          if (!contract.hasDocument) {
+            toast.error('ยังไม่มีไฟล์แนบในสัญญานี้');
+            return;
+          }
+          handleViewAttachment(contract);
+        },
+      },
+    ];
+
+    if (contract.hasDocument) {
+      items.push({ divider: true, label: '' });
+      items.push({
+        label: 'ดาวน์โหลดไฟล์แนบ',
+        icon: <Download className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+        onClick: () => handleDownloadAttachment(contract),
+      });
+    }
+
+    items.push({ divider: true, label: '' });
+    items.push({
+      label: 'ประวัติรายบุคคล',
+      icon: <Clock className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />,
+      onClick: () => {
+        setSelectedTimelineEmployee({
+          id: contract.employeeId,
+          name: contract.employeeName,
+          code: contract.employeeCode,
+        });
+        setIsTimelineModalOpen(true);
+      },
+    });
+
+    if (contract.status === 'ACTIVE' && canEditContracts) {
+      items.push({ divider: true, label: '' });
+      items.push({
+        label: 'สิ้นสุดสัญญา',
+        icon: <X className="w-4 h-4 text-rose-600 shrink-0" />,
+        danger: true,
+        onClick: () => {
+          setSelectedContract(contract);
+          setIsDetailModalOpen(true);
+        },
+      });
+    }
+
+    return items;
+  };
 
   if (!canViewContracts) {
     return (
@@ -352,34 +439,29 @@ export default function ContractsPage() {
                       )}
                     </td>
 
-                    {/* เอกสารสัญญา: แนบไฟล์แล้ว (ดูตัวอย่าง 1-Click) หรือ ยังไม่แนบ (+ แนบเอกสาร) */}
+                    {/* เอกสารสัญญา: มีไฟล์แนบแล้ว (เขียว) หรือ รอไฟล์แนบ (ฟ้า) */}
                     <td className="py-4 px-6 whitespace-nowrap">
                       {contract.hasDocument ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedContractForDocPreview(contract);
-                            setIsDocPreviewModalOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer group shadow-2xs"
-                          title={contract.documentFileName ? `คลิกเพื่อดูเอกสาร: ${contract.documentFileName}` : 'ดูเอกสารสัญญา'}
+                        <span
+                          title={contract.documentFileName ? `มีไฟล์แนบแล้ว: ${contract.documentFileName}` : 'มีไฟล์แนบแล้ว'}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 shadow-2xs select-none cursor-default"
                         >
-                          <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                          <span className="truncate max-w-[130px]">{contract.documentFileName || 'ดูเอกสารสัญญา'}</span>
-                          <Eye className="w-3 h-3 text-blue-500 opacity-60 group-hover:opacity-100 transition-opacity shrink-0" />
-                        </button>
+                          <Paperclip className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <span>มีไฟล์แนบแล้ว</span>
+                        </span>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedContractForAttach(contract);
                             setIsAttachModalOpen(true);
                           }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer"
-                          title={`แนบเอกสารสัญญาจ้างสำหรับ ${contract.employeeName}`}
+                          title={`คลิกเพื่อแนบเอกสารสัญญาสำหรับ ${contract.employeeName}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 hover:border-sky-300 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/50 transition cursor-pointer hover:shadow-xs"
                         >
-                          <Paperclip className="w-3.5 h-3.5 text-slate-400" />
-                          <span>แนบเอกสาร</span>
+                          <Paperclip className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                          <span>รอไฟล์แนบ</span>
                         </button>
                       )}
                     </td>
@@ -387,86 +469,8 @@ export default function ContractsPage() {
                     {/* 3-Dots Action Menu */}
                     <td className="py-4 px-6 text-right whitespace-nowrap">
                       <ActionDropdown
-                        menuClassName="w-44"
-                        items={[
-                          {
-                            label: 'ประวัติรายบุคคล',
-                            icon: <Clock className="w-3.5 h-3.5 text-emerald-600" />,
-                            onClick: () => {
-                              setSelectedTimelineEmployee({
-                                id: contract.employeeId,
-                                name: contract.employeeName,
-                                code: contract.employeeCode,
-                              });
-                              setIsTimelineModalOpen(true);
-                            },
-                          },
-                          {
-                            label: 'ดูรายละเอียด',
-                            icon: <Eye className="w-3.5 h-3.5 text-blue-600" />,
-                            onClick: () => {
-                              setSelectedContract(contract);
-                              setIsDetailModalOpen(true);
-                            },
-                          },
-                          ...(canEditContracts
-                            ? [
-                                {
-                                  label: contract.hasDocument ? 'เปลี่ยนเอกสารสัญญา' : 'แนบเอกสารสัญญา',
-                                  icon: <Paperclip className="w-3.5 h-3.5 text-indigo-600" />,
-                                  onClick: () => {
-                                    setSelectedContractForAttach(contract);
-                                    setIsAttachModalOpen(true);
-                                  },
-                                },
-                              ]
-                            : []),
-                          ...(contract.hasDocument
-                            ? [
-                                {
-                                  label: 'ดูเอกสารสัญญา',
-                                  icon: <FileText className="w-3.5 h-3.5 text-blue-600" />,
-                                  onClick: () => {
-                                    setSelectedContractForDocPreview(contract);
-                                    setIsDocPreviewModalOpen(true);
-                                  },
-                                },
-                                {
-                                  label: 'ดาวน์โหลดเอกสาร',
-                                  icon: <Download className="w-3.5 h-3.5 text-emerald-600" />,
-                                  onClick: async () => {
-                                    try {
-                                      const res = await contractService.getDocumentBlob(contract.id, false);
-                                      const url = URL.createObjectURL(res.blob);
-                                      const a = document.createElement('a');
-                                      a.href = url;
-                                      a.download = contract.documentFileName || res.fileName;
-                                      document.body.appendChild(a);
-                                      a.click();
-                                      document.body.removeChild(a);
-                                      URL.revokeObjectURL(url);
-                                      toast.success('เริ่มดาวน์โหลดเอกสารสัญญา');
-                                    } catch {
-                                      toast.error('ไม่สามารถดาวน์โหลดเอกสารได้');
-                                    }
-                                  },
-                                },
-                              ]
-                            : []),
-                          ...(contract.status === 'ACTIVE' && canEditContracts
-                            ? [
-                                {
-                                  label: 'สิ้นสุดสัญญา',
-                                  icon: <X className="w-3.5 h-3.5 text-rose-500" />,
-                                  danger: true,
-                                  onClick: () => {
-                                    setSelectedContract(contract);
-                                    setIsDetailModalOpen(true);
-                                  },
-                                },
-                              ]
-                            : []),
-                        ]}
+                        menuClassName="w-52"
+                        items={getContractActionItems(contract)}
                       />
                     </td>
                   </tr>
