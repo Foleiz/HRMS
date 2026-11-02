@@ -20,3 +20,4 @@ export * from './RefreshIndicator';
 export * from './TablePagination';
 export * from './ActionDropdown';
 export * from './TableToolbar';
+export * from './ModalHeader';

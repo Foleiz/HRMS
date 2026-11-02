@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
 import { Button } from './Button';
 import { ModalShell } from './ModalShell';
+import { ModalHeader } from './ModalHeader';
 
 const SIZES = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' } as const;
 
@@ -15,13 +15,15 @@ export const Modal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   title: React.ReactNode;
+  /** ไอคอนหน้าหัวข้อ (lucide) */
+  icon?: React.ElementType;
   subtitle?: React.ReactNode;
   size?: keyof typeof SIZES;
   /** ห่อเนื้อหาด้วย form (ปุ่ม submit ใน footer ทำงานได้) */
   onSubmit?: (e: React.FormEvent) => void;
   footer?: React.ReactNode;
   children: React.ReactNode;
-}> = ({ isOpen, onClose, title, subtitle, size = 'md', onSubmit, footer, children }) => {
+}> = ({ isOpen, onClose, title, icon, subtitle, size = 'md', onSubmit, footer, children }) => {
   if (!isOpen) return null;
   const body = (
     <>
@@ -37,17 +39,7 @@ export const Modal: React.FC<{
       <div
         className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${SIZES[size]} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200`}
       >
-        <div className="relative px-6 pt-6 pb-4 text-center shrink-0 border-b border-slate-100 dark:border-slate-700/60">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h3>
-          {subtitle && <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{subtitle}</div>}
-          <button
-            onClick={onClose}
-            type="button"
-            className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader icon={icon} title={title} subtitle={subtitle} onClose={onClose} />
         {onSubmit ? (
           <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {body}

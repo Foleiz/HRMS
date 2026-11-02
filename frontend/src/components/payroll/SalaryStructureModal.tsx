@@ -1,7 +1,12 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import {
+  X,
+  AlertCircle,
+  Layers,
+} from 'lucide-react';
 import { SalaryStructure, CreateSalaryStructurePayload, UpdateSalaryStructurePayload } from '@/types/payroll';
 import { Position, EmployeeLevel } from '@/types/organization';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -108,18 +113,11 @@ export const SalaryStructureModal: React.FC<Props> = ({
     <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         {/* Header - Centered title matching mockup */}
-        <div className="relative px-6 pt-6 pb-4 text-center shrink-0">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
-            {structure ? 'แก้ไขโครงสร้างเงินเดือน' : 'เพิ่มโครงสร้างเงินเดือน'}
-          </h3>
-          <button
-            onClick={onClose}
-            type="button"
-            className="absolute right-4 top-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Layers}
+          title={structure ? 'แก้ไขโครงสร้างเงินเดือน' : 'เพิ่มโครงสร้างเงินเดือน'}
+          onClose={onClose}
+        />
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4 overflow-y-auto flex-1">

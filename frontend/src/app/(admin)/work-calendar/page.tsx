@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -785,14 +786,11 @@ export default function WorkCalendarPage() {
       {modalOpen && (
         <ModalShell className="bg-slate-900/40 backdrop-blur-sm z-50 animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm dark:text-slate-100">
-                {modalMode === 'create' ? 'เพิ่มวันหยุดประจำปี' : 'แก้ไขข้อมูลวันหยุด'}
-              </h3>
-              <button onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:text-slate-400">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={CalendarDays}
+              title={modalMode === 'create' ? 'เพิ่มวันหยุดประจำปี' : 'แก้ไขข้อมูลวันหยุด'}
+              onClose={() => setModalOpen(false)}
+            />
 
             <form onSubmit={handleSaveHoliday} className="space-y-4 pt-4">
               <div>

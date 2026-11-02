@@ -42,6 +42,8 @@ import {
   BarChart3,
   Download,
   Plus,
+  Pencil,
+  FileEdit,
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
@@ -1736,6 +1738,7 @@ function DailyAttendanceContent() {
       {/* Edit Record Modal */}
       {editModalOpen && editingRecord && (
         <Modal
+          icon={Pencil}
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}
           title="แก้ไขข้อมูลบันทึกเวลา"
@@ -1828,6 +1831,7 @@ function DailyAttendanceContent() {
       {/* Manual Punch Modal */}
       {clockModalOpen && (
         <Modal
+          icon={Clock}
           isOpen={clockModalOpen}
           onClose={() => setClockModalOpen(false)}
           title={`บันทึกเวลา${clockModalType === 'in' ? 'เข้างาน' : 'ออกงาน'}ด้วยตนเอง`}
@@ -2304,6 +2308,7 @@ function DailyAttendanceContent() {
       {/* ------------------------------------------------------------- */}
       {adjustmentModalOpen && targetRecordForAdjustment && (
         <Modal
+          icon={FileEdit}
           isOpen={adjustmentModalOpen}
           onClose={() => {
             setAdjustmentModalOpen(false);

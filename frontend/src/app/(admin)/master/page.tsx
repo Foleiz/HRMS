@@ -917,6 +917,7 @@ export default function MasterDataHubPage() {
       {/* Modal Dialog for Create & Edit */}
       {modalOpen && (
         <Modal
+          icon={Database}
           isOpen
           size="sm"
           onClose={() => setModalOpen(false)}

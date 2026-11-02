@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button, TabBar } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
@@ -1109,20 +1110,11 @@ export default function EmployeeDetailView({
         <ModalShell onBackdropClick={closeSignatureModal}>
           <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             {/* Header */}
-            <div className="flex items-start justify-between gap-3 px-6 pt-5">
-              <div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">ลายเซ็น</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ใช้ประทับในเอกสารที่ต้องลงนาม</p>
-              </div>
-              <button
-                type="button"
-                aria-label="ปิด"
-                onClick={closeSignatureModal}
-                className="p-1.5 -mr-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+            <ModalHeader
+              icon={FileSignature}
+              title="ลายเซ็น"
+              onClose={closeSignatureModal}
+            />
 
             <div className="px-6 pt-4 pb-5 space-y-3">
               {signatureUrl || pendingSig ? (

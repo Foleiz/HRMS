@@ -1,9 +1,20 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { X, Calendar, Loader2, AlertCircle, ExternalLink, Upload, Trash2, FileText } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Loader2,
+  AlertCircle,
+  ExternalLink,
+  Upload,
+  Trash2,
+  FileText,
+  FilePlus,
+} from 'lucide-react';
 import { Employee } from '@/types/employee';
 import { CreateContractRequest } from '@/types/contract';
 import { EmployeeType } from '@/types/employeeType';
@@ -194,16 +205,11 @@ export default function CreateContractModal({
     <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="pt-6 pb-2 text-center relative px-6 shrink-0">
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">สร้างสัญญาจ้างใหม่</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-5 right-5 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={FilePlus}
+          title="สร้างสัญญาจ้างใหม่"
+          onClose={onClose}
+        />
 
         {/* Error Alert */}
         {errorMessage && (

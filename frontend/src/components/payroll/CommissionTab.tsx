@@ -1,4 +1,5 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -1657,24 +1658,12 @@ export default function CommissionTab() {
         return (
           <ModalShell className="z-[70] bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
             <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 max-h-[92vh] overflow-y-auto">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Briefcase className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                    <span>บันทึกผลงาน / ค่าคอมมิชชั่น</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    รอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 transition cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
+              <ModalHeader
+                icon={Briefcase}
+                title="บันทึกผลงาน / ค่าคอมมิชชั่น"
+                subtitle={<>รอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543}</>}
+                onClose={() => setIsAddModalOpen(false)}
+              />
 
               <div className="space-y-3 text-xs">
                 {/* Employee Selection */}

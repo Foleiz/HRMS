@@ -1,8 +1,17 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Calendar, History, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  Calendar,
+  History,
+  TrendingUp,
+  CheckCircle2,
+  Clock,
+} from 'lucide-react';
 import { salaryService } from '@/services/salaryService';
 import { EmployeeSalary, EmployeeSalaryOverview } from '@/types/payroll';
 
@@ -44,27 +53,12 @@ export const SalaryHistoryModal: React.FC<Props> = ({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" innerClassName="items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl lg:max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/30 text-primary dark:text-blue-300 flex items-center justify-center font-bold">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
-                ประวัติการปรับเงินเดือน: {employee.employeeName}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                {employee.employeeCode} • {employee.departmentName || 'ไม่ระบุแผนก'} • {employee.positionName || 'ไม่ระบุตำแหน่ง'}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={History}
+          title={<>ประวัติการปรับเงินเดือน: {employee.employeeName}</>}
+          subtitle={<>{employee.employeeCode} • {employee.departmentName || 'ไม่ระบุแผนก'} • {employee.positionName || 'ไม่ระบุตำแหน่ง'}</>}
+          onClose={onClose}
+        />
 
         {/* Content */}
         <div className="p-6 max-h-[70vh] overflow-y-auto">

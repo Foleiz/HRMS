@@ -1,8 +1,14 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Loader2, FileCheck2 } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  FileCheck2,
+  ListChecks,
+} from 'lucide-react';
 import {
   LeaveType,
   LeavePolicy,
@@ -277,14 +283,11 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
   return (
     <ModalShell className="z-50 bg-black/45 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col border border-gray-100 dark:border-slate-700/60">
-        <div className="px-6 py-5 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">{isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}</h3>
-          </div>
-          <button onClick={onClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={ListChecks}
+          title={isEditing ? 'แก้ไขสิทธิ์การลา' : 'เพิ่มสิทธิ์การลา'}
+          onClose={onClose}
+        />
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 text-sm">
           {error && <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl whitespace-pre-line dark:bg-red-900/20 dark:text-red-400">{error}</div>}

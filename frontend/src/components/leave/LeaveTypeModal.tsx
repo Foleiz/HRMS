@@ -1,3 +1,6 @@
+import {
+  CalendarRange,
+} from 'lucide-react';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -127,6 +130,7 @@ export const LeaveTypeModal: React.FC<LeaveTypeModalProps> = ({
 
   return (
     <Modal
+      icon={CalendarRange}
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'แก้ไขประเภทการลา' : 'เพิ่มประเภทการลา'}

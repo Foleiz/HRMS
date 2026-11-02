@@ -1,8 +1,16 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle, Building2, Briefcase, CalendarClock } from 'lucide-react';
+import {
+  X,
+  AlertCircle,
+  Building2,
+  Briefcase,
+  CalendarClock,
+  TrendingUp,
+} from 'lucide-react';
 import { EmployeeSalaryOverview, AdjustEmployeeSalaryPayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 
@@ -135,19 +143,11 @@ export const AdjustSalaryModal: React.FC<Props> = ({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" innerClassName="items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 shrink-0">
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">ปรับฐานเงินเดือนพนักงาน</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">บันทึกอัตราเงินเดือนใหม่พร้อมวันที่มีผล</p>
-          </div>
-          <button
-            onClick={onClose}
-            type="button"
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={TrendingUp}
+          title="ปรับฐานเงินเดือนพนักงาน"
+          onClose={onClose}
+        />
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">

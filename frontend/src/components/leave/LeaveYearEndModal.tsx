@@ -1,8 +1,16 @@
 'use client';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Loader2, Lock, Search, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Lock,
+  Search,
+  X,
+} from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { LeaveYearEndPreview } from '@/types/leaveInsights';
 import { Button, inputClass } from '@/components/ui';
@@ -91,15 +99,11 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
   return (
     <ModalShell className="z-50 bg-black/40 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
       <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-700/60 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-primary" />
-            <h3 className="text-base font-semibold text-gray-800 dark:text-slate-200">ปิดยอดวันลาสิ้นปี {year + 543}</h3>
-          </div>
-          <button onClick={handleClose} className="text-gray-400 dark:text-slate-500 dark:text-slate-400 hover:text-gray-600 dark:text-slate-400 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <ModalHeader
+          icon={Lock}
+          title={<>ปิดยอดวันลาสิ้นปี {year + 543}</>}
+          onClose={handleClose}
+        />
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {loading && (

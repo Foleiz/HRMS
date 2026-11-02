@@ -1,7 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, AlertCircle, Calculator, Lock, Sparkles } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  AlertCircle,
+  Calculator,
+  Lock,
+  Sparkles,
+  Coins,
+} from 'lucide-react';
 import { PayrollItem, SocialSecurityRate, TaxBracket, UpdateSocialSecurityRatePayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { getAutoPullSource } from './autoPullItems';
@@ -506,6 +514,7 @@ export const PayrollItemModal: React.FC<Props> = ({
 
   return (
     <Modal
+      icon={Coins}
       isOpen={isOpen}
       onClose={onClose}
       onSubmit={handleSubmit}
