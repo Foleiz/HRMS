@@ -1,13 +1,14 @@
 'use client';
 
-import { ModalShell, Button } from '@/components/ui';
+import { ModalShell, ModalHeader, Button, ActionDropdown, type ActionDropdownItem } from '@/components/ui';
+import { reviewCardCls, reviewTitleCls } from '@/components/approvals/ReviewInfoPanels';
+import { employeeService } from '@/services/employeeService';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   FileText,
-  Calendar,
   CheckCircle2,
-  AlertTriangle,
+  XCircle,
   Loader2,
   Download,
   Eye,
@@ -16,14 +17,8 @@ import {
   Paperclip,
   ExternalLink,
   RefreshCw,
-  FileCheck,
-  User,
-  Building,
-  Briefcase,
   Clock,
   AlertCircle,
-  FileSpreadsheet,
-  Maximize2,
 } from 'lucide-react';
 import { EmploymentContract } from '@/types/contract';
 import { contractService } from '@/services/contractService';
@@ -67,6 +62,21 @@ export default function ContractDetailModal({
   const [previewFileName, setPreviewFileName] = useState<string>('');
   const [previewMimeType, setPreviewMimeType] = useState<string>('');
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+
+  // ฝ่ายของพนักงาน (สัญญาไม่ได้ส่งมา — ดึงจากข้อมูลพนักงาน)
+  const [divisionName, setDivisionName] = useState<string | null>(null);
+  useEffect(() => {
+    const empId = contract?.employeeId;
+    if (!isOpen || !empId) return;
+    let alive = true;
+    employeeService
+      .getById(empId)
+      .then((e) => alive && setDivisionName(e?.divisionName || null))
+      .catch(() => alive && setDivisionName(null));
+    return () => {
+      alive = false;
+    };
+  }, [contract?.employeeId, isOpen]);
 
   // Sync prop changes
   useEffect(() => {
@@ -226,376 +236,220 @@ export default function ContractDetailModal({
     }
   };
 
+  const isActive = currentContract.status === 'ACTIVE';
+  const isEnded = currentContract.status === 'TERMINATED' || currentContract.status === 'COMPLETED' || !!currentContract.terminationDate;
+  const canEditDocument = !isEnded;
+
+  const statusBanner = isActive
+    ? { cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300', Icon: CheckCircle2, label: 'สัญญาใช้งานอยู่ (Active)' }
+    : currentContract.status === 'PENDING_APPROVAL'
+      ? { cls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300', Icon: Clock, label: 'รออนุมัติ' }
+      : isEnded
+        ? { cls: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300', Icon: XCircle, label: currentContract.statusDisplay || 'สิ้นสุดสัญญาแล้ว' }
+        : { cls: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300', Icon: FileText, label: currentContract.statusDisplay || '-' };
+
+  const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="flex justify-between gap-4 py-2">
+      <dt className="text-slate-500 dark:text-slate-400 shrink-0">{label}</dt>
+      <dd className="m-0 font-semibold text-slate-800 dark:text-slate-200 text-right min-w-0 break-words">{children}</dd>
+    </div>
+  );
+
+  const fileMenuItems: ActionDropdownItem[] = [
+    { id: 'download', label: 'ดาวน์โหลดไฟล์แนบ', icon: <Download className="w-4 h-4" />, onClick: handleDownload, disabled: isDownloading },
+    ...(canEditDocument
+      ? [
+          { id: 'replace', label: 'เปลี่ยนไฟล์', icon: <RefreshCw className="w-4 h-4" />, onClick: () => fileInputRef.current?.click(), disabled: isUploadingDoc },
+          { id: 'delete', label: 'ลบไฟล์', icon: <Trash2 className="w-4 h-4" />, onClick: handleDeleteDocument, danger: true, disabled: isDeletingDoc },
+        ]
+      : []),
+  ];
+
+  const fileExt = (currentContract.documentFileName?.split('.').pop() || 'FILE').toUpperCase().slice(0, 4);
+
   return (
     <>
       <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 font-sans" innerClassName="items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-          {/* 1. Modern Header */}
-          <div className="px-6 py-4.5 border-b border-slate-100 dark:border-slate-700/60 bg-gradient-to-r from-slate-50 via-white to-blue-50/20 dark:from-slate-800 dark:to-slate-800/80 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-xs">
-                <FileText className="w-5 h-5 text-blue-200" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                    รายละเอียดสัญญาจ้างงาน
-                  </h3>
-                  <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                    #{currentContract.id}
-                  </span>
-                </div>
-              </div>
-            </div>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-700 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <ModalHeader title="รายละเอียดสัญญาจ้าง" onClose={onClose} />
 
-            <div className="flex items-center gap-2">
-              {/* Status Badge */}
-              {currentContract.status === 'ACTIVE' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/40">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                  ใช้งาน (Active)
-                </span>
-              ) : currentContract.status === 'PENDING_APPROVAL' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200/60">
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                  รออนุมัติ
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                  <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                  {currentContract.statusDisplay || 'สิ้นสุดแล้ว'}
-                </span>
+          <div className={`flex-1 min-h-0 overflow-y-auto px-5 sm:px-6 py-5 space-y-4 bg-slate-50/70 dark:bg-slate-900/40 transition-opacity ${showTerminateForm ? 'opacity-50 pointer-events-none' : ''}`}>
+            {/* สถานะสัญญา */}
+            <div className={`rounded-xl border px-4 py-3 text-sm ${statusBanner.cls}`}>
+              <div className="flex items-center gap-2.5 font-semibold">
+                <statusBanner.Icon className="w-4.5 h-4.5 shrink-0" strokeWidth={2.5} />
+                <span>{statusBanner.label}</span>
+                <span className="ml-auto text-xs font-medium">เลขที่ #{currentContract.id}</span>
+              </div>
+              {currentContract.terminationDate && (
+                <dl className="m-0 mt-2 text-xs space-y-1">
+                  <div className="flex justify-between gap-4">
+                    <dt>วันที่สิ้นสุดจริง</dt>
+                    <dd className="m-0 font-semibold">{formatDateTh(currentContract.terminationDate)}</dd>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <dt className="shrink-0">เหตุผล</dt>
+                    <dd className="m-0 font-semibold text-right break-words">{currentContract.terminationReason || '-'}</dd>
+                  </div>
+                </dl>
               )}
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Modal Body */}
-          <div className="p-6 overflow-y-auto space-y-5 flex-1">
-            {/* 2.1 Employee Info Card */}
-            <div className="p-4 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold text-lg flex items-center justify-center shadow-sm shrink-0">
-                  {currentContract.employeeName?.slice(0, 1) || 'E'}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-base">
-                      {currentContract.employeeName}
-                    </h4>
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-                      {currentContract.employeeCode}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Building className="w-3.5 h-3.5 text-slate-400" />
-                      {currentContract.departmentName || 'ไม่ระบุแผนก'}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Briefcase className="w-3.5 h-3.5 text-slate-400" />
-                      {currentContract.positionTitle || 'ไม่ระบุตำแหน่ง'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 self-end sm:self-center">
-                <span className="text-xs px-3 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 font-semibold text-slate-700 dark:text-slate-200 shadow-2xs">
-                  {currentContract.employeeTypeName || currentContract.contractTypeDisplay}
-                </span>
-              </div>
             </div>
 
-            {/* 2.2 Contract Key Details Grid */}
-            <div>
-              <h5 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">
-                ข้อกำหนดและระยะเวลาสัญญา
-              </h5>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shadow-2xs">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">
-                    ประเภทการจ้าง
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {currentContract.employeeTypeName || currentContract.contractTypeDisplay}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shadow-2xs">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">
-                    รูปแบบค่าจ้าง
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {currentContract.wageType === 'DAILY' ? 'รายวัน (Daily)' : 'รายเดือน (Monthly)'}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shadow-2xs">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">
-                    วันที่เริ่มสัญญา
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {currentContract.startDateDisplay || '-'}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shadow-2xs">
-                  <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">
-                    สิ้นสุด / ครบทดลองงาน
-                  </span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    {currentContract.effectiveEndDateDisplay || 'ไม่มีกำหนด'}
-                  </span>
-                </div>
-
+            {/* ข้อมูลสัญญา */}
+            <div className={`${reviewCardCls} text-sm`}>
+              <div className={reviewTitleCls}>
+                <FileText className="w-3.5 h-3.5 text-slate-500" /> ข้อมูลสัญญา
+              </div>
+              <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60">
+                <Row label="ชื่อ-นามสกุล">
+                  {currentContract.employeeName}{' '}
+                  <span className="font-medium text-slate-500 dark:text-slate-400">({currentContract.employeeCode})</span>
+                </Row>
+                <Row label="ฝ่าย">{divisionName || '-'}</Row>
+                <Row label="แผนก">{currentContract.departmentName || '-'}</Row>
+              </dl>
+              <dl className="m-0 mt-1.5 pt-1.5 border-t border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700/60">
+                <Row label="ตำแหน่งตามสัญญา">{currentContract.positionTitle || '-'}</Row>
+                <Row label="ประเภทการจ้าง">{currentContract.employeeTypeName || currentContract.contractTypeDisplay}</Row>
+                <Row label="รูปแบบค่าจ้าง">{currentContract.wageType === 'DAILY' ? 'รายวัน' : 'รายเดือน'}</Row>
+                <Row label="วันที่เริ่มสัญญา">
+                  <span className="text-primary dark:text-blue-300">{currentContract.startDateDisplay || '-'}</span>
+                </Row>
+                <Row label="สิ้นสุด / ครบทดลองงาน">{currentContract.effectiveEndDateDisplay || 'ไม่มีกำหนด'}</Row>
                 {currentContract.probationPassedDate && (
-                  <div className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shadow-2xs">
-                    <span className="text-xs text-slate-400 dark:text-slate-500 block mb-1">
-                      วันที่ผ่านทดลองงาน
-                    </span>
-                    <span className="text-sm font-semibold text-emerald-600">
-                      {formatDateTh(currentContract.probationPassedDate)}
-                    </span>
-                  </div>
+                  <Row label="วันที่ผ่านทดลองงาน">
+                    <span className="text-emerald-600">{formatDateTh(currentContract.probationPassedDate)}</span>
+                  </Row>
                 )}
+              </dl>
+            </div>
 
-                {currentContract.terminationDate && (
-                  <div className="p-3.5 rounded-xl border border-rose-100 dark:border-rose-900/30 bg-rose-50/50 dark:bg-rose-950/20 shadow-2xs">
-                    <span className="text-xs text-rose-500 block mb-1">วันที่สิ้นสุดจริง</span>
-                    <span className="text-sm font-semibold text-rose-700 dark:text-rose-400">
-                      {formatDateTh(currentContract.terminationDate)}
-                    </span>
-                    <p className="text-[11px] text-rose-600/80 mt-0.5 truncate">
-                      {currentContract.terminationReason || 'สิ้นสุดสัญญา'}
+            {/* ไฟล์สัญญาจ้าง */}
+            <div className={`${reviewCardCls} text-sm`}>
+              <div className={reviewTitleCls}>
+                <Paperclip className="w-3.5 h-3.5 text-slate-500" /> ไฟล์สัญญาจ้าง
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                onChange={handleFileSelected}
+                className="hidden"
+              />
+              {currentContract.hasDocument ? (
+                <div className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span className="w-9 h-9 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-[10px] font-bold inline-flex items-center justify-center shrink-0">
+                    {fileExt}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="m-0 font-semibold text-slate-800 dark:text-slate-200 truncate">
+                      {currentContract.documentFileName || 'เอกสารสัญญาจ้าง'}
+                    </p>
+                    <p className="m-0 text-xs text-slate-500 dark:text-slate-400">
+                      {[formatFileSize(currentContract.documentFileSize), currentContract.documentUploadedAt && `แนบเมื่อ ${formatDateTh(currentContract.documentUploadedAt)}`]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </p>
                   </div>
-                )}
-              </div>
-            </div>
-
-            {/* 2.3 Attached Contract Document (ส่วนเอกสารสัญญาจ้างแนบ) */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-4.5 bg-slate-50/40 dark:bg-slate-800/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 flex items-center justify-center">
-                    <Paperclip className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h5 className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                      เอกสารสัญญาจ้างแนบ
-                    </h5>
-                  </div>
-                </div>
-
-                {/* Hidden File Input for uploading/replacing */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
-                  onChange={handleFileSelected}
-                  className="hidden"
-                />
-
-                {currentContract.hasDocument && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingDoc}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors cursor-pointer"
-                  >
-                    {isUploadingDoc ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    )}
-                    <span>เปลี่ยนไฟล์</span>
-                  </button>
-                )}
-              </div>
-
-              {/* Case 1: Has Attached Document */}
-              {currentContract.hasDocument ? (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-blue-100 dark:border-blue-900/40 shadow-xs">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-800">
-                      <FileCheck className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
-                        {currentContract.documentFileName || 'เอกสารสัญญาจ้างงาน.pdf'}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 mt-0.5">
-                        {currentContract.documentFileSize && (
-                          <span>{formatFileSize(currentContract.documentFileSize)}</span>
-                        )}
-                        {currentContract.documentUploadedAt && (
-                          <>
-                            <span>•</span>
-                            <span>แนบเมื่อ {formatDateTh(currentContract.documentUploadedAt)}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions for Document */}
-                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                    {/* Preview Button */}
-                    <button
-                      type="button"
-                      onClick={handleOpenPreview}
-                      disabled={isLoadingPreview}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors cursor-pointer"
-                      title="ดูตัวอย่างเอกสาร"
-                    >
-                      {isLoadingPreview ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Eye className="w-3.5 h-3.5" />
-                      )}
-                      <span>ดูตัวอย่าง</span>
-                    </button>
-
-                    {/* Download Button */}
-                    <button
-                      type="button"
-                      onClick={handleDownload}
-                      disabled={isDownloading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-colors cursor-pointer"
-                      title="ดาวน์โหลดเอกสาร"
-                    >
-                      {isDownloading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Download className="w-3.5 h-3.5" />
-                      )}
-                      <span>ดาวน์โหลด</span>
-                    </button>
-
-                    {/* Delete Document Button */}
-                    <button
-                      type="button"
-                      onClick={handleDeleteDocument}
-                      disabled={isDeletingDoc}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors cursor-pointer"
-                      title="ลบเอกสารสัญญา"
-                    >
-                      {isDeletingDoc ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
+                  {(isUploadingDoc || isDeletingDoc || isDownloading) && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+                  <ActionDropdown
+                    menuClassName="w-48"
+                    title="ตัวเลือกไฟล์"
+                    triggerClassName="w-9 h-9 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 inline-flex items-center justify-center transition-colors cursor-pointer"
+                    items={fileMenuItems}
+                  />
                 </div>
               ) : (
-                /* Case 2: No Document Attached Yet */
-                <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-center">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 flex items-center justify-center mb-2">
-                    <Paperclip className="w-5 h-5" />
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/40">
+                  <span className="w-9 h-9 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 inline-flex items-center justify-center shrink-0">
+                    <AlertCircle className="w-4.5 h-4.5" />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="m-0 font-semibold text-amber-700 dark:text-amber-300">รอไฟล์แนบ</p>
+                    <p className="m-0 text-xs text-slate-500 dark:text-slate-400">PDF, JPG, PNG, DOCX ไม่เกิน 10 MB</p>
                   </div>
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    ยังไม่มีเอกสารสัญญาจ้างแนบสำหรับสัญญานี้
-                  </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 mb-3">
-                    สามารถแนบไฟล์สัญญาต้นฉบับ (PDF, JPG, PNG, DOCX) ขนาดไม่เกิน 10 MB
-                  </p>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingDoc}
-                    loading={isUploadingDoc}
-                    icon={!isUploadingDoc ? <Upload className="w-3.5 h-3.5" /> : undefined}
-                  >
-                    แนบเอกสารสัญญาจ้าง
-                  </Button>
+                  {canEditDocument && (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      loading={isUploadingDoc}
+                      icon={!isUploadingDoc ? <Upload className="w-3.5 h-3.5" /> : undefined}
+                    >
+                      แนบเอกสาร
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
-
-            {/* 2.4 Terminate Contract Form (Collapsible) */}
-            {showTerminateForm && (
-              <form
-                onSubmit={handleTerminateSubmit}
-                className="border border-rose-200 dark:border-rose-900/50 bg-rose-50/60 dark:bg-rose-950/20 p-4 rounded-xl space-y-3 animate-in fade-in duration-150"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    ยืนยันการสิ้นสุด / บอกเลิกสัญญาจ้าง
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={() => setShowTerminateForm(false)}
-                    className="text-slate-400 hover:text-slate-600 text-xs"
-                  >
-                    ปิด
-                  </button>
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-700 dark:text-slate-300 font-medium mb-1">
-                    เหตุผลในการสิ้นสุดสัญญา <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={terminateReason}
-                    onChange={(e) => setTerminateReason(e.target.value)}
-                    placeholder="เช่น สิ้นสุดระยะเวลาตามสัญญา, ลาออก, ไม่ผ่านการทดลองงาน"
-                    required
-                    className="w-full h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 text-slate-800 dark:text-slate-200"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowTerminateForm(false)}
-                    className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-lg hover:bg-slate-300 cursor-pointer"
-                  >
-                    ยกเลิก
-                  </button>
-                  <Button type="submit" variant="danger" size="sm" loading={isTerminating}>
-                    ยืนยันสิ้นสุดสัญญา
-                  </Button>
-                </div>
-              </form>
-            )}
           </div>
 
-          {/* 3. Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/40 dark:bg-slate-800/40 shrink-0">
-            {currentContract.status === 'ACTIVE' && !showTerminateForm ? (
-              <button
-                type="button"
-                onClick={() => setShowTerminateForm(true)}
-                className="text-xs text-rose-600 hover:text-rose-700 font-medium hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span>สิ้นสุด / บอกเลิกสัญญา</span>
-              </button>
-            ) : (
-              <div></div>
-            )}
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer"
+          {/* Footer / ฟอร์มสิ้นสุดสัญญา */}
+          {showTerminateForm ? (
+            <form
+              onSubmit={handleTerminateSubmit}
+              className="border-t-2 border-rose-300 dark:border-rose-800 px-5 sm:px-6 py-4 space-y-3 bg-white dark:bg-slate-800 shrink-0 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] animate-in fade-in duration-150"
             >
-              ปิดหน้าต่าง
-            </button>
-          </div>
+              <div className="flex items-center gap-2 text-sm font-bold text-rose-700 dark:text-rose-300">
+                <XCircle className="w-4.5 h-4.5" /> สิ้นสุด / บอกเลิกสัญญา
+              </div>
+              <label className="block space-y-1.5">
+                <span className="block text-xs font-semibold text-rose-700 dark:text-rose-300">
+                  เหตุผลในการสิ้นสุดสัญญา <span className="text-rose-500">*</span>
+                </span>
+                <textarea
+                  rows={3}
+                  autoFocus
+                  value={terminateReason}
+                  onChange={(e) => setTerminateReason(e.target.value)}
+                  placeholder="เช่น สิ้นสุดระยะเวลาตามสัญญา, ลาออก, ไม่ผ่านการทดลองงาน"
+                  required
+                  className="w-full text-xs p-3 bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 rounded-xl outline-none resize-none placeholder:text-slate-400 focus:ring-2 focus:ring-rose-500/20 text-slate-800 dark:text-slate-200"
+                />
+              </label>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="secondary" onClick={() => setShowTerminateForm(false)} disabled={isTerminating}>
+                  ยกเลิก
+                </Button>
+                <Button type="submit" variant="danger" loading={isTerminating}>
+                  ยืนยันสิ้นสุดสัญญา
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="flex items-center justify-between gap-3 px-5 sm:px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
+              {isActive ? (
+                <button
+                  type="button"
+                  onClick={() => setShowTerminateForm(true)}
+                  className="h-10 px-4 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                >
+                  สิ้นสุด / บอกเลิกสัญญา
+                </button>
+              ) : (
+                <span className="text-xs text-slate-400">{isEnded ? 'อ่านอย่างเดียว' : ''}</span>
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenPreview}
+                  disabled={!currentContract.hasDocument || isLoadingPreview}
+                  className="h-10 px-4 rounded-xl border border-slate-300 dark:border-slate-600 text-primary dark:text-slate-200 text-sm font-semibold inline-flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingPreview ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                  ดูเอกสาร
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="h-10 px-5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                >
+                  ปิด
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </ModalShell>
 
