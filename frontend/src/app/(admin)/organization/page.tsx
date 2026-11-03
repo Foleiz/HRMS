@@ -80,6 +80,7 @@ import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar } from '@/components/ui';
+import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
@@ -873,6 +874,11 @@ export default function OrganizationPage() {
       toast.error('กรุณาระบุชื่อบริษัท');
       return;
     }
+    const contactErr = phoneError(companyForm.phone, false, 'เบอร์โทรศัพท์บริษัท') || emailError(companyForm.email, false);
+    if (contactErr) {
+      toast.error(contactErr);
+      return;
+    }
     if (!isCompanyDirty) {
       toast.info('ยังไม่มีการเปลี่ยนแปลงข้อมูลบริษัท');
       return;
@@ -957,6 +963,14 @@ export default function OrganizationPage() {
     if (!bankAccountForm.accountNumber.trim()) {
       toast.error('กรุณาระบุเลขที่บัญชี');
       return;
+    }
+    {
+      const acc = bankAccountForm.accountNumber.trim();
+      const required = banks.find((bk) => bk.id === Number(bankAccountForm.bankId))?.accountDigits;
+      if (!/[xX*]/.test(acc) && required && onlyDigits(acc).length !== required) {
+        toast.error(`เลขที่บัญชีของธนาคารนี้ต้องมี ${required} หลัก`);
+        return;
+      }
     }
 
     setSavingBankAccount(true);
@@ -1943,8 +1957,11 @@ export default function OrganizationPage() {
                       <label className={labelCls}>เบอร์โทรศัพท์ (Phone)</label>
                       <input
                         type="text"
+                        inputMode="tel"
+                        maxLength={12}
+                        placeholder="02-XXX-XXXX"
                         value={companyForm.phone}
-                        onChange={(e) => setCompanyForm({ ...companyForm, phone: e.target.value })}
+                        onChange={(e) => setCompanyForm({ ...companyForm, phone: formatThaiPhone(e.target.value) })}
                         className={inputCls}
                       />
                     </div>
@@ -2778,7 +2795,8 @@ export default function OrganizationPage() {
             <input
               type="text"
               required
-              placeholder="เช่น 789-0-12345-6"
+              inputMode="numeric"
+              placeholder="กรอกเฉพาะตัวเลข"
               value={bankAccountForm.accountNumber}
               onFocus={() => {
                 // เลขถูกปิดบางส่วน: เมื่อคลิกแก้ ให้ล้างช่องเพื่อกรอกเลขใหม่ทั้งหมด
@@ -2791,7 +2809,10 @@ export default function OrganizationPage() {
                   setBankAccountForm({ ...bankAccountForm, accountNumber: editingBankAccount.accountNumber });
                 }
               }}
-              onChange={(e) => setBankAccountForm({ ...bankAccountForm, accountNumber: e.target.value })}
+              onChange={(e) => {
+                const digits = banks.find((bk) => bk.id === Number(bankAccountForm.bankId))?.accountDigits || 15;
+                setBankAccountForm({ ...bankAccountForm, accountNumber: onlyDigits(e.target.value, digits) });
+              }}
               className={inputClass}
             />
           </div>

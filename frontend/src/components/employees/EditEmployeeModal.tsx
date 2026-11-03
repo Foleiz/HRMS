@@ -27,6 +27,7 @@ import {
   EmployeeWorkExperience,
   EmployeeBankAccount,
 } from '@/types/employee';
+import { formatThaiPhone, onlyDigits, stripDigits, citizenIdError, phoneError } from '@/lib/inputRules';
 import {
   AddressPairFields,
   AddressPair,
@@ -60,16 +61,7 @@ const formatPhoneNumber = (val?: string | null): string => {
   return clean;
 };
 
-const autoFormatPhone = (val: string): string => {
-  const digits = val.replace(/\D/g, '').slice(0, 10);
-  if (digits.length > 6) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length > 3) {
-    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  }
-  return digits;
-};
+const autoFormatPhone = formatThaiPhone;
 
 function FieldInfoTooltip({
   text,
@@ -458,6 +450,23 @@ export default function EditEmployeeModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ตรวจรูปแบบข้อมูลก่อนบันทึก (ค่าที่ปิดบางส่วน เช่น 1-2345-xxxxx-xx-1 = ไม่ได้แก้ ข้ามการตรวจ)
+    const isMasked = (v?: string) => /[xX*]/.test(v || '');
+    const problems = [
+      !isMasked(formData.citizenId) ? citizenIdError(formData.citizenId, false) : null,
+      phoneError(formData.personalPhone, false, 'เบอร์โทรศัพท์ส่วนตัว'),
+      phoneError(formData.emergencyContact?.primaryPhone, false, 'เบอร์โทรฉุกเฉิน'),
+      ...(formData.familyMembers || []).map((fm, i) => {
+        const err = !isMasked(fm.citizenId) ? citizenIdError(fm.citizenId, false) : null;
+        return err ? `สมาชิกครอบครัวคนที่ ${i + 1}: ${err}` : null;
+      }),
+    ].filter(Boolean) as string[];
+    if (problems.length > 0) {
+      toast.warning(problems[0]);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -634,7 +643,7 @@ export default function EditEmployeeModal({
                         type="text"
                         placeholder="เช่น 100001"
                         value={formData.biometricId || ''}
-                        onChange={(e) => setFormData({ ...formData, biometricId: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, biometricId: onlyDigits(e.target.value, 10) })}
                         className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
@@ -752,7 +761,7 @@ export default function EditEmployeeModal({
                         placeholder="กรอกชื่อ"
                         required
                         value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, firstName: stripDigits(e.target.value) })}
                         className={`${inputClass} h-10`}
                       />
                     </div>
@@ -769,7 +778,7 @@ export default function EditEmployeeModal({
                         placeholder="กรอกนามสกุล"
                         required
                         value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, lastName: stripDigits(e.target.value) })}
                         className={`${inputClass} h-10`}
                       />
                     </div>
@@ -790,7 +799,10 @@ export default function EditEmployeeModal({
                         maxLength={17}
                         placeholder="เลขบัตรประชาชน 13 หลัก"
                         value={formData.citizenId || ''}
-                        onChange={(e) => setFormData({ ...formData, citizenId: e.target.value })}
+                        onFocus={() => {
+                          if (/[xX*]/.test(formData.citizenId || '')) setFormData({ ...formData, citizenId: '' });
+                        }}
+                        onChange={(e) => setFormData({ ...formData, citizenId: onlyDigits(e.target.value, 13) })}
                         className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
                     </div>
@@ -1165,7 +1177,7 @@ export default function EditEmployeeModal({
                             value={formData.familyMembers[activeFamilyIndex].firstName}
                             onChange={(e) => {
                               const list = [...(formData.familyMembers || [])];
-                              list[activeFamilyIndex].firstName = e.target.value;
+                              list[activeFamilyIndex].firstName = stripDigits(e.target.value);
                               setFormData({ ...formData, familyMembers: list });
                             }}
                             className={inputClass}
@@ -1182,7 +1194,7 @@ export default function EditEmployeeModal({
                             value={formData.familyMembers[activeFamilyIndex].lastName || ''}
                             onChange={(e) => {
                               const list = [...(formData.familyMembers || [])];
-                              list[activeFamilyIndex].lastName = e.target.value;
+                              list[activeFamilyIndex].lastName = stripDigits(e.target.value);
                               setFormData({ ...formData, familyMembers: list });
                             }}
                             className={inputClass}
@@ -1194,10 +1206,19 @@ export default function EditEmployeeModal({
                           <input
                             type="text"
                             placeholder="เลขบัตรประชาชน 13 หลัก"
+                            inputMode="numeric"
+                            maxLength={13}
+                            onFocus={() => {
+                              if (/[xX*]/.test(formData.familyMembers?.[activeFamilyIndex]?.citizenId || '')) {
+                                const list = [...(formData.familyMembers || [])];
+                                list[activeFamilyIndex].citizenId = '';
+                                setFormData({ ...formData, familyMembers: list });
+                              }
+                            }}
                             value={formData.familyMembers[activeFamilyIndex].citizenId || ''}
                             onChange={(e) => {
                               const list = [...(formData.familyMembers || [])];
-                              list[activeFamilyIndex].citizenId = e.target.value;
+                              list[activeFamilyIndex].citizenId = onlyDigits(e.target.value, 13);
                               setFormData({ ...formData, familyMembers: list });
                             }}
                             className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
@@ -1298,7 +1319,7 @@ export default function EditEmployeeModal({
                             ...formData,
                             emergencyContact: {
                               ...formData.emergencyContact,
-                              firstName: e.target.value,
+                              firstName: stripDigits(e.target.value),
                               lastName: formData.emergencyContact?.lastName || '',
                               primaryPhone: formData.emergencyContact?.primaryPhone || '',
                             },
@@ -1322,7 +1343,7 @@ export default function EditEmployeeModal({
                             emergencyContact: {
                               ...formData.emergencyContact,
                               firstName: formData.emergencyContact?.firstName || '',
-                              lastName: e.target.value,
+                              lastName: stripDigits(e.target.value),
                               primaryPhone: formData.emergencyContact?.primaryPhone || '',
                             },
                           })

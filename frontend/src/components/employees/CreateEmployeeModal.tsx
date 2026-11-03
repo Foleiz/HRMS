@@ -27,6 +27,7 @@ import {
   EmployeeEducation,
   EmployeeWorkExperience,
 } from '@/types/employee';
+import { formatThaiPhone, onlyDigits, stripDigits, citizenIdError, phoneError } from '@/lib/inputRules';
 import {
   AddressPairFields,
   AddressPair,
@@ -60,16 +61,7 @@ const formatPhoneNumber = (val?: string | null): string => {
   return clean;
 };
 
-const autoFormatPhone = (val: string): string => {
-  const digits = val.replace(/\D/g, '').slice(0, 10);
-  if (digits.length > 6) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length > 3) {
-    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  }
-  return digits;
-};
+const autoFormatPhone = formatThaiPhone;
 
 function FieldInfoTooltip({
   text,
@@ -365,12 +357,8 @@ export default function CreateEmployeeModal({
     if (!data.firstName?.trim()) errors.firstName = 'กรุณากรอกชื่อ';
     if (!data.lastName?.trim()) errors.lastName = 'กรุณากรอกนามสกุล';
 
-    const citizenDigits = (data.citizenId || '').replace(/\D/g, '');
-    if (!data.citizenId?.trim()) {
-      errors.citizenId = 'กรุณากรอกเลขบัตรประชาชน';
-    } else if (citizenDigits.length !== 13) {
-      errors.citizenId = 'เลขบัตรประชาชนต้องมี 13 หลัก';
-    }
+    const citizenErr = citizenIdError(data.citizenId, true);
+    if (citizenErr) errors.citizenId = citizenErr;
 
     if (!data.gender || data.gender === 'เลือกเพศ') errors.gender = 'กรุณาเลือกเพศ';
     if (!data.nationality || data.nationality === 'เลือกสัญชาติ') errors.nationality = 'กรุณาเลือกสัญชาติ';
@@ -402,12 +390,8 @@ export default function CreateEmployeeModal({
       errors.organizationEmail = 'รูปแบบอีเมลไม่ถูกต้อง';
     }
 
-    const phoneDigits = (data.personalPhone || '').replace(/\D/g, '');
-    if (!data.personalPhone?.trim()) {
-      errors.personalPhone = 'กรุณากรอกเบอร์โทรศัพท์ส่วนตัว';
-    } else if (phoneDigits.length < 9 || phoneDigits.length > 10) {
-      errors.personalPhone = 'เบอร์โทรศัพท์ต้องมี 9-10 หลัก';
-    }
+    const personalPhoneErr = phoneError(data.personalPhone, true, 'เบอร์โทรศัพท์ส่วนตัว');
+    if (personalPhoneErr) errors.personalPhone = personalPhoneErr;
 
     // ตำแหน่งงาน & ธนาคาร
     if (!data.positionName || data.positionName === 'เลือกตำแหน่ง') errors.positionName = 'กรุณาเลือกตำแหน่ง';
@@ -441,10 +425,8 @@ export default function CreateEmployeeModal({
           if (!fm.firstName?.trim()) errors[`family_${idx}_firstName`] = 'กรุณากรอกชื่อ';
           if (!fm.lastName?.trim()) errors[`family_${idx}_lastName`] = 'กรุณากรอกนามสกุล';
 
-          const fmCitizenDigits = (fm.citizenId || '').replace(/\D/g, '');
-          if (fm.citizenId?.trim() && fmCitizenDigits.length !== 13) {
-            errors[`family_${idx}_citizenId`] = 'เลขบัตรประชาชนต้องมี 13 หลัก';
-          }
+          const fmCitizenErr = citizenIdError(fm.citizenId, false);
+          if (fmCitizenErr) errors[`family_${idx}_citizenId`] = fmCitizenErr;
 
           if (fm.birthDate?.trim() && fm.birthDate > todayStr) {
             errors[`family_${idx}_birthDate`] = 'วันเกิดต้องไม่ใช่วันในอนาคต';
@@ -461,12 +443,8 @@ export default function CreateEmployeeModal({
     if (!ec?.lastName?.trim()) errors['emergency_lastName'] = 'กรุณากรอกนามสกุล';
     if (!ec?.address?.trim()) errors['emergency_address'] = 'กรุณากรอกที่อยู่';
 
-    const ecPhoneDigits = (ec?.primaryPhone || '').replace(/\D/g, '');
-    if (!ec?.primaryPhone?.trim()) {
-      errors['emergency_primaryPhone'] = 'กรุณากรอกเบอร์โทร';
-    } else if (ecPhoneDigits.length < 9 || ecPhoneDigits.length > 10) {
-      errors['emergency_primaryPhone'] = 'เบอร์โทรศัพท์ต้องมี 9-10 หลัก';
-    }
+    const ecPhoneErr = phoneError(ec?.primaryPhone, true, 'เบอร์โทร');
+    if (ecPhoneErr) errors['emergency_primaryPhone'] = ecPhoneErr;
 
     return errors;
   };
@@ -737,10 +715,12 @@ export default function CreateEmployeeModal({
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
+                      maxLength={10}
                       placeholder="เช่น 100001"
                       value={formData.biometricId || ''}
                       onChange={(e) => {
-                        setFormData({ ...formData, biometricId: e.target.value });
+                        setFormData({ ...formData, biometricId: onlyDigits(e.target.value, 10) });
                         clearFieldError('biometricId');
                       }}
                       className={getFieldClass('biometricId', true)}
@@ -899,7 +879,7 @@ export default function CreateEmployeeModal({
                       placeholder="กรอกชื่อ"
                       value={formData.firstName}
                       onChange={(e) => {
-                        setFormData({ ...formData, firstName: e.target.value });
+                        setFormData({ ...formData, firstName: stripDigits(e.target.value) });
                         clearFieldError('firstName');
                       }}
                       className={getFieldClass('firstName')}
@@ -919,7 +899,7 @@ export default function CreateEmployeeModal({
                       placeholder="กรอกนามสกุล"
                       value={formData.lastName}
                       onChange={(e) => {
-                        setFormData({ ...formData, lastName: e.target.value });
+                        setFormData({ ...formData, lastName: stripDigits(e.target.value) });
                         clearFieldError('lastName');
                       }}
                       className={getFieldClass('lastName')}
@@ -939,6 +919,7 @@ export default function CreateEmployeeModal({
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       maxLength={13}
                       placeholder="เลขบัตรประชาชน 13 หลัก"
                       value={formData.citizenId}
@@ -1144,6 +1125,7 @@ export default function CreateEmployeeModal({
                     </label>
                     <input
                       type="text"
+                      inputMode="tel"
                       maxLength={12}
                       placeholder="08X-XXX-XXXX"
                       value={formData.personalPhone}
@@ -1345,7 +1327,7 @@ export default function CreateEmployeeModal({
                           value={formData.familyMembers[activeFamilyIndex].firstName}
                           onChange={(e) => {
                             const list = [...(formData.familyMembers || [])];
-                            list[activeFamilyIndex].firstName = e.target.value;
+                            list[activeFamilyIndex].firstName = stripDigits(e.target.value);
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_firstName`);
                           }}
@@ -1364,7 +1346,7 @@ export default function CreateEmployeeModal({
                           value={formData.familyMembers[activeFamilyIndex].lastName || ''}
                           onChange={(e) => {
                             const list = [...(formData.familyMembers || [])];
-                            list[activeFamilyIndex].lastName = e.target.value;
+                            list[activeFamilyIndex].lastName = stripDigits(e.target.value);
                             setFormData({ ...formData, familyMembers: list });
                             clearFieldError(`family_${activeFamilyIndex}_lastName`);
                           }}
@@ -1499,7 +1481,7 @@ export default function CreateEmployeeModal({
                           ...formData,
                           emergencyContact: {
                             ...formData.emergencyContact,
-                            firstName: e.target.value,
+                            firstName: stripDigits(e.target.value),
                             lastName: formData.emergencyContact?.lastName || '',
                             primaryPhone: formData.emergencyContact?.primaryPhone || '',
                           },
@@ -1525,7 +1507,7 @@ export default function CreateEmployeeModal({
                           emergencyContact: {
                             ...formData.emergencyContact,
                             firstName: formData.emergencyContact?.firstName || '',
-                            lastName: e.target.value,
+                            lastName: stripDigits(e.target.value),
                             primaryPhone: formData.emergencyContact?.primaryPhone || '',
                           },
                         });
@@ -1542,6 +1524,7 @@ export default function CreateEmployeeModal({
                     </label>
                     <input
                       type="text"
+                      inputMode="tel"
                       maxLength={12}
                       placeholder="08X-XXX-XXXX"
                       value={formData.emergencyContact?.primaryPhone || ''}

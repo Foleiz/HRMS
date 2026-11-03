@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { EmployeeAddress } from '@/types/employee';
+import { postalCodeError } from '@/lib/inputRules';
 
 /** ช่องที่อยู่ 1 ชุด */
 export interface AddressFields {
@@ -85,9 +86,8 @@ export function validateAddressPair(pair: AddressPair): Record<string, string> {
     if (!f.subDistrict.trim()) errors[`${prefix}subDistrict`] = 'กรุณากรอกตำบล / แขวง';
     if (!f.district.trim()) errors[`${prefix}district`] = 'กรุณากรอกอำเภอ / เขต';
     if (!f.province.trim()) errors[`${prefix}province`] = 'กรุณากรอกจังหวัด';
-    const digits = f.postalCode.replace(/\D/g, '');
-    if (!f.postalCode.trim()) errors[`${prefix}postalCode`] = 'กรุณากรอกรหัสไปรษณีย์';
-    else if (digits.length !== 5) errors[`${prefix}postalCode`] = 'รหัสไปรษณีย์ต้องมี 5 หลัก';
+    const postalErr = postalCodeError(f.postalCode, true);
+    if (postalErr) errors[`${prefix}postalCode`] = postalErr;
   };
   check(pair.registered, 'reg_');
   if (!pair.sameAsRegistered) check(pair.current, 'cur_');
@@ -169,6 +169,7 @@ export function AddressPairFields({
               </span>
               <input
                 type="text"
+                inputMode={d.key === 'postalCode' ? 'numeric' : undefined}
                 placeholder={d.placeholder}
                 maxLength={d.maxLength}
                 value={f[d.key]}
