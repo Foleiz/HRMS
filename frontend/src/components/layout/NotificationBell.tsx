@@ -318,7 +318,7 @@ export const NotificationBell: React.FC = () => {
           setShowSettings(false);
           if (!isOpen) fetchSummary();
         }}
-        className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition-colors relative cursor-pointer"
+        className="w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition-colors relative cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none"
       >
         <Bell className="w-4 h-4" />
         {unreadCount > 0 && (
@@ -358,7 +358,7 @@ export const NotificationBell: React.FC = () => {
                 type="button"
                 disabled={unreadCount === 0 || markingAll}
                 onClick={handleMarkAllAsRead}
-                className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer disabled:opacity-40 disabled:no-underline"
+                className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 underline underline-offset-2 transition-colors cursor-pointer disabled:opacity-40 disabled:no-underline outline-none focus:outline-none focus-visible:outline-none select-none"
               >
                 {markingAll ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -375,7 +375,7 @@ export const NotificationBell: React.FC = () => {
                   e.stopPropagation();
                   setShowSettings((prev) => !prev);
                 }}
-                className={`p-1 rounded-lg transition-all cursor-pointer ${
+                className={`p-1 rounded-lg transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none select-none ${
                   showSettings
                     ? 'text-primary dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50'
                     : 'text-slate-400 hover:text-primary dark:hover:text-blue-400'
@@ -410,7 +410,7 @@ export const NotificationBell: React.FC = () => {
                 <button
                   type="button"
                   onClick={toggleMuteWeb}
-                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                     muteWeb ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 >
@@ -458,7 +458,7 @@ export const NotificationBell: React.FC = () => {
                 key={tab.key}
                 type="button"
                 onClick={() => { setActiveTab(tab.key); setShowAll(false); }}
-                className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap outline-none focus:outline-none focus:ring-0 focus-visible:outline-none select-none ${
                   activeTab === tab.key
                     ? 'bg-blue-50 dark:bg-blue-950/70 text-primary dark:text-blue-300 border border-blue-200/80 dark:border-blue-800 shadow-2xs'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60'
@@ -543,7 +543,7 @@ export const NotificationBell: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAll(true)}
-                className="text-xs font-bold text-accent dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors cursor-pointer"
+                className="text-xs font-bold text-accent dark:text-blue-400 hover:text-primary-hover dark:hover:text-blue-300 transition-colors cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none select-none"
               >
                 ดูการแจ้งเตือนทั้งหมด
               </button>
@@ -551,7 +551,7 @@ export const NotificationBell: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowAll(false)}
-                className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer outline-none focus:outline-none focus:ring-0 focus-visible:outline-none select-none"
               >
                 ย่อการแจ้งเตือน
               </button>
