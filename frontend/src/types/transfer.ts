@@ -8,6 +8,7 @@ export interface EmployeeTransfer {
   employeeName: string;
   employeeCode: string;
   avatarUrl?: string;
+  employeePrefix?: string;
 
   /** รหัสที่เก็บไว้ (คั่นด้วยจุลภาค) */
   transferType: string;

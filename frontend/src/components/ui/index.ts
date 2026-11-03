@@ -21,3 +21,4 @@ export * from './TablePagination';
 export * from './ActionDropdown';
 export * from './TableToolbar';
 export * from './ModalHeader';
+export * from './AvatarName';

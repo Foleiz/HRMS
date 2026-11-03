@@ -616,6 +616,10 @@ public class EmployeeTransferService : IEmployeeTransferService
             EmployeeId = t.EmployeeId,
             EmployeeName = empName,
             EmployeeCode = empCode,
+            EmployeePrefix = t.Employee?.Prefix,
+            AvatarUrl = t.Employee?.AvatarUpdatedAt != null
+                ? $"/api/employees/{t.EmployeeId}/avatar?v={t.Employee.AvatarUpdatedAt.Value.Ticks}"
+                : null,
             TransferType = t.TransferType,
             TransferTypeDisplay = typeDisplay,
             TransferTypes = typeCodes,
