@@ -206,7 +206,7 @@ export default function TransfersPage() {
           <TableToolbar
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
-            searchPlaceholder="ค้นหาคำสั่งโอนย้าย, รหัส, ชื่อพนักงาน..."
+            searchPlaceholder="ค้นหารหัส, ชื่อพนักงาน, ตำแหน่ง, แผนก..."
             filters={
               <CustomSelect
                 value={selectedType}
@@ -244,14 +244,13 @@ export default function TransfersPage() {
                   <th className="py-3.5 px-5 font-medium">พนักงาน</th>
                   <th className="py-3.5 px-5 font-medium">ก่อน → หลัง</th>
                   <th className="py-3.5 px-5 font-medium">ประเภท</th>
-                  <th className="py-3.5 px-5 font-medium">เลขที่คำสั่ง</th>
                   <th className="py-3.5 px-5 font-medium text-center w-20">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-400" />
                         <span>กำลังโหลดประวัติการโยกย้าย...</span>
@@ -260,7 +259,7 @@ export default function TransfersPage() {
                   </tr>
                 ) : paginatedTransfers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
                       ไม่พบข้อมูลประวัติการโยกย้าย
                     </td>
                   </tr>
@@ -315,13 +314,6 @@ export default function TransfersPage() {
                           <TransferTypeBadges types={parseTransferTypes(item.transferType, item.transferTypes)} />
                           {item.status && item.status !== 'APPROVED' && (
                             <div className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">{item.statusDisplay}</div>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-5 whitespace-nowrap">
-                          {item.orderNo ? (
-                            <span className="font-medium text-slate-800 dark:text-slate-200">{item.orderNo}</span>
-                          ) : (
-                            <span className="text-slate-400">-</span>
                           )}
                         </td>
                         <td className="py-3.5 px-5 text-center">
