@@ -640,6 +640,8 @@ public class OperationalReportService : IOperationalReportService
                 maskedCitizenId = "-";
             }
 
+            decimal otherDeductions = Math.Max(0, p.TotalDeductionAmount - taxAmount - ssoEmpAmount);
+
             var itemDto = new PayrollTaxItemDto
             {
                 EmployeeId = p.EmployeeId,
@@ -655,6 +657,7 @@ public class OperationalReportService : IOperationalReportService
                 WithholdingTax = taxAmount,
                 SsoEmployee = ssoEmpAmount,
                 SsoEmployer = ssoEmployerAmount,
+                OtherDeductions = otherDeductions,
                 TotalDeductions = p.TotalDeductionAmount,
                 NetSalary = p.NetPayableSalary
             };
@@ -669,6 +672,8 @@ public class OperationalReportService : IOperationalReportService
         result.TotalSsoEmployee = result.Items.Sum(i => i.SsoEmployee);
         result.TotalSsoEmployer = result.Items.Sum(i => i.SsoEmployer);
         result.TotalSsoRemittance = result.TotalSsoEmployee + result.TotalSsoEmployer;
+        result.TotalOtherDeductions = result.Items.Sum(i => i.OtherDeductions);
+        result.TotalDeductions = result.Items.Sum(i => i.TotalDeductions);
         result.TotalNetSalary = result.Items.Sum(i => i.NetSalary);
 
         return result;
