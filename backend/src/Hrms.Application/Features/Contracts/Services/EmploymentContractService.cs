@@ -169,8 +169,10 @@ public class EmploymentContractService : IEmploymentContractService
             {
                 Id = c.Employee.Id,
                 EmployeeCode = c.Employee.EmployeeCode,
+                Prefix = c.Employee.Prefix,
                 FirstName = c.Employee.FirstName,
                 LastName = c.Employee.LastName,
+                AvatarUpdatedAt = c.Employee.AvatarUpdatedAt,
                 Assignments = c.Employee.Assignments.Where(a => a.IsCurrent).Select(a => new EmployeeAssignment
                 {
                     Id = a.Id,
@@ -672,6 +674,10 @@ public class EmploymentContractService : IEmploymentContractService
             EmployeeId = c.EmployeeId,
             EmployeeCode = c.Employee?.EmployeeCode ?? string.Empty,
             EmployeeName = c.Employee != null ? $"{c.Employee.FirstName} {c.Employee.LastName}".Trim() : string.Empty,
+            EmployeePrefix = c.Employee?.Prefix,
+            AvatarUrl = c.Employee?.AvatarUpdatedAt != null
+                ? $"/api/employees/{c.EmployeeId}/avatar?v={c.Employee.AvatarUpdatedAt.Value.Ticks}"
+                : null,
             DepartmentName = currentAssignment?.Department?.DepartmentName,
             PositionTitle = currentAssignment?.Position?.PositionName,
             EmployeeTypeId = c.EmployeeTypeId,
