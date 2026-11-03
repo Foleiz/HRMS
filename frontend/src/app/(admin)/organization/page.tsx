@@ -1627,7 +1627,7 @@ export default function OrganizationPage() {
             <TableToolbar
               searchValue={searchQuery}
               onSearchChange={setSearchQuery}
-              searchPlaceholder="ค้นหาสวัสดิการ, รหัส หรือรายละเอียด..."
+              searchPlaceholder="ค้นหาสวัสดิการ หรือรหัส..."
               filters={
                 <CustomSelect
                   value={filterBenefitCategory}
@@ -1691,12 +1691,7 @@ export default function OrganizationPage() {
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">
-                            <div>
-                              <div>{ben.benefitName}</div>
-                              {ben.description && (
-                                <div className="text-[11px] text-slate-400 dark:text-slate-500 font-normal truncate max-w-xs">{ben.description}</div>
-                              )}
-                            </div>
+                            <div>{ben.benefitName}</div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border ${catInfo.color}`}>
@@ -2554,17 +2549,6 @@ export default function OrganizationPage() {
                 </option>
               ))}
             </CustomSelect>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">รายละเอียดเพิ่มเติม</label>
-            <textarea
-              rows={2}
-              value={benefitForm.description || ''}
-              onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
-              placeholder="รายละเอียดเงื่อนไขหรือข้อมูลของสวัสดิการ..."
-              className={`${inputClass} resize-none`}
-            />
           </div>
 
           {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
