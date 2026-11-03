@@ -2,25 +2,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import {
-  Plus,
-  Search,
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  Building2,
-  FileText,
-  Download,
-  Calendar,
-} from 'lucide-react';
+import { Plus, Loader2, Eye, Download, Clock } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Button, TabBar , TableToolbar } from '@/components/ui';
+import { Button, TabBar, TableToolbar, ActionDropdown, type ActionDropdownItem } from '@/components/ui';
 import { showError } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
+import TransferDetailModal from '@/components/transfers/TransferDetailModal';
+import { TransferTypeBadges, parseTransferTypes } from '@/components/transfers/TransferTypeBadges';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 
 import { useAuth } from '@/context/AuthContext';
@@ -57,6 +48,7 @@ export default function TransfersPage() {
 
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [detailTransfer, setDetailTransfer] = useState<EmployeeTransfer | null>(null);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState<boolean>(false);
   const [selectedTimelineEmployee, setSelectedTimelineEmployee] = useState<{
     id: number | null;
@@ -112,7 +104,7 @@ export default function TransfersPage() {
         (item.toDisplay && item.toDisplay.toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchType =
-        selectedType === 'ALL' || item.transferType === selectedType;
+        selectedType === 'ALL' || parseTransferTypes(item.transferType, item.transferTypes).includes(selectedType as any);
 
       return matchSearch && matchType;
     });
@@ -223,10 +215,10 @@ export default function TransfersPage() {
                 className="min-w-[190px]"
                 options={[
                   { value: 'ALL', label: 'ประเภทการโอนย้ายทั้งหมด' },
-                  { value: 'DEPARTMENT', label: 'ย้ายฝ่าย / แผนก' },
+                  { value: 'DEPARTMENT_TRANSFER', label: 'ย้ายแผนก' },
                   { value: 'PROMOTION', label: 'เลื่อนตำแหน่ง' },
+                  { value: 'POSITION_CHANGE', label: 'เปลี่ยนตำแหน่ง' },
                   { value: 'DEMOTION', label: 'ลดตำแหน่ง' },
-                  { value: 'LATERAL', label: 'โอนย้ายระดับเดียวกัน' },
                 ]}
               />
             }
@@ -237,175 +229,112 @@ export default function TransfersPage() {
                   icon={<Plus className="w-4 h-4" />}
                   className="shrink-0 self-start sm:self-auto"
                 >
-                  บันทึกคำสั่งแต่งตั้ง/โยกย้าย
+                  บันทึกคำสั่งโยกย้าย
                 </Button>
               ) : null
             }
           />
 
-          {/* TABLE: เอาไว้ดูว่ามีใครย้ายตำแหน่งไหนไปไหนวันที่เท่าไหร่ */}
+          {/* ตาราง: ใคร ย้ายจากไหนไปไหน มีผลเมื่อไร */}
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-            <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
+            <table className="table-standard w-full min-w-[900px] text-left border-collapse text-xs">
               <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">วันที่มีผล</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">จากตำแหน่ง / แผนกเดิม</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">ไปยังตำแหน่ง / แผนกใหม่</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทการปรับเปลี่ยน</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">เลขที่คำสั่ง / เอกสาร</th>
-                <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">ไทม์ไลน์การทำงาน</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
-              {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-400" />
-                      <span>กำลังโหลดประวัติการโยกย้ายตำแหน่ง...</span>
-                    </div>
-                  </td>
+                  <th className="py-3.5 px-5 font-medium">วันที่มีผล</th>
+                  <th className="py-3.5 px-5 font-medium">พนักงาน</th>
+                  <th className="py-3.5 px-5 font-medium">ก่อน → หลัง</th>
+                  <th className="py-3.5 px-5 font-medium">ประเภท</th>
+                  <th className="py-3.5 px-5 font-medium">เลขที่คำสั่ง</th>
+                  <th className="py-3.5 px-5 font-medium text-center w-20">จัดการ</th>
                 </tr>
-              ) : paginatedTransfers.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-16 text-center text-slate-400 dark:text-slate-500">
-                    ไม่พบข้อมูลประวัติการโยกย้ายตำแหน่ง
-                  </td>
-                </tr>
-              ) : (
-                paginatedTransfers.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                    {/* วันที่มีผล */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-semibold">
-                        <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                        <span>{item.effectiveDateDisplay}</span>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-400" />
+                        <span>กำลังโหลดประวัติการโยกย้าย...</span>
                       </div>
-                    </td>
-
-                    {/* พนักงาน (มีใคร) */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-600">
-                          {item.employeeName?.charAt(0) || 'E'}
-                        </div>
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedTimelineEmployee({
-                                id: item.employeeId,
-                                name: item.employeeName,
-                                code: item.employeeCode,
-                              });
-                              setIsTimelineModalOpen(true);
-                            }}
-                            className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer text-left block"
-                          >
-                            {item.employeeName}
-                          </button>
-                          <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                            รหัส: {item.employeeCode}
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* จากตำแหน่ง/แผนกเดิม (ย้ายตำแหน่งไหน) */}
-                    <td className="py-4 px-6">
-                      <div className="space-y-0.5">
-                        <p className="font-medium text-slate-700 dark:text-slate-300">
-                          {item.fromPositionName || item.fromDisplay || 'ไม่ระบุ'}
-                        </p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                          <Building2 className="w-3 h-3 shrink-0" />
-                          <span>{item.fromDepartmentName || '-'}</span>
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* ไปยังตำแหน่ง/แผนกใหม่ (ไปไหน) */}
-                    <td className="py-4 px-6">
-                      <div className="space-y-0.5">
-                        <p className="font-semibold text-blue-700 dark:text-blue-400">
-                          {item.toPositionName || item.toDisplay || 'ไม่ระบุ'}
-                        </p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                          <Building2 className="w-3 h-3 text-blue-500 shrink-0" />
-                          <span>{item.toDepartmentName || '-'}</span>
-                        </p>
-                      </div>
-                    </td>
-
-                    {/* ประเภทการปรับเปลี่ยน */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      {item.transferType === 'DEPARTMENT_TRANSFER' ? (
-                        <span className="bg-[#fef3c7] dark:bg-amber-950/40 text-[#92400e] dark:text-amber-300 text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block border border-amber-200 dark:border-amber-800">
-                          {item.transferTypeDisplay}
-                        </span>
-                      ) : item.transferType === 'PROMOTION' ? (
-                        <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block border border-emerald-200 dark:border-emerald-800">
-                          {item.transferTypeDisplay}
-                        </span>
-                      ) : (
-                        <span className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 text-[11px] font-semibold px-2.5 py-1 rounded-md inline-block border border-blue-200 dark:border-blue-800">
-                          {item.transferTypeDisplay}
-                        </span>
-                      )}
-                    </td>
-
-                    {/* เลขที่คำสั่ง / เอกสาร */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <div className="space-y-1">
-                        {item.orderNo ? (
-                          <span className="text-xs font-medium text-slate-800 dark:text-slate-200 block">
-                            {item.orderNo}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400 dark:text-slate-500 block">-</span>
-                        )}
-                        {item.hasDocument && (
-                          <div>
-                            <button
-                              type="button"
-                              onClick={() => handleDownloadDocument(item)}
-                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium bg-blue-50/70 dark:bg-blue-900/20 hover:bg-blue-100/70 px-2 py-0.5 rounded-md transition-colors"
-                              title={item.documentName || 'ดาวน์โหลดเอกสารคำสั่ง'}
-                            >
-                              <FileText className="w-3 h-3 text-blue-600 shrink-0" />
-                              <span className="max-w-[130px] truncate">{item.documentName || 'เอกสารคำสั่ง'}</span>
-                              <Download className="w-2.5 h-2.5 text-blue-500 shrink-0 ml-0.5" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* ไทม์ไลน์การทำงาน / การจัดการ */}
-                    <td className="py-4 px-6 text-right whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          setSelectedTimelineEmployee({
-                            id: item.employeeId,
-                            name: item.employeeName,
-                            code: item.employeeCode,
-                          });
-                          setIsTimelineModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-primary hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 rounded-lg transition-all font-medium text-xs cursor-pointer shadow-2xs"
-                        title="ดูประวัติการทำงานและสายอาชีพรายบุคคล"
-                      >
-                        <Clock className="w-3.5 h-3.5 text-emerald-600 hover:text-white" />
-                        <span>ประวัติรายบุคคล</span>
-                      </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : paginatedTransfers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-16 text-center text-slate-400 dark:text-slate-500">
+                      ไม่พบข้อมูลประวัติการโยกย้าย
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedTransfers.map((item) => {
+                    const deptChanged = (item.fromDepartmentName || '') !== (item.toDepartmentName || '');
+                    const menu: ActionDropdownItem[] = [
+                      { id: 'detail', label: 'ดูรายละเอียด', icon: <Eye className="w-4 h-4" />, onClick: () => setDetailTransfer(item) },
+                      ...(item.hasDocument
+                        ? [{ id: 'doc', label: 'ดาวน์โหลดเอกสาร', icon: <Download className="w-4 h-4" />, onClick: () => handleDownloadDocument(item) }]
+                        : []),
+                      {
+                        id: 'timeline',
+                        label: 'ประวัติรายบุคคล',
+                        icon: <Clock className="w-4 h-4" />,
+                        onClick: () => {
+                          setSelectedTimelineEmployee({ id: item.employeeId, name: item.employeeName, code: item.employeeCode });
+                          setIsTimelineModalOpen(true);
+                        },
+                      },
+                    ];
+                    return (
+                      <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3.5 px-5 whitespace-nowrap font-semibold text-slate-800 dark:text-slate-200">
+                          {item.effectiveDateDisplay}
+                        </td>
+                        <td className="py-3.5 px-5 whitespace-nowrap">
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">{item.employeeName}</div>
+                          <div className="text-[11px] text-slate-400 dark:text-slate-500">{item.employeeCode}</div>
+                        </td>
+                        <td className="py-3.5 px-5">
+                          <div>
+                            <span className="text-slate-500 dark:text-slate-400">{item.fromPositionName || '-'}</span>
+                            <span className="mx-1.5 text-slate-400">→</span>
+                            <b className="text-primary dark:text-blue-300">{item.toPositionName || '-'}</b>
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                            {deptChanged ? (
+                              <>
+                                {item.fromDepartmentName || '-'} → {item.toDepartmentName || '-'}
+                              </>
+                            ) : (
+                              item.toDepartmentName || '-'
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-5">
+                          <TransferTypeBadges types={parseTransferTypes(item.transferType, item.transferTypes)} />
+                          {item.status && item.status !== 'APPROVED' && (
+                            <div className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">{item.statusDisplay}</div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-5 whitespace-nowrap">
+                          {item.orderNo ? (
+                            <span className="font-medium text-slate-800 dark:text-slate-200">{item.orderNo}</span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-5 text-center">
+                          <ActionDropdown
+                            menuClassName="w-52"
+                            title="การจัดการ"
+                            triggerClassName="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 inline-flex items-center justify-center transition-colors cursor-pointer"
+                            items={menu}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Table Footer with TablePagination มาตรฐานระบบ */}
           {filteredTransfers.length > 0 && (
@@ -428,6 +357,12 @@ export default function TransfersPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={fetchData}
+      />
+
+      <TransferDetailModal
+        transfer={detailTransfer}
+        onClose={() => setDetailTransfer(null)}
+        onDownload={handleDownloadDocument}
       />
 
       {/* 8. Career & Assignment Timeline Modal */}

@@ -11,7 +11,7 @@ public class CreateEmployeeTransferRequest
     public long EmployeeId { get; set; }
 
     [Required(ErrorMessage = "กรุณาระบุประเภทคำขอ")]
-    public string TransferType { get; set; } = "DEPARTMENT_TRANSFER"; // DEPARTMENT_TRANSFER, PROMOTION, TRANSFER_AND_PROMOTION, PROMOTION_AND_SUPERVISOR
+    public string TransferType { get; set; } = "DEPARTMENT_TRANSFER"; // ไม่ใช้แล้ว — ระบบจัดประเภทให้อัตโนมัติ (คงไว้เพื่อรองรับ client เดิม)
 
     // ปลายทาง
     public long? ToDivisionId { get; set; }

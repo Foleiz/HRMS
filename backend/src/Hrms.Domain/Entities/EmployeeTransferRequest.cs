@@ -10,7 +10,7 @@ public class EmployeeTransferRequest : BaseEntity
 {
     public string RequestNo { get; set; } = string.Empty;
     public long EmployeeId { get; set; }
-    public string TransferType { get; set; } = "DEPARTMENT_TRANSFER"; // DEPARTMENT_TRANSFER, PROMOTION, TRANSFER_AND_PROMOTION, PROMOTION_AND_SUPERVISOR
+    public string TransferType { get; set; } = "DEPARTMENT_TRANSFER"; // รหัสคั่นด้วยจุลภาค: DEPARTMENT_TRANSFER, PROMOTION, POSITION_CHANGE, DEMOTION
     
     // ข้อมูลต้นทาง
     public long? FromDivisionId { get; set; }

@@ -1,3 +1,6 @@
+/** ประเภทการปรับเปลี่ยน (ระบบจัดให้อัตโนมัติจากการเทียบ ปัจจุบัน ↔ ปลายทาง) */
+export type TransferTypeCode = 'DEPARTMENT_TRANSFER' | 'PROMOTION' | 'POSITION_CHANGE' | 'DEMOTION';
+
 export interface EmployeeTransfer {
   id: number;
   requestNo: string;
@@ -6,8 +9,11 @@ export interface EmployeeTransfer {
   employeeCode: string;
   avatarUrl?: string;
 
-  transferType: 'DEPARTMENT_TRANSFER' | 'PROMOTION' | 'TRANSFER_AND_PROMOTION' | 'PROMOTION_AND_SUPERVISOR' | string;
+  /** รหัสที่เก็บไว้ (คั่นด้วยจุลภาค) */
+  transferType: string;
   transferTypeDisplay: string;
+  /** ประเภทแยกเป็นรายการ — ระบบจัดให้อัตโนมัติ */
+  transferTypes?: TransferTypeCode[];
 
   fromDivisionId?: number;
   fromDivisionName: string;
@@ -53,7 +59,8 @@ export interface TransferSummaryStats {
 
 export interface CreateTransferRequest {
   employeeId: number;
-  transferType: string;
+  /** ไม่ใช้แล้ว — backend จัดประเภทให้เอง */
+  transferType?: string;
   toDivisionId?: number;
   toDepartmentId: number;
   toPositionId: number;
