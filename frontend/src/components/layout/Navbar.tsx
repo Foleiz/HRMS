@@ -477,47 +477,59 @@ export const Navbar: React.FC = () => {
 
                   {/* 2. Information Section with Icon Boxes */}
                   <div className="space-y-3">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                    <h4 className="text-xs font-semibold text-slate-400 dark:text-slate-500">
                       ข้อมูลสังกัด &amp; เวลาทำงาน
                     </h4>
 
                     {/* 2.1 แผนก & ฝ่าย & บริษัท */}
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 mt-0.5 shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 mt-0.5 shadow-2xs">
                         <Briefcase className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="min-w-0 flex-1 space-y-1 text-xs">
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">สังกัด</p>
                         {employee?.departmentName && (
-                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
-                            แผนก: {employee.departmentName}
+                          <p className="leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500">แผนก: </span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {employee.departmentName.replace(/^แผนก\s*/, '')}
+                            </span>
                           </p>
                         )}
                         {employee?.divisionName && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            ฝ่าย: {employee.divisionName}
+                          <p className="leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500">ฝ่าย: </span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {employee.divisionName.replace(/^ฝ่าย\s*/, '')}
+                            </span>
                           </p>
                         )}
                         {companyName && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                            {companyName}
+                          <p className="leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500">บริษัท: </span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {companyName.replace(/^บริษัท\s*/, '')}
+                            </span>
                           </p>
                         )}
                       </div>
                     </div>
 
-                    {/* 2.2 เวลาทำงาน (เอารหัสกะออก ตามที่ผู้ใช้แจ้ง) */}
+                    {/* 2.2 เวลาทำงาน */}
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 mt-0.5 shadow-2xs">
+                      <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 mt-0.5 shadow-2xs">
                         <Clock className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 space-y-1 text-xs">
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">เวลาทำงาน</p>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 leading-snug">
                           {displayWorkHours} น.
                         </p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          พักเบรก: 12:00 - 13:00 น.
+                        <p className="leading-snug">
+                          <span className="text-slate-400 dark:text-slate-500">พักเบรก: </span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            12:00 - 13:00 น.
+                          </span>
                         </p>
                       </div>
                     </div>
