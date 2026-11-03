@@ -173,7 +173,7 @@ public class EmploymentContractsController : ControllerBase
         [FromQuery] bool inline = false,
         CancellationToken cancellationToken = default)
     {
-        var file = await _contractService.GetDocumentFileAsync(id, cancellationToken);
+        var file = await _contractService.GetDocumentFileAsync(id, null, cancellationToken);
         if (inline)
         {
             Response.Headers["Content-Disposition"] = $"inline; filename=\"{Uri.EscapeDataString(file.FileName)}\"";
@@ -183,7 +183,7 @@ public class EmploymentContractsController : ControllerBase
     }
 
     /// <summary>
-    /// แนบหรือเปลี่ยนไฟล์เอกสารสัญญาจ้างงาน
+    /// แนบไฟล์เอกสารสัญญาจ้างงานเพิ่ม (แนบได้หลายไฟล์)
     /// </summary>
     [HttpPost("{id:long}/document")]
     [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
@@ -210,7 +210,44 @@ public class EmploymentContractsController : ControllerBase
         long id,
         CancellationToken cancellationToken)
     {
-        var result = await _contractService.DeleteDocumentAsync(id, cancellationToken);
+        var result = await _contractService.DeleteDocumentAsync(id, null, cancellationToken);
+        return Ok(ApiResponse<EmploymentContractDto>.Ok(result, "ลบไฟล์เอกสารสัญญาจ้างงานสำเร็จ"));
+    }
+
+    /// <summary>
+    /// ดาวน์โหลดหรือเปิดดูไฟล์แนบรายไฟล์ของสัญญาจ้าง (inline=true เพื่อ preview)
+    /// </summary>
+    [HttpGet("{id:long}/documents/{documentId:long}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDocumentById(
+        long id,
+        long documentId,
+        [FromQuery] bool inline = false,
+        CancellationToken cancellationToken = default)
+    {
+        var file = await _contractService.GetDocumentFileAsync(id, documentId, cancellationToken);
+        if (inline)
+        {
+            Response.Headers["Content-Disposition"] = $"inline; filename=\"{Uri.EscapeDataString(file.FileName)}\"";
+            return File(file.Data, file.MimeType);
+        }
+        return File(file.Data, file.MimeType, file.FileName);
+    }
+
+    /// <summary>
+    /// ลบไฟล์แนบรายไฟล์ของสัญญาจ้าง
+    /// </summary>
+    [HttpDelete("{id:long}/documents/{documentId:long}")]
+    [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+    [RequirePermission("EMP_CONTRACT_EDIT")]
+    public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> DeleteDocumentById(
+        long id,
+        long documentId,
+        CancellationToken cancellationToken)
+    {
+        var result = await _contractService.DeleteDocumentAsync(id, documentId, cancellationToken);
         return Ok(ApiResponse<EmploymentContractDto>.Ok(result, "ลบไฟล์เอกสารสัญญาจ้างงานสำเร็จ"));
     }
 }

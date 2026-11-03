@@ -24,17 +24,17 @@ public interface IEmploymentContractService
     Task<int> ApplyDueEmployeeTypesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// ดึงไฟล์เอกสารสัญญาจ้างงานสำหรับ Preview / Download
+    /// ดึงไฟล์เอกสารสัญญาจ้างงานสำหรับ Preview / Download (documentId = null → ไฟล์ล่าสุด)
     /// </summary>
-    Task<ContractDocumentFile> GetDocumentFileAsync(long id, CancellationToken cancellationToken = default);
+    Task<ContractDocumentFile> GetDocumentFileAsync(long id, long? documentId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// แนบ/เปลี่ยนไฟล์เอกสารสัญญาจ้างงาน
+    /// แนบไฟล์เอกสารสัญญาจ้างงานเพิ่ม (แนบได้หลายไฟล์)
     /// </summary>
     Task<EmploymentContractDto> AttachDocumentAsync(long id, UploadContractDocumentRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// ลบไฟล์เอกสารสัญญาจ้างงาน
+    /// ลบไฟล์เอกสารสัญญาจ้างงาน (documentId = null → ลบทุกไฟล์)
     /// </summary>
-    Task<EmploymentContractDto> DeleteDocumentAsync(long id, CancellationToken cancellationToken = default);
+    Task<EmploymentContractDto> DeleteDocumentAsync(long id, long? documentId = null, CancellationToken cancellationToken = default);
 }

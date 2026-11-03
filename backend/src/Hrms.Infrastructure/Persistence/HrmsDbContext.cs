@@ -71,6 +71,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
 
     // Contracts & Lifecycle (Dev 2 Sprint 2)
     public DbSet<EmploymentContract> EmploymentContracts => Set<EmploymentContract>();
+    public DbSet<EmploymentContractDocument> EmploymentContractDocuments => Set<EmploymentContractDocument>();
     public DbSet<EmployeeStatusHistory> EmployeeStatusHistories => Set<EmployeeStatusHistory>();
 
     // Attendance Adjustment Requests (Dev 1 Sprint 7)
@@ -976,6 +977,25 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.RawPunchTimestamp).HasColumnName("raw_punch_timestamp").HasMaxLength(50);
             entity.Property(e => e.DevicePunchState).HasColumnName("device_punch_state").HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+        });
+
+        // ไฟล์แนบสัญญาจ้าง (หลายไฟล์ต่อสัญญา)
+        modelBuilder.Entity<EmploymentContractDocument>(entity =>
+        {
+            entity.ToTable("employment_contract_document", "hrms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").UseIdentityByDefaultColumn();
+            entity.Property(e => e.ContractId).HasColumnName("contract_id").IsRequired();
+            entity.Property(e => e.FileName).HasColumnName("file_name").IsRequired().HasMaxLength(255);
+            entity.Property(e => e.MimeType).HasColumnName("mime_type").HasMaxLength(100);
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.FileData).HasColumnName("file_data").IsRequired();
+            entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at");
+
+            entity.HasOne(e => e.Contract)
+                .WithMany(c => c.Documents)
+                .HasForeignKey(e => e.ContractId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Configuration: EmploymentContract (Dev 2 Sprint 2)

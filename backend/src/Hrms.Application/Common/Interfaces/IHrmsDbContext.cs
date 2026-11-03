@@ -58,6 +58,7 @@ public interface IHrmsDbContext
 
     // Contracts & Lifecycle (Dev 2 Sprint 2)
     DbSet<EmploymentContract> EmploymentContracts { get; }
+    DbSet<EmploymentContractDocument> EmploymentContractDocuments { get; }
     DbSet<EmployeeStatusHistory> EmployeeStatusHistories { get; }
 
     // Attendance Adjustment Requests (Dev 1 Sprint 7)

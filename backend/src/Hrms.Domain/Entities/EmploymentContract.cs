@@ -38,4 +38,5 @@ public class EmploymentContract : BaseEntity
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual EmployeeType? EmployeeType { get; set; }
+    public virtual ICollection<EmploymentContractDocument> Documents { get; set; } = new List<EmploymentContractDocument>();
 }

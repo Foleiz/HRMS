@@ -37,4 +37,16 @@ public class EmploymentContractDto
     public string? DocumentMimeType { get; set; }
     public DateTime? DocumentUploadedAt { get; set; }
     public string? DocumentUrl { get; set; }
+    public int DocumentCount { get; set; }
+    public List<ContractDocumentDto> Documents { get; set; } = new();
+}
+
+/// <summary>ไฟล์แนบหนึ่งไฟล์ของสัญญาจ้าง (ไม่รวมเนื้อไฟล์)</summary>
+public class ContractDocumentDto
+{
+    public long Id { get; set; }
+    public string FileName { get; set; } = string.Empty;
+    public string? MimeType { get; set; }
+    public long? FileSize { get; set; }
+    public DateTime UploadedAt { get; set; }
 }

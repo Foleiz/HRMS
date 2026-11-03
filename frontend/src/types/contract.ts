@@ -1,3 +1,12 @@
+/** ไฟล์แนบหนึ่งไฟล์ของสัญญาจ้าง */
+export interface ContractDocument {
+  id: number;
+  fileName: string;
+  mimeType?: string;
+  fileSize?: number;
+  uploadedAt: string;
+}
+
 export interface EmploymentContract {
   id: number;
   employeeId: number;
@@ -28,6 +37,8 @@ export interface EmploymentContract {
   documentFileSize?: number;
   documentMimeType?: string;
   documentUploadedAt?: string;
+  documentCount?: number;
+  documents?: ContractDocument[];
   documentUrl?: string;
 }
 

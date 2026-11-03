@@ -68,7 +68,7 @@ export const contractService = {
     await apiClient.delete<ApiResponse<null>>(`/employment-contracts/${id}`);
   },
 
-  // แนบหรือเปลี่ยนไฟล์เอกสารสัญญาจ้างงาน
+  // แนบไฟล์เอกสารสัญญาจ้างงานเพิ่ม (แนบได้หลายไฟล์)
   async uploadDocument(id: number, fileData: string, fileName: string): Promise<EmploymentContract> {
     const res = await apiClient.post<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}/document`, {
       fileData,
@@ -77,7 +77,22 @@ export const contractService = {
     return res.data.data;
   },
 
-  // ลบไฟล์เอกสารสัญญาจ้างงานที่แนบไว้
+  // ลบไฟล์แนบรายไฟล์
+  async deleteDocumentById(id: number, documentId: number): Promise<EmploymentContract> {
+    const res = await apiClient.delete<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}/documents/${documentId}`);
+    return res.data.data;
+  },
+
+  // ดึง Blob ของไฟล์แนบรายไฟล์ (Preview / Download)
+  async getDocumentFileBlob(id: number, documentId: number, inline: boolean = false): Promise<{ blob: Blob; mimeType: string }> {
+    const res = await apiClient.get(`/employment-contracts/${id}/documents/${documentId}`, {
+      params: inline ? { inline: true } : undefined,
+      responseType: 'blob',
+    });
+    return { blob: res.data, mimeType: String(res.headers['content-type'] || 'application/octet-stream') };
+  },
+
+  // ลบไฟล์เอกสารสัญญาจ้างงานที่แนบไว้ทั้งหมด
   async deleteDocument(id: number): Promise<EmploymentContract> {
     const res = await apiClient.delete<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}/document`);
     return res.data.data;

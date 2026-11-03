@@ -154,10 +154,17 @@ public class EmploymentContractService : IEmploymentContractService
             TerminationReason = c.TerminationReason,
             Status = c.Status,
             ApprovalInstanceId = c.ApprovalInstanceId,
-            DocumentFileName = c.DocumentFileName,
-            DocumentMimeType = c.DocumentMimeType,
-            DocumentFileSize = c.DocumentFileSize ?? (c.DocumentFileData != null ? 1L : null),
-            DocumentUploadedAt = c.DocumentUploadedAt,
+            Documents = c.Documents
+                .OrderBy(d => d.UploadedAt).ThenBy(d => d.Id)
+                .Select(d => new EmploymentContractDocument
+                {
+                    Id = d.Id,
+                    ContractId = d.ContractId,
+                    FileName = d.FileName,
+                    MimeType = d.MimeType,
+                    FileSize = d.FileSize,
+                    UploadedAt = d.UploadedAt
+                }).ToList(),
             Employee = c.Employee == null ? null : new Employee
             {
                 Id = c.Employee.Id,
@@ -314,11 +321,7 @@ public class EmploymentContractService : IEmploymentContractService
         {
             var (bytes, mime) = FileDataDecoder.Decode(request.DocumentFileData, request.DocumentFileName);
             if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
-            contract.DocumentFileData = bytes;
-            contract.DocumentMimeType = mime;
-            contract.DocumentFileName = string.IsNullOrWhiteSpace(request.DocumentFileName) ? "contract" : Path.GetFileName(request.DocumentFileName.Trim());
-            contract.DocumentFileSize = bytes.LongLength;
-            contract.DocumentUploadedAt = DateTime.UtcNow;
+            contract.Documents.Add(NewDocument(bytes, mime, request.DocumentFileName));
         }
 
         _context.EmploymentContracts.Add(contract);
@@ -399,21 +402,19 @@ public class EmploymentContractService : IEmploymentContractService
 
         if (request.DocumentFileData == "REMOVE")
         {
-            contract.DocumentFileData = null;
-            contract.DocumentMimeType = null;
-            contract.DocumentFileName = null;
-            contract.DocumentFileSize = null;
-            contract.DocumentUploadedAt = null;
+            var docs = await _context.EmploymentContractDocuments
+                .Where(d => d.ContractId == contract.Id)
+                .ToListAsync(cancellationToken);
+            _context.EmploymentContractDocuments.RemoveRange(docs);
+            ClearLegacyDocument(contract);
         }
         else if (!string.IsNullOrWhiteSpace(request.DocumentFileData))
         {
             var (bytes, mime) = FileDataDecoder.Decode(request.DocumentFileData, request.DocumentFileName);
             if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
-            contract.DocumentFileData = bytes;
-            contract.DocumentMimeType = mime;
-            contract.DocumentFileName = string.IsNullOrWhiteSpace(request.DocumentFileName) ? "contract" : Path.GetFileName(request.DocumentFileName.Trim());
-            contract.DocumentFileSize = bytes.LongLength;
-            contract.DocumentUploadedAt = DateTime.UtcNow;
+            var doc = NewDocument(bytes, mime, request.DocumentFileName);
+            doc.ContractId = contract.Id;
+            _context.EmploymentContractDocuments.Add(doc);
         }
 
         // เปลี่ยนประเภท/วันเริ่ม/สถานะของสัญญา → ประเมินการอัปเดตประเภทพนักงานใหม่
@@ -542,27 +543,32 @@ public class EmploymentContractService : IEmploymentContractService
         return true;
     }
 
-    public async Task<ContractDocumentFile> GetDocumentFileAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<ContractDocumentFile> GetDocumentFileAsync(
+        long id,
+        long? documentId = null,
+        CancellationToken cancellationToken = default)
     {
-        var contract = await _context.EmploymentContracts
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-
-        if (contract == null)
+        var exists = await _context.EmploymentContracts.AsNoTracking().AnyAsync(c => c.Id == id, cancellationToken);
+        if (!exists)
         {
             throw new NotFoundException("สัญญาจ้างงาน", id);
         }
 
-        if (contract.DocumentFileData == null || contract.DocumentFileData.Length == 0)
+        var query = _context.EmploymentContractDocuments.AsNoTracking().Where(d => d.ContractId == id);
+        var doc = documentId.HasValue
+            ? await query.FirstOrDefaultAsync(d => d.Id == documentId.Value, cancellationToken)
+            : await query.OrderByDescending(d => d.UploadedAt).ThenByDescending(d => d.Id).FirstOrDefaultAsync(cancellationToken);
+
+        if (doc == null || doc.FileData.Length == 0)
         {
             throw new NotFoundException("ไม่พบไฟล์เอกสารสัญญาจ้างที่แนบไว้");
         }
 
         return new ContractDocumentFile
         {
-            Data = contract.DocumentFileData,
-            FileName = string.IsNullOrWhiteSpace(contract.DocumentFileName) ? $"contract_{id}.pdf" : contract.DocumentFileName,
-            MimeType = string.IsNullOrWhiteSpace(contract.DocumentMimeType) ? "application/pdf" : contract.DocumentMimeType
+            Data = doc.FileData,
+            FileName = string.IsNullOrWhiteSpace(doc.FileName) ? $"contract_{id}.pdf" : doc.FileName,
+            MimeType = string.IsNullOrWhiteSpace(doc.MimeType) ? "application/pdf" : doc.MimeType
         };
     }
 
@@ -571,10 +577,8 @@ public class EmploymentContractService : IEmploymentContractService
         UploadContractDocumentRequest request,
         CancellationToken cancellationToken = default)
     {
-        var contract = await _context.EmploymentContracts
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
-
-        if (contract == null)
+        var exists = await _context.EmploymentContracts.AnyAsync(c => c.Id == id, cancellationToken);
+        if (!exists)
         {
             throw new NotFoundException("สัญญาจ้างงาน", id);
         }
@@ -588,17 +592,18 @@ public class EmploymentContractService : IEmploymentContractService
         if (bytes.LongLength == 0) throw new ValidationException("ไฟล์แนบว่างเปล่า");
         if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
 
-        contract.DocumentFileData = bytes;
-        contract.DocumentMimeType = mime;
-        contract.DocumentFileName = string.IsNullOrWhiteSpace(request.FileName) ? "contract" : Path.GetFileName(request.FileName.Trim());
-        contract.DocumentFileSize = bytes.LongLength;
-        contract.DocumentUploadedAt = DateTime.UtcNow;
+        var doc = NewDocument(bytes, mime, request.FileName);
+        doc.ContractId = id;
+        _context.EmploymentContractDocuments.Add(doc);
 
         await _context.SaveChangesAsync(cancellationToken);
-        return await GetByIdAsync(contract.Id, cancellationToken);
+        return await GetByIdAsync(id, cancellationToken);
     }
 
-    public async Task<EmploymentContractDto> DeleteDocumentAsync(long id, CancellationToken cancellationToken = default)
+    public async Task<EmploymentContractDto> DeleteDocumentAsync(
+        long id,
+        long? documentId = null,
+        CancellationToken cancellationToken = default)
     {
         var contract = await _context.EmploymentContracts
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -608,14 +613,39 @@ public class EmploymentContractService : IEmploymentContractService
             throw new NotFoundException("สัญญาจ้างงาน", id);
         }
 
+        var docs = await _context.EmploymentContractDocuments
+            .Where(d => d.ContractId == id && (!documentId.HasValue || d.Id == documentId.Value))
+            .ToListAsync(cancellationToken);
+
+        if (documentId.HasValue && docs.Count == 0)
+        {
+            throw new NotFoundException("ไม่พบไฟล์เอกสารสัญญาจ้างที่ต้องการลบ");
+        }
+
+        _context.EmploymentContractDocuments.RemoveRange(docs);
+        if (!documentId.HasValue) ClearLegacyDocument(contract);
+
+        await _context.SaveChangesAsync(cancellationToken);
+        return await GetByIdAsync(contract.Id, cancellationToken);
+    }
+
+    private static EmploymentContractDocument NewDocument(byte[] bytes, string mime, string? fileName) => new()
+    {
+        FileName = string.IsNullOrWhiteSpace(fileName) ? "contract" : Path.GetFileName(fileName.Trim()),
+        MimeType = mime,
+        FileSize = bytes.LongLength,
+        FileData = bytes,
+        UploadedAt = DateTime.UtcNow
+    };
+
+    /// <summary>ล้างคอลัมน์ไฟล์แนบแบบเดิม (ไฟล์เดียว) — ย้ายไปตาราง employment_contract_document แล้ว</summary>
+    private static void ClearLegacyDocument(EmploymentContract contract)
+    {
         contract.DocumentFileData = null;
         contract.DocumentMimeType = null;
         contract.DocumentFileName = null;
         contract.DocumentFileSize = null;
         contract.DocumentUploadedAt = null;
-
-        await _context.SaveChangesAsync(cancellationToken);
-        return await GetByIdAsync(contract.Id, cancellationToken);
     }
 
     private static EmploymentContractDto MapToDto(EmploymentContract c)
@@ -630,9 +660,11 @@ public class EmploymentContractService : IEmploymentContractService
         else if (c.TerminationDate.HasValue)
             effectiveEndDate = c.TerminationDate;
 
-        var hasDoc = !string.IsNullOrWhiteSpace(c.DocumentFileName) ||
-                     (c.DocumentFileSize.HasValue && c.DocumentFileSize.Value > 0) ||
-                     (c.DocumentFileData != null && c.DocumentFileData.Length > 0);
+        var docs = (c.Documents ?? new List<EmploymentContractDocument>())
+            .OrderBy(d => d.UploadedAt).ThenBy(d => d.Id)
+            .ToList();
+        var latest = docs.LastOrDefault();
+        var hasDoc = docs.Count > 0;
 
         return new EmploymentContractDto
         {
@@ -663,11 +695,20 @@ public class EmploymentContractService : IEmploymentContractService
             StatusDisplay = GetStatusDisplay(c.Status),
             ApprovalInstanceId = c.ApprovalInstanceId,
             HasDocument = hasDoc,
-            DocumentFileName = c.DocumentFileName,
-            DocumentFileSize = c.DocumentFileSize,
-            DocumentMimeType = c.DocumentMimeType,
-            DocumentUploadedAt = c.DocumentUploadedAt,
-            DocumentUrl = hasDoc ? $"/api/employment-contracts/{c.Id}/document" : null
+            DocumentFileName = latest?.FileName,
+            DocumentFileSize = latest?.FileSize,
+            DocumentMimeType = latest?.MimeType,
+            DocumentUploadedAt = latest?.UploadedAt,
+            DocumentUrl = hasDoc ? $"/api/employment-contracts/{c.Id}/document" : null,
+            DocumentCount = docs.Count,
+            Documents = docs.Select(d => new ContractDocumentDto
+            {
+                Id = d.Id,
+                FileName = d.FileName,
+                MimeType = d.MimeType,
+                FileSize = d.FileSize,
+                UploadedAt = d.UploadedAt
+            }).ToList()
         };
     }
 
