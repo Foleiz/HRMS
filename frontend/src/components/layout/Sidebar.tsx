@@ -316,15 +316,13 @@ const menuGroups: MenuGroup[] = [
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const { user, hasPermission, hasRole } = useAuth();
-  const { isCollapsed, toggleSidebar, collapseSidebar, isMobileOpen, closeMobileSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, isMobileOpen, closeMobileSidebar } = useSidebar();
   const isDesktop = useIsDesktop();
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectMenu = () => {
-    // Desktop: ย่อ sidebar, Mobile: ปิด drawer
-    if (isDesktop) {
-      collapseSidebar();
-    } else {
+    // Desktop: คงสถานะเมนูไว้ตามที่ผู้ใช้ตั้ง (ขยายค้างไว้), Mobile: ปิด drawer
+    if (!isDesktop) {
       closeMobileSidebar();
     }
     setSearchTerm('');
