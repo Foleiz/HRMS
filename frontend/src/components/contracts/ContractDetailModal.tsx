@@ -4,7 +4,6 @@ import { ModalShell, ModalHeader, Button, ActionDropdown, type ActionDropdownIte
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   FileText,
-  CheckCircle2,
   XCircle,
   Loader2,
   Download,
@@ -12,7 +11,6 @@ import {
   Trash2,
   Paperclip,
   ExternalLink,
-  Clock,
   Plus,
   ImageIcon,
 } from 'lucide-react';
@@ -137,34 +135,42 @@ export default function ContractDetailModal({
   const documents: ContractDocument[] = currentContract?.documents || [];
   const selectedDoc = documents.find((d) => d.id === selectedDocId) || null;
 
-  // โหลดตัวอย่างของไฟล์ที่เลือก
+  // โหลดตัวอย่างของไฟล์ที่เลือก — ใช้เลขคำขอล่าสุดแทน flag ต่อ effect
+  // (สลับไฟล์ระหว่างโหลดแล้วสถานะโหลดไม่ค้าง)
+  const previewReq = useRef(0);
+  const [previewNonce, setPreviewNonce] = useState(0);
+  const contractId = currentContract?.id;
+  const docId = selectedDoc?.id;
+  const docMime = selectedDoc?.mimeType || '';
   useEffect(() => {
-    if (!isOpen || !currentContract || !selectedDoc) {
+    const req = ++previewReq.current;
+    if (!isOpen || !contractId || !docId) {
       setPreview(null);
+      setIsLoadingPreview(false);
       return;
     }
-    const cached = urlCache.current.get(selectedDoc.id);
-    if (cached) {
-      setPreview({ docId: selectedDoc.id, url: cached, mime: selectedDoc.mimeType || '' });
-      setPreviewError(null);
-      return;
-    }
-    let alive = true;
-    setIsLoadingPreview(true);
     setPreviewError(null);
+    const cached = urlCache.current.get(docId);
+    if (cached) {
+      setPreview({ docId, url: cached, mime: docMime });
+      setIsLoadingPreview(false);
+      return;
+    }
+    setIsLoadingPreview(true);
     contractService
-      .getDocumentFileBlob(currentContract.id, selectedDoc.id, true)
+      .getDocumentFileBlob(contractId, docId, true)
       .then(({ blob, mimeType }) => {
         const url = URL.createObjectURL(blob);
-        urlCache.current.set(selectedDoc.id, url);
-        if (alive) setPreview({ docId: selectedDoc.id, url, mime: mimeType || selectedDoc.mimeType || '' });
+        urlCache.current.set(docId, url);
+        if (req === previewReq.current) setPreview({ docId, url, mime: mimeType || docMime });
       })
-      .catch((err: any) => alive && setPreviewError(err?.message || 'ไม่สามารถเปิดดูไฟล์ได้'))
-      .finally(() => alive && setIsLoadingPreview(false));
-    return () => {
-      alive = false;
-    };
-  }, [isOpen, currentContract?.id, selectedDoc?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+      .catch((err: any) => {
+        if (req === previewReq.current) setPreviewError(err?.message || 'ไม่สามารถเปิดดูไฟล์ได้');
+      })
+      .finally(() => {
+        if (req === previewReq.current) setIsLoadingPreview(false);
+      });
+  }, [isOpen, contractId, docId, previewNonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!isOpen || !currentContract) return null;
 
@@ -181,7 +187,7 @@ export default function ContractDetailModal({
   const handleTerminateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!terminateReason.trim()) {
-      toast.warning('กรุณาระบุเหตุผลในการสิ้นสุดสัญญา');
+      toast.warning('กรุณาระบุเหตุผลในการยกเลิกสัญญา');
       return;
     }
     try {
@@ -284,14 +290,6 @@ export default function ContractDetailModal({
       : []),
   ];
 
-  const statusBanner = isActive
-    ? { cls: 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300', Icon: CheckCircle2, label: 'สัญญาใช้งานอยู่ (Active)' }
-    : currentContract.status === 'PENDING_APPROVAL'
-      ? { cls: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300', Icon: Clock, label: 'รออนุมัติ' }
-      : isEnded
-        ? { cls: 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300', Icon: XCircle, label: currentContract.statusDisplay || 'สิ้นสุดสัญญาแล้ว' }
-        : { cls: 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300', Icon: FileText, label: currentContract.statusDisplay || '-' };
-
   const previewMime = preview?.mime || selectedDoc?.mimeType || '';
 
   return (
@@ -316,16 +314,11 @@ export default function ContractDetailModal({
               showTerminateForm ? 'opacity-50 pointer-events-none' : ''
             }`}
           >
-            <div className={`rounded-xl border px-4 py-3 text-sm ${statusBanner.cls}`}>
-              <div className="flex items-center gap-2.5 font-semibold">
-                <statusBanner.Icon className="w-4.5 h-4.5 shrink-0" strokeWidth={2.5} />
-                <span>{statusBanner.label}</span>
-                <span className="ml-auto text-xs font-medium">เลขที่ #{currentContract.id}</span>
-              </div>
-              {currentContract.terminationDate && (
-                <dl className="m-0 mt-2 text-xs space-y-1">
+            {currentContract.terminationDate && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300 px-4 py-3 text-xs">
+                <dl className="m-0 space-y-1">
                   <div className="flex justify-between gap-4">
-                    <dt>วันที่สิ้นสุดจริง</dt>
+                    <dt>วันที่ยกเลิกสัญญา</dt>
                     <dd className="m-0 font-semibold">{formatDateTh(currentContract.terminationDate)}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
@@ -333,8 +326,8 @@ export default function ContractDetailModal({
                     <dd className="m-0 font-semibold text-right break-words">{currentContract.terminationReason || '-'}</dd>
                   </div>
                 </dl>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className={`${reviewCardCls} text-sm`}>
               <div className={reviewTitleCls}>
@@ -453,7 +446,6 @@ export default function ContractDetailModal({
             <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-slate-200 dark:border-slate-700 shrink-0">
               <div className="min-w-0 text-sm">
                 <span className="font-bold text-slate-900 dark:text-slate-100">ตัวอย่างเอกสาร</span>
-                {selectedDoc && <span className="text-slate-500 dark:text-slate-400"> · {selectedDoc.fileName}</span>}
               </div>
               {selectedDoc && (
                 <div className="flex items-center gap-2 shrink-0">
@@ -483,12 +475,19 @@ export default function ContractDetailModal({
                   <p className="m-0 text-sm font-medium">ยังไม่มีไฟล์แนบ</p>
                   <p className="m-0 text-xs mt-0.5">แนบไฟล์สัญญาจ้างจากด้านซ้าย แล้วตัวอย่างจะแสดงที่นี่</p>
                 </div>
-              ) : isLoadingPreview || preview?.docId !== selectedDoc.id ? (
-                previewError ? (
-                  <p className="text-sm text-rose-600">{previewError}</p>
-                ) : (
-                  <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-                )
+              ) : previewError ? (
+                <div className="text-center">
+                  <p className="m-0 text-sm text-rose-600">{previewError}</p>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewNonce((n) => n + 1)}
+                    className="mt-3 h-9 px-4 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-semibold text-primary dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 cursor-pointer"
+                  >
+                    ลองอีกครั้ง
+                  </button>
+                </div>
+              ) : isLoadingPreview || !preview || preview.docId !== selectedDoc.id ? (
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
               ) : previewMime.includes('pdf') ? (
                 <iframe src={preview.url} title={selectedDoc.fileName} className="w-full h-full min-h-[440px] rounded-lg border border-slate-300 dark:border-slate-800 bg-white" />
               ) : isImage(previewMime, selectedDoc.fileName) ? (
@@ -515,11 +514,11 @@ export default function ContractDetailModal({
             className="border-t-2 border-rose-300 dark:border-rose-800 px-5 sm:px-6 py-4 space-y-3 bg-white dark:bg-slate-800 shrink-0 shadow-[0_-8px_24px_rgba(15,23,42,0.06)] animate-in fade-in duration-150"
           >
             <div className="flex items-center gap-2 text-sm font-bold text-rose-700 dark:text-rose-300">
-              <XCircle className="w-4.5 h-4.5" /> สิ้นสุด / บอกเลิกสัญญา
+              <XCircle className="w-4.5 h-4.5" /> ยกเลิกสัญญาจ้าง
             </div>
             <label className="block space-y-1.5">
               <span className="block text-xs font-semibold text-rose-700 dark:text-rose-300">
-                เหตุผลในการสิ้นสุดสัญญา <span className="text-rose-500">*</span>
+                เหตุผลในการยกเลิกสัญญา <span className="text-rose-500">*</span>
               </span>
               <textarea
                 rows={3}
@@ -536,7 +535,7 @@ export default function ContractDetailModal({
                 ยกเลิก
               </Button>
               <Button type="submit" variant="danger" loading={isTerminating}>
-                ยืนยันสิ้นสุดสัญญา
+                ยืนยันยกเลิกสัญญาจ้าง
               </Button>
             </div>
           </form>
@@ -548,7 +547,7 @@ export default function ContractDetailModal({
                 onClick={() => setShowTerminateForm(true)}
                 className="h-10 px-4 rounded-xl border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
               >
-                สิ้นสุด / บอกเลิกสัญญา
+                ยกเลิกสัญญาจ้าง
               </button>
             ) : (
               <span className="text-xs text-slate-400">{isEnded ? 'อ่านอย่างเดียว' : ''}</span>
