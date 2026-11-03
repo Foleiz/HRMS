@@ -3,13 +3,11 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import {
   X,
   Calendar,
   Loader2,
   AlertCircle,
-  ExternalLink,
   Upload,
   Trash2,
   FileText,
@@ -235,21 +233,11 @@ export default function CreateContractModal({
             />
           </div>
 
-          {/* 2. ประเภทสัญญา / การจ้างงาน * */}
+          {/* 2. ประเภทพนักงาน * */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                ประเภทสัญญา / การจ้างงาน <span className="text-rose-500">*</span>
-              </label>
-              <Link
-                href="/employees/types"
-                target="_blank"
-                className="text-[11px] text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium hover:underline"
-              >
-                <span>จัดการประเภทสัญญา</span>
-                <ExternalLink className="w-3 h-3" />
-              </Link>
-            </div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              ประเภทพนักงาน <span className="text-rose-500">*</span>
+            </label>
 
             <CustomSelect
               value={employeeTypeId || ''}
@@ -271,12 +259,10 @@ export default function CreateContractModal({
                 </>
               )}
             </CustomSelect>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              เมื่อถึงวันเริ่มสัญญา ระบบจะอัปเดตประเภทพนักงานของพนักงานคนนี้ตามสัญญาให้อัตโนมัติ
-            </p>
           </div>
 
-          {/* 3. วันที่เริ่มสัญญา * */}
+          {/* 3–4. วันที่เริ่ม / วันที่สิ้นสุด (แถวเดียวกัน) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่เริ่มสัญญา <span className="text-rose-500">*</span>
@@ -301,6 +287,7 @@ export default function CreateContractModal({
             <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 font-normal">
               เว้นว่างได้หากเป็นสัญญาไม่มีกำหนด
             </p>
+          </div>
           </div>
 
           {/* 5. แนบเอกสารสัญญาจ้างงาน */}
