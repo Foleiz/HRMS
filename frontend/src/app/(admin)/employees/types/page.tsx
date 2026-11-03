@@ -46,23 +46,6 @@ const CATEGORY_META: Record<string, { label: string }> = {
   OTHER: { label: 'สิทธิประโยชน์อื่นๆ' },
 };
 
-function getBadgeColor(category?: string): string {
-  switch (category) {
-    case 'STATUTORY':
-      return 'bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/60';
-    case 'HEALTH':
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60';
-    case 'ALLOWANCE':
-      return 'bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60';
-    case 'FINANCIAL':
-      return 'bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60';
-    case 'WELLNESS':
-      return 'bg-pink-50 text-pink-700 border-pink-200/80 dark:bg-pink-950/50 dark:text-pink-300 dark:border-pink-800/60';
-    default:
-      return 'bg-slate-50 text-slate-700 border-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
-  }
-}
-
 export default function EmployeeTypesPage() {
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
@@ -450,11 +433,7 @@ export default function EmployeeTypesPage() {
 
                       {/* รูปแบบค่าตอบแทน */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${wage.color}`}
-                        >
-                          {wage.label}
-                        </span>
+                        <span className="text-slate-700 dark:text-slate-300">{wage.label}</span>
                       </td>
 
                       {/* สิทธิประโยชน์ */}
@@ -618,36 +597,27 @@ export default function EmployeeTypesPage() {
                   />
 
                   {/* Header */}
-                  <div className="shrink-0 flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 gap-3">
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <span className="shrink-0 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
-                        {popoverData.typeCode}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={popoverData.typeName}>
-                          {popoverData.typeName}
-                        </h4>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">
-                          สิทธิประโยชน์และสวัสดิการทั้งหมด
-                        </p>
-                      </div>
+                  <div className="shrink-0 flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="min-w-0">
+                      <h4 className="m-0 text-sm font-bold text-slate-900 dark:text-slate-100 truncate" title={popoverData.typeName}>
+                        {popoverData.typeName}
+                      </h4>
+                      <p className="m-0 mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        สวัสดิการที่ได้รับ {popoverData.benefits.length} รายการ
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="whitespace-nowrap inline-flex items-center text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60">
-                        {popoverData.benefits.length} รายการ
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setPopoverData(null)}
-                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPopoverData(null)}
+                      aria-label="ปิด"
+                      className="p-1 -mr-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
 
-                  {/* Categorized List */}
-                  <div className="mt-3 space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
+                  {/* รายการแยกหมวด: ชื่อซ้าย จำนวนเงินขวา */}
+                  <div className="mt-1 overflow-y-auto pr-1 flex-1 min-h-0">
                     {Object.keys(groupedPopoverBenefits).length === 0 ? (
                       <p className="text-center py-6 text-xs text-slate-400 dark:text-slate-500">
                         ไม่มีรายการสวัสดิการระบุไว้
@@ -656,39 +626,33 @@ export default function EmployeeTypesPage() {
                       Object.entries(groupedPopoverBenefits).map(([category, list]) => {
                         const meta = CATEGORY_META[category] || { label: 'สิทธิประโยชน์อื่นๆ' };
                         return (
-                          <div key={category} className="space-y-1.5">
-                            <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                              <span>{meta.label}</span>
-                              <span className="text-[10px] font-normal text-slate-400 whitespace-nowrap">
-                                {list.length} รายการ
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
+                          <div key={category}>
+                            <div className="text-xs font-bold text-slate-500 dark:text-slate-400 pt-3 pb-1">{meta.label}</div>
+                            <ul className="m-0 p-0 list-none divide-y divide-slate-100 dark:divide-slate-800">
                               {list.map((b) => {
-                                const badgeColor = getBadgeColor(b.category);
                                 const amt = Number(b.coverageAmount) || 0;
                                 const freqLabel =
                                   b.frequency === 'DAILY'
-                                    ? 'บ./วัน'
+                                    ? 'วัน'
                                     : b.frequency === 'YEARLY'
-                                    ? 'บ./ปี'
-                                    : 'บ./ด.';
+                                    ? 'ปี'
+                                    : b.frequency === 'PER_OCCURRENCE'
+                                    ? 'ครั้ง'
+                                    : 'เดือน';
+                                const amountText =
+                                  amt > 0
+                                    ? `${amt.toLocaleString('th-TH')} บ./${freqLabel}`
+                                    : b.isStatutory || category === 'STATUTORY'
+                                    ? 'ตามกฎหมาย'
+                                    : 'ตามระเบียบบริษัท';
                                 return (
-                                  <span
-                                    key={b.id}
-                                    title={b.description || b.benefitName}
-                                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-medium whitespace-nowrap ${badgeColor}`}
-                                  >
-                                    <span>{b.benefitName}</span>
-                                    {amt > 0 && (
-                                      <span className="font-mono font-bold opacity-85 text-[10px]">
-                                        ({amt.toLocaleString()} {freqLabel})
-                                      </span>
-                                    )}
-                                  </span>
+                                  <li key={b.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                                    <span className="min-w-0 text-slate-800 dark:text-slate-200">{b.benefitName}</span>
+                                    <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{amountText}</span>
+                                  </li>
                                 );
                               })}
-                            </div>
+                            </ul>
                           </div>
                         );
                       })
