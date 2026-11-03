@@ -14,6 +14,8 @@ public class EmployeeTransferDto
 
     public string TransferType { get; set; } = string.Empty;
     public string TransferTypeDisplay { get; set; } = string.Empty;
+    /// <summary>รหัสประเภทแยกเป็นรายการ: DEPARTMENT_TRANSFER, PROMOTION, POSITION_CHANGE, DEMOTION</summary>
+    public List<string> TransferTypes { get; set; } = new();
 
     // ข้อมูลเดิม
     public long? FromDivisionId { get; set; }

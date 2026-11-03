@@ -54,10 +54,6 @@ public class EmployeeTransferService : IEmployeeTransferService
             );
         }
 
-        if (!string.IsNullOrWhiteSpace(transferType) && transferType != "ALL")
-        {
-            query = query.Where(t => t.TransferType == transferType);
-        }
 
         if (!string.IsNullOrWhiteSpace(status) && status != "ALL")
         {
@@ -68,7 +64,14 @@ public class EmployeeTransferService : IEmployeeTransferService
             .OrderByDescending(t => t.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return items.Select(MapToDto).ToList();
+        var result = items.Select(MapToDto);
+        if (!string.IsNullOrWhiteSpace(transferType) && transferType != "ALL")
+        {
+            var wanted = transferType.Trim().ToUpperInvariant();
+            result = result.Where(d => d.TransferTypes.Contains(wanted));
+        }
+
+        return result.ToList();
     }
 
     public async Task<TransferStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
@@ -83,12 +86,12 @@ public class EmployeeTransferService : IEmployeeTransferService
 
         var pendingCount = all.Count(t => t.Status == "PENDING");
         var transfersThisMonth = all.Count(t =>
-            (t.TransferType == "DEPARTMENT_TRANSFER" || t.TransferType == "TRANSFER_AND_PROMOTION") &&
+            TransferTypes.Split(t.TransferType).Contains(TransferTypes.DepartmentTransfer) &&
             t.EffectiveDate.Month == currentMonth &&
             t.EffectiveDate.Year == currentYear);
 
         var promotionsThisMonth = all.Count(t =>
-            (t.TransferType == "PROMOTION" || t.TransferType == "TRANSFER_AND_PROMOTION" || t.TransferType == "PROMOTION_AND_SUPERVISOR") &&
+            TransferTypes.Split(t.TransferType).Contains(TransferTypes.Promotion) &&
             t.EffectiveDate.Month == currentMonth &&
             t.EffectiveDate.Year == currentYear);
 
@@ -198,11 +201,31 @@ public class EmployeeTransferService : IEmployeeTransferService
         // วันที่มีผลต้องไม่ก่อนวันที่เริ่มตำแหน่งปัจจุบัน (กันข้อมูลประวัติตำแหน่งทับซ้อน/ย้อนกลับ)
         EnsureEffectiveDateValid(currentAssign, request.EffectiveDate);
 
+        // จัดประเภทอัตโนมัติจากการเทียบ ปัจจุบัน ↔ ปลายทาง (ไม่ใช้ค่าที่ผู้ใช้เลือก)
+        var positionIds = new[] { currentAssign?.PositionId, (long?)request.ToPositionId }
+            .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+        var levelRanks = await _context.Positions
+            .AsNoTracking()
+            .Where(p => positionIds.Contains(p.Id))
+            .Select(p => new { p.Id, Rank = p.EmployeeLevel != null ? p.EmployeeLevel.LevelRank : null })
+            .ToDictionaryAsync(p => p.Id, p => p.Rank, cancellationToken);
+        int? RankOf(long? positionId) =>
+            positionId.HasValue && levelRanks.TryGetValue(positionId.Value, out var r) ? r : null;
+
+        var typeCodes = TransferTypes.Classify(
+            currentAssign?.DepartmentId, request.ToDepartmentId,
+            currentAssign?.PositionId, request.ToPositionId,
+            RankOf(currentAssign?.PositionId), RankOf(request.ToPositionId));
+        if (typeCodes.Count == 0)
+        {
+            throw new ValidationException("แผนกและตำแหน่งปลายทางเหมือนปัจจุบัน — ไม่มีการเปลี่ยนแปลงให้บันทึก");
+        }
+
         var transfer = new EmployeeTransferRequest
         {
             RequestNo = requestNo,
             EmployeeId = request.EmployeeId,
-            TransferType = request.TransferType,
+            TransferType = TransferTypes.Join(typeCodes),
             RecordType = isArchive ? "ARCHIVE" : "REQUEST",
             FromDivisionId = currentAssign?.DivisionId,
             FromDepartmentId = currentAssign?.DepartmentId,
@@ -531,15 +554,9 @@ public class EmployeeTransferService : IEmployeeTransferService
             : "-";
         var empCode = t.Employee?.EmployeeCode ?? "-";
 
-        // แปลงประเภทคำขอเป็นภาษาไทยตรงตาม Mockup
-        var typeDisplay = t.TransferType switch
-        {
-            "DEPARTMENT_TRANSFER" => "ย้ายแผนก",
-            "PROMOTION" => "เลื่อนตำแหน่ง",
-            "TRANSFER_AND_PROMOTION" => "โอนย้ายและเลื่อนตำแหน่ง",
-            "PROMOTION_AND_SUPERVISOR" => "เลื่อนตำแหน่ง + เปลี่ยนหัวหน้างาน",
-            _ => t.TransferType
-        };
+        // ประเภทการปรับเปลี่ยน (หลายป้ายได้) + ข้อความภาษาไทย
+        var typeCodes = TransferTypes.Split(t.TransferType);
+        var typeDisplay = string.Join(" + ", typeCodes.Select(TransferTypes.Display));
 
         // แสดงสายงาน / แผนก หรือ ตำแหน่งต้นทาง
         var fromDept = t.FromDepartment?.DepartmentName?.Trim() ?? "";
@@ -601,6 +618,7 @@ public class EmployeeTransferService : IEmployeeTransferService
             EmployeeCode = empCode,
             TransferType = t.TransferType,
             TransferTypeDisplay = typeDisplay,
+            TransferTypes = typeCodes,
             FromDivisionId = t.FromDivisionId,
             FromDivisionName = fromDiv,
             FromDepartmentId = t.FromDepartmentId,
