@@ -15,8 +15,6 @@ public class ApprovalAction : BaseEntity
     public string ActionDecision { get; set; } = "APPROVE"; // APPROVE, REJECT, RETURN, CANCEL
     public string? Comment { get; set; }
     public DateTime ActionAt { get; set; } = DateTime.UtcNow;
-    public long? DelegationId { get; set; }
-    public long? ActedForEmployeeId { get; set; }
     public byte[]? SignatureData { get; set; }
     /// <summary>ชื่อและตำแหน่งของผู้อนุมัติ ณ เวลาที่กดอนุมัติ (เอกสารเก่าไม่เปลี่ยนตามการย้ายตำแหน่ง)</summary>
     public string? ApproverName { get; set; }
@@ -26,5 +24,4 @@ public class ApprovalAction : BaseEntity
     public virtual ApprovalInstance? ApprovalInstance { get; set; }
     public virtual ApprovalStep? ApprovalStep { get; set; }
     public virtual Employee? ApproverEmployee { get; set; }
-    public virtual Employee? ActedForEmployee { get; set; }
 }

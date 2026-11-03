@@ -254,7 +254,6 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         isAllowedDuringProbation: true,
         advanceRequestDays: toNum(form.advanceRequestDays) ?? 0,
         // ยื่นย้อนหลังได้เสมอ — กันด้วยการลาซ้อนวันและงวดเงินเดือนที่ปิดรอบแล้วแทน
-        maxBackdateDays: null,
         maxDaysPerOccurrence: null,
         maxOccurrencesPerYear: null,
         maxLifetimeOccurrences: toNum(form.maxLifetimeOccurrences),

@@ -118,7 +118,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
     // Approval Workflow Designer (Dev 1 Phase 2)
     public DbSet<ApprovalFlow> ApprovalFlows => Set<ApprovalFlow>();
     public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
-    public DbSet<ApprovalDelegation> ApprovalDelegations => Set<ApprovalDelegation>();
     public DbSet<ApprovalInstance> ApprovalInstances => Set<ApprovalInstance>();
     public DbSet<ApprovalAction> ApprovalActions => Set<ApprovalAction>();
 
@@ -697,7 +696,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.LevelName).HasColumnName("level_name").IsRequired().HasMaxLength(100);
             entity.Property(e => e.LevelRank).HasColumnName("level_rank");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
-            entity.Property(e => e.DefaultFlowId).HasColumnName("default_flow_id");
             entity.HasIndex(e => e.LevelCode).IsUnique();
         });
 
@@ -1381,7 +1379,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.MaxDaysPerOccurrence).HasColumnName("max_days_per_occurrence").HasPrecision(8, 2);
             entity.Property(e => e.MaxOccurrencesPerYear).HasColumnName("max_occurrences_per_year");
             entity.Property(e => e.CarryForwardMaxDays).HasColumnName("carry_forward_max_days").HasPrecision(8, 2);
-            entity.Property(e => e.MaxBackdateDays).HasColumnName("max_backdate_days");
             entity.Property(e => e.DocumentGraceDays).HasColumnName("document_grace_days");
             entity.Property(e => e.ProrationMethod).HasColumnName("proration_method").HasMaxLength(20).IsRequired();
 
@@ -1626,30 +1623,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // Configuration: ApprovalDelegation
-        modelBuilder.Entity<ApprovalDelegation>(entity =>
-        {
-            entity.ToTable("approval_delegation", "hrms");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.DelegatorEmployeeId).HasColumnName("delegator_employee_id").IsRequired();
-            entity.Property(e => e.DelegateEmployeeId).HasColumnName("delegate_employee_id").IsRequired();
-            entity.Property(e => e.DocumentType).HasColumnName("document_type").HasMaxLength(50);
-            entity.Property(e => e.StartDate).HasColumnName("start_date").IsRequired();
-            entity.Property(e => e.EndDate).HasColumnName("end_date").IsRequired();
-            entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(20).IsRequired();
-
-            entity.HasOne(e => e.DelegatorEmployee)
-                .WithMany()
-                .HasForeignKey(e => e.DelegatorEmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(e => e.DelegateEmployee)
-                .WithMany()
-                .HasForeignKey(e => e.DelegateEmployeeId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
-
         // Configuration: ApprovalInstance
         modelBuilder.Entity<ApprovalInstance>(entity =>
         {
@@ -1687,8 +1660,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ActionDecision).HasColumnName("action_decision").HasMaxLength(30).IsRequired();
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.ActionAt).HasColumnName("action_at").IsRequired();
-            entity.Property(e => e.DelegationId).HasColumnName("delegation_id");
-            entity.Property(e => e.ActedForEmployeeId).HasColumnName("acted_for_employee_id");
             entity.Property(e => e.SignatureData).HasColumnName("signature_data");
             entity.Property(e => e.ApproverName).HasColumnName("approver_name").HasMaxLength(255);
             entity.Property(e => e.ApproverPositionName).HasColumnName("approver_position_name").HasMaxLength(255);
@@ -1706,11 +1677,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.HasOne(e => e.ApproverEmployee)
                 .WithMany()
                 .HasForeignKey(e => e.ApproverEmployeeId)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasOne(e => e.ActedForEmployee)
-                .WithMany()
-                .HasForeignKey(e => e.ActedForEmployeeId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
@@ -1964,7 +1930,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.ClosedAt).HasColumnName("closed_at");
             entity.Property(e => e.ClosedByEmployeeId).HasColumnName("closed_by_employee_id");
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
-            entity.Property(e => e.PreApprovalStatus).HasColumnName("pre_approval_status").HasMaxLength(20);
             // Payment Workflow Columns
             entity.Property(e => e.PaymentMethod).HasColumnName("payment_method").HasMaxLength(20);
             entity.Property(e => e.FinanceVerifiedAt).HasColumnName("finance_verified_at");
@@ -2190,7 +2155,6 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Purpose).HasColumnName("purpose");
             entity.Property(e => e.Status).HasColumnName("status").HasMaxLength(30).IsRequired();
             entity.Property(e => e.RequestedAt).HasColumnName("requested_at").IsRequired();
-            entity.Property(e => e.IssuedFileUrl).HasColumnName("issued_file_url");
             entity.Property(e => e.IssuedAt).HasColumnName("issued_at");
             entity.Property(e => e.ApprovalInstanceId).HasColumnName("approval_instance_id");
             entity.Property(e => e.DocumentSnapshot).HasColumnName("document_snapshot");
