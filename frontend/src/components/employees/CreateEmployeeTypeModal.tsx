@@ -314,6 +314,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
           benefitItemIds: selectedBenefitIds,
           benefitAssignments,
         });
+      } else {
         await onSubmit({
           typeCode: typeCode.trim() ? typeCode.trim().toUpperCase() : undefined,
           typeName: typeName.trim(),
