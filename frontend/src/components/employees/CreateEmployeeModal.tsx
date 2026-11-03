@@ -664,7 +664,7 @@ export default function CreateEmployeeModal({
 
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
-      <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-5xl shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header (ตรงตามสไตล์เดียวกับ EditEmployeeModal) */}
         <ModalHeader
           icon={UserPlus}
@@ -702,8 +702,8 @@ export default function CreateEmployeeModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form onSubmit={handleSubmit} noValidate className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] p-6 space-y-6">
             {/* Alert สรุปข้อผิดพลาด */}
             {hasAttemptedSubmit && Object.keys(formErrors).length > 0 && (
               <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-rose-800 text-xs shadow-xs animate-in fade-in">

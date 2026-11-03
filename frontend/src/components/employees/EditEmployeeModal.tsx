@@ -551,7 +551,7 @@ export default function EditEmployeeModal({
 
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
-      <div className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-5xl shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
         <ModalHeader
           icon={UserCog}
@@ -591,8 +591,8 @@ export default function EditEmployeeModal({
             <p className="text-xs font-medium">กำลังโหลดข้อมูลพนักงาน...</p>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable] p-6 space-y-6">
               {/* TAB 1: ข้อมูลส่วนตัว (Personal) */}
               {activeTab === 'personal' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-xs animate-in fade-in duration-150">
