@@ -596,7 +596,7 @@ function EmployeeEditPageContent() {
                   { key: 'family', label: 'ข้อมูลครอบครัว' },
                   { key: 'emergency', label: 'ผู้ติดต่อกรณีฉุกเฉิน' },
                   { key: 'background', label: 'การศึกษา & ประวัติการทำงาน' },
-                  { key: 'tax', label: 'ภาษี & ประกันสังคม' },
+                  { key: 'tax', label: 'ประกันสังคม' },
                 ]}
                 activeKey={activeTab}
                 onChange={setActiveTab}

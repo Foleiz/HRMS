@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Landmark, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { inputClass } from '@/components/ui';
 
 const INPUT = inputClass;
@@ -22,7 +22,8 @@ interface Props {
   currentSocialSecurityMasked?: string | null;
 }
 
-/** ข้อมูลภาษีและประกันสังคมรายคน (ฝ่ายบุคคลแก้ไข) */
+/** ข้อมูลประกันสังคมรายคน (ฝ่ายบุคคลแก้ไข)
+ *  ฟิลด์ลดหย่อนภาษี (spouseHasIncome ฯลฯ) ยังเก็บใน state เพื่อส่งค่าเดิมกลับ แต่ไม่แสดงบนหน้าจอแล้ว */
 export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSecurityMasked }: Props) {
   const set = (patch: Partial<TaxSsoValues>) => onChange({ ...values, ...patch });
   const count = (v: string, max: number) => Math.max(0, Math.min(max, Number(v) || 0));
@@ -51,58 +52,6 @@ export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSe
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-          <Landmark className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ข้อมูลลดหย่อนภาษี</h3>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400">ใช้คำนวณภาษีหัก ณ ที่จ่ายในรอบเงินเดือน</span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="flex items-center gap-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 cursor-pointer md:col-span-2">
-            <input
-              type="checkbox"
-              checked={values.spouseHasIncome}
-              onChange={(e) => set({ spouseHasIncome: e.target.checked })}
-              className="w-4 h-4 rounded text-primary focus:ring-primary"
-            />
-            <span className="text-slate-700 dark:text-slate-300">คู่สมรสมีเงินได้ (ไม่ใช้สิทธิ์ลดหย่อนคู่สมรส)</span>
-          </label>
-          <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนบุตรที่ใช้ลดหย่อน</label>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              value={values.numberOfChildren}
-              onChange={(e) => set({ numberOfChildren: count(e.target.value, 20) })}
-              className={INPUT}
-            />
-          </div>
-          <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนบิดามารดาที่ใช้ลดหย่อน</label>
-            <input
-              type="number"
-              min={0}
-              max={4}
-              value={values.parentDeductionCount}
-              onChange={(e) => set({ parentDeductionCount: count(e.target.value, 4) })}
-              className={INPUT}
-            />
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">บิดามารดาของตนเองและคู่สมรส สูงสุด 4 คน</p>
-          </div>
-          <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">จำนวนผู้พิการ/ทุพพลภาพที่ดูแล</label>
-            <input
-              type="number"
-              min={0}
-              max={20}
-              value={values.disabilityDeductionCount}
-              onChange={(e) => set({ disabilityDeductionCount: count(e.target.value, 20) })}
-              className={INPUT}
-            />
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
