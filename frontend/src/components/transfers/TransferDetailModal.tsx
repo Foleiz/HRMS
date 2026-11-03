@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, ArrowDown, Download, FileText } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
 import { ModalShell } from '@/components/ui';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 import { reviewCardCls, reviewTitleCls } from '@/components/approvals/ReviewInfoPanels';
@@ -23,31 +23,25 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-const STATUS_CLS: Record<string, string> = {
-  APPROVED: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
-  PENDING: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800',
-  REJECTED: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
-};
-
 export default function TransferDetailModal({ transfer, onClose, onDownload }: TransferDetailModalProps) {
   if (!transfer) return null;
   const t = transfer;
   const types = parseTransferTypes(t.transferType, t.transferTypes);
 
   const side = (title: string, div?: string, dept?: string, pos?: string, highlight = false) => (
-    <div
-      className={`p-4 rounded-xl bg-white dark:bg-slate-800 text-sm ${
-        highlight ? 'border-[1.5px] border-primary/70 dark:border-blue-400/60' : 'border border-slate-200 dark:border-slate-700'
-      }`}
-    >
-      <div className={`text-xs font-bold mb-1 ${highlight ? 'text-primary dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>
-        {title}
+    <div className="flex flex-col gap-1.5 min-w-0">
+      <div className={`text-xs font-bold ${highlight ? 'text-primary dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>{title}</div>
+      <div
+        className={`flex-1 p-4 rounded-xl bg-white dark:bg-slate-800 text-sm ${
+          highlight ? 'border-[1.5px] border-primary/70 dark:border-blue-400/60' : 'border border-slate-200 dark:border-slate-700'
+        }`}
+      >
+        <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60">
+          <Row label="ฝ่าย">{div || '-'}</Row>
+          <Row label="แผนก">{dept || '-'}</Row>
+          <Row label="ตำแหน่ง">{pos || '-'}</Row>
+        </dl>
       </div>
-      <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60">
-        <Row label="ฝ่าย">{div || '-'}</Row>
-        <Row label="แผนก">{dept || '-'}</Row>
-        <Row label="ตำแหน่ง">{pos || '-'}</Row>
-      </dl>
     </div>
   );
 
@@ -70,19 +64,13 @@ export default function TransferDetailModal({ transfer, onClose, onDownload }: T
               <Row label="วันที่มีผล">
                 <span className="text-primary dark:text-blue-300">{t.effectiveDateDisplay}</span>
               </Row>
-              <Row label="สถานะ">
-                <span className={`inline-flex rounded-full border text-[11px] px-2.5 py-0.5 ${STATUS_CLS[t.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                  {t.statusDisplay}
-                </span>
-              </Row>
             </dl>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_32px_minmax(0,1fr)] gap-3 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] gap-3 items-stretch">
             {side('ก่อน', t.fromDivisionName, t.fromDepartmentName, t.fromPositionName)}
-            <div className="flex items-center justify-center text-primary dark:text-blue-300">
-              <ArrowRight className="w-6 h-6 hidden md:block" strokeWidth={2.2} />
-              <ArrowDown className="w-6 h-6 md:hidden" strokeWidth={2.2} />
+            <div className="flex items-center justify-center md:pt-6 text-sm font-semibold text-primary dark:text-blue-300">
+              ไปยัง
             </div>
             {side('หลัง', t.toDivisionName, t.toDepartmentName, t.toPositionName, true)}
           </div>
