@@ -10,7 +10,7 @@ import {
   Phone,
   User,
   GraduationCap,
-  Landmark,
+  ShieldCheck,
   Plus,
   UserCog,
 } from 'lucide-react';
@@ -591,7 +591,7 @@ export default function EditEmployeeModal({
               { id: 'family', label: 'ข้อมูลครอบครัว', icon: Users },
               { id: 'emergency', label: 'ผู้ติดต่อฉุกเฉิน', icon: Phone },
               { id: 'background', label: 'การศึกษา & ประวัติการทำงาน', icon: GraduationCap },
-              { id: 'tax', label: 'ภาษี & ประกันสังคม', icon: Landmark },
+              { id: 'tax', label: 'ประกันสังคม', icon: ShieldCheck },
             ].map((t) => {
               const Icon = t.icon;
               return {

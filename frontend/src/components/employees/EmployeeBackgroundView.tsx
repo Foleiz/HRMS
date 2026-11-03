@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { GraduationCap, Briefcase, ShieldCheck, Landmark } from 'lucide-react';
+import { GraduationCap, Briefcase, ShieldCheck } from 'lucide-react';
 import { Employee } from '@/types/employee';
 
 const formatDate = (v?: string | null) => {
@@ -127,7 +127,7 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
   );
 }
 
-/** แท็บภาษี & ประกันสังคม ในหน้ารายละเอียดพนักงาน */
+/** แท็บประกันสังคม ในหน้ารายละเอียดพนักงาน */
 export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
   return (
     <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150 items-stretch">
@@ -166,34 +166,6 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
         </SectionCard>
       </section>
 
-      {/* ─── ข้อมูลลดหย่อนภาษี ─── */}
-      <section className="space-y-3 flex flex-col h-full">
-        <div className="flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-            <Landmark className="w-4 h-4" />
-          </span>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ข้อมูลลดหย่อนภาษี</h3>
-        </div>
-
-        <SectionCard className="flex-1">
-          <KeyValueRow
-            label="คู่สมรสมีเงินได้"
-            value={employee.spouseHasIncome ? 'มี' : 'ไม่มี / ไม่ระบุ'}
-          />
-          <KeyValueRow
-            label="จำนวนบุตรที่ใช้ลดหย่อน"
-            value={`${employee.numberOfChildren ?? 0} คน`}
-          />
-          <KeyValueRow
-            label="จำนวนบิดามารดาที่ใช้ลดหย่อน"
-            value={`${employee.parentDeductionCount ?? 0} คน`}
-          />
-          <KeyValueRow
-            label="จำนวนผู้พิการ/ทุพพลภาพที่ดูแล"
-            value={`${employee.disabilityDeductionCount ?? 0} คน`}
-          />
-        </SectionCard>
-      </section>
     </div>
   );
 }

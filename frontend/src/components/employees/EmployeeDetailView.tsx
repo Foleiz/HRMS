@@ -501,7 +501,7 @@ export default function EmployeeDetailView({
   const TABS = [
     { id: 'personal', label: 'ข้อมูลส่วนตัว' },
     { id: 'background', label: 'การศึกษา & ประวัติการทำงาน' },
-    { id: 'tax', label: 'ภาษี & ประกันสังคม' },
+    { id: 'tax', label: 'ประกันสังคม' },
     { id: 'user', label: 'ข้อมูลผู้ใช้งาน' },
     { id: 'documents', label: 'เอกสาร' },
     { id: 'history', label: 'ประวัติการเปลี่ยนแปลง' },

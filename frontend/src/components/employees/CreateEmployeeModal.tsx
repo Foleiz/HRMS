@@ -10,7 +10,7 @@ import {
   Phone,
   User,
   GraduationCap,
-  Landmark,
+  ShieldCheck,
   Plus,
   AlertCircle,
   UserPlus,
@@ -654,7 +654,7 @@ export default function CreateEmployeeModal({
               { id: 'family', label: 'ข้อมูลครอบครัว', icon: Users, errCount: familyErrorsCount },
               { id: 'emergency', label: 'ผู้ติดต่อฉุกเฉิน', icon: Phone, errCount: emergencyErrorsCount },
               { id: 'background', label: 'การศึกษา & ประวัติการทำงาน', icon: GraduationCap, errCount: 0 },
-              { id: 'tax', label: 'ภาษี & ประกันสังคม', icon: Landmark, errCount: 0 },
+              { id: 'tax', label: 'ประกันสังคม', icon: ShieldCheck, errCount: 0 },
             ].map((t) => {
               const Icon = t.icon;
               return {
