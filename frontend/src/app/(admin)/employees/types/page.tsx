@@ -31,7 +31,7 @@ import {
 import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
-import { Button, TabBar , TableToolbar } from '@/components/ui';
+import { Button, TabBar, TableToolbar, AvatarName } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -422,7 +422,7 @@ export default function EmployeeTypesPage() {
               <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
                   <th className="py-3 px-5 whitespace-nowrap">รหัสประเภท</th>
-                  <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทสัญญา / การจ้างงาน</th>
+                  <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทพนักงาน</th>
                   <th className="py-3 px-4 whitespace-nowrap">รูปแบบค่าตอบแทน</th>
                   <th className="py-3 px-4 whitespace-nowrap">สิทธิประโยชน์และสวัสดิการ</th>
                   <th className="py-3 px-4 text-center whitespace-nowrap">สัญญาที่ใช้งานอยู่</th>
@@ -444,8 +444,8 @@ export default function EmployeeTypesPage() {
                       </td>
 
                       {/* ชื่อประเภท */}
-                      <td className="py-3.5 px-4 font-medium text-slate-800 dark:text-slate-200">
-                        {item.typeName}
+                      <td className="py-3.5 px-4">
+                        <AvatarName id={item.id} name={item.typeName} />
                       </td>
 
                       {/* รูปแบบค่าตอบแทน */}

@@ -6,7 +6,7 @@ import { Plus, Loader2, Eye, Download, Clock } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { Button, TabBar, TableToolbar, ActionDropdown, type ActionDropdownItem } from '@/components/ui';
+import { Button, TabBar, TableToolbar, ActionDropdown, AvatarName, type ActionDropdownItem } from '@/components/ui';
 import { showError } from '@/lib/sweetalert';
 import { EmployeeTransfer, TransferSummaryStats } from '@/types/transfer';
 import CreateTransferModal from '@/components/transfers/CreateTransferModal';
@@ -288,8 +288,12 @@ export default function TransfersPage() {
                           {item.effectiveDateDisplay}
                         </td>
                         <td className="py-3.5 px-5 whitespace-nowrap">
-                          <div className="font-semibold text-slate-900 dark:text-slate-100">{item.employeeName}</div>
-                          <div className="text-[11px] text-slate-400 dark:text-slate-500">{item.employeeCode}</div>
+                          <AvatarName
+                            id={item.employeeId}
+                            name={item.employeeName}
+                            prefix={item.employeePrefix}
+                            avatarUrl={item.avatarUrl}
+                          />
                         </td>
                         <td className="py-3.5 px-5">
                           <div>

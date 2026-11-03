@@ -11,6 +11,7 @@ public class EmployeeTransferDto
     public string EmployeeName { get; set; } = string.Empty;
     public string EmployeeCode { get; set; } = string.Empty;
     public string? AvatarUrl { get; set; }
+    public string? EmployeePrefix { get; set; }
 
     public string TransferType { get; set; } = string.Empty;
     public string TransferTypeDisplay { get; set; } = string.Empty;
