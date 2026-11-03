@@ -1696,11 +1696,6 @@ export default function OrganizationPage() {
                               {ben.description && (
                                 <div className="text-[11px] text-slate-400 dark:text-slate-500 font-normal truncate max-w-xs">{ben.description}</div>
                               )}
-                              {ben.isStatutory && (
-                                <div className="text-[10px] text-blue-600 dark:text-blue-300 font-normal">
-                                  แสดงเพื่ออ้างอิงสิทธิ์ — อัตรา/การคำนวณตั้งที่ เงินเดือน &gt; รายได้และรายหัก
-                                </div>
-                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
