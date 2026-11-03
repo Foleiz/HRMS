@@ -1086,9 +1086,6 @@ export default function CommissionTab() {
                     <Sparkles className="h-3 w-3" /> ระบบตรวจจับรูปแบบอัตโนมัติ
                   </span>
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  ลากไฟล์หรือเลือกไฟล์ Excel / CSV เพื่อพรีวิวตรวจสอบข้อมูลและแทนที่ยอดเดิมในช่วงวันที่ซ้ำให้อัตโนมัติ
-                </p>
               </div>
             </div>
 
