@@ -352,7 +352,7 @@ export const NotificationBell: React.FC = () => {
                 ) : (
                   <CheckCheck className="w-3.5 h-3.5" />
                 )}
-                <span>อ่านแล้วทั้งหมด</span>
+                <span>อ่านทั้งหมด</span>
               </button>
 
               <button
