@@ -21,7 +21,7 @@ import { NotificationItem } from '@/types/notification';
 import { useAuth } from '@/context/AuthContext';
 import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
-type TabKey = 'ALL' | 'UNREAD' | 'READ' | 'OTHER';
+type TabKey = 'ALL' | 'UNREAD' | 'READ';
 
 function formatNotificationDate(dateStr: string, fallbackTimeAgo?: string): string {
   try {
@@ -179,24 +179,11 @@ export const NotificationBell: React.FC = () => {
     }
   };
 
-  // Filtered notifications by active tab (ทั้งหมด, ยังไม่ได้อ่าน, อื่นๆ)
+  // Filtered notifications by active tab (ทั้งหมด, ยังไม่ได้อ่าน, อ่านแล้ว)
   const filteredNotifications = useMemo(() => {
-    if (activeTab === 'ALL') return notifications;
     if (activeTab === 'UNREAD') return notifications.filter((n) => !n.isRead);
     if (activeTab === 'READ') return notifications.filter((n) => n.isRead);
-
-    // OTHER: ข่าวสาร ประกาศ สัญญา หรือการแจ้งเตือนทั่วไป
-    return notifications.filter((n) => {
-      const t = (n.notificationType || '').toUpperCase();
-      return (
-        t.includes('ANNOUNCEMENT') ||
-        t.includes('PAYROLL') ||
-        t.includes('GENERAL') ||
-        t.includes('DOCUMENT') ||
-        t.includes('PROBATION') ||
-        t.includes('CONTRACT')
-      );
-    });
+    return notifications;
   }, [notifications, activeTab]);
 
   // Slice to 3 items initially unless showAll is true
@@ -403,7 +390,7 @@ export const NotificationBell: React.FC = () => {
               </button>
 
               {/* Option 1: Mute Website Notifications */}
-              <div className="p-2.5 rounded-xl border border-blue-200 dark:border-blue-800/80 bg-blue-50/40 dark:bg-blue-950/30 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                 <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   ปิดการแจ้งเตือนเว็บไซต์
                 </span>
@@ -430,7 +417,7 @@ export const NotificationBell: React.FC = () => {
                 <button
                   type="button"
                   onClick={toggleMuteSound}
-                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer ${
+                  className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-200 cursor-pointer outline-none focus:outline-none focus:ring-0 select-none ${
                     muteSound ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                 >
@@ -451,7 +438,6 @@ export const NotificationBell: React.FC = () => {
                 { key: 'ALL', label: 'ทั้งหมด' },
                 { key: 'UNREAD', label: 'ยังไม่ได้อ่าน' },
                 { key: 'READ', label: 'อ่านแล้ว' },
-                { key: 'OTHER', label: 'อื่นๆ' },
               ] as const
             ).map((tab) => (
               <button
