@@ -223,7 +223,7 @@ export default function CreateTransferModal({
       <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh]">
         {/* Header */}
         <ModalHeader
-          title="บันทึกคำสั่งแต่งตั้ง / โยกย้ายพนักงาน"
+          title="บันทึกคำสั่งโยกย้ายพนักงาน"
           onClose={onClose}
         />
 
@@ -334,12 +334,7 @@ export default function CreateTransferModal({
 
           {/* 7. อัปโหลดไฟล์เอกสารคำสั่งแต่งตั้ง/โยกย้าย */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 flex items-center justify-between">
-              <span>
-                เอกสารคำสั่งแต่งตั้ง/โยกย้าย (แนบไฟล์หลักฐานถ้ามี)
-              </span>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal">PDF, JPG, PNG (ไม่เกิน 10MB)</span>
-            </label>
+            <label className="text-xs font-medium text-slate-700 dark:text-slate-300 block">แนบเอกสารโยกย้ายพนักงาน</label>
 
             {!attachedFile ? (
               <div
@@ -355,7 +350,7 @@ export default function CreateTransferModal({
                 />
                 <Upload className="w-5 h-5 text-slate-400 dark:text-slate-500 mx-auto mb-1.5" />
                 <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">ไฟล์คำสั่งแต่งตั้ง, ประกาศ หรือหนังสือส่งตัว</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">PDF, JPG, PNG (ไม่เกิน 10MB)</p>
               </div>
             ) : (
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
