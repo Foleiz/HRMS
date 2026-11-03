@@ -70,7 +70,6 @@ export default function TransferDetailModal({ transfer, onClose, onDownload }: T
               <Row label="วันที่มีผล">
                 <span className="text-primary dark:text-blue-300">{t.effectiveDateDisplay}</span>
               </Row>
-              <Row label="เลขที่คำสั่ง">{t.orderNo || '-'}</Row>
               <Row label="สถานะ">
                 <span className={`inline-flex rounded-full border text-[11px] px-2.5 py-0.5 ${STATUS_CLS[t.status] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                   {t.statusDisplay}

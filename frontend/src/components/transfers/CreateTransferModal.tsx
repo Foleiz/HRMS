@@ -46,7 +46,6 @@ export default function CreateTransferModal({ isOpen, onClose, onSuccess }: Crea
   const [toDepartmentId, setToDepartmentId] = useState<string>('');
   const [toPositionId, setToPositionId] = useState<string>('');
   const [effectiveDate, setEffectiveDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [orderNo, setOrderNo] = useState<string>('');
   const [reason, setReason] = useState<string>('');
 
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -60,7 +59,6 @@ export default function CreateTransferModal({ isOpen, onClose, onSuccess }: Crea
     setToDepartmentId('');
     setToPositionId('');
     setEffectiveDate(new Date().toISOString().split('T')[0]);
-    setOrderNo('');
     setReason('');
     setAttachedFile(null);
     setFileBase64('');
@@ -151,7 +149,6 @@ export default function CreateTransferModal({ isOpen, onClose, onSuccess }: Crea
         toDepartmentId: Number(toDepartmentId),
         toPositionId: Number(toPositionId),
         effectiveDate,
-        orderNo: orderNo.trim() || undefined,
         reason: reason.trim() || undefined,
         autoApprove: true,
         recordType: 'ARCHIVE',
@@ -231,6 +228,7 @@ export default function CreateTransferModal({ isOpen, onClose, onSuccess }: Crea
                     แผนก <span className="text-rose-500">*</span>
                   </label>
                   <CustomSelect
+                    className="w-full"
                     value={toDepartmentId}
                     onChange={(e) => {
                       setToDepartmentId(e.target.value);
@@ -250,7 +248,12 @@ export default function CreateTransferModal({ isOpen, onClose, onSuccess }: Crea
                   <label className="block text-xs text-slate-500 dark:text-slate-400">
                     ตำแหน่ง <span className="text-rose-500">*</span>
                   </label>
-                  <CustomSelect value={toPositionId} onChange={(e) => setToPositionId(e.target.value)} disabled={!toDepartmentId}>
+                  <CustomSelect
+                    className="w-full"
+                    value={toPositionId}
+                    onChange={(e) => setToPositionId(e.target.value)}
+                    disabled={!toDepartmentId}
+                  >
                     <option value="">{toDepartmentId ? 'เลือกตำแหน่ง...' : 'เลือกแผนกก่อน'}</option>
                     {filteredPositions.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -281,23 +284,11 @@ export default function CreateTransferModal({ isOpen, onClose, onSuccess }: Crea
               <span className="text-[11px] text-slate-400 sm:ml-auto">ระบบเลือกให้จากการเปลี่ยนแผนกและระดับตำแหน่ง</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label className={labelCls}>
-                  วันที่มีผล <span className="text-rose-500">*</span>
-                </label>
-                <ThaiDatePicker value={effectiveDate} onChange={setEffectiveDate} placeholder="เลือกวันที่มีผล" />
-              </div>
-              <div className="space-y-1.5">
-                <label className={labelCls}>เลขที่คำสั่ง</label>
-                <input
-                  type="text"
-                  value={orderNo}
-                  onChange={(e) => setOrderNo(e.target.value)}
-                  placeholder="เช่น คำสั่งที่ 15/2569 (ถ้ามี)"
-                  className={inputCls}
-                />
-              </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>
+                วันที่มีผล <span className="text-rose-500">*</span>
+              </label>
+              <ThaiDatePicker value={effectiveDate} onChange={setEffectiveDate} placeholder="เลือกวันที่มีผล" />
             </div>
 
             <div className="space-y-1.5">
