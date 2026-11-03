@@ -38,7 +38,7 @@ import { getAvatarUrl } from '@/lib/api-client';
 import { useAuth } from '@/context/AuthContext';
 import { confirmDelete } from '@/lib/sweetalert';
 import EmployeeDocumentsTab from '@/components/employees/EmployeeDocumentsTab';
-import { EmployeeBackgroundView, EmployeeTaxSsoView } from '@/components/employees/EmployeeBackgroundView';
+import { EmployeeBackgroundView } from '@/components/employees/EmployeeBackgroundView';
 import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHistoryTab';
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 import { formatRoleName } from '@/lib/roleUtils';
@@ -146,7 +146,6 @@ export type EmployeeDetailTab =
   | 'family'
   | 'emergency'
   | 'background'
-  | 'tax'
   | 'user'
   | 'documents'
   | 'history';
@@ -203,7 +202,6 @@ export default function EmployeeDetailView({
     if (tabParam === 'history') return 'history';
     if (tabParam === 'user' || tabParam === 'account') return 'user';
     if (tabParam === 'background') return 'background';
-    if (tabParam === 'tax') return 'tax';
     return 'personal';
   });
 
@@ -213,14 +211,14 @@ export default function EmployeeDetailView({
     else if (tabParam === 'history') setActiveTab('history');
     else if (tabParam === 'user' || tabParam === 'account') setActiveTab('user');
     else if (tabParam === 'background') setActiveTab('background');
-    else if (tabParam === 'tax') setActiveTab('tax');
-    else if (tabParam === 'personal' || !tabParam) setActiveTab('personal');
+    else if (tabParam === 'personal' || tabParam === 'tax' || !tabParam) setActiveTab('personal');
   }, [tabParam]);
 
   // ลิงก์เดิม ?tab=family / ?tab=emergency → เลื่อนไปหัวข้อในแท็บข้อมูลส่วนตัว
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const target = tabParam === 'family' ? 'sec-family' : tabParam === 'emergency' ? 'sec-emergency' : null;
+    const target =
+      tabParam === 'family' ? 'sec-family' : tabParam === 'emergency' ? 'sec-emergency' : tabParam === 'tax' ? 'sec-sso' : null;
     if (!target) return;
     const t = setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     return () => clearTimeout(t);
@@ -499,7 +497,6 @@ export default function EmployeeDetailView({
   const TABS = [
     { id: 'personal', label: 'ข้อมูลส่วนตัว' },
     { id: 'background', label: 'การศึกษา & ประวัติการทำงาน' },
-    { id: 'tax', label: 'ประกันสังคม' },
     { id: 'user', label: 'ข้อมูลผู้ใช้งาน' },
     { id: 'documents', label: 'เอกสาร' },
     { id: 'history', label: 'ประวัติการเปลี่ยนแปลง' },
@@ -785,6 +782,7 @@ export default function EmployeeDetailView({
                   { id: 'sec-basic', label: 'ข้อมูลพื้นฐาน' },
                   { id: 'sec-contact', label: 'ติดต่อ & ที่อยู่' },
                   { id: 'sec-bank', label: 'บัญชีธนาคาร' },
+                  { id: 'sec-sso', label: 'ประกันสังคม' },
                   { id: 'sec-family', label: `ครอบครัว` },
                   { id: 'sec-emergency', label: `ผู้ติดต่อฉุกเฉิน` },
                 ].map((s) => (
@@ -929,7 +927,34 @@ export default function EmployeeDetailView({
                 </div>
               </ProfileSection>
 
-              {/* 4) ครอบครัว */}
+              {/* 4) ประกันสังคม */}
+              <ProfileSection id="sec-sso" icon={<Shield className="w-4 h-4" />} title="ประกันสังคม">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-8 gap-y-3 text-sm">
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">เลขประกันสังคม</p>
+                    <p className="font-mono font-medium text-slate-900 dark:text-slate-100">
+                      {employee.socialSecurity?.socialSecurityNoMasked || employee.citizenIdMasked || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">โรงพยาบาลตามสิทธิ์</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{employee.socialSecurity?.hospitalName || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">สถานะผู้ประกันตน</p>
+                    <p className="font-medium text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      ผู้ประกันตน มาตรา 33
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-0.5">อัตราเงินสมทบ</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">5% (สูงสุด 750 บาท/เดือน)</p>
+                  </div>
+                </div>
+              </ProfileSection>
+
+              {/* 5) ครอบครัว */}
               <ProfileSection
                 id="sec-family"
                 icon={<Users className="w-4 h-4" />}
@@ -962,7 +987,7 @@ export default function EmployeeDetailView({
                 )}
               </ProfileSection>
 
-              {/* 5) ผู้ติดต่อฉุกเฉิน */}
+              {/* 6) ผู้ติดต่อฉุกเฉิน */}
               <ProfileSection
                 id="sec-emergency"
                 icon={<Phone className="w-4 h-4" />}
@@ -1027,11 +1052,6 @@ export default function EmployeeDetailView({
           {/* TAB 4: การศึกษา & ประวัติการทำงาน                            */}
           {/* ============================================================ */}
           {activeTab === 'background' && <EmployeeBackgroundView employee={employee} />}
-
-          {/* ============================================================ */}
-          {/* TAB 5: ประกันสังคม                                            */}
-          {/* ============================================================ */}
-          {activeTab === 'tax' && <EmployeeTaxSsoView employee={employee} />}
 
           {/* ============================================================ */}
           {/* TAB 6: ข้อมูลผู้ใช้งาน & จัดการบัญชี (User Account & Signature) */}
