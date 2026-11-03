@@ -1656,7 +1656,6 @@ export default function OrganizationPage() {
               <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
-                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสสวัสดิการ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">หมวดหมู่</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">โควตาวงเงินเริ่มต้น & รูปแบบ</th>
@@ -1668,21 +1667,20 @@ export default function OrganizationPage() {
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลสวัสดิการ...
                       </td>
                     </tr>
                   ) : filteredBenefits.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
                         ไม่พบข้อมูลสวัสดิการ
                       </td>
                     </tr>
                   ) : (
                     paginate(filteredBenefits).map((ben) => {
                       const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
-                      const CatIcon = catInfo.icon;
                       const freqLabel = ben.defaultFrequency === 'MONTHLY' ? 'ด.' : ben.defaultFrequency === 'YEARLY' ? 'ปี' : ben.defaultFrequency === 'DAILY' ? 'วัน' : 'ครั้ง';
                       const payoutBadge = ben.payoutType === 'PAYROLL' && !ben.isDocumentRequired
                         ? { label: 'จ่ายประจำในเงินเดือน', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' }
@@ -1692,25 +1690,17 @@ export default function OrganizationPage() {
 
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">
-                            {ben.benefitCode}
-                          </td>
                           <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">
-                            <div className="flex items-center gap-2">
-                              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600 dark:text-slate-400 dark:bg-slate-700 dark:text-slate-300">
-                                <CatIcon className="w-3.5 h-3.5" />
-                              </span>
-                              <div>
-                                <div>{ben.benefitName}</div>
-                                {ben.description && (
-                                  <div className="text-[11px] text-slate-400 dark:text-slate-500 font-normal truncate max-w-xs">{ben.description}</div>
-                                )}
-                                {ben.isStatutory && (
-                                  <div className="text-[10px] text-blue-600 dark:text-blue-300 font-normal">
-                                    แสดงเพื่ออ้างอิงสิทธิ์ — อัตรา/การคำนวณตั้งที่ เงินเดือน &gt; รายได้และรายหัก
-                                  </div>
-                                )}
-                              </div>
+                            <div>
+                              <div>{ben.benefitName}</div>
+                              {ben.description && (
+                                <div className="text-[11px] text-slate-400 dark:text-slate-500 font-normal truncate max-w-xs">{ben.description}</div>
+                              )}
+                              {ben.isStatutory && (
+                                <div className="text-[10px] text-blue-600 dark:text-blue-300 font-normal">
+                                  แสดงเพื่ออ้างอิงสิทธิ์ — อัตรา/การคำนวณตั้งที่ เงินเดือน &gt; รายได้และรายหัก
+                                </div>
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4 whitespace-nowrap">
