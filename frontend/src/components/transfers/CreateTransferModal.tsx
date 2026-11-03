@@ -406,7 +406,7 @@ export default function CreateTransferModal({
               variant="primary"
               loading={submitting}
             >
-              บันทึกคำสั่งแต่งตั้ง/โยกย้าย
+              บันทึก
             </Button>
           </div>
         </form>
