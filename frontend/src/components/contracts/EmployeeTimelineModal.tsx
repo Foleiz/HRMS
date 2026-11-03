@@ -1,14 +1,9 @@
 ﻿'use client';
-import { ModalHeader } from '@/components/ui/ModalHeader';
 
+import { ModalHeader } from '@/components/ui/ModalHeader';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Loader2,
-  AlertCircle,
-  History,
-} from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
 import { contractService } from '@/services/contractService';
 import { EmployeeCareerTimeline } from '@/types/contract';
 
@@ -54,11 +49,97 @@ export default function EmployeeTimelineModal({
 
   return (
     <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-      <ModalHeader
-        icon={History}
-        title={<><span>ไทม์ไลน์ตำแหน่งของ</span> <span className="text-[#16a34a]">{employeeName} · {employeeCode}</span></>}
-        onClose={onClose}
-      />
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <ModalHeader
+          title={
+            <>
+              ไทม์ไลน์ตำแหน่งของ <span className="text-[#16a34a]">{employeeName} · {employeeCode}</span>
+            </>
+          }
+          onClose={onClose}
+        />
+
+        {/* Content Body ตรงตาม Mockup 100% */}
+        <div className="p-7 max-h-[70vh] overflow-y-auto">
+          {loading ? (
+            <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 flex flex-col items-center justify-center gap-2">
+              <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-300" />
+              <span className="text-xs">กำลังโหลดไทม์ไลน์ตำแหน่งงาน...</span>
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-rose-800 text-xs">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{error}</span>
+            </div>
+          ) : timeline.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 text-sm">
+              ไม่พบข้อมูลประวัติตำแหน่งงานของพนักงานคนนี้
+            </div>
+          ) : (
+            <div className="relative pl-6 space-y-8">
+              {timeline.map((item, index) => {
+                const isLast = index === timeline.length - 1;
+                const isCurrent = item.isCurrent;
+
+                return (
+                  <div key={item.id} className="relative flex items-start group">
+                    {/* เส้นเชื่อมโยงไทม์ไลน์แนวตั้ง (Connecting Vertical Line) */}
+                    {!isLast && (
+                      <span
+                        className="absolute left-[-17px] top-[14px] w-[2px] bg-slate-400 bottom-[-36px]"
+                        aria-hidden="true"
+                      />
+                    )}
+
+                    {/* จุด Node ของไทม์ไลน์: วงกลมกลวง (อดีต) / วงกลมทึบสีดำ (ปัจจุบัน) */}
+                    <span
+                      className={`absolute left-[-24px] top-[3px] flex items-center justify-center w-4 h-4 rounded-full transition-all ${ isCurrent ? 'bg-slate-900 border-2 border-slate-900'
+                          : 'bg-white border-2 border-slate-700'
+                      }`}
+                    />
+
+                    {/* เนื้อหาไทม์ไลน์ตรงตามรูป Mockup */}
+                    <div className="flex-1">
+                      {/* 1. ช่วงเวลา: 01/03/2567 – 31/07/2569 */}
+                      <div className="text-xs text-slate-600 dark:text-slate-400 font-normal">
+                        {item.dateRangeDisplay}
+                      </div>
+
+                      {/* 2. ชื่อตำแหน่ง + Badge ปัจจุบัน */}
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                          {item.positionName}
+                        </span>
+                        {isCurrent && (
+                          <span className="bg-[#bbf7d0] text-[#15803d] text-xs px-2 py-0.5 rounded-md font-medium inline-flex items-center">
+                            ปัจจุบัน
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 3. สังกัดสายงาน / แผนก / สาขา · หัวหน้างาน */}
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {item.hierarchyDisplay}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end px-7 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 px-5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+          >
+            ปิด
+          </button>
+        </div>
+      </div>
     </ModalShell>
   );
 }
