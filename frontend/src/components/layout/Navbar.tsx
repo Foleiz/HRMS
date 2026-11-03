@@ -486,40 +486,39 @@ export const Navbar: React.FC = () => {
                       <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 mt-0.5 shadow-2xs">
                         <Briefcase className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 flex-1 space-y-1 text-xs">
+                      <div className="min-w-0 flex-1 space-y-1.5 text-xs">
                         {employee?.departmentName || employee?.divisionName ? (
                           <>
-                            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">สังกัด</p>
                             {employee?.departmentName && (
-                              <p className="leading-snug">
-                                <span className="text-slate-400 dark:text-slate-500">แผนก: </span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              <div className="flex items-center justify-between gap-2 leading-snug">
+                                <span className="text-slate-400 dark:text-slate-500 shrink-0">แผนก</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right truncate">
                                   {employee.departmentName.replace(/^แผนก\s*/, '')}
                                 </span>
-                              </p>
+                              </div>
                             )}
                             {employee?.divisionName && (
-                              <p className="leading-snug">
-                                <span className="text-slate-400 dark:text-slate-500">ฝ่าย: </span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              <div className="flex items-center justify-between gap-2 leading-snug">
+                                <span className="text-slate-400 dark:text-slate-500 shrink-0">ฝ่าย</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 text-right truncate">
                                   {employee.divisionName.replace(/^ฝ่าย\s*/, '')}
                                 </span>
-                              </p>
+                              </div>
                             )}
                           </>
                         ) : (
-                          <p className="leading-snug">
-                            <span className="text-slate-400 dark:text-slate-500">สังกัด : </span>
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">-</span>
-                          </p>
+                          <div className="flex items-center justify-between gap-2 leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500 shrink-0">สังกัด</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">-</span>
+                          </div>
                         )}
                         {companyName && (
-                          <p className="leading-snug">
-                            <span className="text-slate-400 dark:text-slate-500">บริษัท: </span>
-                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          <div className="flex items-center justify-between gap-2 leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500 shrink-0">บริษัท</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-right truncate">
                               {companyName.replace(/^บริษัท\s*/, '')}
                             </span>
-                          </p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -529,17 +528,19 @@ export const Navbar: React.FC = () => {
                       <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-400 dark:text-slate-500 mt-0.5 shadow-2xs">
                         <Clock className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 flex-1 space-y-1 text-xs">
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">เวลาทำงาน</p>
-                        <p className="font-bold text-slate-800 dark:text-slate-200 leading-snug">
-                          {displayWorkHours} น.
-                        </p>
-                        <p className="leading-snug">
-                          <span className="text-slate-400 dark:text-slate-500">พักเบรก: </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="min-w-0 flex-1 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between gap-2 leading-snug">
+                          <span className="text-slate-400 dark:text-slate-500 shrink-0">เวลาทำงาน</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200 text-right">
+                            {displayWorkHours} น.
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 leading-snug">
+                          <span className="text-slate-400 dark:text-slate-500 shrink-0">พักเบรก</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 text-right">
                             12:00 - 13:00 น.
                           </span>
-                        </p>
+                        </div>
                       </div>
                     </div>
                   </div>
