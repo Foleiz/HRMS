@@ -43,6 +43,7 @@ import EmployeeChangeHistoryTab from '@/components/employees/EmployeeChangeHisto
 import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 import { formatRoleName } from '@/lib/roleUtils';
 import EditEmployeeModal, { EditModalTab } from '@/components/employees/EditEmployeeModal';
+import { formatAddressLine } from '@/components/employees/AddressPairFields';
 
 const formatThaiDate = (dateStr?: string) => {
   if (!dateStr) return '-';
@@ -157,17 +158,6 @@ interface EmployeeDetailViewProps {
   onEditClick?: () => void;
   editButtonLabel?: string;
 }
-
-/** แปลงประเภทที่อยู่ที่เป็นรหัส (จากข้อมูลตั้งต้น) เป็นข้อความไทย — ค่าที่กรอกจากฟอร์มเป็นภาษาไทยอยู่แล้ว */
-const ADDRESS_TYPE_LABELS: Record<string, string> = {
-  CURRENT: 'ที่อยู่ปัจจุบัน',
-  REGISTERED: 'ที่อยู่ตามทะเบียนบ้าน',
-  HOME: 'บ้านตัวเอง',
-  RENT: 'บ้านเช่า',
-  DORMITORY: 'หอพัก',
-  FAMILY: 'อาศัยกับครอบครัว',
-};
-const formatAddressType = (t?: string | null) => (t ? ADDRESS_TYPE_LABELS[t.toUpperCase()] ?? t : '-');
 
 export default function EmployeeDetailView({
   employee,
@@ -492,7 +482,12 @@ export default function EmployeeDetailView({
     setIsEditModalOpen(true);
   };
 
-  const primaryAddress = employee.addresses?.find((a) => a.isCurrent) || employee.addresses?.[0];
+  const registeredAddress = employee.addresses?.find((a) => (a.addressType || '').toUpperCase() === 'REGISTERED');
+  const currentAddress =
+    employee.addresses?.find((a) => (a.addressType || '').toUpperCase() === 'CURRENT') ||
+    employee.addresses?.find((a) => a !== registeredAddress);
+  const registeredText = formatAddressLine(registeredAddress);
+  const currentText = formatAddressLine(currentAddress);
   const primaryBank =
     employee.bankAccounts?.find((b) => b.status === 'ACTIVE' && b.isPrimary) ||
     employee.bankAccounts?.find((b) => b.status === 'ACTIVE');
@@ -678,11 +673,9 @@ export default function EmployeeDetailView({
                 <Home className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ที่อยู่</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">ที่อยู่ปัจจุบัน</p>
                 <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
-                  {primaryAddress
-                    ? `${primaryAddress.addressLine || ''} ${primaryAddress.subDistrict || ''} ${primaryAddress.district || ''} ${primaryAddress.province || ''} ${primaryAddress.postalCode || ''}`.trim() || '-'
-                    : '-'}
+                  {currentText || registeredText || '-'}
                 </p>
               </div>
             </div>
@@ -833,19 +826,14 @@ export default function EmployeeDetailView({
                   <ProfileField label="เบอร์โทรศัพท์" value={formatPhoneNumber(employee.contact?.personalPhone)} mono />
                   <ProfileField label="อีเมลส่วนตัว" value={employee.contact?.personalEmail || '-'} breakAll />
                   <ProfileField label="อีเมลองค์กร" value={employee.contact?.organizationEmail || '-'} breakAll />
-                  <div className="sm:col-span-2 xl:col-span-3">
+                  <div className="sm:col-span-2 xl:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 pt-4 border-t border-slate-100 dark:border-slate-700/60">
+                    <ProfileField label="ที่อยู่ตามทะเบียนบ้าน" value={registeredText || '-'} />
                     <ProfileField
-                      label={`ที่อยู่${primaryAddress?.addressType ? ` (${formatAddressType(primaryAddress.addressType)})` : ''}`}
+                      label="ที่อยู่ปัจจุบัน"
                       value={
-                        [
-                          primaryAddress?.addressLine,
-                          primaryAddress?.subDistrict && `ต.${primaryAddress.subDistrict}`,
-                          primaryAddress?.district && `อ.${primaryAddress.district}`,
-                          primaryAddress?.province && `จ.${primaryAddress.province}`,
-                          primaryAddress?.postalCode,
-                        ]
-                          .filter(Boolean)
-                          .join(' ') || '-'
+                        registeredText && currentText && registeredText === currentText
+                          ? 'เหมือนที่อยู่ตามทะเบียนบ้าน'
+                          : currentText || '-'
                       }
                     />
                   </div>
