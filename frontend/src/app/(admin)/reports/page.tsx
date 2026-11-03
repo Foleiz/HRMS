@@ -1231,38 +1231,7 @@ export default function ReportsPage() {
             const totalOtherDeductions = taxData.totalOtherDeductions ?? Math.max(0, totalDeductionsAmount - taxData.totalWithholdingTax - taxData.totalSsoEmployee);
 
             return (
-              <div className="space-y-3.5">
-                {/* Visual Formula Flow Bar (แสดงสมการการคำนวณเงินได้สุทธิแบบโปร่งใส บวก-ลบ ตรงไปตรงมา) */}
-                <div className="bg-slate-50/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold">
-                    <Calculator className="w-4 h-4 text-primary shrink-0" />
-                    <span>สรุปสมการคำนวณเงินได้สุทธิรอบเดือน:</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-100/80 dark:bg-blue-950 text-blue-800 dark:text-blue-200 font-bold border border-blue-200 dark:border-blue-800">
-                      เงินได้ {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-slate-400 font-extrabold text-sm">−</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100/80 dark:bg-rose-950 text-rose-800 dark:text-rose-200 font-bold border border-rose-200 dark:border-rose-800">
-                      ภาษี {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-slate-400 font-extrabold text-sm">−</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-100/80 dark:bg-sky-950 text-sky-800 dark:text-sky-200 font-bold border border-sky-200 dark:border-sky-800">
-                      ปกส.ลูกจ้าง {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-slate-400 font-extrabold text-sm">−</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/80 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-bold border border-amber-200 dark:border-amber-800">
-                      หักอื่นๆ {totalOtherDeductions.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                    <span className="text-slate-400 font-extrabold text-sm">=</span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/80 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 font-bold border border-emerald-300 dark:border-emerald-800 shadow-2xs">
-                      สุทธิ {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                </div>
-
-                {/* 5 KPI Cards with Operation Indicators */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
                   {/* Card 1: Gross Income (+) */}
                   <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
                     <div className="flex items-center justify-between">
@@ -1338,7 +1307,6 @@ export default function ReportsPage() {
                     </div>
                   </div>
                 </div>
-              </div>
             );
           })()}
 
