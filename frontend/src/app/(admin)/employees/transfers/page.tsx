@@ -229,7 +229,7 @@ export default function TransfersPage() {
                   icon={<Plus className="w-4 h-4" />}
                   className="shrink-0 self-start sm:self-auto"
                 >
-                  บันทึกคำสั่งโยกย้าย
+                  บันทึกคำสั่งโยกย้ายพนักงาน
                 </Button>
               ) : null
             }
