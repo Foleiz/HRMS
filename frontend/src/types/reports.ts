@@ -67,6 +67,7 @@ export interface PayrollTaxItem {
   withholdingTax: number;
   ssoEmployee: number;
   ssoEmployer: number;
+  otherDeductions: number;
   totalDeductions: number;
   netSalary: number;
 }
@@ -83,6 +84,8 @@ export interface PayrollTaxSummary {
   totalSsoEmployee: number;
   totalSsoEmployer: number;
   totalSsoRemittance: number;
+  totalOtherDeductions: number;
+  totalDeductions: number;
   totalNetSalary: number;
   items: PayrollTaxItem[];
 }
