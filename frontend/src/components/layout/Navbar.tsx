@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { essAttendanceService } from '@/services/essAttendanceService';
+import { employeeShiftService } from '@/services/scheduleService';
+import { EmployeeShift } from '@/types/schedule';
 import { organizationService } from '@/services/organizationService';
 import { Employee } from '@/types/employee';
 import { AttendanceDaily } from '@/types/attendance';
@@ -40,6 +42,27 @@ import { getAvatarUrl } from '@/lib/api-client';
 
 /** อีเวนต์แจ้งว่ารูปโปรไฟล์เปลี่ยน (ส่งจากหน้าข้อมูลพนักงานหลังอัปโหลด) */
 export const AVATAR_UPDATED_EVENT = 'hrms:avatar-updated';
+
+function formatTimeFromApi(dateOrTimeStr?: string | null): string {
+  if (!dateOrTimeStr) return '';
+  const trimmed = String(dateOrTimeStr).trim();
+
+  // If it matches HH:mm (and not starting with a 4-digit year like 2026)
+  if (/^\d{1,2}:\d{2}/.test(trimmed) && !trimmed.includes('T') && !trimmed.startsWith('20')) {
+    const m = trimmed.match(/^(\d{1,2}):(\d{2})/);
+    if (m) return `${m[1].padStart(2, '0')}:${m[2]}`;
+  }
+
+  // Parse ISO date
+  const d = new Date(trimmed);
+  if (!isNaN(d.getTime())) {
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins = String(d.getMinutes()).padStart(2, '0');
+    return `${hours}:${mins}`;
+  }
+
+  return '';
+}
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
@@ -56,6 +79,7 @@ export const Navbar: React.FC = () => {
   // Profile data for dropdown card
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [todayAttendance, setTodayAttendance] = useState<AttendanceDaily | null>(null);
+  const [assignedShift, setAssignedShift] = useState<EmployeeShift | null>(null);
   const [companyName, setCompanyName] = useState<string>('');
   const [copiedCode, setCopiedCode] = useState(false);
 
@@ -69,6 +93,15 @@ export const Navbar: React.FC = () => {
           try {
             const att = await essAttendanceService.getMyToday();
             if (!cancelled) setTodayAttendance(att);
+          } catch {
+            // ignore
+          }
+          try {
+            const shifts = await employeeShiftService.getAssignmentsByEmployee(user.employeeId);
+            if (!cancelled && shifts && shifts.length > 0) {
+              const active = shifts.find((s) => s.isActive) || shifts[0];
+              if (active) setAssignedShift(active);
+            }
           } catch {
             // ignore
           }
@@ -240,6 +273,44 @@ export const Navbar: React.FC = () => {
     return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
   };
 
+  const displayWorkHours = (() => {
+    // 1. Check shiftTimeWindow e.g. "08:30 - 17:30 น."
+    if (todayAttendance?.shiftTimeWindow) {
+      const match = todayAttendance.shiftTimeWindow.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+      if (match) {
+        return `${match[1]} - ${match[2]}`;
+      }
+    }
+
+    // 2. Check scheduledStart and scheduledEnd from todayAttendance
+    if (todayAttendance?.scheduledStart && todayAttendance?.scheduledEnd) {
+      const start = formatTimeFromApi(todayAttendance.scheduledStart);
+      const end = formatTimeFromApi(todayAttendance.scheduledEnd);
+      if (start && end) {
+        return `${start} - ${end}`;
+      }
+    }
+
+    // 3. Check assignedShift
+    if (assignedShift?.startTime && assignedShift?.endTime) {
+      const start = formatTimeFromApi(assignedShift.startTime);
+      const end = formatTimeFromApi(assignedShift.endTime);
+      if (start && end) {
+        return `${start} - ${end}`;
+      }
+    }
+
+    // 4. Default standard work hours
+    return '08:30 - 17:30';
+  })();
+
+  const displayShiftCode =
+    todayAttendance?.shiftCode ||
+    assignedShift?.shiftCode ||
+    todayAttendance?.shiftName ||
+    assignedShift?.shiftName ||
+    'SHIFT101';
+
   const breadcrumb = getBreadcrumb();
 
   return (
@@ -372,7 +443,7 @@ export const Navbar: React.FC = () => {
                     {/* Shift Badge */}
                     <div className="mt-2.5">
                       <span className="px-3.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 tracking-wider">
-                        {todayAttendance?.shiftCode || todayAttendance?.shiftName || 'SHIFT101'}
+                        {displayShiftCode}
                       </span>
                     </div>
 
@@ -380,9 +451,7 @@ export const Navbar: React.FC = () => {
                     <div className="mt-2 text-xs font-medium text-slate-700 dark:text-slate-300 space-y-0.5">
                       <div>
                         <span className="font-bold text-slate-800 dark:text-slate-200">เข้างาน:</span>{' '}
-                        {todayAttendance?.scheduledStart && todayAttendance?.scheduledEnd
-                          ? `${todayAttendance.scheduledStart.slice(0, 5)} - ${todayAttendance.scheduledEnd.slice(0, 5)}`
-                          : '08:00 - 17:00'}
+                        {displayWorkHours}
                       </div>
                       <div>
                         <span className="font-bold text-slate-800 dark:text-slate-200">พักเบรก:</span> 12:00 - 13:00
