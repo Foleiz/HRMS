@@ -10,7 +10,6 @@ import {
   Phone,
   User,
   GraduationCap,
-  ShieldCheck,
   Plus,
   AlertCircle,
   UserPlus,
@@ -40,7 +39,7 @@ import { useToast } from '@/context/ToastContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
-import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
+import { SsoHospitalField, TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { inputClass } from '@/components/ui';
@@ -137,7 +136,7 @@ function FieldInfoTooltip({
   );
 }
 
-export type CreateModalTab = 'personal' | 'family' | 'emergency' | 'background' | 'tax';
+export type CreateModalTab = 'personal' | 'family' | 'emergency' | 'background';
 
 const initialFormData: CreateEmployeePayload = {
   employeeCode: '',
@@ -654,7 +653,6 @@ export default function CreateEmployeeModal({
               { id: 'family', label: 'ข้อมูลครอบครัว', icon: Users, errCount: familyErrorsCount },
               { id: 'emergency', label: 'ผู้ติดต่อฉุกเฉิน', icon: Phone, errCount: emergencyErrorsCount },
               { id: 'background', label: 'การศึกษา & ประวัติการทำงาน', icon: GraduationCap, errCount: 0 },
-              { id: 'tax', label: 'ประกันสังคม', icon: ShieldCheck, errCount: 0 },
             ].map((t) => {
               const Icon = t.icon;
               return {
@@ -1148,6 +1146,9 @@ export default function CreateEmployeeModal({
                     onFieldEdited={clearFieldError}
                   />
 
+                  {/* ประกันสังคม */}
+                  <SsoHospitalField values={taxSso} onChange={setTaxSso} />
+
                   {/* ข้อมูลบัญชีธนาคาร */}
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
                     <label className="font-semibold text-slate-700 dark:text-slate-300 block text-xs">
@@ -1586,12 +1587,6 @@ export default function CreateEmployeeModal({
               </div>
             )}
 
-            {/* TAB 5: ภาษี & ประกันสังคม (Tax & SSO) */}
-            {activeTab === 'tax' && (
-              <div className="w-full animate-in fade-in duration-150">
-                <EmployeeTaxSsoEditor values={taxSso} onChange={setTaxSso} />
-              </div>
-            )}
           </div>
 
           {/* Footer Actions */}

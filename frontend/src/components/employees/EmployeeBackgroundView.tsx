@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { GraduationCap, Briefcase, ShieldCheck } from 'lucide-react';
+import { GraduationCap, Briefcase } from 'lucide-react';
 import { Employee } from '@/types/employee';
 
 const formatDate = (v?: string | null) => {
@@ -123,49 +123,6 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-/** แท็บประกันสังคม ในหน้ารายละเอียดพนักงาน */
-export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
-  return (
-    <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150 items-stretch">
-      {/* ─── ประกันสังคม ─── */}
-      <section className="space-y-3 flex flex-col h-full">
-        <div className="flex items-center gap-2.5">
-          <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-4 h-4" />
-          </span>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ประกันสังคม</h3>
-        </div>
-
-        <SectionCard className="flex-1">
-          <KeyValueRow
-            label="เลขประกันสังคม"
-            value={employee.socialSecurity?.socialSecurityNoMasked || employee.citizenIdMasked || '-'}
-            mono
-          />
-          <KeyValueRow
-            label="โรงพยาบาลตามสิทธิ์"
-            value={employee.socialSecurity?.hospitalName || '-'}
-          />
-          <KeyValueRow
-            label="สถานะผู้ประกันตน"
-            value={
-              <span className="inline-flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                ผู้ประกันตน มาตรา 33
-              </span>
-            }
-          />
-          <KeyValueRow
-            label="อัตราเงินสมทบ"
-            value="5% (สูงสุด 750 บาท/เดือน)"
-          />
-        </SectionCard>
-      </section>
-
     </div>
   );
 }
