@@ -27,6 +27,13 @@ import {
   EmployeeEducation,
   EmployeeWorkExperience,
 } from '@/types/employee';
+import {
+  AddressPairFields,
+  AddressPair,
+  emptyAddressPair,
+  addressesForPayload,
+  validateAddressPair,
+} from './AddressPairFields';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -208,6 +215,7 @@ export default function CreateEmployeeModal({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formData, setFormData] = useState<CreateEmployeePayload>(initialFormData);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [addressPair, setAddressPair] = useState<AddressPair>(emptyAddressPair());
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
   // การศึกษา / ประวัติการทำงาน / ภาษีและประกันสังคม
@@ -254,6 +262,7 @@ export default function CreateEmployeeModal({
     if (!isOpen) return;
 
     setFormData(initialFormData);
+    setAddressPair(emptyAddressPair());
     setFormErrors({});
     setHasAttemptedSubmit(false);
     setActiveTab('personal');
@@ -314,12 +323,16 @@ export default function CreateEmployeeModal({
     'birthDate',
     'maritalStatus',
     'militaryStatus',
-    'addressType',
-    'addressLine',
-    'subDistrict',
-    'district',
-    'province',
-    'postalCode',
+    'reg_addressLine',
+    'reg_subDistrict',
+    'reg_district',
+    'reg_province',
+    'reg_postalCode',
+    'cur_addressLine',
+    'cur_subDistrict',
+    'cur_district',
+    'cur_province',
+    'cur_postalCode',
     'personalEmail',
     'organizationEmail',
     'personalPhone',
@@ -373,19 +386,7 @@ export default function CreateEmployeeModal({
     if (!data.militaryStatus || data.militaryStatus === 'เลือกสถานภาพทางทหาร')
       errors.militaryStatus = 'กรุณาเลือกสถานภาพทางทหาร';
 
-    // ที่อยู่
-    if (!data.addressType?.trim()) errors.addressType = 'กรุณาเลือกประเภทที่อยู่';
-    if (!data.addressLine?.trim()) errors.addressLine = 'กรุณากรอกบ้านเลขที่';
-    if (!data.subDistrict?.trim()) errors.subDistrict = 'กรุณากรอกตำบล / แขวง';
-    if (!data.district?.trim()) errors.district = 'กรุณากรอกอำเภอ / เขต';
-    if (!data.province?.trim()) errors.province = 'กรุณากรอกจังหวัด';
-
-    const postalDigits = (data.postalCode || '').replace(/\D/g, '');
-    if (!data.postalCode?.trim()) {
-      errors.postalCode = 'กรุณากรอกรหัสไปรษณีย์';
-    } else if (postalDigits.length !== 5) {
-      errors.postalCode = 'รหัสไปรษณีย์ต้องมี 5 หลัก';
-    }
+    // ที่อยู่ — ตรวจแยกใน validateAddressPair
 
     // ติดต่อ
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -521,7 +522,7 @@ export default function CreateEmployeeModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const errors = validateForm(formData);
+    const errors = { ...validateForm(formData), ...validateAddressPair(addressPair) };
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       setHasAttemptedSubmit(true);
@@ -558,16 +559,6 @@ export default function CreateEmployeeModal({
 
     setIsSubmitting(true);
     try {
-      const addressItem = {
-        addressType: 'CURRENT',
-        addressLine: formData.addressLine?.trim() || '',
-        subDistrict: formData.subDistrict?.trim() || '',
-        district: formData.district?.trim() || '',
-        province: formData.province?.trim() || '',
-        postalCode: formData.postalCode?.trim() || '',
-        isCurrent: true,
-      };
-
       const selectedBank = banks.find((b) => b.bankName === formData.bankName);
 
       const payload: CreateEmployeePayload = {
@@ -609,7 +600,7 @@ export default function CreateEmployeeModal({
         setTeam: true,
         employeeType:
           formData.employeeType && formData.employeeType !== 'เลือกประเภท' ? formData.employeeType : undefined,
-        addresses: [addressItem],
+        addresses: addressesForPayload(addressPair),
         educations: educations.filter((ed) => ed.educationLevel?.trim() || ed.institution?.trim()),
         workExperiences: workExperiences.filter((w) => w.companyName?.trim()),
         spouseHasIncome: taxSso.spouseHasIncome,
@@ -1165,123 +1156,15 @@ export default function CreateEmployeeModal({
                     {renderFieldError('personalPhone')}
                   </div>
 
-                  {/* ข้อมูลที่อยู่ */}
-                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 block text-xs">
-                      ที่อยู่ (Address) <span className="text-rose-500">*</span>
-                    </label>
-
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">ประเภทที่อยู่</span>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                          <label key={t} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                            <input
-                              type="radio"
-                              name="create_addressType"
-                              value={t}
-                              checked={formData.addressType === t}
-                              onChange={(e) => {
-                                setFormData({ ...formData, addressType: e.target.value });
-                                clearFieldError('addressType');
-                              }}
-                              className="text-primary focus:ring-primary"
-                            />
-                            <span>{t}</span>
-                          </label>
-                        ))}
-                      </div>
-                      {renderFieldError('addressType')}
-                    </div>
-
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                        บ้านเลขที่ / อาคาร <span className="text-rose-500">*</span>
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="บ้านเลขที่ 4"
-                        value={formData.addressLine}
-                        onChange={(e) => {
-                          setFormData({ ...formData, addressLine: e.target.value });
-                          clearFieldError('addressLine');
-                        }}
-                        className={getFieldClass('addressLine')}
-                      />
-                      {renderFieldError('addressLine')}
-                    </div>
-
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                        ตำบล / แขวง <span className="text-rose-500">*</span>
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="แขวงหัวหมาก"
-                        value={formData.subDistrict}
-                        onChange={(e) => {
-                          setFormData({ ...formData, subDistrict: e.target.value });
-                          clearFieldError('subDistrict');
-                        }}
-                        className={getFieldClass('subDistrict')}
-                      />
-                      {renderFieldError('subDistrict')}
-                    </div>
-
-                    <div>
-                      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                        อำเภอ / เขต <span className="text-rose-500">*</span>
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="บางกะปิ"
-                        value={formData.district}
-                        onChange={(e) => {
-                          setFormData({ ...formData, district: e.target.value });
-                          clearFieldError('district');
-                        }}
-                        className={getFieldClass('district')}
-                      />
-                      {renderFieldError('district')}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                          จังหวัด <span className="text-rose-500">*</span>
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="กรุงเทพมหานคร"
-                          value={formData.province}
-                          onChange={(e) => {
-                            setFormData({ ...formData, province: e.target.value });
-                            clearFieldError('province');
-                          }}
-                          className={getFieldClass('province')}
-                        />
-                        {renderFieldError('province')}
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                          รหัสไปรษณีย์ <span className="text-rose-500">*</span>
-                        </span>
-                        <input
-                          type="text"
-                          maxLength={5}
-                          placeholder="10240"
-                          value={formData.postalCode}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 5);
-                            setFormData({ ...formData, postalCode: val });
-                            clearFieldError('postalCode');
-                          }}
-                          className={getFieldClass('postalCode', true)}
-                        />
-                        {renderFieldError('postalCode')}
-                      </div>
-                    </div>
-                  </div>
+                  {/* ที่อยู่ตามทะเบียนบ้าน + ที่อยู่ปัจจุบัน */}
+                  <AddressPairFields
+                    idPrefix="create-addr"
+                    value={addressPair}
+                    onChange={setAddressPair}
+                    inputClassFor={(key, mono) => getFieldClass(key, mono)}
+                    errors={formErrors}
+                    onFieldEdited={clearFieldError}
+                  />
 
                   {/* ข้อมูลบัญชีธนาคาร */}
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">

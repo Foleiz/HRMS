@@ -27,6 +27,13 @@ import {
   EmployeeWorkExperience,
   EmployeeBankAccount,
 } from '@/types/employee';
+import {
+  AddressPairFields,
+  AddressPair,
+  emptyAddressPair,
+  addressPairFromEmployee,
+  addressesForPayload,
+} from '@/components/employees/AddressPairFields';
 import { NationalitySelect } from '@/components/ui/NationalitySelect';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
@@ -193,6 +200,7 @@ export default function EditEmployeeModal({
 
   const lookups = useMasterLookups();
 
+  const [addressPair, setAddressPair] = useState<AddressPair>(emptyAddressPair());
   const [formData, setFormData] = useState<CreateEmployeePayload>({
     employeeCode: '',
     biometricId: '',
@@ -295,6 +303,7 @@ export default function EditEmployeeModal({
     setSsoMasked(emp.socialSecurity?.socialSecurityNoMasked ?? null);
 
     const primaryAddress = emp.addresses?.find((a) => a.isCurrent) || emp.addresses?.[0];
+    setAddressPair(addressPairFromEmployee(emp.addresses));
     const primaryEducation = emp.educations?.[0];
     const primaryEmergency = emp.emergencyContacts?.find((c) => c.isPrimary) || emp.emergencyContacts?.[0];
     const primaryBank =
@@ -472,6 +481,7 @@ export default function EditEmployeeModal({
         numberOfChildren: taxSso.numberOfChildren,
         parentDeductionCount: taxSso.parentDeductionCount,
         disabilityDeductionCount: taxSso.disabilityDeductionCount,
+        addresses: addressesForPayload(addressPair),
         socialSecurityNo: taxSso.socialSecurityNo?.trim() || undefined,
         hospitalName: taxSso.hospitalName.trim(),
         biometricId: formData.biometricId?.trim() ? formData.biometricId.trim() : '',
@@ -951,100 +961,14 @@ export default function EditEmployeeModal({
                       />
                     </div>
 
-                    {/* ข้อมูลที่อยู่ */}
-                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
-                      <label className="font-semibold text-slate-700 dark:text-slate-300 block text-xs">
-                        ที่อยู่ (Address) <span className="text-rose-500">*</span>
-                      </label>
-
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1.5">
-                          ประเภทที่อยู่
-                        </span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {['อาศัยกับครอบครัว', 'บ้านตัวเอง', 'บ้านเช่า', 'หอพัก'].map((t) => (
-                            <label key={t} className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="addressType"
-                                value={t}
-                                checked={formData.addressType === t}
-                                onChange={(e) => setFormData({ ...formData, addressType: e.target.value })}
-                                className="text-primary focus:ring-primary"
-                              />
-                              <span>{t}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                          บ้านเลขที่ / อาคาร <span className="text-rose-500">*</span>
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="บ้านเลขที่ 4"
-                          value={formData.addressLine}
-                          onChange={(e) => setFormData({ ...formData, addressLine: e.target.value })}
-                          className={`${inputClass} h-10`}
-                        />
-                      </div>
-
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                          ตำบล / แขวง <span className="text-rose-500">*</span>
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="แขวงหัวหมาก"
-                          value={formData.subDistrict}
-                          onChange={(e) => setFormData({ ...formData, subDistrict: e.target.value })}
-                          className={`${inputClass} h-10`}
-                        />
-                      </div>
-
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                          อำเภอ / เขต <span className="text-rose-500">*</span>
-                        </span>
-                        <input
-                          type="text"
-                          placeholder="บางกะปิ"
-                          value={formData.district}
-                          onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                          className={`${inputClass} h-10`}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                            จังหวัด <span className="text-rose-500">*</span>
-                          </span>
-                          <input
-                            type="text"
-                            placeholder="กรุงเทพมหานคร"
-                            value={formData.province}
-                            onChange={(e) => setFormData({ ...formData, province: e.target.value })}
-                            className={`${inputClass} h-10`}
-                          />
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                            รหัสไปรษณีย์ <span className="text-rose-500">*</span>
-                          </span>
-                          <input
-                            type="text"
-                            maxLength={5}
-                            placeholder="10240"
-                            value={formData.postalCode}
-                            onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                            className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    {/* ที่อยู่ตามทะเบียนบ้าน + ที่อยู่ปัจจุบัน */}
+                    <AddressPairFields
+                      idPrefix="edit-modal-addr"
+                      required={false}
+                      value={addressPair}
+                      onChange={setAddressPair}
+                      inputClassFor={(_key, mono) => (mono ? 'w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono' : `${inputClass} h-10`)}
+                    />
 
                     {/* ข้อมูลบัญชีธนาคาร */}
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
