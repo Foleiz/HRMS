@@ -9,6 +9,8 @@ public class EmploymentContractDto
     public long EmployeeId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? EmployeePrefix { get; set; }
+    public string? AvatarUrl { get; set; }
     public string? DepartmentName { get; set; }
     public string? PositionTitle { get; set; }
     public long? EmployeeTypeId { get; set; }

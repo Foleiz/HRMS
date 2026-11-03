@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -40,7 +40,7 @@ import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal'
 import AttachContractModal from '@/components/contracts/AttachContractModal';
 import ContractDocumentPreviewModal from '@/components/contracts/ContractDocumentPreviewModal';
 import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
-import { Button, TabBar , TableToolbar } from '@/components/ui';
+import { Button, TabBar, TableToolbar, AvatarName } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -60,6 +60,8 @@ export default function ContractsPage() {
     totalActiveCount: 0,
   });
   const [employees, setEmployees] = useState<Employee[]>([]);
+  // รูปโปรไฟล์/คำนำหน้าจากรายชื่อพนักงาน (ใช้แทนเมื่อข้อมูลสัญญายังไม่มีมาให้)
+  const employeeById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -391,17 +393,19 @@ export default function ContractsPage() {
                 paginatedContracts.map((contract) => (
                   <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                     {/* พนักงาน: อรวรรณ ใจดี · EMP-0142 */}
-                    <td className="py-4 px-6 text-slate-800 dark:text-slate-200 font-medium whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/employees/${contract.employeeId}`}
-                          className="hover:text-blue-600 transition-colors"
-                        >
-                          {contract.employeeName}
-                        </Link>
-                        <span className="text-slate-400 dark:text-slate-500 font-normal">·</span>
-                        <span className="text-slate-500 dark:text-slate-400 font-normal text-xs">{contract.employeeCode}</span>
-                      </div>
+                    <td className="py-4 px-6 whitespace-nowrap">
+                      <Link
+                        href={`/employees/${contract.employeeId}`}
+                        className="inline-flex hover:opacity-80 transition-opacity"
+                        title={contract.employeeCode}
+                      >
+                        <AvatarName
+                          id={contract.employeeId}
+                          name={contract.employeeName}
+                          prefix={contract.employeePrefix ?? employeeById.get(contract.employeeId)?.prefix}
+                          avatarUrl={contract.avatarUrl ?? employeeById.get(contract.employeeId)?.avatarUrl}
+                        />
+                      </Link>
                     </td>
 
                     {/* ประเภทสัญญา: ทดลองงาน, ประจำ, สัญญาจ้าง, ฝึกงาน */}

@@ -12,6 +12,8 @@ export interface EmploymentContract {
   employeeId: number;
   employeeCode: string;
   employeeName: string;
+  employeePrefix?: string;
+  avatarUrl?: string;
   departmentName?: string;
   positionTitle?: string;
   employeeTypeId?: number;
