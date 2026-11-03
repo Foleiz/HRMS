@@ -23,7 +23,6 @@ import {
   BookOpen,
   Briefcase,
   Clock,
-  Mail,
   Copy,
   Check,
 } from 'lucide-react';
@@ -452,7 +451,7 @@ export const Navbar: React.FC = () => {
                       </Link>
                     </div>
 
-                    {/* Name & Role Badge */}
+                    {/* Name, Position & Role Badge */}
                     <div className="text-center mt-2.5 space-y-1">
                       <Link
                         href="/profile?tab=personal"
@@ -462,7 +461,10 @@ export const Navbar: React.FC = () => {
                       >
                         {user.fullName || user.username}
                       </Link>
-                      <div className="flex items-center justify-center gap-1.5">
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        {employee?.positionName || (user.roles.includes('ADMIN') ? 'หัวหน้าทีมพัฒนาซอฟต์แวร์' : 'พนักงานประจำ')}
+                      </p>
+                      <div className="flex items-center justify-center gap-1.5 pt-0.5">
                         <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/70 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                           {user.roleNames?.[0] || (user.roles?.[0] ? formatRoleName(user.roles[0]) : 'ผู้ดูแลระบบ')}
                         </span>
@@ -473,24 +475,21 @@ export const Navbar: React.FC = () => {
                   {/* Divider */}
                   <hr className="border-slate-100 dark:border-slate-800" />
 
-                  {/* 2. Information Section with Icon Boxes (สไตล์การ์ดข้อมูลรูปเรฟ) */}
+                  {/* 2. Information Section with Icon Boxes */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                      ข้อมูลตำแหน่ง &amp; สังกัด
+                      ข้อมูลสังกัด &amp; เวลาทำงาน
                     </h4>
 
-                    {/* 2.1 ตำแหน่ง & แผนก & ฝ่าย & บริษัท */}
+                    {/* 2.1 แผนก & ฝ่าย & บริษัท */}
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 mt-0.5 shadow-2xs">
                         <Briefcase className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1 space-y-0.5">
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">ตำแหน่งงาน</p>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
-                          {employee?.positionName || (user.roles.includes('ADMIN') ? 'หัวหน้าทีมพัฒนาซอฟต์แวร์' : 'พนักงานประจำ')}
-                        </p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">สังกัด</p>
                         {employee?.departmentName && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
                             แผนก: {employee.departmentName}
                           </p>
                         )}
@@ -519,19 +518,6 @@ export const Navbar: React.FC = () => {
                         </p>
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
                           พักเบรก: 12:00 - 13:00 น.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* 2.3 อีเมล */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 mt-0.5 shadow-2xs">
-                        <Mail className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">อีเมลองค์กร</p>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 break-all mt-0.5">
-                          {employee?.contact?.organizationEmail || employee?.contact?.personalEmail || `${user.username}@hrms.internal`}
                         </p>
                       </div>
                     </div>
