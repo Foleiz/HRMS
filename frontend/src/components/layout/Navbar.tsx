@@ -487,25 +487,40 @@ export const Navbar: React.FC = () => {
                         <Briefcase className="w-4 h-4" />
                       </div>
                       <div className="min-w-0 flex-1 space-y-1 text-xs">
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">สังกัด</p>
-                        <p className="leading-snug">
-                          <span className="text-slate-400 dark:text-slate-500">แผนก: </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {employee?.departmentName ? employee.departmentName.replace(/^แผนก\s*/, '') : '-'}
-                          </span>
-                        </p>
-                        <p className="leading-snug">
-                          <span className="text-slate-400 dark:text-slate-500">ฝ่าย: </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {employee?.divisionName ? employee.divisionName.replace(/^ฝ่าย\s*/, '') : '-'}
-                          </span>
-                        </p>
-                        <p className="leading-snug">
-                          <span className="text-slate-400 dark:text-slate-500">บริษัท: </span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
-                            {companyName ? companyName.replace(/^บริษัท\s*/, '') : '-'}
-                          </span>
-                        </p>
+                        {employee?.departmentName || employee?.divisionName ? (
+                          <>
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">สังกัด</p>
+                            {employee?.departmentName && (
+                              <p className="leading-snug">
+                                <span className="text-slate-400 dark:text-slate-500">แผนก: </span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {employee.departmentName.replace(/^แผนก\s*/, '')}
+                                </span>
+                              </p>
+                            )}
+                            {employee?.divisionName && (
+                              <p className="leading-snug">
+                                <span className="text-slate-400 dark:text-slate-500">ฝ่าย: </span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                  {employee.divisionName.replace(/^ฝ่าย\s*/, '')}
+                                </span>
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500">สังกัด : </span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">-</span>
+                          </p>
+                        )}
+                        {companyName && (
+                          <p className="leading-snug">
+                            <span className="text-slate-400 dark:text-slate-500">บริษัท: </span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {companyName.replace(/^บริษัท\s*/, '')}
+                            </span>
+                          </p>
+                        )}
                       </div>
                     </div>
 
