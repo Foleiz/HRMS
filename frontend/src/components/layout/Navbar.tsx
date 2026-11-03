@@ -420,9 +420,9 @@ export const Navbar: React.FC = () => {
                 <div className="max-h-[85vh] overflow-y-auto p-4 sm:p-5 relative z-20 space-y-4">
                   {/* 1. Top Section: Employee Code Badge & Centered Avatar */}
                   <div className="relative pt-1">
-                    {/* Employee Code Badge Top-Left */}
-                    <div className="absolute -top-1 left-0">
-                      <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-extrabold bg-primary text-white tracking-wider shadow-2xs">
+                    {/* Employee Code Top-Right */}
+                    <div className="absolute -top-1 right-0">
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 tracking-wider">
                         {user.employeeCode || employee?.employeeCode || 'EMP0001'}
                       </span>
                     </div>
