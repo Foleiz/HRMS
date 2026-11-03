@@ -3,6 +3,8 @@
 import React from 'react';
 import type { EmployeeAddress } from '@/types/employee';
 import { postalCodeError } from '@/lib/inputRules';
+import { ComboInput } from '@/components/ui/ComboInput';
+import { useThaiAddress, isBangkok, normalizePlaceName } from '@/hooks/useThaiAddress';
 
 /** ช่องที่อยู่ 1 ชุด */
 export interface AddressFields {
@@ -138,6 +140,96 @@ export function AddressPairFields({
   idPrefix = 'addr',
 }: AddressPairFieldsProps) {
   const star = required ? <span className="text-rose-500">*</span> : null;
+  const thai = useThaiAddress();
+
+  const errorText = (key: string) =>
+    errors[key] ? <p className="mt-1 text-[11px] text-rose-600">{errors[key]}</p> : null;
+
+  /** จังหวัด → อำเภอ/เขต → ตำบล/แขวง → รหัสไปรษณีย์ (พิมพ์เองหรือเลือกจากรายการ) */
+  const renderPlaceFields = (which: 'registered' | 'current', prefix: string) => {
+    const f = value[which];
+    const set = (patch: Partial<AddressFields>, ...keys: string[]) => {
+      onChange({ ...value, [which]: { ...f, ...patch } });
+      keys.forEach((k) => onFieldEdited?.(`${prefix}${k}`));
+    };
+    const bkk = isBangkok(f.province);
+    const districtLabel = bkk ? 'เขต' : 'อำเภอ / เขต';
+    const subLabel = bkk ? 'แขวง' : 'ตำบล / แขวง';
+    const provinceOptions = thai.provinces().map((v) => ({ value: v }));
+    const districtOptions = thai.districts(f.province).map((v) => ({ value: v }));
+    const subs = thai.subDistricts(f.province, f.district);
+    const subOptions = subs.map((s) => ({ value: s.name, hint: s.zip }));
+    const zipOptions = Array.from(new Set(subs.map((s) => s.zip).filter(Boolean))).map((z) => ({ value: z }));
+    const label = (text: string) => (
+      <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
+        {text} {star}
+      </span>
+    );
+
+    return (
+      <>
+        <div>
+          {label('จังหวัด')}
+          <ComboInput
+            value={f.province}
+            placeholder="พิมพ์หรือเลือกจังหวัด"
+            options={provinceOptions}
+            emptyText={thai.ready ? 'ไม่พบจังหวัด — พิมพ์เองได้' : 'กำลังโหลดรายชื่อ...'}
+            onChange={(v) => set({ province: v }, 'province')}
+            onSelect={(o) => {
+              if (normalizePlaceName(o.value) === normalizePlaceName(f.province)) return set({ province: o.value }, 'province');
+              set({ province: o.value, district: '', subDistrict: '', postalCode: '' }, 'province');
+            }}
+            className={inputClassFor(`${prefix}province`)}
+          />
+          {errorText(`${prefix}province`)}
+        </div>
+        <div>
+          {label(districtLabel)}
+          <ComboInput
+            value={f.district}
+            placeholder={f.province ? `พิมพ์หรือเลือก${districtLabel}` : 'เลือกจังหวัดก่อน'}
+            options={districtOptions}
+            emptyText={f.province ? 'ไม่พบในจังหวัดนี้ — พิมพ์เองได้' : 'เลือกจังหวัดก่อน หรือพิมพ์เอง'}
+            onChange={(v) => set({ district: v }, 'district')}
+            onSelect={(o) => {
+              if (normalizePlaceName(o.value) === normalizePlaceName(f.district)) return set({ district: o.value }, 'district');
+              set({ district: o.value, subDistrict: '', postalCode: '' }, 'district');
+            }}
+            className={inputClassFor(`${prefix}district`)}
+          />
+          {errorText(`${prefix}district`)}
+        </div>
+        <div>
+          {label(subLabel)}
+          <ComboInput
+            value={f.subDistrict}
+            placeholder={f.district ? `พิมพ์หรือเลือก${subLabel}` : `เลือก${districtLabel}ก่อน`}
+            options={subOptions}
+            emptyText={f.district ? 'ไม่พบในพื้นที่นี้ — พิมพ์เองได้' : `เลือก${districtLabel}ก่อน หรือพิมพ์เอง`}
+            onChange={(v) => set({ subDistrict: v }, 'subDistrict')}
+            onSelect={(o) => set({ subDistrict: o.value, postalCode: o.hint || f.postalCode }, 'subDistrict', 'postalCode')}
+            className={inputClassFor(`${prefix}subDistrict`)}
+          />
+          {errorText(`${prefix}subDistrict`)}
+        </div>
+        <div>
+          {label('รหัสไปรษณีย์')}
+          <ComboInput
+            value={f.postalCode}
+            placeholder="เลือกตำบลแล้วจะขึ้นให้เอง"
+            options={zipOptions}
+            inputMode="numeric"
+            maxLength={5}
+            onChange={(v) => set({ postalCode: v.replace(/\D/g, '').slice(0, 5) }, 'postalCode')}
+            onSelect={(o) => set({ postalCode: o.value }, 'postalCode')}
+            className={inputClassFor(`${prefix}postalCode`, true)}
+          />
+          {errorText(`${prefix}postalCode`)}
+        </div>
+      </>
+    );
+  };
 
   const renderGroup = (which: 'registered' | 'current', prefix: string) => {
     const f = value[which];
@@ -162,27 +254,7 @@ export function AddressPairFields({
           </div>
         ))}
         <div className="grid grid-cols-2 gap-3">
-          {FIELD_DEFS.filter((d) => d.key !== 'addressLine').map((d) => (
-            <div key={d.key}>
-              <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">
-                {d.label} {star}
-              </span>
-              <input
-                type="text"
-                inputMode={d.key === 'postalCode' ? 'numeric' : undefined}
-                placeholder={d.placeholder}
-                maxLength={d.maxLength}
-                value={f[d.key]}
-                onChange={(e) => {
-                  const v = d.key === 'postalCode' ? e.target.value.replace(/\D/g, '').slice(0, 5) : e.target.value;
-                  onChange({ ...value, [which]: { ...f, [d.key]: v } });
-                  onFieldEdited?.(`${prefix}${d.key}`);
-                }}
-                className={inputClassFor(`${prefix}${d.key}`, d.mono)}
-              />
-              {errors[`${prefix}${d.key}`] && <p className="mt-1 text-[11px] text-rose-600">{errors[`${prefix}${d.key}`]}</p>}
-            </div>
-          ))}
+          {renderPlaceFields(which, prefix)}
         </div>
       </div>
     );
