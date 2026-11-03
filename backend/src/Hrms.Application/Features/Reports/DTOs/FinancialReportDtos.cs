@@ -18,6 +18,7 @@ public class PayrollTaxItemDto
     public decimal WithholdingTax { get; set; }
     public decimal SsoEmployee { get; set; }
     public decimal SsoEmployer { get; set; }
+    public decimal OtherDeductions { get; set; }
     public decimal TotalDeductions { get; set; }
     public decimal NetSalary { get; set; }
 }
@@ -38,6 +39,8 @@ public class PayrollTaxSummaryDto
     public decimal TotalSsoEmployee { get; set; }
     public decimal TotalSsoEmployer { get; set; }
     public decimal TotalSsoRemittance { get; set; }
+    public decimal TotalOtherDeductions { get; set; }
+    public decimal TotalDeductions { get; set; }
     public decimal TotalNetSalary { get; set; }
     public List<PayrollTaxItemDto> Items { get; set; } = new();
 }

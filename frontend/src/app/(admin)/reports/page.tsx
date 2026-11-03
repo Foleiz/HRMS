@@ -59,6 +59,10 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Calculator,
+  TrendingDown,
+  Minus,
+  Equal,
 } from 'lucide-react';
 
 const formatThaiDate = (dateStr: string) => {
@@ -1221,65 +1225,132 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* 4 Summary KPI Cards */}
-          {taxData && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4.5 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">เงินได้พึงประเมินรวม</span>
-                  <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-blue-950 dark:text-blue-100">
-                  {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs sm:text-sm font-normal text-blue-600/70 dark:text-blue-300/70 ml-1">บาท</span>
-                </div>
-                <div className="text-xs text-blue-600/80 dark:text-blue-400/80 font-medium">ฐานคำนวณภาษีและค่าจ้างรอบเดือน</div>
-              </div>
+          {/* Summary KPI Cards & Mathematical Formula Flow */}
+          {taxData && (() => {
+            const totalDeductionsAmount = taxData.totalDeductions ?? taxData.items.reduce((sum, it) => sum + (it.totalDeductions || 0), 0);
+            const totalOtherDeductions = taxData.totalOtherDeductions ?? Math.max(0, totalDeductionsAmount - taxData.totalWithholdingTax - taxData.totalSsoEmployee);
 
-              <div className="bg-rose-50/70 dark:bg-rose-950/30 p-4.5 rounded-2xl border border-rose-200/80 dark:border-rose-800/60 shadow-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-semibold text-rose-700 dark:text-rose-300">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
-                  <Receipt className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+            return (
+              <div className="space-y-3.5">
+                {/* Visual Formula Flow Bar (แสดงสมการการคำนวณเงินได้สุทธิแบบโปร่งใส บวก-ลบ ตรงไปตรงมา) */}
+                <div className="bg-slate-50/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 font-bold">
+                    <Calculator className="w-4 h-4 text-primary shrink-0" />
+                    <span>สรุปสมการคำนวณเงินได้สุทธิรอบเดือน:</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-100/80 dark:bg-blue-950 text-blue-800 dark:text-blue-200 font-bold border border-blue-200 dark:border-blue-800">
+                      เงินได้ {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-slate-400 font-extrabold text-sm">−</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100/80 dark:bg-rose-950 text-rose-800 dark:text-rose-200 font-bold border border-rose-200 dark:border-rose-800">
+                      ภาษี {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-slate-400 font-extrabold text-sm">−</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-100/80 dark:bg-sky-950 text-sky-800 dark:text-sky-200 font-bold border border-sky-200 dark:border-sky-800">
+                      ปกส.ลูกจ้าง {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-slate-400 font-extrabold text-sm">−</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-100/80 dark:bg-amber-950 text-amber-800 dark:text-amber-200 font-bold border border-amber-200 dark:border-amber-800">
+                      หักอื่นๆ {totalOtherDeductions.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                    <span className="text-slate-400 font-extrabold text-sm">=</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100/80 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 font-bold border border-emerald-300 dark:border-emerald-800 shadow-2xs">
+                      สุทธิ {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-rose-950 dark:text-rose-100">
-                  {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs sm:text-sm font-normal text-rose-600/70 dark:text-rose-300/70 ml-1">บาท</span>
-                </div>
-                <div className="text-xs text-rose-600/80 dark:text-rose-400/80 font-medium">
-                  มีผู้ถูกหักภาษี {taxData.taxableEmployeesCount} จาก {taxData.totalEmployees} คน
-                </div>
-              </div>
 
-              <div className="bg-indigo-50/70 dark:bg-indigo-950/30 p-4.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 shadow-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-semibold text-indigo-700 dark:text-indigo-300">นำส่งประกันสังคม (สปส. 1-10)</span>
-                  <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-indigo-950 dark:text-indigo-100">
-                  {taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs sm:text-sm font-normal text-indigo-600/70 dark:text-indigo-300/70 ml-1">บาท</span>
-                </div>
-                <div className="text-xs text-indigo-600/80 dark:text-indigo-400/80 font-medium flex justify-between">
-                  <span>ลูกจ้าง: {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                  <span>นายจ้าง: {taxData.totalSsoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })}</span>
-                </div>
-              </div>
+                {/* 5 KPI Cards with Operation Indicators */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                  {/* Card 1: Gross Income (+) */}
+                  <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">เงินได้พึงประเมินรวม</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-700/60">
+                        + รายรับ
+                      </span>
+                    </div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-blue-950 dark:text-blue-100">
+                      {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-blue-600/70 dark:text-blue-300/70 ml-1">บาท</span>
+                    </div>
+                    <div className="text-[11px] text-blue-600/80 dark:text-blue-400/80 font-medium truncate">
+                      ฐานคำนวณค่าจ้างและภาษีรอบเดือน
+                    </div>
+                  </div>
 
-              <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">เงินเดือนสุทธินำจ่าย</span>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100">
-                  {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  <span className="text-xs sm:text-sm font-normal text-emerald-600/70 dark:text-emerald-300/70 ml-1">บาท</span>
-                </div>
-                <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">
-                  สถานะรอบ: <span className="font-bold">{taxData.periodStatus}</span>
+                  {/* Card 2: Withholding Tax (-) */}
+                  <div className="bg-rose-50/70 dark:bg-rose-950/30 p-4 rounded-2xl border border-rose-200/80 dark:border-rose-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-700/60">
+                        − หักภาษี
+                      </span>
+                    </div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-rose-950 dark:text-rose-100">
+                      {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-rose-600/70 dark:text-rose-300/70 ml-1">บาท</span>
+                    </div>
+                    <div className="text-[11px] text-rose-600/80 dark:text-rose-400/80 font-medium truncate">
+                      มีผู้ถูกหักภาษี {taxData.taxableEmployeesCount} จาก {taxData.totalEmployees} คน
+                    </div>
+                  </div>
+
+                  {/* Card 3: Employee SSO Deduction (-) */}
+                  <div className="bg-sky-50/70 dark:bg-sky-950/30 p-4 rounded-2xl border border-sky-200/80 dark:border-sky-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-sky-700 dark:text-sky-300">ปกส. หักจากลูกจ้าง (5%)</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-700/60">
+                        − หัก ปกส.
+                      </span>
+                    </div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-sky-950 dark:text-sky-100">
+                      {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-sky-600/70 dark:text-sky-300/70 ml-1">บาท</span>
+                    </div>
+                    <div className="text-[11px] text-sky-600/80 dark:text-sky-400/80 font-medium truncate" title={`นายจ้างสมทบ ${taxData.totalSsoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บ. (รวมนำส่ง สปส. 1-10 ทั้งหมด ${taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บ.)`}>
+                      นายจ้างสมทบอีก {taxData.totalSsoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บ. (รวมส่ง {taxData.totalSsoRemittance.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บ.)
+                    </div>
+                  </div>
+
+                  {/* Card 4: Other Deductions (Late, Absence, PVD, etc.) (-) */}
+                  <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">รายการหักอื่นๆ</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
+                        − หักอื่นๆ
+                      </span>
+                    </div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-amber-950 dark:text-amber-100">
+                      {totalOtherDeductions.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-amber-600/70 dark:text-amber-300/70 ml-1">บาท</span>
+                    </div>
+                    <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80 font-medium truncate">
+                      หักมาสาย, ขาดงาน, กองทุน และรายการหักอื่น
+                    </div>
+                  </div>
+
+                  {/* Card 5: Net Payable Salary (=) */}
+                  <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">เงินเดือนสุทธินำจ่าย</span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-700/60">
+                        = สุทธิ
+                      </span>
+                    </div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-emerald-950 dark:text-emerald-100">
+                      {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-xs font-normal text-emerald-600/70 dark:text-emerald-300/70 ml-1">บาท</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 font-medium truncate">
+                      สถานะ: <span className="font-bold">{taxData.periodStatus}</span> · หักรวม {totalDeductionsAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })} บ.
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* สถานะรอบเงินเดือน — กันนำตัวเลขที่ยังไม่ปิดรอบไปยื่น */}
           {taxData && !isLoadingTax &&
@@ -1359,102 +1430,122 @@ export default function ReportsPage() {
                 <table className="table-standard w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
                   <thead className="bg-primary text-white font-semibold">
                     <tr className="whitespace-nowrap">
-                      <th className="py-3 px-4 text-center w-12">ลำดับ</th>
-                      <th className="py-3 px-4 sticky left-0 bg-primary text-white z-[1]">พนักงาน</th>
-                      <th className="py-3 px-4">เลขประจำตัวประชาชน</th>
-                      <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
-                      <th className="py-3 px-4 text-right">เงินได้พึงประเมิน</th>
-                      <th className="py-3 px-4 text-right text-rose-300">ภาษี ภ.ง.ด.1</th>
-                      <th className="py-3 px-4 text-right text-sky-300">ปกส. ลูกจ้าง</th>
-                      <th className="py-3 px-4 text-right text-indigo-200">ปกส. นายจ้าง</th>
-                      <th className="py-3 px-4 text-right font-bold text-white font-bold">รวมนำส่ง ปกส.</th>
-                      <th className="py-3 px-4 text-right text-emerald-300">เงินได้สุทธิ</th>
+                      <th className="py-3 px-3 text-center w-10">ลำดับ</th>
+                      <th className="py-3 px-3 sticky left-0 bg-primary text-white z-[1]">พนักงาน</th>
+                      <th className="py-3 px-3">เลขประจำตัวประชาชน</th>
+                      <th className="py-3 px-3">แผนก / ตำแหน่ง</th>
+                      <th className="py-3 px-3 text-right">เงินได้พึงประเมิน (+)</th>
+                      <th className="py-3 px-3 text-right text-rose-300">ภาษี ภ.ง.ด.1 (−)</th>
+                      <th className="py-3 px-3 text-right text-sky-300">ปกส. ลูกจ้าง (−)</th>
+                      <th className="py-3 px-3 text-right text-amber-300">หักอื่นๆ/มาสาย (−)</th>
+                      <th className="py-3 px-3 text-right text-slate-200">รวมรายการหัก</th>
+                      <th className="py-3 px-3 text-right text-emerald-300 font-bold">เงินเดือนสุทธิ (=)</th>
+                      <th className="py-3 px-3 text-right text-indigo-200">ปกส. นายจ้าง</th>
+                      <th className="py-3 px-3 text-right text-sky-200 font-bold">รวมนำส่ง ปกส.</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {pagedTaxItems.map((item, idx) => {
                       const rowNum = (currentTaxPage - 1) * taxRowsPerPage + idx + 1;
                       const ssoTotal = item.ssoEmployee + item.ssoEmployer;
+                      const otherDed = item.otherDeductions ?? Math.max(0, (item.totalDeductions || 0) - (item.withholdingTax || 0) - (item.ssoEmployee || 0));
+                      const totalDed = item.totalDeductions ?? ((item.withholdingTax || 0) + (item.ssoEmployee || 0) + otherDed);
+
                       return (
                         <tr key={item.employeeId} className="hover:bg-slate-50/60 transition-colors dark:hover:bg-slate-800/40">
-                          <td className="py-3 px-4 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{rowNum}</td>
-                          <td className="py-3 px-4 sticky left-0 bg-white z-[1]">
-                            <span className="font-semibold text-slate-900 dark:text-slate-100 block dark:text-slate-100">{item.employeeName}</span>
-                            <span className="text-xs font-mono text-slate-400 dark:text-slate-500 dark:text-slate-400">รหัส {item.employeeCode}</span>
+                          <td className="py-3 px-3 text-center text-xs text-slate-400 dark:text-slate-500">{rowNum}</td>
+                          <td className="py-3 px-3 sticky left-0 bg-white dark:bg-slate-800 z-[1]">
+                            <span className="font-semibold text-slate-900 dark:text-slate-100 block">{item.employeeName}</span>
+                            <span className="text-xs font-mono text-slate-400 dark:text-slate-500">รหัส {item.employeeCode}</span>
                           </td>
-                          <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
+                          <td className="py-3 px-3 font-mono text-xs text-slate-600 dark:text-slate-400">
                             {item.citizenIdMasked}
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400">
-                            <span className="font-medium text-slate-800 dark:text-slate-200 block dark:text-slate-200">{item.departmentName}</span>
-                            <span className="text-slate-400 dark:text-slate-500 dark:text-slate-400">{item.positionName}</span>
+                          <td className="py-3 px-3 text-xs text-slate-600 dark:text-slate-400">
+                            <span className="font-medium text-slate-800 dark:text-slate-200 block">{item.departmentName}</span>
+                            <span className="text-slate-400 dark:text-slate-500">{item.positionName}</span>
                           </td>
-                          <td className="py-3 px-4 text-right font-medium text-slate-900 dark:text-slate-100">
+                          <td className="py-3 px-3 text-right font-medium text-slate-900 dark:text-slate-100">
                             {item.grossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className="py-3 px-4 text-right font-semibold text-rose-600">
+                          <td className="py-3 px-3 text-right font-semibold text-rose-600 dark:text-rose-400">
                             {item.withholdingTax > 0 ? (
                               item.withholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2 })
                             ) : (
-                              <span className="text-slate-300 font-normal">-</span>
+                              <span className="text-slate-300 dark:text-slate-600 font-normal">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-right text-xs font-medium text-blue-600">
+                          <td className="py-3 px-3 text-right text-xs font-medium text-sky-600 dark:text-sky-400">
                             {item.ssoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className="py-3 px-4 text-right text-xs font-medium text-indigo-600">
+                          <td className="py-3 px-3 text-right text-xs font-medium text-amber-600 dark:text-amber-400">
+                            {otherDed > 0 ? (
+                              otherDed.toLocaleString('th-TH', { minimumFractionDigits: 2 })
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600 font-normal">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            {totalDed.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20">
+                            {item.netSalary.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-xs font-medium text-indigo-600 dark:text-indigo-400">
                             {item.ssoEmployer.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className="py-3 px-4 text-right font-bold text-blue-800">
+                          <td className="py-3 px-3 text-right font-semibold text-blue-800 dark:text-blue-300">
                             {ssoTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td className="py-3 px-4 text-right font-bold text-emerald-700">
-                            {item.netSalary.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
                   {/* Summary Footer */}
-                  {taxData && (
-                    <tfoot className="bg-slate-100/80 text-xs font-bold text-slate-800 dark:text-slate-200 border-t-2 border-slate-200 dark:bg-slate-800/80 dark:text-slate-200 dark:border-slate-700">
-                      <tr>
-                        <td colSpan={4} className="py-3 px-4 text-center">
-                          รวมทั้งสิ้น ({filteredTaxItems.length} คน)
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          {filteredTaxItems
-                            .reduce((sum, i) => sum + i.grossIncome, 0)
-                            .toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-right text-rose-700">
-                          {filteredTaxItems
-                            .reduce((sum, i) => sum + i.withholdingTax, 0)
-                            .toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-right text-blue-700">
-                          {filteredTaxItems
-                            .reduce((sum, i) => sum + i.ssoEmployee, 0)
-                            .toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-right text-indigo-700">
-                          {filteredTaxItems
-                            .reduce((sum, i) => sum + i.ssoEmployer, 0)
-                            .toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-right text-blue-900">
-                          {filteredTaxItems
-                            .reduce((sum, i) => sum + (i.ssoEmployee + i.ssoEmployer), 0)
-                            .toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-3 px-4 text-right text-emerald-800">
-                          {filteredTaxItems
-                            .reduce((sum, i) => sum + i.netSalary, 0)
-                            .toLocaleString('th-TH', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  )}
+                  {taxData && (() => {
+                    const totalGross = filteredTaxItems.reduce((sum, i) => sum + i.grossIncome, 0);
+                    const totalTax = filteredTaxItems.reduce((sum, i) => sum + i.withholdingTax, 0);
+                    const totalSsoEmp = filteredTaxItems.reduce((sum, i) => sum + i.ssoEmployee, 0);
+                    const totalOther = filteredTaxItems.reduce((sum, i) => sum + (i.otherDeductions ?? Math.max(0, (i.totalDeductions || 0) - (i.withholdingTax || 0) - (i.ssoEmployee || 0))), 0);
+                    const totalDeductions = filteredTaxItems.reduce((sum, i) => sum + (i.totalDeductions ?? ((i.withholdingTax || 0) + (i.ssoEmployee || 0) + (i.otherDeductions || 0))), 0);
+                    const totalNet = filteredTaxItems.reduce((sum, i) => sum + i.netSalary, 0);
+                    const totalSsoEmpr = filteredTaxItems.reduce((sum, i) => sum + i.ssoEmployer, 0);
+                    const totalSsoAll = totalSsoEmp + totalSsoEmpr;
+
+                    return (
+                      <tfoot className="bg-slate-100/90 dark:bg-slate-800/90 text-xs font-bold text-slate-800 dark:text-slate-200 border-t-2 border-slate-200 dark:border-slate-700">
+                        <tr>
+                          <td colSpan={4} className="py-3 px-3 text-center">
+                            รวมทั้งสิ้น ({filteredTaxItems.length} คน)
+                          </td>
+                          <td className="py-3 px-3 text-right text-blue-900 dark:text-blue-200">
+                            {totalGross.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-rose-700 dark:text-rose-400">
+                            {totalTax.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-sky-700 dark:text-sky-400">
+                            {totalSsoEmp.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-amber-700 dark:text-amber-400">
+                            {totalOther.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-800 dark:text-slate-200">
+                            {totalDeductions.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-emerald-800 dark:text-emerald-300 bg-emerald-100/40 dark:bg-emerald-950/40">
+                            {totalNet.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-indigo-700 dark:text-indigo-400">
+                            {totalSsoEmpr.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-3 px-3 text-right text-blue-900 dark:text-blue-300">
+                            {totalSsoAll.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    );
+                  })()}
                 </table>
 
                 <div className="p-4 border-t border-slate-100 dark:border-slate-700/60">
