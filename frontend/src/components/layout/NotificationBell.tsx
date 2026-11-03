@@ -21,7 +21,7 @@ import { NotificationItem } from '@/types/notification';
 import { useAuth } from '@/context/AuthContext';
 import { useAnimatedMount } from '@/hooks/useAnimatedMount';
 
-type TabKey = 'ALL' | 'UNREAD' | 'OTHER';
+type TabKey = 'ALL' | 'UNREAD' | 'READ' | 'OTHER';
 
 function formatNotificationDate(dateStr: string, fallbackTimeAgo?: string): string {
   try {
@@ -183,6 +183,7 @@ export const NotificationBell: React.FC = () => {
   const filteredNotifications = useMemo(() => {
     if (activeTab === 'ALL') return notifications;
     if (activeTab === 'UNREAD') return notifications.filter((n) => !n.isRead);
+    if (activeTab === 'READ') return notifications.filter((n) => n.isRead);
 
     // OTHER: ข่าวสาร ประกาศ สัญญา หรือการแจ้งเตือนทั่วไป
     return notifications.filter((n) => {
@@ -364,7 +365,7 @@ export const NotificationBell: React.FC = () => {
                 ) : (
                   <CheckCheck className="w-3.5 h-3.5" />
                 )}
-                <span>ทำเครื่องหมายอ่านแล้วทั้งหมด</span>
+                <span>อ่านแล้วทั้งหมด</span>
               </button>
 
               <button
@@ -449,6 +450,7 @@ export const NotificationBell: React.FC = () => {
               [
                 { key: 'ALL', label: 'ทั้งหมด' },
                 { key: 'UNREAD', label: 'ยังไม่ได้อ่าน' },
+                { key: 'READ', label: 'อ่านแล้ว' },
                 { key: 'OTHER', label: 'อื่นๆ' },
               ] as const
             ).map((tab) => (
