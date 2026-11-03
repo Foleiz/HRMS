@@ -474,20 +474,26 @@ export const Navbar: React.FC = () => {
                       <div className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-slate-300 mt-0.5 shadow-2xs">
                         <Briefcase className="w-4 h-4" />
                       </div>
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 space-y-0.5">
                         <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">ตำแหน่งงาน</p>
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
                           {employee?.positionName || (user.roles.includes('ADMIN') ? 'หัวหน้าทีมพัฒนาซอฟต์แวร์' : 'พนักงานประจำ')}
                         </p>
                         {employee?.departmentName && (
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             แผนก: {employee.departmentName}
                           </p>
                         )}
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          {employee?.divisionName ? `ฝ่าย: ${employee.divisionName}` : ''}
-                          {companyName ? ` · ${companyName}` : ''}
-                        </p>
+                        {employee?.divisionName && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            ฝ่าย: {employee.divisionName}
+                          </p>
+                        )}
+                        {companyName && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {companyName}
+                          </p>
+                        )}
                       </div>
                     </div>
 
