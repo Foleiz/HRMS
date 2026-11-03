@@ -22,7 +22,6 @@ public class PayrollPeriod : BaseEntity
     public DateTimeOffset? ClosedAt { get; set; }
     public long? ClosedByEmployeeId { get; set; }
     public long? ApprovalInstanceId { get; set; }
-    public string? PreApprovalStatus { get; set; }
 
     // Payment Workflow Fields
     /// <summary>วิธีการจ่ายเงิน: BANK_BATCH หรือ DIRECT_TRANSFER</summary>

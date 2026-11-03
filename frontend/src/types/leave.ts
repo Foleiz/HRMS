@@ -73,7 +73,6 @@ export interface LeavePolicy {
   /** ยกยอดข้ามปีได้สูงสุด (วัน) — ว่าง = เท่าสิทธิ์ต่อปี */
   carryForwardMaxDays?: number | null;
   /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
-  maxBackdateDays?: number | null;
   /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
   documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
@@ -100,7 +99,6 @@ export interface CreateLeavePolicyPayload {
   /** ยกยอดข้ามปีได้สูงสุด (วัน) — ว่าง = เท่าสิทธิ์ต่อปี */
   carryForwardMaxDays?: number | null;
   /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
-  maxBackdateDays?: number | null;
   /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
   documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
@@ -126,7 +124,6 @@ export interface UpdateLeavePolicyPayload {
   /** ยกยอดข้ามปีได้สูงสุด (วัน) — ว่าง = เท่าสิทธิ์ต่อปี */
   carryForwardMaxDays?: number | null;
   /** ยื่นย้อนหลังได้ไม่เกินกี่วัน — ว่าง = ไม่จำกัด, 0 = ห้ามยื่นย้อนหลัง */
-  maxBackdateDays?: number | null;
   /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
   documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;

@@ -54,7 +54,6 @@ public class LeavePolicyService : ILeavePolicyService
                 MaxDaysPerOccurrence = p.MaxDaysPerOccurrence,
                 MaxOccurrencesPerYear = p.MaxOccurrencesPerYear,
                 CarryForwardMaxDays = p.CarryForwardMaxDays,
-                MaxBackdateDays = p.MaxBackdateDays,
                 DocumentGraceDays = p.DocumentGraceDays,
                 ProrationMethod = p.ProrationMethod
             })
@@ -97,7 +96,6 @@ public class LeavePolicyService : ILeavePolicyService
             MaxDaysPerOccurrence = p.MaxDaysPerOccurrence,
             MaxOccurrencesPerYear = p.MaxOccurrencesPerYear,
             CarryForwardMaxDays = p.CarryForwardMaxDays,
-            MaxBackdateDays = p.MaxBackdateDays,
             DocumentGraceDays = p.DocumentGraceDays,
             ProrationMethod = p.ProrationMethod
         };
@@ -112,7 +110,7 @@ public class LeavePolicyService : ILeavePolicyService
         }
 
         ValidatePolicyValues(request.EntitlementDays, request.MinimumServiceDays, request.AdvanceRequestDays,
-            request.MaxBackdateDays, request.MaxDaysPerOccurrence, request.MaxOccurrencesPerYear, request.MaxLifetimeOccurrences,
+            request.MaxDaysPerOccurrence, request.MaxOccurrencesPerYear, request.MaxLifetimeOccurrences,
             request.CarryForwardMaxDays, request.CarryForwardExpiryMonths, request.EffectiveFrom, request.EffectiveTo);
         await EnsureNoDuplicateAsync(null, request.LeaveTypeId, request.EmployeeTypeId, request.EmployeeLevelId,
             request.EffectiveFrom, request.EffectiveTo, cancellationToken);
@@ -137,7 +135,6 @@ public class LeavePolicyService : ILeavePolicyService
             MaxLifetimeOccurrences = request.MaxLifetimeOccurrences,
             MaxDaysPerOccurrence = request.MaxDaysPerOccurrence,
             MaxOccurrencesPerYear = request.MaxOccurrencesPerYear,
-            MaxBackdateDays = request.MaxBackdateDays,
             DocumentGraceDays = request.DocumentGraceDays is > 0 ? request.DocumentGraceDays : null,
             ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod)
         };
@@ -160,7 +157,7 @@ public class LeavePolicyService : ILeavePolicyService
 
         var effectiveFrom = request.EffectiveFrom ?? policy.EffectiveFrom; // ไม่ส่งมา = คงวันที่มีผลเดิม
         ValidatePolicyValues(request.EntitlementDays, request.MinimumServiceDays, request.AdvanceRequestDays,
-            request.MaxBackdateDays, request.MaxDaysPerOccurrence, request.MaxOccurrencesPerYear, request.MaxLifetimeOccurrences,
+            request.MaxDaysPerOccurrence, request.MaxOccurrencesPerYear, request.MaxLifetimeOccurrences,
             request.CarryForwardMaxDays, request.CarryForwardExpiryMonths, effectiveFrom, request.EffectiveTo);
         await EnsureNoDuplicateAsync(policy.Id, policy.LeaveTypeId, request.EmployeeTypeId, request.EmployeeLevelId,
             effectiveFrom, request.EffectiveTo, cancellationToken);
@@ -182,7 +179,6 @@ public class LeavePolicyService : ILeavePolicyService
         policy.MaxLifetimeOccurrences = request.MaxLifetimeOccurrences;
         policy.MaxDaysPerOccurrence = request.MaxDaysPerOccurrence;
         policy.MaxOccurrencesPerYear = request.MaxOccurrencesPerYear;
-        policy.MaxBackdateDays = request.MaxBackdateDays;
         policy.DocumentGraceDays = request.DocumentGraceDays is > 0 ? request.DocumentGraceDays : null;
         policy.ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod);
 
@@ -206,13 +202,13 @@ public class LeavePolicyService : ILeavePolicyService
     }
 
     private static void ValidatePolicyValues(
-        decimal entitlementDays, int minimumServiceDays, int advanceRequestDays, int? maxBackdateDays,
+        decimal entitlementDays, int minimumServiceDays, int advanceRequestDays,
         decimal? maxDaysPerOccurrence, int? maxOccurrencesPerYear, int? maxLifetimeOccurrences,
         decimal? carryForwardMaxDays, int? carryForwardExpiryMonths, DateOnly effectiveFrom, DateOnly? effectiveTo)
     {
         if (entitlementDays < 0) throw new InvalidOperationException("จำนวนวันลาต่อปีต้องไม่ติดลบ");
-        if (minimumServiceDays < 0 || advanceRequestDays < 0 || maxBackdateDays < 0)
-            throw new InvalidOperationException("อายุงานขั้นต่ำ / จำนวนวันยื่นล่วงหน้า / ยื่นย้อนหลัง ต้องไม่ติดลบ");
+        if (minimumServiceDays < 0 || advanceRequestDays < 0)
+            throw new InvalidOperationException("อายุงานขั้นต่ำ / จำนวนวันยื่นล่วงหน้า ต้องไม่ติดลบ");
         if (maxDaysPerOccurrence <= 0 || maxOccurrencesPerYear <= 0 || maxLifetimeOccurrences <= 0)
             throw new InvalidOperationException("ค่าจำกัดสูงสุดต่อครั้ง / ต่อปี / ตลอดอายุงาน ต้องมากกว่า 0 (เว้นว่าง = ไม่จำกัด)");
         if (carryForwardMaxDays < 0 || carryForwardExpiryMonths < 0)

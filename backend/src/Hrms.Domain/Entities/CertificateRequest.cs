@@ -13,7 +13,6 @@ public class CertificateRequest : BaseEntity
     public string? Purpose { get; set; }
     public string Status { get; set; } = "PENDING"; // PENDING, APPROVED, REJECTED, ISSUED, CANCELLED
     public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
-    public string? IssuedFileUrl { get; set; }
     public DateTime? IssuedAt { get; set; }
     public long? ApprovalInstanceId { get; set; }
     /// <summary>ข้อมูลหนังสือทั้งฉบับ (JSON) ที่ตรึงไว้ ณ วันที่อนุมัติ — เปิดดูภายหลังได้ฉบับเดิมเสมอ</summary>

@@ -106,7 +106,6 @@ public interface IHrmsDbContext
     // Approval Workflow Designer (Dev 1 Phase 2)
     DbSet<ApprovalFlow> ApprovalFlows { get; }
     DbSet<ApprovalStep> ApprovalSteps { get; }
-    DbSet<ApprovalDelegation> ApprovalDelegations { get; }
     DbSet<ApprovalInstance> ApprovalInstances { get; }
     DbSet<ApprovalAction> ApprovalActions { get; }
 
