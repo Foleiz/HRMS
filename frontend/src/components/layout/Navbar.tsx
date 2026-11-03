@@ -19,12 +19,10 @@ import {
   Menu,
   Lock,
   Globe,
-  PhoneCall,
   Rocket,
   BookOpen,
   Copy,
   Check,
-  ArrowLeftRight,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { essAttendanceService } from '@/services/essAttendanceService';
@@ -101,17 +99,6 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const handleSwitchCompany = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDropdownOpen(false);
-    hrmsSwal.fire({
-      title: 'สลับบัญชีบริษัท',
-      text: 'ปัจจุบันคุณกำลังเข้าใช้งานในฐานะองค์กรหลัก',
-      icon: 'info',
-      confirmButtonText: 'ตกลง',
-    });
-  };
-
   const handleLanguageClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     hrmsSwal.fire({
@@ -119,17 +106,6 @@ export const Navbar: React.FC = () => {
       text: 'ปัจจุบันระบบรองรับภาษาไทยเป็นภาษามาตรฐาน (TH)',
       icon: 'info',
       confirmButtonText: 'ตกลง',
-    });
-  };
-
-  const handleHelpReport = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setDropdownOpen(false);
-    hrmsSwal.fire({
-      title: 'แจ้งปัญหาการใช้งาน',
-      text: 'กรุณาติดต่อผู้ดูแลระบบ IT / HR หรืออีเมล support@hrms.local',
-      icon: 'info',
-      confirmButtonText: 'รับทราบ',
     });
   };
 
@@ -456,15 +432,6 @@ export const Navbar: React.FC = () => {
                         <span>โปรไฟล์</span>
                       </Link>
 
-                      <button
-                        type="button"
-                        onClick={handleSwitchCompany}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer select-none"
-                      >
-                        <ArrowLeftRight className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                        <span>สลับบัญชีบริษัท</span>
-                      </button>
-
                       <Link
                         href="/profile"
                         onClick={() => setDropdownOpen(false)}
@@ -495,15 +462,6 @@ export const Navbar: React.FC = () => {
                           <span className="text-sm">🇹🇭</span>
                           <ChevronRight className="w-3.5 h-3.5" />
                         </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={handleHelpReport}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer select-none"
-                      >
-                        <PhoneCall className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                        <span>แจ้งปัญหา</span>
                       </button>
 
                       <button
