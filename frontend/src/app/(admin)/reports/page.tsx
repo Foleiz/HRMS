@@ -1267,9 +1267,7 @@ export default function ReportsPage() {
                   <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">เงินได้พึงประเมินรวม</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-700/60">
-                        + รายรับ
-                      </span>
+                      <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-blue-950 dark:text-blue-100">
                       {taxData.totalGrossIncome.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1284,9 +1282,7 @@ export default function ReportsPage() {
                   <div className="bg-rose-50/70 dark:bg-rose-950/30 p-4 rounded-2xl border border-rose-200/80 dark:border-rose-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-700/60">
-                        − หักภาษี
-                      </span>
+                      <Receipt className="w-4 h-4 text-rose-600 dark:text-rose-400" />
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-rose-950 dark:text-rose-100">
                       {taxData.totalWithholdingTax.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1301,9 +1297,7 @@ export default function ReportsPage() {
                   <div className="bg-sky-50/70 dark:bg-sky-950/30 p-4 rounded-2xl border border-sky-200/80 dark:border-sky-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-sky-700 dark:text-sky-300">ปกส. หักจากลูกจ้าง (5%)</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-700/60">
-                        − หัก ปกส.
-                      </span>
+                      <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-sky-950 dark:text-sky-100">
                       {taxData.totalSsoEmployee.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1318,9 +1312,7 @@ export default function ReportsPage() {
                   <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">รายการหักอื่นๆ</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-700/60">
-                        − หักอื่นๆ
-                      </span>
+                      <TrendingDown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-amber-950 dark:text-amber-100">
                       {totalOtherDeductions.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1335,9 +1327,7 @@ export default function ReportsPage() {
                   <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5 relative overflow-hidden">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">เงินเดือนสุทธินำจ่าย</span>
-                      <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-700/60">
-                        = สุทธิ
-                      </span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     <div className="text-xl sm:text-2xl font-extrabold text-emerald-950 dark:text-emerald-100">
                       {taxData.totalNetSalary.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
