@@ -10,7 +10,6 @@ import {
   Phone,
   User,
   GraduationCap,
-  ShieldCheck,
   Plus,
   UserCog,
 } from 'lucide-react';
@@ -41,7 +40,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
-import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
+import { SsoHospitalField, TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { inputClass } from '@/components/ui';
 
@@ -137,7 +136,7 @@ function FieldInfoTooltip({
   );
 }
 
-export type EditModalTab = 'personal' | 'family' | 'emergency' | 'background' | 'tax';
+export type EditModalTab = 'personal' | 'family' | 'emergency' | 'background';
 
 interface EditEmployeeModalProps {
   isOpen: boolean;
@@ -179,7 +178,7 @@ export default function EditEmployeeModal({
     parentDeductionCount: 0,
     disabilityDeductionCount: 0,
   });
-  const [ssoMasked, setSsoMasked] = useState<string | null>(null);
+  const [, setSsoMasked] = useState<string | null>(null);
   const [activeFamilyIndex, setActiveFamilyIndex] = useState<number>(0);
 
   // ทีม & ธนาคาร
@@ -591,7 +590,6 @@ export default function EditEmployeeModal({
               { id: 'family', label: 'ข้อมูลครอบครัว', icon: Users },
               { id: 'emergency', label: 'ผู้ติดต่อฉุกเฉิน', icon: Phone },
               { id: 'background', label: 'การศึกษา & ประวัติการทำงาน', icon: GraduationCap },
-              { id: 'tax', label: 'ประกันสังคม', icon: ShieldCheck },
             ].map((t) => {
               const Icon = t.icon;
               return {
@@ -981,6 +979,9 @@ export default function EditEmployeeModal({
                       onChange={setAddressPair}
                       inputClassFor={(_key, mono) => (mono ? 'w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono' : `${inputClass} h-10`)}
                     />
+
+                    {/* ประกันสังคม */}
+                    <SsoHospitalField values={taxSso} onChange={setTaxSso} />
 
                     {/* ข้อมูลบัญชีธนาคาร */}
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
@@ -1413,16 +1414,6 @@ export default function EditEmployeeModal({
                 </div>
               )}
 
-              {/* TAB 5: ภาษี & ประกันสังคม (Tax & SSO) */}
-              {activeTab === 'tax' && (
-                <div className="w-full animate-in fade-in duration-150">
-                  <EmployeeTaxSsoEditor
-                    values={taxSso}
-                    onChange={setTaxSso}
-                    currentSocialSecurityMasked={ssoMasked}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Footer Actions */}

@@ -472,8 +472,6 @@ export default function EmployeeDetailView({
       targetTab = tabOverride;
     } else if (activeTab === 'background') {
       targetTab = 'background';
-    } else if (activeTab === 'tax') {
-      targetTab = 'tax';
     } else {
       targetTab = 'personal';
     }
@@ -1031,7 +1029,7 @@ export default function EmployeeDetailView({
           {activeTab === 'background' && <EmployeeBackgroundView employee={employee} />}
 
           {/* ============================================================ */}
-          {/* TAB 5: ภาษี & ประกันสังคม                                    */}
+          {/* TAB 5: ประกันสังคม                                            */}
           {/* ============================================================ */}
           {activeTab === 'tax' && <EmployeeTaxSsoView employee={employee} />}
 

@@ -36,7 +36,7 @@ import { useAuth } from '@/context/AuthContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { useEmployeeTypeOptions } from '@/hooks/useEmployeeTypeOptions';
 import EmployeeBackgroundEditor from '@/components/employees/EmployeeBackgroundEditor';
-import EmployeeTaxSsoEditor, { TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
+import { SsoHospitalField, TaxSsoValues } from '@/components/employees/EmployeeTaxSsoEditor';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { Button, inputClass, TabBar } from '@/components/ui';
@@ -183,7 +183,7 @@ function EmployeeEditPageContent() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Active Tab: ข้อมูลส่วนตัว vs ข้อมูลครอบครัว vs ผู้ติดต่อกรณีฉุกเฉิน
-  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background' | 'tax'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'family' | 'emergency' | 'background'>('personal');
 
   // การศึกษา / ประวัติการทำงาน / ภาษีและประกันสังคม
   const [educations, setEducations] = useState<EmployeeEducation[]>([]);
@@ -196,7 +196,7 @@ function EmployeeEditPageContent() {
     parentDeductionCount: 0,
     disabilityDeductionCount: 0,
   });
-  const [ssoMasked, setSsoMasked] = useState<string | null>(null);
+  const [, setSsoMasked] = useState<string | null>(null);
   const [activeFamilyIndex, setActiveFamilyIndex] = useState<number>(0);
 
   // Sub-Navigation Tabs ด้านบนตามภาพ Figma
@@ -596,7 +596,6 @@ function EmployeeEditPageContent() {
                   { key: 'family', label: 'ข้อมูลครอบครัว' },
                   { key: 'emergency', label: 'ผู้ติดต่อกรณีฉุกเฉิน' },
                   { key: 'background', label: 'การศึกษา & ประวัติการทำงาน' },
-                  { key: 'tax', label: 'ประกันสังคม' },
                 ]}
                 activeKey={activeTab}
                 onChange={setActiveTab}
@@ -612,9 +611,6 @@ function EmployeeEditPageContent() {
               />
             )}
 
-            {activeTab === 'tax' && (
-              <EmployeeTaxSsoEditor values={taxSso} onChange={setTaxSso} currentSocialSecurityMasked={ssoMasked} />
-            )}
 
             {/* ============================================================ */}
             {/* TAB 1: ข้อมูลส่วนตัว (Personal Info) - 3 Columns Layout      */}
@@ -959,6 +955,9 @@ function EmployeeEditPageContent() {
                     onChange={setAddressPair}
                     inputClassFor={(_key, mono) => (mono ? 'w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono' : `${inputClass} h-10`)}
                   />
+
+                  {/* ประกันสังคม */}
+                  <SsoHospitalField values={taxSso} onChange={setTaxSso} />
 
                   {/* ข้อมูลบัญชีธนาคาร (Bank Account) */}
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">

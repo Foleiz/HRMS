@@ -22,37 +22,26 @@ interface Props {
   currentSocialSecurityMasked?: string | null;
 }
 
-/** ข้อมูลประกันสังคมรายคน (ฝ่ายบุคคลแก้ไข)
- *  ฟิลด์ลดหย่อนภาษี (spouseHasIncome ฯลฯ) ยังเก็บใน state เพื่อส่งค่าเดิมกลับ แต่ไม่แสดงบนหน้าจอแล้ว */
-export default function EmployeeTaxSsoEditor({ values, onChange, currentSocialSecurityMasked }: Props) {
-  const set = (patch: Partial<TaxSsoValues>) => onChange({ ...values, ...patch });
-  const count = (v: string, max: number) => Math.max(0, Math.min(max, Number(v) || 0));
-
+/** ช่องประกันสังคม (โรงพยาบาลตามสิทธิ์) — วางในแท็บข้อมูลส่วนตัวของฟอร์มพนักงาน
+ *  ฟิลด์ลดหย่อนภาษีใน TaxSsoValues ยังเก็บใน state เพื่อส่งค่าเดิมกลับ แต่ไม่แสดงบนหน้าจอ */
+export function SsoHospitalField({ values, onChange }: Pick<Props, 'values' | 'onChange'>) {
   return (
-    <div className="w-full space-y-8 text-xs animate-in fade-in duration-150">
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 pb-2 border-b border-slate-200 dark:border-slate-700">
-          <ShieldCheck className="w-4 h-4 text-primary" />
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประกันสังคม</h3>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-            (ใช้เลขเดียวกับเลขประจำตัวประชาชน 13 หลัก)
-          </span>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">โรงพยาบาลตามสิทธิ์</label>
-            <input
-              type="text"
-              value={values.hospitalName}
-              onChange={(e) => set({ hospitalName: e.target.value })}
-              placeholder="เช่น โรงพยาบาลราชวิถี"
-              className={INPUT}
-            />
-          </div>
-        </div>
-      </section>
-
+    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+      <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-xs">
+        <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+        <span>ประกันสังคม</span>
+        <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">(เลขเดียวกับเลขบัตรประชาชน)</span>
+      </label>
+      <div>
+        <span className="text-slate-500 dark:text-slate-400 text-[11px] block mb-1">โรงพยาบาลตามสิทธิ์</span>
+        <input
+          type="text"
+          value={values.hospitalName}
+          onChange={(e) => onChange({ ...values, hospitalName: e.target.value })}
+          placeholder="เช่น โรงพยาบาลราชวิถี"
+          className={`${INPUT} h-10`}
+        />
+      </div>
     </div>
   );
 }
-

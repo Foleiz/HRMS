@@ -127,12 +127,23 @@ export function EmployeeBackgroundView({ employee }: { employee: Employee }) {
   );
 }
 
+/** ช่องข้อมูลแบบหัวข้อบน-ค่าล่าง ใช้ในการ์ดแบบตาราง */
+function InfoCell({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
+  return (
+    <div className="px-5 py-4 min-w-0 bg-white dark:bg-slate-800">
+      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{label}</div>
+      <div className={`mt-1 text-sm font-semibold text-slate-800 dark:text-slate-200 break-words ${mono ? 'font-mono' : ''}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 /** แท็บประกันสังคม ในหน้ารายละเอียดพนักงาน */
 export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
   return (
-    <div className="pt-6 flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 text-xs animate-in fade-in duration-150 items-stretch">
-      {/* ─── ประกันสังคม ─── */}
-      <section className="space-y-3 flex flex-col h-full">
+    <div className="pt-6 w-full text-xs animate-in fade-in duration-150">
+      <section className="space-y-3">
         <div className="flex items-center gap-2.5">
           <span className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-slate-700/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
             <ShieldCheck className="w-4 h-4" />
@@ -140,32 +151,25 @@ export function EmployeeTaxSsoView({ employee }: { employee: Employee }) {
           <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">ประกันสังคม</h3>
         </div>
 
-        <SectionCard className="flex-1">
-          <KeyValueRow
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-700/60 shadow-2xs overflow-hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px">*]:border-slate-100 dark:[&>*]:border-slate-700/60 sm:[&>*:nth-child(-n+2)]:border-b lg:[&>*:nth-child(-n+2)]:border-b-0 sm:[&>*:nth-child(odd)]:border-r lg:[&>*:not(:last-child)]:border-r">
+          <InfoCell
             label="เลขประกันสังคม"
             value={employee.socialSecurity?.socialSecurityNoMasked || employee.citizenIdMasked || '-'}
             mono
           />
-          <KeyValueRow
-            label="โรงพยาบาลตามสิทธิ์"
-            value={employee.socialSecurity?.hospitalName || '-'}
-          />
-          <KeyValueRow
+          <InfoCell label="โรงพยาบาลตามสิทธิ์" value={employee.socialSecurity?.hospitalName || '-'} />
+          <InfoCell
             label="สถานะผู้ประกันตน"
             value={
-              <span className="inline-flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 ผู้ประกันตน มาตรา 33
               </span>
             }
           />
-          <KeyValueRow
-            label="อัตราเงินสมทบ"
-            value="5% (สูงสุด 750 บาท/เดือน)"
-          />
-        </SectionCard>
+          <InfoCell label="อัตราเงินสมทบ" value="5% (สูงสุด 750 บาท/เดือน)" />
+        </div>
       </section>
-
     </div>
   );
 }
