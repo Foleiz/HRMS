@@ -86,7 +86,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       {
         title: 'โปรไฟล์ของฉัน',
-        href: '/profile',
+        href: '/profile?tab=personal',
         matchPrefix: '/profile',
         icon: User,
         requiredPermissions: ['ESS_PROFILE_VIEW'],

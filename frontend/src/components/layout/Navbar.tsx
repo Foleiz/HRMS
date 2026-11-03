@@ -429,7 +429,12 @@ export const Navbar: React.FC = () => {
 
                     {/* Avatar Centered */}
                     <div className="flex justify-center">
-                      <div className="relative">
+                      <Link
+                        href="/profile?tab=personal"
+                        onClick={() => setDropdownOpen(false)}
+                        className="relative block group"
+                        title="ดูโปรไฟล์"
+                      >
                         {navAvatarSrc ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -437,21 +442,26 @@ export const Navbar: React.FC = () => {
                             src={navAvatarSrc}
                             alt={user.fullName || user.username}
                             onError={() => setAvatarFailed(true)}
-                            className="w-18 h-18 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700 shadow-sm"
+                            className="w-18 h-18 rounded-full object-cover border-2 border-slate-100 dark:border-slate-700 shadow-sm transition-transform duration-150 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="w-18 h-18 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xl font-bold shadow-sm">
+                          <div className="w-18 h-18 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-xl font-bold shadow-sm transition-transform duration-150 group-hover:scale-105">
                             {navInitial}
                           </div>
                         )}
-                      </div>
+                      </Link>
                     </div>
 
                     {/* Name & Role Badge */}
                     <div className="text-center mt-2.5 space-y-1">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                      <Link
+                        href="/profile?tab=personal"
+                        onClick={() => setDropdownOpen(false)}
+                        className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight hover:text-primary transition-colors inline-block"
+                        title="ดูโปรไฟล์"
+                      >
                         {user.fullName || user.username}
-                      </h3>
+                      </Link>
                       <div className="flex items-center justify-center gap-1.5">
                         <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950/70 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                           {user.roleNames?.[0] || (user.roles?.[0] ? formatRoleName(user.roles[0]) : 'ผู้ดูแลระบบ')}
@@ -533,7 +543,7 @@ export const Navbar: React.FC = () => {
                   {/* 3. Action Menu */}
                   <div className="space-y-0.5">
                     <Link
-                      href="/profile"
+                      href="/profile?tab=personal"
                       onClick={() => setDropdownOpen(false)}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors select-none"
                     >
