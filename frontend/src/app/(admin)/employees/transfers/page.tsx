@@ -4,6 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2, Eye, Download, Clock } from 'lucide-react';
 import { transferService } from '@/services/transferService';
+import { employeeService } from '@/services/employeeService';
+import type { Employee } from '@/types/employee';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { Button, TabBar, TableToolbar, ActionDropdown, AvatarName, type ActionDropdownItem } from '@/components/ui';
@@ -35,6 +37,8 @@ export default function TransfersPage() {
     promotionsThisMonthCount: 0,
   });
   const [transfers, setTransfers] = useState<EmployeeTransfer[]>([]);
+  // รูปโปรไฟล์/คำนำหน้าจากรายชื่อพนักงาน (ใช้แทนเมื่อข้อมูลโยกย้ายยังไม่มีมาให้)
+  const [employeeById, setEmployeeById] = useState<Map<number, Employee>>(new Map());
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,6 +90,10 @@ export default function TransfersPage() {
 
   useEffect(() => {
     fetchData();
+    employeeService
+      .getAll()
+      .then((emps) => setEmployeeById(new Map((emps || []).map((e) => [e.id, e]))))
+      .catch(() => undefined);
   }, []);
 
   // Filtered Transfers
@@ -290,8 +298,8 @@ export default function TransfersPage() {
                           <AvatarName
                             id={item.employeeId}
                             name={item.employeeName}
-                            prefix={item.employeePrefix}
-                            avatarUrl={item.avatarUrl}
+                            prefix={item.employeePrefix ?? employeeById.get(item.employeeId)?.prefix}
+                            avatarUrl={item.avatarUrl ?? employeeById.get(item.employeeId)?.avatarUrl}
                           />
                         </td>
                         <td className="py-3.5 px-5">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -60,6 +60,8 @@ export default function ContractsPage() {
     totalActiveCount: 0,
   });
   const [employees, setEmployees] = useState<Employee[]>([]);
+  // รูปโปรไฟล์/คำนำหน้าจากรายชื่อพนักงาน (ใช้แทนเมื่อข้อมูลสัญญายังไม่มีมาให้)
+  const employeeById = useMemo(() => new Map(employees.map((e) => [e.id, e])), [employees]);
   const [loading, setLoading] = useState(true);
 
   // Filters & Search
@@ -400,8 +402,8 @@ export default function ContractsPage() {
                         <AvatarName
                           id={contract.employeeId}
                           name={contract.employeeName}
-                          prefix={contract.employeePrefix}
-                          avatarUrl={contract.avatarUrl}
+                          prefix={contract.employeePrefix ?? employeeById.get(contract.employeeId)?.prefix}
+                          avatarUrl={contract.avatarUrl ?? employeeById.get(contract.employeeId)?.avatarUrl}
                         />
                       </Link>
                     </td>
