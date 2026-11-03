@@ -2,22 +2,8 @@
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button } from '@/components/ui';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  X,
-  AlertCircle,
-  Loader2,
-  ShieldCheck,
-  Search,
-  Check,
-  Shield,
-  HeartPulse,
-  Coins,
-  CheckSquare,
-  HelpCircle,
-  RotateCcw,
-  Briefcase,
-} from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { AlertCircle, Loader2, Search } from 'lucide-react';
 import {
   EmployeeType,
   CreateEmployeeTypePayload,
@@ -27,7 +13,7 @@ import { BenefitItem } from '@/types/benefit';
 import { benefitService } from '@/services/benefitService';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { inputClass } from '@/components/ui';
 
 interface CreateEmployeeTypeModalProps {
@@ -41,46 +27,6 @@ interface CreateEmployeeTypeModalProps {
 }
 
 type CategoryFilter = 'ALL' | 'STATUTORY' | 'HEALTH' | 'ALLOWANCE' | 'OTHER';
-
-const CATEGORY_META: Record<string, { label: string; badge: string; icon: React.ComponentType<{ className?: string }> }> = {
-  STATUTORY: {
-    label: 'สิทธิตามกฎหมาย',
-    badge: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
-    icon: Shield,
-  },
-  HEALTH: {
-    label: 'สุขภาพและประกัน',
-    badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800',
-    icon: HeartPulse,
-  },
-  ALLOWANCE: {
-    label: 'เบี้ยเลี้ยงและการช่วยเหลือ',
-    badge: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
-    icon: Coins,
-  },
-  WELLNESS: {
-    label: 'กิจกรรมและฟิตเนส',
-    badge: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/30 dark:text-pink-300 dark:border-pink-800',
-    icon: HeartPulse,
-  },
-  FINANCIAL: {
-    label: 'กองทุนและการเงิน',
-    badge: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
-    icon: Coins,
-  },
-  OTHER: {
-    label: 'ทั่วไป / อื่นๆ',
-    badge: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
-    icon: HelpCircle,
-  },
-};
-
-const PAYOUT_LABELS: Record<string, string> = {
-  PAYROLL: 'เข้าสลิปเงินเดือน',
-  REIMBURSEMENT: 'เบิกจ่ายตามจริง',
-  IN_KIND: 'สิทธิประโยชน์/สวัสดิการในตัว',
-  DIRECT: 'คุ้มครองโดยตรง',
-};
 
 const formatBenefitRate = (b: BenefitItem) => {
   if (!b.defaultCoverageAmount || Number(b.defaultCoverageAmount) === 0) {
@@ -117,7 +63,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   // Search & Filter
   const [benefitSearch, setBenefitSearch] = useState('');
   const [selectedCategoryTab, setSelectedCategoryTab] = useState<CategoryFilter>('ALL');
-  const benefitListRef = useRef<HTMLDivElement>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -199,11 +144,6 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     setErrorMessage(null);
   }, [initialData, isOpen, availableBenefits.length, hasInitializedForm]);
 
-  // Derived selected list
-  const selectedBenefits = useMemo(() => {
-    return availableBenefits.filter((b) => selectedBenefitIds.includes(b.id));
-  }, [availableBenefits, selectedBenefitIds]);
-
   // Category classification helper
   const getGroupKey = (b: BenefitItem): 'STATUTORY' | 'HEALTH' | 'ALLOWANCE' | 'OTHER' => {
     if (b.isStatutory || b.category === 'STATUTORY') return 'STATUTORY';
@@ -235,41 +175,12 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     });
   }, [availableBenefits, selectedCategoryTab, benefitSearch]);
 
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts = { ALL: availableBenefits.length, STATUTORY: 0, HEALTH: 0, ALLOWANCE: 0, OTHER: 0 };
-    availableBenefits.forEach((b) => {
-      const g = getGroupKey(b);
-      counts[g] = (counts[g] || 0) + 1;
-    });
-    return counts;
-  }, [availableBenefits]);
-
   if (!isOpen) return null;
 
   const toggleBenefit = (id: number) => {
     setSelectedBenefitIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
-  };
-
-  const handleSelectAll = () => {
-    const listToSelect = (benefitSearch.trim() || selectedCategoryTab !== 'ALL')
-      ? filteredBenefits
-      : availableBenefits;
-    const idsToAdd = listToSelect.map((b) => b.id);
-    setSelectedBenefitIds((prev) => Array.from(new Set([...prev, ...idsToAdd])));
-  };
-
-  const handleSelectStatutoryOnly = () => {
-    const statutoryIds = availableBenefits
-      .filter((b) => b.isStatutory || b.category === 'STATUTORY' || ['SSO', 'LEAVE', 'OT', 'PVD'].includes(b.benefitCode))
-      .map((b) => b.id);
-    setSelectedBenefitIds((prev) => Array.from(new Set([...prev, ...statutoryIds])));
-  };
-
-  const handleClearAll = () => {
-    setSelectedBenefitIds([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -343,370 +254,148 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
     }
   };
 
+  const GROUP_ORDER: Array<'STATUTORY' | 'HEALTH' | 'ALLOWANCE' | 'OTHER'> = ['STATUTORY', 'HEALTH', 'ALLOWANCE', 'OTHER'];
+  const GROUP_LABEL: Record<string, string> = {
+    STATUTORY: 'สิทธิตามกฎหมาย',
+    HEALTH: 'สุขภาพ & ประกัน',
+    ALLOWANCE: 'เบี้ยเลี้ยง & ช่วยเหลือ',
+    OTHER: 'อื่นๆ',
+  };
+  const groupedBenefits = GROUP_ORDER.map((g) => ({
+    key: g,
+    label: GROUP_LABEL[g],
+    items: filteredBenefits.filter((b) => getGroupKey(b) === g),
+  })).filter((g) => g.items.length > 0);
+
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 font-sans" innerClassName="items-center justify-center p-3 sm:p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Modal Header */}
-        <ModalHeader
-          icon={Briefcase}
-          title={isEdit ? 'แก้ไขประเภทสัญญา/การจ้างงาน' : 'เพิ่มประเภทสัญญา/การจ้างงานใหม่'}
-          onClose={onClose}
-        />
+        <ModalHeader title={isEdit ? 'แก้ไขประเภทพนักงาน' : 'เพิ่มประเภทพนักงานใหม่'} onClose={onClose} />
 
-        {/* Error Alert */}
-        {errorMessage && (
-          <div className="mx-6 mt-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Modal Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
-          {/* รหัสประเภทพนักงาน — ระบบแนะนำ แก้ได้ */}
-          <CodeInput
-            type="employee-type"
-            prefix="ET"
-            existingCodes={existingCodes}
-            label="รหัสประเภทพนักงาน"
-            mode={isEdit ? 'edit' : 'create'}
-            value={typeCode}
-            onChange={setTypeCode}
-            resetKey={isOpen}
-            labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
-            inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/20 focus:border-primary dark:focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
-          />
-
-          {/* ชื่อประเภทสัญญา/การจ้างงาน */}
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              ชื่อประเภทสัญญา/การจ้างงาน <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={typeName}
-              onChange={(e) => setTypeName(e.target.value)}
-              placeholder="เช่น พนักงานสัญญาจ้างโครงการ, ผู้รับเหมาบริการภายนอก, พนักงานประจำ"
-              className={`${inputClass} h-10`}
-            />
-          </div>
-
-          {/* รูปแบบค่าตอบแทน & สถานะ */}
-          <div className={`grid grid-cols-1 ${isEdit ? 'sm:grid-cols-2' : ''} gap-3`}>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                รูปแบบค่าตอบแทน (Wage Type)
-              </label>
-              <CustomSelect
-                value={wageType}
-                onChange={(e) => setWageType(e.target.value)}
-                className={`${inputClass} h-10`}
-              >
-                <option value="MONTHLY">รายเดือน</option>
-                <option value="DAILY">รายวัน</option>
-                <option value="HOURLY">รายชั่วโมง</option>
-                <option value="PIECE_RATE">รายชิ้นงาน</option>
-                <option value="STIPEND">เบี้ยเลี้ยงเหมาจ่าย</option>
-              </CustomSelect>
-            </div>
-
-            {isEdit && (
-              <ActiveToggleRow label="เปิดใช้งาน" checked={status === 'ACTIVE'} onChange={(v) => setStatus((v ? 'ACTIVE' : 'INACTIVE'))} />
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-6 py-5 space-y-4 bg-slate-50/70 dark:bg-slate-900/40">
+            {errorMessage && (
+              <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
             )}
-          </div>
 
-          {/* 4. สิทธิประโยชน์และสวัสดิการ */}
-          <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 space-y-3">
-            {/* Header section with refresh button */}
-            <div className="flex items-center justify-between gap-2 border-b border-slate-200/70 dark:border-slate-800 pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary text-white rounded-lg shadow-2xs">
-                  <ShieldCheck className="w-4 h-4 text-cyan-300" />
-                </div>
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                  สิทธิประโยชน์และสวัสดิการที่ได้รับ
-                </span>
+            {/* ข้อมูลประเภท */}
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-3.5">
+              <CodeInput
+                type="employee-type"
+                prefix="ET"
+                existingCodes={existingCodes}
+                label="รหัสประเภทพนักงาน"
+                mode={isEdit ? 'edit' : 'create'}
+                value={typeCode}
+                onChange={setTypeCode}
+                resetKey={isOpen}
+                labelClassName="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                inputClassName="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-primary/20 dark:focus:ring-blue-500/20 focus:border-primary dark:focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              />
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  ชื่อประเภทพนักงาน <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={typeName}
+                  onChange={(e) => setTypeName(e.target.value)}
+                  placeholder="เช่น พนักงานประจำ, พนักงานสัญญาจ้าง, นักศึกษาฝึกงาน"
+                  className={`${inputClass} h-10`}
+                />
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={loadBenefits}
-                  disabled={loadingBenefits}
-                  className="text-[11px] text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 font-medium inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                  title="ดึงข้อมูลสวัสดิการล่าสุดจากฐานข้อมูลทันที"
-                >
-                  <RotateCcw className={`w-3.5 h-3.5 ${loadingBenefits ? 'animate-spin text-blue-600' : ''}`} />
-                  <span>รีเฟรชสวัสดิการ</span>
-                </button>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">รูปแบบค่าตอบแทน</label>
+                <CustomSelect value={wageType} onChange={(e) => setWageType(e.target.value)} className={`${inputClass} h-10`}>
+                  <option value="MONTHLY">รายเดือน</option>
+                  <option value="DAILY">รายวัน</option>
+                  <option value="HOURLY">รายชั่วโมง</option>
+                  <option value="PIECE_RATE">รายชิ้นงาน</option>
+                  <option value="STIPEND">เบี้ยเลี้ยงเหมาจ่าย</option>
+                </CustomSelect>
               </div>
             </div>
 
-            {/* Selected items quick badges tray (Always visible if any selected) */}
-            {selectedBenefits.length > 0 && (
-              <div className="p-2.5 bg-white dark:bg-slate-800/90 rounded-xl border border-blue-200/80 dark:border-blue-900/40 shadow-2xs">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    รายการที่เลือกไว้ในปัจจุบัน ({selectedBenefits.length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleClearAll}
-                    className="text-[10px] text-rose-600 hover:text-rose-700 dark:text-rose-400 font-medium hover:underline cursor-pointer"
-                  >
-                    ยกเลิกทั้งหมด
-                  </button>
+            {/* สวัสดิการที่ได้รับ */}
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-100">สวัสดิการที่ได้รับ</span>
+                <span className="text-xs font-semibold text-primary dark:text-blue-300">เลือก {selectedBenefitIds.length} รายการ</span>
+              </div>
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="search"
+                  value={benefitSearch}
+                  onChange={(e) => setBenefitSearch(e.target.value)}
+                  placeholder="ค้นหาสวัสดิการ"
+                  className="w-full h-10 pl-9 pr-3 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
+                />
+              </div>
+
+              {loadingBenefits && availableBenefits.length === 0 ? (
+                <div className="py-8 flex items-center justify-center gap-2 text-xs text-slate-400">
+                  <Loader2 className="w-4 h-4 animate-spin" /> กำลังโหลดรายการสวัสดิการ...
                 </div>
-                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                  {selectedBenefits.map((b) => (
-                    <span
-                      key={b.id}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200"
-                    >
-                      <span className="truncate max-w-[160px]">{b.benefitName}</span>
-                      <button
-                        type="button"
-                        onClick={() => toggleBenefit(b.id)}
-                        className="text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 p-0.5 cursor-pointer"
-                        title={`นำ ${b.benefitName} ออก`}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
+              ) : groupedBenefits.length === 0 ? (
+                <p className="m-0 py-8 text-center text-xs text-slate-400">ไม่พบสวัสดิการที่ค้นหา</p>
+              ) : (
+                <div>
+                  {groupedBenefits.map((group) => (
+                    <div key={group.key}>
+                      <div className="text-xs font-bold text-slate-500 dark:text-slate-400 pt-3 pb-1 first:pt-1">{group.label}</div>
+                      <ul className="m-0 p-0 list-none divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {group.items.map((b) => {
+                          const checked = selectedBenefitIds.includes(b.id);
+                          return (
+                            <li key={b.id}>
+                              <label className="flex items-center gap-3 py-2.5 px-1 cursor-pointer text-sm hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-lg">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleBenefit(b.id)}
+                                  className="w-4 h-4 rounded border-slate-300 accent-[var(--color-primary)] cursor-pointer shrink-0"
+                                />
+                                <span className={`flex-1 min-w-0 truncate ${checked ? 'text-slate-800 dark:text-slate-100 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
+                                  {b.benefitName}
+                                </span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 shrink-0">{formatBenefitRate(b)}</span>
+                              </label>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Search Bar & Quick Filters */}
-            <div className="space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                  <input
-                    type="text"
-                    value={benefitSearch}
-                    onChange={(e) => setBenefitSearch(e.target.value)}
-                    placeholder="ค้นหาชื่อสวัสดิการ, รหัส หรือหมวดหมู่..."
-                    className="w-full h-8 pl-8 pr-7 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary dark:focus:ring-blue-500"
-                  />
-                  {benefitSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setBenefitSearch('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Quick Action Buttons */}
-                <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={handleSelectStatutoryOnly}
-                    className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:hover:bg-blue-900/50 text-primary dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-medium transition-colors cursor-pointer"
-                  >
-                    สิทธิตามกฎหมาย
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSelectAll}
-                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium transition-colors cursor-pointer"
-                  >
-                    เลือกทั้งหมด
-                  </button>
-                </div>
-              </div>
-
-              {/* Category Filter Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategoryTab('ALL')}
-                  className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedCategoryTab === 'ALL'
-                      ? 'bg-primary text-white'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  ทั้งหมด
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategoryTab('STATUTORY')}
-                  className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedCategoryTab === 'STATUTORY'
-                      ? 'bg-primary text-white'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  สิทธิตามกฎหมาย
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategoryTab('HEALTH')}
-                  className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedCategoryTab === 'HEALTH'
-                      ? 'bg-primary text-white'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  สุขภาพ & ประกัน
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCategoryTab('ALLOWANCE')}
-                  className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                    selectedCategoryTab === 'ALLOWANCE'
-                      ? 'bg-primary text-white'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  เบี้ยเลี้ยง & ช่วยเหลือ
-                </button>
-                {categoryCounts.OTHER > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedCategoryTab('OTHER')}
-                    className={`px-2.5 py-1 rounded-lg font-medium whitespace-nowrap transition-colors cursor-pointer ${
-                      selectedCategoryTab === 'OTHER'
-                        ? 'bg-primary text-white'
-                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    อื่นๆ
-                  </button>
-                )}
-              </div>
+              )}
             </div>
-
-            {/* Benefit Items List */}
-            {loadingBenefits ? (
-              <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500 flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin text-primary dark:text-cyan-400" />
-                กำลังโหลดรายการสวัสดิการทั้งหมดจากระบบ...
-              </div>
-            ) : filteredBenefits.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500 bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                <p>ไม่พบรายการสวัสดิการที่ตรงกับคำค้นหาหรือตัวกรอง</p>
-                {(benefitSearch || selectedCategoryTab !== 'ALL') && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBenefitSearch('');
-                      setSelectedCategoryTab('ALL');
-                    }}
-                    className="mt-2 text-primary dark:text-cyan-400 hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    ล้างตัวกรองทั้งหมด
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div
-                ref={benefitListRef}
-                className="space-y-2 text-xs pt-1 max-h-80 overflow-y-auto pr-1.5 custom-scrollbar"
-              >
-                {filteredBenefits.map((b) => {
-                  const isChecked = selectedBenefitIds.includes(b.id);
-                  const meta = CATEGORY_META[b.category] || CATEGORY_META.OTHER;
-                  const Icon = meta.icon;
-                  const payoutText = PAYOUT_LABELS[b.payoutType] || b.payoutType;
-
-                  return (
-                    <div
-                      key={b.id}
-                      onClick={() => toggleBenefit(b.id)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
-                        isChecked
-                          ? 'bg-blue-50/60 dark:bg-blue-950/25 border-blue-400 dark:border-blue-500/60 shadow-xs ring-1 ring-blue-500/20'
-                          : 'bg-white/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700/70 hover:bg-white dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-start gap-2.5">
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}} // Click handled by parent container
-                          className="w-4 h-4 mt-0.5 rounded text-primary dark:text-blue-500 border-slate-300 dark:border-slate-600 focus:ring-primary dark:focus:ring-blue-500 cursor-pointer pointer-events-none"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="text-slate-800 dark:text-slate-100 font-semibold leading-tight text-xs">
-                              {b.benefitName}
-                            </span>
-
-                            {/* Category Badge */}
-                            <span
-                              className={`text-[10px] px-2 py-0.5 rounded-md font-medium border flex items-center gap-1 ${meta.badge}`}
-                            >
-                              <Icon className="w-2.5 h-2.5" />
-                              {b.isStatutory ? 'สิทธิตามกฎหมาย' : meta.label}
-                            </span>
-
-                            {/* Standard Quota / Rate Badge from Central Settings */}
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-medium bg-slate-100 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-600">
-                              {formatBenefitRate(b)}
-                            </span>
-
-                            {/* Payout Type Badge */}
-                            {payoutText && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded font-normal bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                {payoutText}
-                              </span>
-                            )}
-                          </div>
-
-                          {b.description && (
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-1 block">
-                              {b.description}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Status Check Pill */}
-                        <div className="shrink-0 text-right">
-                          <span
-                            className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
-                              isChecked
-                                ? 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-400 dark:text-slate-500'
-                            }`}
-                          >
-                            {isChecked ? 'ได้รับสิทธิ์' : 'ไม่ได้สิทธิ์'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
 
-          {/* Modal Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={onClose}
-            >
-              ยกเลิก
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="sm"
-              loading={isSubmitting}
-            >
-              {isEdit ? 'บันทึกการแก้ไข' : 'สร้างประเภทสัญญา'}
-            </Button>
+          {/* แถบล่าง: สถานะซ้าย, ปุ่มขวา */}
+          <div className="flex items-center gap-2 px-5 sm:px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
+            {isEdit && (
+              <label className="mr-auto inline-flex items-center gap-2.5 text-sm text-slate-700 dark:text-slate-200">
+                <ToggleSwitch
+                  checked={status === 'ACTIVE'}
+                  onChange={(v) => setStatus(v ? 'ACTIVE' : 'INACTIVE')}
+                  ariaLabel="เปิดใช้งาน"
+                />
+                เปิดใช้งาน
+              </label>
+            )}
+            <div className="ml-auto flex items-center gap-2">
+              <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+                ยกเลิก
+              </Button>
+              <Button type="submit" variant="primary" loading={isSubmitting}>
+                บันทึก
+              </Button>
+            </div>
           </div>
         </form>
       </div>
