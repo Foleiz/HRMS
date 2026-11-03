@@ -207,8 +207,8 @@ export default function EmployeeDetailView({
   const { hasRole, hasPermission, user } = useAuth();
 
   // Tab State
+  const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState<EmployeeDetailTab>(() => {
-    const tabParam = searchParams.get('tab');
     if (tabParam === 'documents') return 'documents';
     if (tabParam === 'history') return 'history';
     if (tabParam === 'user' || tabParam === 'account') return 'user';
@@ -216,6 +216,16 @@ export default function EmployeeDetailView({
     if (tabParam === 'tax') return 'tax';
     return 'personal';
   });
+
+  // ซิงค์ activeTab เมื่อ URL query param ?tab=... เปลี่ยนแปลง (เช่น กดเปลี่ยนรหัสผ่าน -> ?tab=user)
+  useEffect(() => {
+    if (tabParam === 'documents') setActiveTab('documents');
+    else if (tabParam === 'history') setActiveTab('history');
+    else if (tabParam === 'user' || tabParam === 'account') setActiveTab('user');
+    else if (tabParam === 'background') setActiveTab('background');
+    else if (tabParam === 'tax') setActiveTab('tax');
+    else if (tabParam === 'personal' || !tabParam) setActiveTab('personal');
+  }, [tabParam]);
 
   // ลิงก์เดิม ?tab=family / ?tab=emergency → เลื่อนไปหัวข้อในแท็บข้อมูลส่วนตัว
   useEffect(() => {
