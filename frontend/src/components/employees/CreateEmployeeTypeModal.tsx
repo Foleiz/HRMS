@@ -345,15 +345,15 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
                 <p className="m-0 py-8 text-center text-xs text-slate-400">ไม่พบสวัสดิการที่ค้นหา</p>
               ) : (
                 <div>
-                  {groupedBenefits.map((group) => (
+                  {groupedBenefits.map((group, gi) => (
                     <div key={group.key}>
-                      <div className="text-xs font-bold text-slate-500 dark:text-slate-400 pt-3 pb-1 first:pt-1">{group.label}</div>
+                      <div className={`${gi === 0 ? 'mt-1' : 'mt-3'} mb-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold text-primary dark:text-blue-300`}>{group.label}</div>
                       <ul className="m-0 p-0 list-none divide-y divide-slate-100 dark:divide-slate-700/60">
                         {group.items.map((b) => {
                           const checked = selectedBenefitIds.includes(b.id);
                           return (
                             <li key={b.id}>
-                              <label className="flex items-center gap-3 py-2.5 px-1 cursor-pointer text-sm hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-lg">
+                              <label className="flex items-center gap-3 py-2.5 px-2.5 cursor-pointer text-sm hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-lg">
                                 <input
                                   type="checkbox"
                                   checked={checked}
