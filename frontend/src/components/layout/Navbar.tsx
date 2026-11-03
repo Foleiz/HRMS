@@ -533,11 +533,11 @@ export const Navbar: React.FC = () => {
                   <hr className="border-slate-100 dark:border-slate-800" />
 
                   {/* 3. Action Menu */}
-                  <div className="space-y-0.5">
+                  <div className="space-y-1.5">
                     <Link
                       href="/profile?tab=personal"
                       onClick={() => setDropdownOpen(false)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors select-none"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors select-none"
                     >
                       <User className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
                       <span>โปรไฟล์ของฉัน</span>
@@ -546,7 +546,7 @@ export const Navbar: React.FC = () => {
                     <Link
                       href="/profile?tab=user"
                       onClick={() => setDropdownOpen(false)}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors select-none"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors select-none"
                     >
                       <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
                       <span>เปลี่ยนรหัสผ่าน</span>
@@ -555,7 +555,7 @@ export const Navbar: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleLanguageClick}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none"
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer select-none"
                     >
                       <div className="flex items-center gap-2.5">
                         <Globe className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
@@ -567,7 +567,7 @@ export const Navbar: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleUserManual}
-                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer select-none"
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer select-none"
                     >
                       <BookOpen className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
                       <span>คู่มือการใช้งาน</span>
@@ -584,7 +584,7 @@ export const Navbar: React.FC = () => {
                       setDropdownOpen(false);
                       logout();
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer select-none"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors cursor-pointer select-none"
                   >
                     <LogOut className="w-4 h-4 text-rose-500 shrink-0" />
                     <span>ออกจากระบบ</span>
