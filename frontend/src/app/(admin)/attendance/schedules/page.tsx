@@ -60,7 +60,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 const THAI_MONTHS = [
@@ -933,6 +933,33 @@ function SchedulesContent() {
     setShiftModalOpen(true);
   };
 
+  // เปิด/ปิดใช้งานกะจากการ์ดโดยตรง (ส่งข้อมูลเดิมทั้งหมด เปลี่ยนเฉพาะสถานะ)
+  const [togglingShiftId, setTogglingShiftId] = useState<number | null>(null);
+  const handleToggleShiftStatus = async (shift: Shift) => {
+    const nextStatus = shift.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+    try {
+      setTogglingShiftId(shift.id);
+      await shiftService.updateShift(shift.id, {
+        shiftName: shift.shiftName,
+        startTime: shift.startTime,
+        endTime: shift.endTime,
+        isCrossDay: shift.isCrossDay,
+        breakMinutes: shift.breakMinutes,
+        status: nextStatus,
+        lateGraceMinutes: shift.lateGraceMinutes,
+        earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+        color: shift.color || null,
+        workDays: shift.workDays,
+      });
+      toast.success(`${nextStatus === 'ACTIVE' ? 'เปิด' : 'ปิด'}ใช้งานกะ "${shift.shiftName}" แล้ว`);
+      loadShifts();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'ไม่สามารถเปลี่ยนสถานะกะได้');
+    } finally {
+      setTogglingShiftId(null);
+    }
+  };
+
   const handleSaveShift = async (e: React.FormEvent) => {
     e.preventDefault();
     setShiftModalError(null);
@@ -1385,8 +1412,6 @@ function SchedulesContent() {
                               ? allDayShifts
                               : allDayShifts.filter((item) => item.shift.shiftId === calendarShiftFilter);
 
-                          const dateStr = `${rosterYear}-${String(rosterMonth).padStart(2, '0')}-${String(cell.dayNumber).padStart(2, '0')}`;
-
                           return (
                             <div
                               key={`day-${cell.dayNumber}`}
@@ -1422,25 +1447,12 @@ function SchedulesContent() {
                                       {dayShifts.length} คน
                                     </span>
                                   )}
-                                  {canCreateSchedule && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openSingleAssignCreate(undefined, dateStr);
-                                      }}
-                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-primary hover:bg-slate-200/70 rounded transition"
-                                      title="มอบหมายกะในวันนี้"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </button>
-                                  )}
                                 </div>
                               </div>
 
                               {/* Scheduled Shift Pills */}
                               <div className="space-y-1 flex-1 overflow-hidden">
-                                {dayShifts.slice(0, 3).map((item, idx) => {
+                                {dayShifts.slice(0, dayShifts.length > 3 ? 2 : 3).map((item, idx) => {
                                   const color = colorOfShift(item.shift.shiftId);
                                   return (
                                     <div
@@ -1456,9 +1468,10 @@ function SchedulesContent() {
                                   );
                                 })}
 
+                                {/* เกิน 3 คน: แสดง 2 คน + ลิงก์ดูที่เหลือ (ให้พอดีความสูงช่อง ไม่ถูกตัด) */}
                                 {dayShifts.length > 3 && (
-                                  <div className="text-[10px] font-semibold text-slate-500 group-hover:text-primary text-right pt-0.5 shrink-0">
-                                    + อีก {dayShifts.length - 3} คน
+                                  <div className="text-[11px] font-semibold text-slate-500 group-hover:text-primary px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-center truncate">
+                                    ดูอีก {dayShifts.length - 2} คน
                                   </div>
                                 )}
 
@@ -1795,18 +1808,23 @@ function SchedulesContent() {
 
                   {/* Card Actions Footer */}
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs font-medium ${
-                        shift.status === 'ACTIVE' ? 'text-emerald-600' : 'text-slate-400'
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          shift.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-300'
-                        }`}
+                    {/* สถานะกะ — สวิตช์แบบเดียวกับสายการอนุมัติ (กดเพื่อเปิด/ปิดใช้งานได้ทันที) */}
+                    <div className="flex items-center gap-2">
+                      <ToggleSwitch
+                        checked={shift.status === 'ACTIVE'}
+                        onChange={() => handleToggleShiftStatus(shift)}
+                        disabled={!canEditShift || togglingShiftId === shift.id}
+                        ariaLabel={`สถานะกะ ${shift.shiftName}`}
                       />
-                      {shift.status === 'ACTIVE' ? 'เปิดใช้งาน' : 'ระงับใช้งาน'}
-                    </span>
+                      <span
+                        className={`text-xs font-semibold ${canEditShift ? 'cursor-pointer' : ''} ${
+                          shift.status === 'ACTIVE' ? 'text-primary dark:text-blue-400' : 'text-slate-400'
+                        }`}
+                        onClick={() => canEditShift && togglingShiftId !== shift.id && handleToggleShiftStatus(shift)}
+                      >
+                        {shift.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
+                      </span>
+                    </div>
 
                     <ActionDropdown
                       menuClassName="w-48"
@@ -2084,29 +2102,24 @@ function SchedulesContent() {
                               </button>
                             )}
                           </div>
-                          {/* กรองประเภทพนักงาน */}
-                          <div className="flex flex-wrap items-center gap-1.5 mt-2 px-1">
-                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ประเภท:</span>
-                            {[{ id: 'ALL', name: 'ทั้งหมด' }, ...employeeTypes.map((t) => ({ id: String(t.id), name: t.typeName }))].map((opt) => {
-                              const active = singleAssignTypeFilter === opt.id;
-                              return (
-                                <button
-                                  key={opt.id}
-                                  type="button"
-                                  onClick={() => setSingleAssignTypeFilter(opt.id)}
-                                  className={`px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer ${
-                                    active
-                                      ? 'bg-primary text-white border-primary dark:bg-blue-600 dark:border-blue-600'
-                                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
-                                  }`}
-                                >
-                                  {opt.name}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <div className="mt-1.5 px-1 text-[11px] text-slate-500 dark:text-slate-400">
-                            พบ {filteredSingleAssignEmployees.length} คน
+                          {/* กรองประเภทพนักงาน + จำนวนที่พบ */}
+                          <div className="flex items-center justify-between gap-2 mt-2 px-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] text-slate-500 dark:text-slate-400">ประเภท:</span>
+                              <CustomSelect
+                                value={singleAssignTypeFilter}
+                                onChange={(e) => setSingleAssignTypeFilter(e.target.value)}
+                                className="px-2 py-0.5 text-xs bg-white border border-slate-200 rounded-md focus:outline-none text-slate-700 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
+                              >
+                                <option value="ALL">ทุกประเภทการจ้างงาน</option>
+                                {employeeTypes.map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.typeName}
+                                  </option>
+                                ))}
+                              </CustomSelect>
+                            </div>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">พบ {filteredSingleAssignEmployees.length} คน</span>
                           </div>
                         </div>
 
@@ -2117,7 +2130,7 @@ function SchedulesContent() {
                               <Users className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
                               <p className="text-xs font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไข</p>
                               <p className="text-[11px] text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">
-                                ลองเปลี่ยนคำค้นหา หรือเลือกประเภท &quot;ทั้งหมด&quot;
+                                ลองเปลี่ยนคำค้นหา หรือเลือก &quot;ทุกประเภทการจ้างงาน&quot;
                               </p>
                             </div>
                           ) : (
@@ -2974,22 +2987,10 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* สถานะกะ — รูปแบบเดียวกับสายการอนุมัติ */}
-              <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                <ToggleSwitch
-                  checked={shiftForm.status === 'ACTIVE'}
-                  onChange={(checked) => setShiftForm({ ...shiftForm, status: checked ? 'ACTIVE' : 'INACTIVE' })}
-                  ariaLabel="สถานะกะการทำงาน"
-                />
-                <span
-                  className={`text-xs font-semibold cursor-pointer ${
-                    shiftForm.status === 'ACTIVE' ? 'text-primary dark:text-blue-400' : 'text-slate-400'
-                  }`}
-                  onClick={() => setShiftForm({ ...shiftForm, status: shiftForm.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' })}
-                >
-                  {shiftForm.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
-                </span>
-              </div>
+              {/* Status (แสดงเฉพาะตอนแก้ไข) */}
+              {shiftModalMode === 'edit' && (
+                <ActiveToggleRow label="เปิดใช้งานกะนี้" checked={shiftForm.status === 'ACTIVE'} onChange={(v) => setShiftForm({ ...shiftForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
+              )}
 
       </Modal>
 
