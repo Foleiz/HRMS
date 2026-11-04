@@ -1077,6 +1077,18 @@ public class EmployeeService : IEmployeeService
         if (employee == null)
             throw new NotFoundException("Employee", id);
 
+        // พ้นสภาพ → ต้องมีวันสิ้นสุดการจ้าง (ใช้ในรายงานอัตราการลาออก): ถ้ายังไม่มี ใส่วันนี้ให้สังกัดปัจจุบัน
+        // กลับมาทำงาน → ล้างวันสิ้นสุดที่ผ่านมาแล้วของสังกัดปัจจุบัน
+        var todayThai = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
+        var currentAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent);
+        if (currentAssignment != null)
+        {
+            if (normalized == "INACTIVE" && currentAssignment.EffectiveTo == null)
+                currentAssignment.EffectiveTo = todayThai;
+            else if (normalized == "ACTIVE" && currentAssignment.EffectiveTo.HasValue && currentAssignment.EffectiveTo.Value <= todayThai)
+                currentAssignment.EffectiveTo = null;
+        }
+
         employee.EmploymentStatus = normalized;
         employee.UpdatedAt = DateTime.UtcNow;
         await _dbContext.SaveChangesAsync(cancellationToken);

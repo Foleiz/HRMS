@@ -437,7 +437,7 @@ public class OperationalReportService : IOperationalReportService
             .Include(a => a.Employee)
             .Include(a => a.Department)
             .Include(a => a.Position)
-            .Where(a => a.IsCurrent && a.Employee != null)
+            .Where(a => a.IsCurrent && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE") // ไม่นับพนักงานที่พ้นสภาพ (ให้ตรงกับรายงานรายวัน)
             .AsNoTracking();
 
         if (departmentId.HasValue && departmentId.Value > 0)
@@ -804,6 +804,8 @@ public class OperationalReportService : IOperationalReportService
             .ToListAsync(cancellationToken);
 
         var contractMap = contracts.GroupBy(c => c.EmployeeId).ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Id).First());
+        // วันเริ่มงาน = วันเริ่มของสัญญาแรก (การต่อสัญญาใหม่ไม่นับเป็นพนักงานเข้าใหม่) — ตรงกับรายงานพนักงานแยกตามแผนก
+        var firstStartMap = contracts.GroupBy(c => c.EmployeeId).ToDictionary(g => g.Key, g => g.Min(c => c.StartDate));
 
         var result = new MonthlyTurnoverSummaryDto
         {
@@ -824,8 +826,10 @@ public class OperationalReportService : IOperationalReportService
             foreach (var assign in deptAssignments)
             {
                 contractMap.TryGetValue(assign.EmployeeId, out var contract);
-                DateOnly empStart = contract?.StartDate ?? assign.EffectiveFrom;
+                DateOnly empStart = firstStartMap.TryGetValue(assign.EmployeeId, out var firstStart) ? firstStart : assign.EffectiveFrom;
                 DateOnly? empEnd = contract?.TerminationDate ?? assign.EffectiveTo;
+                // พ้นสภาพแล้วแต่ไม่มีวันสิ้นสุดการจ้าง → ไม่รู้ว่าออกเมื่อไร จึงไม่นับเป็นพนักงาน (ให้ตรงกับรายงานอื่นที่นับเฉพาะ ACTIVE)
+                if (empEnd == null && assign.Employee != null && assign.Employee.EmploymentStatus != "ACTIVE") continue;
 
                 // พนักงานต้นงวด: เริ่มงานก่อนต้นเดือน และยังไม่ลาออกก่อนต้นเดือน
                 if (empStart < monthStart && (empEnd == null || empEnd >= monthStart))
