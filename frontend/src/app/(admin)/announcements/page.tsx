@@ -1,4 +1,5 @@
 'use client';
+import { CountBadge } from '@/components/ui/CountBadge';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
@@ -950,9 +951,10 @@ export default function AnnouncementsPage() {
                     return (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                            รายชื่อพนักงานที่เปิดอ่านแล้ว ({totalReceipts} คน)
-                          </h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">รายชื่อพนักงานที่เปิดอ่านแล้ว</h4>
+                            <CountBadge count={totalReceipts} />
+                          </div>
                           {totalStatsPages > 1 && (
                             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                               หน้า {statsPage} จาก {totalStatsPages}

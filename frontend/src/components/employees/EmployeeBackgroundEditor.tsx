@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, GraduationCap, Briefcase } from 'lucide-react';
 import { EmployeeEducation, EmployeeWorkExperience } from '@/types/employee';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
-import { Button, inputClass } from '@/components/ui';
+import { Button, inputClass, CountBadge } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { formatGpaInput, clampGpa } from '@/lib/gpaUtils';
 
@@ -94,7 +94,7 @@ export default function EmployeeBackgroundEditor({
           <div className="flex items-center gap-2">
             <GraduationCap className="w-4 h-4 text-primary" />
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติการศึกษา</h3>
-            <span className="text-[11px] text-slate-400 dark:text-slate-500">({educations.length} รายการ)</span>
+            <CountBadge count={educations.length} />
           </div>
           {educations.length === 0 && (
             <Button

@@ -60,7 +60,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1443,11 +1443,9 @@ function SchedulesContent() {
           {assignmentViewMode === 'list' && (
             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
-                <div>
-                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm dark:text-slate-200">รายการมอบหมายกะพนักงานทั้งหมด</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    รายการการกำหนดกะแบบเฉพาะบุคคล ({filteredAssignments.length} รายการ)
-                  </p>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">รายการมอบหมายกะพนักงานทั้งหมด</h3>
+                  <CountBadge count={filteredAssignments.length} />
                 </div>
               </div>
 
