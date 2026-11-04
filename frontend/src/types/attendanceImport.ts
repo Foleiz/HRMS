@@ -51,6 +51,8 @@ export interface AttendanceImportResult {
   existingBatchFileName?: string | null;
   existingBatchImportedAt?: string | null;
   existingBatchImportedBy?: string | null;
+  existingBatchDateFrom?: string | null;
+  existingBatchDateTo?: string | null;
   errors: AttendanceImportError[];
 }
 

@@ -704,10 +704,33 @@ function DailyAttendanceContent() {
     }
   };
 
+  /** ปิดหน้าต่างไฟล์ทับซ้อน = ไม่นำเข้าไฟล์ใหม่ คงไฟล์เดิมไว้ */
+  const cancelOverlapImport = () => {
+    setOverlapModalOpen(false);
+    setOverlapData(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
+  };
+
   const handleOpenRevertModal = (batch: AttendanceImportBatch) => {
     setBatchToRevert(batch);
     setRevertModalOpen(true);
   };
+
+  // ค้นหาในหน้าต่างตรวจเวลา: พิมพ์แล้วค้นหาเองหลังหยุดพิมพ์ (ไม่ต้องกดปุ่ม)
+  const lastReviewSearchRef = useRef('');
+  useEffect(() => {
+    if (!selectedBatchForReview) return;
+    if (batchRecordSearch === lastReviewSearchRef.current) return;
+    const batchId = selectedBatchForReview.id;
+    const t = setTimeout(() => {
+      setBatchRecordPage(1);
+      loadBatchRecords(batchId, 1, batchRecordPageSize, batchRecordSearch);
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batchRecordSearch, selectedBatchForReview]);
 
   const handleOpenTimeReview = async (batch: AttendanceImportBatch) => {
     setSelectedBatchForReview(batch);
@@ -726,6 +749,7 @@ function DailyAttendanceContent() {
       setIsLoadingBatchRecords(true);
       const size = targetPageSize !== undefined ? targetPageSize : batchRecordPageSize;
       const search = targetSearch !== undefined ? targetSearch : batchRecordSearch;
+      lastReviewSearchRef.current = search;
       const res = await attendanceImportService.getBatchRecords(batchId, targetPage, size, search);
       setBatchRecords(res.items);
       setBatchRecordTotalPages(res.totalPages);
@@ -2000,8 +2024,8 @@ function DailyAttendanceContent() {
               onClose={() => setSelectedBatchForReview(null)}
             />
 
-            {/* Search & Page Size Toolbar */}
-            <div className="px-5 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60 dark:bg-slate-900">
+            {/* Search Toolbar */}
+            <div className="px-5 py-3 border-b border-slate-100 bg-white flex items-center gap-3 dark:border-slate-700/60 dark:bg-slate-900">
               <div className="relative flex-1 min-w-[220px] max-w-md">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none dark:text-slate-500 dark:text-slate-400" />
                 <input
@@ -2009,64 +2033,18 @@ function DailyAttendanceContent() {
                   placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
                   value={batchRecordSearch}
                   onChange={(e) => setBatchRecordSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setBatchRecordPage(1);
-                      loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
-                    }
-                  }}
                   className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:text-slate-400"
                 />
                 {batchRecordSearch && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setBatchRecordSearch('');
-                      setBatchRecordPage(1);
-                      loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, '');
-                    }}
+                    onClick={() => setBatchRecordSearch('')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400 p-0.5 rounded-full dark:text-slate-500 dark:text-slate-400"
                     title="ล้างคำค้นหา"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBatchRecordPage(1);
-                    loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
-                  }}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  ค้นหา
-                </button>
-
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-
-                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="whitespace-nowrap font-medium">แสดงหน้าละ:</span>
-                  <CustomSelect
-                    value={batchRecordPageSize}
-                    onChange={(e) => {
-                      const newSize = Number(e.target.value);
-                      setBatchRecordPageSize(newSize);
-                      setBatchRecordPage(1);
-                      loadBatchRecords(selectedBatchForReview.id, 1, newSize, batchRecordSearch);
-                    }}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-800 dark:text-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-                  >
-                    <option value={10}>10 คน / หน้า</option>
-                    <option value={20}>20 คน / หน้า</option>
-                    <option value={50}>50 คน / หน้า</option>
-                    <option value={100}>100 คน / หน้า</option>
-                    <option value={200}>200 คน / หน้า</option>
-                  </CustomSelect>
-                </div>
               </div>
             </div>
 
@@ -2376,24 +2354,11 @@ function DailyAttendanceContent() {
       {/* Modal: ยืนยันการนำเข้าไฟล์เดือน/ปีที่ซ้ำซ้อน (เลือกใช้ไฟล์ใหม่หรือไฟล์เก่า) */}
       {overlapModalOpen && overlapData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  ช่วงเวลาในไฟล์ที่กำลังนำเข้าทับซ้อนกับข้อมูลที่มีอยู่แล้ว คุณต้องการใช้ไฟล์ใหม่นี้เขียนทับข้อมูลเดิม หรือต้องการใช้ไฟล์เก่าต่อไป?
-                </p>
-              </div>
-            </div>
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
+            <ModalHeader title="ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว" onClose={cancelOverlapImport} />
 
             {/* Comparison Cards */}
-            <div className="space-y-3">
+            <div className="p-6 pb-0 space-y-3">
               {/* Existing File Info */}
               <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -2408,11 +2373,11 @@ function DailyAttendanceContent() {
                 <div className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
                   {overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span>นำเข้าโดย: <strong className="text-slate-700 dark:text-slate-300">{overlapData.existingBatchImportedBy || 'ผู้ดูแลระบบ'}</strong></span>
-                  {overlapData.existingBatchImportedAt && (
-                    <span>เมื่อ: {new Date(overlapData.existingBatchImportedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} น.</span>
-                  )}
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  ช่วงวันที่:{' '}
+                  {overlapData.existingBatchDateFrom && overlapData.existingBatchDateTo
+                    ? `${formatDateThai(overlapData.existingBatchDateFrom)} ถึง ${formatDateThai(overlapData.existingBatchDateTo)}`
+                    : '-'}
                 </div>
               </div>
 
@@ -2436,25 +2401,14 @@ function DailyAttendanceContent() {
               </div>
             </div>
 
-            {/* Warning Note */}
-            <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-              * หากเลือก <strong>&ldquo;ใช้ไฟล์ใหม่&rdquo;</strong> ข้อมูลเวลาทำงานเดิมของช่วงวันที่นี้จะถูกแทนที่ด้วยข้อมูลจากไฟล์ใหม่ทันที
-            </div>
-
             {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 px-6 py-4 mt-5 border-t border-slate-100 dark:border-slate-700">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 disabled={isUploading}
-                onClick={() => {
-                  setOverlapModalOpen(false);
-                  setOverlapData(null);
-                  setSelectedFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                  toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
-                }}
+                onClick={cancelOverlapImport}
               >
                 ใช้ไฟล์เก่า (ยกเลิกการอัปโหลด)
               </Button>
