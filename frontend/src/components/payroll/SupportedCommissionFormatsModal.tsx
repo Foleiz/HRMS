@@ -7,9 +7,8 @@ import { Button } from '@/components/ui';
 import {
   FileSpreadsheet,
   Download,
+  Calendar,
   Clock,
-  CalendarDays,
-  Sparkles,
 } from 'lucide-react';
 import { commissionService } from '@/services/commissionService';
 import { useToast } from '@/context/ToastContext';
@@ -37,76 +36,7 @@ interface SheetSample {
 
 const colLetters = (n: number) => Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, ...
 
-// 1. Summary Format without Date (Auto detected as Full Month of selected period)
-const SUMMARY_SAMPLE: SheetSample = {
-  columns: colLetters(7),
-  titleRows: [
-    ['รายงานสรุปยอดขายและค่าคอมมิชชั่นพนักงานประจำเดือน (ตรวจจับเป็นทั้งเดือนอัตโนมัติ)'],
-    ['รอบเดือน: 10/2569 (ตุลาคม 2026)'],
-  ],
-  headerRows: [
-    [
-      { text: 'รหัสพนักงาน*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
-      { text: 'ชื่อ-นามสกุล', tooltip: 'ชื่อ-สกุลพนักงาน' },
-      { text: 'แผนก/ตำแหน่ง', tooltip: 'แผนกหรือตำแหน่งงาน' },
-      { text: 'ยอดขาย (บาท)*', tooltip: 'ยอดขายรวมทั้งเดือน (จำเป็นต้องมี)' },
-      { text: 'อัตรา (%)', tooltip: 'เปอร์เซ็นต์ค่าคอมมิชชั่น (ระบบใช้อัตราตามงวด)' },
-      { text: 'เงินพิเศษ (บาท)', tooltip: 'เงินรางวัลหรือเงินพิเศษเพิ่มเติม' },
-      { text: 'หมายเหตุ', tooltip: 'บันทึกเพิ่มเติม' },
-    ],
-    [
-      { text: 'Emp_ID' },
-      { text: 'Employee_Name' },
-      { text: 'Department' },
-      { text: 'Sales_Amount' },
-      { text: 'Commission_Rate' },
-      { text: 'Special_Amount' },
-      { text: 'Note' },
-    ],
-  ],
-  dataRows: [
-    ['EMP-001', 'สมชาย ใจดี', 'ฝ่ายขาย (Sales Rep)', '250,000.00', '5.00', '2,000.00', 'ยอดขาย Q3'],
-    ['EMP-002', 'สมหญิง รักงาน', 'ฝ่ายขาย (Senior Sales)', '480,000.00', '7.50', '5,000.00', 'Top Spender'],
-    ['EMP-003', 'ประสิทธิ์ มุ่งมั่น', 'วิศวกรรมการขาย (Sales Eng)', '180,000.00', '5.00', '0.00', ''],
-    ['EMP-004', 'นภา สดใส', 'ฝ่ายขาย (Key Account)', '620,000.00', '10.00', '10,000.00', 'ปิดดีลโครงการใหญ่'],
-  ],
-};
-
-// 2. Transaction Format with Date (Auto detected as Single Day or Date Range)
-const TRANSACTION_SAMPLE: SheetSample = {
-  columns: colLetters(7),
-  titleRows: [
-    ['รายการยอดขายและบิล (POS / ERP Export — ตรวจจับวันเดียวหรือช่วงวันอัตโนมัติ)'],
-  ],
-  headerRows: [
-    [
-      { text: 'เลขที่บิล', tooltip: 'เลขที่เอกสารหรือบิลขาย' },
-      { text: 'วันที่ทำรายการ (วว/ดด/ปปปป)*', tooltip: 'วันที่ขายสินค้าหรือทำรายการ (จำเป็นต้องมี)' },
-      { text: 'รหัสพนักงาน*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
-      { text: 'ชื่อพนักงาน', tooltip: 'ชื่อพนักงานผู้ขาย' },
-      { text: 'ชื่อลูกค้า/รายการ', tooltip: 'ข้อมูลลูกค้าหรือรายการสินค้า' },
-      { text: 'ยอดขาย (บาท)*', tooltip: 'ยอดเงินขายสุทธิ (จำเป็นต้องมี)' },
-      { text: 'หมายเหตุ', tooltip: 'บันทึกเพิ่มเติม' },
-    ],
-    [
-      { text: 'Invoice_No' },
-      { text: 'Date' },
-      { text: 'Emp_Code' },
-      { text: 'Emp_Name' },
-      { text: 'Customer_Product' },
-      { text: 'Net_Sales' },
-      { text: 'Note' },
-    ],
-  ],
-  dataRows: [
-    ['INV-20261001', '15/10/2026', 'EMP-001', 'สมชาย ใจดี', 'ลูกค้า บจก. เอแอนด์บี', '75,000.00', 'ออเดอร์เช้า'],
-    ['INV-20261002', '15/10/2026', 'EMP-001', 'สมชาย ใจดี', 'ลูกค้า ร้านค้าปลีก กะรัต', '120,000.00', 'ออเดอร์บ่าย'],
-    ['INV-20261003', '15/10/2026', 'EMP-002', 'สมหญิง รักงาน', 'โครงการคอนโด A', '280,000.00', 'ปิดการขาย'],
-    ['INV-20261004', '15/10/2026', 'EMP-003', 'ประสิทธิ์ มุ่งมั่น', 'ลูกค้า โรงงานทอผ้า', '55,000.00', ''],
-  ],
-};
-
-// 3. Official System Template
+// Official Single Standard Template
 const TEMPLATE_SAMPLE: SheetSample = {
   columns: colLetters(7),
   titleRows: [
@@ -114,12 +44,12 @@ const TEMPLATE_SAMPLE: SheetSample = {
   ],
   headerRows: [
     [
-      { text: 'วันที่ (วว/ดด/ปปปป หรือ เว้นว่างถ้าทั้งเดือน)', tooltip: 'ระบุวันที่หากเป็นยอดรายวัน หรือเว้นว่างหากเป็นยอดสรุปทั้งเดือน' },
-      { text: 'รหัสพนักงาน*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
-      { text: 'ชื่อ-นามสกุล', tooltip: 'ชื่อ-สกุลพนักงาน' },
+      { text: 'วันที่ (วว/ดด/ปปปป หรือ เว้นว่างถ้าทั้งเดือน)', tooltip: 'ระบุวันที่หากต้องการคิดรายวัน หรือเว้นว่างหากต้องการคิดสรุปทั้งเดือน' },
+      { text: 'รหัสพนักงาน (จำเป็น)*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
+      { text: 'ชื่อ-นามสกุล', tooltip: 'ชื่อ-นามสกุลพนักงาน' },
       { text: 'แผนก', tooltip: 'แผนกสังกัด' },
       { text: 'ตำแหน่ง', tooltip: 'ตำแหน่งงาน' },
-      { text: 'ยอดขายรวม (บาท)*', tooltip: 'ยอดขายสุทธิ (จำเป็นต้องมี)' },
+      { text: 'ยอดขายรวม (บาท)*', tooltip: 'ยอดขายสุทธิที่นำมาคิดคอมมิชชั่น (จำเป็นต้องมี)' },
       { text: 'หมายเหตุ', tooltip: 'บันทึกเพิ่มเติม' },
     ],
     [
@@ -133,8 +63,9 @@ const TEMPLATE_SAMPLE: SheetSample = {
     ],
   ],
   dataRows: [
-    ['15/10/2026', 'EMP0001', 'นายสมชาย ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขาย', '250,000.00', 'ตัวอย่างยอดขายรายวัน'],
-    ['', 'EMP0002', 'นางสาวสมหญิง ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขายอาวุโส', '480,000.00', 'ตัวอย่างยอดขายทั้งเดือน (เว้นว่างวันที่)'],
+    ['15/10/2026', 'EMP0001', 'นายสมชาย ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขาย', '250,000.00', 'ตัวอย่างยอดขายรายวัน (มีวันที่)'],
+    ['(เว้นว่าง)', 'EMP0002', 'นางสาวสมหญิง ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขายอาวุโส', '480,000.00', 'ตัวอย่างยอดขายทั้งเดือน (เว้นว่างวันที่)'],
+    ['20/10/2026', 'EMP0003', 'นายประสิทธิ์ ตัวอย่าง', 'วิศวกรรมการขาย', 'วิศวกรฝ่ายขาย', '180,000.00', 'ตัวอย่างยอดขายรายวัน (มีวันที่)'],
   ],
 };
 
@@ -202,7 +133,11 @@ const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
               {row.map((v, i) => (
                 <td
                   key={i}
-                  className="px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans"
+                  className={`px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans ${
+                    i === 0 && v === '(เว้นว่าง)'
+                      ? 'text-slate-400 italic'
+                      : ''
+                  }`}
                 >
                   {v}
                 </td>
@@ -215,11 +150,8 @@ const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
   );
 };
 
-type FormatTab = 'summary' | 'transaction' | 'template';
-
 export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Props) {
   const { success, error } = useToast();
-  const [activeTab, setActiveTab] = useState<FormatTab>('summary');
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen) return null;
@@ -252,34 +184,6 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
     }
   };
 
-  const tabs: {
-    key: FormatTab;
-    label: string;
-    sub: string;
-    Icon: React.ElementType;
-    badge?: string;
-  }[] = [
-    {
-      key: 'summary',
-      label: 'ไฟล์สรุปทั้งเดือน',
-      sub: 'ไฟล์ที่มีข้อมูลสรุปยอดของทั้งเดือน',
-      Icon: CalendarDays,
-      badge: 'แนะนำ',
-    },
-    {
-      key: 'transaction',
-      label: 'ไฟล์บันทึกรายวัน',
-      sub: 'ไฟล์ยอดขายรายวัน หรือส่งออกจาก POS / ERP',
-      Icon: Clock,
-    },
-    {
-      key: 'template',
-      label: 'เทมเพลตมาตรฐานระบบ',
-      sub: 'แบบฟอร์มมาตรฐานของระบบ HRMS',
-      Icon: FileSpreadsheet,
-    },
-  ];
-
   return (
     <ModalShell
       className="z-50 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150"
@@ -294,69 +198,38 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
         />
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-slate-700 dark:text-slate-300">
-          {/* Tabs Selector Bar (ลักษณะเดียวกับเมนูนำเข้าไฟล์บันทึกเวลา) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
-            {tabs.map(({ key, label, sub, Icon, badge }) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`py-2 px-3 rounded-lg text-left transition-all cursor-pointer ${
-                  activeTab === key
-                    ? 'bg-white dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700'
-                    : 'hover:bg-white/60 dark:hover:bg-slate-900/40'
-                }`}
-              >
-                <span
-                  className={`flex items-center gap-1.5 font-bold ${
-                    activeTab === key
-                      ? 'text-primary dark:text-blue-300'
-                      : 'text-slate-600 dark:text-slate-400'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                  {badge && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold">
-                      {badge}
-                    </span>
-                  )}
-                </span>
-                <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 pl-5">
-                  {sub}
-                </span>
-              </button>
-            ))}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs text-slate-700 dark:text-slate-300">
+          <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+            เทมเพลตนำเข้าค่าคอมมิชชั่นมาตรฐานของระบบ รองรับไฟล์นามสกุล <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">.xlsx</code>, <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">.xls</code> และ <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">.csv</code> โดยสามารถเลือกกรอกข้อมูลได้ทั้ง 2 รูปแบบในไฟล์เดียวกัน:
+          </p>
+
+          {/* Format Explanation Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
+              <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-1">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>1. คิดยอดแบบรายวัน / รายบิล</span>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                ระบุวันที่ในช่อง <span className="font-semibold text-slate-700 dark:text-slate-300">วันที่ (วว/ดด/ปปปป)</span> เช่น 15/10/2026 ระบบจะตรวจจับและบันทึกยอดขายแยกตามวันที่จริงให้อัตโนมัติ
+              </p>
+            </div>
+
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
+              <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 mb-1">
+                <Clock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>2. คิดยอดแบบสรุปทั้งเดือน</span>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">เว้นว่างช่องวันที่</span> ระบบจะตรวจจับและบันทึกเป็นยอดขายรวมทั้งเดือนประจำงวดที่เลือกให้อัตโนมัติ
+              </p>
+            </div>
           </div>
 
-          {/* Description & Table for Active Tab */}
-          {activeTab === 'summary' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-                เป็นไฟล์ที่มีข้อมูลสรุปยอดขายหรือค่าคอมมิชชั่นของพนักงานตลอดทั้งเดือน (ไม่มีคอลัมน์วันที่ หรือเว้นว่างช่องวันที่ไว้) ระบบจะตรวจจับและบันทึกเป็นยอดรวมประจำงวดเดือนที่เลือกให้อัตโนมัติ เหมาะสำหรับการสรุปยอดคอมมิชชั่นก่อนตัดรอบคำนวณเงินเดือน
-              </p>
-              <SheetPreview sample={SUMMARY_SAMPLE} />
-            </div>
-          )}
-
-          {activeTab === 'transaction' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-                เป็นไฟล์บันทึกรายการยอดขายตามวันที่ หรือประวัติรายการบิลที่ส่งออกจากระบบ POS / ERP (1 แถว = 1 รายการขาย) ที่มีคอลัมน์ &apos;วันที่ทำรายการ&apos; ระบบจะตรวจจับวันเดียวหรือช่วงวันให้อัตโนมัติ และนำไปรวมยอดให้พนักงานในงวดนั้นๆ
-              </p>
-              <SheetPreview sample={TRANSACTION_SAMPLE} />
-            </div>
-          )}
-
-          {activeTab === 'template' && (
-            <div className="space-y-4 animate-in fade-in duration-150">
-              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-                เป็นแบบฟอร์มไฟล์ Excel มาตรฐานที่ดาวน์โหลดจากระบบ สามารถเลือกกรอกได้ทั้ง 2 รูปแบบ: หากต้องการสรุปยอดทั้งเดือนให้เว้นว่างช่องวันที่ไว้ หรือหากต้องการคิดยอดตามวันให้กรอกวันที่ทำรายการ (วว/ดด/ปปปป)
-              </p>
-              <SheetPreview sample={TEMPLATE_SAMPLE} />
-            </div>
-          )}
+          {/* Excel Mock Preview */}
+          <div className="pt-2">
+            <SheetPreview sample={TEMPLATE_SAMPLE} />
+          </div>
         </div>
 
         {/* Footer */}
