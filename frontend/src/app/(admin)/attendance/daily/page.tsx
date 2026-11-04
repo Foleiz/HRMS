@@ -3,7 +3,7 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, TabBar, type TabBarItem, TablePagination } from '@/components/ui';
+import { ModalShell, TabBar, type TabBarItem, TablePagination, ActionDropdown } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1627,7 +1627,7 @@ function DailyAttendanceContent() {
                     <th className="py-3.5 px-4 text-center whitespace-nowrap">ผิดพลาด</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
                     <th className="py-3.5 px-4 whitespace-nowrap">ผู้นำเข้า</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">การจัดการ</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap w-20">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -1699,41 +1699,40 @@ function DailyAttendanceContent() {
                         <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">
                           {batch.importedByUserName || 'ระบบอัตโนมัติ'}
                         </td>
-                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2">
-                            {batch.status === 'REVERTED' && <span className="text-2xs text-slate-400 dark:text-slate-500 dark:text-slate-400">—</span>}
-                            {batch.status !== 'REVERTED' && batch.failedRecords > 0 && (
-                              <button
-                                onClick={() => handleOpenErrors(batch)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors dark:bg-rose-900/20 dark:text-rose-400"
-                              >
-                                <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                                ดูข้อผิดพลาด
-                              </button>
-                            )}
-                            {batch.status !== 'REVERTED' && (
-                            <>
-                            <button
-                              onClick={() => handleOpenTimeReview(batch)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer dark:bg-blue-900/20 dark:text-blue-400"
-                              title="ดูข้อมูลบันทึกเวลาที่นำเข้าในชุดนี้"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-blue-600" />
-                              ตรวจเวลา
-                            </button>
-                            {canEditImport && (
-                              <button
-                                onClick={() => handleOpenRevertModal(batch)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-2xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors cursor-pointer dark:bg-rose-900/20 dark:text-rose-400"
-                                title="ยกเลิกการนำเข้า: ล้างเวลาจากไฟล์นี้และคืนสถานะวันทำงาน"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                ยกเลิกชุดข้อมูล
-                              </button>
-                            )}
-                            </>
-                            )}
-                          </div>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          {batch.status === 'REVERTED' ? (
+                            <span className="text-2xs text-slate-400 dark:text-slate-500">—</span>
+                          ) : (
+                            <ActionDropdown
+                              menuClassName="w-48"
+                              title="จัดการชุดข้อมูลนำเข้า"
+                              items={[
+                                {
+                                  label: 'ตรวจเวลา',
+                                  icon: <Eye className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0" />,
+                                  onClick: () => handleOpenTimeReview(batch),
+                                },
+                                ...(batch.failedRecords > 0
+                                  ? [{
+                                      label: 'ดูข้อผิดพลาด',
+                                      icon: <AlertCircle className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0" />,
+                                      onClick: () => handleOpenErrors(batch),
+                                    }]
+                                  : []),
+                                ...(canEditImport
+                                  ? [
+                                      { divider: true, label: '' },
+                                      {
+                                        label: 'ยกเลิกชุดข้อมูล',
+                                        icon: <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />,
+                                        onClick: () => handleOpenRevertModal(batch),
+                                        danger: true,
+                                      },
+                                    ]
+                                  : []),
+                              ]}
+                            />
+                          )}
                         </td>
                       </tr>
                     ))
