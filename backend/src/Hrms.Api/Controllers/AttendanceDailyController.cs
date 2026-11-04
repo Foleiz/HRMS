@@ -130,6 +130,8 @@ public class AttendanceDailyController : ControllerBase
     {
         try
         {
+            var uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+            request.EditedByUserId = long.TryParse(uid, out var parsedUid) ? parsedUid : null;
             var result = await _service.UpdateAttendanceAsync(id, request, cancellationToken);
             return Ok(ApiResponse<AttendanceDailyDto>.Ok(result, "บันทึกการแก้ไขเวลาเรียบร้อยแล้ว"));
         }

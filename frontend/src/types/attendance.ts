@@ -21,6 +21,8 @@ export interface AttendanceDaily {
   isAbsent: boolean;
   status: 'PRESENT' | 'LATE' | 'EARLY_LEAVE' | 'LATE_AND_EARLY' | 'LEAVE' | 'ABSENT' | 'HOLIDAY' | 'OFF' | 'PENDING' | string;
   statusText: string;
+  editReason?: string | null;
+  editedAt?: string | null;
 }
 
 export interface DailyAttendanceSummary {
@@ -51,8 +53,13 @@ export interface UpdateAttendanceRequest {
   shiftId?: number;
   actualIn?: string;
   actualOut?: string;
+  /** ล้างเวลาเข้า/ออกที่มีอยู่ */
+  clearActualIn?: boolean;
+  clearActualOut?: boolean;
+  /** ว่าง = ให้ระบบคำนวณจากเวลาและกะ; ระบุ = กำหนดเอง (LEAVE, ABSENT, HOLIDAY, OFF, HOLIDAY_WORK) */
   status?: string;
-  isAbsent?: boolean;
+  /** เหตุผลการแก้ไข */
+  reason?: string;
 }
 
 export interface DailyAttendanceFilterQuery {

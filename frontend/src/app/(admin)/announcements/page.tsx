@@ -29,7 +29,6 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
-  Building,
   Tag,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -601,7 +600,6 @@ export default function AnnouncementsPage() {
                       const cat = CATEGORY_MAP[a.category] || CATEGORY_MAP.GENERAL;
                       const isAllTargets =
                         a.targets.length === 0 || a.targets.some((t) => t.targetType === 'ALL');
-                      const deptNames = !isAllTargets ? getTargetDepartmentNames(a.targets) : [];
                       const targetSummary = isAllTargets
                         ? 'พนักงานทุกคน'
                         : `${a.targets.length} แผนกที่กำหนด`;
@@ -663,32 +661,9 @@ export default function AnnouncementsPage() {
                                 <span>พนักงานทุกคน</span>
                               </div>
                             ) : (
-                              <div
-                                className="relative group inline-flex items-center gap-1.5 cursor-help"
-                                title={deptNames.length > 0 ? `แผนกที่กำหนด:\n• ${deptNames.join('\n• ')}` : targetSummary}
-                              >
+                              <div className="flex items-center gap-1.5">
                                 <Users className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
-                                <span className="font-medium text-slate-700 dark:text-slate-200 border-b border-dashed border-slate-300 dark:border-slate-600 group-hover:border-primary group-hover:text-primary transition-colors">
-                                  {targetSummary}
-                                </span>
-
-                                {/* Tooltip popover on hover */}
-                                {deptNames.length > 0 && (
-                                  <div className="pointer-events-none absolute bottom-full left-0 mb-2 hidden group-hover:flex flex-col gap-1 z-30 min-w-[170px] max-w-xs p-2.5 bg-slate-900/95 dark:bg-slate-800 text-white rounded-xl shadow-xl border border-slate-700/80 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-150">
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-slate-300 pb-1 border-b border-slate-700/60">
-                                      <Building className="w-3 h-3 text-primary" />
-                                      <span>แผนกที่กำหนด ({deptNames.length})</span>
-                                    </div>
-                                    <ul className="space-y-0.5 text-[11px] text-slate-200">
-                                      {deptNames.map((name, idx) => (
-                                        <li key={idx} className="flex items-center gap-1.5 truncate">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                                          <span className="truncate">{name}</span>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                )}
+                                <span className="font-medium text-slate-700 dark:text-slate-200">{targetSummary}</span>
                               </div>
                             )}
                           </td>

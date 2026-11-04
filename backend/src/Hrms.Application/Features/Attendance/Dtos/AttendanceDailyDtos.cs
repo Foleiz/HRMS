@@ -30,6 +30,8 @@ public class AttendanceDailyDto
     public bool IsAbsent { get; set; }
     public string Status { get; set; } = "PRESENT";
     public string StatusText { get; set; } = "ตรงเวลา";
+    public string? EditReason { get; set; }
+    public DateTime? EditedAt { get; set; }
 }
 
 /// <summary>
@@ -76,8 +78,17 @@ public class UpdateAttendanceRequest
     public long? ShiftId { get; set; }
     public DateTime? ActualIn { get; set; }
     public DateTime? ActualOut { get; set; }
+    /// <summary>ล้างเวลาเข้า/ออก (เช่น เครื่องสแกนบันทึกผิด)</summary>
+    public bool ClearActualIn { get; set; }
+    public bool ClearActualOut { get; set; }
+    /// <summary>ว่าง = ให้ระบบคำนวณสถานะจากเวลาและกะ; ระบุ = กำหนดเอง (LEAVE, ABSENT, HOLIDAY, OFF, HOLIDAY_WORK)</summary>
     public string? Status { get; set; }
     public bool? IsAbsent { get; set; }
+    /// <summary>เหตุผลการแก้ไข (บันทึกไว้เป็นหลักฐาน)</summary>
+    public string? Reason { get; set; }
+    /// <summary>ตั้งโดย controller จาก token — ไม่รับจาก client</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public long? EditedByUserId { get; set; }
 }
 
 /// <summary>
