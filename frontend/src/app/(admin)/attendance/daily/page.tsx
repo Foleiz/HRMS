@@ -704,6 +704,15 @@ function DailyAttendanceContent() {
     }
   };
 
+  /** ปิดหน้าต่างไฟล์ทับซ้อน = ไม่นำเข้าไฟล์ใหม่ คงไฟล์เดิมไว้ */
+  const cancelOverlapImport = () => {
+    setOverlapModalOpen(false);
+    setOverlapData(null);
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
+  };
+
   const handleOpenRevertModal = (batch: AttendanceImportBatch) => {
     setBatchToRevert(batch);
     setRevertModalOpen(true);
@@ -2345,24 +2354,11 @@ function DailyAttendanceContent() {
       {/* Modal: ยืนยันการนำเข้าไฟล์เดือน/ปีที่ซ้ำซ้อน (เลือกใช้ไฟล์ใหม่หรือไฟล์เก่า) */}
       {overlapModalOpen && overlapData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full p-6 space-y-5 animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  ช่วงเวลาในไฟล์ที่กำลังนำเข้าทับซ้อนกับข้อมูลที่มีอยู่แล้ว คุณต้องการใช้ไฟล์ใหม่นี้เขียนทับข้อมูลเดิม หรือต้องการใช้ไฟล์เก่าต่อไป?
-                </p>
-              </div>
-            </div>
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
+            <ModalHeader title="ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว" onClose={cancelOverlapImport} />
 
             {/* Comparison Cards */}
-            <div className="space-y-3">
+            <div className="p-6 pb-0 space-y-3">
               {/* Existing File Info */}
               <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -2377,11 +2373,11 @@ function DailyAttendanceContent() {
                 <div className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
                   {overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span>นำเข้าโดย: <strong className="text-slate-700 dark:text-slate-300">{overlapData.existingBatchImportedBy || 'ผู้ดูแลระบบ'}</strong></span>
-                  {overlapData.existingBatchImportedAt && (
-                    <span>เมื่อ: {new Date(overlapData.existingBatchImportedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} น.</span>
-                  )}
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  ช่วงวันที่:{' '}
+                  {overlapData.existingBatchDateFrom && overlapData.existingBatchDateTo
+                    ? `${formatDateThai(overlapData.existingBatchDateFrom)} ถึง ${formatDateThai(overlapData.existingBatchDateTo)}`
+                    : '-'}
                 </div>
               </div>
 
@@ -2405,25 +2401,14 @@ function DailyAttendanceContent() {
               </div>
             </div>
 
-            {/* Warning Note */}
-            <div className="p-3 bg-amber-50/60 dark:bg-amber-950/20 border border-amber-250 dark:border-amber-900/40 rounded-xl text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
-              * หากเลือก <strong>&ldquo;ใช้ไฟล์ใหม่&rdquo;</strong> ข้อมูลเวลาทำงานเดิมของช่วงวันที่นี้จะถูกแทนที่ด้วยข้อมูลจากไฟล์ใหม่ทันที
-            </div>
-
             {/* Action Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 px-6 py-4 mt-5 border-t border-slate-100 dark:border-slate-700">
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 disabled={isUploading}
-                onClick={() => {
-                  setOverlapModalOpen(false);
-                  setOverlapData(null);
-                  setSelectedFile(null);
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                  toast.info('ยกเลิกการนำเข้าไฟล์ และคงการใช้งานไฟล์เดิมในระบบ');
-                }}
+                onClick={cancelOverlapImport}
               >
                 ใช้ไฟล์เก่า (ยกเลิกการอัปโหลด)
               </Button>

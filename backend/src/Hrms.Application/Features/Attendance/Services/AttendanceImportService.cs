@@ -70,6 +70,8 @@ public class AttendanceImportService : IAttendanceImportService
                     ExistingBatchFileName = existingBatch.FileName,
                     ExistingBatchImportedAt = existingBatch.ImportedAt,
                     ExistingBatchImportedBy = uName,
+                    ExistingBatchDateFrom = existingBatch.DateFrom?.ToString("yyyy-MM-dd"),
+                    ExistingBatchDateTo = existingBatch.DateTo?.ToString("yyyy-MM-dd"),
                     Errors = new List<AttendanceImportErrorDto>
                     {
                         new AttendanceImportErrorDto
@@ -235,6 +237,8 @@ public class AttendanceImportService : IAttendanceImportService
                         ExistingBatchFileName = overlappingBatch.FileName,
                         ExistingBatchImportedAt = overlappingBatch.ImportedAt,
                         ExistingBatchImportedBy = uName,
+                        ExistingBatchDateFrom = overlappingBatch.DateFrom?.ToString("yyyy-MM-dd"),
+                        ExistingBatchDateTo = overlappingBatch.DateTo?.ToString("yyyy-MM-dd"),
                         Status = "OVERLAP_CONFIRMATION_REQUIRED",
                         Errors = new List<AttendanceImportErrorDto>
                         {

@@ -55,6 +55,9 @@ public class AttendanceImportResultDto
     public string? ExistingBatchFileName { get; set; }
     public DateTime? ExistingBatchImportedAt { get; set; }
     public string? ExistingBatchImportedBy { get; set; }
+    /// <summary>ช่วงวันที่ของไฟล์เดิมที่ทับซ้อน (yyyy-MM-dd)</summary>
+    public string? ExistingBatchDateFrom { get; set; }
+    public string? ExistingBatchDateTo { get; set; }
     public List<AttendanceImportErrorDto> Errors { get; set; } = new();
 }
 
