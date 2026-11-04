@@ -37,7 +37,6 @@ import {
   ArrowRight,
   Eye,
   Trash2,
-  ClipboardCheck,
   ThumbsUp,
   ThumbsDown,
   BarChart3,
@@ -1380,25 +1379,17 @@ function DailyAttendanceContent() {
                           {renderStatusBadge(rec.status, rec.isAbsent)}
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1.5">
+                          {canEditTime ? (
                             <button
-                              onClick={() => handleOpenAdjustmentModal(rec)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors cursor-pointer dark:bg-blue-900/20 dark:text-blue-400"
-                              title="ยื่นคำขอปรับปรุงเวลาเข้า-ออกงาน"
+                              onClick={() => handleOpenEditModal(rec)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer dark:text-slate-300 dark:border-slate-700"
                             >
-                              <ClipboardCheck className="w-3.5 h-3.5" />
-                              <span>ขอปรับเวลา</span>
+                              <Edit2 className="w-3.5 h-3.5" />
+                              <span>แก้ไข</span>
                             </button>
-                            {canEditTime && (
-                              <button
-                                onClick={() => handleOpenEditModal(rec)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 border border-slate-200 transition-colors cursor-pointer dark:text-slate-300 dark:border-slate-700"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                                <span>แก้ไข</span>
-                              </button>
-                            )}
-                          </div>
+                          ) : (
+                            <span className="text-slate-300 dark:text-slate-600">-</span>
+                          )}
                         </td>
                       </tr>
                     ))
