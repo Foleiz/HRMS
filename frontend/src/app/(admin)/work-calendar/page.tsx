@@ -447,21 +447,10 @@ export default function WorkCalendarPage() {
             {/* Header / Sub-title */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700/60">
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">กำหนดวันและเวลาทำงานปกติของบริษัท</h2>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold whitespace-nowrap dark:bg-emerald-900/20 dark:text-emerald-400">
-                  <Sun className="w-3.5 h-3.5" />
-                  ทำงาน {workingDaysCount} วัน
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
-                  <Moon className="w-3.5 h-3.5" />
-                  วันหยุด {offDaysCount} วัน
-                </div>
-              </div>
             </div>
 
             {/* Time Setting Bar */}
-            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col lg:flex-row lg:items-end justify-between gap-4">
               <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 shrink-0">
                 <div className="w-44">
                   <ThaiTimePicker
@@ -478,6 +467,16 @@ export default function WorkCalendarPage() {
                     onChange={(val) => setBulkEndTime(val)}
                     align="right"
                   />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 h-10 px-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold whitespace-nowrap dark:bg-emerald-900/20 dark:text-emerald-400">
+                  <Sun className="w-3.5 h-3.5" />
+                  ทำงาน {workingDaysCount} วัน
+                </div>
+                <div className="flex items-center gap-2 h-10 px-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 dark:text-slate-400 text-xs font-semibold whitespace-nowrap dark:bg-slate-700 dark:text-slate-300 dark:border-slate-700">
+                  <Moon className="w-3.5 h-3.5" />
+                  วันหยุด {offDaysCount} วัน
                 </div>
               </div>
             </div>
@@ -525,11 +524,7 @@ export default function WorkCalendarPage() {
             )}
 
             {/* Save Button */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/60">
-              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                บันทึกแล้วระบบคำนวณสาย / ออกก่อน / ขาดงานใหม่ให้อัตโนมัติ (ยกเว้นเดือนที่งวดเงินเดือนอนุมัติหรือจ่ายแล้ว)
-              </span>
-
+            <div className="flex items-center justify-end pt-4 border-t border-slate-100 dark:border-slate-700/60">
               {canEditCalendar && (
                 <Button
                   variant="primary"
