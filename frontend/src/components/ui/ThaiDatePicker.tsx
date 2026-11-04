@@ -164,9 +164,9 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const popoverHeight = 360;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    const popoverHeight = popoverRef.current?.offsetHeight || 370;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
 
     if (rect.bottom < 0 || rect.top > window.innerHeight) {
       closeAll();
@@ -175,18 +175,21 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
 
     const openUpward = spaceBelow < popoverHeight && spaceAbove > spaceBelow;
 
+    let topPos = openUpward ? rect.top - 6 - popoverHeight : rect.bottom + 6;
+
+    // ล็อก topPos ให้อยู่ในหน้าจอเสมอ ไม่ให้เลยขอบบน (อย่างน้อย 8px) และไม่ให้ตกขอบล่าง
+    const maxTop = Math.max(8, window.innerHeight - popoverHeight - 8);
+    topPos = Math.max(8, Math.min(topPos, maxTop));
+
     const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 99999,
+      top: `${topPos}px`,
+      maxHeight: 'calc(100vh - 16px)',
+      overflowY: 'auto',
     };
 
-    if (openUpward) {
-      style.bottom = `${Math.max(8, window.innerHeight - rect.top + 6)}px`;
-    } else {
-      style.top = `${Math.max(8, rect.bottom + 6)}px`;
-    }
-
-    const popoverWidth = 320;
+    const popoverWidth = popoverRef.current?.offsetWidth || 320;
     if (align === 'right') {
       const rightSpace = window.innerWidth - rect.right;
       if (rect.right - popoverWidth < 8) {
@@ -208,6 +211,14 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
   useEffect(() => {
     if (!open) return;
     updatePosition();
+    const rafId = requestAnimationFrame(() => {
+      updatePosition();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [open, updatePosition, monthPickerOpen, yearPickerOpen]);
+
+  useEffect(() => {
+    if (!open) return;
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
@@ -344,7 +355,7 @@ export const ThaiDatePicker: React.FC<ThaiDatePickerProps> = ({
         <div
           ref={popoverRef}
           style={popoverStyle}
-          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-menu-in"
+          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] max-h-[calc(100vh-16px)] overflow-y-auto bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-menu-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header: เลื่อนเดือน + ตัวเลือกเดือน/ปี */}
@@ -615,9 +626,9 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const popoverHeight = 360;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
+    const popoverHeight = popoverRef.current?.offsetHeight || 370;
+    const spaceBelow = window.innerHeight - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
 
     if (rect.bottom < 0 || rect.top > window.innerHeight) {
       closeAll();
@@ -626,18 +637,21 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
 
     const openUpward = spaceBelow < popoverHeight && spaceAbove > spaceBelow;
 
+    let topPos = openUpward ? rect.top - 6 - popoverHeight : rect.bottom + 6;
+
+    // ล็อก topPos ให้อยู่ในหน้าจอเสมอ ไม่ให้เลยขอบบน (อย่างน้อย 8px) และไม่ให้ตกขอบล่าง
+    const maxTop = Math.max(8, window.innerHeight - popoverHeight - 8);
+    topPos = Math.max(8, Math.min(topPos, maxTop));
+
     const style: React.CSSProperties = {
       position: 'fixed',
       zIndex: 99999,
+      top: `${topPos}px`,
+      maxHeight: 'calc(100vh - 16px)',
+      overflowY: 'auto',
     };
 
-    if (openUpward) {
-      style.bottom = `${Math.max(8, window.innerHeight - rect.top + 6)}px`;
-    } else {
-      style.top = `${Math.max(8, rect.bottom + 6)}px`;
-    }
-
-    const popoverWidth = 320;
+    const popoverWidth = popoverRef.current?.offsetWidth || 320;
     if (align === 'right') {
       const rightSpace = window.innerWidth - rect.right;
       if (rect.right - popoverWidth < 8) {
@@ -659,6 +673,14 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
   useEffect(() => {
     if (!open) return;
     updatePosition();
+    const rafId = requestAnimationFrame(() => {
+      updatePosition();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [open, updatePosition, monthPickerOpen, yearPickerOpen]);
+
+  useEffect(() => {
+    if (!open) return;
 
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
       const target = e.target as Node;
@@ -792,7 +814,7 @@ export const ThaiDateRangePicker: React.FC<ThaiDateRangePickerProps> = ({
         <div
           ref={popoverRef}
           style={popoverStyle}
-          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-menu-in"
+          className="w-[310px] sm:w-[320px] max-w-[calc(100vw-16px)] max-h-[calc(100vh-16px)] overflow-y-auto bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700/80 shadow-2xl p-3.5 sm:p-4 select-none animate-menu-in"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

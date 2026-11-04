@@ -31,10 +31,14 @@ export const YearPicker: React.FC<{
     const rect = triggerRef.current?.getBoundingClientRect();
     if (rect) {
       const width = 280;
+      const height = 220;
+      const topPos = rect.bottom + 6 + height > window.innerHeight
+        ? Math.max(8, rect.top - 6 - height)
+        : rect.bottom + 6;
       setMenuStyle({
         position: 'fixed',
         zIndex: 99999,
-        top: rect.bottom + 6,
+        top: topPos,
         left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
         width,
       });
