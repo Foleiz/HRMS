@@ -1,20 +1,15 @@
 'use client';
-import { ModalHeader } from '@/components/ui/ModalHeader';
 
-import { ModalShell, Button } from '@/components/ui';
 import React, { useState } from 'react';
+import { ModalHeader } from '@/components/ui/ModalHeader';
+import { ModalShell } from '@/components/ui/ModalShell';
+import { Button } from '@/components/ui';
 import {
-  X,
   FileSpreadsheet,
   Download,
-  Info,
-  FileText,
-  CheckCircle2,
-  HelpCircle,
-  Loader2,
-  Calendar,
+  Clock,
+  CalendarDays,
   Sparkles,
-  Layers,
 } from 'lucide-react';
 import { commissionService } from '@/services/commissionService';
 import { useToast } from '@/context/ToastContext';
@@ -25,46 +20,49 @@ interface Props {
 }
 
 type Cell = string;
+
+interface HeaderCell {
+  text: string;
+  colSpan?: number;
+  rowSpan?: number;
+  tooltip?: string;
+}
+
 interface SheetSample {
   columns: string[];
-  used: number[]; // Index of columns used by system
   titleRows?: Cell[][];
-  headerRows: Cell[][];
+  headerRows: HeaderCell[][];
   dataRows: Cell[][];
 }
 
 const colLetters = (n: number) => Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i)); // A, B, C, ...
 
-// 1. Transaction Format with Date (Auto detected as Single Day or Date Range)
-const TRANSACTION_SAMPLE: SheetSample = {
-  columns: colLetters(7),
-  used: [1, 2, 5],
-  titleRows: [
-    ['รายการยอดขายและบิล (POS / ERP Export — ตรวจจับวันเดียวหรือช่วงวันอัตโนมัติ)'],
-  ],
-  headerRows: [
-    ['เลขที่บิล', 'วันที่ทำรายการ (วว/ดด/ปปปป)*', 'รหัสพนักงาน*', 'ชื่อพนักงาน', 'ชื่อลูกค้า/รายการ', 'ยอดขาย (บาท)*', 'หมายเหตุ'],
-    ['Invoice_No', 'Date', 'Emp_Code', 'Emp_Name', 'Customer_Product', 'Net_Sales', 'Note'],
-  ],
-  dataRows: [
-    ['INV-20261001', '15/10/2026', 'EMP-001', 'สมชาย ใจดี', 'ลูกค้า บจก. เอแอนด์บี', '75,000.00', 'ออเดอร์เช้า'],
-    ['INV-20261002', '15/10/2026', 'EMP-001', 'สมชาย ใจดี', 'ลูกค้า ร้านค้าปลีก กะรัต', '120,000.00', 'ออเดอร์บ่าย'],
-    ['INV-20261003', '15/10/2026', 'EMP-002', 'สมหญิง รักงาน', 'โครงการคอนโด A', '280,000.00', 'ปิดการขาย'],
-    ['INV-20261004', '15/10/2026', 'EMP-003', 'ประสิทธิ์ มุ่งมั่น', 'ลูกค้า โรงงานทอผ้า', '55,000.00', ''],
-  ],
-};
-
-// 2. Summary Format without Date (Auto detected as Full Month of selected period)
+// 1. Summary Format without Date (Auto detected as Full Month of selected period)
 const SUMMARY_SAMPLE: SheetSample = {
   columns: colLetters(7),
-  used: [0, 3, 4, 5],
   titleRows: [
     ['รายงานสรุปยอดขายและค่าคอมมิชชั่นพนักงานประจำเดือน (ตรวจจับเป็นทั้งเดือนอัตโนมัติ)'],
     ['รอบเดือน: 10/2569 (ตุลาคม 2026)'],
   ],
   headerRows: [
-    ['รหัสพนักงาน*', 'ชื่อ-นามสกุล', 'แผนก/ตำแหน่ง', 'ยอดขาย (บาท)*', 'อัตรา (%)', 'เงินพิเศษ (บาท)', 'หมายเหตุ'],
-    ['Emp_ID', 'Employee_Name', 'Department', 'Sales_Amount', 'Commission_Rate', 'Special_Amount', 'Note'],
+    [
+      { text: 'รหัสพนักงาน*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
+      { text: 'ชื่อ-นามสกุล', tooltip: 'ชื่อ-สกุลพนักงาน' },
+      { text: 'แผนก/ตำแหน่ง', tooltip: 'แผนกหรือตำแหน่งงาน' },
+      { text: 'ยอดขาย (บาท)*', tooltip: 'ยอดขายรวมทั้งเดือน (จำเป็นต้องมี)' },
+      { text: 'อัตรา (%)', tooltip: 'เปอร์เซ็นต์ค่าคอมมิชชั่น (ระบบใช้อัตราตามงวด)' },
+      { text: 'เงินพิเศษ (บาท)', tooltip: 'เงินรางวัลหรือเงินพิเศษเพิ่มเติม' },
+      { text: 'หมายเหตุ', tooltip: 'บันทึกเพิ่มเติม' },
+    ],
+    [
+      { text: 'Emp_ID' },
+      { text: 'Employee_Name' },
+      { text: 'Department' },
+      { text: 'Sales_Amount' },
+      { text: 'Commission_Rate' },
+      { text: 'Special_Amount' },
+      { text: 'Note' },
+    ],
   ],
   dataRows: [
     ['EMP-001', 'สมชาย ใจดี', 'ฝ่ายขาย (Sales Rep)', '250,000.00', '5.00', '2,000.00', 'ยอดขาย Q3'],
@@ -74,22 +72,154 @@ const SUMMARY_SAMPLE: SheetSample = {
   ],
 };
 
-// 3. Template Format
-const TEMPLATE_SAMPLE: SheetSample = {
+// 2. Transaction Format with Date (Auto detected as Single Day or Date Range)
+const TRANSACTION_SAMPLE: SheetSample = {
   columns: colLetters(7),
-  used: [0, 1, 5],
+  titleRows: [
+    ['รายการยอดขายและบิล (POS / ERP Export — ตรวจจับวันเดียวหรือช่วงวันอัตโนมัติ)'],
+  ],
   headerRows: [
-    ['วันที่ (วว/ดด/ปปปป หรือ เว้นว่างถ้าทั้งเดือน)', 'รหัสพนักงาน*', 'ชื่อ-นามสกุล', 'แผนก', 'ตำแหน่ง', 'ยอดขายรวม (บาท)*', 'หมายเหตุ'],
-    ['Date', 'EmployeeCode', 'EmployeeName', 'Department', 'Position', 'SalesAmount', 'Note'],
+    [
+      { text: 'เลขที่บิล', tooltip: 'เลขที่เอกสารหรือบิลขาย' },
+      { text: 'วันที่ทำรายการ (วว/ดด/ปปปป)*', tooltip: 'วันที่ขายสินค้าหรือทำรายการ (จำเป็นต้องมี)' },
+      { text: 'รหัสพนักงาน*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
+      { text: 'ชื่อพนักงาน', tooltip: 'ชื่อพนักงานผู้ขาย' },
+      { text: 'ชื่อลูกค้า/รายการ', tooltip: 'ข้อมูลลูกค้าหรือรายการสินค้า' },
+      { text: 'ยอดขาย (บาท)*', tooltip: 'ยอดเงินขายสุทธิ (จำเป็นต้องมี)' },
+      { text: 'หมายเหตุ', tooltip: 'บันทึกเพิ่มเติม' },
+    ],
+    [
+      { text: 'Invoice_No' },
+      { text: 'Date' },
+      { text: 'Emp_Code' },
+      { text: 'Emp_Name' },
+      { text: 'Customer_Product' },
+      { text: 'Net_Sales' },
+      { text: 'Note' },
+    ],
   ],
   dataRows: [
-    ['15/10/2026', 'EMP0001', 'นายสมชาย ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขาย', '250,000.00', 'ตัวอย่างยอดขาย'],
+    ['INV-20261001', '15/10/2026', 'EMP-001', 'สมชาย ใจดี', 'ลูกค้า บจก. เอแอนด์บี', '75,000.00', 'ออเดอร์เช้า'],
+    ['INV-20261002', '15/10/2026', 'EMP-001', 'สมชาย ใจดี', 'ลูกค้า ร้านค้าปลีก กะรัต', '120,000.00', 'ออเดอร์บ่าย'],
+    ['INV-20261003', '15/10/2026', 'EMP-002', 'สมหญิง รักงาน', 'โครงการคอนโด A', '280,000.00', 'ปิดการขาย'],
+    ['INV-20261004', '15/10/2026', 'EMP-003', 'ประสิทธิ์ มุ่งมั่น', 'ลูกค้า โรงงานทอผ้า', '55,000.00', ''],
   ],
 };
 
+// 3. Official System Template
+const TEMPLATE_SAMPLE: SheetSample = {
+  columns: colLetters(7),
+  titleRows: [
+    ['เทมเพลตนำเข้าค่าคอมมิชชั่นมาตรฐาน (HRMS Official Template)'],
+  ],
+  headerRows: [
+    [
+      { text: 'วันที่ (วว/ดด/ปปปป หรือ เว้นว่างถ้าทั้งเดือน)', tooltip: 'ระบุวันที่หากเป็นยอดรายวัน หรือเว้นว่างหากเป็นยอดสรุปทั้งเดือน' },
+      { text: 'รหัสพนักงาน*', tooltip: 'รหัสพนักงานในระบบ (จำเป็นต้องมี)' },
+      { text: 'ชื่อ-นามสกุล', tooltip: 'ชื่อ-สกุลพนักงาน' },
+      { text: 'แผนก', tooltip: 'แผนกสังกัด' },
+      { text: 'ตำแหน่ง', tooltip: 'ตำแหน่งงาน' },
+      { text: 'ยอดขายรวม (บาท)*', tooltip: 'ยอดขายสุทธิ (จำเป็นต้องมี)' },
+      { text: 'หมายเหตุ', tooltip: 'บันทึกเพิ่มเติม' },
+    ],
+    [
+      { text: 'Date' },
+      { text: 'EmployeeCode' },
+      { text: 'EmployeeName' },
+      { text: 'Department' },
+      { text: 'Position' },
+      { text: 'SalesAmount' },
+      { text: 'Note' },
+    ],
+  ],
+  dataRows: [
+    ['15/10/2026', 'EMP0001', 'นายสมชาย ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขาย', '250,000.00', 'ตัวอย่างยอดขายรายวัน'],
+    ['', 'EMP0002', 'นางสาวสมหญิง ตัวอย่าง', 'ฝ่ายขายและการตลาด', 'เจ้าหน้าที่ฝ่ายขายอาวุโส', '480,000.00', 'ตัวอย่างยอดขายทั้งเดือน (เว้นว่างวันที่)'],
+  ],
+};
+
+const SheetPreview: React.FC<{ sample: SheetSample }> = ({ sample }) => {
+  const rowNo =
+    'px-1 text-center text-slate-400 bg-slate-100 dark:bg-slate-800 border-r border-slate-300 dark:border-slate-700 font-normal align-middle select-none';
+  return (
+    <div className="border border-slate-300 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
+      <table className="text-[11px] text-left border-collapse font-mono w-full">
+        <thead>
+          <tr className="bg-slate-100 dark:bg-slate-800 text-slate-500 text-center">
+            <th className="w-8 px-1 py-1 border-r border-slate-300 dark:border-slate-700 font-normal" />
+            {sample.columns.map((c) => (
+              <th
+                key={c}
+                className="px-2 py-1 border-r border-slate-200 dark:border-slate-700 font-normal"
+              >
+                {c}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300">
+          {sample.titleRows?.map((row, r) => (
+            <tr key={`t${r}`} className="border-t border-slate-200 dark:border-slate-700">
+              <td className={rowNo}>{r + 1}</td>
+              <td
+                colSpan={sample.columns.length}
+                className="px-2 py-1.5 font-semibold text-slate-800 dark:text-slate-200"
+              >
+                {row[0]}
+              </td>
+            </tr>
+          ))}
+          {sample.headerRows.map((row, r) => (
+            <tr
+              key={`h${r}`}
+              className="border-t border-slate-200 dark:border-slate-700 font-semibold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/60"
+            >
+              <td className={rowNo}>{(sample.titleRows?.length || 0) + r + 1}</td>
+              {row.map((cell, i) => (
+                <td
+                  key={i}
+                  colSpan={cell.colSpan || 1}
+                  rowSpan={cell.rowSpan || 1}
+                  title={cell.tooltip}
+                  className={`px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans align-middle ${
+                    cell.colSpan && cell.colSpan > 1 ? 'text-center' : ''
+                  } ${
+                    cell.tooltip
+                      ? 'cursor-help hover:bg-slate-200/70 dark:hover:bg-slate-700/70 transition-colors'
+                      : ''
+                  }`}
+                >
+                  {cell.text}
+                </td>
+              ))}
+            </tr>
+          ))}
+          {sample.dataRows.map((row, r) => (
+            <tr key={`d${r}`} className="border-t border-slate-200 dark:border-slate-700">
+              <td className={rowNo}>
+                {(sample.titleRows?.length || 0) + sample.headerRows.length + r + 1}
+              </td>
+              {row.map((v, i) => (
+                <td
+                  key={i}
+                  className="px-2 py-1.5 border-r border-slate-200 dark:border-slate-700 whitespace-nowrap font-sans"
+                >
+                  {v}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+type FormatTab = 'summary' | 'transaction' | 'template';
+
 export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Props) {
   const { success, error } = useToast();
-  const [activeTab, setActiveTab] = useState<'transaction' | 'summary' | 'template'>('transaction');
+  const [activeTab, setActiveTab] = useState<FormatTab>('summary');
   const [isDownloading, setIsDownloading] = useState(false);
 
   if (!isOpen) return null;
@@ -122,192 +252,127 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
     }
   };
 
-  const currentSample =
-    activeTab === 'transaction'
-      ? TRANSACTION_SAMPLE
-      : activeTab === 'summary'
-      ? SUMMARY_SAMPLE
-      : TEMPLATE_SAMPLE;
+  const tabs: {
+    key: FormatTab;
+    label: string;
+    sub: string;
+    Icon: React.ElementType;
+    badge?: string;
+  }[] = [
+    {
+      key: 'summary',
+      label: 'ไฟล์สรุปทั้งเดือน',
+      sub: 'ไฟล์ที่มีข้อมูลสรุปยอดของทั้งเดือน',
+      Icon: CalendarDays,
+      badge: 'แนะนำ',
+    },
+    {
+      key: 'transaction',
+      label: 'ไฟล์บันทึกรายวัน',
+      sub: 'ไฟล์ยอดขายรายวัน หรือส่งออกจาก POS / ERP',
+      Icon: Clock,
+    },
+    {
+      key: 'template',
+      label: 'เทมเพลตมาตรฐานระบบ',
+      sub: 'แบบฟอร์มมาตรฐานของระบบ HRMS',
+      Icon: FileSpreadsheet,
+    },
+  ];
 
   return (
-    <ModalShell className="z-50 bg-black/50 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
-      <div className="relative flex max-h-[92vh] w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <ModalShell
+      className="z-50 bg-black/40 backdrop-blur-2xs animate-in fade-in duration-150"
+      innerClassName="items-center justify-center p-3 sm:p-6"
+    >
+      <div className="bg-white dark:bg-slate-900 w-full max-w-5xl max-h-[92vh] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-800 overflow-hidden flex flex-col">
         {/* Header */}
         <ModalHeader
           icon={FileSpreadsheet}
-          title="รูปแบบไฟล์ที่รองรับ & ระบบตรวจจับอัตโนมัติ"
+          title="รูปแบบไฟล์ที่รองรับ"
           onClose={onClose}
         />
 
-        {/* Tabs Bar */}
-        <div className="flex border-b border-slate-200 bg-slate-100/70 p-2 dark:border-slate-800 dark:bg-slate-950/40 gap-2">
-          <button
-            onClick={() => setActiveTab('transaction')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer ${
-              activeTab === 'transaction'
-                ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-800 dark:text-emerald-400 ring-1 ring-emerald-500/20'
-                : 'text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900/50 dark:hover:text-slate-200'
-            }`}
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>ตรวจจับอัตโนมัติ</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('summary')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer ${
-              activeTab === 'summary'
-                ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-800 dark:text-emerald-400 ring-1 ring-emerald-500/20'
-                : 'text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900/50 dark:hover:text-slate-200'
-            }`}
-          >
-            <Layers className="h-4 w-4" />
-            <span>ทับเฉพาะวันที่ซ้ำ</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('template')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all cursor-pointer ${
-              activeTab === 'template'
-                ? 'bg-white text-emerald-700 shadow-sm dark:bg-slate-800 dark:text-emerald-400 ring-1 ring-emerald-500/20'
-                : 'text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-900/50 dark:hover:text-slate-200'
-            }`}
-          >
-            <Calendar className="h-4 w-4" />
-            <span>กู้คืนได้เสมอ</span>
-          </button>
-        </div>
-
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {/* Active Tab Header */}
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 px-4 py-3 text-xs text-slate-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-slate-300 flex items-center justify-between gap-4">
-            {activeTab === 'transaction' && (
-              <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 shrink-0" /> ตรวจจับอัตโนมัติ
-              </p>
-            )}
-            {activeTab === 'summary' && (
-              <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 shrink-0" /> ทับเฉพาะวันที่ซ้ำ
-              </p>
-            )}
-            {activeTab === 'template' && (
-              <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 shrink-0" /> กู้คืนได้เสมอ
-              </p>
-            )}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs text-slate-700 dark:text-slate-300">
+          {/* Tabs Selector Bar (ลักษณะเดียวกับเมนูนำเข้าไฟล์บันทึกเวลา) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
+            {tabs.map(({ key, label, sub, Icon, badge }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`py-2 px-3 rounded-lg text-left transition-all cursor-pointer ${
+                  activeTab === key
+                    ? 'bg-white dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700'
+                    : 'hover:bg-white/60 dark:hover:bg-slate-900/40'
+                }`}
+              >
+                <span
+                  className={`flex items-center gap-1.5 font-bold ${
+                    activeTab === key
+                      ? 'text-primary dark:text-blue-300'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                  {badge && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 font-semibold">
+                      {badge}
+                    </span>
+                  )}
+                </span>
+                <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 pl-5">
+                  {sub}
+                </span>
+              </button>
+            ))}
           </div>
 
-          {/* Excel Mock Grid */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    <th className="w-10 border-r border-slate-200 dark:border-slate-800 px-2 py-1 text-center font-mono text-[11px] text-slate-400">
-                      #
-                    </th>
-                    {currentSample.columns.map((col, idx) => (
-                      <th
-                        key={idx}
-                        className={`border-r border-slate-200 px-3 py-1 font-mono text-center text-[11px] dark:border-slate-800 ${
-                          currentSample.used.includes(idx)
-                            ? 'bg-emerald-100/70 font-bold text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        {col}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-slate-100 font-mono dark:divide-slate-800/60">
-                  {currentSample.titleRows?.map((row, rIdx) => (
-                    <tr key={`t-${rIdx}`} className="bg-slate-50/50 dark:bg-slate-900/40">
-                      <td className="border-r border-slate-200 dark:border-slate-800 px-2 py-1 text-center text-[10px] text-slate-400">
-                        {rIdx + 1}
-                      </td>
-                      <td
-                        colSpan={currentSample.columns.length}
-                        className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300"
-                      >
-                        {row[0]}
-                      </td>
-                    </tr>
-                  ))}
-
-                  {currentSample.headerRows.map((hRow, hIdx) => {
-                    const rowNumber = (currentSample.titleRows?.length || 0) + hIdx + 1;
-                    return (
-                      <tr
-                        key={`h-${hIdx}`}
-                        className="bg-emerald-50/60 dark:bg-emerald-950/30 font-semibold"
-                      >
-                        <td className="border-r border-slate-200 dark:border-slate-800 px-2 py-1 text-center text-[10px] text-slate-400">
-                          {rowNumber}
-                        </td>
-                        {hRow.map((cell, cIdx) => (
-                          <td
-                            key={cIdx}
-                            className={`border-r border-slate-200 dark:border-slate-800 px-3 py-1.5 text-xs ${
-                              currentSample.used.includes(cIdx)
-                                ? 'bg-emerald-100/50 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200 font-bold'
-                                : 'text-slate-600 dark:text-slate-400'
-                            }`}
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-
-                  {currentSample.dataRows.map((dRow, dIdx) => {
-                    const rowNumber =
-                      (currentSample.titleRows?.length || 0) +
-                      currentSample.headerRows.length +
-                      dIdx +
-                      1;
-                    return (
-                      <tr
-                        key={`d-${dIdx}`}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300"
-                      >
-                        <td className="border-r border-slate-200 dark:border-slate-800 px-2 py-1 text-center text-[10px] text-slate-400">
-                          {rowNumber}
-                        </td>
-                        {dRow.map((cell, cIdx) => (
-                          <td
-                            key={cIdx}
-                            className={`border-r border-slate-200 dark:border-slate-800 px-3 py-1 text-xs ${
-                              currentSample.used.includes(cIdx)
-                                ? 'bg-emerald-50/30 dark:bg-emerald-950/20 font-medium text-slate-900 dark:text-slate-100'
-                                : 'text-slate-500 dark:text-slate-400'
-                            }`}
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Description & Table for Active Tab */}
+          {activeTab === 'summary' && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                เป็นไฟล์ที่มีข้อมูลสรุปยอดขายหรือค่าคอมมิชชั่นของพนักงานตลอดทั้งเดือน (ไม่มีคอลัมน์วันที่ หรือเว้นว่างช่องวันที่ไว้) ระบบจะตรวจจับและบันทึกเป็นยอดรวมประจำงวดเดือนที่เลือกให้อัตโนมัติ เหมาะสำหรับการสรุปยอดคอมมิชชั่นก่อนตัดรอบคำนวณเงินเดือน
+              </p>
+              <SheetPreview sample={SUMMARY_SAMPLE} />
             </div>
-          </div>
+          )}
+
+          {activeTab === 'transaction' && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                เป็นไฟล์บันทึกรายการยอดขายตามวันที่ หรือประวัติรายการบิลที่ส่งออกจากระบบ POS / ERP (1 แถว = 1 รายการขาย) ที่มีคอลัมน์ &apos;วันที่ทำรายการ&apos; ระบบจะตรวจจับวันเดียวหรือช่วงวันให้อัตโนมัติ และนำไปรวมยอดให้พนักงานในงวดนั้นๆ
+              </p>
+              <SheetPreview sample={TRANSACTION_SAMPLE} />
+            </div>
+          )}
+
+          {activeTab === 'template' && (
+            <div className="space-y-4 animate-in fade-in duration-150">
+              <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                เป็นแบบฟอร์มไฟล์ Excel มาตรฐานที่ดาวน์โหลดจากระบบ สามารถเลือกกรอกได้ทั้ง 2 รูปแบบ: หากต้องการสรุปยอดทั้งเดือนให้เว้นว่างช่องวันที่ไว้ หรือหากต้องการคิดยอดตามวันให้กรอกวันที่ทำรายการ (วว/ดด/ปปปป)
+              </p>
+              <SheetPreview sample={TEMPLATE_SAMPLE} />
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end border-t border-slate-200 px-6 py-4 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60">
+        <div className="px-6 py-3.5 border-t border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/80 flex items-center justify-end gap-3 shrink-0">
           <Button
             onClick={handleDownloadTemplate}
             loading={isDownloading}
-            icon={<Download className="h-4 w-4" />}
-            className="!bg-emerald-600 hover:!bg-emerald-700 !text-white cursor-pointer"
+            icon={<Download className="w-4 h-4" />}
           >
-            ดาวน์โหลดเทมเพลต Excel (.xlsx)
+            ดาวน์โหลดไฟล์ตัวอย่าง
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={onClose}
+          >
+            ปิดหน้าต่าง
           </Button>
         </div>
       </div>
