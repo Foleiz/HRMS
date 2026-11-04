@@ -3,7 +3,7 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { TabBar, type TabBarItem } from '@/components/ui';
+import { TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -695,9 +695,9 @@ export default function EssAttendancePage() {
       ───────────────────────────────────────────────────────────── */}
       {activeTab === 'adjustments' && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-center gap-2">
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">ประวัติคำขอปรับปรุงเวลาเข้า-ออกงาน</h3>
-            <span className="text-xs text-slate-400">{adjustmentsList.length} รายการ</span>
+            <CountBadge count={adjustmentsList.length} />
           </div>
 
           <RefreshIndicator active={adjustmentsPhase.refreshing} />

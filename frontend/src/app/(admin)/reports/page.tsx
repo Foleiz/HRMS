@@ -2,7 +2,7 @@
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { TabBar, type TabBarItem, TablePagination } from '@/components/ui';
+import { TabBar, type TabBarItem, TablePagination, CountBadge } from '@/components/ui';
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -743,10 +743,8 @@ export default function ReportsPage() {
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 ตารางสรุปอัตรากำลังคนจำแนกตามแผนก
+                <CountBadge count={headcountData?.departments.length || 0} />
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                {headcountData?.departments.length || 0} แผนก
-              </span>
             </div>
 
             <RefreshIndicator active={headcountPhase.refreshing} />
@@ -1005,10 +1003,8 @@ export default function ReportsPage() {
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                 <FileSpreadsheet className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 ตารางสรุปเวลาทำงานและการมาสายรายบุคคล
+                <CountBadge count={latenessData?.items.length || 0} />
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                {latenessData?.items.length || 0} คน
-              </span>
             </div>
 
             <RefreshIndicator active={latenessPhase.refreshing} />
@@ -1362,12 +1358,7 @@ export default function ReportsPage() {
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm dark:text-slate-200">
                   ตารางจำแนกภาษีเงินได้หัก ณ ที่จ่าย และเงินสมทบประกันสังคมรายบุคคล
                 </h3>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                  ทั้งหมด {filteredTaxItems.length} รายการ
-                </span>
-                
+                <CountBadge count={filteredTaxItems.length} />
               </div>
             </div>
 
@@ -1726,10 +1717,8 @@ export default function ReportsPage() {
               <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                 <BarChart3 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 อัตราการเข้า-ออกของพนักงานจำแนกตามแผนก
+                <CountBadge count={turnoverData?.departmentTurnovers.length || 0} />
               </h3>
-              <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                {turnoverData?.departmentTurnovers.length || 0} แผนก
-              </span>
             </div>
 
             <RefreshIndicator active={turnoverPhase.refreshing} />
@@ -1813,10 +1802,8 @@ export default function ReportsPage() {
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2 dark:text-slate-200">
                   <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                   บันทึกประวัติการเคลื่อนไหวพนักงานประจำงวดเดือน
+                  <CountBadge count={turnoverData.eventLogs.length} />
                 </h3>
-                <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                  {turnoverData.eventLogs.length} รายการ
-                </span>
               </div>
 
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">

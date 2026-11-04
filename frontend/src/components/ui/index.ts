@@ -23,3 +23,4 @@ export * from './TableToolbar';
 export * from './ModalHeader';
 export * from './AvatarName';
 export * from './ComboInput';
+export * from './CountBadge';

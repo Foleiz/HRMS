@@ -19,7 +19,7 @@ import {
 import { PayrollPeriod, PayrollRecord } from '@/types/payroll';
 import { salaryService } from '@/services/salaryService';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { ModalShell, Button } from '@/components/ui';
+import { ModalShell, Button, CountBadge } from '@/components/ui';
 
 interface PayrollPeriodDetailModalProps {
   period: PayrollPeriod | null;
@@ -277,8 +277,9 @@ export const PayrollPeriodDetailModal: React.FC<PayrollPeriodDetailModalProps> =
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-slate-500" />
                 <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                  รายชื่อพนักงานในรอบนี้ ({filteredPayrolls.length} คน)
+                  รายชื่อพนักงานในรอบนี้
                 </h4>
+                <CountBadge count={filteredPayrolls.length} />
               </div>
 
               <div className="relative min-w-[220px]">
