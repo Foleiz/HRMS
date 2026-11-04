@@ -60,7 +60,8 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
-import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
+import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 
 const THAI_MONTHS = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -1989,23 +1990,6 @@ function SchedulesContent() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     เลือกพนักงาน <span className="text-rose-500">*</span>
                   </label>
-                  {assignModalMode === 'create' && (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">ประเภท:</span>
-                      <CustomSelect
-                        value={singleAssignTypeFilter}
-                        onChange={(e) => setSingleAssignTypeFilter(e.target.value)}
-                        className="px-2 py-0.5 text-xs bg-slate-100 border border-slate-200 rounded-md focus:outline-none text-slate-700 dark:text-slate-300 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"
-                      >
-                        <option value="ALL">ทุกประเภทการจ้างงาน</option>
-                        {employeeTypes.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.typeName}
-                          </option>
-                        ))}
-                      </CustomSelect>
-                    </div>
-                  )}
                 </div>
                 {assignModalMode === 'create' ? (
                   <div ref={singleAssignDropdownRef} className="relative">
@@ -2100,13 +2084,29 @@ function SchedulesContent() {
                               </button>
                             )}
                           </div>
-                          <div className="flex items-center justify-between mt-1.5 px-1 text-[11px] text-slate-500 dark:text-slate-400">
-                            <span>พบ {filteredSingleAssignEmployees.length} คน</span>
-                            {singleAssignTypeFilter !== 'ALL' && (
-                              <span className="text-blue-600 font-medium">
-                                (กรอง: {employeeTypes.find((t) => t.id === Number(singleAssignTypeFilter))?.typeName || singleAssignTypeFilter})
-                              </span>
-                            )}
+                          {/* กรองประเภทพนักงาน */}
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2 px-1">
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">ประเภท:</span>
+                            {[{ id: 'ALL', name: 'ทั้งหมด' }, ...employeeTypes.map((t) => ({ id: String(t.id), name: t.typeName }))].map((opt) => {
+                              const active = singleAssignTypeFilter === opt.id;
+                              return (
+                                <button
+                                  key={opt.id}
+                                  type="button"
+                                  onClick={() => setSingleAssignTypeFilter(opt.id)}
+                                  className={`px-2 py-0.5 rounded-full text-[11px] font-medium border transition-colors cursor-pointer ${
+                                    active
+                                      ? 'bg-primary text-white border-primary dark:bg-blue-600 dark:border-blue-600'
+                                      : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700'
+                                  }`}
+                                >
+                                  {opt.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <div className="mt-1.5 px-1 text-[11px] text-slate-500 dark:text-slate-400">
+                            พบ {filteredSingleAssignEmployees.length} คน
                           </div>
                         </div>
 
@@ -2117,7 +2117,7 @@ function SchedulesContent() {
                               <Users className="w-7 h-7 text-slate-300 mx-auto mb-1.5" />
                               <p className="text-xs font-medium text-slate-600 dark:text-slate-400">ไม่พบข้อมูลพนักงานที่ตรงกับเงื่อนไข</p>
                               <p className="text-[11px] text-slate-400 mt-0.5 dark:text-slate-500 dark:text-slate-400">
-                                ลองเปลี่ยนคำค้นหา หรือเลือก &quot;ทุกประเภทการจ้างงาน&quot;
+                                ลองเปลี่ยนคำค้นหา หรือเลือกประเภท &quot;ทั้งหมด&quot;
                               </p>
                             </div>
                           ) : (
@@ -2272,6 +2272,43 @@ function SchedulesContent() {
                 })()}
               </div>
 
+              {/* วันทำงานประจำกะ (ดึงจากกะที่เลือก) */}
+              {(() => {
+                const currentShift = shifts.find((s) => s.id === assignForm.shiftId);
+                const displayWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
+                  ? currentShift.workDays
+                  : (assignForm.workDays || [1, 2, 3, 4, 5]);
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        วันทำงานประจำกะ
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {WEEK_DAYS.map((day) => {
+                        const isSelected = displayWorkDays.includes(day.id);
+                        return (
+                          <div
+                            key={day.id}
+                            className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
+                              isSelected
+                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
+                            }`}
+                          >
+                            <span className="text-[11px]">{day.short}</span>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Date Ranges */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -2299,45 +2336,6 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Day of Week Display (ตามกะการทำงาน · แก้ไขไม่ได้) */}
-              {(() => {
-                const currentShift = shifts.find((s) => s.id === assignForm.shiftId);
-                const displayWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
-                  ? currentShift.workDays
-                  : (assignForm.workDays || [1, 2, 3, 4, 5]);
-
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        วันทำงานประจำสัปดาห์ <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">(ดึงตามกะการทำงาน · แก้ไขไม่ได้)</span>
-                      </label>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        ทำงาน {displayWorkDays.length} วัน ({formatWorkDays(displayWorkDays)})
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1.5">
-                      {WEEK_DAYS.map((day) => {
-                        const isSelected = displayWorkDays.includes(day.id);
-                        return (
-                          <div
-                            key={day.id}
-                            className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
-                              isSelected
-                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
-                                : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
-                            }`}
-                          >
-                            <span className="text-[11px]">{day.short}</span>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
 
       </Modal>
 
@@ -2636,6 +2634,43 @@ function SchedulesContent() {
                 })()}
               </div>
 
+              {/* วันทำงานประจำกะ (ดึงจากกะที่เลือก) */}
+              {(() => {
+                const currentShift = shifts.find((s) => s.id === batchShiftId);
+                const displayWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
+                  ? currentShift.workDays
+                  : (batchWorkDays && batchWorkDays.length > 0 ? batchWorkDays : [1, 2, 3, 4, 5]);
+
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        วันทำงานประจำกะ
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {WEEK_DAYS.map((day) => {
+                        const isSelected = displayWorkDays.includes(day.id);
+                        return (
+                          <div
+                            key={day.id}
+                            className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
+                              isSelected
+                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
+                            }`}
+                          >
+                            <span className="text-[11px]">{day.short}</span>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Dates */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -2663,45 +2698,6 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Day of Week Display (ตามกะการทำงาน · แก้ไขไม่ได้) */}
-              {(() => {
-                const currentShift = shifts.find((s) => s.id === batchShiftId);
-                const displayWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
-                  ? currentShift.workDays
-                  : (batchWorkDays && batchWorkDays.length > 0 ? batchWorkDays : [1, 2, 3, 4, 5]);
-
-                return (
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        วันทำงานประจำสัปดาห์ <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">(ดึงตามกะการทำงาน · แก้ไขไม่ได้)</span>
-                      </label>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        ทำงาน {displayWorkDays.length} วัน ({formatWorkDays(displayWorkDays)})
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-7 gap-1.5">
-                      {WEEK_DAYS.map((day) => {
-                        const isSelected = displayWorkDays.includes(day.id);
-                        return (
-                          <div
-                            key={day.id}
-                            className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
-                              isSelected
-                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
-                                : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
-                            }`}
-                          >
-                            <span className="text-[11px]">{day.short}</span>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Modal Actions */}
@@ -2733,6 +2729,7 @@ function SchedulesContent() {
         isOpen={shiftModalOpen}
         onClose={() => setShiftModalOpen(false)}
         title={shiftModalMode === 'create' ? 'เพิ่มกะการทำงานใหม่' : 'แก้ไขกะการทำงาน'}
+        size="lg"
         onSubmit={handleSaveShift}
         footer={
           <ModalFooter
@@ -2899,35 +2896,8 @@ function SchedulesContent() {
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    ทำงาน {(shiftForm.workDays || []).length} วัน ({formatWorkDays(shiftForm.workDays)})
-                  </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">เลือกเร็ว:</span>
-                  <button
-                    type="button"
-                    onClick={() => setShiftForm({ ...shiftForm, workDays: [1, 2, 3, 4, 5] })}
-                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 cursor-pointer"
-                  >
-                    จันทร์ - ศุกร์
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShiftForm({ ...shiftForm, workDays: [1, 2, 3, 4, 5, 6] })}
-                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 cursor-pointer"
-                  >
-                    จันทร์ - เสาร์
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShiftForm({ ...shiftForm, workDays: [0, 1, 2, 3, 4, 5, 6] })}
-                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 cursor-pointer"
-                  >
-                    ทุกวัน
-                  </button>
-                </div>
 
                 <div className="grid grid-cols-7 gap-1.5">
                   {WEEK_DAYS.map((day) => {
@@ -3004,10 +2974,22 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Status (แสดงเฉพาะตอนแก้ไข) */}
-              {shiftModalMode === 'edit' && (
-                <ActiveToggleRow label="เปิดใช้งานกะนี้" checked={shiftForm.status === 'ACTIVE'} onChange={(v) => setShiftForm({ ...shiftForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
-              )}
+              {/* สถานะกะ — รูปแบบเดียวกับสายการอนุมัติ */}
+              <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-700/60">
+                <ToggleSwitch
+                  checked={shiftForm.status === 'ACTIVE'}
+                  onChange={(checked) => setShiftForm({ ...shiftForm, status: checked ? 'ACTIVE' : 'INACTIVE' })}
+                  ariaLabel="สถานะกะการทำงาน"
+                />
+                <span
+                  className={`text-xs font-semibold cursor-pointer ${
+                    shiftForm.status === 'ACTIVE' ? 'text-primary dark:text-blue-400' : 'text-slate-400'
+                  }`}
+                  onClick={() => setShiftForm({ ...shiftForm, status: shiftForm.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' })}
+                >
+                  {shiftForm.status === 'ACTIVE' ? 'ใช้งานอยู่' : 'ปิดใช้งาน'}
+                </span>
+              </div>
 
       </Modal>
 
