@@ -445,7 +445,7 @@ export default function WorkCalendarPage() {
         {activeTab === 'work-week' && (
           <div className="space-y-6">
             {/* Header / Sub-title */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-700/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">กำหนดวันและเวลาทำงานปกติของบริษัท</h2>
             </div>
 
