@@ -151,7 +151,9 @@ public class EmployeeShiftService : IEmployeeShiftService
             IsCrossDay = es.Shift?.IsCrossDay ?? false,
             EffectiveFrom = es.EffectiveFrom.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             EffectiveTo = es.EffectiveTo?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-            WorkDays = es.WorkDays != null ? es.WorkDays.ToList() : new List<int> { 1, 2, 3, 4, 5 },
+            WorkDays = (es.Shift?.WorkDays != null && es.Shift.WorkDays.Length > 0)
+                ? es.Shift.WorkDays.ToList()
+                : (es.WorkDays != null ? es.WorkDays.ToList() : new List<int> { 1, 2, 3, 4, 5 }),
             IsActive = isActive
         };
     }

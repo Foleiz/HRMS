@@ -229,7 +229,17 @@ public class ShiftService : IShiftService
         shift.Color = NormalizeColor(request.Color);
         shift.LateGraceMinutes = Math.Max(0, request.LateGraceMinutes);
         shift.EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes);
-        if (request.WorkDays != null && request.WorkDays.Length > 0) shift.WorkDays = request.WorkDays.Distinct().ToArray();
+        if (request.WorkDays != null && request.WorkDays.Length > 0)
+        {
+            shift.WorkDays = request.WorkDays.Distinct().ToArray();
+            var affectedEmployeeShifts = await _context.EmployeeShifts
+                .Where(es => es.ShiftId == id)
+                .ToListAsync();
+            foreach (var es in affectedEmployeeShifts)
+            {
+                es.WorkDays = shift.WorkDays;
+            }
+        }
 
         await _context.SaveChangesAsync();
 
