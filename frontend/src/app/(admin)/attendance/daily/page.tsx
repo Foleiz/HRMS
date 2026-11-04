@@ -709,6 +709,20 @@ function DailyAttendanceContent() {
     setRevertModalOpen(true);
   };
 
+  // ค้นหาในหน้าต่างตรวจเวลา: พิมพ์แล้วค้นหาเองหลังหยุดพิมพ์ (ไม่ต้องกดปุ่ม)
+  const lastReviewSearchRef = useRef('');
+  useEffect(() => {
+    if (!selectedBatchForReview) return;
+    if (batchRecordSearch === lastReviewSearchRef.current) return;
+    const batchId = selectedBatchForReview.id;
+    const t = setTimeout(() => {
+      setBatchRecordPage(1);
+      loadBatchRecords(batchId, 1, batchRecordPageSize, batchRecordSearch);
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [batchRecordSearch, selectedBatchForReview]);
+
   const handleOpenTimeReview = async (batch: AttendanceImportBatch) => {
     setSelectedBatchForReview(batch);
     setBatchRecordPage(1);
@@ -726,6 +740,7 @@ function DailyAttendanceContent() {
       setIsLoadingBatchRecords(true);
       const size = targetPageSize !== undefined ? targetPageSize : batchRecordPageSize;
       const search = targetSearch !== undefined ? targetSearch : batchRecordSearch;
+      lastReviewSearchRef.current = search;
       const res = await attendanceImportService.getBatchRecords(batchId, targetPage, size, search);
       setBatchRecords(res.items);
       setBatchRecordTotalPages(res.totalPages);
@@ -2000,8 +2015,8 @@ function DailyAttendanceContent() {
               onClose={() => setSelectedBatchForReview(null)}
             />
 
-            {/* Search & Page Size Toolbar */}
-            <div className="px-5 py-3 border-b border-slate-100 bg-white flex flex-wrap items-center justify-between gap-3 dark:border-slate-700/60 dark:bg-slate-900">
+            {/* Search Toolbar */}
+            <div className="px-5 py-3 border-b border-slate-100 bg-white flex items-center gap-3 dark:border-slate-700/60 dark:bg-slate-900">
               <div className="relative flex-1 min-w-[220px] max-w-md">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none dark:text-slate-500 dark:text-slate-400" />
                 <input
@@ -2009,64 +2024,18 @@ function DailyAttendanceContent() {
                   placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
                   value={batchRecordSearch}
                   onChange={(e) => setBatchRecordSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setBatchRecordPage(1);
-                      loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
-                    }
-                  }}
                   className="w-full pl-9 pr-8 py-1.5 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:text-slate-400"
                 />
                 {batchRecordSearch && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setBatchRecordSearch('');
-                      setBatchRecordPage(1);
-                      loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, '');
-                    }}
+                    onClick={() => setBatchRecordSearch('')}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:text-slate-400 p-0.5 rounded-full dark:text-slate-500 dark:text-slate-400"
                     title="ล้างคำค้นหา"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBatchRecordPage(1);
-                    loadBatchRecords(selectedBatchForReview.id, 1, batchRecordPageSize, batchRecordSearch);
-                  }}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Search className="w-3.5 h-3.5" />
-                  ค้นหา
-                </button>
-
-                <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-
-                <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="whitespace-nowrap font-medium">แสดงหน้าละ:</span>
-                  <CustomSelect
-                    value={batchRecordPageSize}
-                    onChange={(e) => {
-                      const newSize = Number(e.target.value);
-                      setBatchRecordPageSize(newSize);
-                      setBatchRecordPage(1);
-                      loadBatchRecords(selectedBatchForReview.id, 1, newSize, batchRecordSearch);
-                    }}
-                    className="px-2.5 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-800 dark:text-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-                  >
-                    <option value={10}>10 คน / หน้า</option>
-                    <option value={20}>20 คน / หน้า</option>
-                    <option value={50}>50 คน / หน้า</option>
-                    <option value={100}>100 คน / หน้า</option>
-                    <option value={200}>200 คน / หน้า</option>
-                  </CustomSelect>
-                </div>
               </div>
             </div>
 
