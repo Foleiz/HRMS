@@ -16,4 +16,6 @@ public class Shift
     public string? Color { get; set; }
     public int LateGraceMinutes { get; set; } = 0;
     public int EarlyLeaveGraceMinutes { get; set; } = 0;
+    /// <summary>วันทำงานประจำสัปดาห์ (1=จันทร์ .. 7/0=อาทิตย์) เช่น [1,2,3,4,5]</summary>
+    public int[]? WorkDays { get; set; } = new[] { 1, 2, 3, 4, 5 };
 }

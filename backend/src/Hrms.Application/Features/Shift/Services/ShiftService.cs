@@ -63,7 +63,8 @@ public class ShiftService : IShiftService
             LateGraceMinutes = s.LateGraceMinutes,
             EarlyLeaveGraceMinutes = s.EarlyLeaveGraceMinutes,
             WorkHours = workHours,
-            NetWorkHours = netWorkHours
+            NetWorkHours = netWorkHours,
+            WorkDays = s.WorkDays != null && s.WorkDays.Length > 0 ? s.WorkDays : new[] { 1, 2, 3, 4, 5 }
         };
     }
 
@@ -185,7 +186,8 @@ public class ShiftService : IShiftService
             Status = string.IsNullOrWhiteSpace(request.Status) ? "ACTIVE" : request.Status.Trim(),
             Color = NormalizeColor(request.Color),
             LateGraceMinutes = Math.Max(0, request.LateGraceMinutes),
-            EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes)
+            EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes),
+            WorkDays = request.WorkDays != null && request.WorkDays.Length > 0 ? request.WorkDays.Distinct().ToArray() : new[] { 1, 2, 3, 4, 5 }
         };
 
         _context.Shifts.Add(shift);
@@ -227,6 +229,7 @@ public class ShiftService : IShiftService
         shift.Color = NormalizeColor(request.Color);
         shift.LateGraceMinutes = Math.Max(0, request.LateGraceMinutes);
         shift.EarlyLeaveGraceMinutes = Math.Max(0, request.EarlyLeaveGraceMinutes);
+        if (request.WorkDays != null && request.WorkDays.Length > 0) shift.WorkDays = request.WorkDays.Distinct().ToArray();
 
         await _context.SaveChangesAsync();
 

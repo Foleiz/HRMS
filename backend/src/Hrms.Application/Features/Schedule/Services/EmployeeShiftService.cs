@@ -248,7 +248,7 @@ public class EmployeeShiftService : IEmployeeShiftService
 
         var workDays = request.WorkDays != null && request.WorkDays.Count > 0
             ? request.WorkDays.Distinct().ToArray()
-            : new[] { 1, 2, 3, 4, 5 };
+            : (shift.WorkDays != null && shift.WorkDays.Length > 0 ? shift.WorkDays : new[] { 1, 2, 3, 4, 5 });
 
         var es = new EmployeeShift
         {
@@ -293,7 +293,7 @@ public class EmployeeShiftService : IEmployeeShiftService
 
         var batchWorkDays = request.WorkDays != null && request.WorkDays.Count > 0
             ? request.WorkDays.Distinct().ToArray()
-            : new[] { 1, 2, 3, 4, 5 };
+            : (shift.WorkDays != null && shift.WorkDays.Length > 0 ? shift.WorkDays : new[] { 1, 2, 3, 4, 5 });
 
         var employeeIdsToAssign = new HashSet<long>(request.EmployeeIds ?? new List<long>());
 

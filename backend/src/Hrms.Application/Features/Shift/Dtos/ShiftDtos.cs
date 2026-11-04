@@ -15,6 +15,7 @@ public class ShiftDto
     public int EarlyLeaveGraceMinutes { get; set; }
     public double WorkHours { get; set; }
     public double NetWorkHours { get; set; }
+    public int[] WorkDays { get; set; } = new[] { 1, 2, 3, 4, 5 };
 }
 
 public class CreateShiftRequest
@@ -29,6 +30,7 @@ public class CreateShiftRequest
     public string? Color { get; set; }
     public int LateGraceMinutes { get; set; } = 0;
     public int EarlyLeaveGraceMinutes { get; set; } = 0;
+    public int[]? WorkDays { get; set; }
 }
 
 public class UpdateShiftRequest
@@ -42,4 +44,5 @@ public class UpdateShiftRequest
     public string? Color { get; set; }
     public int LateGraceMinutes { get; set; } = 0;
     public int EarlyLeaveGraceMinutes { get; set; } = 0;
+    public int[]? WorkDays { get; set; }
 }

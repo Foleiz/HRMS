@@ -754,6 +754,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.Property(e => e.LateGraceMinutes).HasColumnName("late_grace_minutes").IsRequired();
             entity.Property(e => e.EarlyLeaveGraceMinutes).HasColumnName("early_leave_grace_minutes").IsRequired();
+            entity.Property(e => e.WorkDays).HasColumnName("work_days");
 
             entity.HasIndex(e => e.ShiftCode).IsUnique();
         });

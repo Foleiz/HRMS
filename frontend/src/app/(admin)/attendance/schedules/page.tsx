@@ -325,6 +325,7 @@ function SchedulesContent() {
     lateGraceMinutes: 10,
     earlyLeaveGraceMinutes: 5,
     color: '',
+    workDays: [1, 2, 3, 4, 5],
   });
 
   // Employee details modal for shift
@@ -866,6 +867,7 @@ function SchedulesContent() {
       lateGraceMinutes: 10,
       earlyLeaveGraceMinutes: 5,
       color: '',
+      workDays: [1, 2, 3, 4, 5],
     });
     setShiftModalOpen(true);
   };
@@ -885,6 +887,7 @@ function SchedulesContent() {
       lateGraceMinutes: shift.lateGraceMinutes,
       earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
       color: shift.color ?? '',
+      workDays: shift.workDays && shift.workDays.length > 0 ? [...shift.workDays] : [1, 2, 3, 4, 5],
     });
     setShiftModalOpen(true);
   };
@@ -903,6 +906,7 @@ function SchedulesContent() {
       lateGraceMinutes: shift.lateGraceMinutes,
       earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
       color: '',
+      workDays: shift.workDays && shift.workDays.length > 0 ? [...shift.workDays] : [1, 2, 3, 4, 5],
     });
     setShiftModalOpen(true);
   };
@@ -914,6 +918,11 @@ function SchedulesContent() {
     const nameTrimmed = shiftForm.shiftName.trim();
     if (!nameTrimmed) {
       setShiftModalError('กรุณากรอกชื่อกะการทำงาน');
+      return;
+    }
+
+    if (!shiftForm.workDays || shiftForm.workDays.length === 0) {
+      setShiftModalError('กรุณาเลือกวันทำงานประจำสัปดาห์ของกะอย่างน้อย 1 วัน');
       return;
     }
 
@@ -950,6 +959,7 @@ function SchedulesContent() {
           lateGraceMinutes: shiftForm.lateGraceMinutes,
           earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
           color: shiftForm.color || null,
+          workDays: shiftForm.workDays,
         });
         toast.success('สร้างกะการทำงานใหม่เรียบร้อยแล้ว');
       } else if (shiftForm.id) {
@@ -963,6 +973,7 @@ function SchedulesContent() {
           lateGraceMinutes: shiftForm.lateGraceMinutes,
           earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
           color: shiftForm.color || null,
+          workDays: shiftForm.workDays,
         });
         toast.success('แก้ไขข้อมูลกะการทำงานเรียบร้อยแล้ว');
       }
@@ -1728,6 +1739,12 @@ function SchedulesContent() {
                           {shift.netWorkHours ?? 8} ชม. (พัก {shift.breakMinutes} นาที)
                         </span>
                       </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-500 dark:text-slate-400">วันทำงานประจำกะ:</span>
+                        <span className="font-bold text-[#0B2046] dark:text-blue-300">
+                          {formatWorkDays(shift.workDays)}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Separate Grace Times */}
@@ -2188,7 +2205,11 @@ function SchedulesContent() {
                                   key={s.id}
                                   type="button"
                                   onClick={() => {
-                                    setAssignForm({ ...assignForm, shiftId: s.id });
+                                    setAssignForm({
+                                      ...assignForm,
+                                      shiftId: s.id,
+                                      workDays: s.workDays && s.workDays.length > 0 ? [...s.workDays] : assignForm.workDays,
+                                    });
                                     setSingleAssignShiftDropdownOpen(false);
                                   }}
                                   className={`w-full px-3 py-2.5 text-left flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
@@ -2252,9 +2273,14 @@ function SchedulesContent() {
 
               {/* Day of Week Selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    วันทำงานประจำสัปดาห์ (ดึงตามกะการทำงานอัตโนมัติ) <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    ทำงาน {(assignForm.workDays || [1, 2, 3, 4, 5]).length} วัน ({formatWorkDays(assignForm.workDays)})
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-7 gap-1.5">
                   {WEEK_DAYS.map((day) => {
@@ -2547,6 +2573,9 @@ function SchedulesContent() {
                                   onClick={() => {
                                     setBatchShiftId(s.id);
                                     setBatchShiftDropdownOpen(false);
+                                    if (s.workDays && s.workDays.length > 0) {
+                                      setBatchWorkDays([...s.workDays]);
+                                    }
                                   }}
                                   className={`w-full px-3 py-2.5 text-left flex items-center justify-between gap-2.5 transition-colors cursor-pointer ${
                                     isSelected
@@ -2609,9 +2638,14 @@ function SchedulesContent() {
 
               {/* Day of Week Selector */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    วันทำงานประจำสัปดาห์ (ดึงตามกะการทำงานอัตโนมัติ) <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    ทำงาน {batchWorkDays.length} วัน ({formatWorkDays(batchWorkDays)})
+                  </span>
+                </div>
 
                 <div className="grid grid-cols-7 gap-1.5">
                   {WEEK_DAYS.map((day) => {
@@ -2875,6 +2909,47 @@ function SchedulesContent() {
                     onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
                     className={inputClass}
                   />
+                </div>
+              </div>
+
+              {/* วันทำงานประจำสัปดาห์ */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    วันทำงานประจำสัปดาห์ <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    ทำงาน {(shiftForm.workDays || []).length} วัน ({formatWorkDays(shiftForm.workDays)})
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-7 gap-1.5">
+                  {WEEK_DAYS.map((day) => {
+                    const isSelected = (shiftForm.workDays || []).includes(day.id);
+                    return (
+                      <button
+                        key={day.id}
+                        type="button"
+                        onClick={() => {
+                          const current = shiftForm.workDays || [];
+                          const next = isSelected
+                            ? current.filter((d) => d !== day.id)
+                            : [...current, day.id];
+                          if (next.length > 0) {
+                            setShiftForm({ ...shiftForm, workDays: next });
+                          }
+                        }}
+                        className={`py-2 px-1 rounded-lg text-xs font-semibold border transition text-center flex flex-col items-center gap-0.5 cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                            : 'bg-slate-50 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700'
+                        }`}
+                      >
+                        <span className="text-[11px]">{day.short}</span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

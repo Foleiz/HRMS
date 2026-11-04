@@ -13,6 +13,8 @@ export interface Shift {
   earlyLeaveGraceMinutes: number;
   workHours: number;
   netWorkHours: number;
+  /** วันทำงานประจำสัปดาห์ (1=จันทร์ .. 7/0=อาทิตย์) เช่น [1, 2, 3, 4, 5] */
+  workDays?: number[];
 }
 
 export interface CreateShiftRequest {
@@ -26,6 +28,7 @@ export interface CreateShiftRequest {
   color?: string | null;
   lateGraceMinutes: number;
   earlyLeaveGraceMinutes: number;
+  workDays?: number[];
 }
 
 export interface UpdateShiftRequest {
@@ -38,4 +41,5 @@ export interface UpdateShiftRequest {
   color?: string | null;
   lateGraceMinutes: number;
   earlyLeaveGraceMinutes: number;
+  workDays?: number[];
 }
