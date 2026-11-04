@@ -8,7 +8,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   CalendarDays,
-  Clock,
   Plus,
   Search,
   Edit2,
@@ -19,7 +18,7 @@ import {
   X,
   Sun,
   Moon,
-  Check,
+  Info,
   Sparkles,
   List,
 } from 'lucide-react';
@@ -39,16 +38,6 @@ import {
 } from '@/types/workCalendar';
 
 type TabType = 'work-week' | 'holidays';
-
-const dayColorMap: Record<number, { bg: string; text: string; border: string; badge: string }> = {
-  0: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', badge: 'bg-rose-100 text-rose-800' }, // อาทิตย์
-  1: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-800' }, // จันทร์
-  2: { bg: 'bg-pink-50', text: 'text-pink-700', border: 'border-pink-200', badge: 'bg-pink-100 text-pink-800' }, // อังคาร
-  3: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-800' }, // พุธ
-  4: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-800' }, // พฤหัสบดี
-  5: { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', badge: 'bg-sky-100 text-sky-800' }, // ศุกร์
-  6: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', badge: 'bg-purple-100 text-purple-800' }, // เสาร์
-};
 
 const thaiMonths = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -473,18 +462,6 @@ export default function WorkCalendarPage() {
 
             {/* Time Setting Bar */}
             <div className="p-4 bg-slate-50/90 border border-slate-200/90 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-700/80 flex items-center justify-center text-[#0B2046] dark:text-slate-100 shadow-2xs shrink-0 transition-colors">
-                  <Clock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">กำหนดเวลาทำงานปกติของบริษัท</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 dark:text-slate-400">
-                    ระบุเวลาเข้าและเลิกงานมาตรฐาน สำหรับวันทำงานปกติทั้งหมด
-                  </p>
-                </div>
-              </div>
-
               <div className="flex flex-wrap sm:flex-nowrap items-end gap-3 shrink-0">
                 <div className="w-44">
                   <ThaiTimePicker
@@ -506,6 +483,10 @@ export default function WorkCalendarPage() {
             </div>
 
             {/* 7-Day Grid Cards */}
+            <p className="flex items-start gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <Info className="w-4 h-4 shrink-0 text-slate-400" />
+              <span>คลิกที่การ์ดประจำวันเพื่อสลับระหว่างวันทำงานปกติกับวันหยุดประจำสัปดาห์ · ใช้กับพนักงานที่ไม่ได้ผูกกะ</span>
+            </p>
             <RefreshIndicator active={calendarPhase.refreshing} />
             {calendarPhase.initialLoading ? (
               <div className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -515,53 +496,29 @@ export default function WorkCalendarPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
                 {workWeek.map((day) => {
-                  const colors = dayColorMap[day.dayOfWeek] || dayColorMap[0];
                   return (
-                    <div
+                    <button
                       key={day.id}
+                      type="button"
                       onClick={() => handleToggleDay(day.dayOfWeek)}
-                      className={`relative p-4 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between min-h-[140px] ${
+                      aria-pressed={day.isWorkingDay}
+                      className={`h-24 rounded-2xl border transition-all cursor-pointer select-none flex flex-col items-center justify-center gap-2 active:scale-[0.97] ${
                         day.isWorkingDay
-                          ? 'border-primary bg-white dark:bg-slate-700 shadow-md shadow-primary/5 hover:border-primary-hover'
-                          : 'border-slate-200 bg-slate-50/60 opacity-80 hover:opacity-100 hover:border-slate-300'
+                          ? 'bg-primary border-primary text-white shadow-md shadow-primary/20 hover:bg-primary-hover'
+                          : 'bg-slate-50 border-dashed border-slate-300 text-slate-400 hover:border-slate-400 hover:text-slate-500 dark:bg-slate-800/60 dark:border-slate-600 dark:text-slate-500'
                       }`}
                     >
-                      {/* Top: Day Name & Badge */}
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${colors.badge}`}>
-                            {day.dayNameThai.replace('วัน', '')}
-                          </span>
-                          <span
-                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-                              day.isWorkingDay ? 'bg-primary text-white' : 'bg-slate-200 text-slate-400'
-                            }`}
-                          >
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </span>
-                        </div>
-                        <div className="text-sm font-bold text-slate-800 dark:text-slate-200 pt-1 dark:text-slate-200">{day.dayNameThai}</div>
-                        <div className="text-[11px] text-slate-400 font-medium dark:text-slate-500 dark:text-slate-400">{day.dayNameEnglish}</div>
-                      </div>
-
-                      {/* Bottom Status Pill */}
-                      <div className="pt-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap w-full justify-center ${
-                            day.isWorkingDay
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-500 dark:text-slate-400 border border-slate-200'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              day.isWorkingDay ? 'bg-emerald-500' : 'bg-slate-400'
-                            }`}
-                          />
-                          {day.isWorkingDay ? 'วันทำงานปกติ' : 'วันหยุดประจำสัปดาห์'}
-                        </span>
-                      </div>
-                    </div>
+                      <span className="text-sm font-bold">{day.dayNameThai.replace(/^วัน/, '')}</span>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          day.isWorkingDay
+                            ? 'bg-white/15 text-white'
+                            : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                        }`}
+                      >
+                        {day.isWorkingDay ? 'ทำงาน' : 'หยุด'}
+                      </span>
+                    </button>
                   );
                 })}
               </div>
@@ -570,9 +527,7 @@ export default function WorkCalendarPage() {
             {/* Save Button */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700/60">
               <span className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                คลิกที่การ์ดประจำวันเพื่อสลับระหว่างวันทำงานปกติกับวันหยุดประจำสัปดาห์
-                <br />
-                ใช้กับพนักงานที่ไม่ได้ผูกกะ — บันทึกแล้วระบบคำนวณสาย / ออกก่อน / ขาดงานใหม่ให้อัตโนมัติ (ยกเว้นเดือนที่งวดเงินเดือนอนุมัติหรือจ่ายแล้ว)
+                บันทึกแล้วระบบคำนวณสาย / ออกก่อน / ขาดงานใหม่ให้อัตโนมัติ (ยกเว้นเดือนที่งวดเงินเดือนอนุมัติหรือจ่ายแล้ว)
               </span>
 
               {canEditCalendar && (
