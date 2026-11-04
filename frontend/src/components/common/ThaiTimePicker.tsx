@@ -17,19 +17,20 @@ const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 const QUICK_MINUTES = ['00', '15', '30', '45'];
 
-const ITEM_HEIGHT = 38; // Exact height of each item in pixels
-const VISIBLE_ROWS = 3; // 3 visible rows: 1 above, 1 selected, 1 below
-const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS; // 114px
-const PADDING = ITEM_HEIGHT * 1; // 38px (1 item of padding top and bottom)
+const ITEM_HEIGHT = 36; // ความสูงต่อแถว (px)
+const VISIBLE_ROWS = 5; // เห็น 5 แถว: 2 บน · 1 ที่เลือก · 2 ล่าง
+const CONTAINER_HEIGHT = ITEM_HEIGHT * VISIBLE_ROWS; // 180px
+const PADDING = ITEM_HEIGHT * 2; // เว้นบน-ล่าง 2 แถว ให้แถวแรก/สุดท้ายมาอยู่กลางได้
 
 interface WheelColumnProps {
   items: string[];
   selected: string;
   onSelect: (val: string) => void;
   isOpen: boolean;
+  ariaLabel?: string;
 }
 
-function WheelColumn({ items, selected, onSelect, isOpen }: WheelColumnProps) {
+function WheelColumn({ items, selected, onSelect, isOpen, ariaLabel }: WheelColumnProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, items.indexOf(selected)));
 
@@ -198,9 +199,25 @@ function WheelColumn({ items, selected, onSelect, isOpen }: WheelColumnProps) {
     }
   };
 
+  // คีย์บอร์ด: ↑/↓ เลื่อนทีละ 1, PageUp/PageDown ทีละ 5, Home/End ไปต้น/ท้าย
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const step: Record<string, number> = { ArrowUp: -1, ArrowDown: 1, PageUp: -5, PageDown: 5 };
+    let next: number | null = null;
+    if (e.key in step) next = activeIndexRef.current + step[e.key];
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    handleItemClick(Math.max(0, Math.min(items.length - 1, next)));
+  };
+
   return (
     <div
       ref={scrollRef}
+      tabIndex={0}
+      role="listbox"
+      aria-label={ariaLabel}
+      onKeyDown={handleKeyDown}
       onScroll={handleScroll}
       onMouseDown={handleMouseDown}
       style={{
@@ -208,23 +225,26 @@ function WheelColumn({ items, selected, onSelect, isOpen }: WheelColumnProps) {
         paddingTop: `${PADDING}px`,
         paddingBottom: `${PADDING}px`,
       }}
-      className="overflow-y-auto scrollbar-none text-center cursor-grab active:cursor-grabbing select-none"
+      className="overflow-y-auto scrollbar-none text-center cursor-grab active:cursor-grabbing select-none rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
     >
       {items.map((item, i) => {
         const isSelected = i === activeIndex;
         const distance = Math.abs(i - activeIndex);
+        // ยิ่งไกลจากแถวที่เลือก ยิ่งจางและเล็กลง (ให้ความรู้สึกเป็นวงล้อ)
+        const opacity = isSelected ? 1 : distance === 1 ? 0.55 : distance === 2 ? 0.28 : 0.12;
+        const scale = isSelected ? 1 : distance === 1 ? 0.9 : 0.8;
 
         return (
           <div
             key={item}
+            role="option"
+            aria-selected={isSelected}
             onClick={() => handleItemClick(i)}
-            style={{ height: `${ITEM_HEIGHT}px` }}
-            className={`flex items-center justify-center font-mono transition-all duration-200 ease-out select-none ${
+            style={{ height: `${ITEM_HEIGHT}px`, opacity, transform: `scale(${scale})` }}
+            className={`flex items-center justify-center tabular-nums transition-all duration-200 ease-out select-none ${
               isSelected
-                ? 'text-2xl font-black text-slate-900 dark:text-slate-100 scale-110 tracking-wide'
-                : distance === 1
-                ? 'text-base font-semibold text-slate-400 dark:text-slate-500 dark:text-slate-400 opacity-60 scale-95'
-                : 'text-xs font-medium text-slate-300 opacity-20 scale-85'
+                ? 'text-xl font-bold text-primary dark:text-blue-300'
+                : 'text-base font-medium text-slate-500 dark:text-slate-400 hover:opacity-80'
             }`}
           >
             {item}
@@ -367,11 +387,16 @@ export default function ThaiTimePicker({
         setIsOpen(false);
       }
     }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setIsOpen(false);
+    }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
 
@@ -389,13 +414,15 @@ export default function ThaiTimePicker({
       {/* Trigger Box with Direct Keyboard Typing + Dropdown Toggle */}
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center justify-between px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 dark:border-slate-700 rounded-xl text-xs transition-all cursor-pointer ${
-          isOpen ? 'ring-2 ring-primary/20 border-primary bg-white dark:bg-slate-800 shadow-sm' : 'hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+        className={`group w-full h-10 flex items-center justify-between px-3 bg-white dark:bg-slate-800 border rounded-xl text-sm transition-all duration-150 cursor-pointer ${
+          isOpen
+            ? 'border-primary ring-4 ring-primary/10 shadow-sm'
+            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
         } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       >
         {/* Left: Clock Icon + Typing Inputs */}
-        <div className="flex items-center gap-2 font-mono">
-          <Clock className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400 shrink-0" />
+        <div className="flex items-center gap-1">
+          <Clock className={`w-4 h-4 shrink-0 mr-1 transition-colors ${isOpen ? 'text-primary dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
 
           {/* Hour Direct Typing Input */}
           <input
@@ -408,10 +435,10 @@ export default function ThaiTimePicker({
             onFocus={(e) => { typingRef.current = 'hour'; e.target.select(); }}
             onClick={(e) => e.stopPropagation()}
             title="พิมพ์ชั่วโมง (00-23)"
-            className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:focus:border-blue-500 transition-all cursor-text"
+            className="w-7 text-center font-semibold tabular-nums text-slate-900 dark:text-slate-100 bg-transparent rounded-md py-0.5 text-sm focus:outline-none focus:bg-primary/10 dark:focus:bg-blue-500/20 transition-colors cursor-text"
           />
 
-          <span className="font-bold text-slate-400 dark:text-slate-500 dark:text-slate-400 select-none">:</span>
+          <span className="font-semibold text-slate-400 dark:text-slate-500 select-none">:</span>
 
           {/* Minute Direct Typing Input */}
           <input
@@ -425,10 +452,10 @@ export default function ThaiTimePicker({
             onFocus={(e) => { typingRef.current = 'minute'; e.target.select(); }}
             onClick={(e) => e.stopPropagation()}
             title="พิมพ์นาที (00-59)"
-            className="w-8 text-center font-black font-mono text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200/90 rounded-lg py-0.5 text-xs shadow-inner focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary dark:focus:border-blue-500 transition-all cursor-text"
+            className="w-7 text-center font-semibold tabular-nums text-slate-900 dark:text-slate-100 bg-transparent rounded-md py-0.5 text-sm focus:outline-none focus:bg-primary/10 dark:focus:bg-blue-500/20 transition-colors cursor-text"
           />
 
-          <span className="font-sans font-semibold text-slate-500 dark:text-slate-400 text-[11px] select-none">น.</span>
+          <span className="font-medium text-slate-500 dark:text-slate-400 text-xs select-none ml-1">น.</span>
         </div>
 
         {/* Right: Chevron Arrow */}
@@ -444,54 +471,58 @@ export default function ThaiTimePicker({
         <div
           className={`absolute ${
             dropdownAlign === 'right' ? 'right-0' : 'left-0'
-          } top-full mt-1.5 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 p-3.5 animate-in fade-in zoom-in-95 duration-150 select-none dark:text-slate-100`}
+          } top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl ring-1 ring-slate-200/80 dark:ring-slate-700 z-50 p-3 animate-in fade-in slide-in-from-top-1 zoom-in-95 duration-150 select-none dark:text-slate-100`}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 dark:border-slate-700/60 text-xs">
-            <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-primary" />
-              <span>เลือกเวลา (24 ชม.)</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="text-xs font-bold text-primary hover:text-primary-hover px-2.5 py-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          {/* เวลาที่เลือก (เด้งเบาๆ ทุกครั้งที่เปลี่ยน) */}
+          <div className="flex items-baseline justify-center gap-1.5 pb-2">
+            <span
+              key={`${selectedHour}:${selectedMinute}`}
+              className="text-2xl font-bold tabular-nums tracking-wide text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150"
             >
-              เสร็จสิ้น
-            </button>
+              {selectedHour}:{selectedMinute}
+            </span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">น.</span>
           </div>
 
           {/* Column Titles: ชม. และ น. */}
-          <div className="grid grid-cols-2 gap-2 text-center text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
-            <div>ชม.</div>
-            <div>น.</div>
+          <div className="grid grid-cols-2 gap-2 text-center text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-1">
+            <div>ชั่วโมง</div>
+            <div>นาที</div>
           </div>
 
           {/* Wheel Frame Area */}
-          <div className="relative bg-slate-50/80 rounded-xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-inner">
-            {/* Center Selection Highlight Box */}
+          <div className="relative rounded-xl overflow-hidden">
+            {/* แถบแถวที่เลือก */}
             <div
               style={{ top: `${PADDING}px`, height: `${ITEM_HEIGHT}px` }}
-              className="absolute left-2 right-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200/90 pointer-events-none z-0 transition-all duration-200"
+              className="absolute left-0 right-0 bg-primary/[0.07] dark:bg-blue-500/15 rounded-lg pointer-events-none z-0"
             />
+            <div
+              style={{ top: `${PADDING + ITEM_HEIGHT / 2 - 10}px` }}
+              className="absolute left-1/2 -translate-x-1/2 text-lg font-bold text-primary/60 dark:text-blue-300/60 pointer-events-none z-0"
+            >
+              :
+            </div>
 
-            {/* Top & Bottom Smooth Gradient Fade Masks */}
-            <div className="pointer-events-none absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-slate-50/90 via-slate-50/50 to-transparent z-20" />
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-slate-50/90 via-slate-50/50 to-transparent z-20" />
+            {/* ไล่จางบน-ล่าง */}
+            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-white dark:from-slate-800 to-transparent z-20" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-white dark:from-slate-800 to-transparent z-20" />
 
             {/* The 2 Scrollable & Draggable Wheel Columns */}
-            <div className="grid grid-cols-2 gap-2 relative z-10">
+            <div className="grid grid-cols-2 gap-4 relative z-10">
               <WheelColumn
                 items={HOURS}
                 selected={selectedHour}
                 onSelect={handleHourSelect}
                 isOpen={isOpen}
+                ariaLabel="เลือกชั่วโมง"
               />
               <WheelColumn
                 items={MINUTES}
                 selected={selectedMinute}
                 onSelect={handleMinuteSelect}
                 isOpen={isOpen}
+                ariaLabel="เลือกนาที"
               />
             </div>
           </div>
@@ -523,6 +554,15 @@ export default function ThaiTimePicker({
               </div>
             </div>
           )}
+
+          {/* ปุ่มยืนยัน */}
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="mt-3 w-full h-9 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-hover active:scale-[0.98] transition-all duration-150 cursor-pointer"
+          >
+            ตกลง
+          </button>
         </div>
       )}
     </div>
