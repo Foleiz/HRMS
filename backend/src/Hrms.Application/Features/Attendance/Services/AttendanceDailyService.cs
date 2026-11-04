@@ -339,23 +339,52 @@ public class AttendanceDailyService : IAttendanceDailyService
             }
         }
 
-        if (request.ActualIn.HasValue)
-            record.ActualIn = request.ActualIn.Value;
+        if (request.ClearActualIn) record.ActualIn = null;
+        else if (request.ActualIn.HasValue) record.ActualIn = request.ActualIn.Value;
+        if (request.ClearActualOut) record.ActualOut = null;
+        else if (request.ActualOut.HasValue) record.ActualOut = request.ActualOut.Value;
 
-        if (request.ActualOut.HasValue)
-            record.ActualOut = request.ActualOut.Value;
-
-        if (request.IsAbsent.HasValue)
-            record.IsAbsent = request.IsAbsent.Value;
-
-        if (!string.IsNullOrWhiteSpace(request.Status))
+        var manualStatus = request.Status?.Trim().ToUpperInvariant();
+        if (string.IsNullOrEmpty(manualStatus))
         {
-            record.Status = request.Status;
+            // ให้ระบบคำนวณใหม่จากเวลาและกะ (เดิมหน้าเว็บส่งสถานะเก่ากลับมาทุกครั้ง ทำให้สาย/ออกก่อนไม่ถูกคำนวณใหม่)
+            if (record.ActualIn == null && record.ActualOut == null)
+            {
+                record.Status = "ABSENT";
+                record.IsAbsent = true;
+                record.LateMinutes = 0;
+                record.EarlyLeaveMinutes = 0;
+                record.WorkedMinutes = 0;
+            }
+            else
+            {
+                record.IsAbsent = false;
+                record.Status = "PRESENT";
+                RecalculateAttendance(record);
+            }
         }
         else
         {
-            RecalculateAttendance(record);
+            var allowed = new[] { "LEAVE", "ABSENT", "HOLIDAY", "OFF", "HOLIDAY_WORK" };
+            if (!allowed.Contains(manualStatus))
+                throw new InvalidOperationException($"สถานะ '{request.Status}' กำหนดเองไม่ได้ — ปล่อยว่างเพื่อให้ระบบคำนวณ");
+            record.Status = manualStatus;
+            record.IsAbsent = manualStatus == "ABSENT";
+            if (manualStatus == "HOLIDAY_WORK")
+            {
+                RecalculateAttendance(record); // คิดชั่วโมงทำงาน ไม่คิดสาย/ออกก่อน
+            }
+            else
+            {
+                record.LateMinutes = 0;
+                record.EarlyLeaveMinutes = 0;
+                if (manualStatus != "LEAVE") record.WorkedMinutes = 0;
+            }
         }
+
+        record.EditReason = string.IsNullOrWhiteSpace(request.Reason) ? record.EditReason : request.Reason.Trim();
+        record.EditedByUserId = request.EditedByUserId ?? record.EditedByUserId;
+        record.EditedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -824,7 +853,9 @@ public class AttendanceDailyService : IAttendanceDailyService
             EarlyLeaveMinutes = item.EarlyLeaveMinutes,
             IsAbsent = item.IsAbsent,
             Status = item.Status,
-            StatusText = statusText
+            StatusText = statusText,
+            EditReason = item.EditReason,
+            EditedAt = item.EditedAt
         };
     }
 

@@ -85,6 +85,17 @@ const THAI_MONTHS = [
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ];
 
+/** สถานะที่ฝ่ายบุคคลกำหนดเองได้ (นอกนั้นระบบคำนวณจากเวลาและกะ) */
+const MANUAL_STATUS_OPTIONS = [
+  { value: 'LEAVE', label: 'ลา' },
+  { value: 'ABSENT', label: 'ขาดงาน' },
+  { value: 'HOLIDAY_WORK', label: 'ทำงานวันหยุด' },
+  { value: 'HOLIDAY', label: 'วันหยุดประเพณี / บริษัท' },
+  { value: 'OFF', label: 'วันหยุดประจำสัปดาห์' },
+];
+
+const fmtMinutes = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} ชม. ${m % 60} น.` : `${m} นาที`);
+
 function DailyAttendanceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -196,14 +207,15 @@ function DailyAttendanceContent() {
     shiftId?: number;
     actualInTime: string;
     actualOutTime: string;
-    status: string;
-    isAbsent: boolean;
+    /** '' = ให้ระบบคำนวณ; อื่นๆ = กำหนดสถานะเอง */
+    overrideStatus: string;
+    reason: string;
   }>({
     shiftId: undefined,
     actualInTime: '',
     actualOutTime: '',
-    status: 'PRESENT',
-    isAbsent: false,
+    overrideStatus: '',
+    reason: '',
   });
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -452,8 +464,9 @@ function DailyAttendanceContent() {
       shiftId: rec.shiftId,
       actualInTime: parseTimeToHHmm(rec.actualIn),
       actualOutTime: parseTimeToHHmm(rec.actualOut),
-      status: rec.status,
-      isAbsent: rec.isAbsent,
+      // สถานะที่ระบบคำนวณเองไม่ได้ → เปิดโหมดกำหนดเองไว้ให้
+      overrideStatus: MANUAL_STATUS_OPTIONS.some((o) => o.value === rec.status) && rec.status !== 'ABSENT' ? rec.status : '',
+      reason: '',
     });
     setEditModalOpen(true);
   };
@@ -461,37 +474,91 @@ function DailyAttendanceContent() {
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingRecord) return;
+    if (editForm.reason.trim().length < 3) {
+      toast.warning('กรุณาระบุเหตุผลการแก้ไข');
+      return;
+    }
 
     try {
       setSavingEdit(true);
 
+      // ใช้วันที่ของรายการที่แก้ (ไม่ใช่วันที่ที่เลือกบนหน้า)
       const combineDateAndTime = (timeStr: string) => {
         if (!timeStr) return undefined;
         const [h, m] = timeStr.split(':');
-        const dt = new Date(selectedDate);
+        const dt = new Date(editingRecord.workDate || selectedDate);
         dt.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
         return dt.toISOString();
       };
 
       const req: UpdateAttendanceRequest = {
         shiftId: editForm.shiftId,
-        actualIn: editForm.actualInTime ? combineDateAndTime(editForm.actualInTime) : undefined,
-        actualOut: editForm.actualOutTime ? combineDateAndTime(editForm.actualOutTime) : undefined,
-        status: editForm.status,
-        isAbsent: editForm.isAbsent,
+        actualIn: combineDateAndTime(editForm.actualInTime),
+        actualOut: combineDateAndTime(editForm.actualOutTime),
+        clearActualIn: !editForm.actualInTime && !!editingRecord.actualIn,
+        clearActualOut: !editForm.actualOutTime && !!editingRecord.actualOut,
+        status: editForm.overrideStatus || undefined,
+        reason: editForm.reason.trim(),
       };
 
       await attendanceService.updateAttendance(editingRecord.id, req);
       toast.success('แก้ไขข้อมูลบันทึกเวลาเรียบร้อยแล้ว');
       setEditModalOpen(false);
       await fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update attendance:', err);
-      toast.error('ไม่สามารถบันทึกการแก้ไขได้ กรุณาตรวจสอบข้อมูล');
+      toast.error(err?.response?.data?.message || 'ไม่สามารถบันทึกการแก้ไขได้ กรุณาตรวจสอบข้อมูล');
     } finally {
       setSavingEdit(false);
     }
   };
+
+  // ผลคำนวณล่วงหน้าในหน้าต่างแก้ไข (ตรงกับ RecalculateAttendance ฝั่ง backend)
+  const editPreview = (() => {
+    if (!editingRecord) return null;
+    const toMin = (hhmm?: string) => {
+      if (!hhmm) return null;
+      const [h, m] = hhmm.split(':').map(Number);
+      return h * 60 + m;
+    };
+    const isoToHHmm = (iso?: string) => {
+      if (!iso) return undefined;
+      const d = new Date(iso);
+      return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+    const shift = shifts.find((s) => s.id === editForm.shiftId);
+    const schedStartStr = shift ? shift.startTime?.substring(0, 5) : isoToHHmm(editingRecord.scheduledStart);
+    const schedEndStr = shift ? shift.endTime?.substring(0, 5) : isoToHHmm(editingRecord.scheduledEnd);
+    const sStart = toMin(schedStartStr);
+    let sEnd = toMin(schedEndStr);
+    if (sStart !== null && sEnd !== null && sEnd <= sStart) sEnd += 24 * 60; // กะข้ามวัน
+    const aIn = toMin(editForm.actualInTime);
+    let aOut = toMin(editForm.actualOutTime);
+    if (aIn !== null && aOut !== null && aOut < aIn) aOut += 24 * 60;
+    const lateGrace = shift?.lateGraceMinutes ?? 10;
+    const earlyGrace = shift?.earlyLeaveGraceMinutes ?? 5;
+    const breakMin = shift?.breakMinutes ?? 60;
+    const late = aIn !== null && sStart !== null && aIn > sStart + lateGrace ? aIn - sStart : 0;
+    const early = aOut !== null && sEnd !== null && aOut < sEnd - earlyGrace ? sEnd - aOut : 0;
+    const worked = aIn !== null && aOut !== null ? Math.max(0, aOut - aIn - breakMin) : 0;
+    let status: string;
+    if (editForm.overrideStatus) status = editForm.overrideStatus;
+    else if (aIn === null && aOut === null) status = 'ABSENT';
+    else if (late > 0 && early > 0) status = 'LATE_AND_EARLY';
+    else if (late > 0) status = 'LATE';
+    else if (early > 0) status = 'EARLY_LEAVE';
+    else status = 'PRESENT';
+    const timed = !editForm.overrideStatus || editForm.overrideStatus === 'HOLIDAY_WORK';
+    return {
+      schedule: schedStartStr && schedEndStr ? `${schedStartStr} – ${schedEndStr} น.` : 'ไม่มีเวลาตามกะ',
+      schedStart: schedStartStr,
+      schedEnd: schedEndStr,
+      status,
+      late: timed && editForm.overrideStatus !== 'HOLIDAY_WORK' ? late : 0,
+      early: timed && editForm.overrideStatus !== 'HOLIDAY_WORK' ? early : 0,
+      worked: timed || editForm.overrideStatus === 'LEAVE' ? worked : 0,
+    };
+  })();
 
   // Manual Punch Handlers
   const openQuickClockModal = (type: 'in' | 'out', empId: number = 0) => {
@@ -1763,7 +1830,7 @@ function DailyAttendanceContent() {
           isOpen={editModalOpen}
           onClose={() => setEditModalOpen(false)}
           title="แก้ไขข้อมูลบันทึกเวลา"
-          subtitle={`${editingRecord.employeeCode} - ${editingRecord.employeeName}`}
+          subtitle={`${editingRecord.employeeCode} · ${editingRecord.employeeName} · ${formatThaiDate(editingRecord.workDate || selectedDate)}`}
           onSubmit={handleSaveEdit}
           footer={
             <ModalFooter
@@ -1776,76 +1843,141 @@ function DailyAttendanceContent() {
             />
           }
         >
+              {/* กะการทำงาน + เวลาตามกะ */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                  กะการทำงาน (Shift)
-                </label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">กะการทำงาน</label>
                 <CustomSelect
                   value={editForm.shiftId || ''}
                   onChange={(e) => {
                     const val = e.target.value ? Number(e.target.value) : undefined;
                     setEditForm((prev) => ({ ...prev, shiftId: val }));
                   }}
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
-                  <option value="">ไม่ได้ระบุกะ</option>
+                  <option value="">ไม่มีกะ (ใช้เวลาทำงานปกติของบริษัท)</option>
                   {shifts.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.shiftName} ({s.startTime?.substring(0, 5)} - {s.endTime?.substring(0, 5)} น.)
+                      {s.shiftName} ({s.startTime?.substring(0, 5)} – {s.endTime?.substring(0, 5)} น.)
                     </option>
                   ))}
                 </CustomSelect>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">เวลาตามกะ: {editPreview?.schedule}</p>
               </div>
 
+              {/* เวลาเข้า-ออกจริง (ลบได้) */}
               <div className="grid grid-cols-2 gap-4">
-                <ThaiTimePicker
-                  label="เวลาเข้าจริง (Actual In)"
-                  value={editForm.actualInTime}
-                  onChange={(val) => setEditForm((prev) => ({ ...prev, actualInTime: val }))}
-                  
-                />
-                <ThaiTimePicker
-                  label="เวลาออกจริง (Actual Out)"
-                  value={editForm.actualOutTime}
-                  onChange={(val) => setEditForm((prev) => ({ ...prev, actualOutTime: val }))}
-                  
-                  align="right"
-                />
+                {([
+                  { key: 'actualInTime', label: 'เวลาเข้างาน', align: 'left' },
+                  { key: 'actualOutTime', label: 'เวลาออกงาน', align: 'right' },
+                ] as const).map((f) => (
+                  <div key={f.key}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{f.label}</span>
+                      {editForm[f.key] && (
+                        <button
+                          type="button"
+                          onClick={() => setEditForm((prev) => ({ ...prev, [f.key]: '' }))}
+                          className="text-[11px] font-medium text-slate-400 hover:text-rose-600 cursor-pointer"
+                        >
+                          ล้างเวลา
+                        </button>
+                      )}
+                    </div>
+                    {editForm[f.key] ? (
+                      <ThaiTimePicker
+                        value={editForm[f.key]}
+                        onChange={(val) => setEditForm((prev) => ({ ...prev, [f.key]: val }))}
+                        align={f.align}
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditForm((prev) => ({
+                            ...prev,
+                            [f.key]: f.key === 'actualInTime' ? editPreview?.schedStart || '08:30' : editPreview?.schedEnd || '17:30',
+                          }))
+                        }
+                        className="w-full h-10 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 text-xs font-medium text-slate-500 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                      >
+                        + ไม่มีเวลา — กดเพื่อเพิ่ม
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 dark:text-slate-300">
-                  สถานะการเข้างาน
-                </label>
-                <CustomSelect
-                  value={editForm.status}
-                  onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-800 dark:text-slate-200 font-medium dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-                >
-                  <option value="PRESENT">ตรงเวลา</option>
-                  <option value="HOLIDAY_WORK">ทำงานวันหยุด</option>
-                  <option value="LATE">มาสาย</option>
-                  <option value="EARLY_LEAVE">ออกก่อนเวลา</option>
-                  <option value="LATE_AND_EARLY">สายและออกก่อน</option>
-                  <option value="ABSENT">ขาดงาน</option>
-                  <option value="HOLIDAY">วันหยุดประเพณี</option>
-                  <option value="OFF">วันหยุดสัปดาห์</option>
-                  <option value="PENDING">รอดำเนินการ</option>
-                </CustomSelect>
-              </div>
+              {/* ผลคำนวณ (อัปเดตทันที) */}
+              {editPreview && (
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 px-3.5 py-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                      {editForm.overrideStatus ? 'สถานะ (กำหนดเอง)' : 'ผลคำนวณจากเวลาและกะ'}
+                    </span>
+                    {renderStatusBadge(editPreview.status, editPreview.status === 'ABSENT')}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">ทำงาน</div>
+                      <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{fmtMinutes(editPreview.worked)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">สาย</div>
+                      <div className={`text-sm font-semibold ${editPreview.late > 0 ? 'text-amber-600' : 'text-slate-800 dark:text-slate-200'}`}>{editPreview.late} นาที</div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">ออกก่อน</div>
+                      <div className={`text-sm font-semibold ${editPreview.early > 0 ? 'text-purple-600' : 'text-slate-800 dark:text-slate-200'}`}>{editPreview.early} นาที</div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-              <div className="pt-2">
+              {/* กำหนดสถานะเอง (กรณีพิเศษ) */}
+              <div className="space-y-2">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
-                    checked={editForm.isAbsent}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, isAbsent: e.target.checked }))}
-                    className="w-4 h-4 rounded text-rose-600 border-slate-300 focus:ring-rose-500 dark:border-slate-600"
+                    checked={!!editForm.overrideStatus}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, overrideStatus: e.target.checked ? 'LEAVE' : '' }))}
+                    className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary dark:border-slate-600"
                   />
-                  <span className="text-xs font-semibold text-rose-700">ระบุเป็น ขาดงาน (Absent)</span>
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">กำหนดสถานะเอง</span>
+                  <span className="text-[11px] text-slate-400">(ลา, ขาดงาน, วันหยุด)</span>
                 </label>
+                {editForm.overrideStatus && (
+                  <CustomSelect
+                    value={editForm.overrideStatus}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, overrideStatus: e.target.value }))}
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    {MANUAL_STATUS_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </CustomSelect>
+                )}
               </div>
 
+              {/* เหตุผลการแก้ไข */}
+              <div>
+                <label htmlFor="edit-reason" className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  เหตุผลการแก้ไข <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  id="edit-reason"
+                  rows={2}
+                  maxLength={500}
+                  value={editForm.reason}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, reason: e.target.value }))}
+                  placeholder="เช่น ลืมสแกนนิ้วตอนเข้างาน / เครื่องสแกนขัดข้อง"
+                  className={`${inputClass} resize-none`}
+                />
+                {editingRecord.editReason && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    แก้ไขล่าสุด{editingRecord.editedAt ? ` ${new Date(editingRecord.editedAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })} น.` : ''}: {editingRecord.editReason}
+                  </p>
+                )}
+              </div>
         </Modal>
       )}
 

@@ -900,6 +900,9 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.IsAbsent).HasColumnName("is_absent").HasDefaultValue(false);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30).HasDefaultValue("PRESENT");
             entity.Property(e => e.ImportBatchId).HasColumnName("import_batch_id");
+            entity.Property(e => e.EditReason).HasColumnName("edit_reason").HasMaxLength(500);
+            entity.Property(e => e.EditedByUserId).HasColumnName("edited_by_user_id");
+            entity.Property(e => e.EditedAt).HasColumnName("edited_at");
 
             entity.HasIndex(e => new { e.EmployeeId, e.WorkDate }).IsUnique();
 

@@ -23,6 +23,11 @@ public class AttendanceDaily
     public string Status { get; set; } = "PRESENT";
     public long? ImportBatchId { get; set; }
 
+    // ฝ่ายบุคคลแก้ไขด้วยมือ: เหตุผล / ผู้แก้ / เวลาที่แก้ (ล่าสุด)
+    public string? EditReason { get; set; }
+    public long? EditedByUserId { get; set; }
+    public DateTime? EditedAt { get; set; }
+
     // Navigation Properties
     public virtual Employee? Employee { get; set; }
     public virtual Shift? Shift { get; set; }
