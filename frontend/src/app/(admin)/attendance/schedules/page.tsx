@@ -219,6 +219,10 @@ function SchedulesContent() {
     const params = new URLSearchParams(window.location.search);
     params.set('tab', tab);
     router.replace(`/attendance/schedules?${params.toString()}`, { scroll: false });
+    if (tab === 'roster') {
+      loadShifts();
+      loadAssignments();
+    }
   };
 
   // -------------------------------------------------------------
@@ -1027,6 +1031,7 @@ function SchedulesContent() {
         toast.success('แก้ไขข้อมูลกะการทำงานเรียบร้อยแล้ว');
       }
       setShiftModalOpen(false);
+      loadAssignments();
       loadShifts();
     } catch (err: any) {
       const msg = err.response?.data?.message || 'เกิดข้อผิดพลาดในการบันทึกกะการทำงาน';
@@ -1055,6 +1060,7 @@ function SchedulesContent() {
       } else if (itemToDelete.type === 'shift') {
         await shiftService.deleteShift(itemToDelete.id);
         toast.success('ลบข้อมูลกะการทำงานเรียบร้อยแล้ว');
+        loadAssignments();
         loadShifts();
       }
       setDeleteConfirmOpen(false);
@@ -1494,8 +1500,8 @@ function SchedulesContent() {
 
           {/* VIEW 2: DETAILED ASSIGNMENT LIST VIEW */}
           {assignmentViewMode === 'list' && (
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden p-4 space-y-4 dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="pb-3 border-b border-slate-100 flex items-center justify-between dark:border-slate-700/60">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">รายการมอบหมายกะพนักงานทั้งหมด</h3>
                   <CountBadge count={filteredAssignments.length} />
@@ -1524,86 +1530,96 @@ function SchedulesContent() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                      {filteredAssignments.map((a) => (
-                        <tr key={a.id} className="hover:bg-slate-50/60 transition dark:hover:bg-slate-800/40">
-                          <td className="p-3.5">
-                            <div className="font-semibold text-slate-900 dark:text-slate-100">{a.employeeName}</div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">{a.employeeCode}</div>
-                          </td>
-                          <td className="p-3.5 text-slate-600 dark:text-slate-400">
-                            {a.departmentName || '-'}
-                          </td>
-                          <td className="p-3.5">
-                            <span
-                              className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
-                              style={leaveColorVars(colorOfShift(a.shiftId)) as React.CSSProperties}
-                            >
-                              <span>{a.shiftName}</span>
-                            </span>
-                          </td>
-                          <td className="p-3.5">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700">
-                              <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-                              <span>{formatWorkDays(a.workDays)}</span>
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-slate-600 dark:text-slate-400 font-mono text-xs dark:text-slate-400">
-                            {a.startTime?.substring(0, 5)} - {a.endTime?.substring(0, 5)} น.
-                            {a.isCrossDay && <span className="ml-1 text-purple-600 font-semibold">(ข้ามวัน)</span>}
-                          </td>
-                          <td className="p-3.5 text-slate-700 dark:text-slate-300">
-                            {new Date(a.effectiveFrom).toLocaleDateString('th-TH', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </td>
-                          <td className="p-3.5 text-slate-700 dark:text-slate-300">
-                            {a.effectiveTo ? (
-                              new Date(a.effectiveTo).toLocaleDateString('th-TH', {
+                      {filteredAssignments.map((a) => {
+                        const shift = shifts.find((s) => s.id === a.shiftId);
+                        const workDays = shift?.workDays && shift.workDays.length > 0 ? shift.workDays : a.workDays;
+                        const startTime = shift ? shift.startTime : a.startTime;
+                        const endTime = shift ? shift.endTime : a.endTime;
+                        const isCrossDay = shift ? shift.isCrossDay : a.isCrossDay;
+                        const shiftName = shift?.shiftName || a.shiftName;
+                        const shiftColor = shift?.color || colorOfShift(a.shiftId);
+
+                        return (
+                          <tr key={a.id} className="hover:bg-slate-50/60 transition dark:hover:bg-slate-800/40">
+                            <td className="p-3.5">
+                              <div className="font-semibold text-slate-900 dark:text-slate-100">{a.employeeName}</div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400">{a.employeeCode}</div>
+                            </td>
+                            <td className="p-3.5 text-slate-600 dark:text-slate-400">
+                              {a.departmentName || '-'}
+                            </td>
+                            <td className="p-3.5">
+                              <span
+                                className="leave-chip inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                                style={leaveColorVars(shiftColor) as React.CSSProperties}
+                              >
+                                <span>{shiftName}</span>
+                              </span>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100/80 text-slate-700 dark:text-slate-300 border border-slate-200 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700">
+                                <Calendar className="w-3 h-3 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
+                                <span>{formatWorkDays(workDays)}</span>
+                              </span>
+                            </td>
+                            <td className="p-3.5 text-slate-600 dark:text-slate-400 font-mono text-xs dark:text-slate-400">
+                              {startTime?.substring(0, 5)} - {endTime?.substring(0, 5)} น.
+                              {isCrossDay && <span className="ml-1 text-purple-600 font-semibold">(ข้ามวัน)</span>}
+                            </td>
+                            <td className="p-3.5 text-slate-700 dark:text-slate-300">
+                              {new Date(a.effectiveFrom).toLocaleDateString('th-TH', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric',
-                              })
-                            ) : (
-                              <span className="text-emerald-600 font-medium text-xs">ไม่มีกำหนดสิ้นสุด</span>
-                            )}
-                          </td>
-                          <td className="p-3.5">
-                            <ActiveStatus
-                              active={a.isActive}
-                              activeText="กำลังใช้งาน"
-                              inactiveText="ยกเลิก"
-                            />
-                          </td>
-                          <td className="p-3.5 text-right">
-                            {canEditSchedule ? (
-                              <RowActions>
-                                <RowActionButton
-                                  action="edit"
-                                  onClick={() => openSingleAssignEdit(a)}
-                                  title="แก้ไขช่วงเวลากะ"
-                                />
-                                <RowActionButton
-                                  action="delete"
-                                  onClick={() => {
-                                    setItemToDelete({
-                                      type: 'assignment',
-                                      id: a.id,
-                                      title: `ยกเลิกการมอบหมายกะ: ${a.employeeName}`,
-                                      subtitle: `กะ ${a.shiftName} (${a.shiftCode})`,
-                                    });
-                                    setDeleteConfirmOpen(true);
-                                  }}
-                                  title="ยกเลิกการมอบหมายกะ"
-                                />
-                              </RowActions>
-                            ) : (
-                              <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                              })}
+                            </td>
+                            <td className="p-3.5 text-slate-700 dark:text-slate-300">
+                              {a.effectiveTo ? (
+                                new Date(a.effectiveTo).toLocaleDateString('th-TH', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })
+                              ) : (
+                                <span className="text-emerald-600 font-medium text-xs">ไม่มีกำหนดสิ้นสุด</span>
+                              )}
+                            </td>
+                            <td className="p-3.5">
+                              <ActiveStatus
+                                active={a.isActive}
+                                activeText="กำลังใช้งาน"
+                                inactiveText="ยกเลิก"
+                              />
+                            </td>
+                            <td className="p-3.5 text-right">
+                              {canEditSchedule ? (
+                                <RowActions>
+                                  <RowActionButton
+                                    action="edit"
+                                    onClick={() => openSingleAssignEdit(a)}
+                                    title="แก้ไขช่วงเวลากะ"
+                                  />
+                                  <RowActionButton
+                                    action="delete"
+                                    onClick={() => {
+                                      setItemToDelete({
+                                        type: 'assignment',
+                                        id: a.id,
+                                        title: `ยกเลิกการมอบหมายกะ: ${a.employeeName}`,
+                                        subtitle: `กะ ${shiftName} (${shift?.shiftCode || a.shiftCode})`,
+                                      });
+                                      setDeleteConfirmOpen(true);
+                                    }}
+                                    title="ยกเลิกการมอบหมายกะ"
+                                  />
+                                </RowActions>
+                              ) : (
+                                <span className="text-slate-400 dark:text-slate-500 text-xs">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1872,8 +1888,8 @@ function SchedulesContent() {
             </div>
           ) : (
             /* TABLE VIEW */
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700/80">
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[280px] pb-8">
+            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden p-4 dark:bg-slate-800 dark:border-slate-700/80">
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 min-h-[280px]">
                 <table className="table-standard w-full min-w-[900px] text-xs text-left border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-primary text-white font-semibold whitespace-nowrap">
