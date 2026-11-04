@@ -2164,14 +2164,6 @@ function DailyAttendanceContent() {
                 pageSizeOptions={[10, 20, 50, 100]}
                 className="flex-1"
               />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedBatchForReview(null)}
-                className="ml-2"
-              >
-                ปิด
-              </Button>
             </div>
           </div>
         </ModalShell>
