@@ -5,15 +5,16 @@ import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
-  Circle,
-  Info,
+  ChevronRight,
   Loader2,
   Lock,
   Search,
+  Users,
 } from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { LeaveYearEndPreview, LeaveYearEndRow } from '@/types/leaveInsights';
 import { Button, inputClass } from '@/components/ui';
+import { leaveColorVars, resolveLeaveColor } from '@/lib/leaveColors';
 
 interface Props {
   isOpen: boolean;
@@ -21,6 +22,30 @@ interface Props {
   year: number;
   onClose: () => void;
   onClosed: (result: LeaveYearEndPreview) => void;
+  /** สีของประเภทการลา (ให้ตรงกับหน้ายอดวันลา) */
+  colorOfType?: (leaveTypeId: number) => string;
+}
+
+function LeaveTypeChip({ name, color }: { name: string; color: string }) {
+  return (
+    <span
+      className="leave-chip inline-flex items-center gap-2 rounded-full font-semibold px-2.5 py-0.5 text-xs"
+      style={leaveColorVars(color) as React.CSSProperties}
+    >
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+      {name}
+    </span>
+  );
+}
+
+interface EmployeeGroup {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  rows: LeaveYearEndRow[];
+  remaining: number;
+  carry: number;
+  overCap: number;
 }
 
 type FilterKey = 'carry' | 'overCap' | 'reset' | 'all';
@@ -44,11 +69,12 @@ const matchFilter = (r: LeaveYearEndRow, f: FilterKey) =>
  * คงเหลือยกไปปีหน้าตามเพดานในสิทธิ์การลา ส่วนที่เกินเพดานถูกตัด
  * ประเภทที่ไม่อนุญาตยกยอด (ลาป่วย ลาคลอด ฯลฯ) แค่เริ่มสิทธิ์ใหม่ในปีหน้า
  */
-export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onClosed }) => {
+export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onClosed, colorOfType }) => {
   const [preview, setPreview] = useState<{ year: number; data: LeaveYearEndPreview } | null>(null);
   const [loadError, setLoadError] = useState<{ year: number; message: string } | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey | null>(null);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -104,6 +130,22 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
     );
   }, [data, search, activeFilter]);
 
+  const groups = useMemo(() => {
+    const map = new Map<number, EmployeeGroup>();
+    for (const r of rows) {
+      let g = map.get(r.employeeId);
+      if (!g) {
+        g = { employeeId: r.employeeId, employeeCode: r.employeeCode, employeeName: r.employeeName, rows: [], remaining: 0, carry: 0, overCap: 0 };
+        map.set(r.employeeId, g);
+      }
+      g.rows.push(r);
+      g.remaining += r.remainingDays;
+      g.carry += r.carryDays;
+      if (isOverCap(r)) g.overCap += r.forfeitDays;
+    }
+    return [...map.values()];
+  }, [rows]);
+
   if (!isOpen) return null;
 
   const handleClose = () => {
@@ -128,20 +170,18 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
   };
 
   const thYear = year + 543;
-  const yearEnded = thaiCurrentYear() > year;
-  const noPending = (data?.pendingRequests ?? 0) === 0;
-  const checks = [
-    {
-      ok: yearEnded,
-      label: yearEnded ? `สิ้นปี ${thYear} แล้ว` : `ยังไม่สิ้นปี ${thYear} — ปิดยอดได้ตั้งแต่ 1 ม.ค. ${thYear + 1}`,
-    },
-    {
-      ok: noPending,
-      label: noPending
-        ? `ไม่มีใบลาของปี ${thYear} ค้างอนุมัติ`
-        : `ยังมีใบลาของปี ${thYear} รออนุมัติ ${data?.pendingRequests} ใบ — อนุมัติหรือปฏิเสธให้หมดก่อน`,
-    },
-  ];
+  const blockers: string[] = [];
+  if (thaiCurrentYear() <= year) blockers.push(`ปิดยอดได้ตั้งแต่ 1 ม.ค. ${thYear + 1}`);
+  if ((data?.pendingRequests ?? 0) > 0) blockers.push(`มีใบลารออนุมัติ ${data?.pendingRequests} ใบ`);
+  const typeColor = (id: number) => colorOfType?.(id) ?? resolveLeaveColor(null, id);
+  const allExpanded = groups.length > 0 && groups.every((g) => expanded.has(g.employeeId));
+  const toggleGroup = (id: number) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   const filters: { key: FilterKey; label: string }[] = [
     { key: 'carry', label: 'ยกยอด' },
@@ -194,7 +234,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
 
           {data && (
             <>
-              {data.isClosed ? (
+              {data.isClosed && (
                 <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300">
                   <CheckCircle2 className="w-5 h-5 shrink-0" />
                   <div>
@@ -202,30 +242,6 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                     {data.closedAt && ` เมื่อ ${new Date(data.closedAt).toLocaleString('th-TH')}`}
                     {data.closedByName && ` โดย ${data.closedByName}`}
                   </div>
-                </div>
-              ) : (
-                <div className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 space-y-2">
-                  <div className={`text-sm font-semibold ${data.canClose ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-100'}`}>
-                    {data.canClose ? 'พร้อมปิดยอดแล้ว' : 'ยังปิดยอดไม่ได้ — ตอนนี้ดูตัวอย่างได้อย่างเดียว'}
-                  </div>
-                  <ul className="space-y-1">
-                    {checks.map((c) => (
-                      <li key={c.label} className={`flex items-center gap-2 text-sm ${c.ok ? 'text-slate-600 dark:text-slate-300' : 'text-amber-700 dark:text-amber-400'}`}>
-                        {c.ok ? (
-                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                        ) : (
-                          <Circle className="w-4 h-4 shrink-0 text-amber-500" />
-                        )}
-                        {c.label}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="flex items-start gap-2 pt-1 text-xs text-slate-500 dark:text-slate-400">
-                    <Info className="w-4 h-4 shrink-0 text-slate-400" />
-                    <span>
-                      คงเหลือจะยกไปปี {thYear + 1} ตามเพดานในสิทธิ์การลา ส่วนประเภทที่ไม่ยกยอดจะเริ่มสิทธิ์ใหม่ · ปิดได้ครั้งเดียว และหลังปิดจะยื่น/อนุมัติใบลาของปีนี้ไม่ได้
-                    </span>
-                  </p>
                 </div>
               )}
 
@@ -274,63 +290,142 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                 </div>
               </div>
 
-              <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-x-auto">
-                <table className="table-standard w-full min-w-[650px] text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 text-xs text-slate-500">
-                    <tr className="whitespace-nowrap">
-                      <th className="text-left px-3 py-2">พนักงาน</th>
-                      <th className="text-left px-3 py-2">ประเภทการลา</th>
-                      <th className="text-right px-3 py-2">คงเหลือ</th>
-                      <th className="text-right px-3 py-2">เพดานยกยอด</th>
-                      <th className="text-right px-3 py-2">ยกไป</th>
-                      <th className="text-right px-3 py-2">ตัดทิ้ง</th>
-                      <th className="text-left px-3 py-2">ใช้ได้ถึง</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="text-center text-slate-400 py-8">
-                          {search.trim() ? 'ไม่พบรายการที่ค้นหา' : emptyText[activeFilter]}
-                        </td>
-                      </tr>
-                    )}
-                    {rows.map((r) => (
-                      <tr key={r.balanceId} className="border-t border-slate-50 dark:border-slate-700/60">
-                        <td className="px-3 py-2">
-                          <div className="font-medium text-slate-800 dark:text-slate-200">{r.employeeName}</div>
-                          <div className="text-xs text-slate-400">{r.employeeCode}</div>
-                        </td>
-                        <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{r.leaveTypeName}</td>
-                        <td className="px-3 py-2 text-right">{fmt(r.remainingDays)}</td>
-                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">
-                          {r.carryForwardAllowed ? fmt(r.carryForwardMaxDays ?? 0) : 'ไม่ยกยอด'}
-                        </td>
-                        <td className={`px-3 py-2 text-right ${r.carryDays > 0 ? 'font-semibold text-emerald-700 dark:text-emerald-400' : 'text-slate-400'}`}>
-                          {r.carryForwardAllowed ? fmt(r.carryDays) : '-'}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          {!r.carryForwardAllowed ? (
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-[11px] text-slate-500 dark:text-slate-400">
-                              เริ่มใหม่
-                            </span>
-                          ) : r.forfeitDays > 0 ? (
-                            <span className="font-semibold text-rose-600">{fmt(r.forfeitDays)}</span>
-                          ) : (
-                            <span className="text-slate-400">0</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{thaiDate(r.carryForwardExpiry)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <Users className="w-4 h-4 text-slate-400" />
+                  แสดงพนักงาน {groups.length.toLocaleString('th-TH')} คน ({rows.length.toLocaleString('th-TH')} รายการ)
+                </div>
+                {groups.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setExpanded(allExpanded ? new Set() : new Set(groups.map((g) => g.employeeId)))}
+                    className="font-semibold text-primary hover:underline cursor-pointer dark:text-blue-300"
+                  >
+                    {allExpanded ? 'ย่อทั้งหมด' : 'ขยายทั้งหมด'}
+                  </button>
+                )}
               </div>
+
+              {groups.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 border border-slate-100 dark:border-slate-700 rounded-2xl text-sm">
+                  {search.trim() ? 'ไม่พบรายการที่ค้นหา' : emptyText[activeFilter]}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {groups.map((g) => {
+                    const isOpen = expanded.has(g.employeeId);
+                    return (
+                      <div
+                        key={g.employeeId}
+                        className={`rounded-2xl border transition-all overflow-hidden bg-white dark:bg-slate-800 ${
+                          isOpen
+                            ? 'border-blue-200 dark:border-blue-700 shadow-sm'
+                            : 'border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isOpen}
+                          onClick={() => toggleGroup(g.employeeId)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              toggleGroup(g.employeeId);
+                            }
+                          }}
+                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <ChevronRight
+                              className={`w-5 h-5 shrink-0 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-90 text-blue-600' : ''}`}
+                            />
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-bold flex items-center justify-center text-sm shrink-0">
+                              {g.employeeName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim().slice(0, 2) || 'EM'}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm truncate">{g.employeeName}</span>
+                                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
+                                  {g.employeeCode}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-400 mt-0.5">{g.rows.length} ประเภทการลา</div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6 pl-8 sm:pl-0">
+                            <div className="text-left sm:text-right">
+                              <span className="text-[11px] text-slate-400 block">คงเหลือรวม</span>
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{fmt(g.remaining)} วัน</span>
+                            </div>
+                            <div className="text-left sm:text-right">
+                              <span className="text-[11px] text-slate-400 block">ยกไป</span>
+                              <span className={`text-sm font-black ${g.carry > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>{fmt(g.carry)} วัน</span>
+                            </div>
+                            <div className="text-left sm:text-right pr-2">
+                              <span className="text-[11px] text-slate-400 block">เกินเพดาน</span>
+                              <span className={`text-sm font-black ${g.overCap > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{fmt(g.overCap)} วัน</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {isOpen && (
+                          <div className="px-4 pb-4 pt-1 bg-slate-50/70 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-700">
+                            <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800">
+                              <table className="table-standard w-full min-w-[600px] text-left border-collapse text-xs whitespace-nowrap">
+                                <thead>
+                                  <tr className="whitespace-nowrap">
+                                    <th className="py-2.5 px-4">ประเภทการลา</th>
+                                    <th className="py-2.5 px-3 text-center">คงเหลือ</th>
+                                    <th className="py-2.5 px-3 text-center">เพดานยกยอด</th>
+                                    <th className="py-2.5 px-3 text-center">ยกไป</th>
+                                    <th className="py-2.5 px-3 text-center">ตัดทิ้ง</th>
+                                    <th className="py-2.5 px-3 text-center">ใช้ได้ถึง</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                  {g.rows.map((r) => (
+                                    <tr key={r.balanceId}>
+                                      <td className="py-3 px-4">
+                                        <LeaveTypeChip name={r.leaveTypeName} color={typeColor(r.leaveTypeId)} />
+                                      </td>
+                                      <td className="py-3 px-3 text-center font-bold text-blue-600 dark:text-blue-400">{fmt(r.remainingDays)} วัน</td>
+                                      <td className="py-3 px-3 text-center text-slate-500 dark:text-slate-400">
+                                        {r.carryForwardAllowed ? `${fmt(r.carryForwardMaxDays ?? 0)} วัน` : 'ไม่ยกยอด'}
+                                      </td>
+                                      <td className={`py-3 px-3 text-center ${r.carryDays > 0 ? 'font-bold text-emerald-600' : 'text-slate-400'}`}>
+                                        {r.carryForwardAllowed ? `${fmt(r.carryDays)} วัน` : '-'}
+                                      </td>
+                                      <td className="py-3 px-3 text-center">
+                                        {!r.carryForwardAllowed ? (
+                                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-[11px] text-slate-500 dark:text-slate-400">
+                                            เริ่มใหม่
+                                          </span>
+                                        ) : r.forfeitDays > 0 ? (
+                                          <span className="font-bold text-rose-600">{fmt(r.forfeitDays)} วัน</span>
+                                        ) : (
+                                          <span className="text-slate-400">0 วัน</span>
+                                        )}
+                                      </td>
+                                      <td className="py-3 px-3 text-center text-slate-500 dark:text-slate-400">{thaiDate(r.carryForwardExpiry)}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {confirming && data.canClose && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
                   <div className="text-sm font-semibold text-amber-800">
-                    ยืนยันปิดยอดปี {thYear}? ยกไป {fmt(summary.carryDays)} วัน · เกินเพดานถูกตัด {fmt(summary.overCapDays)} วัน — ย้อนกลับไม่ได้
+                    ยืนยันปิดยอดปี {thYear}? ยกไป {fmt(summary.carryDays)} วัน · เกินเพดานถูกตัด {fmt(summary.overCapDays)} วัน — ย้อนกลับไม่ได้ และหลังปิดจะยื่น/อนุมัติใบลาของปีนี้ไม่ได้
                   </div>
                   <input
                     value={note}
@@ -347,20 +442,27 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
           )}
         </div>
 
-        {data?.canClose && (
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex justify-end gap-2">
-            {confirming ? (
-              <>
-                <Button variant="secondary" onClick={() => setConfirming(false)} disabled={submitting}>
-                  ยกเลิก
+        {data && !data.isClosed && (
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span className="text-xs text-amber-700 dark:text-amber-400">
+              {!data.canClose && (blockers.length ? blockers.join(' · ') : data.blockReason)}
+            </span>
+            <div className="flex justify-end gap-2">
+              {confirming && data.canClose ? (
+                <>
+                  <Button variant="secondary" onClick={() => setConfirming(false)} disabled={submitting}>
+                    ยกเลิก
+                  </Button>
+                  <Button variant="danger" onClick={handleSubmit} loading={submitting}>
+                    ยืนยันปิดยอด
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setConfirming(true)} disabled={!data.canClose}>
+                  ปิดยอดปี {thYear}
                 </Button>
-                <Button variant="danger" onClick={handleSubmit} loading={submitting}>
-                  ยืนยันปิดยอด
-                </Button>
-              </>
-            ) : (
-              <Button onClick={() => setConfirming(true)}>ปิดยอดปี {thYear}</Button>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -1051,6 +1051,7 @@ export default function LeaveManagementPage() {
         isOpen={isYearEndOpen}
         year={selectedYear}
         onClose={() => setIsYearEndOpen(false)}
+        colorOfType={(id) => colorOfType(id)}
         onClosed={(r) => {
           showToast(`ปิดยอดวันลาปี ${r.year + 543} สำเร็จ`);
           fetchBalances(selectedYear);
