@@ -901,17 +901,7 @@ export default function CommissionTab() {
 
         {/* Right: Actions (Single line) */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Format Guide Button */}
-          <button
-            type="button"
-            onClick={() => setIsGuideOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer"
-          >
-            <HelpCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <span>รูปแบบไฟล์ที่รองรับ</span>
-          </button>
-
-          {/* Add Manual Item */}
+{/* Add Manual Item */}
           {!isPeriodConfirmed && (
               <button
                 type="button"
@@ -1092,16 +1082,11 @@ export default function CommissionTab() {
             <div className="flex flex-wrap items-center gap-2.5">
               <button
                 type="button"
-                onClick={handleDownloadTemplate}
-                disabled={isDownloadingTemplate}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-semibold text-xs border border-blue-200 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 transition-colors shadow-2xs cursor-pointer"
+                onClick={() => setIsGuideOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-semibold text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs cursor-pointer"
               >
-                {isDownloadingTemplate ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                )}
-                <span>ดาวน์โหลดเทมเพลต</span>
+                <HelpCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>รูปแบบไฟล์ที่รองรับ</span>
               </button>
 
               <Button
