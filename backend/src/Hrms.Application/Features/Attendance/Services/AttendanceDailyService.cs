@@ -70,7 +70,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             .Include(a => a.Employee)
             .Include(a => a.Shift)
             .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
-            .Where(a => a.WorkDate == queryDate && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")));
+            .Where(a => a.WorkDate == queryDate && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || a.Status == "LEAVE" || a.Status == "HOLIDAY"));
 
         // Filter Department
         if (filter.DepartmentId.HasValue && filter.DepartmentId.Value > 0)

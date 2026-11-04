@@ -2225,50 +2225,34 @@ private static string NormalizeHeader(string header)
             var today = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
             var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
 
+            var toDelete = new List<AttendanceDaily>();
             foreach (var d in dailies)
             {
-                // ล้างค่าที่มาจากไฟล์
-                d.ActualIn = null;
-                d.ActualOut = null;
-                d.WorkedMinutes = 0;
-                d.LateMinutes = 0;
-                d.EarlyLeaveMinutes = 0;
-                d.ImportBatchId = null;
-
                 if (approvedAdjustments.TryGetValue(d.Id, out var adj) && (adj.AdjustedClockIn.HasValue || adj.AdjustedClockOut.HasValue))
                 {
-                    if (adj.AdjustedClockIn.HasValue) d.ActualIn = DateTime.SpecifyKind(adj.AdjustedClockIn.Value, DateTimeKind.Utc);
-                    if (adj.AdjustedClockOut.HasValue) d.ActualOut = DateTime.SpecifyKind(adj.AdjustedClockOut.Value, DateTimeKind.Utc);
+                    d.ActualIn = adj.AdjustedClockIn.HasValue ? DateTime.SpecifyKind(adj.AdjustedClockIn.Value, DateTimeKind.Utc) : null;
+                    d.ActualOut = adj.AdjustedClockOut.HasValue ? DateTime.SpecifyKind(adj.AdjustedClockOut.Value, DateTimeKind.Utc) : null;
+                    d.WorkedMinutes = 0;
+                    d.LateMinutes = 0;
+                    d.EarlyLeaveMinutes = 0;
+                    d.ImportBatchId = null;
                     d.IsAbsent = false;
                     d.Status = "PRESENT";
                     AttendanceDailyService.RecalculateAttendance(d, d.Shift);
                     restoredFromAdjustment++;
+                    resetCount++;
                 }
                 else
                 {
-                    var shift = shifts
-                        .Where(es => es.EmployeeId == d.EmployeeId && es.EffectiveFrom <= d.WorkDate && (es.EffectiveTo == null || es.EffectiveTo >= d.WorkDate))
-                        .OrderByDescending(es => es.EffectiveFrom)
-                        .FirstOrDefault();
-                    var dow = (int)d.WorkDate.DayOfWeek;
-                    // ไม่มีกะ → ใช้วันทำงานปกติของบริษัท
-                    var isWorkDay = shift != null
-                        ? (shift.WorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains(dow)
-                        : companySchedule.IsWorkingDay(d.WorkDate);
-                    if (d.ShiftId == null) companySchedule.PopulateScheduledTimes(d, d.WorkDate);
-
-                    d.IsAbsent = false;
-                    if (holidays.Contains(d.WorkDate)) d.Status = "HOLIDAY";
-                    else if (!isWorkDay) d.Status = "OFF";
-                    else if (leaveDays.Contains((d.EmployeeId, d.WorkDate))) d.Status = "LEAVE";
-                    else if (d.WorkDate < today)
-                    {
-                        d.IsAbsent = true;
-                        d.Status = "ABSENT";
-                    }
-                    else d.Status = "PENDING";
+                    // ลบรายการที่ถูกสร้างขึ้นโดยชุดนำเข้านี้ทิ้ง ไม่ให้ตกค้างเป็นสถานะขาดงาน
+                    toDelete.Add(d);
+                    resetCount++;
                 }
-                resetCount++;
+            }
+
+            if (toDelete.Count > 0)
+            {
+                _context.AttendanceDailies.RemoveRange(toDelete);
             }
         }
 
