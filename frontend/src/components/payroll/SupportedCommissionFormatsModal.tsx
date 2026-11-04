@@ -199,10 +199,6 @@ export default function SupportedCommissionFormatsModal({ isOpen, onClose }: Pro
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4 text-xs text-slate-700 dark:text-slate-300">
-          <p className="leading-relaxed text-slate-600 dark:text-slate-300">
-            เทมเพลตนำเข้าค่าคอมมิชชั่นมาตรฐานของระบบ รองรับไฟล์นามสกุล <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">.xlsx</code>, <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">.xls</code> และ <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold">.csv</code> โดยสามารถเลือกกรอกข้อมูลได้ทั้ง 2 รูปแบบในไฟล์เดียวกัน:
-          </p>
-
           {/* Format Explanation Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
