@@ -378,16 +378,26 @@ export default function PayrollPeriodsTab({
                               เปิดดู
                             </Button>
                           )}
-                          {(p.status === 'DRAFT' || p.status === 'REVIEW') && canAccessHrView && (
-                            <button
-                              type="button"
-                              onClick={() => onDeletePeriod(p)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
-                              title="ลบรอบนี้"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          {canAccessHrView && (() => {
+                            // แสดงถังขยะทุกรอบ แต่ลบได้เฉพาะรอบที่ยังไม่อนุมัติ (ร่าง / รอตรวจสอบ)
+                            const deletable = p.status === 'DRAFT' || p.status === 'REVIEW';
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => deletable && onDeletePeriod(p)}
+                                disabled={!deletable}
+                                aria-disabled={!deletable}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  deletable
+                                    ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer'
+                                    : 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                                }`}
+                                title={deletable ? 'ลบรอบนี้' : 'ลบไม่ได้ — รอบนี้อนุมัติหรือปิดรอบแล้ว'}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>

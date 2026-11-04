@@ -495,7 +495,7 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'ใบลาและรับรองรออนุมัติ',
+            title: 'ใบลาและรับรองรออนุมัติ (ทั้งองค์กร)',
             value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
             bgClass: 'bg-[#D8F3DC]',

@@ -83,6 +83,9 @@ const CLAIM_STATUS_BADGE: Record<string, { label: string; className: string }> =
   },
 };
 
+/** ตัวเลขเงินบาท ทศนิยม 2 ตำแหน่ง */
+const fmtBaht = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 interface EmployeeBenefitsUsageTabProps {
   employeeId: number;
   employeeName: string;
@@ -112,6 +115,10 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<EmployeeBenefitUsageSummary | null>(null);
+  // คงเหลือ = สิทธิ์ − ใช้ไปที่อนุมัติแล้ว (ตรงกับหน้ายอดสวัสดิการของ HR) — ยอดรออนุมัติแสดงแยก
+  const yearlyPendingAmount = (summary?.benefits ?? [])
+    .filter((b) => b.frequency === 'YEARLY')
+    .reduce((sum, b) => sum + (b.pendingAmount ?? 0), 0);
   const [claims, setClaims] = useState<BenefitClaim[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBenefitForClaim, setSelectedBenefitForClaim] = useState<number | null>(null);
@@ -293,7 +300,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
             <div className="min-w-0">
               <p className="text-[11px] font-bold text-sky-800 dark:text-sky-300">วงเงินโควตารวมต่อปี</p>
               <p className="text-base font-bold text-sky-950 dark:text-sky-100 font-mono">
-                {summary.totalQuotaAmount.toLocaleString()} <span className="text-xs font-medium text-sky-700/80 dark:text-sky-300/80">บาท</span>
+                {fmtBaht(summary.totalQuotaAmount)} <span className="text-xs font-medium text-sky-700/80 dark:text-sky-300/80">บาท</span>
               </p>
             </div>
           </div>
@@ -306,7 +313,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
             <div className="min-w-0">
               <p className="text-[11px] font-bold text-amber-800 dark:text-amber-300">ใช้สิทธิ์ไปแล้วรวม</p>
               <p className="text-base font-bold text-amber-800 dark:text-amber-200 font-mono">
-                {summary.totalUsedAmount.toLocaleString()} <span className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80">บาท</span>
+                {fmtBaht(summary.totalUsedAmount)} <span className="text-xs font-medium text-amber-700/80 dark:text-amber-300/80">บาท</span>
               </p>
             </div>
           </div>
@@ -317,10 +324,13 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
               <TrendingUp className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">โควตาคงเหลือที่ใช้ได้</p>
+              <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">โควตาคงเหลือ</p>
               <p className="text-base font-bold text-emerald-800 dark:text-emerald-200 font-mono">
-                {summary.totalRemainingAmount.toLocaleString()} <span className="text-xs font-medium text-emerald-700/80 dark:text-emerald-300/80">บาท</span>
+                {fmtBaht(summary.totalRemainingAmount + yearlyPendingAmount)} <span className="text-xs font-medium text-emerald-700/80 dark:text-emerald-300/80">บาท</span>
               </p>
+              {yearlyPendingAmount > 0 && (
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">รออนุมัติ {fmtBaht(yearlyPendingAmount)} บาท</p>
+              )}
             </div>
           </div>
 

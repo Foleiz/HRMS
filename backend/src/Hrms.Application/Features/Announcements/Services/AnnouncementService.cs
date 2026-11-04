@@ -69,9 +69,9 @@ public class AnnouncementService : IAnnouncementService
         var divisions = await _context.Divisions.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DivisionName, cancellationToken);
         var levels = await _context.EmployeeLevels.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.LevelName, cancellationToken);
 
-        var totalActiveEmployees = await _context.EmployeeAssignments.CountAsync(a => a.IsCurrent, cancellationToken);
+        var audience = await LoadAudienceAsync(cancellationToken);
 
-        var dtos = items.Select(a => MapToDto(a, null, departments, divisions, levels, totalActiveEmployees)).ToList();
+        var dtos = items.Select(a => MapToDto(a, null, departments, divisions, levels, CountTargetEmployees(a, audience))).ToList();
 
         return new PagedResult<AnnouncementDto>(dtos, totalCount, page, pageSize);
     }
@@ -138,9 +138,9 @@ public class AnnouncementService : IAnnouncementService
         var departments = await _context.Departments.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DepartmentName, cancellationToken);
         var divisions = await _context.Divisions.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DivisionName, cancellationToken);
         var levels = await _context.EmployeeLevels.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.LevelName, cancellationToken);
-        var totalActiveEmployees = await _context.EmployeeAssignments.CountAsync(a => a.IsCurrent, cancellationToken);
+        var audience = await LoadAudienceAsync(cancellationToken);
 
-        return MapToDto(announcement, currentEmployeeId, departments, divisions, levels, totalActiveEmployees);
+        return MapToDto(announcement, currentEmployeeId, departments, divisions, levels, CountTargetEmployees(announcement, audience));
     }
 
     public async Task<AnnouncementDto> CreateAsync(
@@ -471,28 +471,8 @@ public class AnnouncementService : IAnnouncementService
             })
             .ToListAsync(cancellationToken);
 
-        // คำนวณจำนวนกลุ่มเป้าหมายทั้งหมด
-        int totalTargetEmployees;
-        var hasAll = announcement.Targets.Any(t => t.TargetType == "ALL");
-        if (hasAll || !announcement.Targets.Any())
-        {
-            totalTargetEmployees = await _context.EmployeeAssignments.CountAsync(a => a.IsCurrent, cancellationToken);
-        }
-        else
-        {
-            var deptIds = announcement.Targets.Where(t => t.TargetType == "DEPARTMENT" && t.TargetEntityId.HasValue).Select(t => t.TargetEntityId!.Value).ToList();
-            var divIds = announcement.Targets.Where(t => t.TargetType == "DIVISION" && t.TargetEntityId.HasValue).Select(t => t.TargetEntityId!.Value).ToList();
-            var levelIds = announcement.Targets.Where(t => t.TargetType == "EMPLOYEE_LEVEL" && t.TargetEntityId.HasValue).Select(t => t.TargetEntityId!.Value).ToList();
-
-            totalTargetEmployees = await _context.EmployeeAssignments
-                .Where(a => a.IsCurrent &&
-                    (deptIds.Contains(a.DepartmentId) || 
-                     divIds.Contains(a.DivisionId) ||
-                     (a.EmployeeLevelId.HasValue && levelIds.Contains(a.EmployeeLevelId.Value))))
-                .Select(a => a.EmployeeId)
-                .Distinct()
-                .CountAsync(cancellationToken);
-        }
+        // คำนวณจำนวนกลุ่มเป้าหมายทั้งหมด (เฉพาะพนักงานที่ยังทำงานอยู่ในฝ่าย/แผนก/ระดับที่กำหนด)
+        int totalTargetEmployees = CountTargetEmployees(announcement, await LoadAudienceAsync(cancellationToken));
 
         totalTargetEmployees = Math.Max(totalTargetEmployees, receipts.Count);
 
@@ -509,6 +489,34 @@ public class AnnouncementService : IAnnouncementService
             ReadPercentage = readPercentage,
             Receipts = receipts
         };
+    }
+
+    /// <summary>สังกัดปัจจุบันของพนักงานที่ยังทำงานอยู่ — ใช้นับกลุ่มเป้าหมายของประกาศ</summary>
+    private sealed record AudienceMember(long EmployeeId, long DepartmentId, long DivisionId, long? LevelId);
+
+    private async Task<List<AudienceMember>> LoadAudienceAsync(CancellationToken cancellationToken)
+    {
+        var rows = await _context.EmployeeAssignments
+            .AsNoTracking()
+            .Where(a => a.IsCurrent && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
+            .Select(a => new { a.EmployeeId, a.DepartmentId, a.DivisionId, a.EmployeeLevelId })
+            .ToListAsync(cancellationToken);
+        return rows
+            .GroupBy(r => r.EmployeeId)
+            .Select(g => g.First())
+            .Select(r => new AudienceMember(r.EmployeeId, r.DepartmentId, r.DivisionId, r.EmployeeLevelId))
+            .ToList();
+    }
+
+    /// <summary>จำนวนพนักงานในกลุ่มเป้าหมายของประกาศ (ไม่กำหนด/ALL = ทุกคน)</summary>
+    private static int CountTargetEmployees(Announcement a, List<AudienceMember> audience)
+    {
+        var targets = a.Targets ?? new List<AnnouncementTarget>();
+        if (!targets.Any() || targets.Any(t => t.TargetType == "ALL")) return audience.Count;
+        return audience.Count(m => targets.Any(t => t.TargetEntityId.HasValue && (
+            (t.TargetType == "DEPARTMENT" && t.TargetEntityId.Value == m.DepartmentId) ||
+            (t.TargetType == "DIVISION" && t.TargetEntityId.Value == m.DivisionId) ||
+            (t.TargetType == "EMPLOYEE_LEVEL" && m.LevelId.HasValue && t.TargetEntityId.Value == m.LevelId.Value))));
     }
 
     private static AnnouncementDto MapToDto(

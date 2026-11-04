@@ -1124,7 +1124,13 @@ function DailyAttendanceContent() {
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">{summary?.presentCount ?? 0}</div>
-                <div className="text-2xs text-emerald-700 dark:text-emerald-400 mt-0.5 font-medium">คน ({summary?.attendanceRate ?? 0}%)</div>
+                <div className="text-2xs text-emerald-700 dark:text-emerald-400 mt-0.5 font-medium">
+                  คน ({(() => {
+                    // % มาตรงเวลา = ตรงเวลา ÷ พนักงานที่ต้องทำงานวันนี้ (ไม่นับวันหยุด)
+                    const workingTotal = (summary?.totalEmployees ?? 0) - (summary?.holidayOrOffCount ?? 0);
+                    return workingTotal > 0 ? Math.round(((summary?.presentCount ?? 0) / workingTotal) * 1000) / 10 : 0;
+                  })()}%)
+                </div>
               </div>
             </div>
 
@@ -1667,9 +1673,9 @@ function DailyAttendanceContent() {
                         </td>
                         <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">
                           {batch.dateFrom && batch.dateTo ? (
-                            <span>{batch.dateFrom} ถึง {batch.dateTo}</span>
+                            <span>{formatDateThai(batch.dateFrom)} – {formatDateThai(batch.dateTo)}</span>
                           ) : batch.dateFrom ? (
-                            <span>{batch.dateFrom}</span>
+                            <span>{formatDateThai(batch.dateFrom)}</span>
                           ) : (
                             '-'
                           )}

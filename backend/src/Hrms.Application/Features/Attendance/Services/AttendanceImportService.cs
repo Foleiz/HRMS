@@ -436,6 +436,24 @@ public class AttendanceImportService : IAttendanceImportService
         minDate = rowCtx.MinDate;
         maxDate = rowCtx.MaxDate;
 
+        // มีใบลาอนุมัติเต็มวัน แต่ไฟล์มีเวลาสแกนในวันนั้น → ถือเป็นวันลา (ไม่คิดสาย/ออกก่อน) ให้ตรงกับระบบการลา
+        foreach (var rec in dailyDict.Values.Where(d => d.ImportBatchId == batch.Id && d.Status != "LEAVE"))
+        {
+            var onFullDayLeave = approvedLeaves.Any(l =>
+            {
+                if (l.EmployeeId != rec.EmployeeId) return false;
+                var from = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.StartDatetime));
+                var to = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(l.EndDatetime));
+                if (rec.WorkDate < from || rec.WorkDate > to) return false;
+                return !(from == to && l.LeaveDays > 0 && l.LeaveDays < 1); // ลาครึ่งวัน → คงสถานะตามเวลาสแกน
+            });
+            if (!onFullDayLeave) continue;
+            rec.Status = "LEAVE";
+            rec.IsAbsent = false;
+            rec.LateMinutes = 0;
+            rec.EarlyLeaveMinutes = 0;
+        }
+
         // Auto-generate missing absence records for working days within the imported date range
         var todayThai = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
         var rangeStart = customDateFrom ?? minDate;
@@ -1411,6 +1429,17 @@ public class AttendanceImportService : IAttendanceImportService
                 AddError(batch.Id, rowNumber, rawRowJson,
                     $"วันที่ {workDate.Day:D2}/{workDate.Month:D2}/{workDate.Year + 543} อยู่นอกช่วงที่เลือก ({customDateFrom.Value.Day:D2}/{customDateFrom.Value.Month:D2}/{customDateFrom.Value.Year + 543} – {customDateTo.Value.Day:D2}/{customDateTo.Value.Month:D2}/{customDateTo.Value.Year + 543}) กรุณาตรวจว่าเลือกเดือนตรงกับไฟล์",
                     "DATE_OUT_OF_RANGE", empCodeRaw, empName, deptName, null, stateRaw, errorsList, errorDtos);
+                continue;
+            }
+
+            // ไม่รับเวลาของวันที่ยังมาไม่ถึง (กันไฟล์ทดสอบ/ไฟล์ผิดเดือน ทำให้มีเวลาทำงานล่วงหน้า)
+            var todayThaiRow = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
+            if (workDate > todayThaiRow)
+            {
+                failedRecords++;
+                AddError(batch.Id, rowNumber, rawRowJson,
+                    $"วันที่ {workDate.Day:D2}/{workDate.Month:D2}/{workDate.Year + 543} ยังมาไม่ถึง ระบบไม่นำเข้าเวลาของวันในอนาคต",
+                    "FUTURE_DATE", empCodeRaw, empName, deptName, null, stateRaw, errorsList, errorDtos);
                 continue;
             }
 

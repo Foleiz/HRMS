@@ -186,7 +186,7 @@ export const CreateEmployeeTypeModal: React.FC<CreateEmployeeTypeModalProps> = (
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!typeName.trim()) {
-      setErrorMessage('กรุณาระบุชื่อประเภทสัญญา/การจ้างงาน');
+      setErrorMessage('กรุณาระบุชื่อประเภทพนักงาน');
       return;
     }
 

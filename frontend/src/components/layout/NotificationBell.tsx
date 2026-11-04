@@ -108,8 +108,10 @@ export const NotificationBell: React.FC = () => {
   };
 
   // Fetch summary
+  // ผูกกับ id ผู้ใช้ ไม่ใช่ object — ตอนโหลดหน้า user ถูก set 2 ครั้ง (ค่าจากเครื่อง → ค่าจากเซิร์ฟเวอร์) ทำให้ยิงซ้ำ
+  const userId = user?.id;
   const fetchSummary = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
     try {
       const summary = await notificationService.getSummary();
       setUnreadCount(summary.unreadCount);
@@ -117,7 +119,7 @@ export const NotificationBell: React.FC = () => {
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
-  }, [user]);
+  }, [userId]);
 
   // Initial load and periodic polling every 45s
   useEffect(() => {

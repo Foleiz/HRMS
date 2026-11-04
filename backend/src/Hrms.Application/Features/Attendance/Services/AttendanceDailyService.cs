@@ -69,6 +69,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             .AsNoTracking()
             .Include(a => a.Employee)
             .Include(a => a.Shift)
+            .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
             .Where(a => a.WorkDate == queryDate && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")));
 
         // Filter Department
@@ -142,6 +143,8 @@ public class AttendanceDailyService : IAttendanceDailyService
     {
         var records = await _context.AttendanceDailies
             .AsNoTracking()
+            // นับเฉพาะพนักงานที่ยังทำงานอยู่ (ให้ตรงกับแดชบอร์ด/รายงาน)
+            .Where(a => a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
             .Where(a => a.WorkDate == date && (a.ImportBatchId != null || a.ActualIn != null || a.ActualOut != null || (a.Status != "PENDING" && a.Status != "OFF")))
             .ToListAsync(cancellationToken);
 
