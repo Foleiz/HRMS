@@ -2866,52 +2866,6 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Break Minutes */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                  เวลาพักกลางวัน / กะ (นาที)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="180"
-                  value={shiftForm.breakMinutes}
-                  onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Separate Grace Times: Late & Early Leave */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                    ผ่อนปรนมาสาย (นาที)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={shiftForm.lateGraceMinutes}
-                    onChange={(e) => setShiftForm({ ...shiftForm, lateGraceMinutes: Number(e.target.value) })}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">
-                    ผ่อนปรนกลับก่อน (นาที)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={shiftForm.earlyLeaveGraceMinutes}
-                    onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
               {/* วันทำงานประจำสัปดาห์ */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
@@ -2921,6 +2875,31 @@ function SchedulesContent() {
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
                     ทำงาน {(shiftForm.workDays || []).length} วัน ({formatWorkDays(shiftForm.workDays)})
                   </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">เลือกเร็ว:</span>
+                  <button
+                    type="button"
+                    onClick={() => setShiftForm({ ...shiftForm, workDays: [1, 2, 3, 4, 5] })}
+                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 cursor-pointer"
+                  >
+                    จันทร์ - ศุกร์
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShiftForm({ ...shiftForm, workDays: [1, 2, 3, 4, 5, 6] })}
+                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 cursor-pointer"
+                  >
+                    จันทร์ - เสาร์
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShiftForm({ ...shiftForm, workDays: [0, 1, 2, 3, 4, 5, 6] })}
+                    className="text-[11px] px-2 py-0.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300 cursor-pointer"
+                  >
+                    ทุกวัน
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-7 gap-1.5">
@@ -2950,6 +2929,51 @@ function SchedulesContent() {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Break Minutes & Separate Grace Times: Late & Early Leave in 1 Row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    เวลาพัก (นาที)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="180"
+                    value={shiftForm.breakMinutes}
+                    onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    ผ่อนปรนมาสาย (นาที)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={shiftForm.lateGraceMinutes}
+                    onChange={(e) => setShiftForm({ ...shiftForm, lateGraceMinutes: Number(e.target.value) })}
+                    className={inputClass}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    ผ่อนปรนกลับก่อน (นาที)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="60"
+                    value={shiftForm.earlyLeaveGraceMinutes}
+                    onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
+                    className={inputClass}
+                  />
                 </div>
               </div>
 
