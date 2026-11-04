@@ -385,6 +385,7 @@ public class BenefitService : IBenefitService
                 .ThenInclude(a => a.Department)
             .Include(e => e.Assignments)
                 .ThenInclude(a => a.Position)
+            .Where(e => e.EmploymentStatus == "ACTIVE") // ไม่แสดงพนักงานที่พ้นสภาพแล้ว
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))

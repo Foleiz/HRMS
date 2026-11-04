@@ -190,7 +190,8 @@ export default function TeamLeaveCalendarPage() {
 
   const todayKey = ymd(new Date());
   const employeesOnLeave = new Set(items.filter((i) => i.status === 'APPROVED').map((i) => i.employeeId)).size;
-  const pendingCount = items.filter((i) => i.status === 'PENDING').length;
+  // นับเป็นจำนวนคนที่มีใบลารออนุมัติ (คนเดียวอาจมีหลายใบ/หลายช่วง)
+  const pendingCount = new Set(items.filter((i) => i.status === 'PENDING').map((i) => i.employeeId)).size;
 
   const Chip = ({ item, compact }: { item: LeaveCalendarItem; compact?: boolean }) => {
     const c = colorOf.map.get(item.leaveTypeId) ?? PALETTE[PALETTE.length - 1];
@@ -300,7 +301,7 @@ export default function TeamLeaveCalendarPage() {
           {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
         </div>
         <div className="text-xs text-slate-500 dark:text-slate-400">
-          ลาในช่วงนี้ {employeesOnLeave} คน{includePending && pendingCount > 0 ? ` · รออนุมัติ ${pendingCount} ใบ` : ''}
+          ลาในช่วงนี้ {employeesOnLeave} คน{includePending && pendingCount > 0 ? ` · รออนุมัติ ${pendingCount} คน` : ''}
         </div>
       </div>
 

@@ -59,6 +59,11 @@ public class EmployeeTransferService : IEmployeeTransferService
         {
             query = query.Where(t => t.Status == status);
         }
+        else
+        {
+            // เมนูนี้บันทึกคำสั่งที่มีผลแล้วเท่านั้น (ไม่มีขั้นอนุมัติ) — ไม่แสดงคำขอค้างจากระบบเดิม
+            query = query.Where(t => t.Status == "APPROVED");
+        }
 
         var items = await query
             .OrderByDescending(t => t.CreatedAt)
@@ -83,8 +88,9 @@ public class EmployeeTransferService : IEmployeeTransferService
         var all = await _context.EmployeeTransferRequests
             .AsNoTracking()
             .ToListAsync(cancellationToken);
-
         var pendingCount = all.Count(t => t.Status == "PENDING");
+        all = all.Where(t => t.Status == "APPROVED").ToList(); // นับเฉพาะคำสั่งที่มีผลแล้ว
+
         var transfersThisMonth = all.Count(t =>
             TransferTypes.Split(t.TransferType).Contains(TransferTypes.DepartmentTransfer) &&
             t.EffectiveDate.Month == currentMonth &&

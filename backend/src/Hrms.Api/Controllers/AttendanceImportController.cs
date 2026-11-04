@@ -54,7 +54,8 @@ public class AttendanceImportController : ControllerBase
         }
 
         long? userId = null;
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        // .NET 8+ ไม่ map "sub" → NameIdentifier ให้อัตโนมัติ จึงต้องอ่าน "sub" ด้วย
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
         if (long.TryParse(userIdClaim, out var parsedId))
         {
             userId = parsedId;
@@ -242,7 +243,8 @@ public class AttendanceImportController : ControllerBase
         try
         {
             long? userId = null;
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // .NET 8+ ไม่ map "sub" → NameIdentifier ให้อัตโนมัติ จึงต้องอ่าน "sub" ด้วย
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
             if (long.TryParse(userIdClaim, out var parsedId))
             {
                 userId = parsedId;

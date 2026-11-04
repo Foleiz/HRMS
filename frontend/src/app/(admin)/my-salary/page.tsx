@@ -50,6 +50,13 @@ function MySalaryContent() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [overview, setOverview] = useState<MySalaryOverview | null>(null);
+  const otherIncomeAmount = Math.max(
+    0,
+    (overview?.latestGrossIncome || 0) -
+      (overview?.chartData?.baseSalaryAmount || 0) -
+      (overview?.chartData?.overtimeAmount || 0) -
+      (overview?.chartData?.allowanceAmount || 0)
+  );
 
   // View state: null = Overview, number = Detail view of specific payrollId
   const [selectedPayrollId, setSelectedPayrollId] = useState<number | null>(null);
@@ -712,6 +719,7 @@ function MySalaryContent() {
         {/* RIGHT COLUMN: 2 Visual Charts */}
         <div className="lg:col-span-4 space-y-6">
           {/* Top Chart: Pie / Donut Chart */}
+          {/* รายได้อื่น = รายได้รวมงวดล่าสุด − เงินเดือนพื้นฐาน − OT/เบี้ยขยัน (ให้ยอดในกราฟเท่ารายได้รวม) */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
             <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
               <PieChartIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
@@ -724,6 +732,7 @@ function MySalaryContent() {
               const parts = [
                 { v: overview?.chartData?.baseSalaryAmount || 0, color: '#10B981' },
                 { v: (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0), color: '#F59E0B' },
+                { v: otherIncomeAmount, color: '#8B5CF6' },
                 { v: overview?.chartData?.deductionsAmount || 0, color: '#3B82F6' },
               ];
               const total = parts.reduce((sum, x) => sum + Math.max(0, x.v), 0);
@@ -783,6 +792,15 @@ function MySalaryContent() {
                     (overview?.chartData?.overtimeAmount || 0) +
                       (overview?.chartData?.allowanceAmount || 0)
                   )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />
+                  <span>รายได้อื่น / โบนัส / สวัสดิการ</span>
+                </div>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+                  {formatMoney(otherIncomeAmount)}
                 </span>
               </div>
               <div className="flex items-center justify-between">

@@ -108,7 +108,7 @@ public class RolesController : ControllerBase
 
     private long? GetCurrentUserId()
     {
-        var val = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var val = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         if (long.TryParse(val, out var id)) return id;
         return null;
     }

@@ -93,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(JSON.parse(savedUser));
           // ดึงโปรไฟล์ล่าสุดจากเซิร์ฟเวอร์เพื่ออัปเดตสิทธิ์
           try {
+            lastSyncTimeRef.current = Date.now(); // กัน focus/visibility ยิง auth/me ซ้ำทันทีหลังโหลดหน้า
             const freshProfile = await authService.getMe();
             setUser(freshProfile);
             localStorage.setItem('hrms_user', JSON.stringify(freshProfile));
