@@ -790,11 +790,6 @@ export default function ApprovalHistoryPage() {
                 />
               </>
             }
-            actions={
-              <span className="text-xs text-gray-400 font-medium whitespace-nowrap shrink-0">
-                พบ {filteredHistory.length} รายการ
-              </span>
-            }
           />
 
           <RefreshIndicator active={historyPhase.refreshing} />
@@ -916,13 +911,6 @@ export default function ApprovalHistoryPage() {
                                   : item.docType === 'BENEFIT'
                                     ? !!item.benefitRaw?.fileName
                                     : false
-                            }
-                            onClick={
-                              (item.docType === 'LEAVE' && !!item.leaveRaw?.documents && item.leaveRaw.documents.length > 0) ||
-                              (item.docType === 'GENERAL' && !!item.generalRaw?.fileName) ||
-                              (item.docType === 'BENEFIT' && !!item.benefitRaw?.fileName)
-                                ? () => handleViewAttachment(item)
-                                : undefined
                             }
                           />
                         </div>

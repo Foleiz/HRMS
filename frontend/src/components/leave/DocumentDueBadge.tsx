@@ -23,22 +23,9 @@ export function DocumentDueBadge({
   onClick?: () => void;
   className?: string;
 }) {
-  // 1. ถ้ามีการแนบไฟล์แล้ว ให้เปลี่ยนข้อความเป็น "มีไฟล์แนบแล้ว"
+  // 1. ถ้ามีการแนบไฟล์แล้ว ให้เปลี่ยนข้อความเป็น "มีไฟล์แนบแล้ว" (แสดงผลอย่างเดียว กดไม่ได้)
   if (hasAttachments) {
-    const badgeCls = `${className} inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60`;
-    if (onClick) {
-      return (
-        <button
-          type="button"
-          onClick={onClick}
-          title="คลิกเพื่อดูไฟล์แนบ"
-          className={`${badgeCls} hover:bg-emerald-100 hover:border-emerald-300 transition cursor-pointer`}
-        >
-          <Paperclip className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-          <span>มีไฟล์แนบแล้ว</span>
-        </button>
-      );
-    }
+    const badgeCls = `${className} inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 select-none cursor-default`;
     return (
       <span title="มีไฟล์แนบแล้ว" className={badgeCls}>
         <Paperclip className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
