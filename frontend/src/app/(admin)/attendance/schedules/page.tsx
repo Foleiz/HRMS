@@ -1412,8 +1412,6 @@ function SchedulesContent() {
                               ? allDayShifts
                               : allDayShifts.filter((item) => item.shift.shiftId === calendarShiftFilter);
 
-                          const dateStr = `${rosterYear}-${String(rosterMonth).padStart(2, '0')}-${String(cell.dayNumber).padStart(2, '0')}`;
-
                           return (
                             <div
                               key={`day-${cell.dayNumber}`}
@@ -1449,25 +1447,12 @@ function SchedulesContent() {
                                       {dayShifts.length} คน
                                     </span>
                                   )}
-                                  {canCreateSchedule && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openSingleAssignCreate(undefined, dateStr);
-                                      }}
-                                      className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-primary hover:bg-slate-200/70 rounded transition"
-                                      title="มอบหมายกะในวันนี้"
-                                    >
-                                      <Plus className="w-3 h-3" />
-                                    </button>
-                                  )}
                                 </div>
                               </div>
 
                               {/* Scheduled Shift Pills */}
                               <div className="space-y-1 flex-1 overflow-hidden">
-                                {dayShifts.slice(0, 3).map((item, idx) => {
+                                {dayShifts.slice(0, dayShifts.length > 3 ? 2 : 3).map((item, idx) => {
                                   const color = colorOfShift(item.shift.shiftId);
                                   return (
                                     <div
@@ -1483,9 +1468,10 @@ function SchedulesContent() {
                                   );
                                 })}
 
+                                {/* เกิน 3 คน: แสดง 2 คน + ลิงก์ดูที่เหลือ (ให้พอดีความสูงช่อง ไม่ถูกตัด) */}
                                 {dayShifts.length > 3 && (
-                                  <div className="text-[10px] font-semibold text-slate-500 group-hover:text-primary text-right pt-0.5 shrink-0">
-                                    + อีก {dayShifts.length - 3} คน
+                                  <div className="text-[11px] font-semibold text-slate-500 group-hover:text-primary px-1.5 py-0.5 rounded bg-slate-50 dark:bg-slate-800/60 text-center truncate">
+                                    ดูอีก {dayShifts.length - 2} คน
                                   </div>
                                 )}
 
