@@ -51,6 +51,7 @@ import { AttendanceFileFormatModal } from '@/components/attendance/AttendanceFil
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { Button, Modal, ModalFooter, inputClass } from '@/components/ui';
+import ShiftSelect from '@/components/attendance/ShiftSelect';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { organizationService } from '@/services/organizationService';
 import { shiftService } from '@/services/shiftService';
@@ -1843,25 +1844,15 @@ function DailyAttendanceContent() {
             />
           }
         >
-              {/* กะการทำงาน + เวลาตามกะ */}
+              {/* กะการทำงาน */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">กะการทำงาน</label>
-                <CustomSelect
-                  value={editForm.shiftId || ''}
-                  onChange={(e) => {
-                    const val = e.target.value ? Number(e.target.value) : undefined;
-                    setEditForm((prev) => ({ ...prev, shiftId: val }));
-                  }}
-                  className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                >
-                  <option value="">ไม่มีกะ (ใช้เวลาทำงานปกติของบริษัท)</option>
-                  {shifts.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.shiftName} ({s.startTime?.substring(0, 5)} – {s.endTime?.substring(0, 5)} น.)
-                    </option>
-                  ))}
-                </CustomSelect>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">เวลาตามกะ: {editPreview?.schedule}</p>
+                <ShiftSelect
+                  shifts={shifts}
+                  value={editForm.shiftId}
+                  onChange={(id) => setEditForm((prev) => ({ ...prev, shiftId: id }))}
+                  noneLabel="ไม่มีกะ (ใช้เวลาทำงานปกติของบริษัท)"
+                />
               </div>
 
               {/* เวลาเข้า-ออกจริง (ลบได้) */}
