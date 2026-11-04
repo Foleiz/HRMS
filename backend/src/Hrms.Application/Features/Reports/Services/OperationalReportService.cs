@@ -201,7 +201,7 @@ public class OperationalReportService : IOperationalReportService
     {
         var data = await GetEmployeesByDepartmentAsync(divisionId, departmentId, cancellationToken);
         var sb = new StringBuilder();
-        sb.AppendLine($"รายงานพนักงานแยกตามแผนก,ณ วันที่ {data.AsOfDate:dd/MM/yyyy}");
+        sb.AppendLine($"รายงานพนักงานแยกตามแผนก,ณ วันที่ {ThaiDate(data.AsOfDate)}");
         sb.AppendLine($"สรุปภาพรวม: พนักงานทั้งหมด {data.TotalEmployees} คน, {data.TotalDepartments} แผนก, ชาย {data.MaleCount} คน, หญิง {data.FemaleCount} คน, ไม่ระบุ {data.OtherGenderCount} คน, เข้าใหม่ปีนี้ {data.NewHiresThisYear} คน");
         sb.AppendLine();
         sb.AppendLine("สรุปรายแผนก");
@@ -214,7 +214,7 @@ public class OperationalReportService : IOperationalReportService
         sb.AppendLine("ฝ่าย,แผนก,รหัสพนักงาน,ชื่อ-นามสกุล,ตำแหน่ง,ประเภทพนักงาน,ระดับ,เพศ,วันเริ่มงาน");
         foreach (var d in data.Departments)
             foreach (var e in d.Employees)
-                sb.AppendLine($"\"{EscapeCsv(d.DivisionName)}\",\"{EscapeCsv(d.DepartmentName)}\",\"{EscapeCsv(e.EmployeeCode)}\",\"{EscapeCsv(e.EmployeeName)}\",\"{EscapeCsv(e.PositionName)}\",\"{EscapeCsv(e.EmployeeTypeName)}\",\"{EscapeCsv(e.LevelName)}\",\"{e.Gender}\",{(e.StartDate.HasValue ? e.StartDate.Value.ToString("dd/MM/yyyy") : "")}");
+                sb.AppendLine($"\"{EscapeCsv(d.DivisionName)}\",\"{EscapeCsv(d.DepartmentName)}\",\"{EscapeCsv(e.EmployeeCode)}\",\"{EscapeCsv(e.EmployeeName)}\",\"{EscapeCsv(e.PositionName)}\",\"{EscapeCsv(e.EmployeeTypeName)}\",\"{EscapeCsv(e.LevelName)}\",\"{e.Gender}\",{(e.StartDate.HasValue ? ThaiDate(e.StartDate.Value) : "")}");
         return PrependUtf8Bom(sb.ToString());
     }
     #endregion
@@ -400,7 +400,7 @@ public class OperationalReportService : IOperationalReportService
 
         var sb = new StringBuilder();
         // Header
-        sb.AppendLine($"รายงานอัตรากำลังคนประจำวัน,วันที่ {date:dd/MM/yyyy}");
+        sb.AppendLine($"รายงานอัตรากำลังคนประจำวัน,วันที่ {ThaiDate(date)}");
         sb.AppendLine($"สรุปภาพรวม: พนักงานทั้งหมด {data.TotalEmployees} คน, ต้องมาทำงาน {data.TotalExpected} คน, มาทำงาน {data.TotalPresent} คน, มาสาย {data.TotalLate} คน, ออกก่อน {data.TotalEarlyLeave} คน, ลา {data.TotalLeave} คน, วันหยุด {data.TotalOff} คน, ขาดงาน {data.TotalAbsent} คน, อัตราการเข้างาน {data.OverallAttendanceRate}%");
         sb.AppendLine();
         sb.AppendLine("รหัสแผนก,ชื่อแผนก,ฝ่าย,พนักงานทั้งหมด (คน),มาปฏิบัติงาน (คน),มาสาย (คน),ออกก่อน (คน),ลา (คน),วันหยุด (คน),ขาดงาน (คน),อัตราการเข้างาน (%)");
@@ -437,7 +437,7 @@ public class OperationalReportService : IOperationalReportService
             .Include(a => a.Employee)
             .Include(a => a.Department)
             .Include(a => a.Position)
-            .Where(a => a.IsCurrent && a.Employee != null)
+            .Where(a => a.IsCurrent && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE") // ไม่นับพนักงานที่พ้นสภาพ (ให้ตรงกับรายงานรายวัน)
             .AsNoTracking();
 
         if (departmentId.HasValue && departmentId.Value > 0)
@@ -756,6 +756,9 @@ public class OperationalReportService : IOperationalReportService
         return PrependUtf8Bom(sb.ToString());
     }
 
+    /// <summary>วันที่แบบไทย dd/MM/พ.ศ. สำหรับไฟล์ส่งออก (ให้ตรงกับรายงานอื่นที่ใช้ พ.ศ.)</summary>
+    private static string ThaiDate(DateOnly d) => $"{d.Day:D2}/{d.Month:D2}/{d.Year + 543}";
+
     /// <summary>
     /// ดึงรายงานอัตราการเข้า-ออกของพนักงาน (Monthly Turnover Rate)
     /// </summary>
@@ -804,6 +807,8 @@ public class OperationalReportService : IOperationalReportService
             .ToListAsync(cancellationToken);
 
         var contractMap = contracts.GroupBy(c => c.EmployeeId).ToDictionary(g => g.Key, g => g.OrderByDescending(c => c.Id).First());
+        // วันเริ่มงาน = วันเริ่มของสัญญาแรก (การต่อสัญญาใหม่ไม่นับเป็นพนักงานเข้าใหม่) — ตรงกับรายงานพนักงานแยกตามแผนก
+        var firstStartMap = contracts.GroupBy(c => c.EmployeeId).ToDictionary(g => g.Key, g => g.Min(c => c.StartDate));
 
         var result = new MonthlyTurnoverSummaryDto
         {
@@ -824,8 +829,10 @@ public class OperationalReportService : IOperationalReportService
             foreach (var assign in deptAssignments)
             {
                 contractMap.TryGetValue(assign.EmployeeId, out var contract);
-                DateOnly empStart = contract?.StartDate ?? assign.EffectiveFrom;
+                DateOnly empStart = firstStartMap.TryGetValue(assign.EmployeeId, out var firstStart) ? firstStart : assign.EffectiveFrom;
                 DateOnly? empEnd = contract?.TerminationDate ?? assign.EffectiveTo;
+                // พ้นสภาพแล้วแต่ไม่มีวันสิ้นสุดการจ้าง → ไม่รู้ว่าออกเมื่อไร จึงไม่นับเป็นพนักงาน (ให้ตรงกับรายงานอื่นที่นับเฉพาะ ACTIVE)
+                if (empEnd == null && assign.Employee != null && assign.Employee.EmploymentStatus != "ACTIVE") continue;
 
                 // พนักงานต้นงวด: เริ่มงานก่อนต้นเดือน และยังไม่ลาออกก่อนต้นเดือน
                 if (empStart < monthStart && (empEnd == null || empEnd >= monthStart))
