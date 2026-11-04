@@ -301,7 +301,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                             ...(canEditUser
                               ? [
                                   {
-                                    label: 'แก้ไขข้อมูล / บทบาท',
+                                    label: 'แก้ไขข้อมูล',
                                     icon: <Edit2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400" />,
                                     onClick: () => onEditUserClick(user),
                                   },
