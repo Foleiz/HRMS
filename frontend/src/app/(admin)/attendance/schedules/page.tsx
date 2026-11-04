@@ -353,6 +353,9 @@ function SchedulesContent() {
       setShifts(data);
       if (data.length > 0 && batchShiftId === 0) {
         setBatchShiftId(data[0].id);
+        if (data[0].workDays && data[0].workDays.length > 0) {
+          setBatchWorkDays([...data[0].workDays]);
+        }
       }
     } catch (err: any) {
       console.error('Error loading shifts:', err);
@@ -742,12 +745,16 @@ function SchedulesContent() {
     setSingleAssignDropdownOpen(false);
     setSingleAssignShiftDropdownOpen(false);
     setSingleAssignSearch('');
+    const defaultShift = shifts[0];
+    const initialWorkDays = defaultShift?.workDays && defaultShift.workDays.length > 0
+      ? [...defaultShift.workDays]
+      : [1, 2, 3, 4, 5];
     setAssignForm({
       employeeId: empId || 0,
-      shiftId: shifts[0]?.id ?? 0,
+      shiftId: defaultShift?.id ?? 0,
       effectiveFrom: dateStr || new Date().toISOString().split('T')[0],
       effectiveTo: '',
-      workDays: [1, 2, 3, 4, 5],
+      workDays: initialWorkDays,
     });
     setAssignModalOpen(true);
   };
@@ -757,13 +764,17 @@ function SchedulesContent() {
     setSingleAssignDropdownOpen(false);
     setSingleAssignShiftDropdownOpen(false);
     setSingleAssignSearch('');
+    const shift = shifts.find((s) => s.id === assignment.shiftId);
+    const initialWorkDays = shift?.workDays && shift.workDays.length > 0
+      ? [...shift.workDays]
+      : (assignment.workDays && assignment.workDays.length > 0 ? assignment.workDays : [1, 2, 3, 4, 5]);
     setAssignForm({
       id: assignment.id,
       employeeId: assignment.employeeId,
       shiftId: assignment.shiftId,
       effectiveFrom: assignment.effectiveFrom.split('T')[0],
       effectiveTo: assignment.effectiveTo ? assignment.effectiveTo.split('T')[0] : '',
-      workDays: assignment.workDays && assignment.workDays.length > 0 ? assignment.workDays : [1, 2, 3, 4, 5],
+      workDays: initialWorkDays,
     });
     setAssignModalOpen(true);
   };
@@ -780,13 +791,18 @@ function SchedulesContent() {
     }
     try {
       setSubmitting(true);
+      const currentShift = shifts.find((s) => s.id === Number(assignForm.shiftId));
+      const finalWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
+        ? currentShift.workDays
+        : (assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5]);
+
       if (assignModalMode === 'create') {
         await employeeShiftService.assignShift({
           employeeId: Number(assignForm.employeeId),
           shiftId: Number(assignForm.shiftId),
           effectiveFrom: assignForm.effectiveFrom,
           effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
-          workDays: assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5],
+          workDays: finalWorkDays,
         });
         toast.success('มอบหมายกะให้พนักงานสำเร็จเรียบร้อย');
       } else if (assignForm.id) {
@@ -794,7 +810,7 @@ function SchedulesContent() {
           shiftId: Number(assignForm.shiftId),
           effectiveFrom: assignForm.effectiveFrom,
           effectiveTo: assignForm.effectiveTo ? assignForm.effectiveTo : null,
-          workDays: assignForm.workDays && assignForm.workDays.length > 0 ? assignForm.workDays : [1, 2, 3, 4, 5],
+          workDays: finalWorkDays,
         });
         toast.success('อัปเดตการมอบหมายกะสำเร็จ');
       }
@@ -827,11 +843,16 @@ function SchedulesContent() {
 
     try {
       setSubmitting(true);
+      const currentShift = shifts.find((s) => s.id === batchShiftId);
+      const finalWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
+        ? currentShift.workDays
+        : (batchWorkDays && batchWorkDays.length > 0 ? batchWorkDays : [1, 2, 3, 4, 5]);
+
       const req: BatchAssignEmployeeShiftRequest = {
         shiftId: batchShiftId,
         effectiveFrom: batchEffectiveFrom,
         effectiveTo: batchEffectiveTo ? batchEffectiveTo : null,
-        workDays: batchWorkDays && batchWorkDays.length > 0 ? batchWorkDays : [1, 2, 3, 4, 5],
+        workDays: finalWorkDays,
         departmentId: batchTargetType === 'department' ? batchSelectedDept : null,
         employeeIds: batchTargetType === 'selected' ? batchSelectedEmpIds : undefined,
       };
@@ -1120,6 +1141,13 @@ function SchedulesContent() {
                       size="sm"
                       icon={<Users className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />}
                       onClick={() => {
+                        const targetShift = shifts.find((s) => s.id === batchShiftId) || shifts[0];
+                        if (targetShift) {
+                          setBatchShiftId(targetShift.id);
+                          if (targetShift.workDays && targetShift.workDays.length > 0) {
+                            setBatchWorkDays([...targetShift.workDays]);
+                          }
+                        }
                         setBatchModalOpen(true);
                         setBatchShiftDropdownOpen(false);
                         setBatchResult(null);
@@ -2271,46 +2299,45 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Day of Week Selector */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    วันทำงานประจำสัปดาห์ (ดึงตามกะการทำงานอัตโนมัติ) <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    ทำงาน {(assignForm.workDays || [1, 2, 3, 4, 5]).length} วัน ({formatWorkDays(assignForm.workDays)})
-                  </span>
-                </div>
+              {/* Day of Week Display (ตามกะการทำงาน · แก้ไขไม่ได้) */}
+              {(() => {
+                const currentShift = shifts.find((s) => s.id === assignForm.shiftId);
+                const displayWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
+                  ? currentShift.workDays
+                  : (assignForm.workDays || [1, 2, 3, 4, 5]);
 
-                <div className="grid grid-cols-7 gap-1.5">
-                  {WEEK_DAYS.map((day) => {
-                    const isSelected = (assignForm.workDays || [1, 2, 3, 4, 5]).includes(day.id);
-                    return (
-                      <button
-                        key={day.id}
-                        type="button"
-                        onClick={() => {
-                          const current = assignForm.workDays || [1, 2, 3, 4, 5];
-                          const next = isSelected
-                            ? current.filter((d) => d !== day.id)
-                            : [...current, day.id];
-                          if (next.length > 0) {
-                            setAssignForm({ ...assignForm, workDays: next });
-                          }
-                        }}
-                        className={`py-2 px-1 rounded-lg text-xs font-semibold border transition text-center flex flex-col items-center gap-0.5 ${
-                          isSelected
-                            ? 'bg-primary text-white border-primary shadow-xs'
-                            : 'bg-slate-50 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        <span className="text-[11px]">{day.short}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        วันทำงานประจำสัปดาห์ <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">(ดึงตามกะการทำงาน · แก้ไขไม่ได้)</span>
+                      </label>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        ทำงาน {displayWorkDays.length} วัน ({formatWorkDays(displayWorkDays)})
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {WEEK_DAYS.map((day) => {
+                        const isSelected = displayWorkDays.includes(day.id);
+                        return (
+                          <div
+                            key={day.id}
+                            className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
+                              isSelected
+                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
+                            }`}
+                          >
+                            <span className="text-[11px]">{day.short}</span>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
 
       </Modal>
 
@@ -2636,45 +2663,45 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Day of Week Selector */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    วันทำงานประจำสัปดาห์ (ดึงตามกะการทำงานอัตโนมัติ) <span className="text-rose-500">*</span>
-                  </label>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    ทำงาน {batchWorkDays.length} วัน ({formatWorkDays(batchWorkDays)})
-                  </span>
-                </div>
+              {/* Day of Week Display (ตามกะการทำงาน · แก้ไขไม่ได้) */}
+              {(() => {
+                const currentShift = shifts.find((s) => s.id === batchShiftId);
+                const displayWorkDays = currentShift?.workDays && currentShift.workDays.length > 0
+                  ? currentShift.workDays
+                  : (batchWorkDays && batchWorkDays.length > 0 ? batchWorkDays : [1, 2, 3, 4, 5]);
 
-                <div className="grid grid-cols-7 gap-1.5">
-                  {WEEK_DAYS.map((day) => {
-                    const isSelected = batchWorkDays.includes(day.id);
-                    return (
-                      <button
-                        key={day.id}
-                        type="button"
-                        onClick={() => {
-                          const next = isSelected
-                            ? batchWorkDays.filter((d) => d !== day.id)
-                            : [...batchWorkDays, day.id];
-                          if (next.length > 0) {
-                            setBatchWorkDays(next);
-                          }
-                        }}
-                        className={`py-2 px-1 rounded-lg text-xs font-semibold border transition text-center flex flex-col items-center gap-0.5 ${
-                          isSelected
-                            ? 'bg-primary text-white border-primary shadow-xs'
-                            : 'bg-slate-50 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        <span className="text-[11px]">{day.short}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                return (
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        วันทำงานประจำสัปดาห์ <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">(ดึงตามกะการทำงาน · แก้ไขไม่ได้)</span>
+                      </label>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        ทำงาน {displayWorkDays.length} วัน ({formatWorkDays(displayWorkDays)})
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1.5">
+                      {WEEK_DAYS.map((day) => {
+                        const isSelected = displayWorkDays.includes(day.id);
+                        return (
+                          <div
+                            key={day.id}
+                            className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
+                              isSelected
+                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                                : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
+                            }`}
+                          >
+                            <span className="text-[11px]">{day.short}</span>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-transparent'}`} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Modal Actions */}
