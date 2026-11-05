@@ -15,7 +15,6 @@ import {
   Calendar,
   Search,
   ChevronsUpDown,
-  ChevronRight,
   Users,
   Loader2,
   Receipt,
@@ -33,6 +32,7 @@ import { getAvatarUrl } from '@/lib/api-client';
 import { confirmAction } from '@/lib/sweetalert';
 import { getSmartYearRange } from '@/lib/yearUtils';
 import { TableEmpty } from '@/components/ui/TableState';
+import { EmployeeAccordionItem } from '@/components/common/EmployeeAccordionItem';
 
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -276,63 +276,32 @@ export default function EmployeeBenefitBalancesPage() {
           <div className="space-y-3">
             {overviewList.map((emp) => {
               const isExpanded = expandedEmployeeIds.has(emp.employeeId);
-              const nameParts = (emp.employeeName || '').trim().replace(/^(นางสาว|นาย|นาง|น\.ส\.|Mr\.?|Mrs\.?|Ms\.?|Miss)\s*/i, '').split(/\s+/).filter(Boolean);
-              const initials = nameParts.length ? nameParts.slice(0, 2).map((n) => n.charAt(0)).join('').toUpperCase() : 'EM';
 
               return (
-                <div
+                <EmployeeAccordionItem
                   key={emp.employeeId}
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    isExpanded
-                      ? 'bg-white dark:bg-slate-800/90 border-blue-200 dark:border-blue-700/60 shadow-xs'
-                      : 'bg-white dark:bg-slate-800/50 border-gray-100 dark:border-slate-800 hover:border-gray-300 dark:hover:border-slate-700 hover:shadow-2xs'
-                  }`}
-                >
-                  {/* Master Row Header */}
-                  <div
-                    onClick={() => toggleExpandEmployee(emp.employeeId)}
-                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none"
-                  >
-                    {/* Employee Details */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        className={`p-1 rounded-lg text-gray-400 dark:text-slate-500 transition-transform duration-200 ${
-                          isExpanded ? 'rotate-90 text-blue-600 dark:text-blue-400' : ''
-                        }`}
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                      {emp.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={getAvatarUrl(emp.avatarUrl)!}
-                          alt={emp.employeeName}
-                          className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center text-sm shadow-xs shrink-0 border border-blue-100 dark:border-blue-900">
-                          {initials}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-bold text-gray-900 dark:text-slate-100 text-sm">{emp.employeeName}</span>
-                          <span className="text-[11px] font-semibold text-gray-500 dark:text-slate-400 bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                            {emp.employeeCode}
-                          </span>
-                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-md">
-                            {emp.employeeTypeName}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">
-                          {emp.departmentName} · {emp.positionTitle}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Summary Metrics */}
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-6 pl-11 sm:pl-0">
+                  open={isExpanded}
+                  onToggle={() => toggleExpandEmployee(emp.employeeId)}
+                  name={emp.employeeName}
+                  code={emp.employeeCode}
+                  avatar={
+                    emp.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={getAvatarUrl(emp.avatarUrl)!}
+                        alt={emp.employeeName}
+                        className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs"
+                      />
+                    ) : undefined
+                  }
+                  tags={
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-md">
+                      {emp.employeeTypeName}
+                    </span>
+                  }
+                  subtitle={`${emp.departmentName} · ${emp.positionTitle}`}
+                  metrics={
+                    <>
                       <div className="text-left sm:text-right">
                         <span className="text-[11px] text-gray-400 dark:text-slate-400 block">สิทธิ์ที่เปิด</span>
                         <span className="text-xs font-semibold text-gray-700 dark:text-slate-300 bg-gray-50 dark:bg-slate-800 px-2 py-0.5 rounded-full border border-gray-200 dark:border-slate-700">
@@ -361,12 +330,9 @@ export default function EmployeeBenefitBalancesPage() {
                           ฿{emp.totalRemaining.toLocaleString('th-TH', { minimumFractionDigits: 0 })}
                         </span>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Expanded Sub-Table */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4 pt-1 bg-slate-50/70 dark:bg-slate-900/60 border-t border-gray-100 dark:border-slate-700/60 animate-in fade-in duration-150">
+                    </>
+                  }
+                >
                       <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs">
                         <table className="table-standard w-full text-left border-collapse text-xs">
                           <thead>
@@ -446,9 +412,7 @@ export default function EmployeeBenefitBalancesPage() {
                           </tbody>
                         </table>
                       </div>
-                    </div>
-                  )}
-                </div>
+                </EmployeeAccordionItem>
               );
             })}
           </div>

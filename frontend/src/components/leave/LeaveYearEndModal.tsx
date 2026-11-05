@@ -5,7 +5,6 @@ import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
-  ChevronRight,
   Loader2,
   Lock,
   Search,
@@ -14,8 +13,10 @@ import {
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { LeaveYearEndPreview, LeaveYearEndRow } from '@/types/leaveInsights';
 import { Button, inputClass } from '@/components/ui';
-import { leaveColorVars, resolveLeaveColor } from '@/lib/leaveColors';
+import { resolveLeaveColor } from '@/lib/leaveColors';
 import { formatThaiDate } from '@/lib/thaiDate';
+import { LeaveTypeChip } from '@/components/leave/LeaveTypeChip';
+import { EmployeeAccordionItem } from '@/components/common/EmployeeAccordionItem';
 
 interface Props {
   isOpen: boolean;
@@ -25,18 +26,6 @@ interface Props {
   onClosed: (result: LeaveYearEndPreview) => void;
   /** สีของประเภทการลา (ให้ตรงกับหน้ายอดวันลา) */
   colorOfType?: (leaveTypeId: number) => string;
-}
-
-function LeaveTypeChip({ name, color }: { name: string; color: string }) {
-  return (
-    <span
-      className="leave-chip inline-flex items-center gap-2 rounded-full font-semibold px-2.5 py-0.5 text-xs"
-      style={leaveColorVars(color) as React.CSSProperties}
-    >
-      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-      {name}
-    </span>
-  );
 }
 
 interface EmployeeGroup {
@@ -311,46 +300,15 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                   {groups.map((g) => {
                     const isOpen = expanded.has(g.employeeId);
                     return (
-                      <div
+                      <EmployeeAccordionItem
                         key={g.employeeId}
-                        className={`rounded-2xl border transition-all overflow-hidden bg-white dark:bg-slate-800 ${
-                          isOpen
-                            ? 'border-blue-200 dark:border-blue-700 shadow-sm'
-                            : 'border-slate-100 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
-                      >
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          aria-expanded={isOpen}
-                          onClick={() => toggleGroup(g.employeeId)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              toggleGroup(g.employeeId);
-                            }
-                          }}
-                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <ChevronRight
-                              className={`w-5 h-5 shrink-0 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-90 text-blue-600' : ''}`}
-                            />
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-bold flex items-center justify-center text-sm shrink-0">
-                              {g.employeeName.replace(/^(นาย|นางสาว|นาง)\s*/, '').trim().slice(0, 2) || 'EM'}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-900 dark:text-slate-100 text-sm truncate">{g.employeeName}</span>
-                                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">
-                                  {g.employeeCode}
-                                </span>
-                              </div>
-                              <div className="text-xs text-slate-400 mt-0.5">{g.rows.length} ประเภทการลา</div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-4 sm:gap-6 pl-8 sm:pl-0">
+                        open={isOpen}
+                        onToggle={() => toggleGroup(g.employeeId)}
+                        name={g.employeeName}
+                        code={g.employeeCode}
+                        subtitle={`${g.rows.length} ประเภทการลา`}
+                        metrics={
+                          <>
                             <div className="text-left sm:text-right">
                               <span className="text-[11px] text-slate-400 block">คงเหลือรวม</span>
                               <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{fmt(g.remaining)} วัน</span>
@@ -363,11 +321,9 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                               <span className="text-[11px] text-slate-400 block">เกินเพดาน</span>
                               <span className={`text-sm font-black ${g.overCap > 0 ? 'text-rose-600' : 'text-slate-400'}`}>{fmt(g.overCap)} วัน</span>
                             </div>
-                          </div>
-                        </div>
-
-                        {isOpen && (
-                          <div className="px-4 pb-4 pt-1 bg-slate-50/70 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-700">
+                          </>
+                        }
+                      >
                             <div className="overflow-x-auto rounded-xl border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800">
                               <table className="table-standard w-full min-w-[600px] text-left border-collapse text-xs whitespace-nowrap">
                                 <thead>
@@ -410,9 +366,7 @@ export const LeaveYearEndModal: React.FC<Props> = ({ isOpen, year, onClose, onCl
                                 </tbody>
                               </table>
                             </div>
-                          </div>
-                        )}
-                      </div>
+                      </EmployeeAccordionItem>
                     );
                   })}
                 </div>
