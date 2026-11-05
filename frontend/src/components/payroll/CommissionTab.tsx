@@ -788,7 +788,7 @@ export default function CommissionTab() {
       e.dateTo.includes(periodModalSearch)
   );
 
-  const modalActiveListCount = periodModalTab === 'EMPLOYEES' ? filteredModalRecords.length : filteredModalEntries.length;
+  const modalActiveListCount = filteredModalRecords.length;
   const totalModalPages = Math.max(1, Math.ceil(modalActiveListCount / periodModalPageSize));
   const safeModalPage = Math.min(Math.max(1, periodModalPage), totalModalPages);
 
@@ -2305,46 +2305,16 @@ export default function CommissionTab() {
                   />
                 </div>
 
-                {/* Right: View Switcher Tabs */}
-                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 self-end sm:self-auto shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPeriodModalTab('EMPLOYEES');
-                      setPeriodModalPage(1);
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      periodModalTab === 'EMPLOYEES'
-                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Users className="w-3.5 h-3.5 text-blue-600" />
-                    <span>สรุปรายพนักงาน ({periodSummaryForDetails?.records.length || 0} คน)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPeriodModalTab('ALL_DAYS');
-                      setPeriodModalPage(1);
-                    }}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                      periodModalTab === 'ALL_DAYS'
-                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>รายการทุกวันในเดือน ({periodAllEntriesForDetails.length} รายการ)</span>
-                  </button>
+                {/* Right: Employee Summary Badge */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-200 self-end sm:self-auto shrink-0">
+                  <Users className="w-3.5 h-3.5 text-blue-600" />
+                  <span>สรุปรายพนักงาน ({periodSummaryForDetails?.records.length || 0} คน)</span>
                 </div>
               </div>
 
               {/* Table Content */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="overflow-x-auto">
-                  {periodModalTab === 'EMPLOYEES' ? (
-                    /* Tab 1: Employee Summary */
                     <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
                       <thead className="bg-primary text-white font-semibold">
                         <tr className="whitespace-nowrap">
@@ -2478,98 +2448,6 @@ export default function CommissionTab() {
                         )}
                       </tbody>
                     </table>
-                  ) : (
-                    /* Tab 2: All Days / Entries in Month */
-                    <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
-                      <thead className="bg-primary text-white font-semibold">
-                        <tr className="whitespace-nowrap">
-                          <th className="py-3.5 px-4 font-semibold">ช่วงวันที่</th>
-                          <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
-                          <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
-                          <th className="py-3.5 px-4 font-semibold">ที่มา / ไฟล์</th>
-                          <th className="py-3.5 px-4 text-right font-semibold">ยอดขาย (บาท)</th>
-                          <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
-                          <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่น (บาท)</th>
-                          <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
-                          <th className="py-3.5 px-4 text-center font-semibold">วันที่นำเข้า</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                        {isLoadingPeriodModal ? (
-                          <tr>
-                            <td colSpan={9} className="py-12 text-center text-slate-400">
-                              <Loader2 className="mx-auto h-6 w-6 animate-spin text-blue-600" />
-                              <p className="mt-2 text-xs">กำลังโหลดรายการทุกวันในเดือน...</p>
-                            </td>
-                          </tr>
-                        ) : pagedModalEntries.length === 0 ? (
-                          <tr>
-                            <td colSpan={9} className="py-12 text-center text-slate-400">
-                              <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
-                              <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
-                                ไม่พบรายการในงวดนี้
-                              </p>
-                            </td>
-                          </tr>
-                        ) : (
-                          pagedModalEntries.map((e) => (
-                            <tr
-                              key={e.id}
-                              className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
-                            >
-                              <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono text-xs">
-                                  {e.dateFrom === e.dateTo ? e.dateFrom : `${e.dateFrom} ถึง ${e.dateTo}`}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                                {e.employeeCode}
-                              </td>
-                              <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                                {e.employeeName}
-                              </td>
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                {e.batchFileName ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono text-xs">
-                                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span>{e.batchFileName}</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs">
-                                    <Plus className="w-3 h-3" />
-                                    <span>บันทึกด้วยตนเอง</span>
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                                ฿{e.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </td>
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                                <span className="inline-flex items-center justify-center min-w-10 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200">
-                                  {e.commissionRate}%
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
-                                ฿{e.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </td>
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                {e.note ? (
-                                  <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={e.note}>
-                                    {e.note}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-center text-slate-500 dark:text-slate-400 text-xs font-mono whitespace-nowrap">
-                                {new Date(e.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  )}
                 </div>
               </div>
 
