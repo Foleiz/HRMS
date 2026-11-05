@@ -4,7 +4,6 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { Button, ModalShell, TableToolbar } from '@/components/ui';
-import { BenefitsSubNav } from '@/components/benefits/BenefitsSubNav';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -222,9 +221,6 @@ export default function EmployeeBenefitBalancesPage() {
 
   return (
     <div className="space-y-6 font-sans">
-      {/* Sub-Navigation Tabs matching Design System */}
-      <BenefitsSubNav />
-
       {/* Main Content Container */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-5">
         {/* Filter and Control Bar (Matching leave/page.tsx Tab 3) */}
