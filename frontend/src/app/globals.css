@@ -475,13 +475,45 @@ html.dark .refresh-indicator__bar::before {
    - .modal-pop: popup ขยายออกมาจากจุดที่กด (ModalShell ตั้ง --modal-origin-x / -y ให้)
    - .skeleton-bar: แถบโหลดข้อมูลแบบโครงร่าง (TableLoading)
    - ผู้ใช้ที่ตั้งเครื่องให้ "ลดการเคลื่อนไหว" จะไม่เห็นแอนิเมชันเหล่านี้ */
+/* พื้นหลังมืดค่อย ๆ ปรากฏ (ใส่ให้ทุก popup แม้ className ที่ส่งมาจะไม่มี animation) */
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-backdrop {
+  animation: modal-backdrop-in 200ms ease-out both;
+}
+
+/* ตัวหน้าต่าง: ขยายจากจุดที่กดแบบนุ่ม ไม่เด้งเกิน (ease-out แบบ expo) */
 @keyframes modal-pop {
-  from { opacity: 0; transform: scale(0.88); }
+  from { opacity: 0; transform: scale(0.94); }
   to { opacity: 1; transform: none; }
 }
 .modal-pop {
   transform-origin: var(--modal-origin-x, 50%) var(--modal-origin-y, 50%);
-  animation: modal-pop 260ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  animation: modal-pop 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+/* กันแอนิเมชันซ้อน: popup เดิมหลายตัวมี animate-in / zoom-in ของตัวเองอยู่แล้ว */
+.modal-pop > * {
+  animation: none;
+}
+
+/* ตอนปิด: หดกลับไปทางจุดเดิมแล้วจางหาย */
+@keyframes modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes modal-pop-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: scale(0.96); }
+}
+.modal-closing {
+  pointer-events: none;
+  animation: modal-backdrop-out 200ms ease-in forwards;
+}
+.modal-closing .modal-pop {
+  animation: modal-pop-out 180ms ease-in forwards;
 }
 
 @keyframes skeleton-shimmer {
@@ -500,7 +532,9 @@ html.dark .refresh-indicator__bar::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
   .modal-pop,
+  .modal-closing,
   .skeleton-bar {
     animation: none;
   }
