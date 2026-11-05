@@ -16,11 +16,15 @@ public class ShiftService : IShiftService
 {
     private readonly IHrmsDbContext _context;
     private readonly ILogger<ShiftService> _logger;
+    private readonly IAttendanceDailyService _attendanceDailyService;
 
-    public ShiftService(IHrmsDbContext context, ILogger<ShiftService> logger)
+    private static readonly string[] LockedPayrollStatuses = { "APPROVED", "PROCESSING", "PAID", "CLOSED" };
+
+    public ShiftService(IHrmsDbContext context, ILogger<ShiftService> logger, IAttendanceDailyService attendanceDailyService)
     {
         _context = context;
         _logger = logger;
+        _attendanceDailyService = attendanceDailyService;
     }
 
     private static (double workHours, double netWorkHours) CalculateHours(TimeOnly start, TimeOnly end, bool isCrossDay, int breakMinutes)
@@ -250,16 +254,65 @@ public class ShiftService : IShiftService
 
         if (affectedRecords.Count > 0)
         {
+            // วันทำงานของกะอาจเปลี่ยน → ปรับสถานะ "ทำงานวันหยุด" / วันทำงานปกติ (ข้ามเดือนที่งวดเงินเดือนปิดแล้ว)
+            var minDate = affectedRecords.Min(r => r.WorkDate);
+            var maxDate = affectedRecords.Max(r => r.WorkDate);
+            var holidays = (await _context.Holidays.AsNoTracking()
+                    .Where(h => h.HolidayDate >= minDate && h.HolidayDate <= maxDate)
+                    .Select(h => h.HolidayDate)
+                    .ToListAsync())
+                .ToHashSet();
+            var lockedMonths = (await _context.PayrollPeriods.AsNoTracking()
+                    .Where(p => LockedPayrollStatuses.Contains(p.Status))
+                    .Select(p => new { p.Year, p.Month })
+                    .ToListAsync())
+                .Select(p => (p.Year, p.Month))
+                .ToHashSet();
+            var employeeIds = affectedRecords.Select(r => r.EmployeeId).Distinct().ToList();
+            var assignments = await _context.EmployeeShifts.AsNoTracking()
+                .Where(es => employeeIds.Contains(es.EmployeeId) && es.EffectiveFrom <= maxDate && (es.EffectiveTo == null || es.EffectiveTo >= minDate))
+                .ToListAsync();
+            var companySchedule = await CompanyWorkSchedule.LoadAsync(_context);
+
             foreach (var rec in affectedRecords)
             {
                 rec.Shift = shift;
                 AttendanceDailyService.PopulateScheduledTimes(rec, shift, rec.WorkDate);
                 if (rec.ActualIn != null || rec.ActualOut != null)
                 {
+                    if (!lockedMonths.Contains((rec.WorkDate.Year, rec.WorkDate.Month)))
+                    {
+                        var es = assignments
+                            .Where(x => x.EmployeeId == rec.EmployeeId && x.EffectiveFrom <= rec.WorkDate && (x.EffectiveTo == null || x.EffectiveTo >= rec.WorkDate))
+                            .OrderByDescending(x => x.EffectiveFrom)
+                            .FirstOrDefault();
+                        var workDays = es?.WorkDays ?? shift.WorkDays;
+                        AttendanceDailyService.ApplyDayType(rec,
+                            AttendanceDailyService.IsOffDay(rec.WorkDate, workDays, true, companySchedule, holidays.Contains(rec.WorkDate)));
+                    }
                     AttendanceDailyService.RecalculateAttendance(rec, shift);
                 }
             }
             await _context.SaveChangesAsync();
+
+            // สรุปเวลารายเดือน (ที่เงินเดือนใช้) ให้ตรงกับสถานะใหม่
+            var months = affectedRecords
+                .Select(r => (r.WorkDate.Year, r.WorkDate.Month))
+                .Where(m => !lockedMonths.Contains(m))
+                .Distinct()
+                .OrderBy(m => m.Year).ThenBy(m => m.Month)
+                .ToList();
+            foreach (var (year, month) in months)
+            {
+                try
+                {
+                    await _attendanceDailyService.ProcessMonthlyAttendanceSummaryAsync(year, month);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "คำนวณสรุปเวลาเดือน {Month}/{Year} ใหม่หลังแก้ไขกะไม่สำเร็จ", month, year);
+                }
+            }
         }
 
         return MapToDto(shift);
