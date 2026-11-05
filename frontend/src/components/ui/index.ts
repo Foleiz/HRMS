@@ -24,4 +24,5 @@ export * from './ModalHeader';
 export * from './AvatarName';
 export * from './ComboInput';
 export * from './CountBadge';
+export * from './TableState';
 export * from './HoverList';

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Plus, Loader2, Eye, Download, Clock } from 'lucide-react';
+import { Plus, Eye, Download, Clock } from 'lucide-react';
 import { transferService } from '@/services/transferService';
 import { employeeService } from '@/services/employeeService';
 import type { Employee } from '@/types/employee';
@@ -19,6 +19,7 @@ import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal'
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 export default function TransfersPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -257,20 +258,9 @@ export default function TransfersPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-400" />
-                        <span>กำลังโหลดประวัติการโยกย้าย...</span>
-                      </div>
-                    </td>
-                  </tr>
+                  <TableLoading colSpan={5} text="กำลังโหลดประวัติการโยกย้าย..." />
                 ) : paginatedTransfers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-16 text-center text-slate-400 dark:text-slate-500">
-                      ไม่พบข้อมูลประวัติการโยกย้าย
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={5} text="ไม่พบข้อมูลประวัติการโยกย้าย" />
                 ) : (
                   paginatedTransfers.map((item) => {
                     const deptChanged = (item.fromDepartmentName || '') !== (item.toDepartmentName || '');

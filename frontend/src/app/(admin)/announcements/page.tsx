@@ -52,6 +52,7 @@ import {
 import { Department } from '@/types/organization';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { TableLoading } from '@/components/ui/TableState';
 
 // ─── Helpers ─────────────────────────────────────────────────
 
@@ -578,14 +579,7 @@ export default function AnnouncementsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {listPhase.initialLoading ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
-                        <div className="flex flex-col items-center justify-center gap-2">
-                          <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                          <span>กำลังโหลดข้อมูลประกาศ...</span>
-                        </div>
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={8} text="กำลังโหลดข้อมูลประกาศ..." />
                   ) : announcements.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="py-12 text-center text-slate-400">

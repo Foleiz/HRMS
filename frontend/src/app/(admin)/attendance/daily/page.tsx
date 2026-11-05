@@ -81,6 +81,7 @@ import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { confirmAction } from '@/lib/sweetalert';
 import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 const THAI_MONTHS = TH_MONTHS;
 
@@ -1343,12 +1344,7 @@ function DailyAttendanceContent() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {dailyPhase.initialLoading ? (
-                    <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
-                        กำลังโหลดข้อมูลบันทึกเวลา...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={12} text="กำลังโหลดข้อมูลบันทึกเวลา..." />
                   ) : records.length === 0 ? (
                     <tr>
                       <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -1687,12 +1683,7 @@ function DailyAttendanceContent() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {batchesPhase.initialLoading ? (
-                    <tr>
-                      <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                        <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
-                        กำลังโหลดข้อมูลประวัติการนำเข้า...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={12} text="กำลังโหลดข้อมูลประวัติการนำเข้า..." />
                   ) : batches.length === 0 ? (
                     <tr>
                       <td colSpan={12} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
@@ -2039,18 +2030,9 @@ function DailyAttendanceContent() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {isLoadingErrors ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-600 mb-1" />
-                          กำลังโหลด Error Logs...
-                        </td>
-                      </tr>
+                      <TableLoading colSpan={6} text="กำลังโหลด Error Logs..." />
                     ) : errorLogs.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                          ไม่พบรายการข้อผิดพลาดในชุดนี้
-                        </td>
-                      </tr>
+                      <TableEmpty colSpan={6} text="ไม่พบรายการข้อผิดพลาดในชุดนี้" />
                     ) : (
                       errorLogs.map((err) => (
                         <tr key={err.id} className="hover:bg-rose-50/30 transition-colors">
@@ -2176,12 +2158,7 @@ function DailyAttendanceContent() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {isLoadingBatchRecords ? (
-                      <tr>
-                        <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                          <RefreshCw className="w-5 h-5 animate-spin mx-auto text-blue-600 mb-1" />
-                          กำลังโหลดข้อมูล...
-                        </td>
-                      </tr>
+                      <TableLoading colSpan={9} />
                     ) : batchRecords.length === 0 ? (
                       <tr>
                         <td colSpan={9} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">

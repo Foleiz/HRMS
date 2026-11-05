@@ -59,6 +59,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getSmartYearRange } from '@/lib/yearUtils';
 import SupportedCommissionFormatsModal from './SupportedCommissionFormatsModal';
 import { TH_MONTHS } from '@/lib/thaiDate';
+import { TableEmpty } from '@/components/ui/TableState';
 
 const THAI_MONTHS = TH_MONTHS;
 
@@ -1393,11 +1394,7 @@ export default function CommissionTab() {
                   </td>
                 </tr>
               ) : batches.length === 0 ? (
-                <tr>
-                  <td colSpan={12} className="py-8 text-center text-slate-400">
-                    ยังไม่มีประวัติการนำเข้าไฟล์ในระบบ
-                  </td>
-                </tr>
+                <TableEmpty colSpan={12} text="ยังไม่มีประวัติการนำเข้าไฟล์ในระบบ" />
               ) : (
                 batches.map((b) => (
                   <tr

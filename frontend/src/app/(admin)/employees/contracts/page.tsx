@@ -19,7 +19,6 @@ import {
   Briefcase,
   Layers,
   X,
-  Loader2,
   Paperclip,
   Download,
   Upload,
@@ -44,6 +43,7 @@ import { Button, TabBar, TableToolbar, AvatarName } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 export default function ContractsPage() {
   const router = useRouter();
@@ -375,20 +375,9 @@ export default function ContractsPage() {
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                      <span>กำลังโหลดข้อมูลสัญญาจ้างงาน...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableLoading colSpan={7} text="กำลังโหลดข้อมูลสัญญาจ้างงาน..." />
               ) : paginatedContracts.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                    ไม่พบข้อมูลสัญญาจ้างงาน
-                  </td>
-                </tr>
+                <TableEmpty colSpan={7} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
               ) : (
                 paginatedContracts.map((contract) => (
                   <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">

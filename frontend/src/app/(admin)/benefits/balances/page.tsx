@@ -32,6 +32,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getAvatarUrl } from '@/lib/api-client';
 import { confirmAction } from '@/lib/sweetalert';
 import { getSmartYearRange } from '@/lib/yearUtils';
+import { TableEmpty } from '@/components/ui/TableState';
 
 export default function EmployeeBenefitBalancesPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -381,11 +382,7 @@ export default function EmployeeBenefitBalancesPage() {
                           </thead>
                           <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60">
                             {emp.benefits.length === 0 ? (
-                              <tr>
-                                <td colSpan={7} className="py-6 text-center text-gray-400 dark:text-slate-500">
-                                  ไม่มีสิทธิประโยชน์ที่ผูกกับสัญญาจ้างนี้
-                                </td>
-                              </tr>
+                              <TableEmpty colSpan={7} text="ไม่มีสิทธิประโยชน์ที่ผูกกับสัญญาจ้างนี้" />
                             ) : (
                               emp.benefits.map((b) => (
                                 <tr key={b.benefitItemId} className="hover:bg-blue-50/30 dark:hover:bg-slate-700/40 transition-colors">

@@ -64,6 +64,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, type TabBarItem , TableToolbar } from '@/components/ui';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
@@ -563,19 +564,9 @@ export default function LeaveManagementPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {loading ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-gray-400">
-                        <div className="inline-flex items-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูลประเภทการลา...
-                        </div>
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={5} text="กำลังโหลดข้อมูลประเภทการลา..." />
                   ) : filteredLeaveTypes.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-gray-400">
-                        {leaveTypes.length === 0 ? 'ยังไม่มีประเภทการลาในระบบ' : 'ไม่พบประเภทการลาที่ตรงกับการค้นหา'}
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={5} text={leaveTypes.length === 0 ? 'ยังไม่มีประเภทการลาในระบบ' : 'ไม่พบประเภทการลาที่ตรงกับการค้นหา'} />
                   ) : (
                     pagedLeaveTypes.map((type) => (
                       <tr key={type.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
@@ -682,19 +673,9 @@ export default function LeaveManagementPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {loading ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-gray-400">
-                        <div className="inline-flex items-center gap-2">
-                          <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูลสิทธิ์การลา...
-                        </div>
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={8} text="กำลังโหลดข้อมูลสิทธิ์การลา..." />
                   ) : filteredLeavePolicies.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-gray-400">
-                        {leavePolicies.length === 0 ? 'ยังไม่มีนโยบายสิทธิ์การลาในระบบ' : 'ไม่พบนโยบายสิทธิ์การลาที่ตรงกับการค้นหา'}
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={8} text={leavePolicies.length === 0 ? 'ยังไม่มีนโยบายสิทธิ์การลาในระบบ' : 'ไม่พบนโยบายสิทธิ์การลาที่ตรงกับการค้นหา'} />
                   ) : (
                     pagedLeavePolicies.map((policy) => (
                       <tr key={policy.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">

@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ChevronLeft, ChevronRight, FileText, Loader2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, FileText, } from 'lucide-react';
 import Link from 'next/link';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { leaveService } from '@/services/leaveService';
 import { certificateService } from '@/services/certificateService';
 import { LeaveRequest } from '@/types/leave';
+import { TableLoading } from '@/components/ui/TableState';
 
 interface RecentTransactionItem {
   id: string | number;
@@ -400,14 +401,7 @@ export const RecentTransactionsTable: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Loader2 className="w-6 h-6 text-primary dark:text-blue-300 animate-spin" />
-                      <span className="text-xs">กำลังโหลดประวัติการทำรายการของคุณ...</span>
-                    </div>
-                  </td>
-                </tr>
+                <TableLoading colSpan={5} text="กำลังโหลดประวัติการทำรายการของคุณ..." />
               ) : paginatedItems.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400 dark:text-slate-500">

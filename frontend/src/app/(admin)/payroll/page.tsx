@@ -55,8 +55,7 @@ import {
   X,
   ArrowDownToLine,
   FileText,
-  RefreshCw,
-} from 'lucide-react';
+  } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -110,6 +109,7 @@ import PayrollPeriodsTab from '@/components/payroll/PayrollPeriodsTab';
 import PayrollScheduleTab from '@/components/payroll/PayrollScheduleTab';
 import { calculatePeriodDatesFromSettings, getPayrollScheduleSettings } from '@/services/payrollScheduleService';
 import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate } from '@/lib/thaiDate';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 type ActiveTab =
   | 'overview'
@@ -2387,19 +2387,9 @@ export default function PayrollPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
                       {payrollPhase.initialLoading ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-400">
-                            <div className="inline-flex items-center gap-2">
-                              <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูล...
-                            </div>
-                          </td>
-                        </tr>
+                        <TableLoading colSpan={6} />
                       ) : structures.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-400">
-                            ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ
-                          </td>
-                        </tr>
+                        <TableEmpty colSpan={6} text="ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ" />
                       ) : (
                         paginatedStructures.map((s, idx) => {
                         const isStructureActive = s.status ? s.status.toUpperCase() === 'ACTIVE' : true;
@@ -5287,11 +5277,7 @@ export default function PayrollPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-xs">
                           {!transferList || transferList.items.length === 0 ? (
-                            <tr>
-                              <td colSpan={7} className="py-14 text-center text-slate-400">
-                                ยังไม่มีรายการเงินเดือนในรอบนี้
-                              </td>
-                            </tr>
+                            <TableEmpty colSpan={7} text="ยังไม่มีรายการเงินเดือนในรอบนี้" />
                           ) : (
                             transferList.items.map((item) => (
                               <tr key={item.payrollId} className="hover:bg-slate-50/50 dark:hover:bg-slate-750/50 transition-colors">
