@@ -84,7 +84,7 @@ import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { BenefitPolicyFields } from '@/components/benefits/BenefitPolicyFields';
-import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, CountBadge, HoverList } from '@/components/ui';
+import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, HoverList } from '@/components/ui';
 import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
@@ -1710,12 +1710,6 @@ export default function OrganizationPage() {
                 )
               }
             />
-
-
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">รายการสวัสดิการ</h3>
-              <CountBadge count={filteredBenefits.length} />
-            </div>
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
               <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
