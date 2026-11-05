@@ -6,6 +6,7 @@ import { leaveService } from '@/services/leaveService';
 import { essAttendanceService } from '@/services/essAttendanceService';
 import { certificateService } from '@/services/certificateService';
 import { LeaveBalance } from '@/types/leave';
+import { CountUp } from '@/components/ui/CountUp';
 
 interface EmployeeDashboardStats {
   vacationRemaining: number;
@@ -228,7 +229,7 @@ export const EmployeeStatCards: React.FC = () => {
           </div>
           <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[32px] sm:min-h-[36px] mt-auto">
             <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {card.value}
+              {typeof card.value === 'number' ? <CountUp value={card.value} /> : card.value}
             </span>
             {card.unit && (
               <span className="text-[11px] sm:text-xs font-semibold text-slate-600">

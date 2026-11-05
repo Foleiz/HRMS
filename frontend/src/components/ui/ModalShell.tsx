@@ -3,6 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
+/** จุดที่ผู้ใช้กดล่าสุด — ให้ popup ขยายออกมาจากปุ่มที่กดเปิด */
+let lastPointer: { x: number; y: number; t: number } | null = null;
+if (typeof window !== 'undefined') {
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      lastPointer = { x: e.clientX, y: e.clientY, t: Date.now() };
+    },
+    { capture: true, passive: true }
+  );
+}
+
 /**
  * พื้นหลังมืด + ตำแหน่งกลางจอ ของ popup ทุกตัวในระบบ (ใช้ภายใน <Modal> และ popup ที่ออกแบบหน้าตาเอง)
  *   <ModalShell className="z-50 bg-slate-900/50 backdrop-blur-xs">
@@ -35,6 +47,10 @@ export const ModalShell: React.FC<{
 }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  // เปิดจากการกด (ภายใน 1 วินาที) → ขยายออกจากจุดนั้น, เปิดด้วยคีย์บอร์ด/โค้ด → ขยายจากกลางจอ
+  const [origin] = useState(() =>
+    lastPointer && Date.now() - lastPointer.t < 1000 ? { x: lastPointer.x, y: lastPointer.y } : null
+  );
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -53,7 +69,15 @@ export const ModalShell: React.FC<{
 
   const node = (
     <div className={`fixed inset-0 overflow-y-auto ${className}`} onClick={handleClick}>
-      <div className={`flex min-h-full ${resolvedInnerClassName}`} onClick={handleClick}>
+      <div
+        className={`flex min-h-full ${resolvedInnerClassName} ${placement === 'center' ? 'modal-pop' : ''}`}
+        style={
+          placement === 'center' && origin
+            ? ({ '--modal-origin-x': `${origin.x}px`, '--modal-origin-y': `${origin.y}px` } as React.CSSProperties)
+            : undefined
+        }
+        onClick={handleClick}
+      >
         {children}
       </div>
     </div>
