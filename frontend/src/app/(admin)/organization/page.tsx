@@ -79,6 +79,7 @@ import { BenefitItem, CreateBenefitPayload, UpdateBenefitPayload } from '@/types
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
+import { BenefitPolicyFields } from '@/components/benefits/BenefitPolicyFields';
 import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar } from '@/components/ui';
 import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
 
@@ -634,8 +635,8 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
-          isDocumentRequired: benefitForm.payoutType === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
-          defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
+          isDocumentRequired: benefitForm.payoutType === 'REIMBURSEMENT' ? benefitForm.isDocumentRequired : false,
+          defaultCoverageAmount: benefitForm.payoutType === 'IN_KIND' ? 0 : Number(benefitForm.defaultCoverageAmount) || 0,
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
           status: benefitForm.status,
@@ -648,8 +649,8 @@ export default function OrganizationPage() {
           category: benefitForm.category,
           description: benefitForm.description?.trim() || undefined,
           isStatutory: benefitForm.isStatutory,
-          isDocumentRequired: benefitForm.payoutType === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
-          defaultCoverageAmount: Number(benefitForm.defaultCoverageAmount) || 0,
+          isDocumentRequired: benefitForm.payoutType === 'REIMBURSEMENT' ? benefitForm.isDocumentRequired : false,
+          defaultCoverageAmount: benefitForm.payoutType === 'IN_KIND' ? 0 : Number(benefitForm.defaultCoverageAmount) || 0,
           defaultFrequency: benefitForm.defaultFrequency,
           payoutType: benefitForm.payoutType,
           status: benefitForm.status,
@@ -2553,118 +2554,11 @@ export default function OrganizationPage() {
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">หมวดหมู่สวัสดิการ <span className="text-rose-500">*</span></label>
-            <CustomSelect
-              value={benefitForm.category}
-              onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })}
-              className={inputClass}
-            >
-              {Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => (
-                <option key={key} value={key}>
-                  {item.label}
-                </option>
-              ))}
-            </CustomSelect>
-          </div>
-
-          {/* วงเงินและการเบิกจ่าย (Benefit Quota & Payout Policy) */}
-          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-3">
-            <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-              กำหนดโควตาวงเงินและรูปแบบการใช้สิทธิ์
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                วิธีจ่าย <span className="text-rose-500">*</span>
-              </label>
-              <CustomSelect
-                value={benefitForm.payoutType || 'REIMBURSEMENT'}
-                onChange={(e) =>
-                  setBenefitForm({
-                    ...benefitForm,
-                    payoutType: e.target.value,
-                    isDocumentRequired: e.target.value === 'PAYROLL' ? false : benefitForm.isDocumentRequired,
-                  })
-                }
-                className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700"
-              >
-                <option value="PAYROLL">จ่ายประจำในเงินเดือน (อัตโนมัติทุกงวด)</option>
-                <option value="REIMBURSEMENT">เบิกตามจริง (ยื่นคำขอเบิก)</option>
-                <option value="IN_KIND">ไม่ใช่ตัวเงิน (บริการ / สิทธิ์ตามระเบียบ)</option>
-              </CustomSelect>
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                {benefitForm.payoutType === 'PAYROLL'
-                  ? 'ระบบจ่ายยอดตามสิทธิ์ของประเภทพนักงานในสลิปทุกงวดให้อัตโนมัติ ไม่ต้องยื่นเบิก'
-                  : benefitForm.payoutType === 'IN_KIND'
-                  ? 'ไม่จ่ายเป็นเงิน (เช่น รถรับส่ง ประกันกลุ่ม) จึงไม่ต้องมีรายการในสลิป'
-                  : 'พนักงานยื่นคำขอเบิกพร้อมหลักฐาน เมื่ออนุมัติแล้วระบบจ่ายในงวดเงินเดือนถัดไป ไม่เกินวงเงิน'}
-              </span>
-            </div>
-
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  วงเงินมาตรฐาน (บาท)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  step="any"
-                  value={benefitForm.defaultCoverageAmount ?? 0}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, defaultCoverageAmount: Number(e.target.value) || 0 })}
-                  placeholder="0 = ไม่จำกัด/ตามระเบียบ"
-                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700"
-                />
-                <span className="text-[10px] text-slate-400 mt-0.5 block">0 = ตามสิทธิ์ / ไม่จำกัด</span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  รอบการให้สิทธิ์
-                </label>
-                <CustomSelect
-                  value={benefitForm.defaultFrequency || 'YEARLY'}
-                  onChange={(e) => setBenefitForm({ ...benefitForm, defaultFrequency: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-white dark:bg-slate-800 border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700"
-                >
-                  <option value="YEARLY">ต่อปี</option>
-                  <option value="MONTHLY">ต่อเดือน</option>
-                  <option value="DAILY">ต่อวัน</option>
-                  <option value="PER_OCCURRENCE">ต่อครั้ง</option>
-                </CustomSelect>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-            <input
-              type="checkbox"
-              id="isStatutory"
-              checked={benefitForm.isStatutory}
-              onChange={(e) => setBenefitForm({ ...benefitForm, isStatutory: e.target.checked })}
-              className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-            />
-            <label htmlFor="isStatutory" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-              เป็นสิทธิตามกฎหมายแรงงานบังคับ
-            </label>
-          </div>
-
-          {benefitForm.payoutType !== 'PAYROLL' && (
-          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-            <input
-              type="checkbox"
-              id="isDocumentRequired"
-              checked={benefitForm.isDocumentRequired}
-              onChange={(e) => setBenefitForm({ ...benefitForm, isDocumentRequired: e.target.checked })}
-              className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
-            />
-            <label htmlFor="isDocumentRequired" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-              แนบเอกสารประกอบหรือใบรับรองแพทย์
-            </label>
-          </div>
-          )}
+          <BenefitPolicyFields
+            value={benefitForm}
+            onChange={(patch) => setBenefitForm((f) => ({ ...f, ...patch }))}
+            categories={Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => ({ value: key, label: item.label }))}
+          />
 
           {modalMode === 'edit' && (
             <ActiveToggleRow label="เปิดใช้งาน" checked={benefitForm.status === 'ACTIVE'} onChange={(v) => setBenefitForm({ ...benefitForm, status: (v ? 'ACTIVE' : 'INACTIVE') })} />
