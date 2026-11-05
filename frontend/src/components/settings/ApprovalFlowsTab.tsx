@@ -190,6 +190,8 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [, setScrollTick] = useState(0);
 
   // Sync if flow prop updates from outside
   useEffect(() => {
@@ -222,15 +224,61 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
     }
   }, [flow]);
 
-  // Close step settings popover on Escape key
+  // Close step settings popover when clicking outside or pressing Escape,
+  // and update position smoothly when outer containers or window scroll/resize
   useEffect(() => {
+    if (editingStepIndex === null) return;
+
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+
+      // Clicked inside the popover card?
+      if (popoverRef.current && popoverRef.current.contains(target)) {
+        return;
+      }
+
+      // Clicked inside any step node? Let the step's own onClick handle it
+      const isAnyStepEl = stepRefs.current.some((el) => el && el.contains(target));
+      if (isAnyStepEl) {
+        return;
+      }
+
+      // If clicked inside any custom dropdown/portal menu, ignore
+      if ((target as Element).closest?.('[data-custom-select-menu], .custom-select-menu, [role="listbox"]')) {
+        return;
+      }
+
+      setEditingStepIndex(null);
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && editingStepIndex !== null) {
+      if (e.key === 'Escape') {
         setEditingStepIndex(null);
       }
     };
+
+    const handleScrollOrResize = (e: Event) => {
+      // If the scroll event originated inside the popover itself, don't trigger repositioning
+      if (popoverRef.current && e.target && popoverRef.current.contains(e.target as Node)) {
+        return;
+      }
+      setScrollTick((t) => (t + 1) % 1000000);
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
   }, [editingStepIndex]);
 
   const renumberSteps = (steps: ApprovalStepInput[]): ApprovalStepInput[] =>
@@ -670,53 +718,71 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
         const rect = activeEl?.getBoundingClientRect();
         if (!rect) return null;
 
+        // หากองค์ประกอบขั้นตอนเลื่อนหลุดออกจากหน้าจอไปแล้ว ไม่ต้องเรนเดอร์ป๊อปอัป
+        if (rect.bottom < 40 || rect.top > window.innerHeight - 40) {
+          return null;
+        }
+
         const popoverWidth = 360;
-        const left = Math.max(16, Math.min(window.innerWidth - popoverWidth - 16, rect.left));
-        const popoverHeight = 390;
-        let top = rect.bottom + 8;
-        if (top + popoverHeight > window.innerHeight && rect.top > popoverHeight + 16) {
-          top = rect.top - popoverHeight - 8;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        const left = Math.max(16, Math.min(viewportWidth - popoverWidth - 16, rect.left));
+
+        const spaceBelow = viewportHeight - rect.bottom - 16;
+        const spaceAbove = rect.top - 16;
+
+        // สลับเปิดขึ้นด้านบนเมื่อพื้นที่ด้านล่างเหลือน้อย (< 320px) และด้านบนมีพื้นที่มากกว่า
+        const openUpward = spaceBelow < 320 && spaceAbove > spaceBelow;
+
+        const maxHeight = openUpward
+          ? Math.max(220, Math.min(520, spaceAbove))
+          : Math.max(220, Math.min(520, spaceBelow));
+
+        const posStyle: React.CSSProperties = {
+          position: 'fixed',
+          left: `${left}px`,
+          width: `${popoverWidth}px`,
+          maxHeight: `${maxHeight}px`,
+          zIndex: 50,
+        };
+
+        if (openUpward) {
+          posStyle.bottom = `${Math.max(16, viewportHeight - rect.top + 8)}px`;
+        } else {
+          posStyle.top = `${Math.max(16, rect.bottom + 8)}px`;
         }
 
         return (
-          <>
-            {/* Transparent click-outside backdrop */}
-            <div
-              className="fixed inset-0 z-40 bg-transparent"
-              onClick={() => setEditingStepIndex(null)}
-            />
-
-            {/* Anchored Dropdown Card */}
-            <div
-              style={{
-                position: 'fixed',
-                top: `${top}px`,
-                left: `${left}px`,
-                width: `${popoverWidth}px`,
-              }}
-              className="z-50 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-4 space-y-3.5 animate-in fade-in zoom-in-95 duration-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Dropdown Header */}
-              <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-700/60">
-                <div className="flex items-center gap-1.5">
-                  <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    ขั้นตอนที่
-                  </h4>
-                  <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold inline-flex items-center justify-center shadow-xs">
-                    {form.steps[editingStepIndex].stepNo}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setEditingStepIndex(null)}
-                  className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
-                  title="ปิด"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+          <div
+            ref={popoverRef}
+            style={posStyle}
+            className="z-50 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col animate-in fade-in duration-100 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Dropdown Header */}
+            <div className="flex items-center justify-between p-4 pb-2.5 border-b border-slate-100 dark:border-slate-700/60 shrink-0">
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  ขั้นตอนที่
+                </h4>
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold inline-flex items-center justify-center shadow-xs">
+                  {form.steps[editingStepIndex].stepNo}
+                </span>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setEditingStepIndex(null)}
+                className="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                title="ปิด"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div className="p-4 space-y-3.5 overflow-y-auto overscroll-contain custom-scrollbar flex-1 min-h-0">
 
               {/* Field 1: ผู้อนุมัติ */}
               <div>
@@ -942,19 +1008,19 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
                   </div>
                 )}
               </div>
-
-              {/* Footer Button */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex justify-end">
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setEditingStepIndex(null)}
-                >
-                  เรียบร้อย
-                </Button>
-              </div>
             </div>
-          </>
+
+            {/* Footer Button */}
+            <div className="p-3 px-4 border-t border-slate-100 dark:border-slate-700/60 flex justify-end shrink-0 bg-slate-50/50 dark:bg-slate-800/80 rounded-b-2xl">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setEditingStepIndex(null)}
+              >
+                เรียบร้อย
+              </Button>
+            </div>
+          </div>
         );
       })()}
     </div>
