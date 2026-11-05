@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -91,17 +91,20 @@ export const UpcomingEventsWidget: React.FC = () => {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-xs flex flex-col justify-between h-full min-h-[170px]">
       <div>
-        <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mb-3.5 flex items-center justify-between">
-          <span>กิจกรรมที่กำลังจะมาถึง</span>
-          <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500 dark:text-slate-400">ปฏิทินบริษัท</span>
+        {/* หัวข้อ: กำหนด whitespace-nowrap และ gap เพื่อป้องกันข้อความตกบรรทัดผิดตำแหน่ง */}
+        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-3.5 flex items-center justify-between gap-2">
+          <span className="whitespace-nowrap">กิจกรรมที่กำลังจะมาถึง</span>
+          <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
+            ปฏิทินบริษัท
+          </span>
         </h3>
 
         {loading ? (
-          <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
+          <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
             กำลังโหลดกิจกรรม...
           </div>
         ) : events.length === 0 ? (
-          <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
+          <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
             ยังไม่มีกิจกรรมหรือวันหยุดที่กำลังจะมาถึงในเร็วๆ นี้
           </div>
         ) : (
@@ -111,11 +114,16 @@ export const UpcomingEventsWidget: React.FC = () => {
                 key={ev.id}
                 className="text-xs text-slate-700 dark:text-slate-300 flex items-center gap-2 py-0.5"
               >
-                <span className="font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap min-w-[70px]">
+                <span className="font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap min-w-[92px] shrink-0">
                   {ev.date}
                 </span>
-                <span className="text-slate-300">|</span>
-                <span className="text-slate-600 dark:text-slate-400 truncate flex-1">{ev.title}</span>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span
+                  className="text-slate-600 dark:text-slate-400 truncate flex-1"
+                  title={ev.title}
+                >
+                  {ev.title}
+                </span>
               </div>
             ))}
           </div>
@@ -127,10 +135,10 @@ export const UpcomingEventsWidget: React.FC = () => {
         className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-300 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between mt-auto transition-colors cursor-pointer group"
       >
         <div className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 dark:text-slate-400 group-hover:text-primary dark:hover:text-blue-300 transition-colors" />
+          <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-primary dark:hover:text-blue-300 transition-colors" />
           <span>ปฏิทินกิจกรรมองค์กร</span>
         </div>
-        <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-500 dark:text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+        <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
       </Link>
     </div>
   );
