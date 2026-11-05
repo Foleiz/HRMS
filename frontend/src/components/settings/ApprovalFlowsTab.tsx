@@ -373,7 +373,7 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
       <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-slate-700/60 gap-4">
         {isNew ? (
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#0B2046] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-xs shadow-xs">
               <Plus className="w-4 h-4" />
             </div>
             <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">

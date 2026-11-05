@@ -715,7 +715,7 @@ export default function OrgChartView({ fullHeight = false }: OrgChartViewProps) 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-slate-700 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-700/80 flex items-center justify-center text-[#0B2046] dark:text-slate-100 shadow-2xs shrink-0 transition-colors">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-700/80 flex items-center justify-center text-primary dark:text-slate-100 shadow-2xs shrink-0 transition-colors">
             <Network className="w-5 h-5" />
           </div>
           <div>
