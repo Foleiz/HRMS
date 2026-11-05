@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 /** จุดที่ผู้ใช้กดล่าสุด — ให้ popup ขยายออกมาจากปุ่มที่กดเปิด */
@@ -13,6 +13,36 @@ if (typeof window !== 'undefined') {
     },
     { capture: true, passive: true }
   );
+}
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * เล่นแอนิเมชันตอนปิด: ทำสำเนาหน้าต่างที่กำลังถูกถอดออก แล้วให้สำเนาค่อย ๆ หายไป
+ * (component ที่เรียกใช้ไม่ต้องรอแอนิเมชันจบก่อนถอด popup)
+ */
+function playCloseAnimation(node: HTMLElement) {
+  if (prefersReducedMotion() || !node.isConnected) return;
+  const clone = node.cloneNode(true) as HTMLElement;
+  clone.classList.add('modal-closing');
+  clone.setAttribute('aria-hidden', 'true');
+  clone.removeAttribute('id');
+  document.body.appendChild(clone);
+  // ค่าในช่องกรอก / ตำแหน่งเลื่อน ไม่ติดไปกับ cloneNode — คัดลอกให้ ไม่ให้เนื้อหากระตุกตอนปิด
+  const src = node.querySelectorAll<HTMLElement>('*');
+  const dst = clone.querySelectorAll<HTMLElement>('*');
+  clone.scrollTop = node.scrollTop;
+  src.forEach((el, i) => {
+    const target = dst[i];
+    if (!target) return;
+    if (el.scrollTop) target.scrollTop = el.scrollTop;
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
+      (target as HTMLInputElement).value = el.value;
+      if (el instanceof HTMLInputElement) (target as HTMLInputElement).checked = el.checked;
+    }
+  });
+  window.setTimeout(() => clone.remove(), 220);
 }
 
 /**
@@ -47,6 +77,13 @@ export const ModalShell: React.FC<{
 }) => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  const nodeRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(
+    () => () => {
+      if (portal && nodeRef.current) playCloseAnimation(nodeRef.current);
+    },
+    [portal]
+  );
   // เปิดจากการกด (ภายใน 1 วินาที) → ขยายออกจากจุดนั้น, เปิดด้วยคีย์บอร์ด/โค้ด → ขยายจากกลางจอ
   const [origin] = useState(() =>
     lastPointer && Date.now() - lastPointer.t < 1000 ? { x: lastPointer.x, y: lastPointer.y } : null
@@ -68,7 +105,13 @@ export const ModalShell: React.FC<{
   const resolvedInnerClassName = innerClassName ?? defaultInner;
 
   const node = (
-    <div className={`fixed inset-0 overflow-y-auto ${className}`} onClick={handleClick}>
+    <div
+      ref={(el) => {
+        if (el) nodeRef.current = el;
+      }}
+      className={`fixed inset-0 overflow-y-auto modal-backdrop ${className}`}
+      onClick={handleClick}
+    >
       <div
         className={`flex min-h-full ${resolvedInnerClassName} ${placement === 'center' ? 'modal-pop' : ''}`}
         style={
