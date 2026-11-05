@@ -41,6 +41,8 @@ import {
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
 import { benefitService } from '@/services/benefitService';
+import { employeeTypeService } from '@/services/employeeTypeService';
+import type { EmployeeType } from '@/types/employeeType';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { employeeService } from '@/services/employeeService';
@@ -82,7 +84,7 @@ import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { BenefitPolicyFields } from '@/components/benefits/BenefitPolicyFields';
-import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, CountBadge } from '@/components/ui';
+import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, CountBadge, HoverList } from '@/components/ui';
 import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
@@ -156,6 +158,7 @@ export default function OrganizationPage() {
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
   const [filterBenefitCategory, setFilterBenefitCategory] = useState<string>('ALL');
   const [filterBenefitPayout, setFilterBenefitPayout] = useState<string>('ALL');
+  const [employeeTypes, setEmployeeTypes] = useState<EmployeeType[]>([]);
   // แบ่งหน้าตาราง (ใช้ร่วมกันทุกแท็บ) — กลับไปหน้า 1 เมื่อเปลี่ยนแท็บ/ค้นหา/กรอง
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -346,7 +349,7 @@ export default function OrganizationPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [divs, depts, teamList, pos, lvls, comp, ben, emps, bAccounts, bList] = await Promise.all([
+      const [divs, depts, teamList, pos, lvls, comp, ben, emps, bAccounts, bList, empTypes] = await Promise.all([
         organizationService.getDivisions().catch(() => []),
         organizationService.getDepartments().catch(() => []),
         organizationService.getTeams().catch(() => []),
@@ -357,6 +360,7 @@ export default function OrganizationPage() {
         employeeService.getAll().catch(() => []),
         companyBankAccountService.getAll().catch(() => []),
         bankService.getAll().catch(() => []),
+        employeeTypeService.getAll().catch(() => []),
       ]);
       setDivisions(divs || []);
       setDepartments(depts || []);
@@ -371,6 +375,7 @@ export default function OrganizationPage() {
       }
       setCompany(comp || null);
       setBenefits(ben || []);
+      setEmployeeTypes(empTypes || []);
       setEmployees(emps || []);
       setBankAccounts(bAccounts || []);
       setBanks(bList || []);
@@ -1121,6 +1126,23 @@ export default function OrganizationPage() {
       p.positionCode.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+  /** สวัสดิการ → ประเภทพนักงานที่ผูกอยู่ (พร้อมวงเงินจริงของแต่ละประเภท) */
+  const benefitTypeItems = useMemo(() => {
+    const m = new Map<number, { label: string; hint?: string }[]>();
+    for (const t of employeeTypes) {
+      for (const bi of t.benefits ?? []) {
+        const amt = Number(bi.coverageAmount) || 0;
+        const list = m.get(bi.id) ?? [];
+        list.push({
+          label: t.typeName,
+          hint: amt > 0 ? `${amt.toLocaleString('th-TH')} บาท / ${BENEFIT_FREQ_LABEL[bi.frequency || ''] || 'ปี'}` : undefined,
+        });
+        m.set(bi.id, list);
+      }
+    }
+    return m;
+  }, [employeeTypes]);
+
   const filteredBenefits = benefits
     .filter((b) => (filterBenefitCategory === 'ALL' ? true : b.category === filterBenefitCategory))
     .filter((b) => (filterBenefitPayout === 'ALL' ? true : (b.payoutType || 'REIMBURSEMENT') === filterBenefitPayout))
@@ -1747,14 +1769,7 @@ export default function OrganizationPage() {
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
                           <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                            <div className="flex items-center gap-1.5">
-                              {ben.benefitName}
-                              {ben.isStatutory && (
-                                <span title="สิทธิตามกฎหมายแรงงาน" className="inline-flex text-blue-600 dark:text-blue-400">
-                                  <Shield className="w-3.5 h-3.5" aria-label="สิทธิตามกฎหมายแรงงาน" />
-                                </span>
-                              )}
-                            </div>
+                            {ben.benefitName}
                           </td>
                           <td className="py-3 px-4">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border ${catInfo.color}`}>
@@ -1775,7 +1790,13 @@ export default function OrganizationPage() {
                           </td>
                           <td className="py-3 px-4">
                             {usedBy > 0 ? (
-                              <span className="text-slate-700 dark:text-slate-300">{usedBy} ประเภทพนักงาน</span>
+                              <HoverList
+                                title={`ประเภทพนักงานที่ใช้ (${usedBy})`}
+                                items={benefitTypeItems.get(ben.id) ?? []}
+                                className="text-slate-700 dark:text-slate-300"
+                              >
+                                {usedBy} ประเภทพนักงาน
+                              </HoverList>
                             ) : (
                               <span className="text-slate-400">ยังไม่ได้ผูก</span>
                             )}
@@ -2578,7 +2599,7 @@ export default function OrganizationPage() {
         <Modal
           icon={Gift}
           isOpen
-          size="md"
+          size="lg"
           onClose={() => setModalOpen(false)}
           title={modalMode === 'create' ? 'เพิ่มสวัสดิการใหม่' : 'แก้ไขข้อมูลสวัสดิการ'}
           onSubmit={handleSaveBenefit}

@@ -1,5 +1,6 @@
 'use client';
 import { CountBadge } from '@/components/ui/CountBadge';
+import { HoverList } from '@/components/ui/HoverList';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
@@ -663,7 +664,13 @@ export default function AnnouncementsPage() {
                             ) : (
                               <div className="flex items-center gap-1.5">
                                 <Users className="w-3.5 h-3.5 text-primary dark:text-blue-400" />
-                                <span className="font-medium text-slate-700 dark:text-slate-200">{targetSummary}</span>
+                                <HoverList
+                                  title={`แผนกที่กำหนด (${a.targets.length})`}
+                                  items={getTargetDepartmentNames(a.targets).map((name) => ({ label: name }))}
+                                  className="font-medium text-slate-700 dark:text-slate-200"
+                                >
+                                  {targetSummary}
+                                </HoverList>
                               </div>
                             )}
                           </td>
