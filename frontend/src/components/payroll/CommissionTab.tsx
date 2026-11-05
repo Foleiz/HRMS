@@ -901,33 +901,6 @@ export default function CommissionTab() {
 
         {/* Right: Actions (Single line) */}
         <div className="flex items-center gap-2 shrink-0">
-{/* Add Manual Item */}
-          {!isPeriodConfirmed && (
-              <button
-                type="button"
-                onClick={() => {
-                  loadEmployees();
-                  setAddJobDate(new Date().toISOString().slice(0, 10));
-                  setAddJobTitle('');
-                  setAddForm({
-                    employeeId: 0,
-                    year: selectedYear,
-                    month: selectedMonth,
-                    salesAmount: 0,
-                    commissionRate: defaultRate,
-                    specialAmount: 0,
-                    note: '',
-                  });
-                  setIsAddModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-2xs transition active:scale-95 cursor-pointer"
-                title="บันทึกหรือปรับยอดรายคนด้วยตนเอง"
-              >
-                <Plus className="h-4 w-4" />
-                <span>เพิ่มรายคน</span>
-              </button>
-          )}
-
           {/* Confirm or Reset Button */}
           {summary && summary.records.length > 0 && (
             <>
