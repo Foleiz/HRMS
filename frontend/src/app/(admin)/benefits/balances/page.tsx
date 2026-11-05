@@ -16,7 +16,6 @@ import {
   Search,
   ChevronsUpDown,
   ChevronRight,
-  Sparkles,
   Users,
   Loader2,
   Receipt,
@@ -247,11 +246,6 @@ export default function EmployeeBenefitBalancesPage() {
                 </button>
               </div>
             </>
-          }
-          actions={
-            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-800 text-xs text-blue-700 dark:text-blue-300 whitespace-nowrap">
-              <Sparkles className="w-4 h-4 text-blue-500 dark:text-blue-400" /> สิทธิ์และวงเงินคำนวณตามประเภทสัญญาจ้างงาน
-            </div>
           }
         />
 
