@@ -36,13 +36,12 @@ import {
   CreateHolidayRequest,
   UpdateHolidayRequest,
 } from '@/types/workCalendar';
+import { TH_MONTHS } from '@/lib/thaiDate';
+import { TableLoading } from '@/components/ui/TableState';
 
 type TabType = 'work-week' | 'holidays';
 
-const thaiMonths = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
+const thaiMonths = TH_MONTHS;
 
 const thaiDayNamesShort = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
@@ -653,12 +652,7 @@ export default function WorkCalendarPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {calendarPhase.initialLoading ? (
-                    <tr>
-                      <td colSpan={5} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
-                        กำลังโหลดข้อมูลวันหยุดประจำปี...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={5} text="กำลังโหลดข้อมูลวันหยุดประจำปี..." />
                   ) : filteredHolidays.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">

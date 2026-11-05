@@ -55,8 +55,7 @@ import {
   X,
   ArrowDownToLine,
   FileText,
-  RefreshCw,
-} from 'lucide-react';
+  } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -109,6 +108,8 @@ import { CommissionPeriodSummary } from '@/types/commission';
 import PayrollPeriodsTab from '@/components/payroll/PayrollPeriodsTab';
 import PayrollScheduleTab from '@/components/payroll/PayrollScheduleTab';
 import { calculatePeriodDatesFromSettings, getPayrollScheduleSettings } from '@/services/payrollScheduleService';
+import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate } from '@/lib/thaiDate';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 type ActiveTab =
   | 'overview'
@@ -260,27 +261,19 @@ function TablePagination({
   );
 }
 
-const THAI_MONTH_NAMES = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+const THAI_MONTH_NAMES = TH_MONTHS;
 
 /** แปลง 'YYYY-MM-DD' เป็นวันที่ไทยแบบย่อ เช่น 29 ส.ค. 2569 */
 const formatThaiShortDate = (iso?: string | null) => {
   if (!iso) return '-';
   const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
   if (!y || !m || !d) return iso;
-  const abbr = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const abbr = TH_MONTHS_SHORT;
   return `${d} ${abbr[m - 1]} ${y + 543}`;
 };
 
 /** แปลง 'YYYY-MM-DD' เป็นวันที่ไทยแบบตัวเลข เช่น 01/08/2569 */
-const formatThaiDateSlash = (iso?: string | null) => {
-  if (!iso) return '-';
-  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
-  if (!y || !m || !d) return iso;
-  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y + 543}`;
-};
+const formatThaiDateSlash = (iso?: string | null) => formatThaiDate(iso, 'numeric');
 
 const getDefaultPeriodValues = (year: number, month: number) => {
   const safeMonth = Math.min(Math.max(1, month || 1), 12);
@@ -2394,19 +2387,9 @@ export default function PayrollPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
                       {payrollPhase.initialLoading ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-400">
-                            <div className="inline-flex items-center gap-2">
-                              <Loader2 className="w-5 h-5 animate-spin" /> กำลังโหลดข้อมูล...
-                            </div>
-                          </td>
-                        </tr>
+                        <TableLoading colSpan={6} />
                       ) : structures.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-400">
-                            ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ
-                          </td>
-                        </tr>
+                        <TableEmpty colSpan={6} text="ยังไม่มีการกำหนดโครงสร้างเงินเดือนในระบบ" />
                       ) : (
                         paginatedStructures.map((s, idx) => {
                         const isStructureActive = s.status ? s.status.toUpperCase() === 'ACTIVE' : true;
@@ -4204,7 +4187,7 @@ export default function PayrollPage() {
                         ? (() => {
                             const s = selectedPeriod.startDate?.slice(0, 10).split('-').map(Number);
                             const e = selectedPeriod.endDate?.slice(0, 10).split('-').map(Number);
-                            const abbr = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                            const abbr = TH_MONTHS_SHORT;
                             if (s && e && s.length === 3 && e.length === 3 && s[0] === e[0]) {
                               return `${s[2]} ${abbr[s[1] - 1]} – ${e[2]} ${abbr[e[1] - 1]} ${e[0] + 543}`;
                             }
@@ -5294,11 +5277,7 @@ export default function PayrollPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-xs">
                           {!transferList || transferList.items.length === 0 ? (
-                            <tr>
-                              <td colSpan={7} className="py-14 text-center text-slate-400">
-                                ยังไม่มีรายการเงินเดือนในรอบนี้
-                              </td>
-                            </tr>
+                            <TableEmpty colSpan={7} text="ยังไม่มีรายการเงินเดือนในรอบนี้" />
                           ) : (
                             transferList.items.map((item) => (
                               <tr key={item.payrollId} className="hover:bg-slate-50/50 dark:hover:bg-slate-750/50 transition-colors">

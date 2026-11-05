@@ -3,6 +3,7 @@
 import { ModalShell } from '@/components/ui/ModalShell';
 import React from 'react';
 import { X } from 'lucide-react';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 interface LeaveRequestPaperPreviewProps {
   fullName: string;
@@ -17,10 +18,7 @@ interface LeaveRequestPaperPreviewProps {
   onClose: () => void;
 }
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
+const THAI_MONTHS = TH_MONTHS;
 
 const toThaiDateParts = (dateStr?: string) => {
   if (!dateStr) return { day: '', month: '', yearBE: '' };

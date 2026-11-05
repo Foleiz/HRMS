@@ -62,11 +62,9 @@ import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+const THAI_MONTHS = TH_MONTHS;
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 
@@ -1799,7 +1797,7 @@ function SchedulesContent() {
                       </div>
                       <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
                         <span className="text-slate-500 dark:text-slate-400">วันทำงานประจำกะ:</span>
-                        <span className="font-bold text-[#0B2046] dark:text-blue-300">
+                        <span className="font-bold text-primary dark:text-blue-300">
                           {formatWorkDays(shift.workDays)}
                         </span>
                       </div>
@@ -2324,7 +2322,7 @@ function SchedulesContent() {
                             key={day.id}
                             className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
                               isSelected
-                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                                ? 'bg-primary text-white border-primary shadow-xs dark:bg-blue-600 dark:border-blue-600'
                                 : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
                             }`}
                           >
@@ -2686,7 +2684,7 @@ function SchedulesContent() {
                             key={day.id}
                             className={`py-2 px-1 rounded-lg text-xs font-semibold border text-center flex flex-col items-center gap-0.5 select-none ${
                               isSelected
-                                ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                                ? 'bg-primary text-white border-primary shadow-xs dark:bg-blue-600 dark:border-blue-600'
                                 : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/40 dark:text-slate-600 dark:border-slate-800'
                             }`}
                           >
@@ -2946,7 +2944,7 @@ function SchedulesContent() {
                         }}
                         className={`py-2 px-1 rounded-lg text-xs font-semibold border transition text-center flex flex-col items-center gap-0.5 cursor-pointer ${
                           isSelected
-                            ? 'bg-[#0B2046] text-white border-[#0B2046] shadow-xs dark:bg-blue-600 dark:border-blue-600'
+                            ? 'bg-primary text-white border-primary shadow-xs dark:bg-blue-600 dark:border-blue-600'
                             : 'bg-slate-50 text-slate-600 dark:text-slate-400 border-slate-200 hover:bg-slate-100 dark:bg-slate-800 dark:border-slate-700'
                         }`}
                       >

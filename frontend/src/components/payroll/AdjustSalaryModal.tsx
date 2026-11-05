@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { EmployeeSalaryOverview, AdjustEmployeeSalaryPayload } from '@/types/payroll';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
+import { formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 
 /** yyyy-MM-dd ตามเวลาเครื่อง (ไม่ใช้ toISOString เพราะเขตเวลาไทยทำให้วันถอยไป 1 วัน) */
 const toLocalIso = (d: Date) => {
@@ -20,11 +21,7 @@ const toLocalIso = (d: Date) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
 
-const formatThaiDate = (iso?: string | null) => {
-  if (!iso) return '-';
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-};
+const formatThaiDate = (iso?: string | null) => fmtThaiDate(iso);
 
 /** ตัวอักษรย่อจากชื่อ (ตัดคำนำหน้า) */
 const initialsOf = (name: string) => {

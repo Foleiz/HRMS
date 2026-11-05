@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   X,
   AlertCircle,
-  Loader2,
   Award,
   UserRound,
   Database,
@@ -43,6 +42,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { Button, RowActions, RowActionButton, ActiveStatus, inputClass, Modal, ModalFooter, TabBar, TablePagination , TableToolbar } from '@/components/ui';
+import { TableEmpty } from '@/components/ui/TableState';
 
 type MasterTab =
   | 'document-types'
@@ -480,11 +480,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredDocTypes.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลประเภทเอกสารแนบ
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={8} text="ไม่พบข้อมูลประเภทเอกสารแนบ" />
                 ) : (
                   pagedDocTypes.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
@@ -557,11 +553,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredNationalities.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลสัญชาติ
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={3} text="ไม่พบข้อมูลสัญชาติ" />
                 ) : (
                   pagedNationalities.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
@@ -613,11 +605,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredReligions.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลศาสนา
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={3} text="ไม่พบข้อมูลศาสนา" />
                 ) : (
                   pagedReligions.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
@@ -669,11 +657,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredMaritalStatuses.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลสถานภาพสมรส
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={3} text="ไม่พบข้อมูลสถานภาพสมรส" />
                 ) : (
                   pagedMaritalStatuses.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
@@ -727,11 +711,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredCertTypes.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลประเภทหนังสือรับรอง
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={5} text="ไม่พบข้อมูลประเภทหนังสือรับรอง" />
                 ) : (
                   pagedCertTypes.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
@@ -792,11 +772,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredGenders.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลเพศ
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={4} text="ไม่พบข้อมูลเพศ" />
                 ) : (
                   pagedGenders.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
@@ -857,11 +833,7 @@ export default function MasterDataHubPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {filteredBanks.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                      ไม่พบข้อมูลธนาคาร
-                    </td>
-                  </tr>
+                  <TableEmpty colSpan={7} text="ไม่พบข้อมูลธนาคาร" />
                 ) : (
                   pagedBanks.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">

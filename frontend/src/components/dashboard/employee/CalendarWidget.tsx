@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Sparkles } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { Holiday } from '@/types/workCalendar';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 export interface CalendarEvent {
   id: string | number;
@@ -68,10 +69,7 @@ export const CalendarWidget: React.FC = () => {
     setSelectedDay(now.getDate());
   };
 
-  const monthNames = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-  ];
+  const monthNames = TH_MONTHS;
 
   const yearThai = year + 543;
   const monthName = monthNames[month];

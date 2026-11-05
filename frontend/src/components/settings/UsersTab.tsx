@@ -23,6 +23,8 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { Button } from '@/components/ui/Button';
 import { formatRoleName } from '@/lib/roleUtils';
+import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 interface UsersTabProps {
   users: UserAccount[];
@@ -112,7 +114,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
     if (!isoString) return '-';
     try {
       const d = new Date(isoString);
-      const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      const months = TH_MONTHS_SHORT;
       const thaiYear = d.getFullYear() + 543;
       const day = d.getDate();
       const month = months[d.getMonth()];
@@ -188,17 +190,9 @@ export const UsersTab: React.FC<UsersTabProps> = ({
 
             <tbody className="divide-y divide-slate-100 text-xs text-slate-700 dark:text-slate-300">
               {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
-                    กำลังโหลดข้อมูลผู้ใช้งาน...
-                  </td>
-                </tr>
+                <TableLoading colSpan={8} text="กำลังโหลดข้อมูลผู้ใช้งาน..." />
               ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
-                    ไม่พบข้อมูลบัญชีผู้ใช้งาน
-                  </td>
-                </tr>
+                <TableEmpty colSpan={8} text="ไม่พบข้อมูลบัญชีผู้ใช้งาน" />
               ) : (
                 users.map((user, idx) => {
                   const rowNumber = (currentPage - 1) * pageSize + idx + 1;

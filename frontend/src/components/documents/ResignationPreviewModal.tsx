@@ -27,6 +27,7 @@ import {
 } from './documentFormParts';
 import type { ApprovalTimeline } from '@/types/leave';
 import { type ApprovalStep } from '@/types/approval';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 export interface ResignationPreviewModalProps {
   isOpen: boolean;
@@ -73,10 +74,7 @@ export interface ResignationPreviewModalProps {
   } | null;
 }
 
-const THAI_MONTH_NAMES = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
+const THAI_MONTH_NAMES = TH_MONTHS;
 
 interface ThaiDateParts {
   day: string;

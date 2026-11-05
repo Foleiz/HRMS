@@ -13,7 +13,6 @@ import {
   Edit2,
   Trash2,
   PowerOff,
-  Loader2,
   CheckCircle2,
   AlertCircle,
   X,
@@ -86,6 +85,8 @@ import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { BenefitPolicyFields } from '@/components/benefits/BenefitPolicyFields';
 import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, HoverList } from '@/components/ui';
 import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
+import { formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
@@ -200,22 +201,7 @@ export default function OrganizationPage() {
   }, [activeTab, setBreadcrumb]);
 
   // Helper แปลงวันที่รูปแบบไทย (พ.ศ.) เช่น 2 มกราคม 2569
-  const formatThaiDate = (dateString?: string | Date | null): string => {
-    if (!dateString) return '-';
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return '-';
-
-    const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-    ];
-
-    const day = d.getDate();
-    const month = thaiMonths[d.getMonth()];
-    const year = d.getFullYear() + 543;
-
-    return `${day} ${month} ${year}`;
-  };
+  const formatThaiDate = (dateString?: string | Date | null): string => fmtThaiDate(dateString, 'long');
 
   // Helper แสดง Avatar และชื่อพนักงาน
   // หัวหน้าฝ่าย/แผนก — ใช้หาผู้อนุมัติแบบ "หัวหน้าของผู้ยื่น" ในสายการอนุมัติ
@@ -1220,18 +1206,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลฝ่าย...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={8} text="กำลังโหลดข้อมูลฝ่าย..." />
                   ) : filteredDivisions.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        ไม่พบข้อมูลฝ่าย
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={8} text="ไม่พบข้อมูลฝ่าย" />
                   ) : (
                     paginate(filteredDivisions).map((div) => (
                       <tr key={div.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1312,18 +1289,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลแผนก...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={9} text="กำลังโหลดข้อมูลแผนก..." />
                   ) : filteredDepartments.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        ไม่พบข้อมูลแผนก
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={9} text="ไม่พบข้อมูลแผนก" />
                   ) : (
                     paginate(filteredDepartments).map((dept) => (
                       <tr key={dept.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1403,18 +1371,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={9} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลทีม...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={9} text="กำลังโหลดข้อมูลทีม..." />
                   ) : filteredTeams.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500">
-                        ไม่พบข้อมูลทีม
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={9} text="ไม่พบข้อมูลทีม" />
                   ) : (
                     paginate(filteredTeams).map((team) => (
                       <tr key={team.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
@@ -1507,18 +1466,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={10} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลตำแหน่ง...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={10} text="กำลังโหลดข้อมูลตำแหน่ง..." />
                   ) : filteredPositions.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        ไม่พบข้อมูลตำแหน่ง
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={10} text="ไม่พบข้อมูลตำแหน่ง" />
                   ) : (
                     paginate(filteredPositions).map((pos) => (
                       <tr key={pos.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1610,18 +1560,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={canViewSalaryBand ? 7 : 4} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลระดับพนักงาน...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={canViewSalaryBand ? 7 : 4} text="กำลังโหลดข้อมูลระดับพนักงาน..." />
                   ) : filteredLevels.length === 0 ? (
-                    <tr>
-                      <td colSpan={canViewSalaryBand ? 7 : 4} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        ไม่พบข้อมูลระดับพนักงาน
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={canViewSalaryBand ? 7 : 4} text="ไม่พบข้อมูลระดับพนักงาน" />
                   ) : (
                     paginate(filteredLevels).map((lvl) => (
                       <tr key={lvl.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1726,18 +1667,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลสวัสดิการ...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={7} text="กำลังโหลดข้อมูลสวัสดิการ..." />
                   ) : filteredBenefits.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-400">
-                        ไม่พบข้อมูลสวัสดิการ
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={7} text="ไม่พบข้อมูลสวัสดิการ" />
                   ) : (
                     paginate(filteredBenefits).map((ben) => {
                       const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
@@ -2156,18 +2088,9 @@ export default function OrganizationPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
-                    <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                        กำลังโหลดข้อมูลบัญชีธนาคาร...
-                      </td>
-                    </tr>
+                    <TableLoading colSpan={6} text="กำลังโหลดข้อมูลบัญชีธนาคาร..." />
                   ) : filteredBankAccounts.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
-                        ไม่พบข้อมูลบัญชีธนาคาร
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={6} text="ไม่พบข้อมูลบัญชีธนาคาร" />
                   ) : (
                     paginate(filteredBankAccounts).map((acc) => (
                       <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">

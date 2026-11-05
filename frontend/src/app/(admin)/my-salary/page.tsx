@@ -26,6 +26,7 @@ import {
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, StatusBadge, RowActions, RowActionButton, inputClass, TableToolbar } from '@/components/ui';
 import { TablePagination } from '@/components/ui/TablePagination';
+import { TableEmpty } from '@/components/ui/TableState';
 
 export default function MySalaryPage() {
   return (
@@ -621,11 +622,7 @@ function MySalaryContent() {
                       </tr>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan={7} className="py-16 text-center text-slate-400 text-xs">
-                        {searchTerm ? 'ไม่พบข้อมูลสลิปที่ค้นหา' : 'ยังไม่มีประวัติสลิปเงินเดือน'}
-                      </td>
-                    </tr>
+                    <TableEmpty colSpan={7} text={searchTerm ? 'ไม่พบข้อมูลสลิปที่ค้นหา' : 'ยังไม่มีประวัติสลิปเงินเดือน'} />
                   )}
                 </tbody>
               </table>

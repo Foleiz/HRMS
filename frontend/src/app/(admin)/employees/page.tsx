@@ -54,6 +54,7 @@ import {
 import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
 import { Button, inputClass, TabBar } from '@/components/ui';
+import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
 interface DepartmentItem {
   id: number;
@@ -1132,18 +1133,9 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
 
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary mb-2" />
-                    กำลังโหลดข้อมูลพนักงาน...
-                  </td>
-                </tr>
+                <TableLoading colSpan={12} text="กำลังโหลดข้อมูลพนักงาน..." />
               ) : paginatedEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan={12} className="py-16 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                    ไม่พบข้อมูลพนักงานในระบบ
-                  </td>
-                </tr>
+                <TableEmpty colSpan={12} text="ไม่พบข้อมูลพนักงานในระบบ" />
               ) : (
                 paginatedEmployees.map((emp, index) => {
                   const hasComment = Boolean(comments[emp.id]);

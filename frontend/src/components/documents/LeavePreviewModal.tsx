@@ -24,6 +24,7 @@ import {
   extractPrefixAndName,
 } from './documentFormParts';
 import type { ApprovalTimeline } from '@/types/leave';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 /** หมวดการลาตามช่องติ๊กในแบบฟอร์ม */
 export type LeaveCategory = 'SICK' | 'PERSONAL' | 'VACATION' | 'SPECIAL';
@@ -90,10 +91,7 @@ export interface LeavePreviewModalProps {
   data: LeavePreviewData | null;
 }
 
-const THAI_MONTH_NAMES = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
+const THAI_MONTH_NAMES = TH_MONTHS;
 
 const parseDate = (value?: string | null): Date | null => {
   if (!value) return null;

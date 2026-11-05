@@ -28,6 +28,7 @@ import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { Modal, ModalFooter } from '@/components/ui/Modal';
 import { FormField, Input, NumberInput } from '@/components/ui/Input';
 import { OptionCheckCard, TAX_OPTION_TEXT, SSO_OPTION_TEXT } from '@/components/ui/OptionCheckCard';
+import { formatThaiDate } from '@/lib/thaiDate';
 
 interface Props {
   isOpen: boolean;
@@ -357,10 +358,7 @@ export const PayrollItemModal: React.FC<Props> = ({
   /** รายการของระบบที่ต้องคำนวณเสมอ (ปิดใช้งานแล้วเงินเดือน/ภาษี/ประกันสังคม/OT จะผิด) — ค่าตำแหน่งปิดได้ */
   const lockActive = isSystemFormula && templateCode !== 'POSITION_ALLOWANCE';
   const wasInactive = item?.status ? item.status.toUpperCase() !== 'ACTIVE' : false;
-  const thaiDate = (iso: string) => {
-    const d = new Date(`${iso}T00:00:00`);
-    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  const thaiDate = (iso: string) => formatThaiDate(iso);
   const typeLabel = (c: string) => (c === 'EARNING' ? 'รายได้' : 'รายหัก');
   const selectedTemplate = FORMULA_TEMPLATES.find((t) => t.code === templateCode) ?? systemTemplate ?? legacyTemplate;
   const hasParams = !isAutoPullModuleItem && PARAM_TEMPLATES.includes(templateCode);

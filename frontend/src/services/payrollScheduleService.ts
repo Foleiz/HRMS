@@ -1,7 +1,5 @@
-export const THAI_MONTH_NAMES = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+import { TH_MONTHS } from '@/lib/thaiDate';
+export const THAI_MONTH_NAMES = TH_MONTHS;
 
 export interface PayrollScheduleSettings {
   startDayType: 'FIRST_DAY' | 'CUSTOM_DAY';

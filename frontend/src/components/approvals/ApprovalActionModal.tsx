@@ -16,6 +16,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { ModalShell } from '@/components/ui/ModalShell';
+import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 export interface ApprovalDetailRow {
   label: string;
@@ -76,7 +77,7 @@ export const formatThaiDateRange = (startDateStr?: string | null, endDateStr?: s
     return formatThaiDate(startDateStr);
   }
 
-  const thMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const thMonths = TH_MONTHS_SHORT;
   const sDay = start.getDate();
   const eDay = end.getDate();
   const sMonth = start.getMonth();

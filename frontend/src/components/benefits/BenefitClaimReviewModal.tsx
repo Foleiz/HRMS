@@ -6,6 +6,7 @@ import { benefitService } from '@/services/benefitService';
 import { AlertCircle } from 'lucide-react';
 import { ApprovalActionModal, ApprovalDetailRow } from '@/components/approvals/ApprovalActionModal';
 import { openBlobInNewTab } from '@/lib/filePreview';
+import { formatThaiDate } from '@/lib/thaiDate';
 
 export type BenefitClaimReviewMode = 'approve' | 'reject' | 'view';
 
@@ -18,13 +19,7 @@ interface BenefitClaimReviewModalProps {
 }
 
 // 'YYYY-MM-DD' → '26 ต.ค. 2569' (parse แบบ local เพื่อไม่ให้วันเลื่อนตาม timezone)
-const thaiDate = (d?: string | null) => {
-  if (!d) return '-';
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
-  const dt = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
-  if (isNaN(dt.getTime())) return d;
-  return dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-};
+const thaiDate = (d?: string | null) => formatThaiDate(d);
 const money = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const STATUS_LABEL: Record<string, string> = {

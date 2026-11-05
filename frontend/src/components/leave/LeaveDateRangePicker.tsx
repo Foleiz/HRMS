@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { TH_MONTHS, TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 interface LeaveDateRangePickerProps {
   /** วันที่เริ่มต้น รูปแบบ 'YYYY-MM-DD' หรือ '' ถ้ายังไม่ได้เลือก */
@@ -18,14 +19,8 @@ interface LeaveDateRangePickerProps {
   align?: 'left' | 'right';
 }
 
-const THAI_MONTHS_FULL = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-];
+const THAI_MONTHS_FULL = TH_MONTHS;
+const THAI_MONTHS_SHORT = TH_MONTHS_SHORT;
 const THAI_WEEKDAYS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 const YEAR_GRID_SIZE = 12;
 
