@@ -173,8 +173,7 @@ public class AttendanceDailyController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<List<AttendanceDailyDto>>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"));
+        var nowThai = AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow);
         var targetYear = year ?? nowThai.Year;
         var targetMonth = month ?? nowThai.Month;
 
@@ -195,8 +194,7 @@ public class AttendanceDailyController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<MyAttendanceMonthlySummaryDto>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"));
+        var nowThai = AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow);
         var targetYear = year ?? nowThai.Year;
         var targetMonth = month ?? nowThai.Month;
 
@@ -217,8 +215,7 @@ public class AttendanceDailyController : ControllerBase
         if (employeeId <= 0)
             return Unauthorized(ApiResponse<int>.Fail("ไม่สามารถระบุตัวตนผู้ใช้งานได้"));
 
-        var nowThai = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow,
-            TimeZoneInfo.FindSystemTimeZoneById("Asia/Bangkok"));
+        var nowThai = AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow);
         var targetYear = year ?? nowThai.Year;
         var targetMonth = month ?? nowThai.Month;
 

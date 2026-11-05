@@ -229,7 +229,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             if (shiftInfo != null)
             {
                 record.ShiftId = shiftInfo.Id;
-                record.Shift = shiftInfo;
+                record.Shift = null;
                 PopulateScheduledTimes(record, shiftInfo, workDate);
             }
         }
@@ -288,7 +288,7 @@ public class AttendanceDailyService : IAttendanceDailyService
             if (shiftInfo != null)
             {
                 record.ShiftId = shiftInfo.Id;
-                record.Shift = shiftInfo;
+                record.Shift = null;
                 PopulateScheduledTimes(record, shiftInfo, workDate);
             }
         }
@@ -560,7 +560,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                     if (shiftByEmp.TryGetValue(emp.Id, out var esMatch) && esMatch.Shift != null)
                     {
                         existingRecord.ShiftId = esMatch.ShiftId;
-                        existingRecord.Shift = esMatch.Shift;
+                        existingRecord.Shift = null;
                         PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
                         if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
                         {
@@ -915,7 +915,6 @@ public class AttendanceDailyService : IAttendanceDailyService
             var endDate = startDate.AddMonths(1).AddDays(-1);
 
             var records = await _context.AttendanceDailies
-                .Include(a => a.Shift)
                 .Where(a => a.EmployeeId == employeeId && a.WorkDate >= startDate && a.WorkDate <= endDate)
                 .ToListAsync(cancellationToken);
 
@@ -948,7 +947,7 @@ public class AttendanceDailyService : IAttendanceDailyService
                     if (shiftIdDiff || timeDiff)
                     {
                         r.ShiftId = esMatch.ShiftId;
-                        r.Shift = shift;
+                        r.Shift = null;
                         PopulateScheduledTimes(r, shift, r.WorkDate);
                         if (r.ActualIn != null || r.ActualOut != null)
                         {
