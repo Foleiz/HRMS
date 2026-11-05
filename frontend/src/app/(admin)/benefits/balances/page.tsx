@@ -12,7 +12,6 @@ import { benefitService } from '@/services/benefitService';
 import { EmployeeBenefitOverview, BenefitUsageItem, BenefitClaim } from '@/types/benefit';
 import { useToast } from '@/context/ToastContext';
 import {
-  Gift,
   Calendar,
   Search,
   ChevronsUpDown,
@@ -20,9 +19,6 @@ import {
   Sparkles,
   Users,
   Loader2,
-  HeartPulse,
-  Utensils,
-  ShieldCheck,
   Receipt,
   History,
   X,
@@ -167,19 +163,6 @@ export default function EmployeeBenefitBalancesPage() {
       toast.error(msg);
     } finally {
       setDeletingClaimId(null);
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'HEALTH':
-        return <HeartPulse className="w-4 h-4 text-rose-500 dark:text-rose-400" />;
-      case 'ALLOWANCE':
-        return <Utensils className="w-4 h-4 text-amber-500 dark:text-amber-400" />;
-      case 'STATUTORY':
-        return <ShieldCheck className="w-4 h-4 text-blue-500 dark:text-blue-400" />;
-      default:
-        return <Gift className="w-4 h-4 text-purple-500 dark:text-purple-400" />;
     }
   };
 
@@ -413,15 +396,8 @@ export default function EmployeeBenefitBalancesPage() {
                               emp.benefits.map((b) => (
                                 <tr key={b.benefitItemId} className="hover:bg-blue-50/30 dark:hover:bg-slate-700/40 transition-colors">
                                   <td className="py-3 px-4">
-                                    <div className="flex items-center gap-2">
-                                      <div className="p-1 rounded-md bg-slate-100 dark:bg-slate-700/60">
-                                        {getCategoryIcon(b.category)}
-                                      </div>
-                                      <div>
-                                        <div className="font-semibold text-gray-800 dark:text-slate-200">{b.benefitName}</div>
-                                        <div className="text-[11px] text-gray-400 dark:text-slate-400">{b.benefitCode}</div>
-                                      </div>
-                                    </div>
+                                    <div className="font-semibold text-gray-800 dark:text-slate-200">{b.benefitName}</div>
+                                    <div className="text-[11px] text-gray-400 dark:text-slate-400">{b.benefitCode}</div>
                                   </td>
                                   <td className="py-3 px-3 text-center">
                                     {getPayoutTypeBadge(b.payoutType)}
