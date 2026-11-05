@@ -35,6 +35,8 @@ import {
   Camera,
   Network,
   Users,
+  ReceiptText,
+  Wallet,
 } from 'lucide-react';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { organizationService } from '@/services/organizationService';
@@ -80,7 +82,7 @@ import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { BenefitPolicyFields } from '@/components/benefits/BenefitPolicyFields';
-import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar } from '@/components/ui';
+import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, CountBadge } from '@/components/ui';
 import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
@@ -93,6 +95,14 @@ const BENEFIT_CATEGORY_MAP: Record<string, { label: string; color: string; icon:
   FINANCIAL: { label: 'การเงิน & กองทุน', color: 'bg-purple-50 text-purple-700 border-purple-200', icon: Coins },
   OTHER: { label: 'ทั่วไป / อื่นๆ', color: 'bg-slate-50 text-slate-700 dark:text-slate-300 border-slate-200', icon: HelpCircle },
 };
+
+/** วิธีจ่ายสวัสดิการ — ไอคอน/สีชุดเดียวกับการ์ดในฟอร์ม */
+const BENEFIT_PAYOUT_MAP: Record<string, { label: string; icon: React.ElementType; cls: string }> = {
+  REIMBURSEMENT: { label: 'เบิกตามจริง', icon: ReceiptText, cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800' },
+  PAYROLL: { label: 'จ่ายในเงินเดือน', icon: Wallet, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' },
+  IN_KIND: { label: 'ไม่ใช่ตัวเงิน', icon: Gift, cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' },
+};
+const BENEFIT_FREQ_LABEL: Record<string, string> = { YEARLY: 'ปี', MONTHLY: 'เดือน', DAILY: 'วัน', PER_OCCURRENCE: 'ครั้ง' };
 
 /** หัวข้อกล่องในแท็บข้อมูลบริษัท */
 function CompanySectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: string }) {
@@ -145,12 +155,13 @@ export default function OrganizationPage() {
   const [filterDivisionId, setFilterDivisionId] = useState<string>('ALL');
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
   const [filterBenefitCategory, setFilterBenefitCategory] = useState<string>('ALL');
+  const [filterBenefitPayout, setFilterBenefitPayout] = useState<string>('ALL');
   // แบ่งหน้าตาราง (ใช้ร่วมกันทุกแท็บ) — กลับไปหน้า 1 เมื่อเปลี่ยนแท็บ/ค้นหา/กรอง
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   useEffect(() => {
     setPage(1);
-  }, [activeTab, searchQuery, filterDivisionId, filterDeptId, filterBenefitCategory]);
+  }, [activeTab, searchQuery, filterDivisionId, filterDeptId, filterBenefitCategory, filterBenefitPayout]);
 
   const tabTitles: Record<TabType, string> = {
     divisions: 'จัดการฝ่าย',
@@ -1112,6 +1123,7 @@ export default function OrganizationPage() {
 
   const filteredBenefits = benefits
     .filter((b) => (filterBenefitCategory === 'ALL' ? true : b.category === filterBenefitCategory))
+    .filter((b) => (filterBenefitPayout === 'ALL' ? true : (b.payoutType || 'REIMBURSEMENT') === filterBenefitPayout))
     .filter((b) =>
       b.benefitName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.benefitCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1644,18 +1656,29 @@ export default function OrganizationPage() {
               onSearchChange={setSearchQuery}
               searchPlaceholder="ค้นหาสวัสดิการ หรือรหัส..."
               filters={
-                <CustomSelect
-                  value={filterBenefitCategory}
-                  onChange={(val) => setFilterBenefitCategory(String(val))}
-                  placeholder="ทุกหมวดหมู่สวัสดิการ"
-                  options={[
-                    { value: 'ALL', label: 'ทุกหมวดหมู่สวัสดิการ' },
-                    ...Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => ({
-                      value: key,
-                      label: item.label,
-                    })),
-                  ]}
-                />
+                <>
+                  <CustomSelect
+                    value={filterBenefitCategory}
+                    onChange={(val) => setFilterBenefitCategory(String(val))}
+                    placeholder="ทุกหมวดหมู่สวัสดิการ"
+                    options={[
+                      { value: 'ALL', label: 'ทุกหมวดหมู่สวัสดิการ' },
+                      ...Object.entries(BENEFIT_CATEGORY_MAP).map(([key, item]) => ({
+                        value: key,
+                        label: item.label,
+                      })),
+                    ]}
+                  />
+                  <CustomSelect
+                    value={filterBenefitPayout}
+                    onChange={(val) => setFilterBenefitPayout(String(val))}
+                    placeholder="ทุกวิธีจ่าย"
+                    options={[
+                      { value: 'ALL', label: 'ทุกวิธีจ่าย' },
+                      ...Object.entries(BENEFIT_PAYOUT_MAP).map(([key, item]) => ({ value: key, label: item.label })),
+                    ]}
+                  />
+                </>
               }
               actions={
                 canCreateBenefit && (
@@ -1667,90 +1690,111 @@ export default function OrganizationPage() {
             />
 
 
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm">รายการสวัสดิการ</h3>
+              <CountBadge count={filteredBenefits.length} />
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
-                    <th className="py-3.5 px-4 whitespace-nowrap">ชื่อสวัสดิการ / สิทธิประโยชน์</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">หมวดหมู่</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">โควตาวงเงินเริ่มต้น & รูปแบบ</th>
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ประเภทสิทธิ์</th>
-                    <th className="py-3.5 px-4 whitespace-nowrap">สถานะ</th>
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap">จัดการ</th>
+                    <th className="py-3.5 px-4">ชื่อสวัสดิการ</th>
+                    <th className="py-3.5 px-4">หมวดหมู่</th>
+                    <th className="py-3.5 px-4">วิธีจ่าย</th>
+                    <th className="py-3.5 px-4">วงเงินเริ่มต้น</th>
+                    <th className="py-3.5 px-4">ใช้กับ</th>
+                    <th className="py-3.5 px-4">สถานะ</th>
+                    <th className="py-3.5 px-4 text-right">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
                         กำลังโหลดข้อมูลสวัสดิการ...
                       </td>
                     </tr>
                   ) : filteredBenefits.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 whitespace-nowrap dark:text-slate-500 dark:text-slate-400">
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
                         ไม่พบข้อมูลสวัสดิการ
                       </td>
                     </tr>
                   ) : (
                     paginate(filteredBenefits).map((ben) => {
                       const catInfo = BENEFIT_CATEGORY_MAP[ben.category] || BENEFIT_CATEGORY_MAP.OTHER;
-                      const freqLabel = ben.defaultFrequency === 'MONTHLY' ? 'ด.' : ben.defaultFrequency === 'YEARLY' ? 'ปี' : ben.defaultFrequency === 'DAILY' ? 'วัน' : 'ครั้ง';
-                      const payoutBadge = ben.payoutType === 'PAYROLL' && !ben.isDocumentRequired
-                        ? { label: 'จ่ายประจำในเงินเดือน', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800' }
-                        : ben.payoutType === 'IN_KIND'
-                        ? { label: 'ไม่ใช่ตัวเงิน', cls: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800' }
-                        : { label: 'เบิกตามจริง', cls: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800' };
+                      const payout = BENEFIT_PAYOUT_MAP[ben.payoutType || 'REIMBURSEMENT'] || BENEFIT_PAYOUT_MAP.REIMBURSEMENT;
+                      const PayoutIcon = payout.icon;
+                      const isKind = ben.payoutType === 'IN_KIND';
+                      const isPayroll = ben.payoutType === 'PAYROLL';
+                      const amount = Number(ben.defaultCoverageAmount) || 0;
+                      const amountText = isKind
+                        ? '—'
+                        : amount > 0
+                        ? `${amount.toLocaleString('th-TH')} บาท / ${isPayroll ? 'งวด' : BENEFIT_FREQ_LABEL[ben.defaultFrequency] || 'ปี'}`
+                        : isPayroll
+                        ? 'ตามประเภทพนักงาน'
+                        : 'ไม่จำกัด';
+                      const usedBy = ben.assignedTypesCount ?? 0;
+                      const deleteBlock = ben.isStatutory
+                        ? 'สิทธิตามกฎหมายลบไม่ได้ — ปิดใช้งานแทนได้'
+                        : usedBy > 0
+                        ? `ผูกกับ ${usedBy} ประเภทพนักงานอยู่ — ปลดการผูกก่อนจึงจะลบได้`
+                        : null;
 
                       return (
-                        <tr key={ben.id} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">
-                            <div>{ben.benefitName}</div>
+                        <tr key={ben.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
+                          <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
+                            <div className="flex items-center gap-1.5">
+                              {ben.benefitName}
+                              {ben.isStatutory && (
+                                <span title="สิทธิตามกฎหมายแรงงาน" className="inline-flex text-blue-600 dark:text-blue-400">
+                                  <Shield className="w-3.5 h-3.5" aria-label="สิทธิตามกฎหมายแรงงาน" />
+                                </span>
+                              )}
+                            </div>
                           </td>
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3 px-4">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border ${catInfo.color}`}>
                               {catInfo.label}
                             </span>
                           </td>
-                          <td className="py-3 px-4 whitespace-nowrap">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-semibold text-slate-800 dark:text-slate-200">
-                                {ben.defaultCoverageAmount > 0 
-                                  ? `${Number(ben.defaultCoverageAmount).toLocaleString()} บ./${freqLabel}`
-                                  : 'ตามสิทธิ์'}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium border ${payoutBadge.cls}`}>
-                                {payoutBadge.label}
-                              </span>
-                            </div>
+                          <td className="py-3 px-4">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${payout.cls}`}>
+                              <PayoutIcon className="w-3.5 h-3.5" />
+                              {payout.label}
+                            </span>
                           </td>
-                          <td className="py-3 px-4 text-center whitespace-nowrap">
-                            <div className="flex flex-col items-center gap-1">
-                              {ben.isStatutory ? (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-400">
-                                  สิทธิตามกฎหมาย
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-400">
-                                  สวัสดิการบริษัท
-                                </span>
-                              )}
-                              {ben.isDocumentRequired && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-900/20 dark:text-purple-300">
-                                  บังคับแนบเอกสาร
-                                </span>
-                              )}
-                            </div>
+                          <td className="py-3 px-4">
+                            <div className={`font-semibold ${isKind || amount === 0 ? 'text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{amountText}</div>
+                            {ben.isDocumentRequired && !isKind && !isPayroll && (
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">ต้องแนบหลักฐาน</div>
+                            )}
                           </td>
-                          <td className="py-3 px-4 whitespace-nowrap">
+                          <td className="py-3 px-4">
+                            {usedBy > 0 ? (
+                              <span className="text-slate-700 dark:text-slate-300">{usedBy} ประเภทพนักงาน</span>
+                            ) : (
+                              <span className="text-slate-400">ยังไม่ได้ผูก</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
                             <ActiveStatus active={ben.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดใช้งาน" />
                           </td>
-                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <td className="py-3 px-4 text-right">
                             {canEditBenefit ? (
                               <div className="flex items-center justify-end gap-1">
                                 <RowActionButton action="edit" onClick={() => handleOpenBenefitModal(ben)} />
-                                <RowActionButton action="delete" onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')} />
+                                <span title={deleteBlock ?? 'ลบ'} className="inline-flex">
+                                  <RowActionButton
+                                    action="delete"
+                                    title={deleteBlock ?? undefined}
+                                    disabled={!!deleteBlock}
+                                    onClick={() => handleConfirmDelete(ben.id, ben.benefitName, 'benefit')}
+                                  />
+                                </span>
                               </div>
                             ) : (
                               <span className="text-slate-400 dark:text-slate-500 text-[11px]">-</span>
