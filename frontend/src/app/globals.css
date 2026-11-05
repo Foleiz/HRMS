@@ -473,7 +473,6 @@ html.dark .refresh-indicator__bar::before {
 
 /* ===================== แอนิเมชันพื้นฐานของระบบ =====================
    - .modal-pop: popup ขยายออกมาจากจุดที่กด (ModalShell ตั้ง --modal-origin-x / -y ให้)
-   - .skeleton-bar: แถบโหลดข้อมูลแบบโครงร่าง (TableLoading)
    - ผู้ใช้ที่ตั้งเครื่องให้ "ลดการเคลื่อนไหว" จะไม่เห็นแอนิเมชันเหล่านี้ */
 /* พื้นหลังมืดค่อย ๆ ปรากฏ (ใส่ให้ทุก popup แม้ className ที่ส่งมาจะไม่มี animation) */
 @keyframes modal-backdrop-in {
@@ -516,26 +515,10 @@ html.dark .refresh-indicator__bar::before {
   animation: modal-pop-out 180ms ease-in forwards;
 }
 
-@keyframes skeleton-shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
-}
-.skeleton-bar {
-  border-radius: 9999px;
-  background: linear-gradient(90deg, rgb(226 232 240) 25%, rgb(241 245 249) 50%, rgb(226 232 240) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.4s ease-in-out infinite;
-}
-.dark .skeleton-bar {
-  background: linear-gradient(90deg, rgb(51 65 85) 25%, rgb(71 85 105) 50%, rgb(51 65 85) 75%);
-  background-size: 200% 100%;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
   .modal-pop,
-  .modal-closing,
-  .skeleton-bar {
+  .modal-closing {
     animation: none;
   }
 }
