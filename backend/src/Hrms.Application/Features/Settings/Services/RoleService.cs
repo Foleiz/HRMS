@@ -165,6 +165,7 @@ public class RoleService : IRoleService
                 RoleName = r.RoleName,
                 Description = r.Description,
                 Status = r.Status,
+                Color = r.Color ?? "#2563EB",
                 UserCount = r.UserRoles.Count,
                 IsSystemDefault = r.RoleCode == "ADMIN" || r.RoleCode == "SYSTEM_SUPER",
                 LastModifiedAt = DateTime.UtcNow.AddHours(-2)
@@ -282,7 +283,8 @@ public class RoleService : IRoleService
         string? description,
         string status,
         IReadOnlySet<string> grantedPermCodes,
-        IReadOnlySet<(string PermissionCode, string DataVisibilityScope)> activeScopes)
+        IReadOnlySet<(string PermissionCode, string DataVisibilityScope)> activeScopes,
+        string? color = null)
     {
         var moduleDtos = new List<ModulePermissionScopeDto>(StandardModules.Count);
 
@@ -384,6 +386,7 @@ public class RoleService : IRoleService
             RoleName = roleName,
             Description = description,
             Status = status,
+            Color = color ?? "#2563EB",
             IsSystemDefault = roleCode is "ADMIN" or "SYSTEM_SUPER",
             LastModifiedAt = DateTime.UtcNow,
             Modules = moduleDtos
@@ -401,7 +404,7 @@ public class RoleService : IRoleService
 
         var role = await _dbContext.Roles
             .AsNoTracking()
-            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status })
+            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status, r.Color })
             .FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
 
         if (role == null)
@@ -432,7 +435,8 @@ public class RoleService : IRoleService
             role.Description,
             role.Status,
             grantedPermCodes,
-            activeScopes);
+            activeScopes,
+            role.Color);
 
         _matrixCache[roleId] = (DateTime.UtcNow.Add(CacheTtl), result);
         return result;
@@ -466,7 +470,8 @@ public class RoleService : IRoleService
             RoleCode = code,
             RoleName = request.RoleName.Trim(),
             Description = request.Description?.Trim(),
-            Status = "ACTIVE"
+            Status = "ACTIVE",
+            Color = string.IsNullOrWhiteSpace(request.Color) ? "#2563EB" : request.Color.Trim()
         };
 
         _dbContext.Roles.Add(role);
@@ -484,6 +489,7 @@ public class RoleService : IRoleService
             RoleName = role.RoleName,
             Description = role.Description,
             Status = role.Status,
+            Color = role.Color ?? "#2563EB",
             UserCount = 0,
             IsSystemDefault = false,
             LastModifiedAt = DateTime.UtcNow
@@ -505,6 +511,10 @@ public class RoleService : IRoleService
         role.RoleName = request.RoleName.Trim();
         role.Description = request.Description?.Trim();
         role.Status = request.Status;
+        if (!string.IsNullOrWhiteSpace(request.Color))
+        {
+            role.Color = request.Color.Trim();
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         InvalidateMatrixCache(role.Id);
@@ -520,6 +530,7 @@ public class RoleService : IRoleService
             RoleName = role.RoleName,
             Description = role.Description,
             Status = role.Status,
+            Color = role.Color ?? "#2563EB",
             UserCount = role.UserRoles.Count,
             IsSystemDefault = role.RoleCode is "ADMIN" or "SYSTEM_SUPER",
             LastModifiedAt = DateTime.UtcNow
@@ -530,7 +541,7 @@ public class RoleService : IRoleService
     {
         var role = await _dbContext.Roles
             .AsNoTracking()
-            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status })
+            .Select(r => new { r.Id, r.RoleCode, r.RoleName, r.Description, r.Status, r.Color })
             .FirstOrDefaultAsync(r => r.Id == roleId, cancellationToken);
 
         if (role == null)
@@ -674,7 +685,8 @@ public class RoleService : IRoleService
             role.Description,
             role.Status,
             addedPermCodes,
-            activeScopesSet);
+            activeScopesSet,
+            role.Color);
 
         _matrixCache[role.Id] = (DateTime.UtcNow.Add(CacheTtl), result);
 

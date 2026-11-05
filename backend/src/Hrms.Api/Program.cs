@@ -280,6 +280,13 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await db.Database.ExecuteSqlRawAsync(@"
+            ALTER TABLE hrms.role ADD COLUMN IF NOT EXISTS color varchar(30) NULL;
+            UPDATE hrms.role SET color = '#2563EB' WHERE (role_code = 'ADMIN' OR role_code = 'SYSTEM_SUPER') AND color IS NULL;
+            UPDATE hrms.role SET color = '#059669' WHERE role_code LIKE '%HR%' AND color IS NULL;
+            UPDATE hrms.role SET color = '#7C3AED' WHERE (role_code LIKE '%MGR%' OR role_code LIKE '%HEAD%' OR role_code LIKE '%LEAD%') AND color IS NULL;
+            UPDATE hrms.role SET color = '#0284C7' WHERE (role_code LIKE '%EMPLOYEE%' OR role_code LIKE '%STAFF%') AND color IS NULL;
+            UPDATE hrms.role SET color = '#4F46E5' WHERE color IS NULL;
+
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_file_name varchar(255) NULL;
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_file_data bytea NULL;
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_mime_type varchar(100) NULL;

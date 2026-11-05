@@ -10,6 +10,7 @@ public class RoleSummaryDto
     public string RoleName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public string? Color { get; set; }
     public int UserCount { get; set; }
     public bool IsSystemDefault { get; set; }
     public DateTime? LastModifiedAt { get; set; }
@@ -25,6 +26,7 @@ public class RoleDetailDto
     public string RoleName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public string? Color { get; set; }
     public bool IsSystemDefault { get; set; }
     public DateTime? LastModifiedAt { get; set; }
     public List<ModulePermissionScopeDto> Modules { get; set; } = new();
@@ -79,6 +81,7 @@ public class CreateRoleRequestDto
     public string? RoleCode { get; set; }
     public string RoleName { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public string? Color { get; set; }
 }
 
 /// <summary>
@@ -89,6 +92,7 @@ public class UpdateRoleRequestDto
     public string RoleName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Status { get; set; } = "ACTIVE";
+    public string? Color { get; set; }
 }
 
 /// <summary>

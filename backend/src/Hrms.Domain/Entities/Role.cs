@@ -12,6 +12,7 @@ public class Role : BaseEntity
     public string RoleName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE
+    public string? Color { get; set; } // Hex color code e.g. #2563EB
 
     // Navigation Properties
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();

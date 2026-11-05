@@ -235,14 +235,29 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       {/* 5. บทบาท (Badges) */}
                       <td className="py-3.5 px-4">
                         <div className="flex flex-wrap gap-1.5">
-                          {user.roles.map((r, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20/80 text-blue-700 dark:text-blue-400 border border-blue-200/60 rounded text-[10px] font-semibold tracking-wide"
-                            >
-                              {r.roleName || formatRoleName(r.roleCode)}
-                            </span>
-                          ))}
+                          {user.roles.map((r, i) => {
+                            const roleColor =
+                              r.color ||
+                              roles.find((x) => x.id === r.roleId || x.roleCode === r.roleCode)?.color ||
+                              '#2563EB';
+                            return (
+                              <span
+                                key={i}
+                                style={{
+                                  backgroundColor: `${roleColor}14`,
+                                  color: roleColor,
+                                  borderColor: `${roleColor}33`,
+                                }}
+                                className="px-2 py-0.5 border rounded text-[10px] font-semibold tracking-wide inline-flex items-center gap-1"
+                              >
+                                <span
+                                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: roleColor }}
+                                />
+                                {r.roleName || formatRoleName(r.roleCode)}
+                              </span>
+                            );
+                          })}
                         </div>
                       </td>
 

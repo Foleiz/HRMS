@@ -783,30 +783,53 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         >
           {filteredRoles.map((role) => {
             const isSelected = selectedRoleMatrix?.id === role.id;
+            const roleColor = role.color || '#2563EB';
             return (
               <div
                 key={role.id}
                 onClick={() => onSelectRole(role.id)}
-                className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${ isSelected ? 'bg-white dark:bg-slate-800 border-primary ring-2 ring-primary/10 shadow-sm'
-                    : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-xs'
+                className={`p-4 pl-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                  isSelected
+                    ? 'bg-white dark:bg-slate-800 ring-2 shadow-sm'
+                    : 'bg-white dark:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xs'
                 }`}
+                style={
+                  isSelected
+                    ? {
+                        borderColor: roleColor,
+                        boxShadow: `0 0 0 2px ${roleColor}25`,
+                      }
+                    : undefined
+                }
               >
+                {/* แถบสีด้านซ้ายของบทบาท */}
+                <div
+                  className={`absolute left-0 top-0 bottom-0 transition-all duration-200 ${
+                    isSelected ? 'w-2 shadow-sm' : 'w-1.5'
+                  }`}
+                  style={{ backgroundColor: roleColor }}
+                />
+
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
+                        style={{ backgroundColor: roleColor }}
+                      />
                       <span className="font-bold text-sm text-slate-900 dark:text-slate-100 tracking-tight">
                         {role.roleName}
                       </span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full shrink-0">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     ใช้งานอยู่
                   </span>
                 </div>
 
                 {role.description && (
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 line-clamp-2 mt-2 leading-relaxed">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-2 mt-2 leading-relaxed">
                     {role.description}
                   </p>
                 )}
@@ -815,15 +838,17 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3 text-[11px]">
                     {role.isSystemDefault ? (
                       <>
-                        <span
-                          className="text-slate-300 dark:text-slate-600 flex items-center gap-1 cursor-not-allowed select-none"
-                          title="บทบาทเริ่มต้นของระบบ ไม่สามารถแก้ไขได้"
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
+                          icon={<Edit2 className="w-3 h-3" />}
                         >
-                          <Edit2 className="w-3 h-3 text-slate-300 dark:text-slate-600" />
-                          <span>แก้ไข</span>
-                        </span>
+                          แก้ไข
+                        </Button>
                         <span
-                          className="text-slate-300 dark:text-slate-600 flex items-center gap-1 cursor-not-allowed select-none"
+                          className="text-slate-300 dark:text-slate-600 flex items-center gap-1 cursor-not-allowed select-none px-2 py-1"
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
                         >
                           <Trash2 className="w-3 h-3 text-slate-300 dark:text-slate-600" />
@@ -873,7 +898,14 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                   <span>ตั้งค่าสิทธิ์สำหรับ:</span>
-                  <span className="text-primary dark:text-blue-400">
+                  <span
+                    className="flex items-center gap-1.5 font-bold"
+                    style={{ color: selectedRoleMatrix.color || '#2563EB' }}
+                  >
+                    <span
+                      className="w-2.5 h-2.5 rounded-full inline-block"
+                      style={{ backgroundColor: selectedRoleMatrix.color || '#2563EB' }}
+                    />
                     {selectedRoleMatrix.roleName}
                   </span>
                 </h2>

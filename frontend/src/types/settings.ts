@@ -6,6 +6,7 @@ export interface UserRoleItem {
   roleName: string;
   isActive: boolean;
   isPrimary?: boolean;
+  color?: string;
 }
 
 export interface UserAccount {
@@ -60,6 +61,7 @@ export interface RoleSummary {
   status: 'ACTIVE' | 'INACTIVE' | string;
   userCount: number;
   isSystemDefault: boolean;
+  color?: string;
   lastModifiedAt?: string;
 }
 
@@ -99,6 +101,7 @@ export interface RoleDetail {
   description?: string;
   status: 'ACTIVE' | 'INACTIVE' | string;
   isSystemDefault: boolean;
+  color?: string;
   lastModifiedAt?: string;
   modules: ModulePermissionScope[];
 }
@@ -107,12 +110,14 @@ export interface CreateRoleRequest {
   roleCode?: string;
   roleName: string;
   description?: string;
+  color?: string;
 }
 
 export interface UpdateRoleRequest {
   roleName: string;
   description?: string;
   status: string;
+  color?: string;
 }
 
 export interface UpdateRoleMatrixRequest {

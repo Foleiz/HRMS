@@ -374,11 +374,25 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
                   {selectedRoles.map((roleItem, index) => (
                     <div
                       key={index}
-                      className="p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xs space-y-3 hover:border-slate-300 transition-colors"
+                      className="p-3.5 pl-4.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xs space-y-3 hover:border-slate-300 transition-colors relative overflow-hidden"
                     >
+                      {/* Left role color stripe */}
+                      <div
+                        className="absolute left-0 top-0 bottom-0 w-1.5"
+                        style={{
+                          backgroundColor:
+                            roles.find((r) => r.id === roleItem.roleId)?.color || '#2563EB',
+                        }}
+                      />
                       <div className="flex items-center gap-3">
-                        {/* Badge Number Circle (Navy) */}
-                        <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                        {/* Badge Number Circle */}
+                        <div
+                          className="w-7 h-7 rounded-full text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs"
+                          style={{
+                            backgroundColor:
+                              roles.find((r) => r.id === roleItem.roleId)?.color || '#2563EB',
+                          }}
+                        >
                           {index + 1}
                         </div>
 

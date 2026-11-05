@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import {
   X,
   Shield,
+  Check,
 } from 'lucide-react';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { RoleSummary, CreateRoleRequest, UpdateRoleRequest } from '@/types/settings';
@@ -19,6 +20,23 @@ interface RoleModalProps {
   roleToEdit?: RoleSummary | null;
   existingRoles?: RoleSummary[];
 }
+
+
+const COLOR_PRESETS = [
+  { label: 'น้ำเงิน', value: '#2563EB' },
+  { label: 'คราม', value: '#4F46E5' },
+  { label: 'ม่วง', value: '#7C3AED' },
+  { label: 'ม่วงสด', value: '#9333EA' },
+  { label: 'ชมพู', value: '#DB2777' },
+  { label: 'แดงกุหลาบ', value: '#E11D48' },
+  { label: 'แดง', value: '#DC2626' },
+  { label: 'ส้ม', value: '#EA580C' },
+  { label: 'อำพัน', value: '#D97706' },
+  { label: 'เขียว', value: '#059669' },
+  { label: 'เขียวหัวเป็ด', value: '#0D9488' },
+  { label: 'ฟ้าคราม', value: '#0891B2' },
+  { label: 'เทา', value: '#475569' },
+];
 
 export const RoleModal: React.FC<RoleModalProps> = ({
   isOpen,
@@ -34,6 +52,7 @@ export const RoleModal: React.FC<RoleModalProps> = ({
   const [roleName, setRoleName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('ACTIVE');
+  const [color, setColor] = useState('#2563EB');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -67,11 +86,13 @@ export const RoleModal: React.FC<RoleModalProps> = ({
       setRoleName(roleToEdit.roleName);
       setDescription(roleToEdit.description || '');
       setStatus(roleToEdit.status);
+      setColor(roleToEdit.color || '#2563EB');
     } else {
       setRoleCode(generateNextRoleCode(existingRoles));
       setRoleName('');
       setDescription('');
       setStatus('ACTIVE');
+      setColor('#2563EB');
     }
     setErrorMsg(null);
   }, [roleToEdit, isOpen, existingRoles]);
@@ -97,12 +118,14 @@ export const RoleModal: React.FC<RoleModalProps> = ({
           roleName: roleName.trim(),
           description: description.trim() || undefined,
           status,
+          color,
         });
       } else {
         await onSubmitCreate({
           roleCode: roleCode.trim().toUpperCase(),
           roleName: roleName.trim(),
           description: description.trim() || undefined,
+          color,
         });
       }
       onClose();
@@ -167,6 +190,59 @@ export const RoleModal: React.FC<RoleModalProps> = ({
             />
           </div>
 
+
+
+          {/* สีประจำบทบาท */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              สีประจำบทบาท
+            </label>
+            <div className="flex flex-wrap items-center gap-1.5 p-2.5 bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200/80 dark:border-slate-700">
+              {COLOR_PRESETS.map((preset) => {
+                const isSelected = color.toLowerCase() === preset.value.toLowerCase();
+                return (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setColor(preset.value)}
+                    title={preset.label}
+                    className={`w-6 h-6 rounded-full transition-transform flex items-center justify-center cursor-pointer ${
+                      isSelected ? 'ring-2 ring-offset-2 ring-primary scale-110' : 'hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: preset.value }}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white drop-shadow-xs" />}
+                  </button>
+                );
+              })}
+              {/* Custom Color Input */}
+              <div className="relative flex items-center ml-1">
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-7 h-7 rounded-lg border border-slate-300 dark:border-slate-600 cursor-pointer p-0.5 bg-transparent"
+                  title="เลือกสีแบบกำหนดเอง"
+                />
+              </div>
+            </div>
+
+            {/* Badge Preview */}
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">ตัวอย่างป้ายชื่อ:</span>
+              <span
+                style={{
+                  backgroundColor: `${color}18`,
+                  color: color,
+                  borderColor: `${color}40`,
+                }}
+                className="px-2.5 py-0.5 border rounded-md text-xs font-semibold tracking-wide inline-flex items-center gap-1.5"
+              >
+                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                {roleName || 'ชื่อบทบาท'}
+              </span>
+            </div>
+          </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">คำอธิบาย</label>

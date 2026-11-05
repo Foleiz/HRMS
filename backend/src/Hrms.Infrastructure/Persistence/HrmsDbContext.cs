@@ -459,6 +459,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.RoleName).HasColumnName("role_name").IsRequired().HasMaxLength(150);
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(30);
         });
 
         // Configuration: Permission

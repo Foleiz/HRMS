@@ -510,6 +510,7 @@ public class UserService : IUserService
                 RoleId = ur.RoleId,
                 RoleCode = ur.Role.RoleCode,
                 RoleName = ur.Role.RoleName,
+                Color = ur.Role.Color ?? "#2563EB",
                 IsActive = ur.Role.Status == "ACTIVE"
             }).ToList(),
             CreatedAt = u.CreatedAt,
