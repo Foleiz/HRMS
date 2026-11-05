@@ -3,8 +3,7 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { ModalShell, Button, TabBar, type TabBarItem } from '@/components/ui';
-import { useSearchParams } from 'next/navigation';
+import { ModalShell, Button } from '@/components/ui';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   FileSpreadsheet,
@@ -78,26 +77,6 @@ const THAI_MONTHS = [
 export default function CommissionTab() {
   const { success, error, info } = useToast();
   const { user } = useAuth();
-
-  // Active Sub-tab State ('records' | 'import') - คล้ายกับตรวจบันทึกเวลา
-  const searchParams = useSearchParams();
-  const [activeSubTab, setActiveSubTab] = useState<'records' | 'import'>('records');
-
-  useEffect(() => {
-    const sub = searchParams?.get('subTab');
-    if (sub === 'import' || sub === 'records') {
-      setActiveSubTab(sub);
-    }
-  }, [searchParams]);
-
-  const handleSubTabChange = (tab: 'records' | 'import') => {
-    setActiveSubTab(tab);
-    if (typeof window !== 'undefined') {
-      const url = new URL(window.location.href);
-      url.searchParams.set('subTab', tab);
-      window.history.replaceState({}, '', url.toString());
-    }
-  };
 
   // Period State (default to current Gregorian date)
   const today = new Date();
@@ -825,37 +804,7 @@ export default function CommissionTab() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-            {/* ------------------------------------------------------------- */}
-      {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูตรวจบันทึกเวลา) */}
-      {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-2xl shadow-xs">
-        <TabBar
-          aria-label="เมนูค่าคอมมิชชั่น"
-          items={[
-            {
-              key: 'records',
-              label: 'รายการค่าคอมมิชชั่น',
-              icon: <DollarSign className="w-4 h-4 text-emerald-600" />,
-              badge: summary?.records?.length ? `${summary.records.length} คน` : undefined,
-            },
-            {
-              key: 'import',
-              label: 'นำเข้าไฟล์ค่าคอมมิชชั่น',
-              icon: <UploadCloud className="w-4 h-4 text-blue-600" />,
-              badge: batchTotalCount ? `${batchTotalCount} ชุด` : undefined,
-            },
-          ]}
-          activeKey={activeSubTab}
-          onChange={(k) => handleSubTabChange(k as 'records' | 'import')}
-        />
-      </div>
-
-      {/* ========================================================= */}
-      {/* TAB 1: รายการค่าคอมมิชชั่น (COMMISSION RECORDS & OVERVIEW) */}
-      {/* ========================================================= */}
-      {activeSubTab === 'records' && (
-        <div className="space-y-5 animate-in fade-in duration-200">
-{/* 1. Header Toolbar & Filters */}
+      {/* 1. Header Toolbar & Filters */}
       <div className="flex flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:px-4 sm:py-3 shadow-xs overflow-x-auto">
         {/* Left: Period & Rate Controls (Single line) */}
         <div className="flex items-center gap-2.5 shrink-0">
@@ -1112,242 +1061,115 @@ export default function CommissionTab() {
         </div>
       </div>
 
-            {/* 3. รายการค่าคอมมิชชั่นพนักงาน ประจำงวด */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-h-9">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900 shadow-2xs">
-              <Users className="h-4 w-4" />
+      {/* 3. Unified File Upload Dropzone (Automatic Mode Detection — No Manual Choice Cards) */}
+      {!isPeriodConfirmed && (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all animate-in fade-in duration-200">
+          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/40">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-2xs bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60">
+                <UploadCloud className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <span>นำเข้าไฟล์ค่าคอมมิชชั่น</span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                    <Sparkles className="h-3 w-3" /> ระบบตรวจจับรูปแบบอัตโนมัติ
+                  </span>
+                </h2>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>รายการค่าคอมมิชชั่นพนักงาน ประจำงวด {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543}</span>
-                <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
-                  {filteredRecords.length} คน
-                </span>
-              </h3>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsGuideOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-semibold text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs cursor-pointer"
+              >
+                <HelpCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>รูปแบบไฟล์ที่รองรับ</span>
+              </button>
+
+              <Button
+                variant="success"
+                disabled={!selectedFile}
+                loading={isExecutingImport}
+                onClick={handleConfirmImport}
+                icon={<UploadCloud className="w-4 h-4" />}
+              >
+                {isExecutingImport ? 'กำลังนำเข้าและประมวลผล...' : 'เริ่มประมวลผลนำเข้าไฟล์'}
+              </Button>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-            <div className="relative w-56 sm:w-64">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+          <div className="p-6">
+            {/* Dropzone */}
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center ${
+                isDragOver
+                  ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 scale-[0.99] ring-4 ring-emerald-500/10'
+                  : selectedFile
+                  ? 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20'
+                  : 'border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
+              }`}
+            >
               <input
-                type="text"
-                placeholder="ค้นหารหัส, ชื่อพนักงาน หรือแผนก..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setSummaryPage(1);
-                }}
-                className="w-full pl-9 pr-7 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition shadow-2xs"
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileInputChange}
+                className="hidden"
               />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+
+              {selectedFile ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200 shadow-sm dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800">
+                    <FileSpreadsheet className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-slate-900 dark:text-slate-100">{selectedFile.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ขนาด: {formatFileSize(selectedFile.size)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>ยกเลิกเลือกไฟล์</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900">
+                    <UploadCloud className="w-7 h-7" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                      ลากไฟล์มาวางที่นี่ หรือ{' '}
+                      <span className="text-emerald-600 dark:text-emerald-400 hover:underline">
+                        คลิกเพื่อเลือกไฟล์
+                      </span>
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      รองรับไฟล์ .xlsx, .xls หรือ .csv (นำเข้าหลายคนพร้อมกันได้ทั้งแผนกหรือทั้งบริษัท)
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
-
-            <button
-              type="button"
-              onClick={() => loadCommissionData(selectedYear, selectedMonth)}
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>รีเฟรช</span>
-            </button>
           </div>
         </div>
+      )}
 
-        {/* Table inside inner container with rounded corners */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <RefreshIndicator active={loading} />
-            <table className="table-standard w-full min-w-[950px] text-left text-xs border-collapse whitespace-nowrap">
-              <thead className="bg-primary text-white font-semibold">
-                <tr className="whitespace-nowrap">
-                  <th className="py-3.5 px-4 font-semibold">รหัสพนักงาน</th>
-                  <th className="py-3.5 px-4 font-semibold">ชื่อ-นามสกุล</th>
-                  <th className="py-3.5 px-4 font-semibold">แผนก / ตำแหน่ง</th>
-                  <th className="py-3.5 px-4 text-right font-semibold">ยอดขายรวม (บาท)</th>
-                  <th className="py-3.5 px-4 text-center font-semibold">อัตรา (%)</th>
-                  <th className="py-3.5 px-4 text-right font-bold">ค่าคอมมิชชั่นสุทธิ (บาท)</th>
-                  <th className="py-3.5 px-4 font-semibold">หมายเหตุ</th>
-                  <th className="py-3.5 px-4 text-center font-semibold">ที่มา / รายการย่อย</th>
-                  <th className="py-3.5 px-4 text-center font-semibold">จัดการ</th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                {loading ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
-                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-emerald-600" />
-                      <p className="mt-2 text-xs">กำลังโหลดข้อมูลค่าคอมมิชชั่นประจำงวด...</p>
-                    </td>
-                  </tr>
-                ) : filteredRecords.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center text-slate-400">
-                      <FileSpreadsheet className="mx-auto h-10 w-10 text-slate-300 dark:text-slate-700" />
-                      <p className="mt-2 font-medium text-slate-600 dark:text-slate-400">
-                        ยังไม่มีข้อมูลค่าคอมมิชชั่นในรอบเดือนนี้
-                      </p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        สามารถนำเข้าไฟล์ Excel/CSV หรือกด &quot;เพิ่มรายคน&quot; เพื่อบันทึกข้อมูล
-                      </p>
-                      <div className="mt-4 flex items-center justify-center gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={<UploadCloud className="w-3.5 h-3.5 text-blue-600" />}
-                          onClick={() => handleSubTabChange('import')}
-                        >
-                          ไปยังหน้านำเข้าไฟล์ค่าคอมมิชชั่น
-                        </Button>
-                        {!isPeriodConfirmed && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            icon={<Plus className="w-3.5 h-3.5 text-emerald-600" />}
-                            onClick={() => {
-                              loadEmployees();
-                              setAddJobDate(new Date().toISOString().slice(0, 10));
-                              setAddJobTitle('');
-                              setAddForm({
-                                employeeId: 0,
-                                year: selectedYear,
-                                month: selectedMonth,
-                                salesAmount: 0,
-                                commissionRate: defaultRate,
-                                specialAmount: 0,
-                                note: '',
-                              });
-                              setIsAddModalOpen(true);
-                            }}
-                          >
-                            เพิ่มรายคน
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  pagedRecords.map((r) => (
-                    <tr
-                      key={r.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-200 transition-colors"
-                    >
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                        {r.employeeCode}
-                      </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                        {r.employeeName}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                        <div className="font-bold text-slate-800 dark:text-slate-200">{r.departmentName || '-'}</div>
-                        <div className="text-[11px] text-slate-400 font-normal">{r.positionName || '-'}</div>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                        ฿{r.salesAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span className="inline-flex items-center justify-center min-w-10 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-mono font-bold text-xs text-slate-800 dark:text-slate-200 shadow-2xs">
-                          {r.commissionRate}%
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-700 dark:text-emerald-400 text-xs whitespace-nowrap">
-                        ฿{r.totalCommission.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {r.note ? (
-                          <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={r.note}>
-                            {r.note}
-                          </span>
-                        ) : (
-                          <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEmployeeEntries(r)}
-                          className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:text-blue-300 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800/60 transition cursor-pointer"
-                          title="ดูรายการย่อยและที่มาของยอดค่าคอมมิชชั่นของพนักงานท่านนี้"
-                        >
-                          <Eye className="h-3 w-3" />
-                          <span>ดูที่มา</span>
-                        </button>
-                      </td>
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {!isPeriodConfirmed ? (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenAddWorkForEmployee(r)}
-                              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-300 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
-                              title="บันทึกงานเพิ่มให้พนักงานท่านนี้"
-                            >
-                              <Plus className="h-3 w-3" />
-                              <span>+ งานเพิ่ม</span>
-                            </button>
-                            <ActionDropdown
-                              menuClassName="w-32"
-                              items={[
-                                {
-                                  label: 'แก้ไขยอด',
-                                  icon: <Edit2 className="w-3.5 h-3.5 text-blue-500" />,
-                                  onClick: () => {
-                                    setEditingRecord(r);
-                                    setEditForm({
-                                      salesAmount: r.salesAmount,
-                                      commissionRate: r.commissionRate,
-                                      specialAmount: 0,
-                                      note: r.note || '',
-                                    });
-                                  },
-                                },
-                                {
-                                  label: 'ลบรายการ',
-                                  icon: <Trash2 className="w-3.5 h-3.5 text-rose-500" />,
-                                  danger: true,
-                                  onClick: () => handleDeleteRecord(r),
-                                },
-                              ]}
-                            />
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 text-[11px] italic">ล็อกแล้ว</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Table Pagination */}
-        <TablePagination
-          total={filteredRecords.length}
-          page={safeSummaryPage}
-          pageSize={summaryPageSize}
-          onPageChange={setSummaryPage}
-          onPageSizeChange={(newSize) => {
-            setSummaryPageSize(newSize);
-            setSummaryPage(1);
-          }}
-          pageSizeOptions={[10, 20, 50, 100]}
-        />
-      </div>
-{/* 5. Monthly Periods Overview Section (Table similar to History) */}
+      {/* 5. Monthly Periods Overview Section (Table similar to History) */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-h-9">
           <div className="flex items-center gap-2.5">
@@ -1526,140 +1348,6 @@ export default function CommissionTab() {
           pageSizeOptions={[5, 10, 20, 50]}
         />
       </div>
-
-              </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* TAB 2: นำเข้าไฟล์ค่าคอมมิชชั่น (FILE UPLOAD & IMPORT BATCHES) */}
-      {/* ========================================================= */}
-      {activeSubTab === 'import' && (
-        <div className="space-y-5 animate-in fade-in duration-200">
-          {/* แถบระบุงวดเดือนเป้าหมายของการนำเข้าไฟล์ */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-300">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400">
-                <Calendar className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-semibold">งวดเป้าหมายสำหรับการประมวลผล: </span>
-                <span className="font-bold underline">งวดเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543}</span>
-                <span className="text-slate-500 dark:text-slate-400 block sm:inline sm:ml-2">
-                  (หากในไฟล์มีคอลัมน์วันที่ ระบบจะตรวจจับและจัดเข้าตามงวดของวันนั้นให้อัตโนมัติ)
-                </span>
-              </div>
-            </div>
-            {isPeriodConfirmed && (
-              <span className="inline-flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold text-2xs bg-amber-100/70 dark:bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-900">
-                <Lock className="w-3 h-3" /> งวดนี้ยืนยันแล้ว
-              </span>
-            )}
-          </div>
-{/* 3. Unified File Upload Dropzone (Automatic Mode Detection — No Manual Choice Cards) */}
-      {!isPeriodConfirmed && (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all animate-in fade-in duration-200">
-          <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/40">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center border shadow-2xs bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800/60">
-                <UploadCloud className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                  <span>นำเข้าไฟล์ค่าคอมมิชชั่น</span>
-                  
-                </h2>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => setIsGuideOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-semibold text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-2xs cursor-pointer"
-              >
-                <HelpCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>รูปแบบไฟล์ที่รองรับ</span>
-              </button>
-
-              <Button
-                variant="success"
-                disabled={!selectedFile}
-                loading={isExecutingImport}
-                onClick={handleConfirmImport}
-                icon={<UploadCloud className="w-4 h-4" />}
-              >
-                {isExecutingImport ? 'กำลังนำเข้าและประมวลผล...' : 'เริ่มประมวลผลนำเข้าไฟล์'}
-              </Button>
-            </div>
-          </div>
-
-          <div className="p-6">
-            {/* Dropzone */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center ${
-                isDragOver
-                  ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 scale-[0.99] ring-4 ring-emerald-500/10'
-                  : selectedFile
-                  ? 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/20'
-                  : 'border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:bg-slate-50/60 dark:hover:bg-slate-800/40'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileInputChange}
-                className="hidden"
-              />
-
-              {selectedFile ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center border border-emerald-200 shadow-sm dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-800">
-                    <FileSpreadsheet className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <p className="text-base font-bold text-slate-900 dark:text-slate-100">{selectedFile.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">ขนาด: {formatFileSize(selectedFile.size)}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedFile(null);
-                      if (fileInputRef.current) fileInputRef.current.value = '';
-                    }}
-                    className="mt-1 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900 transition-colors cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    <span>ยกเลิกเลือกไฟล์</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 shadow-sm dark:bg-emerald-950/60 dark:text-emerald-400 dark:border-emerald-900">
-                    <UploadCloud className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                      ลากไฟล์มาวางที่นี่ หรือ{' '}
-                      <span className="text-emerald-600 dark:text-emerald-400 hover:underline">
-                        คลิกเพื่อเลือกไฟล์
-                      </span>
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      รองรับไฟล์ .xlsx, .xls หรือ .csv (นำเข้าหลายคนพร้อมกันได้ทั้งแผนกหรือทั้งบริษัท)
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 6. Batch Import History Section */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
@@ -1849,9 +1537,7 @@ export default function CommissionTab() {
       />
     </div>
 
-              </div>
-      )}
-{/* 7. Edit Item Modal */}
+      {/* 7. Edit Item Modal */}
       {editingRecord && (
         <ModalShell className="z-[70] bg-black/60 backdrop-blur-sm animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4">
