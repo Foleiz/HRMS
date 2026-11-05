@@ -831,205 +831,7 @@ export default function CommissionTab() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* 1. Header Toolbar & Filters */}
-      <div className="flex flex-row items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:px-4 sm:py-3 shadow-xs overflow-x-auto">
-        {/* Left: Period & Rate Controls (Single line) */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          {/* Year & Month Selector */}
-          <div className="flex items-center gap-2">
-            {/* Year Selector */}
-            <div className="w-28 sm:w-32">
-              <CustomSelect
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                numbered={false}
-                size="sm"
-                className="w-full text-xs font-bold"
-                title="เลือกปี พ.ศ."
-              >
-                {getSmartYearRange({
-                  forwardYears: 1,
-                  backYears: 4,
-                  historicalYears: monthlyPeriods.map((p) => p.year),
-                  selectedYear,
-                }).map((y) => (
-                  <option key={y} value={y}>
-                    ปี {y + 543}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-
-            {/* Month Selector */}
-            <div className="w-32 sm:w-36">
-              <CustomSelect
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                numbered={false}
-                size="sm"
-                className="w-full text-xs font-bold"
-                title="เลือกเดือน"
-              >
-                {THAI_MONTHS.map((m, idx) => (
-                  <option key={idx + 1} value={idx + 1}>
-                    {m}
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-          </div>
-
-          {/* Refresh Button */}
-          <button
-            type="button"
-            onClick={() => {
-              loadCommissionData();
-              loadBatches(batchPage);
-            }}
-            className="flex items-center justify-center h-8 w-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition active:scale-95 cursor-pointer shadow-2xs"
-            title="รีเฟรชข้อมูล"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-
-        {/* Right: Actions (Single line) */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Confirm or Reset Button */}
-          {summary && summary.records.length > 0 && (
-            <>
-              {!isPeriodConfirmed ? (
-                <Button
-                  onClick={handleConfirmPeriod}
-                  loading={isConfirming}
-                  icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />}
-                >
-                  ยืนยันค่าคอมมิชชั่น
-                </Button>
-              ) : summary.status !== 'PAID' ? (
-                <button
-                  type="button"
-                  onClick={handleResetPeriod}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 hover:bg-amber-100 shadow-2xs transition active:scale-95 cursor-pointer"
-                  title="ปลดล็อกกลับเป็นฉบับร่างเพื่อแก้ไข"
-                >
-                  <Unlock className="h-4 w-4" />
-                  <span>ปลดล็อกแก้ไข</span>
-                </button>
-              ) : (
-                <div className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  <Lock className="h-4 w-4" />
-                  <span>จ่ายในเงินเดือนแล้ว</span>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Stat Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Total Sales */}
-        <div className="rounded-2xl border border-blue-200 dark:border-blue-800/80 bg-blue-100/60 dark:bg-blue-950/40 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-              ยอดขายรวมทั้งบริษัท
-            </span>
-            <div className="text-2xl font-bold tracking-tight text-blue-950 dark:text-white">
-              ฿
-              {(summary?.totalSalesAmount ?? summary?.totalSales ?? 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </div>
-            <p className="text-[11px] text-blue-600/80 dark:text-blue-400 font-medium">
-              รอบเดือน {THAI_MONTHS[selectedMonth - 1]} {selectedYear + 543}
-            </p>
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 shadow-2xs">
-            <TrendingUp className="h-6 w-6" />
-          </div>
-        </div>
-
-        {/* Card 2: Total Commission */}
-        <div className="rounded-2xl border border-emerald-200 dark:border-emerald-800/80 bg-emerald-100/60 dark:bg-emerald-950/40 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-              ค่าคอมมิชชั่นรวมที่ต้องจ่าย
-            </span>
-            <div className="text-2xl font-bold tracking-tight text-emerald-950 dark:text-white">
-              ฿
-              {(summary?.totalCommissionAmount ?? summary?.totalCommission ?? 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </div>
-            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300 font-medium">
-              ดึงเข้าเป็นเงินได้ในงวดเงินเดือน
-            </p>
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
-            <DollarSign className="h-6 w-6" />
-          </div>
-        </div>
-
-        {/* Card 3: Employee Count */}
-        <div className="rounded-2xl border border-purple-200 dark:border-purple-800/80 bg-purple-100/60 dark:bg-purple-950/40 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
-              พนักงานที่ได้รับค่าคอม
-            </span>
-            <div className="text-2xl font-bold tracking-tight text-purple-950 dark:text-white">
-              {summary?.totalEmployees ?? 0}{' '}
-              <span className="text-sm font-normal text-purple-700 dark:text-purple-300">คน</span>
-            </div>
-            <p className="text-[11px] text-purple-600/80 dark:text-purple-400 font-medium">จากข้อมูลที่มีในงวดนี้</p>
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 shadow-2xs">
-            <Users className="h-6 w-6" />
-          </div>
-        </div>
-
-        {/* Card 4: Status */}
-        <div className="rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-100/60 dark:bg-amber-950/40 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex items-center justify-between">
-          <div className="space-y-1.5">
-            <span className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-              สถานะรอบคอมมิชชั่น
-            </span>
-            <div>
-              {summary?.status === 'CONFIRMED' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> ยืนยันแล้ว (พร้อมคิดเงินเดือน)
-                </span>
-              ) : summary?.status === 'PAID' ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3 py-1 text-xs font-bold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-2xs">
-                  <Lock className="h-3.5 w-3.5 text-blue-600" /> จ่ายพร้อมเงินเดือนแล้ว
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white dark:bg-slate-800 px-3 py-1 text-xs font-bold text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-2xs">
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-600" /> ฉบับร่าง (ยังไม่ยืนยัน)
-                </span>
-              )}
-            </div>
-            {summary?.confirmedAt && (
-              <p className="text-[10px] text-amber-700/80 dark:text-amber-400 font-medium">
-                ยืนยันโดย {summary.confirmedByName || 'HR'} เมื่อ{' '}
-                {new Date(summary.confirmedAt).toLocaleDateString('th-TH')}
-              </p>
-            )}
-          </div>
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white dark:bg-slate-800 border border-amber-200/80 dark:border-amber-800/80 shadow-2xs">
-            {isPeriodConfirmed ? (
-              <CheckCircle2 className="h-6 w-6 text-emerald-600" />
-            ) : (
-              <AlertCircle className="h-6 w-6 text-amber-600" />
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* 3. Unified File Upload Dropzone (Automatic Mode Detection — No Manual Choice Cards) */}
-      {!isPeriodConfirmed && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden transition-all animate-in fade-in duration-200">
           <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/40">
             <div className="flex items-center gap-3">
@@ -1134,7 +936,6 @@ export default function CommissionTab() {
             </div>
           </div>
         </div>
-      )}
 
       {/* 5. Monthly Periods Overview Section (Table similar to History) */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-4 sm:p-5 space-y-4">
@@ -1154,6 +955,29 @@ export default function CommissionTab() {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {/* Year Selector */}
+            <div className="w-28 sm:w-32">
+              <CustomSelect
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                numbered={false}
+                size="sm"
+                className="w-full text-xs font-bold"
+                title="เลือกปี พ.ศ."
+              >
+                {getSmartYearRange({
+                  forwardYears: 1,
+                  backYears: 4,
+                  historicalYears: monthlyPeriods.map((p) => p.year),
+                  selectedYear,
+                }).map((y) => (
+                  <option key={y} value={y}>
+                    ปี {y + 543}
+                  </option>
+                ))}
+              </CustomSelect>
+            </div>
+
             {/* Search Input */}
             <div className="relative w-56 sm:w-64">
               <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
