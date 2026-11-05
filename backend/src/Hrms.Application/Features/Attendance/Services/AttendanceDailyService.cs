@@ -360,6 +360,14 @@ public class AttendanceDailyService : IAttendanceDailyService
             {
                 record.IsAbsent = false;
                 record.Status = "PRESENT";
+                // มาทำงานในวันหยุด (วันหยุดประจำปี / นอกวันทำงานของกะ) → ทำงานวันหยุด ไม่คิดสาย/ออกก่อน
+                var dayShift = await _context.EmployeeShifts.AsNoTracking()
+                    .Where(x => x.EmployeeId == record.EmployeeId && x.EffectiveFrom <= record.WorkDate && (x.EffectiveTo == null || x.EffectiveTo >= record.WorkDate))
+                    .OrderByDescending(x => x.EffectiveFrom)
+                    .FirstOrDefaultAsync(cancellationToken);
+                var isHoliday = await _context.Holidays.AsNoTracking().AnyAsync(h => h.HolidayDate == record.WorkDate, cancellationToken);
+                var schedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+                ApplyDayType(record, IsOffDay(record.WorkDate, dayShift?.WorkDays, dayShift != null, schedule, isHoliday), force: true);
                 RecalculateAttendance(record);
             }
         }
@@ -433,8 +441,10 @@ public class AttendanceDailyService : IAttendanceDailyService
         // วันทำงานของพนักงานที่มีกะ (ใช้ตัดสินสถานะวันที่ไม่มีเวลา)
         var shifts = await _context.EmployeeShifts.AsNoTracking().ToListAsync(cancellationToken);
 
+        // รวมรายการที่มีกะและมีเวลาด้วย เพื่อปรับสถานะ "ทำงานวันหยุด" ให้ตรงวันทำงานของกะปัจจุบัน
         var recordsQuery = _context.AttendanceDailies
-            .Where(a => a.Status != "LEAVE" && (a.ShiftId == null || (a.ActualIn == null && a.ActualOut == null)));
+            .Include(a => a.Shift)
+            .Where(a => a.Status != "LEAVE");
         if (onlyDates != null)
             recordsQuery = recordsQuery.Where(a => onlyDates.Contains(a.WorkDate));
         var records = await recordsQuery.ToListAsync(cancellationToken);
@@ -449,6 +459,11 @@ public class AttendanceDailyService : IAttendanceDailyService
 
             var before = (r.ScheduledStart, r.ScheduledEnd, r.Status, r.LateMinutes, r.EarlyLeaveMinutes, r.WorkedMinutes, r.IsAbsent);
             var hasTimes = r.ActualIn != null || r.ActualOut != null;
+            var dayShift = shifts
+                .Where(x => x.EmployeeId == r.EmployeeId && x.EffectiveFrom <= r.WorkDate && (x.EffectiveTo == null || x.EffectiveTo >= r.WorkDate))
+                .OrderByDescending(x => x.EffectiveFrom)
+                .FirstOrDefault();
+            var offDay = IsOffDay(r.WorkDate, dayShift?.WorkDays, dayShift != null, schedule, holidays.Contains(r.WorkDate));
 
             if (r.ShiftId == null)
             {
@@ -456,8 +471,13 @@ public class AttendanceDailyService : IAttendanceDailyService
                 if (hasTimes)
                 {
                     r.IsAbsent = false;
+                    ApplyDayType(r, offDay);
                     RecalculateAttendance(r);
                 }
+            }
+            else if (hasTimes && ApplyDayType(r, offDay))
+            {
+                RecalculateAttendance(r);
             }
 
             if (!hasTimes && NoTimeStatuses.Contains(r.Status))
@@ -549,6 +569,10 @@ public class AttendanceDailyService : IAttendanceDailyService
             // วัน/เวลาทำงานปกติของบริษัท — ใช้กับพนักงานที่ไม่มีกะ
             var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
 
+            // เดือนที่งวดเงินเดือนปิดแล้ว ไม่ปรับสถานะวันทำงาน/วันหยุดย้อนหลัง
+            var dateLocked = await _context.PayrollPeriods.AsNoTracking()
+                .AnyAsync(p => p.Year == date.Year && p.Month == date.Month && LockedPayrollStatuses.Contains(p.Status), cancellationToken);
+
             int countNew = 0;
             int dayOfWeekInt = (int)date.DayOfWeek; // 0=Sun, 1=Mon, ..., 6=Sat
 
@@ -564,6 +588,8 @@ public class AttendanceDailyService : IAttendanceDailyService
                         PopulateScheduledTimes(existingRecord, esMatch.Shift, date);
                         if (existingRecord.ActualIn != null || existingRecord.ActualOut != null)
                         {
+                            if (!dateLocked)
+                                ApplyDayType(existingRecord, IsOffDay(date, esMatch.WorkDays, true, companySchedule, holiday != null));
                             RecalculateAttendance(existingRecord, esMatch.Shift);
                         }
                     }
@@ -575,6 +601,8 @@ public class AttendanceDailyService : IAttendanceDailyService
                         companySchedule.PopulateScheduledTimes(existingRecord, date);
                         if (existingRecord.ScheduledStart != null && (existingRecord.ActualIn != null || existingRecord.ActualOut != null) && existingRecord.Status != "LEAVE")
                         {
+                            if (!dateLocked)
+                                ApplyDayType(existingRecord, IsOffDay(date, null, false, companySchedule, holiday != null));
                             RecalculateAttendance(existingRecord);
                         }
                     }
@@ -584,6 +612,8 @@ public class AttendanceDailyService : IAttendanceDailyService
                         companySchedule.PopulateScheduledTimes(existingRecord, date);
                         if (existingRecord.ScheduledStart != null && (existingRecord.ActualIn != null || existingRecord.ActualOut != null) && existingRecord.Status != "LEAVE")
                         {
+                            if (!dateLocked)
+                                ApplyDayType(existingRecord, IsOffDay(date, null, false, companySchedule, holiday != null));
                             RecalculateAttendance(existingRecord);
                         }
                     }
@@ -701,6 +731,42 @@ public class AttendanceDailyService : IAttendanceDailyService
         var endWorkDate = shift.IsCrossDay ? workDate.AddDays(1) : workDate;
         var endLocal = new DateTime(endWorkDate.Year, endWorkDate.Month, endWorkDate.Day, endTime.Hour, endTime.Minute, 0);
         record.ScheduledEnd = ToUtcTime(endLocal);
+    }
+
+    /// <summary>วันนั้นเป็นวันหยุดของพนักงานไหม: วันหยุดประจำปี หรือไม่อยู่ในวันทำงานของกะ (ไม่มีกะ = วันทำงานของบริษัท)</summary>
+    public static bool IsOffDay(DateOnly date, int[]? shiftWorkDays, bool hasShift, CompanyWorkSchedule schedule, bool isHoliday)
+    {
+        if (isHoliday) return true;
+        return hasShift
+            ? !(shiftWorkDays ?? new[] { 1, 2, 3, 4, 5 }).Contains((int)date.DayOfWeek)
+            : !schedule.IsWorkingDay(date);
+    }
+
+    /// <summary>
+    /// ปรับสถานะ "ทำงานวันหยุด" ให้ตรงกับวันทำงานปัจจุบัน (เรียกก่อน RecalculateAttendance)
+    /// - มาทำงานในวันหยุด → HOLIDAY_WORK
+    /// - มาทำงานในวันทำงานปกติ แต่ค้างสถานะวันหยุดจากการตั้งค่าเดิม → PRESENT แล้วคิดสาย/ออกก่อนใหม่
+    /// - ไม่แตะวันลา ขาดงาน วันที่ไม่มีเวลา และรายการที่แอดมินแก้ด้วยมือ (เว้นแต่ force)
+    /// คืน true เมื่อสถานะเปลี่ยน
+    /// </summary>
+    public static bool ApplyDayType(AttendanceDaily record, bool isOffDay, bool force = false)
+    {
+        if (record.Status == "LEAVE" || record.IsAbsent) return false;
+        if (record.ActualIn == null && record.ActualOut == null) return false;
+        if (!force && record.EditedAt != null) return false;
+
+        if (isOffDay)
+        {
+            if (record.Status == "HOLIDAY_WORK") return false;
+            record.Status = "HOLIDAY_WORK";
+            return true;
+        }
+        if (record.Status is "HOLIDAY_WORK" or "HOLIDAY" or "OFF")
+        {
+            record.Status = "PRESENT";
+            return true;
+        }
+        return false;
     }
 
     public static void RecalculateAttendance(AttendanceDaily record, ShiftEntity? shiftOverride = null)
@@ -929,6 +995,14 @@ public class AttendanceDailyService : IAttendanceDailyService
             var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
             int changedCount = 0;
 
+            var monthLocked = await _context.PayrollPeriods.AsNoTracking()
+                .AnyAsync(p => p.Year == year && p.Month == month && LockedPayrollStatuses.Contains(p.Status), cancellationToken);
+            var monthHolidays = (await _context.Holidays.AsNoTracking()
+                    .Where(h => h.HolidayDate >= startDate && h.HolidayDate <= endDate)
+                    .Select(h => h.HolidayDate)
+                    .ToListAsync(cancellationToken))
+                .ToHashSet();
+
             foreach (var r in records)
             {
                 var esMatch = activeShifts
@@ -965,6 +1039,14 @@ public class AttendanceDailyService : IAttendanceDailyService
                     {
                         RecalculateAttendance(r);
                     }
+                    changedCount++;
+                }
+
+                // ปรับสถานะทำงานวันหยุดให้ตรงวันทำงานปัจจุบัน (ข้ามเดือนที่งวดเงินเดือนปิดแล้ว)
+                if (!monthLocked && (r.ActualIn != null || r.ActualOut != null)
+                    && ApplyDayType(r, IsOffDay(r.WorkDate, esMatch?.WorkDays, esMatch != null, companySchedule, monthHolidays.Contains(r.WorkDate))))
+                {
+                    RecalculateAttendance(r, esMatch?.Shift);
                     changedCount++;
                 }
             }

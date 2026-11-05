@@ -43,6 +43,17 @@ public class EmployeeShiftService : IEmployeeShiftService
         return locked.ToHashSet();
     }
 
+    private async Task<HashSet<DateOnly>> LoadHolidaysAsync(List<AttendanceDaily> records, CancellationToken cancellationToken)
+    {
+        var minDate = records.Min(r => r.WorkDate);
+        var maxDate = records.Max(r => r.WorkDate);
+        var dates = await _context.Holidays.AsNoTracking()
+            .Where(h => h.HolidayDate >= minDate && h.HolidayDate <= maxDate)
+            .Select(h => h.HolidayDate)
+            .ToListAsync(cancellationToken);
+        return dates.ToHashSet();
+    }
+
     /// <summary>คำนวณสรุปเวลารายเดือนใหม่ (ที่เงินเดือนใช้) หลังเปลี่ยนกะ — เดิมแก้แค่รายวัน ทำให้เงินเดือนยังหักสายตามกะเก่า</summary>
     private async Task RefreshMonthlySummariesAsync(IEnumerable<AttendanceDaily> changed, CancellationToken cancellationToken)
     {
@@ -278,7 +289,7 @@ public class EmployeeShiftService : IEmployeeShiftService
         es.Employee = employee;
         es.Shift = shift;
 
-        await SyncAttendanceRecordsForEmployeeShiftAsync(request.EmployeeId, shift, from, to);
+        await SyncAttendanceRecordsForEmployeeShiftAsync(request.EmployeeId, shift, from, to, workDays: workDays);
 
         var assignmentMap = await GetEmployeeAssignmentInfoMapAsync();
         return MapToDto(es, assignmentMap);
@@ -347,7 +358,7 @@ public class EmployeeShiftService : IEmployeeShiftService
 
                 _context.EmployeeShifts.Add(es);
                 await _context.SaveChangesAsync();
-                await SyncAttendanceRecordsForEmployeeShiftAsync(empId, shift, from, to, changedForSummary);
+                await SyncAttendanceRecordsForEmployeeShiftAsync(empId, shift, from, to, changedForSummary, workDays: batchWorkDays);
                 result.SuccessCount++;
             }
             catch (Exception ex)
@@ -401,7 +412,7 @@ public class EmployeeShiftService : IEmployeeShiftService
         _logger.LogInformation("แก้ไขการมอบหมายกะสำเร็จ: Id {Id}, พนักงาน {EmpCode} -> กะ {ShiftCode}",
             id, es.Employee?.EmployeeCode, shift.ShiftCode);
 
-        await SyncAttendanceRecordsForEmployeeShiftAsync(es.EmployeeId, shift, from, to);
+        await SyncAttendanceRecordsForEmployeeShiftAsync(es.EmployeeId, shift, from, to, workDays: es.WorkDays);
 
         var assignmentMap = await GetEmployeeAssignmentInfoMapAsync();
         return MapToDto(es, assignmentMap);
@@ -610,7 +621,7 @@ public class EmployeeShiftService : IEmployeeShiftService
 
     /// <param name="changedForSummary">ถ้าส่งมา จะเก็บรายการที่เปลี่ยนไว้คำนวณสรุปรายเดือนทีเดียวตอนท้าย (ใช้กับการกำหนดกะหลายคน)</param>
     private async Task SyncAttendanceRecordsForEmployeeShiftAsync(long employeeId, Domain.Entities.Shift shift, DateOnly from, DateOnly? to,
-        List<AttendanceDaily>? changedForSummary = null, CancellationToken cancellationToken = default)
+        List<AttendanceDaily>? changedForSummary = null, CancellationToken cancellationToken = default, int[]? workDays = null)
     {
         var targetEnd = to ?? DateOnly.MaxValue;
         var records = await _context.AttendanceDailies
@@ -623,6 +634,9 @@ public class EmployeeShiftService : IEmployeeShiftService
         records = records.Where(r => !lockedMonths.Contains(r.WorkDate.Year * 100 + r.WorkDate.Month)).ToList();
         if (records.Count == 0) return;
 
+        var holidays = await LoadHolidaysAsync(records, cancellationToken);
+        var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+
         foreach (var rec in records)
         {
             rec.ShiftId = shift.Id;
@@ -630,6 +644,9 @@ public class EmployeeShiftService : IEmployeeShiftService
             AttendanceDailyService.PopulateScheduledTimes(rec, shift, rec.WorkDate);
             if (rec.ActualIn != null || rec.ActualOut != null)
             {
+                // วันทำงานของกะเปลี่ยน → ปรับสถานะทำงานวันหยุด / วันทำงานปกติ ให้ตรง
+                AttendanceDailyService.ApplyDayType(rec,
+                    AttendanceDailyService.IsOffDay(rec.WorkDate, workDays, true, companySchedule, holidays.Contains(rec.WorkDate)));
                 AttendanceDailyService.RecalculateAttendance(rec, shift);
             }
         }
@@ -653,6 +670,7 @@ public class EmployeeShiftService : IEmployeeShiftService
         if (records.Count == 0) return;
 
         var companySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken);
+        var holidays = await LoadHolidaysAsync(records, cancellationToken);
         var otherShifts = await _context.EmployeeShifts
             .Include(es => es.Shift)
             .Where(es => es.EmployeeId == employeeId && es.EffectiveFrom <= targetEnd && (es.EffectiveTo == null || es.EffectiveTo >= from))
@@ -662,6 +680,7 @@ public class EmployeeShiftService : IEmployeeShiftService
         foreach (var rec in records)
         {
             var match = otherShifts.FirstOrDefault(es => es.EffectiveFrom <= rec.WorkDate && (es.EffectiveTo == null || es.EffectiveTo >= rec.WorkDate));
+            var offDay = AttendanceDailyService.IsOffDay(rec.WorkDate, match?.WorkDays, match != null, companySchedule, holidays.Contains(rec.WorkDate));
             if (match?.Shift != null)
             {
                 rec.ShiftId = match.ShiftId;
@@ -669,6 +688,7 @@ public class EmployeeShiftService : IEmployeeShiftService
                 AttendanceDailyService.PopulateScheduledTimes(rec, match.Shift, rec.WorkDate);
                 if (rec.ActualIn != null || rec.ActualOut != null)
                 {
+                    AttendanceDailyService.ApplyDayType(rec, offDay);
                     AttendanceDailyService.RecalculateAttendance(rec, match.Shift);
                 }
             }
@@ -679,6 +699,7 @@ public class EmployeeShiftService : IEmployeeShiftService
                 companySchedule.PopulateScheduledTimes(rec, rec.WorkDate);
                 if (rec.ActualIn != null || rec.ActualOut != null)
                 {
+                    AttendanceDailyService.ApplyDayType(rec, offDay);
                     AttendanceDailyService.RecalculateAttendance(rec);
                 }
             }
