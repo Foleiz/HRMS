@@ -32,6 +32,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { getAvatarUrl } from '@/lib/api-client';
 import type { OrgChart, OrgChartDepartment, OrgChartDivision, OrgChartPerson } from '@/types/organization';
+import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 // ---------------------------------------------------------------------------
 // สีประจำระดับ
@@ -51,7 +52,7 @@ interface OpenPerson {
   unit?: string;
 }
 
-const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const THAI_MONTHS = TH_MONTHS_SHORT;
 
 /** วันเริ่มงาน + อายุงาน เช่น "1 ม.ค. 2566 (3 ปี 9 เดือน)" */
 function formatStartDate(value?: string | null): string | null {

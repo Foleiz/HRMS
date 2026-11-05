@@ -44,21 +44,9 @@ import { MaskedDataViewer } from '@/components/common/MaskedDataViewer';
 import { formatRoleName } from '@/lib/roleUtils';
 import EditEmployeeModal, { EditModalTab } from '@/components/employees/EditEmployeeModal';
 import { formatAddressLine } from '@/components/employees/AddressPairFields';
+import { formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 
-const formatThaiDate = (dateStr?: string) => {
-  if (!dateStr) return '-';
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    const months = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-    ];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
-  } catch {
-    return dateStr;
-  }
-};
+const formatThaiDate = (dateStr?: string) => fmtThaiDate(dateStr, 'long');
 
 const formatMaskedCitizenId = (val?: string): string => {
   if (!val) return '-';

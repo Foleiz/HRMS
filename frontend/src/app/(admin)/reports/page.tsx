@@ -64,21 +64,9 @@ import {
   Minus,
   Equal,
 } from 'lucide-react';
+import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 
-const formatThaiDate = (dateStr: string) => {
-  if (!dateStr) return '-';
-  try {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      const y = parseInt(parts[0], 10);
-      return `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${y + 543}`;
-    }
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-};
+const formatThaiDate = (dateStr: string) => fmtThaiDate(dateStr, 'numeric');
 
 export default function ReportsPage() {
   const { hasPermission, hasRole } = useAuth();
@@ -474,10 +462,7 @@ export default function ReportsPage() {
     }
   };
 
-  const thaiMonths = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-  ];
+  const thaiMonths = TH_MONTHS;
 
   if (!canViewAnyReport) {
     return <AccessDenied message="คุณไม่มีสิทธิ์เข้าถึงรายงานสรุปและสถิติ" />;

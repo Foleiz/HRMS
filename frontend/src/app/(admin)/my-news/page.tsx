@@ -20,6 +20,7 @@ import {
 import { announcementService } from '@/services/announcementService';
 import { Announcement, AnnouncementCategory, AnnouncementPriority } from '@/types/announcement';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { TH_MONTHS, TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 // ─── Color Themes matching Mockup ────────────────────────────
 // อบรมพนักงานใหม่ = Orange/Amber
@@ -85,17 +86,9 @@ const CATEGORY_STYLES: Record<string, {
   },
 };
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
-  'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
-  'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+const THAI_MONTHS = TH_MONTHS;
 
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.',
-  'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.',
-  'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
-];
+const THAI_MONTHS_SHORT = TH_MONTHS_SHORT;
 
 const WEEKDAYS = [
   { key: 0, label: 'อาทิตย์', color: 'text-rose-500' },

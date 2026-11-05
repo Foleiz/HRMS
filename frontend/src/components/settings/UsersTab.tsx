@@ -23,6 +23,7 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { Button } from '@/components/ui/Button';
 import { formatRoleName } from '@/lib/roleUtils';
+import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 interface UsersTabProps {
   users: UserAccount[];
@@ -112,7 +113,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
     if (!isoString) return '-';
     try {
       const d = new Date(isoString);
-      const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      const months = TH_MONTHS_SHORT;
       const thaiYear = d.getFullYear() + 543;
       const day = d.getDate();
       const month = months[d.getMonth()];

@@ -62,11 +62,9 @@ import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CodeInput } from '@/components/ui/CodeInput';
 import { Button, Modal, ModalFooter, inputClass, ActiveStatus, RowActions, RowActionButton, ActiveToggleRow, TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+const THAI_MONTHS = TH_MONTHS;
 
 const THAI_DAYS = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 

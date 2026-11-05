@@ -22,6 +22,7 @@ import {
   useEmployeeSignature,
   type ApprovalSlot,
 } from './documentFormParts';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 interface CertificatePreviewModalProps {
   isOpen: boolean;
@@ -38,10 +39,7 @@ interface CertificatePreviewModalProps {
 
 const fmtMoney = (n: number) => n.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
+const THAI_MONTHS = TH_MONTHS;
 
 /** วันที่ออกหนังสือ → วัน / เดือน / พ.ศ. (เวลาไทย) */
 const issueDateParts = (value?: string | null) => {

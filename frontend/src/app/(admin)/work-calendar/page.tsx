@@ -36,13 +36,11 @@ import {
   CreateHolidayRequest,
   UpdateHolidayRequest,
 } from '@/types/workCalendar';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 type TabType = 'work-week' | 'holidays';
 
-const thaiMonths = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
+const thaiMonths = TH_MONTHS;
 
 const thaiDayNamesShort = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 

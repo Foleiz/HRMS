@@ -34,6 +34,7 @@ import {
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
 export default function EssAttendancePage() {
   const { user, hasPermission, hasRole } = useAuth();
@@ -405,10 +406,7 @@ export default function EssAttendancePage() {
     }
   };
 
-  const thaiMonths = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-  ];
+  const thaiMonths = TH_MONTHS;
 
   const pendingCount = adjustmentsList.filter((a) => a.status === 'PENDING').length;
 

@@ -86,6 +86,7 @@ import { ActiveToggleRow } from '@/components/ui/ToggleSwitch';
 import { BenefitPolicyFields } from '@/components/benefits/BenefitPolicyFields';
 import { Modal, ModalFooter, Button, ActiveStatus, inputClass, RowActions, RowActionButton, TableToolbar, HoverList } from '@/components/ui';
 import { formatThaiPhone, phoneError, emailError, onlyDigits } from '@/lib/inputRules';
+import { formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 
 type TabType = 'divisions' | 'departments' | 'teams' | 'positions' | 'levels' | 'benefits' | 'company' | 'bank-accounts';
 
@@ -200,22 +201,7 @@ export default function OrganizationPage() {
   }, [activeTab, setBreadcrumb]);
 
   // Helper แปลงวันที่รูปแบบไทย (พ.ศ.) เช่น 2 มกราคม 2569
-  const formatThaiDate = (dateString?: string | Date | null): string => {
-    if (!dateString) return '-';
-    const d = new Date(dateString);
-    if (isNaN(d.getTime())) return '-';
-
-    const thaiMonths = [
-      'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-    ];
-
-    const day = d.getDate();
-    const month = thaiMonths[d.getMonth()];
-    const year = d.getFullYear() + 543;
-
-    return `${day} ${month} ${year}`;
-  };
+  const formatThaiDate = (dateString?: string | Date | null): string => fmtThaiDate(dateString, 'long');
 
   // Helper แสดง Avatar และชื่อพนักงาน
   // หัวหน้าฝ่าย/แผนก — ใช้หาผู้อนุมัติแบบ "หัวหน้าของผู้ยื่น" ในสายการอนุมัติ

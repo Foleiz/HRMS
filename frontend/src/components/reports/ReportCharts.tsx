@@ -6,6 +6,7 @@
  * - ทุกกราฟมี tooltip เมื่อชี้ และมี legend/ป้ายกำกับ ไม่ใช้สีอย่างเดียวสื่อความหมาย
  */
 import React, { useRef, useState } from 'react';
+import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 export const VIZ = {
   s1: 'var(--viz-s1)',
@@ -31,7 +32,7 @@ export function toSegments(items: { name: string; count: number }[], max = 6): S
   return segs;
 }
 
-export const THAI_MONTHS_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+export const THAI_MONTHS_SHORT = TH_MONTHS_SHORT;
 
 const nf = new Intl.NumberFormat('th-TH');
 export const fmtNumber = (v: number) => nf.format(v);

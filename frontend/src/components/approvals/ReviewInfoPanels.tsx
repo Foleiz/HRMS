@@ -8,19 +8,14 @@ import type { BenefitClaimRequest } from '@/types/benefit';
 import type { CertificateRequest } from '@/types/certificates';
 import type { ResignationRequest } from '@/types/resignation';
 import type { GeneralDocumentRequest } from '@/types/generalDocument';
+import { formatThaiDate } from '@/lib/thaiDate';
 
 /** ข้อมูลประกอบการพิจารณา (ฝั่งซ้ายของหน้าตรวจสอบ) — ใช้ร่วมกันทุกประเภทเอกสาร */
 
 export const reviewCardCls = 'p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800';
 export const reviewTitleCls = 'flex items-center gap-1.5 text-[13px] font-bold text-slate-800 dark:text-slate-100 mb-2.5';
 
-const thaiDate = (d?: string | null) => {
-  if (!d) return '-';
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d);
-  const dt = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
-  if (isNaN(dt.getTime())) return d;
-  return dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-};
+const thaiDate = (d?: string | null) => formatThaiDate(d);
 
 const thaiTime = (d?: string | null) => {
   if (!d) return '-';

@@ -80,11 +80,9 @@ import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { confirmAction } from '@/lib/sweetalert';
+import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+const THAI_MONTHS = TH_MONTHS;
 
 /** สถานะที่ฝ่ายบุคคลกำหนดเองได้ (นอกนั้นระบบคำนวณจากเวลาและกะ) */
 const MANUAL_STATUS_OPTIONS = [
@@ -424,15 +422,7 @@ function DailyAttendanceContent() {
     setCurrentPage(1);
   };
 
-  const formatThaiDate = (dateStr: string) => {
-    try {
-      const [y, m, d] = dateStr.split('-').map(Number);
-      const thaiYear = y + 543;
-      return `${d} ${THAI_MONTHS[m - 1]} ${thaiYear}`;
-    } catch {
-      return dateStr;
-    }
-  };
+  const formatThaiDate = (dateStr: string) => fmtThaiDate(dateStr, 'long');
 
   // Recalculate
   const handleRecalculate = async () => {

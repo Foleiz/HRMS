@@ -15,6 +15,7 @@ import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { LeaveYearEndPreview, LeaveYearEndRow } from '@/types/leaveInsights';
 import { Button, inputClass } from '@/components/ui';
 import { leaveColorVars, resolveLeaveColor } from '@/lib/leaveColors';
+import { formatThaiDate } from '@/lib/thaiDate';
 
 interface Props {
   isOpen: boolean;
@@ -50,13 +51,8 @@ interface EmployeeGroup {
 
 type FilterKey = 'carry' | 'overCap' | 'reset' | 'all';
 
-const TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const fmt = (n: number) => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
-const thaiDate = (s?: string | null) => {
-  if (!s) return '-';
-  const [y, m, d] = s.slice(0, 10).split('-').map(Number);
-  return `${d} ${TH_MONTHS[m - 1]} ${y + 543}`;
-};
+const thaiDate = (s?: string | null) => formatThaiDate(s);
 /** ปี ค.ศ. ปัจจุบันตามเวลาไทย */
 const thaiCurrentYear = () => new Date(Date.now() + 7 * 3600_000).getUTCFullYear();
 

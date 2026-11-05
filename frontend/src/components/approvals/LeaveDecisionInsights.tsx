@@ -7,6 +7,7 @@ import { LeaveBalance, LeaveRequest } from '@/types/leave';
 import { useAuth } from '@/context/AuthContext';
 import { RequestSummaryCard } from '@/components/approvals/ReviewInfoPanels';
 import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
+import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 
 // ─── Helpers ──────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ const formatShortThaiDate = (d?: string | null) => {
   return dt.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' });
 };
 
-const MONTHS_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const MONTHS_TH = TH_MONTHS_SHORT;
 
 const dayDiff = (a: Date, b: Date) => Math.round((a.getTime() - b.getTime()) / 86_400_000);
 

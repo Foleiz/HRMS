@@ -8,17 +8,12 @@ import { Department, Division } from '@/types/organization';
 import { LeaveCalendarItem, LeaveCalendarResult } from '@/types/leaveInsights';
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Loader2, Users, X } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate } from '@/lib/thaiDate';
 
 type ViewMode = 'month' | 'week';
 
-const THAI_MONTHS = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
-];
-const THAI_MONTHS_SHORT = [
-  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
-];
+const THAI_MONTHS = TH_MONTHS;
+const THAI_MONTHS_SHORT = TH_MONTHS_SHORT;
 const WEEK_DAYS = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
 
 /** สีตามประเภทการลา (วนตามลำดับประเภทที่พบ) */
@@ -58,8 +53,7 @@ function startOfWeek(d: Date): Date {
   return addDays(d, -dow);
 }
 function thaiDate(s: string): string {
-  const [y, m, d] = s.split('-').map(Number);
-  return `${d} ${THAI_MONTHS_SHORT[m - 1]} ${y + 543}`;
+  return formatThaiDate(s);
 }
 
 export default function TeamLeaveCalendarPage() {

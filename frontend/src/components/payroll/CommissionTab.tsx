@@ -58,21 +58,9 @@ import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { getSmartYearRange } from '@/lib/yearUtils';
 import SupportedCommissionFormatsModal from './SupportedCommissionFormatsModal';
+import { TH_MONTHS } from '@/lib/thaiDate';
 
-const THAI_MONTHS = [
-  'มกราคม',
-  'กุมภาพันธ์',
-  'มีนาคม',
-  'เมษายน',
-  'พฤษภาคม',
-  'มิถุนายน',
-  'กรกฎาคม',
-  'สิงหาคม',
-  'กันยายน',
-  'ตุลาคม',
-  'พฤศจิกายน',
-  'ธันวาคม',
-];
+const THAI_MONTHS = TH_MONTHS;
 
 export default function CommissionTab() {
   const { success, error, info } = useToast();

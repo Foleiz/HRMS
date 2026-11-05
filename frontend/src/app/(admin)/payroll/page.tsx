@@ -109,6 +109,7 @@ import { CommissionPeriodSummary } from '@/types/commission';
 import PayrollPeriodsTab from '@/components/payroll/PayrollPeriodsTab';
 import PayrollScheduleTab from '@/components/payroll/PayrollScheduleTab';
 import { calculatePeriodDatesFromSettings, getPayrollScheduleSettings } from '@/services/payrollScheduleService';
+import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate } from '@/lib/thaiDate';
 
 type ActiveTab =
   | 'overview'
@@ -260,27 +261,19 @@ function TablePagination({
   );
 }
 
-const THAI_MONTH_NAMES = [
-  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-];
+const THAI_MONTH_NAMES = TH_MONTHS;
 
 /** แปลง 'YYYY-MM-DD' เป็นวันที่ไทยแบบย่อ เช่น 29 ส.ค. 2569 */
 const formatThaiShortDate = (iso?: string | null) => {
   if (!iso) return '-';
   const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
   if (!y || !m || !d) return iso;
-  const abbr = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const abbr = TH_MONTHS_SHORT;
   return `${d} ${abbr[m - 1]} ${y + 543}`;
 };
 
 /** แปลง 'YYYY-MM-DD' เป็นวันที่ไทยแบบตัวเลข เช่น 01/08/2569 */
-const formatThaiDateSlash = (iso?: string | null) => {
-  if (!iso) return '-';
-  const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
-  if (!y || !m || !d) return iso;
-  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y + 543}`;
-};
+const formatThaiDateSlash = (iso?: string | null) => formatThaiDate(iso, 'numeric');
 
 const getDefaultPeriodValues = (year: number, month: number) => {
   const safeMonth = Math.min(Math.max(1, month || 1), 12);
@@ -4204,7 +4197,7 @@ export default function PayrollPage() {
                         ? (() => {
                             const s = selectedPeriod.startDate?.slice(0, 10).split('-').map(Number);
                             const e = selectedPeriod.endDate?.slice(0, 10).split('-').map(Number);
-                            const abbr = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                            const abbr = TH_MONTHS_SHORT;
                             if (s && e && s.length === 3 && e.length === 3 && s[0] === e[0]) {
                               return `${s[2]} ${abbr[s[1] - 1]} – ${e[2]} ${abbr[e[1] - 1]} ${e[0] + 543}`;
                             }
