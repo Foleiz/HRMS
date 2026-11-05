@@ -790,7 +790,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 onClick={() => onSelectRole(role.id)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'text-white shadow-md'
+                    ? 'theme-light text-white shadow-md'
                     : 'bg-white dark:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xs'
                 }`}
                 style={
@@ -806,10 +806,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span
-                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                          isSelected ? 'bg-white shadow-xs' : ''
-                        }`}
-                        style={!isSelected ? { backgroundColor: roleColor } : undefined}
+                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
+                        style={{ backgroundColor: isSelected ? '#FFFFFF' : roleColor }}
                       />
                       <span
                         className={`font-bold text-sm tracking-tight ${
@@ -821,16 +819,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                     </div>
                   </div>
                   <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
+                    className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
                       isSelected
-                        ? 'text-white bg-white/20 backdrop-blur-xs'
+                        ? 'text-white'
                         : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
                     }`}
+                    style={isSelected ? { backgroundColor: 'rgba(255, 255, 255, 0.2)' } : undefined}
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        isSelected ? 'bg-white' : 'bg-emerald-500'
-                      }`}
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: isSelected ? '#FFFFFF' : '#10B981' }}
                     />
                     ใช้งานอยู่
                   </span>
