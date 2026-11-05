@@ -19,6 +19,7 @@ public interface IAttendanceDailyService
     Task<List<AttendanceDailyDto>> GetMyAttendanceHistoryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default);
     Task<MyAttendanceMonthlySummaryDto> GetMyMonthlySummaryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default);
     Task<int> RecalculateMyAttendanceAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default);
+    Task<(int Year, int Month)> GetLatestPeriodAsync(long? employeeId, CancellationToken cancellationToken = default);
 
     // Admin / HR Monthly Summary Methods
     Task<MonthlyAttendanceOverviewDto> GetMonthlyAttendanceSummaryAsync(int year, int month, long? departmentId = null, CancellationToken cancellationToken = default);

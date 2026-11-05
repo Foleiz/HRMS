@@ -268,4 +268,27 @@ public class AttendanceImportController : ControllerBase
             return StatusCode(500, ApiResponse<RevertBatchResultDto>.Fail($"เกิดข้อผิดพลาดในการยกเลิกชุดข้อมูล: {detail}"));
         }
     }
+
+    /// <summary>
+    /// สั่งจับคู่ข้อมูลเวลาจากไฟล์ที่เคยหาพนักงานไม่เจอใหม่
+    /// </summary>
+    [HttpPost("rematch")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Rematch(
+        [FromQuery] long? employeeId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (employeeId.HasValue)
+        {
+            var matched = await _importService.RematchUnmatchedRowsAsync(employeeId.Value, cancellationToken);
+            return Ok(ApiResponse<int>.Ok(matched, $"จับคู่ข้อมูลเวลาสำเร็จ {matched} รายการ"));
+        }
+        else
+        {
+            var total = await _importService.RematchAllAsync(cancellationToken);
+            return Ok(ApiResponse<int>.Ok(total, $"จับคู่ข้อมูลเวลาทั้งหมดสำเร็จ {total} รายการ"));
+        }
+    }
+
+
 }

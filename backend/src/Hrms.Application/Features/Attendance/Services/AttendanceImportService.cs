@@ -1007,6 +1007,23 @@ public class AttendanceImportService : IAttendanceImportService
     }
 
     /// <summary>ปรับรหัสจากไฟล์ให้อยู่รูปเดียวกับตอนนำเข้า (ตัดช่องว่าง, "100002.0" → "100002")</summary>
+    public async Task<int> RematchAllAsync(CancellationToken cancellationToken = default)
+    {
+        var employeeIds = await _context.Employees
+            .AsNoTracking()
+            .Where(e => !string.IsNullOrWhiteSpace(e.BiometricId) || !string.IsNullOrWhiteSpace(e.EmployeeCode))
+            .Select(e => e.Id)
+            .ToListAsync(cancellationToken);
+
+        int totalMatched = 0;
+        foreach (var id in employeeIds)
+        {
+            totalMatched += await RematchUnmatchedRowsAsync(id, cancellationToken);
+        }
+
+        return totalMatched;
+    }
+
     private static string NormalizeEmployeeCode(string raw)
     {
         var cleanCode = raw.Trim();

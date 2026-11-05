@@ -27,6 +27,21 @@ export const essAttendanceService = {
   /**
    * [ESS] บันทึกเวลาออกงานของตนเอง
    */
+  /**
+   * [ESS] ดึงงวดเดือน/ปีล่าสุดที่มีข้อมูลจริงในระบบ
+   */
+  async getMyLatestPeriod(): Promise<{ year: number; month: number } | null> {
+    try {
+      const res = await apiClient.get<ApiResponse<{ year: number; month: number }>>('/attendance/daily/my/latest-period');
+      return res.data.data;
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * [ESS] บันทึกเวลาออกงานของตนเอง
+   */
   async myClockOut(): Promise<AttendanceDaily> {
     const res = await apiClient.post<ApiResponse<AttendanceDaily>>('/attendance/daily/my/clock-out');
     return res.data.data;

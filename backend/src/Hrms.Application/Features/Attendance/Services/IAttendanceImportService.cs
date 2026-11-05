@@ -19,6 +19,9 @@ public interface IAttendanceImportService
     /// <summary>จับคู่แถวที่เคยหาพนักงานไม่เจอ (จากไฟล์ที่นำเข้าไว้แล้ว) กับพนักงานคนนี้ใหม่ — คืนจำนวนแถวที่บันทึกเวลาได้</summary>
     Task<int> RematchUnmatchedRowsAsync(long employeeId, CancellationToken cancellationToken = default);
 
+    /// <summary>จับคู่แถวที่เคยหาพนักงานไม่เจอจากไฟล์ทั้งหมดกับพนักงานทุกคนที่มีในระบบใหม่</summary>
+    Task<int> RematchAllAsync(CancellationToken cancellationToken = default);
+
     Task<PagedImportBatchResult> GetBatchesAsync(
         AttendanceImportBatchFilterQuery query, 
         CancellationToken cancellationToken = default);

@@ -184,6 +184,20 @@ public class AttendanceDailyController : ControllerBase
     /// <summary>
     /// [ESS] ดูสถิติสรุปการเข้างานประจำเดือนของตนเอง
     /// </summary>
+    /// <summary>
+    /// [ESS] ดึงงวดเดือน/ปีล่าสุดที่มีข้อมูลจริงในระบบ
+    /// </summary>
+    [HttpGet("my/latest-period")]
+    public async Task<IActionResult> GetMyLatestPeriod(CancellationToken cancellationToken)
+    {
+        var employeeId = GetCurrentEmployeeId();
+        var (year, month) = await _service.GetLatestPeriodAsync(employeeId, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new { year, month }));
+    }
+
+    /// <summary>
+    /// [ESS] ดูสถิติสรุปการเข้างานประจำเดือนของตนเอง
+    /// </summary>
     [HttpGet("my/summary")]
     public async Task<IActionResult> GetMyMonthlySummary(
         [FromQuery] int? year,

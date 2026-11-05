@@ -1069,6 +1069,34 @@ public class AttendanceDailyService : IAttendanceDailyService
         return await RecalculateMyAttendanceInternalAsync(employeeId, year, month, cancellationToken);
     }
 
+
+    public async Task<(int Year, int Month)> GetLatestPeriodAsync(long? employeeId, CancellationToken cancellationToken = default)
+    {
+        var nowThai = ToThaiLocalTime(DateTime.UtcNow);
+
+        DateOnly? latestEmployeeRecord = null;
+        if (employeeId.HasValue && employeeId.Value > 0)
+        {
+            latestEmployeeRecord = await _context.AttendanceDailies
+                .AsNoTracking()
+                .Where(a => a.EmployeeId == employeeId.Value && (a.ActualIn != null || a.ActualOut != null || a.ImportBatchId != null))
+                .OrderByDescending(a => a.WorkDate)
+                .Select(a => (DateOnly?)a.WorkDate)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        var latestBatchDate = await _context.AttendanceImportBatches
+            .AsNoTracking()
+            .Where(b => b.Status != "REVERTED" && b.Status != "FAILED" && b.DateTo != null)
+            .OrderByDescending(b => b.DateTo)
+            .Select(b => b.DateTo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var effectiveDate = latestEmployeeRecord ?? latestBatchDate ?? DateOnly.FromDateTime(nowThai);
+        return (effectiveDate.Year, effectiveDate.Month);
+    }
+
+
     public async Task<List<AttendanceDailyDto>> GetMyAttendanceHistoryAsync(long employeeId, int year, int month, CancellationToken cancellationToken = default)
     {
         await RecalculateMyAttendanceInternalAsync(employeeId, year, month, cancellationToken);

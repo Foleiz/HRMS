@@ -67,6 +67,22 @@ export default function EssAttendancePage() {
   // Filter Month & Year for History
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [hasInitializedPeriod, setHasInitializedPeriod] = useState(false);
+
+  // ดึงงวดเดือน/ปีล่าสุดที่มีข้อมูลจริงในระบบให้อัตโนมัติ (เช่น เดือนที่เพิ่งนำเข้าไฟล์ล่าสุด)
+  useEffect(() => {
+    let isMounted = true;
+    essAttendanceService.getMyLatestPeriod().then((period) => {
+      if (isMounted && period && !hasInitializedPeriod) {
+        setSelectedYear(period.year);
+        setSelectedMonth(period.month);
+        setHasInitializedPeriod(true);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [hasInitializedPeriod]);
   const [historyList, setHistoryList] = useState<AttendanceDaily[]>([]);
   const [monthlySummary, setMonthlySummary] = useState<MyAttendanceMonthlySummary | null>(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
