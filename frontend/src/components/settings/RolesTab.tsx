@@ -788,94 +788,135 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               <div
                 key={role.id}
                 onClick={() => onSelectRole(role.id)}
-                className={`p-4 pl-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${
+                className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'bg-white dark:bg-slate-800 ring-2 shadow-sm'
+                    ? 'text-white shadow-md'
                     : 'bg-white dark:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xs'
                 }`}
                 style={
                   isSelected
                     ? {
+                        backgroundColor: roleColor,
                         borderColor: roleColor,
-                        boxShadow: `0 0 0 2px ${roleColor}25`,
                       }
                     : undefined
                 }
               >
-                {/* แถบสีด้านซ้ายของบทบาท */}
-                <div
-                  className={`absolute left-0 top-0 bottom-0 transition-all duration-200 ${
-                    isSelected ? 'w-2 shadow-sm' : 'w-1.5'
-                  }`}
-                  style={{ backgroundColor: roleColor }}
-                />
-
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
-                        style={{ backgroundColor: roleColor }}
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                          isSelected ? 'bg-white shadow-xs' : ''
+                        }`}
+                        style={!isSelected ? { backgroundColor: roleColor } : undefined}
                       />
-                      <span className="font-bold text-sm text-slate-900 dark:text-slate-100 tracking-tight">
+                      <span
+                        className={`font-bold text-sm tracking-tight ${
+                          isSelected ? 'text-white' : 'text-slate-900 dark:text-slate-100'
+                        }`}
+                      >
                         {role.roleName}
                       </span>
                     </div>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
+                      isSelected
+                        ? 'text-white bg-white/20 backdrop-blur-xs'
+                        : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
+                    }`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isSelected ? 'bg-white' : 'bg-emerald-500'
+                      }`}
+                    />
                     ใช้งานอยู่
                   </span>
                 </div>
 
                 {role.description && (
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 line-clamp-2 mt-2 leading-relaxed">
+                  <p
+                    className={`text-[11px] line-clamp-2 mt-2 leading-relaxed ${
+                      isSelected
+                        ? 'text-white/85'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
                     {role.description}
                   </p>
                 )}
 
                 {canEditRole && (
-                  <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-3 text-[11px]">
+                  <div
+                    className={`mt-3 pt-2.5 border-t flex items-center justify-end gap-3.5 text-[11px] ${
+                      isSelected
+                        ? 'border-white/20'
+                        : 'border-slate-100 dark:border-slate-700/60'
+                    }`}
+                  >
                     {role.isSystemDefault ? (
                       <>
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
-                          icon={<Edit2 className="w-3 h-3" />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditRoleClick(role);
+                          }}
+                          className={`flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'text-white hover:text-white/80'
+                              : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                          }`}
                         >
-                          แก้ไข
-                        </Button>
+                          <Edit2 className="w-3 h-3" />
+                          <span>แก้ไข</span>
+                        </button>
                         <span
-                          className="text-slate-300 dark:text-slate-600 flex items-center gap-1 cursor-not-allowed select-none px-2 py-1"
+                          className={`flex items-center gap-1 cursor-not-allowed select-none text-[11px] ${
+                            isSelected
+                              ? 'text-white/40'
+                              : 'text-slate-300 dark:text-slate-600'
+                          }`}
                           title="บทบาทเริ่มต้นของระบบ ไม่สามารถลบได้"
                         >
-                          <Trash2 className="w-3 h-3 text-slate-300 dark:text-slate-600" />
+                          <Trash2 className="w-3 h-3" />
                           <span>ลบ</span>
                         </span>
                       </>
                     ) : (
                       <>
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); onEditRoleClick(role); }}
-                          icon={<Edit2 className="w-3 h-3" />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditRoleClick(role);
+                          }}
+                          className={`flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'text-white hover:text-white/80'
+                              : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                          }`}
                         >
-                          แก้ไข
-                        </Button>
-                        <Button
+                          <Edit2 className="w-3 h-3" />
+                          <span>แก้ไข</span>
+                        </button>
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => { e.stopPropagation(); onDeleteRoleClick(role); }}
-                          className="text-rose-500 hover:text-rose-700"
-                          icon={<Trash2 className="w-3 h-3" />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteRoleClick(role);
+                          }}
+                          className={`flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer ${
+                            isSelected
+                              ? 'text-white hover:text-white/80'
+                              : 'text-rose-500 hover:text-rose-700'
+                          }`}
                         >
-                          ลบ
-                        </Button>
+                          <Trash2 className="w-3 h-3" />
+                          <span>ลบ</span>
+                        </button>
                       </>
                     )}
                   </div>
