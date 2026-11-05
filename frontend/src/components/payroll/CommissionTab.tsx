@@ -124,6 +124,8 @@ export default function CommissionTab() {
   const [periodModalSearch, setPeriodModalSearch] = useState<string>('');
   const [periodModalPage, setPeriodModalPage] = useState<number>(1);
   const [periodModalPageSize, setPeriodModalPageSize] = useState<number>(10);
+  const [modalDefaultRate, setModalDefaultRate] = useState<number>(3.0);
+  const [isRecalculatingModalRate, setIsRecalculatingModalRate] = useState<boolean>(false);
 
   // Employee Sub-entries Modal State
   const [selectedEmployeeForEntries, setSelectedEmployeeForEntries] = useState<CommissionRecord | null>(null);
@@ -211,6 +213,37 @@ export default function CommissionTab() {
     }
   };
 
+  // Recalculate Modal Period with Modal Default Rate
+  const handleApplyModalDefaultRate = async () => {
+    if (!selectedPeriodForDetails) return;
+    if (selectedPeriodForDetails.status === 'CONFIRMED' || selectedPeriodForDetails.status === 'PAID') return;
+    try {
+      setIsRecalculatingModalRate(true);
+      const res = await commissionService.recalculatePeriod(
+        selectedPeriodForDetails.year,
+        selectedPeriodForDetails.month,
+        modalDefaultRate
+      );
+      setPeriodSummaryForDetails(res);
+      setSelectedPeriodForDetails((prev) =>
+        prev
+          ? {
+              ...prev,
+              totalCommissionAmount: res.totalCommissionAmount ?? res.totalCommission ?? prev.totalCommissionAmount,
+              totalSalesAmount: res.totalSalesAmount ?? res.totalSales ?? prev.totalSalesAmount,
+            }
+          : null
+      );
+      success(`คำนวณยอดค่าคอมมิชชั่นงวด ${selectedPeriodForDetails.monthLabel} ใหม่ด้วยอัตรา ${modalDefaultRate}% สำเร็จ`);
+      await loadMonthlyPeriods(selectedYear);
+      await loadCommissionData(selectedYear, selectedMonth);
+    } catch (err: any) {
+      error(err?.response?.data?.message || 'คำนวณใหม่ไม่สำเร็จ');
+    } finally {
+      setIsRecalculatingModalRate(false);
+    }
+  };
+
   // Open Monthly Period Details Popup Modal
   const handleOpenPeriodDetails = async (period: CommissionMonthlyPeriod) => {
     setSelectedPeriodForDetails(period);
@@ -225,6 +258,11 @@ export default function CommissionTab() {
       ]);
       setPeriodSummaryForDetails(sum);
       setPeriodAllEntriesForDetails(entries || []);
+      if (sum && sum.records && sum.records.length > 0) {
+        setModalDefaultRate(sum.records[0].commissionRate || defaultRate || 3.0);
+      } else {
+        setModalDefaultRate(defaultRate || 3.0);
+      }
     } catch {
       error('ไม่สามารถโหลดรายละเอียดของงวดเดือนนี้ได้');
     } finally {
@@ -839,39 +877,6 @@ export default function CommissionTab() {
                 ))}
               </CustomSelect>
             </div>
-          </div>
-
-          {/* Default Commission % input (clean & compact) */}
-          <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 shadow-2xs">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1">
-              <Percent className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>อัตราเริ่มต้น:</span>
-            </span>
-            <div className="relative w-16">
-              <input
-                type="number"
-                step="0.5"
-                min="0"
-                max="100"
-                value={defaultRate}
-                onChange={(e) => setDefaultRate(Number(e.target.value) || 0)}
-                disabled={isPeriodConfirmed}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 pr-4 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 text-right"
-              />
-              <span className="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
-            </div>
-            {!isPeriodConfirmed && summary && summary.records && summary.records.length > 0 && (
-              <Button
-                variant="success"
-                size="sm"
-                className="h-6 px-2 ml-1"
-                onClick={handleApplyDefaultRate}
-                loading={isRecalculatingRate}
-                title={`นำอัตรา ${defaultRate}% ไปคำนวณใหม่กับทุกรายการในงวดนี้`}
-              >
-                {isRecalculatingRate ? null : 'คำนวณใหม่'}
-              </Button>
-            )}
           </div>
 
           {/* Refresh Button */}
@@ -2263,10 +2268,45 @@ export default function CommissionTab() {
                   />
                 </div>
 
-                {/* Right: Employee Summary Badge */}
-                <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-200 self-end sm:self-auto shrink-0">
-                  <Users className="w-3.5 h-3.5 text-blue-600" />
-                  <span>สรุปรายพนักงาน ({periodSummaryForDetails?.records.length || 0} คน)</span>
+                {/* Right: Default Rate + Employee Summary Badge */}
+                <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                  {/* Default Commission % input for this period */}
+                  <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 px-3 py-1.5 shadow-2xs">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                      <Percent className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>อัตราเริ่มต้น:</span>
+                    </span>
+                    <div className="relative w-16">
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        max="100"
+                        value={modalDefaultRate}
+                        onChange={(e) => setModalDefaultRate(Number(e.target.value) || 0)}
+                        disabled={selectedPeriodForDetails.status === 'CONFIRMED' || selectedPeriodForDetails.status === 'PAID'}
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-0.5 pr-4 text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 text-right"
+                      />
+                      <span className="absolute right-1.5 top-0.5 text-xs text-slate-400 font-semibold">%</span>
+                    </div>
+                    {selectedPeriodForDetails.status !== 'CONFIRMED' && selectedPeriodForDetails.status !== 'PAID' && periodSummaryForDetails?.records && periodSummaryForDetails.records.length > 0 && (
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="h-6 px-2 ml-1"
+                        onClick={handleApplyModalDefaultRate}
+                        loading={isRecalculatingModalRate}
+                        title={`นำอัตรา ${modalDefaultRate}% ไปคำนวณใหม่กับทุกรายการในงวดนี้`}
+                      >
+                        {isRecalculatingModalRate ? null : 'คำนวณใหม่'}
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 text-xs font-semibold text-slate-700 dark:text-slate-200 shrink-0">
+                    <Users className="w-3.5 h-3.5 text-blue-600" />
+                    <span>สรุปรายพนักงาน ({periodSummaryForDetails?.records.length || 0} คน)</span>
+                  </div>
                 </div>
               </div>
 
