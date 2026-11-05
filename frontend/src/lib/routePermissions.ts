@@ -112,11 +112,6 @@ export const ROUTE_RULES: RouteRule[] = [
     title: 'ยอดสวัสดิการพนักงาน',
     requiredPermissions: ['BENEFIT_BALANCE_VIEW', 'BENEFIT_VIEW'],
   },
-  {
-    matchPrefix: '/benefits/claims',
-    title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ',
-    requiredPermissions: ['BENEFIT_CLAIM_VIEW', 'BENEFIT_VIEW'],
-  },
 
   {
     matchPrefix: '/attendance/import',
