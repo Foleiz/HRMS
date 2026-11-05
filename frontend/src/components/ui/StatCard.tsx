@@ -1,4 +1,5 @@
 import React from 'react';
+import { CountUp } from './CountUp';
 
 export type StatTone = 'slate' | 'sky' | 'blue' | 'emerald' | 'amber' | 'rose' | 'purple';
 
@@ -73,6 +74,7 @@ export function StatCard({
   children?: React.ReactNode;
 }) {
   const t = TONES[tone];
+  const shown = typeof value === 'number' ? <CountUp value={value} /> : value;
   const card = `p-4 rounded-2xl border shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all ${t.card}`;
 
   if (layout === 'inline') {
@@ -85,7 +87,7 @@ export function StatCard({
         )}
         <div className="min-w-0">
           <div className={`text-xs font-bold truncate ${t.label}`}>{label}</div>
-          <div className={`text-2xl font-black mt-0.5 ${t.value}`}>{value}</div>
+          <div className={`text-2xl font-black mt-0.5 ${t.value}`}>{shown}</div>
           {children}
         </div>
       </div>
@@ -102,7 +104,7 @@ export function StatCard({
           </div>
         )}
       </div>
-      <div className={`mt-2 text-2xl font-black ${t.value}`}>{value}</div>
+      <div className={`mt-2 text-2xl font-black ${t.value}`}>{shown}</div>
       {children}
     </div>
   );

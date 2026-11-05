@@ -13,6 +13,7 @@ import { commissionService } from '@/services/commissionService';
 import { attendanceService } from '@/services/attendanceService';
 import { DailyHeadcountSummary } from '@/types/reports';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
+import { CountUp } from '@/components/ui/CountUp';
 
 interface ManagerStatCardsProps {
   role: DashboardRole;
@@ -560,7 +561,7 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
                     : 'text-xl sm:text-2xl font-black text-slate-900 tracking-tight'
                 }
               >
-                {card.value}
+                {typeof card.value === 'number' ? <CountUp value={card.value} /> : card.value}
               </span>
               {card.unit && (
                 <span className="text-[11px] sm:text-xs font-semibold text-slate-600">
