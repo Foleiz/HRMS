@@ -109,11 +109,11 @@ export const ModalShell: React.FC<{
       ref={(el) => {
         if (el) nodeRef.current = el;
       }}
-      className={`fixed inset-0 overflow-y-auto modal-backdrop ${className}`}
+      className={`fixed inset-0 overflow-y-auto overflow-x-hidden modal-backdrop ${className}`}
       onClick={handleClick}
     >
       <div
-        className={`flex min-h-full ${resolvedInnerClassName} ${placement === 'center' ? 'modal-pop' : ''}`}
+        className={`flex min-h-full max-w-full overflow-x-hidden ${resolvedInnerClassName} ${placement === 'center' ? 'modal-pop' : ''}`}
         style={
           placement === 'center' && origin
             ? ({ '--modal-origin-x': `${origin.x}px`, '--modal-origin-y': `${origin.y}px` } as React.CSSProperties)
