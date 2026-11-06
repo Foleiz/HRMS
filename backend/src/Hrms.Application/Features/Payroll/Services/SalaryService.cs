@@ -3185,14 +3185,10 @@ public class SalaryService : ISalaryService
         {
             var empContracts = contracts.Where(c => c.EmployeeId == emp.Id).ToList();
 
-            if (!empContracts.Any())
-            {
-                // ไม่มีสัญญาจ้างงานเลย -> Start เป็น null (ไม่มีสิทธิ์คิดเงินเดือน)
-                result[emp.Id] = new EmploymentWindow(null, null);
-                continue;
-            }
-
-            DateOnly? start = empContracts.Min(c => c.StartDate);
+            // หากมีสัญญาจ้างงาน ให้ใช้วันเริ่มสัญญา หากยังไม่มีสัญญาจ้าง ให้ fallback ไปใช้วันที่เริ่มงานจาก Assignment หรือ CreatedAt
+            DateOnly? start = empContracts.Any()
+                ? empContracts.Min(c => c.StartDate)
+                : (emp.Assignments.Any() ? emp.Assignments.Min(a => a.EffectiveFrom) : DateOnly.FromDateTime(emp.CreatedAt));
 
             // วันทำงานวันสุดท้าย: จากประวัติสถานะลาออก/เลิกจ้าง หรือวันสิ้นสุดสัญญา/เลิกจ้าง
             DateOnly? end = exits.Where(h => h.EmployeeId == emp.Id).Select(h => (DateOnly?)h.EffectiveFrom).Max();
@@ -3213,7 +3209,7 @@ public class SalaryService : ISalaryService
                         end = latestContractEnd;
                 }
             }
-            else
+            else if (empContracts.Any())
             {
                 // ไม่มีสัญญาที่ ACTIVE อยู่เลย (เช่น สัญญาเดิม COMPLETED หรือ TERMINATED ไปหมดแล้ว)
                 var maxContractEnd = empContracts.Where(c => c.ContractEndDate.HasValue).Select(c => c.ContractEndDate).Max();

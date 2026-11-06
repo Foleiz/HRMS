@@ -2041,6 +2041,7 @@ export default function PayrollPage() {
       setIsCalculating(true);
       const { records: updatedPayrolls, message: calcMessage } = await salaryService.calculatePayrollPeriod(selectedPeriod.id);
       setPayrolls(updatedPayrolls || []);
+      setProcessPage(1);
       const [updatedPeriods, updatedOverview] = await Promise.all([
         salaryService.getPayrollPeriods(),
         salaryService.getOverview().catch(() => null),
@@ -4530,61 +4531,85 @@ export default function PayrollPage() {
                           <th className="py-3.5 px-5">พนักงาน</th>
                           <th className="py-3.5 px-5">แผนก</th>
                           <th className="py-3.5 px-5">วันลา</th>
+                          <th className="py-3.5 px-5 text-right">รายได้รวม</th>
+                          <th className="py-3.5 px-5 text-right">รายการหัก</th>
+                          <th className="py-3.5 px-5 text-right">เงินเดือนสุทธิ</th>
                           <th className="py-3.5 px-5">สถานะข้อมูล</th>
                           <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {paginatedPayrolls.map((pr) => {
-                          return (
-                            <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
-                              <td className="py-4 px-5">
-                                <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
-                                <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
-                              </td>
-                              <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
-                              <td className="py-4 px-5">
-                                {pr.leaveDays && pr.leaveDays > 0 ? (
-                                  <div>
-                                    <span className="font-semibold text-slate-900 dark:text-slate-100">{pr.leaveDays} วัน</span>
-                                    {pr.leaveSummary && (
-                                      <div className="text-[11px] text-slate-400">{pr.leaveSummary}</div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-slate-400">-</span>
-                                )}
-                              </td>
-                              <td className="py-4 px-5">
-                                {pr.inputStatus === 'COMPLETE' ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span>ครบแล้ว</span>
-                                  </span>
-                                ) : pr.inputStatus === 'PENDING_SALARY' ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="ยังไม่ระบุฐานเงินเดือนในระบบ">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                    <span>ยังไม่ระบุฐานเงินเดือน</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                    <span>รอ HR ตรวจสอบ</span>
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-4 px-5 text-center">
-                                <button
-                                  onClick={() => handleOpenDetailDrawer(pr)}
-                                  title="ดูรายละเอียดการคำนวณ"
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                        {paginatedPayrolls.length === 0 ? (
+                          <TableEmpty
+                            colSpan={8}
+                            text="ยังไม่มีข้อมูลรายการเงินเดือนในรอบนี้ กรุณากดปุ่ม 'คำนวณเงินเดือน' เพื่อเริ่มต้นประมวลผล"
+                          />
+                        ) : (
+                          paginatedPayrolls.map((pr) => {
+                            const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
+                            return (
+                              <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="py-4 px-5">
+                                  <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
+                                  <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
+                                </td>
+                                <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
+                                <td className="py-4 px-5">
+                                  {pr.leaveDays && pr.leaveDays > 0 ? (
+                                    <div>
+                                      <span className="font-semibold text-slate-900 dark:text-slate-100">{pr.leaveDays} วัน</span>
+                                      {pr.leaveSummary && (
+                                        <div className="text-[11px] text-slate-400">{pr.leaveSummary}</div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
+                                  {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
+                                </td>
+                                <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
+                                  {hasGross && pr.totalDeductionAmount != null
+                                    ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                                    : '-'}
+                                </td>
+                                <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600 text-sm">
+                                  {hasGross && pr.netPayableSalary != null
+                                    ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                    : '-'}
+                                </td>
+                                <td className="py-4 px-5">
+                                  {pr.inputStatus === 'COMPLETE' ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                      <span>ครบแล้ว</span>
+                                    </span>
+                                  ) : pr.inputStatus === 'PENDING_SALARY' ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="ยังไม่ระบุฐานเงินเดือนในระบบ">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                      <span>ยังไม่ระบุฐานเงินเดือน</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                      <span>รอ HR ตรวจสอบ</span>
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-4 px-5 text-center">
+                                  <button
+                                    onClick={() => handleOpenDetailDrawer(pr)}
+                                    title="ดูรายละเอียดการคำนวณ"
+                                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -4723,67 +4748,71 @@ export default function PayrollPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {paginatedPayrolls.map((pr) => {
-                          const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
-                          return (
-                            <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
-                              <td className="py-4 px-5">
-                                <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
-                                <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
-                              </td>
-                              <td className="py-4 px-5">
-                                {pr.bankName && pr.accountNumber ? (
-                                  <>
-                                    <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName}</div>
-                                    <div className="text-[11px] font-mono text-slate-400">
-                                      <MaskedDataViewer value={pr.accountNumber} type="bankAccount" />
-                                    </div>
-                                  </>
-                                ) : (
-                                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-                                      <AlertTriangle className="w-3 h-3 shrink-0" />
-                                      <span>ยังไม่มีบัญชีธนาคาร</span>
-                                    </div>
+                        {paginatedPayrolls.length === 0 ? (
+                          <TableEmpty colSpan={7} text="ยังไม่มีข้อมูลรายการเงินเดือนในรอบนี้" />
+                        ) : (
+                          paginatedPayrolls.map((pr) => {
+                            const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
+                            return (
+                              <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                                <td className="py-4 px-5">
+                                  <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
+                                  <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
+                                </td>
+                                <td className="py-4 px-5">
+                                  {pr.bankName && pr.accountNumber ? (
+                                    <>
+                                      <div className="font-medium text-slate-800 dark:text-slate-200">{pr.bankName}</div>
+                                      <div className="text-[11px] font-mono text-slate-400">
+                                        <MaskedDataViewer value={pr.accountNumber} type="bankAccount" />
+                                      </div>
+                                    </>
+                                  ) : (
+                                      <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                                        <span>ยังไม่มีบัญชีธนาคาร</span>
+                                      </div>
+                                    )}
+                                </td>
+                                <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
+                                  {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
+                                </td>
+                                <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
+                                  {hasGross && pr.totalDeductionAmount != null
+                                    ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+                                    : '-'}
+                                </td>
+                                <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600 text-sm">
+                                  {hasGross && pr.netPayableSalary != null
+                                    ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                    : '-'}
+                                </td>
+                                <td className="py-4 px-5">
+                                  {pr.paymentStatus === 'TRANSFERRED' ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                      <span>โอนแล้ว</span>
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                      <span>รอโอน</span>
+                                    </span>
                                   )}
-                              </td>
-                              <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
-                                {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
-                              </td>
-                              <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
-                                {hasGross && pr.totalDeductionAmount != null
-                                  ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
-                                  : '-'}
-                              </td>
-                              <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600 text-sm">
-                                {hasGross && pr.netPayableSalary != null
-                                  ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                                  : '-'}
-                              </td>
-                              <td className="py-4 px-5">
-                                {pr.paymentStatus === 'TRANSFERRED' ? (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span>โอนแล้ว</span>
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                    <span>รอโอน</span>
-                                  </span>
-                                )}
-                              </td>
-                              <td className="py-4 px-5 text-center">
-                                <button
-                                  onClick={() => handleOpenDetailDrawer(pr)}
-                                  title="ดูรายละเอียดการคำนวณ"
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
+                                </td>
+                                <td className="py-4 px-5 text-center">
+                                  <button
+                                    onClick={() => handleOpenDetailDrawer(pr)}
+                                    title="ดูรายละเอียดการคำนวณ"
+                                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -4912,31 +4941,35 @@ export default function PayrollPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
-                        {paginatedPayrolls.map((pr) => (
-                          <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="py-4 px-5 font-mono font-semibold text-slate-900 dark:text-slate-100">{pr.employeeCode}</td>
-                            <td className="py-4 px-5 font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</td>
-                            <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
-                            <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
-                              ฿{(pr.totalGrossIncome || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                            </td>
-                            <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
-                              -฿{(pr.totalDeductionAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
-                            </td>
-                            <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600">
-                              ฿{(pr.netPayableSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                            </td>
-                            <td className="py-4 px-5 text-center">
-                              <button
-                                onClick={() => handleOpenDetailDrawer(pr)}
-                                title="ดูรายละเอียด"
-                                className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                        {paginatedPayrolls.length === 0 ? (
+                          <TableEmpty colSpan={7} text="ยังไม่มีข้อมูลรายการเงินเดือนในรอบนี้" />
+                        ) : (
+                          paginatedPayrolls.map((pr) => (
+                            <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="py-4 px-5 font-mono font-semibold text-slate-900 dark:text-slate-100">{pr.employeeCode}</td>
+                              <td className="py-4 px-5 font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</td>
+                              <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
+                              <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
+                                ฿{(pr.totalGrossIncome || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                              </td>
+                              <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
+                                -฿{(pr.totalDeductionAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 0 })}
+                              </td>
+                              <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600">
+                                ฿{(pr.netPayableSalary || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-4 px-5 text-center">
+                                <button
+                                  onClick={() => handleOpenDetailDrawer(pr)}
+                                  title="ดูรายละเอียด"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
