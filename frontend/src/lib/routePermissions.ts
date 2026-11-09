@@ -69,8 +69,8 @@ export const ROUTE_RULES: RouteRule[] = [
   },
   {
     matchPrefix: '/documents/leave',
-    title: 'ยื่นคำขอลา',
-    requiredPermissions: ['ESS_DOCS_CREATE'],
+    title: 'การลา',
+    requiredPermissions: ['ESS_DOCS_CREATE', 'ESS_DOCS_VIEW', 'ESS_LEAVE_VIEW'],
   },
   {
     matchPrefix: '/documents/resignation',

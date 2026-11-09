@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
-import { Thermometer, Briefcase, Sun, LogOut, FileText, BadgeCheck, ArrowRight, Clock, Lock } from 'lucide-react';
+import { LogOut, FileText, BadgeCheck, ArrowRight, Clock, Lock } from 'lucide-react';
 import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
@@ -11,24 +11,13 @@ interface DocumentOption {
   title: string;
   description: string;
   href: string;
-  /** ไอคอนที่แสดงกลางการ์ด (เอกสารการลาแสดง 3 ไอคอน: ป่วย / กิจ / พักร้อน) */
   icons: React.ComponentType<{ className?: string }>[];
-  /** สีไอคอน/พื้นหลังไอคอน ตามโทนสีของระบบ */
   color: string;
   bg: string;
   available: boolean;
 }
 
 const DOCUMENT_OPTIONS: DocumentOption[] = [
-  {
-    title: 'ยื่นคำขอลา',
-    description: 'ลาป่วย ลากิจ ลาพักร้อน และการลาประเภทอื่น ๆ พร้อมแนบเอกสารประกอบ',
-    href: '/documents/leave',
-    icons: [Thermometer, Briefcase, Sun],
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
-    available: true,
-  },
   {
     title: 'ยื่นคำขอลาออก',
     description: 'แจ้งความประสงค์ลาออก ระบุวันทำงานสุดท้ายและรายการส่งมอบงาน',
@@ -73,9 +62,8 @@ export default function DocumentsHubPage() {
       {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
       <DocumentsSubNav />
 
-
-      {/* Option Cards — ตาราง 2 x 2 เต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป (สไตล์การ์ดเดียวกับทั้งระบบ) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      {/* Option Cards — ตารางเต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {DOCUMENT_OPTIONS.map((opt) => {
           const isAllowed = opt.available && canCreateDoc;
           const card = (
@@ -128,4 +116,3 @@ export default function DocumentsHubPage() {
     </div>
   );
 }
-

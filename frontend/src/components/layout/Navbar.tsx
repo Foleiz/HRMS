@@ -239,7 +239,7 @@ export const Navbar: React.FC = () => {
 
     // 5. ยื่นเอกสาร (Documents)
     if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
-    if (pathname.startsWith('/documents/leave')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลา' };
+    if (pathname.startsWith('/documents/leave')) return { section: 'การลา', page: 'ยื่นคำขอลา' };
     if (pathname.startsWith('/documents')) return { section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' };
 
     // 6. ตรวจบันทึกเวลา & การจัดตารางงาน (Attendance)

@@ -2,13 +2,12 @@
 
 import React, { Suspense, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { leaveService } from '@/services/leaveService';
 import { employeeService } from '@/services/employeeService';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload } from '@/types/leave';
 import { MyLeaveRequestForm, MyLeaveRequestFormHandle } from '@/components/leave/MyLeaveRequestForm';
-import { DocumentsSubNav } from '@/components/documents/DocumentsSubNav';
 import { prefetchCompanyDocumentInfo } from '@/components/documents/documentFormParts';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { toast } from '@/context/ToastContext';
@@ -20,7 +19,7 @@ export default function MyLeaveRequestPage() {
   return (
     <Suspense
       fallback={
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500 dark:text-slate-400">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500">
           <div className="inline-flex items-center gap-2 text-sm">
             <Loader2 className="w-5 h-5 animate-spin" />
             กำลังโหลดข้อมูล...
@@ -47,7 +46,7 @@ function MyLeaveRequestPageContent() {
 
   // Sync breadcrumb
   useEffect(() => {
-    setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลา' });
+    setBreadcrumb({ section: 'การลา', page: 'ยื่นคำขอลา' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
@@ -148,43 +147,37 @@ function MyLeaveRequestPageContent() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* เมนูย่อยในตัว — สลับไปมาระหว่าง "รายการเอกสาร" กับ "ประวัติเอกสาร" เหมือนเมนู "พนักงาน" */}
-      {/* คงรูปแบบเดียวกันไว้ทุกหน้าในหมวด "ยื่นเอกสาร" รวมถึงหน้าฟอร์มย่อยนี้ด้วย ไม่ใช้ breadcrumb แบบเดิมซ้อนแยกต่างหาก */}
-      <DocumentsSubNav />
-
-      {/* หัวข้อกับฟอร์มกว้างเท่าแถบเมนูย่อยด้านบน */}
       <div className="w-full space-y-5">
-      {/* หัวข้ออยู่ใน breadcrumb แล้ว — เก็บ h1 ไว้ให้โปรแกรมอ่านหน้าจอ */}
-      <h1 className="sr-only">ยื่นคำขอลา</h1>
+        <h1 className="sr-only">ยื่นคำขอลา</h1>
 
-      {/* ยื่นคำขอลา — ฟอร์มแบบเต็มหน้าจอ */}
-      {loading ? (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500 dark:text-slate-400">
-          <div className="inline-flex items-center gap-2 text-sm">
-            <Loader2 className="w-5 h-5 animate-spin" />
-            กำลังโหลดข้อมูล...
+        {/* ยื่นคำขอลา — ฟอร์มแบบเต็มหน้าจอ */}
+        {loading ? (
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm py-20 text-center text-gray-400 dark:text-slate-500">
+            <div className="inline-flex items-center gap-2 text-sm">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              กำลังโหลดข้อมูล...
+            </div>
           </div>
-        </div>
-      ) : (
-        <MyLeaveRequestForm
-          ref={formRef}
-          key={draftIdNum ?? 'new'}
-          leaveTypes={leaveTypes}
-          leavePolicies={leavePolicies}
-          balances={balances}
-          requests={requests}
-          employeeId={user?.employeeId}
-          profile={{
-            fullName: user?.fullName ?? '-',
-            prefix: employeePrefix,
-            positionTitle: balances[0]?.positionTitle,
-            departmentName: balances[0]?.departmentName,
-          }}
-          initialDraft={initialDraft}
-          onSubmit={handleCreate}
-          onSaveDraft={handleSaveDraft}
-        />
-      )}
+        ) : (
+          <MyLeaveRequestForm
+            ref={formRef}
+            key={draftIdNum ?? 'new'}
+            leaveTypes={leaveTypes}
+            leavePolicies={leavePolicies}
+            balances={balances}
+            requests={requests}
+            employeeId={user?.employeeId}
+            profile={{
+              fullName: user?.fullName ?? '-',
+              prefix: employeePrefix,
+              positionTitle: balances[0]?.positionTitle,
+              departmentName: balances[0]?.departmentName,
+            }}
+            initialDraft={initialDraft}
+            onSubmit={handleCreate}
+            onSaveDraft={handleSaveDraft}
+          />
+        )}
       </div>
     </div>
   );

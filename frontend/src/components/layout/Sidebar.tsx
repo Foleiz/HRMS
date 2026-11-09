@@ -138,6 +138,13 @@ const menuGroups: MenuGroup[] = [
         requiredPermissions: ['ESS_PROFILE_VIEW'],
       },
       {
+        title: 'การลา',
+        href: '/documents/leave',
+        matchPrefix: '/documents/leave',
+        icon: CalendarX2,
+        requiredPermissions: ['ESS_DOCS_CREATE', 'ESS_DOCS_VIEW', 'ESS_LEAVE_VIEW'],
+      },
+      {
         title: 'ยื่นเอกสาร',
         href: '/documents',
         matchPrefix: '/documents',
@@ -592,7 +599,12 @@ export const Sidebar: React.FC = () => {
         return pathname === '/employees' || pathname.match(/^\/employees\/\d+/) !== null;
       }
       if (child.href === '/documents') {
-        return pathname === '/documents' || (pathname.startsWith('/documents/') && !pathname.startsWith('/documents/history'));
+        return (
+          pathname === '/documents' ||
+          (pathname.startsWith('/documents/') &&
+            !pathname.startsWith('/documents/history') &&
+            !pathname.startsWith('/documents/leave'))
+        );
       }
       if (child.href === '/approvals/leave-requests') {
         return pathname === '/approvals/leave-requests' || pathname === '/approvals';
