@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Sun, Clock3, Phone, Save, FileText, RotateCcw } from 'lucide-react';
+import { Loader2, Sun, Clock3, Phone, Save, FileText, RotateCcw, Info, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
@@ -474,6 +474,47 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     return { text, tone: withinQuota ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400' };
   })();
 
+  const typePolicyNotice = useMemo(() => {
+    if (!hasSelectedType) {
+      return {
+        hasData: false,
+        text: 'เลือกประเภทการลาเพื่อดูสิทธิ์คงเหลือ โควตา และเงื่อนไขการลา',
+      };
+    }
+
+    const parts: string[] = [];
+    if (selectedBalance) {
+      parts.push(`ใช้ไป ${usedDaysSoFar} วัน`);
+      parts.push(`ลาไปแล้ว ${leaveCountThisYear} ครั้งปีนี้`);
+      if (pendingDays > 0) parts.push(`รออนุมัติ ${pendingDays} วัน`);
+    }
+
+    if (currentValidation?.policySummary) {
+      parts.push(currentValidation.policySummary);
+    } else if (applicablePolicy) {
+      if (applicablePolicy.entitlementDays) {
+        parts.push(`สิทธิ์ ${applicablePolicy.entitlementDays} วัน/ปี`);
+      }
+      if (applicablePolicy.advanceRequestDays === 0) {
+        parts.push('ยื่นวันเดียวกันได้');
+      } else if (applicablePolicy.advanceRequestDays > 0) {
+        parts.push(`ยื่นล่วงหน้า ${applicablePolicy.advanceRequestDays} วัน`);
+      }
+      if (applicablePolicy.isDocumentRequired) {
+        parts.push(
+          applicablePolicy.documentRequiredAfterDays
+            ? `แนบเอกสารเมื่อลา ${applicablePolicy.documentRequiredAfterDays} วันขึ้นไป`
+            : 'ต้องแนบเอกสาร'
+        );
+      }
+    }
+
+    return {
+      hasData: true,
+      text: parts.join(' · ') || 'ไม่มีข้อจำกัดจำนวนวัน',
+    };
+  }, [hasSelectedType, selectedBalance, usedDaysSoFar, leaveCountThisYear, pendingDays, currentValidation?.policySummary, applicablePolicy]);
+
   // ไฟล์แนบ: แสดงเฉพาะประเภทที่ตั้งค่าให้แนบเอกสาร (หรือมีไฟล์ค้างอยู่แล้ว เช่นแบบร่าง)
   const typeUsesDocument = !!applicablePolicy?.isDocumentRequired;
   // แสดงกล่องตลอด แต่ปิดใช้งาน (พื้นเทา) เมื่อยังไม่เลือกประเภท หรือประเภทนั้นไม่ต้องแนบเอกสาร
@@ -503,116 +544,149 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       )}
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-        {/* ซ้าย: สิ่งที่ต้องเลือก / ขวา: รายละเอียด — จอเล็กเรียงต่อกันเป็นคอลัมน์เดียว */}
+        {/* คอลัมน์ซ้าย: ประเภทการลา, วันที่ลา + รูปแบบ พร้อมกล่องแจ้งเตือน */}
         <div className="space-y-6 min-w-0">
-        {/* 1 ประเภทการลา — ขึ้นก่อน เพราะเป็นตัวกำหนดโควตาและเงื่อนไข */}
-        <div>
-          <label htmlFor="leave-type" className={labelCls}>
-            ประเภทการลา <span className="text-rose-600">*</span>
-          </label>
-          <RichSelect<number>
-            id="leave-type"
-            value={leaveTypeId}
-            onChange={(v) => {
-              const p = leavePolicies.find((x) => x.leaveTypeId === v);
-              setForm((f) => ({ ...f, leaveTypeId: v, attachment: p?.isDocumentRequired ? f.attachment : null }));
-            }}
-            options={typeOptions}
-            placeholder="เลือกประเภทการลา"
-            enabledGroupLabel="ใช้ได้"
-            disabledGroupLabel="ใช้ไม่ได้"
-            emptyText='ไม่พบประเภทการลาที่เปิดใช้งาน (เพิ่มได้ที่หน้า "ประเภทการลา")'
-            aria-describedby="leave-type-help"
-          />
-          <p id="leave-type-help" className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            {!hasSelectedType
-              ? 'เลือกแล้วจะเห็นวันคงเหลือและเงื่อนไขของประเภทนั้น'
-              : [
-                  selectedBalance
-                    ? `ใช้ไป ${usedDaysSoFar} วัน · ลาไปแล้ว ${leaveCountThisYear} ครั้งปีนี้${pendingDays > 0 ? ` · รออนุมัติ ${pendingDays} วัน` : ''}`
-                    : null,
-                  currentValidation?.policySummary || null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || 'ไม่มีข้อจำกัดจำนวนวัน'}
-          </p>
-        </div>
-
-        {/* 2 วันที่ลา + รูปแบบ — นับเป็นแถวเดียวกันตลอดเวลา ไม่ตกบรรทัดเมื่อย่อ/ขยาย Sidebar */}
-        <div className="flex items-start gap-3 sm:gap-4">
-          <div className="flex-1 min-w-0">
-            <span className={labelCls}>
-              วันที่ลา <span className="text-rose-600">*</span>
-            </span>
-            <LeaveDateRangePicker
-              key={leaveFormat}
-              mode={leaveFormat === 'FULL_DAY' ? 'range' : 'single'}
-              startDate={startDate}
-              endDate={endDate}
-              disabledDates={bookedDates}
-              className="w-full"
-              onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
+          {/* 1. ประเภทการลา */}
+          <div>
+            <label htmlFor="leave-type" className={labelCls}>
+              ประเภทการลา <span className="text-rose-600">*</span>
+            </label>
+            <RichSelect<number>
+              id="leave-type"
+              value={leaveTypeId}
+              onChange={(v) => {
+                const p = leavePolicies.find((x) => x.leaveTypeId === v);
+                setForm((f) => ({ ...f, leaveTypeId: v, attachment: p?.isDocumentRequired ? f.attachment : null }));
+              }}
+              options={typeOptions}
+              placeholder="เลือกประเภทการลา"
+              enabledGroupLabel="ใช้ได้"
+              disabledGroupLabel="ใช้ไม่ได้"
+              emptyText='ไม่พบประเภทการลาที่เปิดใช้งาน (เพิ่มได้ที่หน้า "ประเภทการลา")'
+              aria-describedby="leave-type-help"
             />
-            {daysSummary ? (
-              <p className={`mt-2 text-sm font-semibold ${daysSummary.tone}`} aria-live="polite">{daysSummary.text}</p>
-            ) : (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">นับเฉพาะวันทำงาน ไม่นับวันหยุดบริษัท</p>
-            )}
-            {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                วันหยุดในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
-              </p>
-            )}
-          </div>
 
-          <div className="shrink-0">
-            <span className={labelCls}>รูปแบบ</span>
-            <div role="radiogroup" aria-label="รูปแบบการลา" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
-              {([
-                ['FULL_DAY', 'เต็มวัน', Sun],
-                ['HALF_DAY', 'ครึ่งวัน', Clock3],
-              ] as const).map(([val, text, Icon]) => (
-                <button
-                  key={val}
-                  type="button"
-                  role="radio"
-                  aria-checked={leaveFormat === val}
-                  onClick={() => setLeaveFormat(val)}
-                  className={`inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
-                    leaveFormat === val
-                      ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-semibold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 font-medium'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" aria-hidden="true" /> {text}
-                </button>
-              ))}
+            {/* กล่องแจ้งเตือนข้อมูลสิทธิ์และเงื่อนไขประเภทการลา */}
+            <div
+              className={`mt-2.5 rounded-xl border p-3 text-xs leading-relaxed transition-all flex items-start gap-2.5 ${
+                hasSelectedType
+                  ? 'bg-blue-50/70 border-blue-200/70 text-blue-900 dark:bg-blue-950/25 dark:border-blue-900/40 dark:text-blue-200 shadow-2xs'
+                  : 'bg-slate-50 border-slate-200/80 text-slate-500 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-400'
+              }`}
+            >
+              <Info className={`w-4 h-4 shrink-0 mt-0.5 ${hasSelectedType ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium">{typePolicyNotice.text}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* 3 เหตุผล */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-            </label>
-            <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
+          {/* 2. วันที่ลา + รูปแบบ (แถวเดียวกัน) */}
+          <div>
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <span className={labelCls}>
+                  วันที่ลา <span className="text-rose-600">*</span>
+                </span>
+                <LeaveDateRangePicker
+                  key={leaveFormat}
+                  mode={leaveFormat === 'FULL_DAY' ? 'range' : 'single'}
+                  startDate={startDate}
+                  endDate={endDate}
+                  disabledDates={bookedDates}
+                  className="w-full"
+                  onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
+                />
+              </div>
+
+              <div className="shrink-0">
+                <span className={labelCls}>รูปแบบ</span>
+                <div role="radiogroup" aria-label="รูปแบบการลา" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
+                  {([
+                    ['FULL_DAY', 'เต็มวัน', Sun],
+                    ['HALF_DAY', 'ครึ่งวัน', Clock3],
+                  ] as const).map(([val, text, Icon]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      role="radio"
+                      aria-checked={leaveFormat === val}
+                      onClick={() => setLeaveFormat(val)}
+                      className={`inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
+                        leaveFormat === val
+                          ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-semibold shadow-xs'
+                          : 'text-slate-600 dark:text-slate-400 font-medium'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" aria-hidden="true" /> {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* กล่องแจ้งเตือนสรุปวันทำการและผลการคำนวณวันลา */}
+            {daysSummary ? (
+              <div
+                className={`mt-2.5 rounded-xl border p-3 text-xs leading-relaxed transition-all flex items-start gap-2.5 shadow-2xs ${
+                  !withinQuota
+                    ? 'bg-rose-50/70 border-rose-200/70 text-rose-900 dark:bg-rose-950/25 dark:border-rose-900/40 dark:text-rose-200'
+                    : leaveDays <= 0
+                    ? 'bg-amber-50/70 border-amber-200/70 text-amber-900 dark:bg-amber-950/25 dark:border-amber-900/40 dark:text-amber-200'
+                    : 'bg-emerald-50/70 border-emerald-200/70 text-emerald-900 dark:bg-emerald-950/25 dark:border-emerald-900/40 dark:text-emerald-200'
+                }`}
+              >
+                {!withinQuota ? (
+                  <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                ) : leaveDays <= 0 ? (
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                ) : isCalculatingDays ? (
+                  <Loader2 className="w-4 h-4 text-slate-500 animate-spin shrink-0 mt-0.5" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold block">{daysSummary.text}</span>
+                  {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
+                    <span className="block mt-1 text-2xs opacity-90">
+                      วันหยุดในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2.5 rounded-xl border border-slate-200/80 bg-slate-50 dark:bg-slate-900/40 dark:border-slate-800 p-3 text-xs text-slate-500 dark:text-slate-400 flex items-start gap-2.5">
+                <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
+                <span className="flex-1 min-w-0">
+                  นับเฉพาะวันทำงาน ไม่นับวันหยุดบริษัทและวันหยุดนักขัตฤกษ์
+                </span>
+              </div>
+            )}
           </div>
-          <textarea
-            id="leave-reason"
-            value={reason}
-            maxLength={REASON_MAX_LENGTH}
-            onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-            rows={4}
-            placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
-            className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
-          />
-        </div>
         </div>
 
-        {/* ขวา: ติดต่อระหว่างลา + ไฟล์แนบ (กล่องลากวางยืดเต็มความสูงคอลัมน์) */}
-        <div className="flex flex-col gap-6 min-w-0">
+        {/* คอลัมน์ขวา: เหตุผล, ติดต่อระหว่างลา, ไฟล์แนบ */}
+        <div className="space-y-6 min-w-0 flex flex-col">
+          {/* 1. เหตุผล */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+              </label>
+              <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
+            </div>
+            <textarea
+              id="leave-reason"
+              value={reason}
+              maxLength={REASON_MAX_LENGTH}
+              onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+              rows={3}
+              placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
+              className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
+            />
+          </div>
+
+          {/* 2. ติดต่อระหว่างลา */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="leave-contact" className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
@@ -630,6 +704,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               className={inputCls}
             />
           </div>
+
+          {/* 3. ไฟล์แนบ */}
           <div className="flex-1 flex flex-col">
             <span id="leave-attachment-label" className={`${labelCls} flex items-center gap-1`}>
               ไฟล์แนบ{' '}
