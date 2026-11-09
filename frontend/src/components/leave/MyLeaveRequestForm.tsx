@@ -652,9 +652,56 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 text-xs">
-                  <Info className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
-                  <span>เลือกประเภทการลาเพื่อดูสิทธิ์คงเหลือ โควตา และเงื่อนไขการลา</span>
+                <div className="space-y-3.5">
+                  {/* หัวข้อด้านบน: (i) สิทธิ์และเงื่อนไขประเภทการลา */}
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full border-[1.5px] border-slate-400 dark:border-slate-500 flex items-center justify-center shrink-0">
+                      <span className="text-2xs font-bold text-slate-500 dark:text-slate-400 leading-none">i</span>
+                    </div>
+                    <h4 className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300">
+                      สิทธิ์และเงื่อนไขประเภทการลา
+                    </h4>
+                  </div>
+
+                  {/* 4 การ์ด: สิทธิ์ต่อปี, ลาไปแล้ว, ลาครั้งนี้, สิทธิ์คงเหลือ */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+                    {/* กล่อง 1: สิทธิ์ต่อปี */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between">
+                      <span className="text-2xs text-slate-400 dark:text-slate-500 font-medium">สิทธิ์ต่อปี</span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 mt-1">-</span>
+                    </div>
+
+                    {/* กล่อง 2: ลาไปแล้ว */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between">
+                      <span className="text-2xs text-slate-400 dark:text-slate-500 font-medium">ลาไปแล้ว</span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 mt-1">-</span>
+                    </div>
+
+                    {/* กล่อง 3: ลาครั้งนี้ */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between">
+                      <span className="text-2xs text-slate-500 dark:text-slate-400 font-medium">ลาครั้งนี้</span>
+                      <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 mt-1">
+                        {leaveDays} วัน
+                      </span>
+                    </div>
+
+                    {/* กล่อง 4: สิทธิ์คงเหลือ */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between">
+                      <span className="text-2xs text-slate-400 dark:text-slate-500 font-medium">สิทธิ์คงเหลือ</span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 mt-1">-</span>
+                    </div>
+                  </div>
+
+                  {/* หมวดเงื่อนไข */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="text-2xs sm:text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      เงื่อนไข
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <Info className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                      <span>กรุณาเลือกประเภทการลาเพื่อดูสิทธิ์คงเหลือ โควตา และเงื่อนไขการลา</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
