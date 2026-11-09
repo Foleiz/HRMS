@@ -679,10 +679,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
                     {/* กล่อง 3: ลาครั้งนี้ */}
                     <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-800 p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between">
-                      <span className="text-2xs text-slate-500 dark:text-slate-400 font-medium">ลาครั้งนี้</span>
-                      <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 mt-1">
-                        {leaveDays} วัน
-                      </span>
+                      <span className="text-2xs text-slate-400 dark:text-slate-500 font-medium">ลาครั้งนี้</span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-400 dark:text-slate-500 mt-1">-</span>
                     </div>
 
                     {/* กล่อง 4: สิทธิ์คงเหลือ */}
