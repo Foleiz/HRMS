@@ -538,9 +538,9 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           </p>
         </div>
 
-        {/* 2 วันที่ลา + รูปแบบ — จำนวนวันเป็นข้อความผลลัพธ์ ไม่ใช่ช่องกรอก */}
-        <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
-          <div className="shrink-0">
+        {/* 2 วันที่ลา + รูปแบบ — นับเป็นแถวเดียวกันตลอดเวลา ไม่ตกบรรทัดเมื่อย่อ/ขยาย Sidebar */}
+        <div className="flex items-start gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
             <span className={labelCls}>
               วันที่ลา <span className="text-rose-600">*</span>
             </span>
@@ -550,6 +550,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               startDate={startDate}
               endDate={endDate}
               disabledDates={bookedDates}
+              className="w-full"
               onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
             />
             {daysSummary ? (
@@ -564,8 +565,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             )}
           </div>
 
-          <fieldset className="shrink-0">
-            <legend className={labelCls}>รูปแบบ</legend>
+          <div className="shrink-0">
+            <span className={labelCls}>รูปแบบ</span>
             <div role="radiogroup" aria-label="รูปแบบการลา" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
               {([
                 ['FULL_DAY', 'เต็มวัน', Sun],
@@ -577,7 +578,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   role="radio"
                   aria-checked={leaveFormat === val}
                   onClick={() => setLeaveFormat(val)}
-                  className={`inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm transition-all cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
                     leaveFormat === val
                       ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-semibold shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 font-medium'
@@ -587,7 +588,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 </button>
               ))}
             </div>
-          </fieldset>
+          </div>
         </div>
 
         {/* 3 เหตุผล */}
