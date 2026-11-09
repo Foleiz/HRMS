@@ -3,7 +3,8 @@
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { TabBar, type TabBarItem, TablePagination, CountBadge } from '@/components/ui';
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import AccessDenied from '@/components/common/AccessDenied';
@@ -68,7 +69,7 @@ import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 
 const formatThaiDate = (dateStr: string) => fmtThaiDate(dateStr, 'numeric');
 
-export default function ReportsPage() {
+function ReportsPageContent() {
   const { hasPermission, hasRole } = useAuth();
   const toast = useToast();
   const toastRef = useRef(toast);
@@ -112,7 +113,17 @@ export default function ReportsPage() {
     if (canViewTax) return 'tax';
     return 'headcount';
   });
+  const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab');
+    if (tabParam === 'attendance') {
+      setActiveTab(canViewHeadcount ? 'headcount' : 'lateness');
+    } else if (tabParam && ['department', 'headcount', 'lateness', 'leave', 'turnover', 'tax'].includes(tabParam)) {
+      setActiveTab(tabParam as ReportTab);
+    }
+  }, [searchParams, canViewHeadcount]);
   // พื้นที่เนื้อหารายงาน (ใช้พิมพ์ / บันทึกเป็น PDF)
   const reportAreaRef = useRef<HTMLDivElement>(null);
 
@@ -510,22 +521,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* ─────────────────────────────────────────────────────────────
-          Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
-      ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <TabBar
-          aria-label="เมนูรายงาน"
-          items={([
-            canViewHeadcount ? { key: 'department', label: 'พนักงานแยกตามแผนก', onClick: () => setActiveTab('department') } : null,
-            (canViewHeadcount || canViewLateness) ? { key: 'attendance', label: 'การเข้าออกงาน', onClick: () => setActiveTab(canViewHeadcount ? 'headcount' : 'lateness') } : null,
-            canViewLeave ? { key: 'leave', label: 'การลา', onClick: () => setActiveTab('leave') } : null,
-            canViewTurnover ? { key: 'turnover', label: 'อัตราการลาออก', onClick: () => setActiveTab('turnover') } : null,
-            canViewTax ? { key: 'tax', label: 'ภาษีและประกันสังคม', onClick: () => setActiveTab('tax') } : null,
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'department') ? 'department' : ((activeTab === 'headcount' || activeTab === 'lateness')) ? 'attendance' : (activeTab === 'leave') ? 'leave' : (activeTab === 'turnover') ? 'turnover' : (activeTab === 'tax') ? 'tax' : null}
-        />
-      </div>
+
 
       {/* การเข้าออกงาน: สลับมุมมองรายวัน / รายเดือน */}
       {(activeTab === 'headcount' || activeTab === 'lateness') && (
@@ -1850,6 +1846,14 @@ export default function ReportsPage() {
       )}
       </div>
     </div>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ReportsPageContent />
+    </Suspense>
   );
 }
 

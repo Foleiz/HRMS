@@ -5,7 +5,8 @@ import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -36,7 +37,7 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
-export default function EssAttendancePage() {
+function EssAttendancePageContent() {
   const { user, hasPermission, hasRole } = useAuth();
   const toast = useToast();
   const { setBreadcrumb } = useBreadcrumb();
@@ -54,7 +55,19 @@ export default function EssAttendancePage() {
   // ─────────────────────────────────────────────────────────────
   // State: Data
   // ─────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>('history');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>(() => {
+    const tabParam = searchParams?.get('tab') as 'history' | 'adjustments';
+    if (tabParam && ['history', 'adjustments'].includes(tabParam)) return tabParam;
+    return 'history';
+  });
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab') as 'history' | 'adjustments';
+    if (tabParam && ['history', 'adjustments'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Sync breadcrumb with activeTab
   useEffect(() => {
@@ -432,19 +445,7 @@ export default function EssAttendancePage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* ─────────────────────────────────────────────────────────────
-          Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน)
-      ───────────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูเวลาทำงานของฉัน"
-          items={([
-            { key: 'history', label: 'ตรวจบันทึกเวลาของฉัน', onClick: () => setActiveTab('history') },
-            { key: 'adjustments', label: <><span>คำขอปรับปรุงเวลา</span> {pendingCount > 0 && ( <span className="px-1.5 py-0.5 text-2xs font-bold rounded-full bg-amber-500 text-white animate-pulse"> {pendingCount} </span> )}</>, onClick: () => setActiveTab('adjustments') },
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'history') ? 'history' : (activeTab === 'adjustments') ? 'adjustments' : null}
-        />
-      </div>
+
 
       {/* ─────────────────────────────────────────────────────────────
           4. TAB CONTENT: History & Monthly Summary
@@ -929,6 +930,14 @@ export default function EssAttendancePage() {
         </ModalShell>
       )}
     </div>
+  );
+}
+
+export default function EssAttendancePage() {
+  return (
+    <Suspense fallback={null}>
+      <EssAttendancePageContent />
+    </Suspense>
   );
 }
 

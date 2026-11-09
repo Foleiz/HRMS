@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
@@ -40,7 +40,9 @@ export default function AdminLayout({
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] dark:bg-slate-950 overflow-hidden font-sans text-slate-800 dark:text-slate-100 transition-colors duration-200">
-      <Sidebar />
+      <Suspense fallback={<aside className="hidden lg:flex w-64 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 shrink-0" />}>
+        <Sidebar />
+      </Suspense>
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Navbar />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">

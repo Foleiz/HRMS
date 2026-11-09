@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
@@ -29,9 +29,20 @@ import {
   X,
   Gift,
   Network,
+  ChevronDown,
 } from 'lucide-react';
 
-interface MenuItem {
+export interface SubMenuItem {
+  title: string;
+  href: string;
+  matchPrefix?: string;
+  /** สิทธิ์ที่ต้องมี (มีข้อใดข้อหนึ่ง หรือเป็น ADMIN) */
+  requiredPermissions?: string[];
+  /** บทบาทที่ต้องมี (มีข้อใดข้อหนึ่ง หรือเป็น ADMIN) */
+  requiredRoles?: string[];
+}
+
+export interface MenuItem {
   title: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -40,9 +51,10 @@ interface MenuItem {
   requiredPermissions?: string[];
   /** บทบาทที่ต้องมี (มีข้อใดข้อหนึ่ง หรือเป็น ADMIN) */
   requiredRoles?: string[];
+  children?: SubMenuItem[];
 }
 
-interface MenuGroup {
+export interface MenuGroup {
   category: string;
   items: MenuItem[];
 }
@@ -97,6 +109,10 @@ const menuGroups: MenuGroup[] = [
         matchPrefix: '/documents',
         icon: FileText,
         requiredPermissions: ['ESS_DOCS_VIEW'],
+        children: [
+          { title: 'รายการเอกสาร', href: '/documents' },
+          { title: 'ประวัติเอกสาร', href: '/documents/history' },
+        ],
       },
       {
         title: 'ยอดวันลาคงเหลือ',
@@ -118,6 +134,10 @@ const menuGroups: MenuGroup[] = [
         matchPrefix: '/ess/attendance',
         icon: Clock,
         requiredPermissions: ['ESS_TIME_VIEW'],
+        children: [
+          { title: 'ตรวจบันทึกเวลาของฉัน', href: '/ess/attendance' },
+          { title: 'คำขอปรับปรุงเวลา', href: '/ess/attendance?tab=adjustments' },
+        ],
       },
       {
         title: 'สวัสดิการของฉัน',
@@ -125,10 +145,13 @@ const menuGroups: MenuGroup[] = [
         matchPrefix: '/ess/benefits',
         icon: Gift,
         requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
+        children: [
+          { title: 'สวัสดิการของฉัน', href: '/ess/benefits', requiredPermissions: ['ESS_BENEFIT_VIEW'] },
+          { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์', href: '/ess/benefits/history', requiredPermissions: ['ESS_BENEFIT_CLAIM_VIEW'] },
+        ],
       },
     ],
   },
-
   {
     category: 'การเงินและค่าตอบแทน',
     items: [
@@ -149,6 +172,16 @@ const menuGroups: MenuGroup[] = [
           'PAYROLL_BANK_VIEW',
           'PAYROLL_TAX_VIEW',
           'PAYROLL_SLIP_VIEW',
+        ],
+        children: [
+          { title: 'รอบเงินเดือน', href: '/payroll?tab=periods', requiredPermissions: ['PAYROLL_PERIOD_VIEW'] },
+          { title: 'ฐานเงินเดือนพนักงาน', href: '/payroll?tab=structures', requiredPermissions: ['PAYROLL_STRUCTURE_VIEW'] },
+          { title: 'รายได้และรายหัก', href: '/payroll?tab=items', requiredPermissions: ['PAYROLL_ITEMS_VIEW'] },
+          { title: 'โบนัส', href: '/payroll?tab=bonus', requiredPermissions: ['PAYROLL_BONUS_VIEW'] },
+          { title: 'ค่าคอมมิชชั่น', href: '/payroll?tab=commission', requiredPermissions: ['PAYROLL_BONUS_VIEW', 'PAYROLL_VIEW', 'PAYROLL_HR_VIEW'] },
+          { title: 'ประมวลเงินเดือน', href: '/payroll?tab=process', requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_FINANCE_VIEW', 'PAYROLL_ADMIN_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_VIEW'] },
+          { title: 'กำหนดวันตัดรอบและจ่ายเงิน', href: '/payroll?tab=schedule-settings', requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_PERIOD_VIEW'] },
+          { title: 'ภาษีและประกันสังคม', href: '/payroll?tab=tax-sso', requiredPermissions: ['PAYROLL_TAX_VIEW'] },
         ],
       },
       {
@@ -176,6 +209,13 @@ const menuGroups: MenuGroup[] = [
           'EMP_DOC_VIEW',
           'EMP_HISTORY_VIEW',
         ],
+        children: [
+          { title: 'จัดการพนักงาน', href: '/employees', requiredPermissions: ['EMP_PROFILE_VIEW'] },
+          { title: 'ประเภทพนักงาน', href: '/employees/types', requiredPermissions: ['EMP_TYPE_VIEW'] },
+          { title: 'การย้ายแผนก/เลื่อนตำแหน่ง', href: '/employees/transfers', requiredPermissions: ['EMP_TRANSFER_VIEW'] },
+          { title: 'สัญญาจ้าง', href: '/employees/contracts', requiredPermissions: ['EMP_CONTRACT_VIEW'] },
+          { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', requiredPermissions: ['EMP_DOC_VIEW'] },
+        ],
       },
       {
         title: 'สวัสดิการ',
@@ -199,6 +239,16 @@ const menuGroups: MenuGroup[] = [
           'ORG_BENEFIT_VIEW',
           'ORG_COMP_VIEW',
         ],
+        children: [
+          { title: 'จัดการฝ่าย', href: '/organization?tab=divisions', requiredPermissions: ['ORG_STRUCT_VIEW'] },
+          { title: 'จัดการแผนก', href: '/organization?tab=departments', requiredPermissions: ['ORG_STRUCT_VIEW'] },
+          { title: 'จัดการทีม', href: '/organization?tab=teams', requiredPermissions: ['ORG_STRUCT_VIEW'] },
+          { title: 'จัดการตำแหน่ง', href: '/organization?tab=positions', requiredPermissions: ['ORG_POS_VIEW'] },
+          { title: 'ระดับพนักงาน', href: '/organization?tab=levels', requiredPermissions: ['ORG_POS_VIEW'] },
+          { title: 'สวัสดิการและสิทธิประโยชน์', href: '/organization?tab=benefits', requiredPermissions: ['ORG_BENEFIT_VIEW'] },
+          { title: 'ข้อมูลบริษัท', href: '/organization?tab=company', requiredPermissions: ['ORG_COMP_VIEW'] },
+          { title: 'บัญชีธนาคารบริษัท', href: '/organization?tab=bank-accounts', requiredPermissions: ['ORG_COMP_VIEW'] },
+        ],
       },
       {
         title: 'จัดการประกาศ',
@@ -221,6 +271,10 @@ const menuGroups: MenuGroup[] = [
           'TIME_DAILY_VIEW',
           'TIME_IMPORT_VIEW',
         ],
+        children: [
+          { title: 'ตรวจบันทึกเวลาประจำวัน', href: '/attendance/daily?tab=daily', requiredPermissions: ['TIME_DAILY_VIEW'] },
+          { title: 'นำเข้าไฟล์บันทึกเวลา', href: '/attendance/daily?tab=import', requiredPermissions: ['TIME_IMPORT_VIEW'] },
+        ],
       },
       {
         title: 'การจัดตารางงาน',
@@ -229,6 +283,10 @@ const menuGroups: MenuGroup[] = [
         icon: CalendarRange,
         requiredPermissions: [
           'TIME_SCHEDULE_VIEW',
+        ],
+        children: [
+          { title: 'มอบหมายกะให้พนักงาน', href: '/attendance/schedules?tab=roster', requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
+          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
         ],
       },
       {
@@ -241,6 +299,11 @@ const menuGroups: MenuGroup[] = [
           'LEAVE_TYPE_VIEW',
           'LEAVE_POLICY_VIEW',
         ],
+        children: [
+          { title: 'ประเภทการลา', href: '/leave?tab=types', requiredPermissions: ['LEAVE_TYPE_VIEW'] },
+          { title: 'สิทธิ์การลา', href: '/leave?tab=policies', requiredPermissions: ['LEAVE_POLICY_VIEW'] },
+          { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
+        ],
       },
       {
         title: 'วันทำงานและวันหยุด',
@@ -249,6 +312,10 @@ const menuGroups: MenuGroup[] = [
         icon: CalendarDays,
         requiredPermissions: [
           'WORK_CALENDAR_VIEW',
+        ],
+        children: [
+          { title: 'วันทำงานประจำสัปดาห์', href: '/work-calendar?tab=work-week', requiredPermissions: ['WORK_CALENDAR_VIEW'] },
+          { title: 'วันหยุดประจำปี', href: '/work-calendar?tab=holidays', requiredPermissions: ['WORK_CALENDAR_VIEW'] },
         ],
       },
     ],
@@ -271,6 +338,10 @@ const menuGroups: MenuGroup[] = [
           'APPROVAL_PAYROLL_VIEW',
           'APPROVAL_PAYROLL_APPROVE',
         ],
+        children: [
+          { title: 'เอกสารรอดำเนินการ', href: '/approvals/leave-requests' },
+          { title: 'ประวัติเอกสาร', href: '/approvals/history' },
+        ],
       },
       {
         title: 'รายงาน',
@@ -282,6 +353,13 @@ const menuGroups: MenuGroup[] = [
           'REPORT_ATT_VIEW',
           'REPORT_HEADCOUNT_VIEW',
           'REPORT_LEAVE_VIEW',
+        ],
+        children: [
+          { title: 'พนักงานแยกตามแผนก', href: '/reports?tab=department', requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
+          { title: 'การเข้าออกงาน', href: '/reports?tab=attendance', requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_VIEW'] },
+          { title: 'การลา', href: '/reports?tab=leave', requiredPermissions: ['REPORT_LEAVE_VIEW', 'REPORT_VIEW'] },
+          { title: 'อัตราการลาออก', href: '/reports?tab=turnover', requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
+          { title: 'ภาษีและประกันสังคม', href: '/reports?tab=tax', requiredPermissions: ['REPORT_VIEW'] },
         ],
       },
     ],
@@ -297,6 +375,15 @@ const menuGroups: MenuGroup[] = [
         requiredPermissions: [
           'MASTER_DATA_VIEW',
         ],
+        children: [
+          { title: 'ประเภทเอกสารแนบ', href: '/master?tab=document-types', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ประเภทหนังสือรับรอง', href: '/master?tab=certificate-types', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'สัญชาติ', href: '/master?tab=nationalities', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ศาสนา', href: '/master?tab=religions', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'สถานภาพสมรส', href: '/master?tab=marital-statuses', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'เพศ', href: '/master?tab=genders', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ธนาคาร', href: '/master?tab=banks', requiredPermissions: ['MASTER_DATA_VIEW'] },
+        ],
       },
       {
         title: 'ตั้งค่าระบบ',
@@ -308,6 +395,12 @@ const menuGroups: MenuGroup[] = [
           'SETTINGS_ROLES_VIEW',
           'SETTINGS_AUDIT_VIEW',
         ],
+        children: [
+          { title: 'ผู้ใช้งาน', href: '/settings?tab=users', requiredPermissions: ['SETTINGS_USERS_VIEW'] },
+          { title: 'บทบาทและสิทธิ์', href: '/settings?tab=roles', requiredPermissions: ['SETTINGS_ROLES_VIEW'] },
+          { title: 'บันทึกการใช้งานระบบ', href: '/settings?tab=audit-log', requiredPermissions: ['SETTINGS_AUDIT_VIEW'] },
+          { title: 'สายการอนุมัติ', href: '/settings?tab=approval-flows', requiredPermissions: ['SETTINGS_ROLES_VIEW', 'SETTINGS_USERS_VIEW'] },
+        ],
       },
     ],
   },
@@ -315,10 +408,13 @@ const menuGroups: MenuGroup[] = [
 
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { user, hasPermission, hasRole } = useAuth();
   const { isCollapsed, toggleSidebar, isMobileOpen, closeMobileSidebar } = useSidebar();
   const isDesktop = useIsDesktop();
   const [searchTerm, setSearchTerm] = useState('');
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
   const handleSelectMenu = () => {
     // Desktop: คงสถานะเมนูไว้ตามที่ผู้ใช้ตั้ง (ขยายค้างไว้), Mobile: ปิด drawer
@@ -328,87 +424,236 @@ export const Sidebar: React.FC = () => {
     setSearchTerm('');
   };
 
-  // กรองเมนูตามสิทธิ์ (RBAC: Permission & Role Data Scope)
-  const checkItemAccessible = (item: MenuItem) => {
-    // 1. หากยังไม่ล็อกอิน ให้ bypass/default
-    if (!user) return true;
+  // ตรวจสอบสิทธิ์สำหรับ SubMenuItem
+  const checkSubItemAccessible = useCallback(
+    (subItem: SubMenuItem): boolean => {
+      if (!user) return true;
+      if (hasRole('ADMIN') || hasRole('SYSTEM_SUPER')) return true;
 
-    // สำหรับเมนูตั้งค่าระบบ อนุญาตให้ผู้ดูแลระบบ (ADMIN หรือ SYSTEM_SUPER) เข้าได้เสมอเพื่อป้องกัน lockout
-    if (item.href === '/settings' && (hasRole('ADMIN') || hasRole('SYSTEM_SUPER'))) {
+      if (subItem.requiredRoles && subItem.requiredRoles.length > 0) {
+        const hasAnyRole = subItem.requiredRoles.some((role) => hasRole(role));
+        if (!hasAnyRole) return false;
+      }
+
+      if (subItem.requiredPermissions && subItem.requiredPermissions.length > 0) {
+        const hasAnyPermission = subItem.requiredPermissions.some((perm) => hasPermission(perm));
+        if (!hasAnyPermission) return false;
+      }
+
       return true;
-    }
+    },
+    [user, hasRole, hasPermission]
+  );
 
-    // หากเป็นเมนูแดชบอร์ด ต้องมีสิทธิ์อย่างน้อย 1 สิทธิ์ขึ้นไป (ถ้าไม่มีสิทธิ์ใดๆ เลย จะไม่แสดงแดชบอร์ด)
-    if (item.href === '/') {
-      const hasAnyPerm = Boolean(user.permissions && user.permissions.length > 0);
-      if (!hasAnyPerm) return false;
-    }
+  // กรองเมนูตามสิทธิ์ (RBAC: Permission & Role Data Scope)
+  const checkItemAccessible = useCallback(
+    (item: MenuItem): boolean => {
+      if (!user) return true;
 
-    // 2. ตรวจสอบ Role ถ้ามีการกำหนด
-    if (item.requiredRoles && item.requiredRoles.length > 0) {
-      const hasAnyRole = item.requiredRoles.some((role) => hasRole(role));
-      if (!hasAnyRole) return false;
-    }
+      // สำหรับเมนูตั้งค่าระบบ อนุญาตให้ผู้ดูแลระบบ (ADMIN หรือ SYSTEM_SUPER) เข้าได้เสมอเพื่อป้องกัน lockout
+      if (item.href === '/settings' && (hasRole('ADMIN') || hasRole('SYSTEM_SUPER'))) {
+        return true;
+      }
 
-    // 3. ตรวจสอบ Permission ถ้ามีการกำหนด
-    if (item.requiredPermissions && item.requiredPermissions.length > 0) {
-      const hasAnyPermission = item.requiredPermissions.some((perm) => hasPermission(perm));
-      if (!hasAnyPermission) return false;
-    }
+      // หากเป็นเมนูแดชบอร์ด ต้องมีสิทธิ์อย่างน้อย 1 สิทธิ์ขึ้นไป
+      if (item.href === '/') {
+        const hasAnyPerm = Boolean(user.permissions && user.permissions.length > 0);
+        if (!hasAnyPerm) return false;
+      }
 
-    return true;
+      // ตรวจสอบ Role
+      if (item.requiredRoles && item.requiredRoles.length > 0) {
+        const hasAnyRole = item.requiredRoles.some((role) => hasRole(role));
+        if (!hasAnyRole) return false;
+      }
+
+      // ตรวจสอบ Permission
+      if (item.requiredPermissions && item.requiredPermissions.length > 0) {
+        const hasAnyPermission = item.requiredPermissions.some((perm) => hasPermission(perm));
+        if (!hasAnyPermission) return false;
+      }
+
+      return true;
+    },
+    [user, hasRole, hasPermission]
+  );
+
+  // กรองเมนูหลักและเมนูย่อยตามสิทธิ์และคำค้นหา
+  const filteredGroups = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+
+    return menuGroups
+      .map((group) => {
+        const accessibleGroupItems = group.items
+          .filter(checkItemAccessible)
+          .map((item) => {
+            // กรอง children ตามสิทธิ์
+            const accessibleChildren = item.children
+              ? item.children.filter(checkSubItemAccessible)
+              : undefined;
+
+            return {
+              ...item,
+              children: accessibleChildren,
+            };
+          });
+
+        const matchedItems = accessibleGroupItems.filter((item) => {
+          if (!term) return true;
+          const parentMatches = item.title.toLowerCase().includes(term);
+          const childMatches = item.children?.some((child) =>
+            child.title.toLowerCase().includes(term)
+          );
+          return parentMatches || Boolean(childMatches);
+        });
+
+        return {
+          ...group,
+          items: matchedItems,
+        };
+      })
+      .filter((group) => group.items.length > 0);
+  }, [checkItemAccessible, checkSubItemAccessible, searchTerm]);
+
+  // Flatten accessible items
+  const allAccessibleItems = useMemo(() => {
+    return filteredGroups.flatMap((g) => g.items);
+  }, [filteredGroups]);
+
+  // ตรวจสอบว่า SubMenuItem นั้นกำลัง Active หรือไม่
+  const isChildActive = useCallback(
+    (child: SubMenuItem) => {
+      const [childPath, childQuery] = child.href.split('?');
+
+      if (childQuery) {
+        if (pathname !== childPath) return false;
+        const childParams = new URLSearchParams(childQuery);
+        const childTab = childParams.get('tab');
+        const currentTab = searchParams.get('tab');
+
+        if (currentTab) {
+          if (currentTab === childTab) return true;
+          // Special matching for reports: attendance matches headcount or lateness
+          if (childTab === 'attendance' && (currentTab === 'headcount' || currentTab === 'lateness')) {
+            return true;
+          }
+          return false;
+        }
+
+        // กรณีไม่มี ?tab ใน URL ให้จับคู่กับ Default Tab ของแต่ละหน้า
+        if (childPath === '/settings' && childTab === 'users') return true;
+        if (childPath === '/organization' && childTab === 'divisions') return true;
+        if (childPath === '/payroll' && (childTab === 'periods' || childTab === 'process')) return true;
+        if (childPath === '/attendance/daily' && childTab === 'daily') return true;
+        if (childPath === '/attendance/schedules' && childTab === 'roster') return true;
+        if (childPath === '/leave' && childTab === 'types') return true;
+        if (childPath === '/work-calendar' && childTab === 'work-week') return true;
+        if (childPath === '/reports' && childTab === 'department') return true;
+        if (childPath === '/master' && childTab === 'document-types') return true;
+        if (childPath === '/ess/attendance' && childTab === 'history') return true;
+        return false;
+      }
+
+      // กรณีเป็น Clean Route ที่ไม่มี query string
+      if (child.href === '/employees') {
+        return pathname === '/employees' || pathname.match(/^\/employees\/\d+/) !== null;
+      }
+      if (child.href === '/documents') {
+        return pathname === '/documents' || (pathname.startsWith('/documents/') && !pathname.startsWith('/documents/history'));
+      }
+      if (child.href === '/approvals/leave-requests') {
+        return pathname === '/approvals/leave-requests' || pathname === '/approvals';
+      }
+      if (child.href === '/ess/attendance') {
+        const currentTab = searchParams.get('tab');
+        return pathname === '/ess/attendance' && (!currentTab || currentTab === 'history');
+      }
+      return pathname === child.href || pathname.startsWith(`${child.href}/`);
+    },
+    [pathname, searchParams]
+  );
+
+  // ตรวจสอบสถานะ Active ของเมนูเดี่ยว (ไม่มีลูก)
+  const isSingleItemActive = useCallback(
+    (item: MenuItem) => {
+      if (item.href === '/' && pathname === '/') return true;
+      if (!item.matchPrefix || !pathname.startsWith(item.matchPrefix)) return false;
+
+      const matches = allAccessibleItems.filter((i) => i.matchPrefix && pathname.startsWith(i.matchPrefix));
+      if (matches.length === 0) return false;
+      const longestMatch = matches.reduce((a, b) => ((b.matchPrefix?.length ?? 0) > (a.matchPrefix?.length ?? 0) ? b : a));
+      return longestMatch.href === item.href;
+    },
+    [allAccessibleItems, pathname]
+  );
+
+  // ตรวจสอบว่าเมนูหลัก (Parent) กำลังอยู่ในสถานะ Active หรือไม่ (ถ้ามีลูกตัวใดตัวหนึ่ง active)
+  const isParentActive = useCallback(
+    (item: MenuItem) => {
+      if (item.children && item.children.length > 0) {
+        return item.children.some(isChildActive);
+      }
+      return isSingleItemActive(item);
+    },
+    [isChildActive, isSingleItemActive]
+  );
+
+  // Auto-expand เมนูที่มีลูก active หรือตรงกับคำค้นหา
+  useEffect(() => {
+    allAccessibleItems.forEach((item) => {
+      if (item.children && item.children.length > 0) {
+        const hasActiveChild = item.children.some(isChildActive);
+        if (hasActiveChild) {
+          setOpenMenus((prev) => ({ ...prev, [item.title]: true }));
+        }
+      }
+    });
+  }, [pathname, searchParams, allAccessibleItems, isChildActive]);
+
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      allAccessibleItems.forEach((item) => {
+        if (item.children && item.children.length > 0) {
+          const hasMatchingChild = item.children.some((c) =>
+            c.title.toLowerCase().includes(term)
+          );
+          if (hasMatchingChild) {
+            setOpenMenus((prev) => ({ ...prev, [item.title]: true }));
+          }
+        }
+      });
+    }
+  }, [searchTerm, allAccessibleItems]);
+
+  const toggleMenu = (title: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpenMenus((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
   };
 
-  // Grouped & Filtered by RBAC and Search Term
-  const filteredGroups = menuGroups
-    .map((group) => {
-      const accessibleGroupItems = group.items.filter(checkItemAccessible);
-      const matchedItems = accessibleGroupItems.filter((item) =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase().trim())
-      );
-      return {
-        ...group,
-        items: matchedItems,
-      };
-    })
-    .filter((group) => group.items.length > 0);
-
-  // Flatten accessible items for isActive calculation
-  const allAccessibleItems = menuGroups
-    .flatMap((g) => g.items)
-    .filter(checkItemAccessible);
-
-  const isActive = (item: MenuItem) => {
-    if (item.href === '/' && pathname === '/') return true;
-    if (!item.matchPrefix || !pathname.startsWith(item.matchPrefix)) return false;
-
-    // ป้องกันกรณี matchPrefix ซ้อนกัน — ให้ยึดเมนูที่ prefix ตรงกับ pathname มากที่สุด (ยาวที่สุด) เป็นตัวไฮไลต์เพียงอันเดียว
-    const matches = allAccessibleItems.filter((i) => i.matchPrefix && pathname.startsWith(i.matchPrefix));
-    if (matches.length === 0) return false;
-    const longestMatch = matches.reduce((a, b) => ((b.matchPrefix?.length ?? 0) > (a.matchPrefix?.length ?? 0) ? b : a));
-    return longestMatch.href === item.href;
+  const handleParentClick = (item: MenuItem, e: React.MouseEvent) => {
+    if (item.children && item.children.length > 0) {
+      if (isCollapsed && isDesktop) {
+        toggleSidebar();
+      } else {
+        setOpenMenus((prev) => ({
+          ...prev,
+          [item.title]: !prev[item.title],
+        }));
+      }
+    } else {
+      handleSelectMenu();
+    }
   };
 
   const resolveItemHref = (item: MenuItem) => {
-    if (item.href === '/employees') {
-      if (hasPermission('EMP_PROFILE_VIEW')) return '/employees';
-      if (hasPermission('EMP_CONTRACT_VIEW')) return '/employees/contracts';
-      if (hasPermission('EMP_TRANSFER_VIEW')) return '/employees/transfers';
-      if (hasPermission('EMP_TYPE_VIEW')) return '/employees/types';
-      if (hasPermission('EMP_DOC_VIEW')) return '/employees/documents';
-    }
-    if (item.href === '/attendance/daily') {
-      if (hasPermission('TIME_DAILY_VIEW')) return '/attendance/daily';
-      if (hasPermission('TIME_IMPORT_VIEW')) return '/attendance/daily?tab=import';
-    }
-    if (item.href === '/payroll') {
-      if (hasPermission('PAYROLL_PERIOD_VIEW')) return '/payroll?tab=periods';
-      if (hasPermission('PAYROLL_HR_VIEW') || hasPermission('PAYROLL_FINANCE_VIEW') || hasPermission('PAYROLL_ADMIN_VIEW') || hasPermission('PAYROLL_CALC_VIEW') || hasPermission('PAYROLL_VIEW')) return '/payroll';
-      if (hasPermission('PAYROLL_STRUCTURE_VIEW')) return '/payroll?tab=structures';
-      if (hasPermission('PAYROLL_ITEMS_VIEW')) return '/payroll?tab=items';
-      if (hasPermission('PAYROLL_BONUS_VIEW')) return '/payroll?tab=bonus';
-      if (hasPermission('PAYROLL_BANK_VIEW')) return '/payroll?tab=bank-transfer';
-      if (hasPermission('PAYROLL_TAX_VIEW')) return '/payroll?tab=tax-sso';
+    if (item.children && item.children.length > 0) {
+      const firstAccessible = item.children.find(checkSubItemAccessible);
+      return firstAccessible ? firstAccessible.href : item.href;
     }
     return item.href;
   };
@@ -420,7 +665,7 @@ export const Sidebar: React.FC = () => {
       <div className={`h-20 flex items-center border-b border-slate-100/80 transition-all duration-300 ease-in-out ${isCollapsed && isDesktop ? 'justify-center px-0' : 'justify-between px-5'}`}>
         <div className={`flex items-center overflow-hidden transition-all duration-300 ease-in-out ${isCollapsed && isDesktop ? 'w-0 opacity-0 pointer-events-none' : 'w-auto opacity-100'}`}>
           <Link href="/" onClick={handleSelectMenu} className="flex items-center gap-3 overflow-hidden">
-            {/* Logo Badge Icon (3 avatars in navy square) */}
+            {/* Logo Badge Icon */}
             <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-md shadow-primary/20 shrink-0 transition-transform duration-200 hover:scale-105">
               <Users className="w-5 h-5" />
             </div>
@@ -502,9 +747,84 @@ export const Sidebar: React.FC = () => {
 
             {/* Menu Items */}
             {group.items.map((item) => {
-              const active = isActive(item);
+              const hasChildren = Boolean(item.children && item.children.length > 0);
+              const parentActive = isParentActive(item);
+              const isOpen = openMenus[item.title] ?? false;
               const Icon = item.icon;
 
+              if (hasChildren) {
+                return (
+                  <div key={item.href} className="space-y-0.5">
+                    {/* Parent Menu Row with Expand/Collapse */}
+                    <div
+                      onClick={(e) => handleParentClick(item, e)}
+                      title={isCollapsed && isDesktop ? item.title : undefined}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.99] ${
+                        parentActive
+                          ? 'bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300 font-semibold'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100'
+                      } ${isCollapsed && isDesktop ? 'justify-center px-0 py-2.5' : ''}`}
+                    >
+                      <div className={`flex items-center ${isCollapsed && isDesktop ? 'justify-center' : 'gap-3.5 min-w-0'}`}>
+                        <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-200 ${parentActive ? 'text-primary dark:text-blue-400 scale-105' : 'text-slate-500 dark:text-slate-400'}`} />
+                        <span
+                          className={`truncate transition-all duration-300 ease-in-out whitespace-nowrap ${
+                            isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[150px] opacity-100 translate-x-0'
+                          }`}
+                        >
+                          {item.title}
+                        </span>
+                      </div>
+
+                      {(!isCollapsed || !isDesktop) && (
+                        <button
+                          type="button"
+                          onClick={(e) => toggleMenu(item.title, e)}
+                          title={isOpen ? 'ย่อเมนูย่อย' : 'ขยายเมนูย่อย'}
+                          className="p-1 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+                        >
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              isOpen ? 'rotate-180 text-primary dark:text-blue-400' : ''
+                            }`}
+                          />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Submenu Items List */}
+                    {(!isCollapsed || !isDesktop) && isOpen && item.children && (
+                      <div className="pl-5 pr-1 py-1 space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 ml-5 my-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                        {item.children.map((child) => {
+                          const childActive = isChildActive(child);
+                          return (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={handleSelectMenu}
+                              className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 ${
+                                childActive
+                                  ? 'text-primary dark:text-blue-300 font-bold bg-primary/10 dark:bg-primary/25 shadow-2xs'
+                                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                                  childActive ? 'bg-primary dark:bg-blue-400 scale-125' : 'bg-slate-300 dark:bg-slate-600'
+                                }`}
+                              />
+                              <span className="truncate">{child.title}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // Single Item without children
+              const active = isSingleItemActive(item);
               return (
                 <Link
                   key={item.href}
@@ -514,10 +834,10 @@ export const Sidebar: React.FC = () => {
                   className={`flex items-center px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ease-out active:scale-[0.98] ${
                     active
                       ? 'bg-primary text-white shadow-xs font-semibold'
-                      : 'text-slate-600 hover:bg-slate-100/80 hover:text-slate-900 hover:translate-x-0.5'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 hover:translate-x-0.5'
                   } ${isCollapsed && isDesktop ? 'justify-center px-0 py-2.5' : 'gap-3.5'}`}
                 >
-                  <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-200 ${active ? 'text-white scale-105' : 'text-slate-500'}`} />
+                  <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform duration-200 ${active ? 'text-white scale-105' : 'text-slate-500 dark:text-slate-400'}`} />
                   <span
                     className={`truncate transition-all duration-300 ease-in-out whitespace-nowrap ${
                       isCollapsed && isDesktop ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none' : 'max-w-[160px] opacity-100 translate-x-0'
@@ -538,7 +858,7 @@ export const Sidebar: React.FC = () => {
     <>
       {/* ===== Desktop Sidebar: Static flex child, hidden on mobile ===== */}
       <aside
-        className={`hidden lg:flex bg-white border-r border-slate-200/80 flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
+        className={`hidden lg:flex bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex-col shrink-0 transition-all duration-300 ease-in-out z-20 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
@@ -559,7 +879,7 @@ export const Sidebar: React.FC = () => {
 
           {/* Drawer panel */}
           <aside
-            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out lg:hidden ${
               isMobileOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
           >
@@ -570,4 +890,3 @@ export const Sidebar: React.FC = () => {
     </>
   );
 };
-

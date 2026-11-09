@@ -125,6 +125,13 @@ function DailyAttendanceContent() {
     }
   }, [canViewDaily, canViewImport, activeTab]);
 
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as 'daily' | 'import' | 'monthly';
+    if (tabParam && ['daily', 'import', 'monthly'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   // Sync breadcrumb with activeTab
   useEffect(() => {
     const getPageTitle = () => {
@@ -1118,20 +1125,7 @@ function DailyAttendanceContent() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* ------------------------------------------------------------- */}
-      {/* ------------------------------------------------------------- */}
-      {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <TabBar
-          aria-label="เมนูลงเวลา"
-          items={([
-            canViewDaily ? { key: 'daily', label: 'ตรวจบันทึกเวลาประจำวัน', onClick: () => handleTabChange('daily') } : null,
-            canViewImport ? { key: 'import', label: 'นำเข้าไฟล์บันทึกเวลา', onClick: () => handleTabChange('import') } : null,
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'daily') ? 'daily' : (activeTab === 'import') ? 'import' : null}
-        />
-      </div>
+
 
       {/* ========================================================= */}
       {/* TAB 1: ตรวจบันทึกเวลาประจำวัน (DAILY ATTENDANCE) */}

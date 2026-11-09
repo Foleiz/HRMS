@@ -156,15 +156,7 @@ export default function TransfersPage() {
 
   return (
     <div className="space-y-5 font-sans pb-12">
-      {/* 1. Sub-Navigation Tabs ตรงตาม Design System */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <TabBar
-          aria-label="เมนูพนักงาน"
-          memoryKey="employees-subnav"
-          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href }))}
-          activeKey={subNavTabs.find((t) => t.active)?.href}
-        />
-      </div>
+
 
       {/* 2. Top Section: 3 Stat KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

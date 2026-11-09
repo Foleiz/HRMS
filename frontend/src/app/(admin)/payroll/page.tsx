@@ -2345,15 +2345,7 @@ export default function PayrollPage() {
     <div className="space-y-5 animate-in fade-in duration-200">
 
 
-      {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูเงินเดือน"
-          items={visibleNavTabs.map((t) => ({ key: t.id, label: t.label }))}
-          activeKey={activeTab}
-          onChange={(k) => setActiveTab(k as typeof activeTab)}
-        />
-      </div>
+
 
 
 

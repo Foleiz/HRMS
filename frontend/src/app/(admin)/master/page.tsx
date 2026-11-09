@@ -76,6 +76,13 @@ export default function MasterDataHubPage() {
 
   const initialTab = (searchParams.get('tab') as MasterTab) || 'document-types';
   const [activeTab, setActiveTab] = useState<MasterTab>(initialTab);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as MasterTab;
+    if (tabParam && ['document-types', 'certificate-types', 'nationalities', 'religions', 'marital-statuses', 'genders', 'banks'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState<number>(1);
@@ -414,22 +421,7 @@ export default function MasterDataHubPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* 1. Sub-Navigation Tabs */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูข้อมูลหลัก"
-          items={[
-            { key: 'document-types', label: 'ประเภทเอกสารแนบ', onClick: () => setActiveTab('document-types') },
-            { key: 'certificate-types', label: 'ประเภทหนังสือรับรอง', onClick: () => setActiveTab('certificate-types') },
-            { key: 'nationalities', label: 'สัญชาติ', onClick: () => setActiveTab('nationalities') },
-            { key: 'religions', label: 'ศาสนา', onClick: () => setActiveTab('religions') },
-            { key: 'marital-statuses', label: 'สถานภาพสมรส', onClick: () => setActiveTab('marital-statuses') },
-            { key: 'genders', label: 'เพศ', onClick: () => setActiveTab('genders') },
-            { key: 'banks', label: 'ธนาคาร', onClick: () => setActiveTab('banks') },
-          ]}
-          activeKey={activeTab}
-        />
-      </div>
+
 
       {/* 2. Main Card Container (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">

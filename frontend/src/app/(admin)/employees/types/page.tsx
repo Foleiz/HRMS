@@ -282,15 +282,7 @@ export default function EmployeeTypesPage() {
 
   return (
     <div className="space-y-5 font-sans pb-12">
-      {/* 1. Sub-Navigation Tabs matching Design System */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <TabBar
-          aria-label="เมนูพนักงาน"
-          memoryKey="employees-subnav"
-          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href }))}
-          activeKey={subNavTabs.find((t) => t.active)?.href}
-        />
-      </div>
+
 
       {/* 2. Notifications Alert */}
       {successMessage && (

@@ -1,7 +1,8 @@
 'use client';
 
 import { ModalShell, TabBar, type TabBarItem } from '@/components/ui';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Building2,
   GitFork,
@@ -119,7 +120,8 @@ function CompanySectionTitle({ icon: Icon, title }: { icon: React.ElementType; t
   );
 }
 
-export default function OrganizationPage() {
+function OrganizationPageContent() {
+  const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
@@ -180,7 +182,7 @@ export default function OrganizationPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const tabParam = new URLSearchParams(window.location.search).get('tab') as TabType;
+      const tabParam = searchParams.get('tab') as TabType;
       // แผนผังองค์กรย้ายไปเป็นเมนูของตัวเองใน sidebar แล้ว — ลิงก์เก่าพาไปหน้าใหม่
       if ((tabParam as string) === 'orgchart') {
         window.location.replace('/org-chart');
@@ -190,7 +192,7 @@ export default function OrganizationPage() {
         setActiveTab(tabParam);
       }
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     setBreadcrumb({
@@ -1154,23 +1156,7 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Sub Navigation Bar - Standardized to Employee Module */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <TabBar
-          aria-label="เมนูองค์กร"
-          items={([
-            canViewStruct ? { key: 'divisions', label: 'จัดการฝ่าย', onClick: () => handleTabClick('divisions') } : null,
-            canViewStruct ? { key: 'departments', label: 'จัดการแผนก', onClick: () => handleTabClick('departments') } : null,
-            canViewStruct ? { key: 'teams', label: 'จัดการทีม', onClick: () => handleTabClick('teams') } : null,
-            canViewPos ? { key: 'positions', label: 'จัดการตำแหน่ง', onClick: () => handleTabClick('positions') } : null,
-            canViewPos ? { key: 'levels', label: 'ระดับพนักงาน', onClick: () => handleTabClick('levels') } : null,
-            canViewBenefits ? { key: 'benefits', label: 'สวัสดิการและสิทธิประโยชน์', onClick: () => handleTabClick('benefits') } : null,
-            canViewCompany ? { key: 'company', label: 'ข้อมูลบริษัท', onClick: () => handleTabClick('company') } : null,
-            canViewCompany ? { key: 'bank-accounts', label: 'บัญชีธนาคารบริษัท', onClick: () => handleTabClick('bank-accounts') } : null,
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'divisions') ? 'divisions' : (activeTab === 'departments') ? 'departments' : (activeTab === 'teams') ? 'teams' : (activeTab === 'positions') ? 'positions' : (activeTab === 'levels') ? 'levels' : (activeTab === 'benefits') ? 'benefits' : (activeTab === 'company') ? 'company' : (activeTab === 'bank-accounts') ? 'bank-accounts' : null}
-        />
-      </div>
+
 
       {/* 4. Tab Content Panels */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
@@ -2798,6 +2784,14 @@ export default function OrganizationPage() {
         isLoading={savingCompany}
       />
     </div>
+  );
+}
+
+export default function OrganizationPage() {
+  return (
+    <Suspense fallback={null}>
+      <OrganizationPageContent />
+    </Suspense>
   );
 }
 

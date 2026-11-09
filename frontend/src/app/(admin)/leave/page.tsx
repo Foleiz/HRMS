@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Plus,
   Edit2,
@@ -55,7 +56,7 @@ import { EmployeeAccordionItem } from '@/components/common/EmployeeAccordionItem
 
 type ActiveTab = 'types' | 'policies' | 'balances';
 
-export default function LeaveManagementPage() {
+function LeaveManagementPageContent() {
   const { hasPermission, hasRole } = useAuth();
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canViewTypes = hasPermission('LEAVE_TYPE_VIEW') || hasPermission('LEAVE_VIEW') || isSuper;
@@ -79,8 +80,20 @@ export default function LeaveManagementPage() {
     ? 'balances'
     : 'types';
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>(defaultTab);
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    const tabParam = searchParams?.get('tab') as ActiveTab;
+    if (tabParam && ['types', 'policies', 'balances'].includes(tabParam)) return tabParam;
+    return defaultTab;
+  });
   const { setBreadcrumb } = useBreadcrumb();
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab') as ActiveTab;
+    if (tabParam && ['types', 'policies', 'balances'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   // Sync breadcrumb with activeTab
   useEffect(() => {
@@ -489,18 +502,7 @@ export default function LeaveManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Sub-Navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูการลา"
-          items={([
-            canViewTypes ? { key: 'types', label: 'ประเภทการลา', onClick: () => setActiveTab('types') } : null,
-            canViewPolicies ? { key: 'policies', label: 'สิทธิ์การลา', onClick: () => setActiveTab('policies') } : null,
-            canViewBalances ? { key: 'balances', label: 'ยอดวันลาพนักงาน', onClick: () => setActiveTab('balances') } : null,
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'types') ? 'types' : (activeTab === 'policies') ? 'policies' : (activeTab === 'balances') ? 'balances' : null}
-        />
-      </div>
+
 
       {/* Main Card */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm overflow-hidden">
@@ -1009,5 +1011,13 @@ export default function LeaveManagementPage() {
         isLoading={confirmConfig.isLoading}
       />
     </div>
+  );
+}
+
+export default function LeaveManagementPage() {
+  return (
+    <Suspense fallback={null}>
+      <LeaveManagementPageContent />
+    </Suspense>
   );
 }

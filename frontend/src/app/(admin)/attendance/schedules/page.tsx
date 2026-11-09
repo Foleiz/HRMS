@@ -203,6 +203,13 @@ function SchedulesContent() {
     ['roster', 'shifts'].includes(initialTab) ? initialTab : 'roster'
   );
 
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabKey;
+    if (tabParam && ['roster', 'shifts'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
   if (!canViewSchedules) {
     return (
       <AccessDenied
@@ -1072,19 +1079,7 @@ function SchedulesContent() {
 
   return (
     <div className="space-y-6">
-      {/* ------------------------------------------------------------- */}
-      {/* Sub-menu Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      {/* ------------------------------------------------------------- */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <TabBar
-          aria-label="เมนูตารางกะ"
-          items={([
-            { key: 'roster', label: 'มอบหมายกะให้พนักงาน', onClick: () => handleTabChange('roster') },
-            { key: 'shifts', label: 'กะการทำงาน', onClick: () => handleTabChange('shifts') },
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'roster') ? 'roster' : (activeTab === 'shifts') ? 'shifts' : null}
-        />
-      </div>
+
 
       {/* ============================================================= */}
       {/* TAB 1: มอบหมายกะให้พนักงาน (Shift Roster) */}

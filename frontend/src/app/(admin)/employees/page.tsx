@@ -717,16 +717,6 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma & Mockup) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูพนักงาน"
-          memoryKey="employees-subnav"
-          items={subNavTabs.map((t) => ({ key: t.href, label: t.title, href: t.href, onClick: () => setActiveTab(t.title) }))}
-          activeKey={subNavTabs.find((t) => t.title === activeTab)?.href}
-        />
-      </div>
-
       {/* 2. Main Content Card (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">

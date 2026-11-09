@@ -1,7 +1,8 @@
 'use client';
 
 import { TabBar, type TabBarItem } from '@/components/ui';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Users, Shield, History, ArrowLeft, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/context/ToastContext';
@@ -37,7 +38,8 @@ type TabType = 'users' | 'roles' | 'audit-log' | 'approval-flows';
 let initialUsersCache: { items: UserAccount[]; totalCount: number } | null = null;
 let initialRolesCache: RoleSummary[] | null = null;
 
-export default function SettingsPage() {
+function SettingsPageContent() {
+  const searchParams = useSearchParams();
   const { success, error, info } = useToast();
   const { user, hasPermission, hasRole, refreshProfile } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
@@ -81,14 +83,11 @@ export default function SettingsPage() {
 
   // Support URL query param e.g. /settings?tab=approval-flows
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab') as TabType;
-      if (tabParam && ['users', 'roles', 'audit-log', 'approval-flows'].includes(tabParam)) {
-        setActiveTab(tabParam);
-      }
+    const tabParam = searchParams.get('tab') as TabType;
+    if (tabParam && ['users', 'roles', 'audit-log', 'approval-flows'].includes(tabParam)) {
+      setActiveTab(tabParam);
     }
-  }, []);
+  }, [searchParams]);
 
   // Auto switch tab if current active tab is not permitted
   useEffect(() => {
@@ -474,19 +473,7 @@ export default function SettingsPage() {
 
   return (
     <div className={`space-y-4 font-sans ${activeTab === 'roles' ? 'pb-2' : 'pb-12'}`}>
-      {/* 1. Sub-Navigation Tabs (ตรงตามรูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 -mt-2 rounded-t-2xl">
-        <TabBar
-          aria-label="เมนูตั้งค่า"
-          items={([
-            canViewUsersTab ? { key: 'users', label: 'ผู้ใช้งาน', onClick: () => setActiveTab('users') } : null,
-            canViewRolesTab ? { key: 'roles', label: 'บทบาทและสิทธิ์', onClick: () => setActiveTab('roles') } : null,
-            canViewAuditLogTab ? { key: 'audit-log', label: 'บันทึกการใช้งานระบบ', onClick: () => setActiveTab('audit-log') } : null,
-            canViewApprovalFlowsTab ? { key: 'approval-flows', label: 'สายการอนุมัติ', onClick: () => setActiveTab('approval-flows') } : null,
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'users') ? 'users' : (activeTab === 'roles') ? 'roles' : (activeTab === 'audit-log') ? 'audit-log' : (activeTab === 'approval-flows') ? 'approval-flows' : null}
-        />
-      </div>
+
 
       {/* 3. Tab Content */}
       {!canViewUsersTab && !canViewRolesTab && !canViewAuditLogTab && !canViewApprovalFlowsTab ? (
@@ -662,5 +649,13 @@ export default function SettingsPage() {
         cancelText="ยกเลิก"
       />
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPageContent />
+    </Suspense>
   );
 }

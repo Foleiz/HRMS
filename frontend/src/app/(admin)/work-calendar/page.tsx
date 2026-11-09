@@ -4,7 +4,8 @@ import { ModalHeader } from '@/components/ui/ModalHeader';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { ModalShell, Button, TabBar, type TabBarItem , TableToolbar } from '@/components/ui';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Calendar,
   CalendarDays,
@@ -231,6 +232,14 @@ function HolidayYearCalendar({
 }
 
 export default function WorkCalendarPage() {
+  return (
+    <Suspense fallback={null}>
+      <WorkCalendarPageContent />
+    </Suspense>
+  );
+}
+
+function WorkCalendarPageContent() {
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const { hasPermission, hasRole } = useAuth();
@@ -239,7 +248,19 @@ export default function WorkCalendarPage() {
   const canCreateCalendar = hasPermission('WORK_CALENDAR_CREATE') || isSuper;
   const canEditCalendar = hasPermission('WORK_CALENDAR_EDIT') || isSuper;
 
-  const [activeTab, setActiveTab] = useState<TabType>('work-week');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tabParam = searchParams?.get('tab') as TabType;
+    if (tabParam && ['work-week', 'holidays'].includes(tabParam)) return tabParam;
+    return 'work-week';
+  });
+
+  useEffect(() => {
+    const tabParam = searchParams?.get('tab') as TabType;
+    if (tabParam && ['work-week', 'holidays'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   const [loading, setLoading] = useState(true);
   const calendarPhase = useLoadPhase(loading);
   const [saving, setSaving] = useState(false);
@@ -424,17 +445,7 @@ export default function WorkCalendarPage() {
 
   return (
     <div className="space-y-6">
-      {/* 1. Sub-navigation Tabs (รูปแบบเดียวกับเมนูพนักงาน) */}
-      <div className="border-b border-slate-200 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl dark:border-slate-700 dark:bg-slate-900">
-        <TabBar
-          aria-label="เมนูปฏิทินการทำงาน"
-          items={([
-            { key: 'work-week', label: 'วันทำงานประจำสัปดาห์', onClick: () => { setActiveTab('work-week'); setSearchQuery(''); } },
-            { key: 'holidays', label: 'วันหยุดประจำปี', onClick: () => { setActiveTab('holidays'); setSearchQuery(''); } },
-          ] as (TabBarItem | null)[]).filter((t): t is TabBarItem => t !== null)}
-          activeKey={(activeTab === 'work-week') ? 'work-week' : (activeTab === 'holidays') ? 'holidays' : null}
-        />
-      </div>
+
 
       {/* 3. Tab Content Panels */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 border-t-0 rounded-b-2xl p-6 shadow-sm dark:bg-slate-800 dark:border-slate-700">

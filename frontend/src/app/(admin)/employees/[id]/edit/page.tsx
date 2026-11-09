@@ -571,15 +571,7 @@ function EmployeeEditPageContent() {
 
   return (
     <div className="space-y-4 font-sans pb-12">
-      {/* 1. Sub-Navigation Tabs (ตรงตามแถบด้านบนของ Figma) */}
-      <div className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 -mt-2 rounded-t-2xl shadow-2xs">
-        <TabBar
-          aria-label="เมนูพนักงาน"
-          memoryKey="employees-subnav"
-          items={subNavTabs.map((tab) => ({ key: tab.href, label: tab.title, href: tab.href }))}
-          activeKey={subNavTabs.find((tab) => tab.active)?.href}
-        />
-      </div>
+
 
       {/* 2. Main Edit Card Container */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 p-6 lg:p-8 shadow-xs min-h-[calc(100vh-210px)] flex flex-col justify-between">
