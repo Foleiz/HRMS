@@ -547,10 +547,8 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       )}
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
-        {/* คอลัมน์ซ้าย: ประเภทการลา, วันที่ลา + รูปแบบ พร้อมกล่องแจ้งเตือน */}
-        <div className="space-y-6 min-w-0">
-          {/* 1. ประเภทการลา */}
-          <div>
+        {/* 1. ประเภทการลา พร้อมกล่องแจ้งเตือน (Row 1 คอลัมน์ซ้าย) */}
+        <div className="order-1 lg:order-1 min-w-0 flex flex-col">
             <label htmlFor="leave-type" className={labelCls}>
               ประเภทการลา <span className="text-rose-600">*</span>
             </label>
@@ -703,10 +701,50 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 </div>
               )}
             </div>
-          </div>
+        </div>
 
-          {/* 2. วันที่ลา + รูปแบบ (แถวเดียวกัน) */}
-          <div>
+        {/* 2. เหตุผล + ติดต่อระหว่างลา (Row 1 คอลัมน์ขวา - สูงเท่ากับประเภทการลาและกล่องแจ้งเตือนซ้ายมือพอดี 100%) */}
+        <div className="order-3 lg:order-2 min-w-0 flex flex-col h-full">
+            {/* 1. เหตุผล */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                </label>
+                <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                id="leave-reason"
+                value={reason}
+                maxLength={REASON_MAX_LENGTH}
+                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                rows={2}
+                placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
+                className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
+              />
+            </div>
+
+            {/* 2. ติดต่อระหว่างลา */}
+            <div className="mt-3 sm:mt-3.5 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="leave-contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  ติดต่อระหว่างลา <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                </label>
+                <span className="text-xs text-slate-400">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                id="leave-contact"
+                value={contactDuringLeave}
+                maxLength={CONTACT_MAX_LENGTH}
+                onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
+                placeholder="เบอร์โทร / สถานที่"
+                className={`${inputCls} flex-1 min-h-[110px] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
+              />
+            </div>
+        </div>
+
+        {/* 3. วันที่ลา + รูปแบบ (Row 2 คอลัมน์ซ้าย) */}
+        <div className="order-2 lg:order-3 min-w-0 flex flex-col">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="flex-1 min-w-0">
                 <span className={labelCls}>
@@ -751,53 +789,10 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 </div>
               </div>
             </div>
-          </div>
         </div>
 
-        {/* คอลัมน์ขวา: เหตุผล, ติดต่อระหว่างลา, ไฟล์แนบ */}
-        <div className="space-y-6 min-w-0 flex flex-col">
-          {/* ส่วนบน: เหตุผล + ติดต่อระหว่างลา (ความสูงพอดีขอบล่างของกล่องแจ้งเตือนซ้ายมือ) */}
-          <div className="flex flex-col">
-            {/* 1. เหตุผล */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-                </label>
-                <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
-              </div>
-              <textarea
-                id="leave-reason"
-                value={reason}
-                maxLength={REASON_MAX_LENGTH}
-                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-                rows={2}
-                placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
-                className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
-              />
-            </div>
-
-            {/* 2. ติดต่อระหว่างลา */}
-            <div className="mt-4 flex-1 flex flex-col">
-              <div className="flex items-center justify-between mb-2">
-                <label htmlFor="leave-contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  ติดต่อระหว่างลา <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-                </label>
-                <span className="text-xs text-slate-400">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
-              </div>
-              <textarea
-                id="leave-contact"
-                value={contactDuringLeave}
-                maxLength={CONTACT_MAX_LENGTH}
-                onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
-                placeholder="เบอร์โทร / สถานที่"
-                className={`${inputCls} min-h-[158px] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
-              />
-            </div>
-          </div>
-
-          {/* 3. ไฟล์แนบ */}
-          <div className="w-full flex-1 flex flex-col">
+        {/* 4. ไฟล์แนบ (Row 2 คอลัมน์ขวา) */}
+        <div className="order-4 lg:order-4 w-full min-w-0 flex flex-col">
             <span id="leave-attachment-label" className={`${labelCls} flex items-center gap-1`}>
               ไฟล์แนบ{' '}
               {isDocumentRecommended ? (
@@ -828,7 +823,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             ) : isDocumentRecommended ? (
               <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">การลาประเภทนี้ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)</p>
             ) : null}
-          </div>
         </div>
 
         {validationErrors.length > 0 && (
