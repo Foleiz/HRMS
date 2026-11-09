@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams, useRouter } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useSidebar } from '@/context/SidebarContext';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
@@ -30,11 +30,45 @@ import {
   Gift,
   Network,
   ChevronDown,
+  History,
+  FileEdit,
+  Receipt,
+  ReceiptText,
+  Coins,
+  SlidersHorizontal,
+  Sparkles,
+  Percent,
+  Calculator,
+  CalendarClock,
+  UserCheck,
+  Tags,
+  ArrowRightLeft,
+  FileSignature,
+  Hourglass,
+  Building,
+  Briefcase,
+  TrendingUp,
+  HeartHandshake,
+  Landmark,
+  Upload,
+  Sunrise,
+  ListChecks,
+  ShieldCheck,
+  Palmtree,
+  PieChart,
+  CalendarX2,
+  UserMinus,
+  Award,
+  Globe,
+  Heart,
+  ScrollText,
+  Workflow,
 } from 'lucide-react';
 
 export interface SubMenuItem {
   title: string;
   href: string;
+  icon?: React.ComponentType<{ className?: string }>;
   matchPrefix?: string;
   /** สิทธิ์ที่ต้องมี (มีข้อใดข้อหนึ่ง หรือเป็น ADMIN) */
   requiredPermissions?: string[];
@@ -110,8 +144,8 @@ const menuGroups: MenuGroup[] = [
         icon: FileText,
         requiredPermissions: ['ESS_DOCS_VIEW'],
         children: [
-          { title: 'รายการเอกสาร', href: '/documents' },
-          { title: 'ประวัติเอกสาร', href: '/documents/history' },
+          { title: 'รายการเอกสาร', href: '/documents', icon: FileText },
+          { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History },
         ],
       },
       {
@@ -135,8 +169,8 @@ const menuGroups: MenuGroup[] = [
         icon: Clock,
         requiredPermissions: ['ESS_TIME_VIEW'],
         children: [
-          { title: 'ตรวจบันทึกเวลาของฉัน', href: '/ess/attendance' },
-          { title: 'คำขอปรับปรุงเวลา', href: '/ess/attendance?tab=adjustments' },
+          { title: 'ตรวจบันทึกเวลาของฉัน', href: '/ess/attendance', icon: CalendarCheck },
+          { title: 'คำขอปรับปรุงเวลา', href: '/ess/attendance?tab=adjustments', icon: FileEdit },
         ],
       },
       {
@@ -146,8 +180,8 @@ const menuGroups: MenuGroup[] = [
         icon: Gift,
         requiredPermissions: ['ESS_BENEFIT_VIEW', 'ESS_BENEFIT_CLAIM_VIEW'],
         children: [
-          { title: 'สวัสดิการของฉัน', href: '/ess/benefits', requiredPermissions: ['ESS_BENEFIT_VIEW'] },
-          { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์', href: '/ess/benefits/history', requiredPermissions: ['ESS_BENEFIT_CLAIM_VIEW'] },
+          { title: 'สวัสดิการของฉัน', href: '/ess/benefits', icon: Gift, requiredPermissions: ['ESS_BENEFIT_VIEW'] },
+          { title: 'ประวัติการเบิกจ่ายและใช้สิทธิ์', href: '/ess/benefits/history', icon: Receipt, requiredPermissions: ['ESS_BENEFIT_CLAIM_VIEW'] },
         ],
       },
     ],
@@ -174,14 +208,14 @@ const menuGroups: MenuGroup[] = [
           'PAYROLL_SLIP_VIEW',
         ],
         children: [
-          { title: 'รอบเงินเดือน', href: '/payroll?tab=periods', requiredPermissions: ['PAYROLL_PERIOD_VIEW'] },
-          { title: 'ฐานเงินเดือนพนักงาน', href: '/payroll?tab=structures', requiredPermissions: ['PAYROLL_STRUCTURE_VIEW'] },
-          { title: 'รายได้และรายหัก', href: '/payroll?tab=items', requiredPermissions: ['PAYROLL_ITEMS_VIEW'] },
-          { title: 'โบนัส', href: '/payroll?tab=bonus', requiredPermissions: ['PAYROLL_BONUS_VIEW'] },
-          { title: 'ค่าคอมมิชชั่น', href: '/payroll?tab=commission', requiredPermissions: ['PAYROLL_BONUS_VIEW', 'PAYROLL_VIEW', 'PAYROLL_HR_VIEW'] },
-          { title: 'ประมวลเงินเดือน', href: '/payroll?tab=process', requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_FINANCE_VIEW', 'PAYROLL_ADMIN_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_VIEW'] },
-          { title: 'กำหนดวันตัดรอบและจ่ายเงิน', href: '/payroll?tab=schedule-settings', requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_PERIOD_VIEW'] },
-          { title: 'ภาษีและประกันสังคม', href: '/payroll?tab=tax-sso', requiredPermissions: ['PAYROLL_TAX_VIEW'] },
+          { title: 'รอบเงินเดือน', href: '/payroll?tab=periods', icon: CalendarRange, requiredPermissions: ['PAYROLL_PERIOD_VIEW'] },
+          { title: 'ฐานเงินเดือนพนักงาน', href: '/payroll?tab=structures', icon: Coins, requiredPermissions: ['PAYROLL_STRUCTURE_VIEW'] },
+          { title: 'รายได้และรายหัก', href: '/payroll?tab=items', icon: SlidersHorizontal, requiredPermissions: ['PAYROLL_ITEMS_VIEW'] },
+          { title: 'โบนัส', href: '/payroll?tab=bonus', icon: Sparkles, requiredPermissions: ['PAYROLL_BONUS_VIEW'] },
+          { title: 'ค่าคอมมิชชั่น', href: '/payroll?tab=commission', icon: Percent, requiredPermissions: ['PAYROLL_BONUS_VIEW', 'PAYROLL_VIEW', 'PAYROLL_HR_VIEW'] },
+          { title: 'ประมวลเงินเดือน', href: '/payroll?tab=process', icon: Calculator, requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_FINANCE_VIEW', 'PAYROLL_ADMIN_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_VIEW'] },
+          { title: 'กำหนดวันตัดรอบและจ่ายเงิน', href: '/payroll?tab=schedule-settings', icon: CalendarClock, requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_PERIOD_VIEW'] },
+          { title: 'ภาษีและประกันสังคม', href: '/payroll?tab=tax-sso', icon: ReceiptText, requiredPermissions: ['PAYROLL_TAX_VIEW'] },
         ],
       },
       {
@@ -210,11 +244,11 @@ const menuGroups: MenuGroup[] = [
           'EMP_HISTORY_VIEW',
         ],
         children: [
-          { title: 'จัดการพนักงาน', href: '/employees', requiredPermissions: ['EMP_PROFILE_VIEW'] },
-          { title: 'ประเภทพนักงาน', href: '/employees/types', requiredPermissions: ['EMP_TYPE_VIEW'] },
-          { title: 'การย้ายแผนก/เลื่อนตำแหน่ง', href: '/employees/transfers', requiredPermissions: ['EMP_TRANSFER_VIEW'] },
-          { title: 'สัญญาจ้าง', href: '/employees/contracts', requiredPermissions: ['EMP_CONTRACT_VIEW'] },
-          { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', requiredPermissions: ['EMP_DOC_VIEW'] },
+          { title: 'จัดการพนักงาน', href: '/employees', icon: UserCheck, requiredPermissions: ['EMP_PROFILE_VIEW'] },
+          { title: 'ประเภทพนักงาน', href: '/employees/types', icon: Tags, requiredPermissions: ['EMP_TYPE_VIEW'] },
+          { title: 'การย้ายแผนก/เลื่อนตำแหน่ง', href: '/employees/transfers', icon: ArrowRightLeft, requiredPermissions: ['EMP_TRANSFER_VIEW'] },
+          { title: 'สัญญาจ้าง', href: '/employees/contracts', icon: FileSignature, requiredPermissions: ['EMP_CONTRACT_VIEW'] },
+          { title: 'เอกสารใกล้หมดอายุ', href: '/employees/documents', icon: Hourglass, requiredPermissions: ['EMP_DOC_VIEW'] },
         ],
       },
       {
@@ -240,14 +274,14 @@ const menuGroups: MenuGroup[] = [
           'ORG_COMP_VIEW',
         ],
         children: [
-          { title: 'จัดการฝ่าย', href: '/organization?tab=divisions', requiredPermissions: ['ORG_STRUCT_VIEW'] },
-          { title: 'จัดการแผนก', href: '/organization?tab=departments', requiredPermissions: ['ORG_STRUCT_VIEW'] },
-          { title: 'จัดการทีม', href: '/organization?tab=teams', requiredPermissions: ['ORG_STRUCT_VIEW'] },
-          { title: 'จัดการตำแหน่ง', href: '/organization?tab=positions', requiredPermissions: ['ORG_POS_VIEW'] },
-          { title: 'ระดับพนักงาน', href: '/organization?tab=levels', requiredPermissions: ['ORG_POS_VIEW'] },
-          { title: 'สวัสดิการและสิทธิประโยชน์', href: '/organization?tab=benefits', requiredPermissions: ['ORG_BENEFIT_VIEW'] },
-          { title: 'ข้อมูลบริษัท', href: '/organization?tab=company', requiredPermissions: ['ORG_COMP_VIEW'] },
-          { title: 'บัญชีธนาคารบริษัท', href: '/organization?tab=bank-accounts', requiredPermissions: ['ORG_COMP_VIEW'] },
+          { title: 'จัดการฝ่าย', href: '/organization?tab=divisions', icon: Building2, requiredPermissions: ['ORG_STRUCT_VIEW'] },
+          { title: 'จัดการแผนก', href: '/organization?tab=departments', icon: Building, requiredPermissions: ['ORG_STRUCT_VIEW'] },
+          { title: 'จัดการทีม', href: '/organization?tab=teams', icon: Users, requiredPermissions: ['ORG_STRUCT_VIEW'] },
+          { title: 'จัดการตำแหน่ง', href: '/organization?tab=positions', icon: Briefcase, requiredPermissions: ['ORG_POS_VIEW'] },
+          { title: 'ระดับพนักงาน', href: '/organization?tab=levels', icon: TrendingUp, requiredPermissions: ['ORG_POS_VIEW'] },
+          { title: 'สวัสดิการและสิทธิประโยชน์', href: '/organization?tab=benefits', icon: HeartHandshake, requiredPermissions: ['ORG_BENEFIT_VIEW'] },
+          { title: 'ข้อมูลบริษัท', href: '/organization?tab=company', icon: Landmark, requiredPermissions: ['ORG_COMP_VIEW'] },
+          { title: 'บัญชีธนาคารบริษัท', href: '/organization?tab=bank-accounts', icon: CreditCard, requiredPermissions: ['ORG_COMP_VIEW'] },
         ],
       },
       {
@@ -272,8 +306,8 @@ const menuGroups: MenuGroup[] = [
           'TIME_IMPORT_VIEW',
         ],
         children: [
-          { title: 'ตรวจบันทึกเวลาประจำวัน', href: '/attendance/daily?tab=daily', requiredPermissions: ['TIME_DAILY_VIEW'] },
-          { title: 'นำเข้าไฟล์บันทึกเวลา', href: '/attendance/daily?tab=import', requiredPermissions: ['TIME_IMPORT_VIEW'] },
+          { title: 'ตรวจบันทึกเวลาประจำวัน', href: '/attendance/daily?tab=daily', icon: Clock, requiredPermissions: ['TIME_DAILY_VIEW'] },
+          { title: 'นำเข้าไฟล์บันทึกเวลา', href: '/attendance/daily?tab=import', icon: Upload, requiredPermissions: ['TIME_IMPORT_VIEW'] },
         ],
       },
       {
@@ -285,8 +319,8 @@ const menuGroups: MenuGroup[] = [
           'TIME_SCHEDULE_VIEW',
         ],
         children: [
-          { title: 'มอบหมายกะให้พนักงาน', href: '/attendance/schedules?tab=roster', requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
-          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
+          { title: 'มอบหมายกะให้พนักงาน', href: '/attendance/schedules?tab=roster', icon: CalendarRange, requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
+          { title: 'กะการทำงาน', href: '/attendance/schedules?tab=shifts', icon: Sunrise, requiredPermissions: ['TIME_SCHEDULE_VIEW'] },
         ],
       },
       {
@@ -300,9 +334,9 @@ const menuGroups: MenuGroup[] = [
           'LEAVE_POLICY_VIEW',
         ],
         children: [
-          { title: 'ประเภทการลา', href: '/leave?tab=types', requiredPermissions: ['LEAVE_TYPE_VIEW'] },
-          { title: 'สิทธิ์การลา', href: '/leave?tab=policies', requiredPermissions: ['LEAVE_POLICY_VIEW'] },
-          { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
+          { title: 'ประเภทการลา', href: '/leave?tab=types', icon: ListChecks, requiredPermissions: ['LEAVE_TYPE_VIEW'] },
+          { title: 'สิทธิ์การลา', href: '/leave?tab=policies', icon: ShieldCheck, requiredPermissions: ['LEAVE_POLICY_VIEW'] },
+          { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', icon: Wallet, requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
         ],
       },
       {
@@ -314,8 +348,8 @@ const menuGroups: MenuGroup[] = [
           'WORK_CALENDAR_VIEW',
         ],
         children: [
-          { title: 'วันทำงานประจำสัปดาห์', href: '/work-calendar?tab=work-week', requiredPermissions: ['WORK_CALENDAR_VIEW'] },
-          { title: 'วันหยุดประจำปี', href: '/work-calendar?tab=holidays', requiredPermissions: ['WORK_CALENDAR_VIEW'] },
+          { title: 'วันทำงานประจำสัปดาห์', href: '/work-calendar?tab=work-week', icon: CalendarDays, requiredPermissions: ['WORK_CALENDAR_VIEW'] },
+          { title: 'วันหยุดประจำปี', href: '/work-calendar?tab=holidays', icon: Palmtree, requiredPermissions: ['WORK_CALENDAR_VIEW'] },
         ],
       },
     ],
@@ -339,8 +373,8 @@ const menuGroups: MenuGroup[] = [
           'APPROVAL_PAYROLL_APPROVE',
         ],
         children: [
-          { title: 'เอกสารรอดำเนินการ', href: '/approvals/leave-requests' },
-          { title: 'ประวัติเอกสาร', href: '/approvals/history' },
+          { title: 'เอกสารรอดำเนินการ', href: '/approvals/leave-requests', icon: Clock },
+          { title: 'ประวัติเอกสาร', href: '/approvals/history', icon: History },
         ],
       },
       {
@@ -355,11 +389,11 @@ const menuGroups: MenuGroup[] = [
           'REPORT_LEAVE_VIEW',
         ],
         children: [
-          { title: 'พนักงานแยกตามแผนก', href: '/reports?tab=department', requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
-          { title: 'การเข้าออกงาน', href: '/reports?tab=attendance', requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_VIEW'] },
-          { title: 'การลา', href: '/reports?tab=leave', requiredPermissions: ['REPORT_LEAVE_VIEW', 'REPORT_VIEW'] },
-          { title: 'อัตราการลาออก', href: '/reports?tab=turnover', requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
-          { title: 'ภาษีและประกันสังคม', href: '/reports?tab=tax', requiredPermissions: ['REPORT_VIEW'] },
+          { title: 'พนักงานแยกตามแผนก', href: '/reports?tab=department', icon: PieChart, requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
+          { title: 'การเข้าออกงาน', href: '/reports?tab=attendance', icon: CalendarCheck, requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_VIEW'] },
+          { title: 'การลา', href: '/reports?tab=leave', icon: CalendarX2, requiredPermissions: ['REPORT_LEAVE_VIEW', 'REPORT_VIEW'] },
+          { title: 'อัตราการลาออก', href: '/reports?tab=turnover', icon: UserMinus, requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
+          { title: 'ภาษีและประกันสังคม', href: '/reports?tab=tax', icon: Receipt, requiredPermissions: ['REPORT_VIEW'] },
         ],
       },
     ],
@@ -376,13 +410,13 @@ const menuGroups: MenuGroup[] = [
           'MASTER_DATA_VIEW',
         ],
         children: [
-          { title: 'ประเภทเอกสารแนบ', href: '/master?tab=document-types', requiredPermissions: ['MASTER_DATA_VIEW'] },
-          { title: 'ประเภทหนังสือรับรอง', href: '/master?tab=certificate-types', requiredPermissions: ['MASTER_DATA_VIEW'] },
-          { title: 'สัญชาติ', href: '/master?tab=nationalities', requiredPermissions: ['MASTER_DATA_VIEW'] },
-          { title: 'ศาสนา', href: '/master?tab=religions', requiredPermissions: ['MASTER_DATA_VIEW'] },
-          { title: 'สถานภาพสมรส', href: '/master?tab=marital-statuses', requiredPermissions: ['MASTER_DATA_VIEW'] },
-          { title: 'เพศ', href: '/master?tab=genders', requiredPermissions: ['MASTER_DATA_VIEW'] },
-          { title: 'ธนาคาร', href: '/master?tab=banks', requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ประเภทเอกสารแนบ', href: '/master?tab=document-types', icon: FileText, requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ประเภทหนังสือรับรอง', href: '/master?tab=certificate-types', icon: Award, requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'สัญชาติ', href: '/master?tab=nationalities', icon: Globe, requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ศาสนา', href: '/master?tab=religions', icon: Heart, requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'สถานภาพสมรส', href: '/master?tab=marital-statuses', icon: HeartHandshake, requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'เพศ', href: '/master?tab=genders', icon: User, requiredPermissions: ['MASTER_DATA_VIEW'] },
+          { title: 'ธนาคาร', href: '/master?tab=banks', icon: Landmark, requiredPermissions: ['MASTER_DATA_VIEW'] },
         ],
       },
       {
@@ -396,10 +430,10 @@ const menuGroups: MenuGroup[] = [
           'SETTINGS_AUDIT_VIEW',
         ],
         children: [
-          { title: 'ผู้ใช้งาน', href: '/settings?tab=users', requiredPermissions: ['SETTINGS_USERS_VIEW'] },
-          { title: 'บทบาทและสิทธิ์', href: '/settings?tab=roles', requiredPermissions: ['SETTINGS_ROLES_VIEW'] },
-          { title: 'บันทึกการใช้งานระบบ', href: '/settings?tab=audit-log', requiredPermissions: ['SETTINGS_AUDIT_VIEW'] },
-          { title: 'สายการอนุมัติ', href: '/settings?tab=approval-flows', requiredPermissions: ['SETTINGS_ROLES_VIEW', 'SETTINGS_USERS_VIEW'] },
+          { title: 'ผู้ใช้งาน', href: '/settings?tab=users', icon: UserCheck, requiredPermissions: ['SETTINGS_USERS_VIEW'] },
+          { title: 'บทบาทและสิทธิ์', href: '/settings?tab=roles', icon: ShieldCheck, requiredPermissions: ['SETTINGS_ROLES_VIEW'] },
+          { title: 'บันทึกการใช้งานระบบ', href: '/settings?tab=audit-log', icon: ScrollText, requiredPermissions: ['SETTINGS_AUDIT_VIEW'] },
+          { title: 'สายการอนุมัติ', href: '/settings?tab=approval-flows', icon: Workflow, requiredPermissions: ['SETTINGS_ROLES_VIEW', 'SETTINGS_USERS_VIEW'] },
         ],
       },
     ],
@@ -409,7 +443,6 @@ const menuGroups: MenuGroup[] = [
 export const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { user, hasPermission, hasRole } = useAuth();
   const { isCollapsed, toggleSidebar, isMobileOpen, closeMobileSidebar } = useSidebar();
   const isDesktop = useIsDesktop();
@@ -792,11 +825,13 @@ export const Sidebar: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Submenu Items List */}
+                    {/* Submenu Items List with Topic Icons */}
                     {(!isCollapsed || !isDesktop) && isOpen && item.children && (
                       <div className="pl-5 pr-1 py-1 space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 ml-5 my-1 animate-in fade-in slide-in-from-top-1 duration-150">
                         {item.children.map((child) => {
                           const childActive = isChildActive(child);
+                          const ChildIcon = child.icon;
+
                           return (
                             <Link
                               key={child.href}
@@ -808,11 +843,21 @@ export const Sidebar: React.FC = () => {
                                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
                               }`}
                             >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
-                                  childActive ? 'bg-primary dark:bg-blue-400 scale-125' : 'bg-slate-300 dark:bg-slate-600'
-                                }`}
-                              />
+                              {ChildIcon ? (
+                                <ChildIcon
+                                  className={`w-3.5 h-3.5 shrink-0 transition-transform duration-150 ${
+                                    childActive
+                                      ? 'text-primary dark:text-blue-400 scale-110'
+                                      : 'text-slate-400 dark:text-slate-500'
+                                  }`}
+                                />
+                              ) : (
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                                    childActive ? 'bg-primary dark:bg-blue-400 scale-125' : 'bg-slate-300 dark:bg-slate-600'
+                                  }`}
+                                />
+                              )}
                               <span className="truncate">{child.title}</span>
                             </Link>
                           );
