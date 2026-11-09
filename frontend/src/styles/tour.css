@@ -1,0 +1,159 @@
+@import "driver.js/dist/driver.css";
+
+/* ==========================================================================
+   HRMS Theme for Driver.js Tour Guide Popover
+   ========================================================================== */
+
+.driver-overlay {
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(2px) !important;
+  transition: opacity 0.25s ease-in-out !important;
+}
+
+.hrms-driver-popover {
+  border-radius: 1.25rem !important;
+  border: 1px solid #e2e8f0 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
+  padding: 1.25rem !important;
+  max-width: 340px !important;
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+  z-index: 100000 !important;
+}
+
+:is(.dark .hrms-driver-popover) {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
+}
+
+.hrms-driver-popover .driver-popover-title {
+  font-size: 0.9375rem !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  margin-bottom: 0.4rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-title) {
+  color: #f8fafc !important;
+}
+
+.hrms-driver-popover .driver-popover-description {
+  font-size: 0.8125rem !important;
+  line-height: 1.55 !important;
+  color: #475569 !important;
+  margin-bottom: 0.75rem !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-description) {
+  color: #94a3b8 !important;
+}
+
+.hrms-driver-popover .driver-popover-footer {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-top: 0.75rem !important;
+  padding-top: 0.75rem !important;
+  border-top: 1px solid #f1f5f9 !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-footer) {
+  border-color: #1e293b !important;
+}
+
+.hrms-driver-popover .driver-popover-progress-text {
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  color: #2563eb !important;
+  background-color: #eff6ff !important;
+  padding: 0.25rem 0.6rem !important;
+  border-radius: 9999px !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-progress-text) {
+  color: #60a5fa !important;
+  background-color: rgba(30, 58, 138, 0.4) !important;
+}
+
+.hrms-driver-popover .driver-popover-navigation-btns {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+}
+
+.hrms-driver-popover .driver-popover-prev-btn {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #475569 !important;
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.4rem 0.75rem !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.hrms-driver-popover .driver-popover-prev-btn:hover {
+  background-color: #f8fafc !important;
+  color: #1e293b !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-prev-btn) {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-prev-btn:hover) {
+  background-color: #334155 !important;
+  color: #ffffff !important;
+}
+
+.hrms-driver-popover .driver-popover-next-btn {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  background-color: #2563eb !important;
+  border: 1px solid transparent !important;
+  border-radius: 0.75rem !important;
+  padding: 0.4rem 0.85rem !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.15s ease !important;
+}
+
+.hrms-driver-popover .driver-popover-next-btn:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.hrms-driver-popover .driver-popover-close-btn {
+  font-size: 1.15rem !important;
+  line-height: 1 !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  padding: 0.25rem !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.15s ease !important;
+}
+
+.hrms-driver-popover .driver-popover-close-btn:hover {
+  color: #475569 !important;
+  background-color: #f1f5f9 !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-close-btn:hover) {
+  color: #f1f5f9 !important;
+  background-color: #1e293b !important;
+}
+
+.hrms-driver-popover .driver-popover-arrow {
+  border-color: #ffffff !important;
+}
+
+:is(.dark .hrms-driver-popover .driver-popover-arrow) {
+  border-color: #0f172a !important;
+}

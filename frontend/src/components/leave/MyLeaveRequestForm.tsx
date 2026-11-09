@@ -11,6 +11,8 @@ import { RequesterSummary } from '@/components/documents/RequesterSummary';
 import { FileDropzone } from '@/components/ui/FileDropzone';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 import { Button } from '@/components/ui';
+import { useOnboardingTour, type TourStep } from '@/hooks/useOnboardingTour';
+import { TourGuideButton } from '@/components/common/TourGuideButton';
 
 interface EmployeeProfileSummary {
   fullName: string;
@@ -110,6 +112,55 @@ const draftToFormState = (draft: LeaveRequest) => {
  * [ESS] ฟอร์มยื่นคำขอลาแบบเต็มหน้าจอ (ปรับตามดีไซน์อ้างอิงจาก Figma)
  * ฟอร์มกระชับ: แถบ "ยื่นในนาม" บรรทัดเดียว, ประเภทการลา (dropdown แสดงวันคงเหลือ), วันที่/รูปแบบ, เหตุผล, ช่องไม่บังคับท้ายฟอร์ม
  */
+
+const LEAVE_FORM_TOUR_STEPS: TourStep[] = [
+  {
+    element: '#tour-step-leave-type',
+    popover: {
+      title: '1. เลือกประเภทการลา & สิทธิ์คงเหลือ',
+      description: 'เลือกประเภทการลาที่ต้องการ (เช่น ลาพักร้อน, ลาป่วย) ระบบจะคำนวณสิทธิ์คงเหลือ โควตาประจำปี และแสดงเงื่อนไขที่เกี่ยวข้องให้ทราบทันที',
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+  {
+    element: '#tour-step-leave-dates',
+    popover: {
+      title: '2. ระบุช่วงวันที่ลาและรูปแบบ',
+      description: 'เลือกวันเริ่มต้นและสิ้นสุด ระบบจะนับหักเฉพาะวันทำงานปกติ (ไม่นับวันหยุดบริษัท) พร้อมเลือกได้ว่าจะลาแบบเต็มวันหรือครึ่งวัน',
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
+    element: '#tour-step-leave-reason-contact',
+    popover: {
+      title: '3. เหตุผลและช่องทางติดต่อ',
+      description: 'ระบุเหตุผลการลา และกรอกเบอร์โทรหรือสถานที่สำหรับติดต่อในกรณีฉุกเฉินระหว่างที่ลาหยุด',
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+  {
+    element: '#tour-step-leave-attachment',
+    popover: {
+      title: '4. แนบเอกสารประกอบ (ถ้ามี)',
+      description: 'กรณีประเภทการลานั้นต้องการหลักฐาน (เช่น ใบรับรองแพทย์เมื่อลาป่วยเกิน 3 วัน) สามารถคลิกหรือลากไฟล์ภาพ/PDF มาแนบที่นี่',
+      side: 'top',
+      align: 'start',
+    },
+  },
+  {
+    element: '#tour-step-action-bar',
+    popover: {
+      title: '5. ตรวจดูตัวอย่างและยื่นคำขอลา',
+      description: 'กด "ดูตัวอย่างใบลา" เพื่อตรวจเอกสารเสมือนจริง, "บันทึกแบบร่าง" เก็บไว้ทำต่อภายหลัง หรือกด "ยื่นคำขอลา" เพื่อส่งต่อไปยังสายการอนุมัติ',
+      side: 'top',
+      align: 'end',
+    },
+  },
+];
+
 export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyLeaveRequestFormProps>(({
   leaveTypes,
   leavePolicies,
@@ -121,6 +172,11 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   onSubmit,
   onSaveDraft,
 }, ref) => {
+    const { startTour } = useOnboardingTour('leave-request-form', LEAVE_FORM_TOUR_STEPS, {
+    autoStart: true,
+    delayMs: 600,
+  });
+
   const [form, setForm] = useState(() => (initialDraft ? draftToFormState(initialDraft) : emptyState));
   const [draftId, setDraftId] = useState<number | undefined>(initialDraft?.id);
   const [loading, setLoading] = useState(false);
@@ -536,9 +592,12 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         positionTitle={profile.positionTitle}
         departmentName={profile.departmentName}
         action={
-          <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
-            ล้างฟอร์ม
-          </Button>
+          <div className="flex items-center gap-2">
+            <TourGuideButton onClick={startTour} />
+            <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
+              ล้างฟอร์ม
+            </Button>
+          </div>
         }
       />
 
@@ -548,7 +607,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm p-5 sm:p-7 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6">
         {/* 1. ประเภทการลา พร้อมกล่องแจ้งเตือน (Row 1 คอลัมน์ซ้าย) */}
-        <div className="order-1 lg:order-1 min-w-0 flex flex-col">
+        <div id="tour-step-leave-type" className="order-1 lg:order-1 min-w-0 flex flex-col">
             <label htmlFor="leave-type" className={labelCls}>
               ประเภทการลา <span className="text-rose-600">*</span>
             </label>
@@ -704,7 +763,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         </div>
 
         {/* 2. เหตุผล + ติดต่อระหว่างลา (Row 1 คอลัมน์ขวา - สูงเท่ากับประเภทการลาและกล่องแจ้งเตือนซ้ายมือพอดี 100%) */}
-        <div className="order-3 lg:order-2 min-w-0 flex flex-col h-full">
+        <div id="tour-step-leave-reason-contact" className="order-3 lg:order-2 min-w-0 flex flex-col h-full">
             {/* 1. เหตุผล */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -744,7 +803,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         </div>
 
         {/* 3. วันที่ลา + รูปแบบ (Row 2 คอลัมน์ซ้าย) */}
-        <div className="order-2 lg:order-3 min-w-0 flex flex-col">
+        <div id="tour-step-leave-dates" className="order-2 lg:order-3 min-w-0 flex flex-col">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="flex-1 min-w-0">
                 <span className={labelCls}>
@@ -792,7 +851,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         </div>
 
         {/* 4. ไฟล์แนบ (Row 2 คอลัมน์ขวา) */}
-        <div className="order-4 lg:order-4 w-full min-w-0 flex flex-col">
+        <div id="tour-step-leave-attachment" className="order-4 lg:order-4 w-full min-w-0 flex flex-col">
             <span id="leave-attachment-label" className={`${labelCls} flex items-center gap-1`}>
               ไฟล์แนบ{' '}
               {isDocumentRecommended ? (
@@ -826,6 +885,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
       </div>
 
       {/* แถบปุ่มติดขอบล่าง — ปุ่มหลักอยู่ที่เดิมเสมอ พร้อมแถบแจ้งเตือนเงื่อนไขฝั่งซ้าย */}
+      <div id="tour-step-action-bar">
       <FormActionBar
         note={
           validationErrors.length > 0 ? (
@@ -868,6 +928,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           ยื่นคำขอลา
         </Button>
       </FormActionBar>
+      </div>
 
       <LeavePreviewModal isOpen={showPreview} onClose={() => setShowPreview(false)} data={showPreview ? previewData : null} />
     </form>

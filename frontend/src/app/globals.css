@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./dark-theme.css";
+@import "../styles/tour.css";
 
 /* Dark mode variant for Tailwind v4 */
 /* dark: ใช้ได้ทั้งแอป ยกเว้นในส่วน .theme-light (กระดาษเอกสาร/หน้า login ที่ต้องเป็นสีสว่างเสมอ) */
