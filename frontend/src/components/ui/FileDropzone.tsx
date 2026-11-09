@@ -60,10 +60,10 @@ export function FileDropzone({
 
   if (disabled) {
     return (
-      <div className={`flex flex-col ${className}`}>
+      <div className={`flex flex-col w-full ${className}`}>
         <div
           aria-disabled="true"
-          className="flex-1 min-h-[150px] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/60 px-4 py-6 text-center cursor-not-allowed select-none"
+          className="w-full flex-1 min-h-[140px] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900/60 px-4 py-6 text-center cursor-not-allowed select-none"
         >
           <span className="w-12 h-12 rounded-xl bg-slate-200/70 dark:bg-slate-800 flex items-center justify-center text-slate-400">
             <UploadCloud className="w-6 h-6" aria-hidden="true" />
@@ -76,8 +76,8 @@ export function FileDropzone({
 
   if (file) {
     return (
-      <div className={`flex flex-col ${className}`}>
-        <div className="flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3">
+      <div className={`flex flex-col w-full ${className}`}>
+        <div className="w-full flex items-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-4 py-3">
           <span className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-[#0B2046] dark:text-blue-300 flex items-center justify-center shrink-0">
             <FileText className="w-5 h-5" aria-hidden="true" />
           </span>
@@ -102,7 +102,7 @@ export function FileDropzone({
   }
 
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div className={`flex flex-col w-full ${className}`}>
       <label
         htmlFor={inputId}
         onDragOver={(e) => {
@@ -115,7 +115,7 @@ export function FileDropzone({
           setDragging(false);
           take(e.dataTransfer.files?.[0]);
         }}
-        className={`flex-1 min-h-[150px] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-6 text-center cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-[#0B2046]/20 ${
+        className={`w-full flex-1 min-h-[140px] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-6 text-center cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-[#0B2046]/20 ${
           dragging
             ? 'border-[#0B2046] bg-blue-50/70 dark:bg-blue-900/20'
             : required

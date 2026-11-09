@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Sun, Clock3, Phone, Save, FileText, RotateCcw, Info, CheckCircle2, Calendar, Check, Paperclip } from 'lucide-react';
+import { Loader2, Sun, Clock3, Save, FileText, RotateCcw, Info, CheckCircle2, Calendar, Check, Paperclip } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
@@ -733,24 +733,24 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
           {/* 2. ติดต่อระหว่างลา */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="leave-contact" className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                <Phone className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" /> ติดต่อระหว่างลา{' '}
-                <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+              <label htmlFor="leave-contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                ติดต่อระหว่างลา <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
               </label>
               <span className="text-xs text-slate-400">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
             </div>
-            <input
+            <textarea
               id="leave-contact"
               value={contactDuringLeave}
               maxLength={CONTACT_MAX_LENGTH}
               onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
+              rows={3}
               placeholder="เบอร์โทร / สถานที่"
-              className={inputCls}
+              className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
             />
           </div>
 
           {/* 3. ไฟล์แนบ */}
-          <div className="flex-1 flex flex-col">
+          <div className="w-full flex-1 flex flex-col">
             <span id="leave-attachment-label" className={`${labelCls} flex items-center gap-1`}>
               ไฟล์แนบ{' '}
               {isDocumentRecommended ? (
@@ -766,7 +766,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               )}
             </span>
             <FileDropzone
-              className="flex-1"
+              className="w-full flex-1"
               file={attachment}
               onChange={(file) => setForm((f) => ({ ...f, attachment: file }))}
               required={isDocumentRecommended}
