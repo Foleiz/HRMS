@@ -474,46 +474,45 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     return { text, tone: withinQuota ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400' };
   })();
 
-  const typePolicyNotice = useMemo(() => {
-    if (!hasSelectedType) {
-      return {
-        hasData: false,
-        text: 'เลือกประเภทการลาเพื่อดูสิทธิ์คงเหลือ โควตา และเงื่อนไขการลา',
-      };
-    }
-
-    const parts: string[] = [];
+  // โควตารวมประจำปีของประเภทที่เลือก
+  const typeQuotaDays = useMemo(() => {
     if (selectedBalance) {
-      parts.push(`ใช้ไป ${usedDaysSoFar} วัน`);
-      parts.push(`ลาไปแล้ว ${leaveCountThisYear} ครั้งปีนี้`);
-      if (pendingDays > 0) parts.push(`รออนุมัติ ${pendingDays} วัน`);
+      return (
+        selectedBalance.annualQuotaDays +
+        (selectedBalance.activeCarriedForwardDays || 0) +
+        (selectedBalance.adjustedDays || 0)
+      );
     }
+    return applicablePolicy?.entitlementDays ?? 0;
+  }, [selectedBalance, applicablePolicy]);
 
-    if (currentValidation?.policySummary) {
-      parts.push(currentValidation.policySummary);
-    } else if (applicablePolicy) {
-      if (applicablePolicy.entitlementDays) {
-        parts.push(`สิทธิ์ ${applicablePolicy.entitlementDays} วัน/ปี`);
-      }
+  // รายการเงื่อนไขและข้อกำหนดแยกเป็นข้อๆ เพื่อแสดงในกล่องแจ้งเตือน
+  const policyRulesList = useMemo(() => {
+    const rules: string[] = [];
+    if (applicablePolicy) {
       if (applicablePolicy.advanceRequestDays === 0) {
-        parts.push('ยื่นวันเดียวกันได้');
+        rules.push('ยื่นวันเดียวกันได้');
       } else if (applicablePolicy.advanceRequestDays > 0) {
-        parts.push(`ยื่นล่วงหน้า ${applicablePolicy.advanceRequestDays} วัน`);
+        rules.push(`ยื่นล่วงหน้าอย่างน้อย ${applicablePolicy.advanceRequestDays} วัน`);
       }
       if (applicablePolicy.isDocumentRequired) {
-        parts.push(
+        rules.push(
           applicablePolicy.documentRequiredAfterDays
             ? `แนบเอกสารเมื่อลา ${applicablePolicy.documentRequiredAfterDays} วันขึ้นไป`
-            : 'ต้องแนบเอกสาร'
+            : 'ต้องแนบเอกสารประกอบ'
         );
       }
+      if (applicablePolicy.isAllowedDuringProbation === false) {
+        rules.push('ไม่อนุญาตระหว่างทดลองงาน');
+      }
+      if (applicablePolicy.maxLifetimeOccurrences) {
+        rules.push(`ลาได้ไม่เกิน ${applicablePolicy.maxLifetimeOccurrences} ครั้ง`);
+      }
+    } else if (currentValidation?.policySummary) {
+      rules.push(currentValidation.policySummary);
     }
-
-    return {
-      hasData: true,
-      text: parts.join(' · ') || 'ไม่มีข้อจำกัดจำนวนวัน',
-    };
-  }, [hasSelectedType, selectedBalance, usedDaysSoFar, leaveCountThisYear, pendingDays, currentValidation?.policySummary, applicablePolicy]);
+    return rules;
+  }, [applicablePolicy, currentValidation?.policySummary]);
 
   // ไฟล์แนบ: แสดงเฉพาะประเภทที่ตั้งค่าให้แนบเอกสาร (หรือมีไฟล์ค้างอยู่แล้ว เช่นแบบร่าง)
   const typeUsesDocument = !!applicablePolicy?.isDocumentRequired;
@@ -566,18 +565,64 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               aria-describedby="leave-type-help"
             />
 
-            {/* กล่องแจ้งเตือนข้อมูลสิทธิ์และเงื่อนไขประเภทการลา */}
+            {/* กล่องแจ้งเตือนข้อมูลสิทธิ์และเงื่อนไขประเภทการลา (แบ่งหัวข้อชัดเจน อ่านง่ายในพริบตา) */}
             <div
-              className={`mt-2.5 rounded-xl border p-3 text-xs leading-relaxed transition-all flex items-start gap-2.5 ${
+              className={`mt-2.5 rounded-xl border p-3.5 text-xs transition-all shadow-2xs ${
                 hasSelectedType
-                  ? 'bg-blue-50/70 border-blue-200/70 text-blue-900 dark:bg-blue-950/25 dark:border-blue-900/40 dark:text-blue-200 shadow-2xs'
+                  ? 'bg-blue-50/70 border-blue-200/70 dark:bg-blue-950/25 dark:border-blue-900/40'
                   : 'bg-slate-50 border-slate-200/80 text-slate-500 dark:bg-slate-900/40 dark:border-slate-800 dark:text-slate-400'
               }`}
             >
-              <Info className={`w-4 h-4 shrink-0 mt-0.5 ${hasSelectedType ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />
-              <div className="flex-1 min-w-0">
-                <span className="font-medium">{typePolicyNotice.text}</span>
-              </div>
+              {hasSelectedType ? (
+                <div className="space-y-2">
+                  {/* หัวข้อ 1: สิทธิ์โควตา */}
+                  <div className="flex items-start gap-2.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-2xs bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300 shrink-0 select-none">
+                      สิทธิ์โควตา
+                    </span>
+                    <span className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
+                      {selectedBalance ? (
+                        <>
+                          สิทธิ์ <strong className="font-semibold text-blue-900 dark:text-blue-200">{typeQuotaDays}</strong> วัน/ปี
+                          <span className="text-slate-500 dark:text-slate-400 font-normal"> (คงเหลือจริง {availableDays} วัน)</span>
+                        </>
+                      ) : (
+                        'ไม่มีข้อจำกัดจำนวนวัน'
+                      )}
+                    </span>
+                  </div>
+
+                  {/* หัวข้อ 2: สถิติปีนี้ */}
+                  <div className="flex items-start gap-2.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-2xs bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 shrink-0 select-none">
+                      สถิติปีนี้
+                    </span>
+                    <span className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                      ใช้ไปแล้ว <strong className="font-semibold text-slate-900 dark:text-slate-100">{usedDaysSoFar}</strong> วัน · ลาไปแล้ว <strong className="font-semibold text-slate-900 dark:text-slate-100">{leaveCountThisYear}</strong> ครั้ง
+                      {pendingDays > 0 && (
+                        <span className="text-amber-700 dark:text-amber-300 font-medium"> (มีรออนุมัติ {pendingDays} วัน)</span>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* หัวข้อ 3: เงื่อนไขการลา */}
+                  {policyRulesList.length > 0 && (
+                    <div className="flex items-start gap-2.5 pt-1 border-t border-blue-200/50 dark:border-blue-900/30">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-2xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-300 shrink-0 select-none">
+                        เงื่อนไข
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {policyRulesList.join(' · ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0" />
+                  <span>เลือกประเภทการลาเพื่อดูสิทธิ์โควตา สถิติ และเงื่อนไขการลา</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -625,32 +670,81 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               </div>
             </div>
 
-            {/* กล่องแจ้งเตือนสรุปวันทำการและผลการคำนวณวันลา */}
+            {/* กล่องแจ้งเตือนสรุปวันทำการและผลการคำนวณวันลา (แบ่งหัวข้อชัดเจน อ่านง่ายในพริบตา) */}
             {daysSummary ? (
               <div
-                className={`mt-2.5 rounded-xl border p-3 text-xs leading-relaxed transition-all flex items-start gap-2.5 shadow-2xs ${
+                className={`mt-2.5 rounded-xl border p-3.5 text-xs transition-all shadow-2xs ${
                   !withinQuota
-                    ? 'bg-rose-50/70 border-rose-200/70 text-rose-900 dark:bg-rose-950/25 dark:border-rose-900/40 dark:text-rose-200'
+                    ? 'bg-rose-50/70 border-rose-200/70 dark:bg-rose-950/25 dark:border-rose-900/40'
                     : leaveDays <= 0
-                    ? 'bg-amber-50/70 border-amber-200/70 text-amber-900 dark:bg-amber-950/25 dark:border-amber-900/40 dark:text-amber-200'
-                    : 'bg-emerald-50/70 border-emerald-200/70 text-emerald-900 dark:bg-emerald-950/25 dark:border-emerald-900/40 dark:text-emerald-200'
+                    ? 'bg-amber-50/70 border-amber-200/70 dark:bg-amber-950/25 dark:border-amber-900/40'
+                    : 'bg-emerald-50/70 border-emerald-200/70 dark:bg-emerald-950/25 dark:border-emerald-900/40'
                 }`}
               >
-                {!withinQuota ? (
-                  <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-                ) : leaveDays <= 0 ? (
-                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                ) : isCalculatingDays ? (
-                  <Loader2 className="w-4 h-4 text-slate-500 animate-spin shrink-0 mt-0.5" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold block">{daysSummary.text}</span>
-                  {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
-                    <span className="block mt-1 text-2xs opacity-90">
-                      วันหยุดในช่วงนี้: {currentCalc.data.holidays.map((h) => h.name).join(', ')}
+                <div className="space-y-2">
+                  {/* หัวข้อ 1: ยอดวันลา */}
+                  <div className="flex items-start gap-2.5">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-2xs shrink-0 select-none ${
+                        !withinQuota
+                          ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300'
+                          : leaveDays <= 0
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'
+                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
+                      }`}
+                    >
+                      ยอดวันลา
                     </span>
+                    <span className="text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
+                      รวม <strong className="font-semibold text-slate-900 dark:text-slate-100">{leaveDays}</strong> วันทำการ
+                      <span className="text-slate-500 dark:text-slate-400 font-normal"> ({leaveFormat === 'FULL_DAY' ? 'เต็มวัน' : 'ครึ่งวัน'})</span>
+                    </span>
+                  </div>
+
+                  {/* หัวข้อ 2: สิทธิ์หลังลา */}
+                  {availableDays != null && (
+                    <div className="flex items-start gap-2.5">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-2xs shrink-0 select-none ${
+                          !withinQuota
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900/60 dark:text-red-300'
+                            : 'bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-300'
+                        }`}
+                      >
+                        สิทธิ์หลังลา
+                      </span>
+                      <span
+                        className={`leading-relaxed ${
+                          withinQuota
+                            ? 'text-slate-700 dark:text-slate-300'
+                            : 'text-rose-700 dark:text-rose-300 font-semibold'
+                        }`}
+                      >
+                        {withinQuota ? (
+                          <>
+                            เหลือสิทธิ์หลังลา <strong className="font-semibold text-slate-900 dark:text-slate-100">{availableDays - leaveDays}</strong> วัน
+                            <span className="text-emerald-700 dark:text-emerald-300 font-medium"> (สิทธิ์คงเหลือเพียงพอ)</span>
+                          </>
+                        ) : (
+                          <>
+                            สิทธิ์คงเหลือ {availableDays} วัน (ไม่เพียงพอ ขาดอีก {leaveDays - availableDays} วัน)
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* หัวข้อ 3: วันหยุด (ถ้ามี) */}
+                  {!isCalculatingDays && currentCalc?.data && currentCalc.data.holidays.length > 0 && (
+                    <div className="flex items-start gap-2.5 pt-1 border-t border-emerald-200/50 dark:border-emerald-900/30">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-2xs bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 shrink-0 select-none">
+                        วันหยุด
+                      </span>
+                      <span className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                        ไม่นับวันหยุด {excludedDays > 0 ? `${excludedDays} วัน: ` : ''}
+                        {currentCalc.data.holidays.map((h) => h.name).join(', ')}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -658,7 +752,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               <div className="mt-2.5 rounded-xl border border-slate-200/80 bg-slate-50 dark:bg-slate-900/40 dark:border-slate-800 p-3 text-xs text-slate-500 dark:text-slate-400 flex items-start gap-2.5">
                 <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 shrink-0 mt-0.5" />
                 <span className="flex-1 min-w-0">
-                  นับเฉพาะวันทำงาน ไม่นับวันหยุดบริษัทและวันหยุดนักขัตฤกษ์
+                  ระบบคำนวณเฉพาะวันทำงานตามกะของคุณ โดยไม่นับรวมวันหยุดบริษัทและวันหยุดนักขัตฤกษ์
                 </span>
               </div>
             )}
