@@ -758,42 +758,44 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
         {/* คอลัมน์ขวา: เหตุผล, ติดต่อระหว่างลา, ไฟล์แนบ */}
         <div className="space-y-6 min-w-0 flex flex-col">
-          {/* 1. เหตุผล */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-              </label>
-              <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
+          {/* ส่วนบน: เหตุผล + ติดต่อระหว่างลา (ความสูงพอดีขอบล่างของกล่องแจ้งเตือนซ้ายมือ) */}
+          <div className="flex flex-col">
+            {/* 1. เหตุผล */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="leave-reason" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  เหตุผล <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                </label>
+                <span className="text-xs text-slate-400">{reason.length}/{REASON_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                id="leave-reason"
+                value={reason}
+                maxLength={REASON_MAX_LENGTH}
+                onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                rows={2}
+                placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
+                className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
+              />
             </div>
-            <textarea
-              id="leave-reason"
-              value={reason}
-              maxLength={REASON_MAX_LENGTH}
-              onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
-              rows={3}
-              placeholder="เช่น พาครอบครัวไปต่างจังหวัด"
-              className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
-            />
-          </div>
 
-          {/* 2. ติดต่อระหว่างลา */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label htmlFor="leave-contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                ติดต่อระหว่างลา <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
-              </label>
-              <span className="text-xs text-slate-400">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
+            {/* 2. ติดต่อระหว่างลา */}
+            <div className="mt-4 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <label htmlFor="leave-contact" className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  ติดต่อระหว่างลา <span className="font-normal text-slate-500 dark:text-slate-400">(ไม่บังคับ)</span>
+                </label>
+                <span className="text-xs text-slate-400">{contactDuringLeave.length}/{CONTACT_MAX_LENGTH}</span>
+              </div>
+              <textarea
+                id="leave-contact"
+                value={contactDuringLeave}
+                maxLength={CONTACT_MAX_LENGTH}
+                onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
+                placeholder="เบอร์โทร / สถานที่"
+                className={`${inputCls} min-h-[158px] resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
+              />
             </div>
-            <textarea
-              id="leave-contact"
-              value={contactDuringLeave}
-              maxLength={CONTACT_MAX_LENGTH}
-              onChange={(e) => setForm((f) => ({ ...f, contactDuringLeave: e.target.value }))}
-              rows={3}
-              placeholder="เบอร์โทร / สถานที่"
-              className={`${inputCls} resize-none whitespace-pre-wrap break-words [overflow-wrap:anywhere]`}
-            />
           </div>
 
           {/* 3. ไฟล์แนบ */}
