@@ -820,8 +820,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
               <p className="mt-1.5 text-xs text-sky-700 dark:text-sky-300">
                 ยื่นก่อนได้ แล้วแนบเอกสารภายหลังภายใน {thaiShortDate(currentValidation.documentDueDate)} (เมนู ประวัติเอกสาร → ⋮ → แนบเอกสารเพิ่ม)
               </p>
-            ) : isDocumentRecommended ? (
-              <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">การลาประเภทนี้ต้องแนบเอกสารประกอบ (เช่น ใบรับรองแพทย์)</p>
             ) : null}
         </div>
 
