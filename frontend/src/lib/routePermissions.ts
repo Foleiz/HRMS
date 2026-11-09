@@ -130,7 +130,7 @@ export const ROUTE_RULES: RouteRule[] = [
   },
   {
     matchPrefix: '/leave',
-    title: 'การลา',
+    title: 'สิทธิ์การลา',
     requiredPermissions: ['LEAVE_BALANCE_VIEW', 'LEAVE_TYPE_VIEW', 'LEAVE_POLICY_VIEW'],
   },
   {

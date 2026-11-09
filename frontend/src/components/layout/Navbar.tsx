@@ -250,7 +250,7 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/attendance')) return { section: 'ตรวจบันทึกเวลา', page: 'ตรวจบันทึกเวลาประจำวัน' };
 
     // 7. การลา (Leave)
-    if (pathname.startsWith('/leave')) return { section: 'การลา', page: 'ประเภทการลา' };
+    if (pathname.startsWith('/leave')) return { section: 'สิทธิ์การลา', page: 'ประเภทการลา' };
 
     // 8. เงินเดือน (Payroll)
     if (pathname.startsWith('/payroll')) return { section: 'เงินเดือน', page: 'ภาพรวม' };

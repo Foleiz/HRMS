@@ -102,12 +102,12 @@ function LeaveManagementPageContent() {
         case 'types':
           return 'ประเภทการลา';
         case 'policies':
-          return 'สิทธิ์การลา';
+          return 'กำหนดสิทธิ์การลา';
         case 'balances':
           return 'ยอดวันลาพนักงาน';
       }
     };
-    setBreadcrumb({ section: 'การลา', page: getLeaveTabTitle() });
+    setBreadcrumb({ section: 'สิทธิ์การลา', page: getLeaveTabTitle() });
     return () => setBreadcrumb(null);
   }, [activeTab, setBreadcrumb]);
 

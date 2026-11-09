@@ -331,7 +331,7 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        title: 'การลา',
+        title: 'สิทธิ์การลา',
         href: '/leave',
         matchPrefix: '/leave',
         icon: CalendarCheck,
@@ -342,7 +342,7 @@ const menuGroups: MenuGroup[] = [
         ],
         children: [
           { title: 'ประเภทการลา', href: '/leave?tab=types', icon: ListChecks, requiredPermissions: ['LEAVE_TYPE_VIEW'] },
-          { title: 'สิทธิ์การลา', href: '/leave?tab=policies', icon: ShieldCheck, requiredPermissions: ['LEAVE_POLICY_VIEW'] },
+          { title: 'กำหนดสิทธิ์การลา', href: '/leave?tab=policies', icon: ShieldCheck, requiredPermissions: ['LEAVE_POLICY_VIEW'] },
           { title: 'ยอดวันลาพนักงาน', href: '/leave?tab=balances', icon: Wallet, requiredPermissions: ['LEAVE_BALANCE_VIEW'] },
         ],
       },
