@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
-import { Loader2, Sun, Clock3, Save, FileText, RotateCcw, Info, CheckCircle2, Calendar, Check, Paperclip } from 'lucide-react';
+import { Loader2, Sun, Clock3, Save, FileText, RotateCcw, Info, CheckCircle2, Calendar, Check, Paperclip, AlertCircle } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
 import { LeaveDateRangePicker } from './LeaveDateRangePicker';
@@ -823,20 +823,30 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
             ) : null}
         </div>
 
-        {validationErrors.length > 0 && (
-          <div role="alert" className="lg:col-span-2 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 p-4">
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1.5">ยังยื่นคำขอนี้ไม่ได้</p>
-            <ul className="list-disc pl-5 space-y-0.5 text-xs text-red-700 dark:text-red-400">
-              {validationErrors.map((msg) => (
-                <li key={msg}>{msg}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
 
-      {/* แถบปุ่มติดขอบล่าง — ปุ่มหลักอยู่ที่เดิมเสมอ */}
-      <FormActionBar>
+      {/* แถบปุ่มติดขอบล่าง — ปุ่มหลักอยู่ที่เดิมเสมอ พร้อมแถบแจ้งเตือนเงื่อนไขฝั่งซ้าย */}
+      <FormActionBar
+        note={
+          validationErrors.length > 0 ? (
+            <div
+              role="alert"
+              className="flex items-center gap-2.5 py-1.5 px-3 rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs sm:text-sm shadow-2xs"
+            >
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="font-semibold text-rose-800 dark:text-rose-200">ยังยื่นคำขอนี้ไม่ได้:</span>
+                {validationErrors.map((msg, idx) => (
+                  <span key={idx} className="flex items-center gap-1.5">
+                    {idx > 0 && <span className="text-rose-300 dark:text-rose-700">•</span>}
+                    <span>{msg}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : undefined
+        }
+      >
           <Button
           variant="secondary"
           onClick={() => setShowPreview(true)}
