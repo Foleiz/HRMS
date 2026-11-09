@@ -610,7 +610,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                     {/* กล่อง 3: ลาครั้งนี้ */}
                     <div className="bg-white dark:bg-slate-800 rounded-xl border border-blue-100/90 dark:border-blue-900/40 p-2.5 sm:p-3 shadow-2xs flex flex-col justify-between">
                       <span className="text-2xs text-slate-500 dark:text-slate-400 font-medium">ลาครั้งนี้</span>
-                      <span className={`text-xs sm:text-sm font-bold mt-1 ${leaveDays > 0 ? 'text-primary dark:text-blue-400' : 'text-slate-900 dark:text-slate-100'}`}>
+                      <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 mt-1">
                         {leaveDays} วัน
                       </span>
                     </div>
@@ -622,7 +622,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                         className={`text-xs sm:text-sm font-bold mt-1 ${
                           !withinQuota
                             ? 'text-rose-600 dark:text-rose-400'
-                            : 'text-slate-900 dark:text-slate-100'
+                            : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
                         {availableDays != null ? `${availableDays - leaveDays} วัน` : 'ไม่จำกัด'}
