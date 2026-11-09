@@ -4,10 +4,14 @@
    HRMS Theme for Driver.js Tour Guide Popover
    ========================================================================== */
 
+/* Overlay SVG: ต้องไม่มี background-color หรือ backdrop-filter ใดๆ
+   เพราะ driver.js ใช้ SVG path ในการเจาะรู (evenodd cutout) ให้เห็น element ด้านล่างอย่างชัดเจน 100%
+   หากใส่ background/backdrop-filter ที่ตัว overlay จะทำให้รูที่เจาะไว้เบลอและมืด */
 .driver-overlay {
-  background-color: rgba(15, 23, 42, 0.65) !important;
-  backdrop-filter: blur(2px) !important;
-  transition: opacity 0.25s ease-in-out !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .hrms-driver-popover {
@@ -150,10 +154,17 @@
   background-color: #1e293b !important;
 }
 
-.hrms-driver-popover .driver-popover-arrow {
-  border-color: #ffffff !important;
+/* Popover arrow colors - ใน Dark mode ให้ลูกศรมีสีเดียวกับพื้นหลัง popover (#0f172a)
+   โดยคงความโปร่งใสของ 3 ด้านที่เหลือไว้ ให้เป็นสามเหลี่ยมชี้คมชัด */
+:is(.dark .hrms-driver-popover .driver-popover-arrow.driver-popover-arrow-side-top) {
+  border-top-color: #0f172a !important;
 }
-
-:is(.dark .hrms-driver-popover .driver-popover-arrow) {
-  border-color: #0f172a !important;
+:is(.dark .hrms-driver-popover .driver-popover-arrow.driver-popover-arrow-side-bottom) {
+  border-bottom-color: #0f172a !important;
+}
+:is(.dark .hrms-driver-popover .driver-popover-arrow.driver-popover-arrow-side-left) {
+  border-left-color: #0f172a !important;
+}
+:is(.dark .hrms-driver-popover .driver-popover-arrow.driver-popover-arrow-side-right) {
+  border-right-color: #0f172a !important;
 }
