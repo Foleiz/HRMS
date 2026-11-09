@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -9,15 +9,88 @@ import { employeeService } from '@/services/employeeService';
 import { Employee } from '@/types/employee';
 import EmployeeDetailView from '@/components/employees/EmployeeDetailView';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { useOnboardingTour, type TourStep } from '@/hooks/useOnboardingTour';
 
-export default function ProfilePage() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+const PROFILE_TOUR_STEPS: TourStep[] = [
+  {
+    element: '#tour-profile-card',
+    popover: {
+      title: '1. ข้อมูลสรุปและรูปโปรไฟล์',
+      description: 'ตรวจสอบรหัสพนักงาน ชื่อ ตำแหน่ง และคลิกที่รูปภาพเพื่ออัปโหลดรูปถ่ายโปรไฟล์ของตนเอง',
+      side: 'right',
+      align: 'start',
+    },
+  },
+  {
+    element: '#tour-profile-tabs',
+    popover: {
+      title: '2. แท็บข้อมูลประวัติพนักงาน',
+      description: 'เรียกดูและตรวจสอบข้อมูลติดต่อ ที่อยู่ บัญชีธนาคาร ประกันสังคม และประวัติการทำงานของคุณได้ที่นี่',
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+];
+
+function ProfileContent() {
+  const { user, hasPermission, hasRole, isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const tourParam = searchParams?.get('tour');
+  const mockParam = searchParams?.get('mock');
+  const isOnboardingFlow = tourParam === 'onboarding-1';
+  const isDirectTour = tourParam === 'direct';
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // เมื่อทัวร์หน้านี้จบ ให้ตรวจสอบสิทธิ์แล้วพาไปหน้าถัดไป
+  const handleTourComplete = () => {
+    if (!isOnboardingFlow) return;
+
+    let mock: Record<string, boolean> = {};
+    if (mockParam) {
+      try {
+        mock = JSON.parse(decodeURIComponent(mockParam));
+      } catch (e) {}
+    }
+
+    const canViewTime =
+      (mock['ESS_TIME_VIEW'] ?? true) &&
+      (hasPermission('ESS_TIME_VIEW') ||
+        hasRole('ADMIN') ||
+        hasRole('SYSTEM_SUPER') ||
+        Boolean(user?.employeeId));
+
+    const canViewLeave =
+      (mock['ESS_LEAVE_VIEW'] ?? true) &&
+      (hasPermission('ESS_LEAVE_VIEW') ||
+        hasPermission('ESS_DOCS_CREATE') ||
+        hasRole('ADMIN') ||
+        hasRole('SYSTEM_SUPER'));
+
+    const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+
+    if (canViewTime) {
+      router.push(`/ess/attendance?tour=onboarding-2${mockQuery}`);
+    } else if (canViewLeave) {
+      // ข้ามหน้า 2 ไปหน้า 3 อัตโนมัติ (หากไม่มีสิทธิ์หน้า 2)
+      router.push(`/documents/leave?tour=onboarding-3${mockQuery}`);
+    } else {
+      router.push('/guide?completed=1');
+    }
+  };
+
+  useOnboardingTour('profile-page', PROFILE_TOUR_STEPS, {
+    autoStart: false,
+    delayMs: 700,
+    doneBtnText: isOnboardingFlow ? 'ไปยังขั้นตอนที่ 2: ตรวจบันทึกเวลา →' : 'เสร็จสิ้น ✨',
+    triggerCondition: Boolean(employee && (isOnboardingFlow || isDirectTour)),
+    onComplete: handleTourComplete,
+  });
 
   useEffect(() => {
     setBreadcrumb({ section: 'โปรไฟล์', page: 'ข้อมูลพนักงาน' });
@@ -82,5 +155,13 @@ export default function ProfilePage() {
       isProfilePage={true}
       editButtonLabel="แก้ไขข้อมูล"
     />
+  );
+}
+
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={<div className="flex h-[50vh] items-center justify-center text-xs text-slate-400">กำลังโหลด...</div>}>
+      <ProfileContent />
+    </Suspense>
   );
 }

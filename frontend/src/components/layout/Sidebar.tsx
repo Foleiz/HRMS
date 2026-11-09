@@ -8,6 +8,7 @@ import { useSidebar } from '@/context/SidebarContext';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import {
   LayoutDashboard,
+  Compass,
   Users,
   Clock,
   FileText,
@@ -110,6 +111,12 @@ const menuGroups: MenuGroup[] = [
           'DASHBOARD_CEO_VIEW',
           'DASHBOARD_ADMIN_VIEW',
         ],
+      },
+      {
+        title: 'วิธีการใช้งาน',
+        href: '/guide',
+        matchPrefix: '/guide',
+        icon: Compass,
       },
       {
         title: 'ข่าวสารสำหรับฉัน',

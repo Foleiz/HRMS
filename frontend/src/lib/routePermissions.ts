@@ -9,6 +9,10 @@ export interface RouteRule {
 
 export const ROUTE_RULES: RouteRule[] = [
   {
+    matchPrefix: '/guide',
+    title: 'วิธีการใช้งาน',
+  },
+  {
     matchPrefix: '/employees/contracts',
     title: 'สัญญาจ้างงาน',
     requiredPermissions: ['EMP_CONTRACT_VIEW', 'EMP_MANAGE'],

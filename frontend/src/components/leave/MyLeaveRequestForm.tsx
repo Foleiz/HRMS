@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useImperativeHandle, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, Sun, Clock3, Save, FileText, RotateCcw, Info, CheckCircle2, Calendar, Check, Paperclip, AlertCircle } from 'lucide-react';
 import { LeaveType, LeavePolicy, LeaveBalance, LeaveRequest, CreateMyLeaveRequestPayload, LeaveDaysCalculation, LeaveValidationResult } from '@/types/leave';
 import { leaveService } from '@/services/leaveService';
@@ -172,9 +173,22 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   onSubmit,
   onSaveDraft,
 }, ref) => {
-    const { startTour } = useOnboardingTour('leave-request-form', LEAVE_FORM_TOUR_STEPS, {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tourParam = searchParams?.get('tour');
+  const isOnboardingFlow = tourParam === 'onboarding-3';
+  const isDirectTour = tourParam === 'direct';
+
+  const { startTour } = useOnboardingTour('leave-request-form', LEAVE_FORM_TOUR_STEPS, {
     autoStart: true,
     delayMs: 600,
+    doneBtnText: isOnboardingFlow ? 'เสร็จสิ้น Onboarding ภารกิจพนักงานใหม่ 🎉' : 'เสร็จสิ้น ✨',
+    triggerCondition: Boolean(isOnboardingFlow || isDirectTour),
+    onComplete: () => {
+      if (isOnboardingFlow) {
+        router.push('/guide?completed=1');
+      }
+    },
   });
 
   const [form, setForm] = useState(() => (initialDraft ? draftToFormState(initialDraft) : emptyState));

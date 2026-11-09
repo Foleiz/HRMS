@@ -22,8 +22,14 @@ export interface UseOnboardingTourOptions {
   autoStart?: boolean;
   /** ระยะเวลาหน่วงก่อนเริ่มอัตโนมัติ (ms) เพื่อรอให้ DOM โหลดครบสมบูรณ์ (default: 500) */
   delayMs?: number;
+  /** ข้อความปุ่มเสร็จสิ้น / ขั้นตอนถัดไป เช่น 'ไปยังหน้าถัดไป →' */
+  doneBtnText?: string;
+  /** ข้อความปุ่มถัดไป */
+  nextBtnText?: string;
   /** Callback เมื่อทัวร์เสร็จสิ้นหรือผู้ใช้กดยกเลิก */
   onComplete?: () => void;
+  /** เงื่อนไขบังคับเริ่มทัวร์ เช่น searchParams.get('tour') === 'onboarding-1' */
+  triggerCondition?: boolean;
 }
 
 export function useOnboardingTour(
@@ -32,7 +38,14 @@ export function useOnboardingTour(
   options: UseOnboardingTourOptions = {}
 ) {
   const { user, hasPermission } = useAuth();
-  const { autoStart = true, delayMs = 500, onComplete } = options;
+  const {
+    autoStart = true,
+    delayMs = 500,
+    doneBtnText = 'เสร็จสิ้น ✨',
+    nextBtnText = 'ถัดไป →',
+    onComplete,
+    triggerCondition,
+  } = options;
 
   const storageKey = `hrms_tour_completed_${user?.id || 'guest'}_${tourId}`;
   const [isCompleted, setIsCompleted] = useState<boolean>(true);
@@ -81,9 +94,9 @@ export function useOnboardingTour(
     const driverObj = driver({
       showProgress: true,
       progressText: '{{current}} จาก {{total}}',
-      nextBtnText: 'ถัดไป →',
+      nextBtnText,
       prevBtnText: '← ย้อนกลับ',
-      doneBtnText: 'เสร็จสิ้น ✨',
+      doneBtnText,
       popoverClass: 'hrms-driver-popover',
       overlayColor: '#0f172a',
       overlayOpacity: 0.72,
@@ -105,7 +118,7 @@ export function useOnboardingTour(
 
     driverInstanceRef.current = driverObj;
     driverObj.drive();
-  }, [steps, hasPermission, storageKey, onComplete]);
+  }, [steps, hasPermission, storageKey, onComplete, nextBtnText, doneBtnText]);
 
   // ล้างสถานะเพื่อทดสอบเล่นใหม่
   const resetTour = useCallback(() => {
@@ -116,10 +129,23 @@ export function useOnboardingTour(
     startTour();
   }, [storageKey, startTour]);
 
-  // Auto-start ในครั้งแรกที่เข้ามา
+  // การเริ่มทัวร์อัตโนมัติ
   useEffect(() => {
-    if (!autoStart || typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return;
 
+    // หากมีการส่ง triggerCondition มา (เช่น มาจาก query param ?tour=...)
+    if (triggerCondition !== undefined) {
+      if (triggerCondition) {
+        const timer = setTimeout(() => {
+          startTour();
+        }, delayMs);
+        return () => clearTimeout(timer);
+      }
+      return;
+    }
+
+    // Auto-start ปกติในครั้งแรก
+    if (!autoStart) return;
     const completed = localStorage.getItem(storageKey) === 'true';
     if (!completed) {
       const timer = setTimeout(() => {
@@ -127,7 +153,7 @@ export function useOnboardingTour(
       }, delayMs);
       return () => clearTimeout(timer);
     }
-  }, [autoStart, storageKey, delayMs, startTour]);
+  }, [autoStart, storageKey, delayMs, startTour, triggerCondition]);
 
   return {
     startTour,

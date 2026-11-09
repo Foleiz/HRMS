@@ -513,7 +513,7 @@ export default function EmployeeDetailView({
         {/* ============================================================ */}
         {/* ซ้าย: Employee Summary Card                                  */}
         {/* ============================================================ */}
-        <div className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col h-full">
+        <div id="tour-profile-card" className="lg:col-span-4 xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col h-full">
           {/* รหัสพนักงานที่มุมซ้ายบน */}
           <div className="flex items-center justify-between w-full mb-2">
             <span className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-semibold rounded-full font-mono">
@@ -736,7 +736,7 @@ export default function EmployeeDetailView({
         {/* ============================================================ */}
         <div className="lg:col-span-8 xl:col-span-9 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-6 shadow-xs flex flex-col h-full">
           {/* Top Bar: Tabs & Icon-Only Edit Button */}
-          <div className="flex items-end justify-between border-b border-slate-100 dark:border-slate-700/60 gap-3">
+          <div id="tour-profile-tabs" className="flex items-end justify-between border-b border-slate-100 dark:border-slate-700/60 gap-3">
             <TabBar
               aria-label="ข้อมูลพนักงาน"
               className="gap-x-5 text-xs flex-1 min-w-0"

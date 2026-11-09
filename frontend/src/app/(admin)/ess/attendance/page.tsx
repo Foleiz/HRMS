@@ -6,7 +6,8 @@ import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
 import { TabBar, type TabBarItem, CountBadge } from '@/components/ui';
 import { ModalShell } from '@/components/ui/ModalShell';
 import React, { useEffect, useState, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useOnboardingTour, type TourStep } from '@/hooks/useOnboardingTour';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
@@ -37,10 +38,73 @@ import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
+
+const ATTENDANCE_TOUR_STEPS: TourStep[] = [
+  {
+    element: '#tour-attendance-summary',
+    popover: {
+      title: '1. สรุปสถิติเวลาทำงานรายเดือน',
+      description: 'แสดงผลรวมจำนวนวันทำงาน ตรงเวลา มาสาย และจำนวนชั่วโมงทำงานรวมในรอบเดือนปัจจุบัน',
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+  {
+    element: '#tour-attendance-filter',
+    popover: {
+      title: '2. ตัวกรองรอบเดือนและคำนวณเวลา',
+      description: 'เลือกดูประวัติเวลาตามเดือน/ปี หรือกดปุ่มหมุนเพื่อสั่งคำนวณเวลาและกะงานใหม่ได้ทันที',
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+];
+
 function EssAttendancePageContent() {
   const { user, hasPermission, hasRole } = useAuth();
   const toast = useToast();
   const { setBreadcrumb } = useBreadcrumb();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const tourParam = searchParams?.get('tour');
+  const mockParam = searchParams?.get('mock');
+  const isOnboardingFlow = tourParam === 'onboarding-2';
+  const isDirectTour = tourParam === 'direct';
+
+  const handleAttendanceTourComplete = () => {
+    if (!isOnboardingFlow) return;
+
+    let mock: Record<string, boolean> = {};
+    if (mockParam) {
+      try {
+        mock = JSON.parse(decodeURIComponent(mockParam));
+      } catch (e) {}
+    }
+
+    const canViewLeave =
+      (mock['ESS_LEAVE_VIEW'] ?? true) &&
+      (hasPermission('ESS_LEAVE_VIEW') ||
+        hasPermission('ESS_DOCS_CREATE') ||
+        hasRole('ADMIN') ||
+        hasRole('SYSTEM_SUPER'));
+
+    const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+
+    if (canViewLeave) {
+      router.push(`/documents/leave?tour=onboarding-3${mockQuery}`);
+    } else {
+      router.push('/guide?completed=1');
+    }
+  };
+
+  useOnboardingTour('attendance-page', ATTENDANCE_TOUR_STEPS, {
+    autoStart: false,
+    delayMs: 700,
+    doneBtnText: isOnboardingFlow ? 'ไปยังขั้นตอนที่ 3: วิธียื่นลา →' : 'เสร็จสิ้น ✨',
+    triggerCondition: Boolean(isOnboardingFlow || isDirectTour),
+    onComplete: handleAttendanceTourComplete,
+  });
 
   const canViewEss =
     hasPermission('ESS_TIME_VIEW') ||
@@ -55,7 +119,6 @@ function EssAttendancePageContent() {
   // ─────────────────────────────────────────────────────────────
   // State: Data
   // ─────────────────────────────────────────────────────────────
-  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>(() => {
     const tabParam = searchParams?.get('tab') as 'history' | 'adjustments';
     if (tabParam && ['history', 'adjustments'].includes(tabParam)) return tabParam;
@@ -454,7 +517,7 @@ function EssAttendancePageContent() {
         <div className="space-y-6">
           {/* การ์ดสรุปประจำเดือน */}
           {monthlySummary && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div id="tour-attendance-summary" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* 1. วันทำงานทั้งหมด */}
               <div className="bg-slate-100 dark:bg-slate-800/90 p-4 rounded-2xl border border-slate-300 dark:border-slate-700 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between">
                 <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
@@ -517,7 +580,7 @@ function EssAttendancePageContent() {
           {/* History Table */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm space-y-4">
             {/* Toolbar: ตัวกรองซ้าย (เดือน, ปี) + รีเฟรช/คำนวณใหม่ขวา */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div id="tour-attendance-filter" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <CustomSelect
                   value={selectedMonth}
