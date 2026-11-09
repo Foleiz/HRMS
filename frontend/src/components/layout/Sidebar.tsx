@@ -845,10 +845,10 @@ export const Sidebar: React.FC = () => {
                             >
                               {ChildIcon ? (
                                 <ChildIcon
-                                  className={`w-3.5 h-3.5 shrink-0 transition-transform duration-150 ${
+                                  className={`w-4.5 h-4.5 shrink-0 transition-transform duration-150 ${
                                     childActive
-                                      ? 'text-primary dark:text-blue-400 scale-110'
-                                      : 'text-slate-400 dark:text-slate-500'
+                                      ? 'text-primary dark:text-blue-400 scale-105'
+                                      : 'text-slate-500 dark:text-slate-400'
                                   }`}
                                 />
                               ) : (
