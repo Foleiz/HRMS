@@ -9,7 +9,6 @@ import { Button, TableToolbar } from '@/components/ui';
 interface GuideItem {
   id: string;
   title: string;
-  description: string;
   stepCount: number;
   icon: React.ElementType;
   route: string;
@@ -19,7 +18,6 @@ const GUIDE_ITEMS: GuideItem[] = [
   {
     id: 'hr-onboarding',
     title: 'เพิ่มพนักงานใหม่',
-    description: 'บันทึกประวัติพนักงานใหม่ จัดทำสัญญาจ้าง และกำหนดสิทธิ์ผู้ใช้งาน',
     stepCount: 3,
     icon: Users,
     route: '/employees?tour=hr-onboarding-1',
@@ -27,7 +25,6 @@ const GUIDE_ITEMS: GuideItem[] = [
   {
     id: 'leave-request',
     title: 'การยื่นคำขอลาและวันหยุด',
-    description: 'เลือกประเภทการลา ตรวจสอบสิทธิ์คงเหลือ และส่งคำขอให้อนุมัติ',
     stepCount: 2,
     icon: CalendarDays,
     route: '/documents/leave',
@@ -35,7 +32,6 @@ const GUIDE_ITEMS: GuideItem[] = [
   {
     id: 'roles-permissions',
     title: 'การกำหนดบทบาทและสิทธิ์การใช้งาน',
-    description: 'สร้างผู้ใช้งาน กำหนดบทบาท และจัดการสิทธิ์การเข้าถึงเมนูต่างๆ',
     stepCount: 3,
     icon: ShieldCheck,
     route: '/settings?tab=users&tour=hr-onboarding-3',
@@ -56,23 +52,18 @@ function GuidePageContent() {
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return GUIDE_ITEMS;
-    return GUIDE_ITEMS.filter(
-      (item) =>
-        item.title.toLowerCase().includes(q) ||
-        item.description.toLowerCase().includes(q)
+    return GUIDE_ITEMS.filter((item) =>
+      item.title.toLowerCase().includes(q)
     );
   }, [searchQuery]);
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      {/* 1. Page Header (ตรงตามมาตรฐานระบบ) */}
+      {/* 1. Page Header (เฉพาะชื่อหัวข้อหลัก) */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
           วิธีการใช้งาน
         </h1>
-        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-          คู่มือแนะนำการใช้งานระบบแบบทีละขั้นตอน เลือกหัวข้อที่ต้องการเพื่อเริ่มดู
-        </p>
       </div>
 
       {/* 2. Main Content Card (Panel พื้นหลังครอบตามมาตรฐานเดียวกับหน้าอื่นๆ ในระบบ) */}
@@ -96,19 +87,14 @@ function GuidePageContent() {
                     key={item.id}
                     className="bg-slate-50/60 dark:bg-slate-900/40 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-4 transition-all hover:bg-slate-100/60 dark:hover:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                   >
-                    {/* ฝั่งซ้าย: ไอคอน, ชื่อหัวข้อ และคำอธิบาย */}
+                    {/* ฝั่งซ้าย: ไอคอน และชื่อหัวข้อ (ไม่มีรายละเอียดย่อย) */}
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                         <Icon className="w-5 h-5" />
                       </div>
-                      <div className="min-w-0">
-                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                          {item.title}
-                        </h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          {item.description}
-                        </p>
-                      </div>
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                        {item.title}
+                      </h4>
                     </div>
 
                     {/* ฝั่งขวา: จำนวนขั้นตอน และปุ่มเริ่มดูคู่มือ */}
