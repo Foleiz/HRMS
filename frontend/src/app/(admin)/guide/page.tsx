@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
-import { Users, CalendarDays, ShieldCheck, Inbox } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import { Button, TableToolbar } from '@/components/ui';
+import { WIZARD_FLOWS } from '@/config/wizardTours';
 
 interface GuideItem {
   id: string;
@@ -14,29 +15,13 @@ interface GuideItem {
   route: string;
 }
 
-const GUIDE_ITEMS: GuideItem[] = [
-  {
-    id: 'hr-onboarding',
-    title: 'เพิ่มพนักงานใหม่',
-    stepCount: 3,
-    icon: Users,
-    route: '/employees?tour=hr-onboarding-1',
-  },
-  {
-    id: 'leave-request',
-    title: 'การยื่นคำขอลาและวันหยุด',
-    stepCount: 2,
-    icon: CalendarDays,
-    route: '/documents/leave',
-  },
-  {
-    id: 'roles-permissions',
-    title: 'การกำหนดบทบาทและสิทธิ์การใช้งาน',
-    stepCount: 3,
-    icon: ShieldCheck,
-    route: '/settings?tab=users&tour=hr-onboarding-3',
-  },
-];
+const GUIDE_ITEMS: GuideItem[] = WIZARD_FLOWS.map((flow) => ({
+  id: flow.id,
+  title: flow.title,
+  stepCount: flow.steps.length,
+  icon: flow.icon,
+  route: flow.steps[0].route,
+}));
 
 function GuidePageContent() {
   const router = useRouter();

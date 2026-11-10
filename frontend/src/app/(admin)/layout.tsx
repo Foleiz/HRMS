@@ -4,6 +4,7 @@ import React, { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Navbar } from '@/components/layout/Navbar';
+import { GlobalWizardTour } from '@/components/common/GlobalWizardTour';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
@@ -47,6 +48,9 @@ export default function AdminLayout({
         <Navbar />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {children}
+          <Suspense fallback={null}>
+            <GlobalWizardTour />
+          </Suspense>
         </main>
       </div>
     </div>
