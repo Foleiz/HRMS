@@ -243,7 +243,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
       onBackdropClick={onClose}
       className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200"
     >
-      <div className="w-screen max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-slate-700">
+      <div id="tour-user-drawer-dialog" className="w-screen max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-slate-700">
           {/* Header */}
           <div id="tour-user-drawer-header" className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">

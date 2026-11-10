@@ -632,7 +632,7 @@ export default function CreateEmployeeModal({
 
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
-      <div className="relative w-full max-w-5xl shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+      <div id="tour-emp-modal-dialog" className="relative w-full max-w-5xl shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header (ตรงตามสไตล์เดียวกับ EditEmployeeModal) */}
         <div id="tour-emp-modal-header">
           <ModalHeader

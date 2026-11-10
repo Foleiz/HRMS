@@ -135,6 +135,7 @@ export function useOnboardingTour(
       prevBtnText,
       doneBtnText,
       popoverClass: 'hrms-driver-popover',
+      popoverOffset: 16,
       overlayColor: 'transparent',
       overlayOpacity: 0,
       stagePadding: 6,

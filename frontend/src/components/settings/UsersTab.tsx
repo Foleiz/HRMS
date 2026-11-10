@@ -66,7 +66,7 @@ const USER_BUTTON_STEPS: TourStep[] = [
 
 const USER_DRAWER_STEPS: TourStep[] = [
   {
-    element: '#tour-user-drawer-header',
+    element: '#tour-user-drawer-dialog',
     popover: {
       title: 'ขั้นตอนที่ 3: ผูกบัญชีผู้ใช้และกำหนดสิทธิ์',
       description: 'เลือกพนักงานที่ต้องการผูกบัญชี กำหนดชื่อผู้ใช้ (Username), รหัสผ่าน และเลือกบทบาท (Role) ในการเข้าถึงระบบ จากนั้นกด "ถัดไป" เพื่อเสร็จสิ้นขั้นตอนทั้งหมด',
@@ -122,7 +122,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
       router.push(`/guide${mockQuery}`);
     },
     onClose: () => {
-      router.replace(window.location.pathname);
+      router.replace('/settings?tab=users');
     },
   });
 
@@ -143,7 +143,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
     },
     onClose: () => {
       if (onCloseDrawer) onCloseDrawer();
-      router.replace(window.location.pathname);
+      router.replace('/settings?tab=users');
     },
   });
 

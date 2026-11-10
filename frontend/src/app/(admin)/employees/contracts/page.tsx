@@ -61,11 +61,11 @@ const CONTRACT_BUTTON_STEPS: TourStep[] = [
 
 const CONTRACT_MODAL_STEPS: TourStep[] = [
   {
-    element: '#tour-contract-modal-header',
+    element: '#tour-contract-modal-dialog',
     popover: {
       title: 'ขั้นตอนที่ 2: กรอกข้อมูลสัญญาจ้างงาน',
       description: 'เลือกพนักงานที่ต้องการทำสัญญา กำหนดประเภทสัญญา วันเริ่มงาน ฐานเงินเดือน และแนบเอกสารสัญญา คุณสามารถบันทึกข้อมูลได้จริง หรือกด "ถัดไป" เพื่อไปยังเมนูผู้ใช้งาน',
-      side: 'bottom',
+      side: 'left',
       align: 'start',
     },
     requiredPermission: 'EMP_CONTRACT_VIEW',

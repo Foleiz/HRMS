@@ -176,11 +176,11 @@ const EMPLOYEE_BUTTON_STEPS: TourStep[] = [
 
 const EMPLOYEE_MODAL_STEPS: TourStep[] = [
   {
-    element: '#tour-emp-modal-header',
+    element: '#tour-emp-modal-dialog',
     popover: {
       title: 'ขั้นตอนที่ 1: กรอกข้อมูลพนักงานใหม่',
       description: 'กรอกข้อมูลตามหัวข้อต่างๆ ให้ครบถ้วน คุณสามารถแก้ไขและกดบันทึกข้อมูลได้จริง หรือกด "ถัดไป" เพื่อไปยังเมนูสัญญาจ้าง',
-      side: 'bottom',
+      side: 'left',
       align: 'start',
     },
     requiredPermission: 'EMP_PROFILE_VIEW',
