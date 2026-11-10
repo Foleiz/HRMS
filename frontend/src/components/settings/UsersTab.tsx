@@ -56,7 +56,7 @@ const USER_BUTTON_STEPS: TourStep[] = [
     element: '#tour-user-add-btn',
     popover: {
       title: 'ขั้นตอนที่ 3: คลิกปุ่ม "เพิ่มผู้ใช้งาน"',
-      description: 'ขั้นตอนสุดท้ายในการรับพนักงานใหม่เข้าสู่ระบบ คือการสร้างบัญชีผู้ใช้งาน (User Account) เพื่อกำหนด Username, รหัสผ่าน และบทบาทสำหรับเข้าสู่ระบบ HRMS',
+      description: 'คลิกปุ่มนี้เพื่อเปิดแบบฟอร์มสร้างบัญชีเข้าใช้งานระบบสำหรับพนักงาน',
       side: 'bottom',
       align: 'end',
     },
@@ -68,8 +68,8 @@ const USER_DRAWER_STEPS: TourStep[] = [
   {
     element: '#tour-user-drawer-header',
     popover: {
-      title: 'ผูกบัญชีพนักงานและกำหนดสิทธิ์ (Role)',
-      description: 'เลือกพนักงานที่ต้องการผูกบัญชี กำหนดชื่อผู้ใช้ (Username), รหัสผ่าน และเลือกบทบาท (Role) สำหรับเข้าสู่ระบบ จากนั้นกดปุ่ม "บันทึก" เพื่อเสร็จสิ้นขั้นตอนทั้งหมด',
+      title: 'ขั้นตอนที่ 3: ผูกบัญชีผู้ใช้และกำหนดสิทธิ์',
+      description: 'เลือกพนักงานที่ต้องการผูกบัญชี กำหนดชื่อผู้ใช้ (Username), รหัสผ่าน และเลือกบทบาท (Role) สำหรับเข้าสู่ระบบ จากนั้นกดปุ่ม "บันทึก" หรือกดปุ่มถัดไปเพื่อเสร็จสิ้นขั้นตอน',
       side: 'left',
       align: 'start',
     },
@@ -111,7 +111,12 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   // Phase 1: Tour ชี้ปุ่มเพิ่มผู้ใช้งาน
   useOnboardingTour('hr-onboarding-user-btn', USER_BUTTON_STEPS, {
     triggerCondition: tourParam === 'hr-onboarding-3' && !isDrawerOpen,
-    doneBtnText: 'เปิดแบบฟอร์มผู้ใช้งาน →',
+    prevBtnText: 'ย้อนกลับ',
+    doneBtnText: 'ถัดไป',
+    onPrev: () => {
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
+    },
     onDone: () => {
       onAddUserClick();
     },
@@ -122,8 +127,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({
     triggerCondition: tourParam === 'hr-onboarding-3' && Boolean(isDrawerOpen),
     delayMs: 250,
     showPrevBtn: true,
-    prevBtnText: '← ย้อนกลับ',
-    doneBtnText: 'เสร็จสิ้น Flow เพิ่มพนักงานใหม่ 🎉',
+    prevBtnText: 'ย้อนกลับ',
+    doneBtnText: 'ถัดไป',
     onPrev: () => {
       if (onCloseDrawer) onCloseDrawer();
     },

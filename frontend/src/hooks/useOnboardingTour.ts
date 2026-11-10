@@ -122,16 +122,15 @@ export function useOnboardingTour(
     isNavigatingRef.current = false;
     const currentOpts = optionsRef.current;
     const {
-      doneBtnText = 'เสร็จสิ้น ✨',
-      nextBtnText = 'ถัดไป →',
-      prevBtnText = '← ย้อนกลับ',
+      doneBtnText = 'ถัดไป',
+      nextBtnText = 'ถัดไป',
+      prevBtnText = 'ย้อนกลับ',
       showPrevBtn = false,
     } = currentOpts;
 
     // 3. กำหนดค่า Driver.js พร้อมปุ่มภาษาไทยและ Theme ของระบบ
     const driverObj = driver({
-      showProgress: validDriveSteps.length > 1,
-      progressText: '{{current}} จาก {{total}}',
+      showProgress: false,
       nextBtnText,
       prevBtnText,
       doneBtnText,
@@ -148,12 +147,13 @@ export function useOnboardingTour(
       onPopoverRender: (popover) => {
         // ควบคุมปุ่ม Previous / ย้อนกลับ
         if (popover.previousButton) {
-          if (showPrevBtn) {
+          if (showPrevBtn || Boolean(currentOpts.onPrev)) {
             popover.previousButton.classList.remove('driver-popover-btn-disabled');
             popover.previousButton.classList.add('hrms-btn-enabled');
             popover.previousButton.style.display = 'inline-flex';
             popover.previousButton.style.opacity = '1';
             popover.previousButton.style.pointerEvents = 'auto';
+            popover.previousButton.innerText = prevBtnText;
             popover.previousButton.onclick = (e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -162,13 +162,14 @@ export function useOnboardingTour(
               } catch {}
               optionsRef.current.onPrev?.();
             };
-          } else if (validDriveSteps.length <= 1) {
+          } else {
             popover.previousButton.style.display = 'none';
           }
         }
 
-        // ควบคุมปุ่ม Next / Done (เสร็จสิ้น / ไปยังหน้าถัดไป)
+        // ควบคุมปุ่ม Next / ถัดไป
         if (popover.nextButton) {
+          popover.nextButton.innerText = doneBtnText || nextBtnText || 'ถัดไป';
           popover.nextButton.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -181,16 +182,9 @@ export function useOnboardingTour(
           };
         }
 
-        // ควบคุมปุ่ม Close (✕) ให้ปิดเฉพาะทัวร์โดยไม่ส่งผลต่อหน้าจอหรือการนำทาง
+        // ซ่อนปุ่ม Close (✕) ตามที่ผู้ใช้ระบุว่ามีแค่สองปุ่มคือ "ย้อนกลับ" , "ถัดไป"
         if (popover.closeButton) {
-          popover.closeButton.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            try {
-              driverObj.destroy();
-            } catch {}
-            optionsRef.current.onClose?.();
-          };
+          popover.closeButton.style.display = 'none';
         }
       },
       onDestroyed: () => {

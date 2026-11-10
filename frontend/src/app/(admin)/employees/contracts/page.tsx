@@ -51,7 +51,7 @@ const CONTRACT_BUTTON_STEPS: TourStep[] = [
     element: '#tour-contract-add-btn',
     popover: {
       title: 'ขั้นตอนที่ 2: คลิกปุ่ม "สร้างสัญญาใหม่"',
-      description: 'เมื่อเพิ่มข้อมูลพนักงานเรียบร้อยแล้ว ขั้นตอนสำคัญถัดไปคือกดปุ่มนี้เพื่อเปิดแบบฟอร์มจัดทำสัญญาจ้างงาน',
+      description: 'คลิกปุ่มนี้เพื่อเปิดแบบฟอร์มจัดทำสัญญาจ้างงานให้กับพนักงานใหม่',
       side: 'bottom',
       align: 'end',
     },
@@ -63,8 +63,8 @@ const CONTRACT_MODAL_STEPS: TourStep[] = [
   {
     element: '#tour-contract-modal-header',
     popover: {
-      title: 'กรอกรายละเอียดสัญญาจ้างงาน',
-      description: 'เลือกพนักงานที่เพิ่งเพิ่มเข้ามา กำหนดประเภทสัญญา วันเริ่มงาน ฐานเงินเดือน และแนบเอกสารสัญญา คุณสามารถกรอกข้อมูลและกดปุ่ม "บันทึกสัญญา" ได้ทันที หรือกด "ไปยังขั้นตอนที่ 3: บัญชีผู้ใช้งาน" เพื่อดำเนินการต่อ',
+      title: 'ขั้นตอนที่ 2: กรอกข้อมูลสัญญาจ้างงาน',
+      description: 'เลือกพนักงานที่ต้องการทำสัญญา กำหนดประเภทสัญญา วันเริ่มงาน ฐานเงินเดือน และแนบเอกสารสัญญา คุณสามารถกรอกข้อมูลและกดปุ่ม "บันทึกสัญญา" ได้ทันที หรือกด "ถัดไป" เพื่อดำเนินการต่อ',
       side: 'bottom',
       align: 'start',
     },
@@ -82,7 +82,12 @@ function ContractsPageContent() {
   // Phase 1: Tour ชี้ปุ่มสร้างสัญญาใหม่
   useOnboardingTour('hr-onboarding-contract-btn', CONTRACT_BUTTON_STEPS, {
     triggerCondition: tourParam === 'hr-onboarding-2' && !isCreateModalOpen,
-    doneBtnText: 'เปิดแบบฟอร์มสัญญา →',
+    prevBtnText: 'ย้อนกลับ',
+    doneBtnText: 'ถัดไป',
+    onPrev: () => {
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/employees?tour=hr-onboarding-1${mockQuery}`);
+    },
     onDone: () => {
       setIsCreateModalOpen(true);
     },
@@ -93,8 +98,8 @@ function ContractsPageContent() {
     triggerCondition: tourParam === 'hr-onboarding-2' && isCreateModalOpen,
     delayMs: 250,
     showPrevBtn: true,
-    prevBtnText: '← ย้อนกลับ',
-    doneBtnText: 'ไปยังขั้นตอนที่ 3: บัญชีผู้ใช้งาน →',
+    prevBtnText: 'ย้อนกลับ',
+    doneBtnText: 'ถัดไป',
     onPrev: () => {
       setIsCreateModalOpen(false);
     },

@@ -166,7 +166,7 @@ const EMPLOYEE_BUTTON_STEPS: TourStep[] = [
     element: '#tour-employee-add-btn',
     popover: {
       title: 'ขั้นตอนที่ 1: คลิกปุ่ม "เพิ่มพนักงาน"',
-      description: 'เริ่มต้นกระบวนการด้วยการคลิกปุ่มนี้ เพื่อเปิดแบบฟอร์มบันทึกข้อมูลและประวัติพนักงานใหม่เข้าสู่ระบบ',
+      description: 'เริ่มต้นด้วยการคลิกปุ่มนี้ เพื่อเปิดแบบฟอร์มบันทึกข้อมูลและประวัติพนักงานใหม่เข้าสู่ระบบ',
       side: 'bottom',
       align: 'end',
     },
@@ -178,8 +178,8 @@ const EMPLOYEE_MODAL_STEPS: TourStep[] = [
   {
     element: '#tour-emp-modal-header',
     popover: {
-      title: 'กรอกข้อมูลพนักงานใหม่ให้ครบถ้วน',
-      description: 'กรอกข้อมูลตามหัวข้อต่างๆ ให้ครบถ้วน (เช่น ข้อมูลส่วนตัว ข้อมูลการทำงาน ตำแหน่ง และแผนก) คุณสามารถพิมพ์ แก้ไข หรือกดปุ่ม "บันทึกข้อมูล" ได้ทันที หรือกด "ไปยังขั้นตอนที่ 2: สัญญาจ้าง" เพื่อดำเนินการต่อ',
+      title: 'ขั้นตอนที่ 1: กรอกข้อมูลพนักงานใหม่',
+      description: 'กรอกข้อมูลตามหัวข้อต่างๆ ให้ครบถ้วน (เช่น ข้อมูลส่วนตัว ข้อมูลการทำงาน ตำแหน่ง และแผนก) คุณสามารถพิมพ์ แก้ไข หรือกดปุ่ม "บันทึกข้อมูล" ได้ทันที หรือกด "ถัดไป" เพื่อดำเนินการต่อ',
       side: 'bottom',
       align: 'start',
     },
@@ -197,7 +197,11 @@ function EmployeesPageContent() {
   // Phase 1: Tour ชี้ที่ปุ่มเพิ่มพนักงาน
   useOnboardingTour('hr-onboarding-emp-btn', EMPLOYEE_BUTTON_STEPS, {
     triggerCondition: tourParam === 'hr-onboarding-1' && !isCreateModalOpen,
-    doneBtnText: 'เปิดแบบฟอร์มพนักงาน →',
+    prevBtnText: 'ย้อนกลับ',
+    doneBtnText: 'ถัดไป',
+    onPrev: () => {
+      router.push('/guide');
+    },
     onDone: () => {
       setIsCreateModalOpen(true);
     },
@@ -208,8 +212,8 @@ function EmployeesPageContent() {
     triggerCondition: tourParam === 'hr-onboarding-1' && isCreateModalOpen,
     delayMs: 250,
     showPrevBtn: true,
-    prevBtnText: '← ย้อนกลับ',
-    doneBtnText: 'ไปยังขั้นตอนที่ 2: สัญญาจ้าง →',
+    prevBtnText: 'ย้อนกลับ',
+    doneBtnText: 'ถัดไป',
     onPrev: () => {
       setIsCreateModalOpen(false);
     },
