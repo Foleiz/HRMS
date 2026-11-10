@@ -1255,18 +1255,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       {/* Group Content (Modules) */}
                       {isExpanded && (
                         isGuideCat ? (
-                          /* Custom View สำหรับหมวด "วิธีการใช้งาน": แสดง Flow เพิ่มพนักงานใหม่ และ 3 เมนูย่อย */
-                          <div className="p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-slate-900/40">
+                          /* Custom View สำหรับหมวด "วิธีการใช้งาน": แสดงหัวข้อไกด์ในระบบ */
+                          <div className="p-4 sm:p-5 space-y-3 bg-slate-50/50 dark:bg-slate-900/40">
                             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs">
+                              {/* Header */}
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                                     <Compass className="w-5 h-5" />
                                   </div>
                                   <div>
                                     <div className="flex items-center gap-2">
                                       <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                        Flow เพิ่มพนักงานใหม่ (HR Onboarding Flow)
+                                        ไกด์: เพิ่มพนักงานใหม่ (HR Onboarding)
                                       </h4>
                                       <span
                                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -1277,19 +1278,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                             : 'bg-slate-100 text-slate-400'
                                         }`}
                                       >
-                                        {guideActiveSubCount}/{ONBOARDING_FLOW_ITEMS.length} เมนูเปิดใช้งาน
+                                        {guideActiveSubCount}/{ONBOARDING_FLOW_ITEMS.length} เปิดใช้งาน
                                       </span>
                                     </div>
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                      ขั้นตอนต่อเนื่องสำหรับการเตรียมความพร้อมและบันทึกข้อมูลพนักงานใหม่เข้าสู่ระบบ (เชื่อมต่อ 3 เมนูหลัก)
+                                      กำหนดสิทธิ์เข้าถึง 3 เมนูในขั้นตอนรับพนักงานใหม่ (เชื่อมโยงกับเมนูหลักภายนอกอัตโนมัติ)
                                     </p>
                                   </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                                  <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                                    {guideActiveSubCount > 0 ? 'เปิดใช้งาน Flow' : 'ปิด Flow'}
-                                  </span>
                                   <ToggleSwitch
                                     checked={guideActiveSubCount > 0}
                                     onChange={handleToggleGuideOnboarding}
@@ -1299,11 +1297,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               </div>
 
                               {/* 3 Sub-item Checkbox List */}
-                              <div className="mt-4 space-y-2.5">
-                                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                                  รายการเมนูใน Flow นี้ (ติ๊กเลือกเพื่อกำหนดสิทธิ์ — มีผลเชื่อมโยงกับเมนูหลักภายนอกทันที):
-                                </div>
-
+                              <div className="mt-3.5 space-y-2">
                                 {ONBOARDING_FLOW_ITEMS.map((item) => {
                                   const targetMod = localModules.find((m) => m.moduleCode === item.targetModuleCode);
                                   const isActive = targetMod ? isModuleActive(targetMod) : false;
@@ -1313,7 +1307,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     <div
                                       key={item.targetModuleCode}
                                       onClick={() => canEditRole && handleToggleFlowSubItem(item.targetModuleCode)}
-                                      className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
+                                      className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
                                         isActive
                                           ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 shadow-2xs'
                                           : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75 hover:opacity-100'
@@ -1328,29 +1322,24 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                           className="w-4 h-4 rounded text-primary focus:ring-primary/20 cursor-pointer shrink-0"
                                         />
                                         <div
-                                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                                             isActive
                                               ? 'bg-primary text-white shadow-2xs'
                                               : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
                                           }`}
                                         >
-                                          <ItemIcon className="w-4 h-4" />
+                                          <ItemIcon className="w-3.5 h-3.5" />
                                         </div>
-                                        <div className="min-w-0">
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                              {item.label}
-                                            </span>
-                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                              {item.route}
-                                            </span>
-                                            <span className="text-[10px] text-primary dark:text-blue-400 font-semibold hidden md:inline">
-                                              ({item.badge})
-                                            </span>
-                                          </div>
-                                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                            {item.desc}
-                                          </p>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                            {item.label}
+                                          </span>
+                                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                            {item.route}
+                                          </span>
+                                          <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+                                            • {item.badge}
+                                          </span>
                                         </div>
                                       </div>
 
@@ -1362,20 +1351,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                               : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
                                           }`}
                                         >
-                                          {isActive ? '✓ มีสิทธิ์' : '✕ ไม่มีสิทธิ์'}
+                                          {isActive ? '✓ มีสิทธิ์' : '✕ ปิด'}
                                         </span>
                                       </div>
                                     </div>
                                   );
                                 })}
-                              </div>
-
-                              {/* Two-way Sync Note */}
-                              <div className="mt-4 p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
-                                <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                                <p className="leading-relaxed text-[11px]">
-                                  <strong>การเชื่อมโยงสิทธิ์แบบเรียลไทม์ (Two-Way Sync):</strong> การติ๊กเลือกเมนูย่อยทั้ง 3 รายการข้างต้นนี้ จะเชื่อมโยงและอัปเดตสิทธิ์ของโมดูลหลักภายนอก (<code>ทะเบียนประวัติพนักงาน</code>, <code>สัญญาจ้างงาน</code>, <code>บัญชีผู้ใช้งาน</code>) โดยอัตโนมัติทันที
-                                </p>
                               </div>
                             </div>
                           </div>
