@@ -1720,6 +1720,8 @@ function SchedulesContent() {
                 <>
                   <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
                   <Button
+                    id="tour-shift-add-btn"
+                    data-tour="tour-shift-add-btn"
                     size="sm"
                     icon={<Plus className="w-3.5 h-3.5" />}
                     onClick={openShiftCreate}

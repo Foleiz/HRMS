@@ -226,6 +226,8 @@ export default function TransfersPage() {
             actions={
               canCreateTransfers ? (
                 <Button
+                  id="tour-transfer-add-btn"
+                  data-tour="tour-transfer-add-btn"
                   onClick={() => setIsCreateModalOpen(true)}
                   icon={<Plus className="w-4 h-4" />}
                   className="shrink-0 self-start sm:self-auto"
