@@ -292,7 +292,6 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
               '#tour-contract-action-btn',
               '[data-tour="tour-contract-action-btn"]',
               'table tbody tr td:last-child button',
-              '#tour-contract-add-btn',
               'main table',
             ],
             side: 'left',
@@ -315,12 +314,12 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
           },
           {
             title: 'ขั้นตอนที่ 3: ระงับสิทธิ์เข้าใช้งานระบบ',
-            description: 'ค้นหาบัญชีผู้ใช้ของพนักงานที่ลาออก แล้วคลิกปุ่มจุดสามจุด (⋮) เพื่อกด "ระงับการใช้งาน" (Deactivate) ระงับสิทธิ์เข้าถึงระบบขององค์กร',
+            description: 'ค้นหาบัญชีผู้ใช้ของพนักงานที่ลาออก แล้วคลิกปุ่มจุดสามจุด (⋮) ในคอลัมน์จัดการ เพื่อกด "ระงับการใช้งาน" (Deactivate) ระงับสิทธิ์เข้าถึงระบบขององค์กร',
             selectors: [
+              '#tour-user-action-resignation',
               '#tour-user-action-btn',
               '[data-tour="tour-user-action-btn"]',
               'table tbody tr td:last-child button',
-              '#tour-user-add-btn',
               'main table',
             ],
             side: 'left',

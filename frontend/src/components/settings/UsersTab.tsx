@@ -200,24 +200,33 @@ export const UsersTab: React.FC<UsersTabProps> = ({
               ) : users.length === 0 ? (
                 <TableEmpty colSpan={8} text="ไม่พบข้อมูลบัญชีผู้ใช้งาน" />
               ) : (
-                users.map((user, idx) => {
-                  const rowNumber = (currentPage - 1) * pageSize + idx + 1;
+                (() => {
+                  const firstResignationIndex = users.findIndex((u) => !!u.resignationLastWorkingDate);
+                  return users.map((user, idx) => {
+                    const rowNumber = (currentPage - 1) * pageSize + idx + 1;
+                    const isTargetResignation = idx === firstResignationIndex;
+                    const isFirstRow = idx === 0;
+                    const actionButtonId = isTargetResignation
+                      ? 'tour-user-action-resignation'
+                      : isFirstRow
+                        ? 'tour-user-action-btn'
+                        : undefined;
 
-                  return (
-                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/50 transition-colors">
-                      {/* 1. ลำดับ */}
-                      <td className="py-3.5 px-4 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
-                        {rowNumber}
-                      </td>
+                    return (
+                      <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40/50 transition-colors">
+                        {/* 1. ลำดับ */}
+                        <td className="py-3.5 px-4 text-center text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
+                          {rowNumber}
+                        </td>
 
-                      {/* 2. ชื่อผู้ใช้งาน */}
-                      <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200 tracking-tight">
-                        {user.username}
-                      </td>
+                        {/* 2. ชื่อผู้ใช้งาน */}
+                        <td className="py-3.5 px-4 font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                          {user.username}
+                        </td>
 
-                      {/* 3. ชื่อ-นามสกุล + Avatar + แผนก/ตำแหน่ง */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
+                        {/* 3. ชื่อ-นามสกุล + Avatar + แผนก/ตำแหน่ง */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2.5">
                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center font-bold text-xs shrink-0 border border-slate-200 dark:border-slate-700">
                             {user.fullName.charAt(0) || <User className="w-4 h-4" />}
                           </div>
@@ -310,8 +319,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       {/* 8. จัดการ (3 dots actions menu) */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <ActionDropdown
-                          id={idx === 0 ? 'tour-user-action-btn' : undefined}
-                          dataTour="tour-user-action-btn"
+                          id={actionButtonId}
+                          dataTour={isTargetResignation ? 'tour-user-action-resignation' : 'tour-user-action-btn'}
                           menuClassName="w-44"
                           triggerClassName="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
                           items={[
@@ -347,9 +356,10 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
+                });
+              })()
+            )}
+          </tbody>
           </table>
         </div>
 

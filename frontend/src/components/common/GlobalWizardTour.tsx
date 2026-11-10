@@ -76,64 +76,62 @@ export function GlobalWizardTour() {
     const { pageStep, prevPageRoute, nextPageRoute } = ctx;
     const isLastPage = pageStep.stepNumber === pageStep.totalSteps;
 
+    // ฟังก์ชันค้นหา DOM element ที่ดีที่สุดสำหรับ subStep นั้นๆ แบบ Realtime
+    const resolveSubStepElement = (sub: (typeof pageStep.subSteps)[0]): Element => {
+      const isSidebarStep =
+        sub.title.startsWith('ตำแหน่งเมนู') ||
+        sub.selectors.some((s) => s.includes('data-sidebar-path') || s.includes('aside'));
+
+      for (const sel of sub.selectors) {
+        try {
+          const el = document.querySelector(sel);
+          if (el && (el.getBoundingClientRect().width > 0 || el.getBoundingClientRect().height > 0)) {
+            // ถ้าไม่ใช่สเต็ปชี้ Sidebar ห้ามไฮไลท์ element ภายใน aside เด็ดขาด
+            if (!isSidebarStep && el.closest('aside')) {
+              continue;
+            }
+            // ถ้าเป็นสเต็ปชี้ Sidebar ห้ามจับปุ่ม toggle ย่อขยาย sidebar ที่หัว aside
+            if (isSidebarStep && el.closest('aside') && el.tagName.toLowerCase() === 'button' && !el.getAttribute('data-sidebar-path')) {
+              continue;
+            }
+            return el;
+          }
+        } catch {}
+      }
+
+      // Fallback ที่ปลอดภัย — ห้าม fallback ไปที่ปุ่ม button.bg-primary โดยพลการ
+      if (isSidebarStep) {
+        return (
+          document.querySelector('aside [data-sidebar-path]') ||
+          document.querySelector('aside nav') ||
+          document.querySelector('aside') ||
+          document.body
+        );
+      } else {
+        return (
+          document.querySelector('main table') ||
+          document.querySelector('main form') ||
+          document.querySelector('main .bg-white') ||
+          document.querySelector('main') ||
+          document.body
+        );
+      }
+    };
+
     // หน่วงเวลาเล็กน้อยเพื่อให้ DOM ของหน้าและ Sidebar render เสร็จสมบูรณ์
     const timer = setTimeout(() => {
       // แปลง subSteps ให้เป็น DriveStep ของ Driver.js
-      const driveSteps: DriveStep[] = [];
-
-      for (const sub of pageStep.subSteps) {
-        const isSidebarStep =
-          sub.title.startsWith('ตำแหน่งเมนู') ||
-          sub.selectors.some((s) => s.includes('data-sidebar-path') || s.includes('aside'));
-
-        let matchedEl: Element | null = null;
-        for (const sel of sub.selectors) {
-          try {
-            const el = document.querySelector(sel);
-            if (el && (el.getBoundingClientRect().width > 0 || el.getBoundingClientRect().height > 0)) {
-              // ถ้าไม่ใช่สเต็ปชี้ Sidebar ห้ามไฮไลท์ element ภายใน aside เด็ดขาด (ป้องกัน highlight ปุ่ม toggle ย่อ sidebar)
-              if (!isSidebarStep && el.closest('aside')) {
-                continue;
-              }
-              // ถ้าเป็นสเต็ปชี้ Sidebar ห้ามจับปุ่ม toggle ย่อขยาย sidebar ที่หัว aside
-              if (isSidebarStep && el.closest('aside') && el.tagName.toLowerCase() === 'button' && !el.getAttribute('data-sidebar-path')) {
-                continue;
-              }
-              matchedEl = el;
-              break;
-            }
-          } catch {
-            // ignore invalid selector syntax
-          }
-        }
-
-        // Fallback ที่ปลอดภัย แยกตามประเภท step
-        if (!matchedEl) {
-          if (isSidebarStep) {
-            matchedEl =
-              document.querySelector('aside [data-sidebar-path]') ||
-              document.querySelector('aside nav') ||
-              document.querySelector('aside') ||
-              document.body;
-          } else {
-            matchedEl =
-              document.querySelector('main button.bg-primary') ||
-              document.querySelector('main table') ||
-              document.querySelector('main') ||
-              document.body;
-          }
-        }
-
-        driveSteps.push({
-          element: matchedEl as HTMLElement,
+      const driveSteps: DriveStep[] = pageStep.subSteps.map((sub) => {
+        return {
+          element: () => resolveSubStepElement(sub),
           popover: {
             title: sub.title,
             description: sub.description,
             side: sub.side || 'bottom',
             align: sub.align || 'start',
           },
-        });
-      }
+        };
+      });
 
       if (driveSteps.length === 0) return;
 
