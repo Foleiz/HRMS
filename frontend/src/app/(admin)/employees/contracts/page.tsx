@@ -50,8 +50,8 @@ const CONTRACT_BUTTON_STEPS: TourStep[] = [
   {
     element: '#tour-contract-add-btn',
     popover: {
-      title: 'ขั้นตอนที่ 2: คลิกปุ่ม "สร้างสัญญาใหม่"',
-      description: 'คลิกปุ่มนี้เพื่อเปิดแบบฟอร์มจัดทำสัญญาจ้างงานให้กับพนักงานใหม่',
+      title: 'ขั้นตอนที่ 2: เพิ่มสัญญาจ้าง',
+      description: 'คลิกปุ่ม "+ สร้างสัญญาใหม่" เพื่อจัดทำสัญญาจ้างงานให้กับพนักงานใหม่ (สามารถคลิกเปิดและบันทึกจริงได้ หรือกด "ถัดไป" เพื่อไปยังเมนูผู้ใช้งาน)',
       side: 'bottom',
       align: 'end',
     },
@@ -64,7 +64,7 @@ const CONTRACT_MODAL_STEPS: TourStep[] = [
     element: '#tour-contract-modal-header',
     popover: {
       title: 'ขั้นตอนที่ 2: กรอกข้อมูลสัญญาจ้างงาน',
-      description: 'เลือกพนักงานที่ต้องการทำสัญญา กำหนดประเภทสัญญา วันเริ่มงาน ฐานเงินเดือน และแนบเอกสารสัญญา คุณสามารถกรอกข้อมูลและกดปุ่ม "บันทึกสัญญา" ได้ทันที หรือกด "ถัดไป" เพื่อดำเนินการต่อ',
+      description: 'เลือกพนักงานที่ต้องการทำสัญญา กำหนดประเภทสัญญา วันเริ่มงาน ฐานเงินเดือน และแนบเอกสารสัญญา คุณสามารถบันทึกข้อมูลได้จริง หรือกด "ถัดไป" เพื่อไปยังเมนูผู้ใช้งาน',
       side: 'bottom',
       align: 'start',
     },
@@ -89,7 +89,11 @@ function ContractsPageContent() {
       router.push(`/employees?tour=hr-onboarding-1${mockQuery}`);
     },
     onDone: () => {
-      setIsCreateModalOpen(true);
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
+    },
+    onClose: () => {
+      router.replace(window.location.pathname);
     },
   });
 
@@ -107,6 +111,10 @@ function ContractsPageContent() {
       setIsCreateModalOpen(false);
       const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
       router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
+    },
+    onClose: () => {
+      setIsCreateModalOpen(false);
+      router.replace(window.location.pathname);
     },
   });
 

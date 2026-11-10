@@ -55,8 +55,8 @@ const USER_BUTTON_STEPS: TourStep[] = [
   {
     element: '#tour-user-add-btn',
     popover: {
-      title: 'ขั้นตอนที่ 3: คลิกปุ่ม "เพิ่มผู้ใช้งาน"',
-      description: 'คลิกปุ่มนี้เพื่อเปิดแบบฟอร์มสร้างบัญชีเข้าใช้งานระบบสำหรับพนักงาน',
+      title: 'ขั้นตอนที่ 3: เพิ่มผู้ใช้งาน',
+      description: 'คลิกปุ่ม "+ เพิ่มผู้ใช้งาน" เพื่อสร้างบัญชีและกำหนดบทบาท (Role) สำหรับเข้าสู่ระบบ (สามารถคลิกเปิดและบันทึกจริงได้ หรือกด "ถัดไป" เพื่อเสร็จสิ้นขั้นตอน)',
       side: 'bottom',
       align: 'end',
     },
@@ -69,7 +69,7 @@ const USER_DRAWER_STEPS: TourStep[] = [
     element: '#tour-user-drawer-header',
     popover: {
       title: 'ขั้นตอนที่ 3: ผูกบัญชีผู้ใช้และกำหนดสิทธิ์',
-      description: 'เลือกพนักงานที่ต้องการผูกบัญชี กำหนดชื่อผู้ใช้ (Username), รหัสผ่าน และเลือกบทบาท (Role) สำหรับเข้าสู่ระบบ จากนั้นกดปุ่ม "บันทึก" หรือกดปุ่มถัดไปเพื่อเสร็จสิ้นขั้นตอน',
+      description: 'เลือกพนักงานที่ต้องการผูกบัญชี กำหนดชื่อผู้ใช้ (Username), รหัสผ่าน และเลือกบทบาท (Role) ในการเข้าถึงระบบ จากนั้นกด "ถัดไป" เพื่อเสร็จสิ้นขั้นตอนทั้งหมด',
       side: 'left',
       align: 'start',
     },
@@ -118,7 +118,11 @@ export const UsersTab: React.FC<UsersTabProps> = ({
       router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
     },
     onDone: () => {
-      onAddUserClick();
+      const mockQuery = mockParam ? `?completed=hr-onboarding&mock=${encodeURIComponent(mockParam)}` : '?completed=hr-onboarding';
+      router.push(`/guide${mockQuery}`);
+    },
+    onClose: () => {
+      router.replace(window.location.pathname);
     },
   });
 
@@ -136,6 +140,10 @@ export const UsersTab: React.FC<UsersTabProps> = ({
       if (onCloseDrawer) onCloseDrawer();
       const mockQuery = mockParam ? `?completed=hr-onboarding&mock=${encodeURIComponent(mockParam)}` : '?completed=hr-onboarding';
       router.push(`/guide${mockQuery}`);
+    },
+    onClose: () => {
+      if (onCloseDrawer) onCloseDrawer();
+      router.replace(window.location.pathname);
     },
   });
 

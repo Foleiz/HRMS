@@ -115,9 +115,8 @@ body.driver-active * {
   border-color: #1e293b !important;
 }
 
-/* ซ่อนปุ่ม Close (✕) และ Progress badge ให้เหลือเพียง 2 ปุ่ม: ย้อนกลับ และ ถัดไป ตามคำสั่ง */
-.hrms-driver-popover .driver-popover-progress-text,
-.hrms-driver-popover .driver-popover-close-btn {
+/* ซ่อน Progress badge ออก ให้คลีน */
+.hrms-driver-popover .driver-popover-progress-text {
   display: none !important;
 }
 
@@ -181,22 +180,34 @@ body.driver-active * {
 }
 
 .hrms-driver-popover .driver-popover-close-btn {
-  font-size: 1.15rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  top: 0.75rem !important;
+  right: 0.75rem !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  font-size: 1.25rem !important;
   line-height: 1 !important;
   color: #94a3b8 !important;
   cursor: pointer !important;
-  padding: 0.25rem !important;
   border-radius: 0.5rem !important;
   transition: all 0.15s ease !important;
+  z-index: 10 !important;
 }
 
 .hrms-driver-popover .driver-popover-close-btn:hover {
-  color: #475569 !important;
+  color: #0f172a !important;
   background-color: #f1f5f9 !important;
 }
 
+:is(.dark .hrms-driver-popover .driver-popover-close-btn) {
+  color: #64748b !important;
+}
+
 :is(.dark .hrms-driver-popover .driver-popover-close-btn:hover) {
-  color: #f1f5f9 !important;
+  color: #f8fafc !important;
   background-color: #1e293b !important;
 }
 

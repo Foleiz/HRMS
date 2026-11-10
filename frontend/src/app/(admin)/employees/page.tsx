@@ -165,8 +165,8 @@ const EMPLOYEE_BUTTON_STEPS: TourStep[] = [
   {
     element: '#tour-employee-add-btn',
     popover: {
-      title: 'ขั้นตอนที่ 1: คลิกปุ่ม "เพิ่มพนักงาน"',
-      description: 'เริ่มต้นด้วยการคลิกปุ่มนี้ เพื่อเปิดแบบฟอร์มบันทึกข้อมูลและประวัติพนักงานใหม่เข้าสู่ระบบ',
+      title: 'ขั้นตอนที่ 1: เพิ่มพนักงาน',
+      description: 'คลิกปุ่ม "+ เพิ่มพนักงาน" เพื่อเปิดแบบฟอร์มและบันทึกประวัติพนักงานใหม่เข้าสู่ระบบ (สามารถคลิกเปิดและบันทึกจริงได้ หรือกด "ถัดไป" เพื่อไปยังเมนูสัญญาจ้าง)',
       side: 'bottom',
       align: 'end',
     },
@@ -179,7 +179,7 @@ const EMPLOYEE_MODAL_STEPS: TourStep[] = [
     element: '#tour-emp-modal-header',
     popover: {
       title: 'ขั้นตอนที่ 1: กรอกข้อมูลพนักงานใหม่',
-      description: 'กรอกข้อมูลตามหัวข้อต่างๆ ให้ครบถ้วน (เช่น ข้อมูลส่วนตัว ข้อมูลการทำงาน ตำแหน่ง และแผนก) คุณสามารถพิมพ์ แก้ไข หรือกดปุ่ม "บันทึกข้อมูล" ได้ทันที หรือกด "ถัดไป" เพื่อดำเนินการต่อ',
+      description: 'กรอกข้อมูลตามหัวข้อต่างๆ ให้ครบถ้วน คุณสามารถแก้ไขและกดบันทึกข้อมูลได้จริง หรือกด "ถัดไป" เพื่อไปยังเมนูสัญญาจ้าง',
       side: 'bottom',
       align: 'start',
     },
@@ -203,7 +203,11 @@ function EmployeesPageContent() {
       router.push('/guide');
     },
     onDone: () => {
-      setIsCreateModalOpen(true);
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
+    },
+    onClose: () => {
+      router.replace(window.location.pathname);
     },
   });
 
@@ -221,6 +225,10 @@ function EmployeesPageContent() {
       setIsCreateModalOpen(false);
       const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
       router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
+    },
+    onClose: () => {
+      setIsCreateModalOpen(false);
+      router.replace(window.location.pathname);
     },
   });
 

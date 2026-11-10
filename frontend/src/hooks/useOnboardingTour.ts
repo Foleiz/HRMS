@@ -182,9 +182,19 @@ export function useOnboardingTour(
           };
         }
 
-        // ซ่อนปุ่ม Close (✕) ตามที่ผู้ใช้ระบุว่ามีแค่สองปุ่มคือ "ย้อนกลับ" , "ถัดไป"
+        // ปุ่มกากบาท (✕) ที่มุมขวาบน — เมื่อกดจะปิดเมนูคำแนะนำทิ้งไป
         if (popover.closeButton) {
-          popover.closeButton.style.display = 'none';
+          popover.closeButton.style.display = 'flex';
+          popover.closeButton.innerHTML = '&times;';
+          popover.closeButton.title = 'ปิดคำแนะนำ';
+          popover.closeButton.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+              driverObj.destroy();
+            } catch {}
+            optionsRef.current.onClose?.();
+          };
         }
       },
       onDestroyed: () => {
