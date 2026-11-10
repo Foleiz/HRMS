@@ -59,12 +59,37 @@ public class EmploymentContractService : IEmploymentContractService
             query = query.Where(c => c.Status == status);
         }
 
-        var contracts = await SelectWithoutBlob(query)
+        var allContracts = await SelectWithoutBlob(query)
             .OrderByDescending(c => c.StartDate)
             .ThenByDescending(c => c.Id)
             .ToListAsync(cancellationToken);
 
-        return contracts.Select(MapToDto).ToList();
+        // จัดกลุ่มตามพนักงาน โดยเลือกสัญญาหลักปัจจุบันเพียงสัญญาเดียวต่อพนักงาน 1 คน (ไม่ให้พนักงานคนเดิมขึ้นแถวซ้ำ)
+        // ลำดับการเลือก: สัญญาที่ ACTIVE ก่อน -> ตามด้วยสัญญาที่มีวันเริ่มล่าสุด -> ตามด้วย ID ล่าสุด
+        var primaryContracts = allContracts
+            .GroupBy(c => c.EmployeeId)
+            .Select(g => g
+                .OrderByDescending(c => c.Status == "ACTIVE" ? 1 : 0)
+                .ThenByDescending(c => c.StartDate)
+                .ThenByDescending(c => c.Id)
+                .First())
+            .ToList();
+
+        if (!string.IsNullOrWhiteSpace(contractType) && contractType != "ALL")
+        {
+            primaryContracts = primaryContracts.Where(c => c.ContractType == contractType).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(status) && status != "ALL")
+        {
+            primaryContracts = primaryContracts.Where(c => c.Status == status).ToList();
+        }
+
+        return primaryContracts
+            .OrderByDescending(c => c.StartDate)
+            .ThenByDescending(c => c.Id)
+            .Select(MapToDto)
+            .ToList();
     }
 
     public async Task<ContractSummaryStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
@@ -86,12 +111,19 @@ public class EmploymentContractService : IEmploymentContractService
 
         var probationCount = activeContracts.Count(c => c.ContractType == "PROBATION");
         var permanentCount = activeContracts.Count(c => c.ContractType == "PERMANENT");
+        var fixedTermCount = activeContracts.Count(c => c.ContractType == "FIXED_TERM");
         
         // ใกล้ครบทดลองงาน (7 วัน)
         var probationExpiring7Days = activeContracts.Count(c =>
             c.ProbationEndDate.HasValue &&
             c.ProbationEndDate.Value >= today &&
             c.ProbationEndDate.Value <= in7Days);
+
+        // ใกล้ครบทดลองงาน (30 วัน)
+        var probationExpiring30Days = activeContracts.Count(c =>
+            c.ProbationEndDate.HasValue &&
+            c.ProbationEndDate.Value >= today &&
+            c.ProbationEndDate.Value <= in30Days);
 
         // สัญญาจ้างใกล้หมดอายุ (30 วัน)
         var contractExpiring30Days = activeContracts.Count(c =>
@@ -103,7 +135,9 @@ public class EmploymentContractService : IEmploymentContractService
         {
             ProbationCount = probationCount,
             PermanentCount = permanentCount,
+            FixedTermCount = fixedTermCount,
             ProbationExpiring7DaysCount = probationExpiring7Days,
+            ProbationExpiring30DaysCount = probationExpiring30Days,
             ContractExpiring30DaysCount = contractExpiring30Days,
             TotalActiveCount = activeContracts.Count
         };
@@ -493,6 +527,113 @@ public class EmploymentContractService : IEmploymentContractService
 
         contract.EmployeeTypeAppliedAt = DateTime.UtcNow;
         return true;
+    }
+
+        public async Task<EmploymentContractDto> RenewAsync(
+        long id,
+        RenewEmploymentContractRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var oldContract = await _context.EmploymentContracts
+            .Include(c => c.Employee)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+
+        if (oldContract == null)
+        {
+            throw new NotFoundException("สัญญาจ้างงาน", id);
+        }
+
+        var employee = oldContract.Employee ?? await _context.Employees
+            .FirstOrDefaultAsync(e => e.Id == oldContract.EmployeeId, cancellationToken);
+
+        if (employee == null)
+        {
+            throw new NotFoundException("พนักงาน", oldContract.EmployeeId);
+        }
+
+        if (request.StartDate == default)
+        {
+            throw new ValidationException("กรุณาระบุวันเริ่มต้นสัญญาใหม่");
+        }
+
+        // 1. ปิดสัญญาเดิม โดยตั้งสถานะเป็น COMPLETED และบันทึกวันที่/เหตุผล
+        if (oldContract.Status == "ACTIVE")
+        {
+            oldContract.Status = "COMPLETED";
+            oldContract.TerminationDate = request.StartDate.AddDays(-1);
+            oldContract.TerminationReason = !string.IsNullOrWhiteSpace(request.Notes)
+                ? $"ต่ออายุสัญญา: {request.Notes}"
+                : "ต่ออายุสัญญาจ้างงานใหม่";
+        }
+
+        // 2. กำหนดวันสิ้นสุดตามประเภทสัญญาใหม่
+        DateOnly? probationEndDate = null;
+        DateOnly? contractEndDate = null;
+
+        if (request.ContractType == "PROBATION")
+        {
+            probationEndDate = request.EndDate ?? request.StartDate.AddDays(119);
+        }
+        else if (request.ContractType == "FIXED_TERM")
+        {
+            if (!request.EndDate.HasValue)
+            {
+                throw new ValidationException("สัญญาจ้างแบบมีกำหนดเวลา (Fixed-Term) ต้องระบุวันสิ้นสุดสัญญา");
+            }
+            if (request.EndDate.Value <= request.StartDate)
+            {
+                throw new ValidationException("วันสิ้นสุดสัญญาต้องอยู่หลังวันเริ่มต้นสัญญา");
+            }
+            contractEndDate = request.EndDate;
+        }
+
+        // 3. สร้างสัญญาฉบับต่ออายุใหม่
+        var newContract = new EmploymentContract
+        {
+            EmployeeId = oldContract.EmployeeId,
+            EmployeeTypeId = request.EmployeeTypeId ?? oldContract.EmployeeTypeId,
+            ContractType = request.ContractType,
+            WageType = !string.IsNullOrWhiteSpace(request.WageType) ? request.WageType : oldContract.WageType,
+            StartDate = request.StartDate,
+            ProbationEndDate = probationEndDate,
+            ContractEndDate = contractEndDate,
+            Status = "ACTIVE"
+        };
+
+        if (!string.IsNullOrWhiteSpace(request.DocumentFileData))
+        {
+            var (bytes, mime) = FileDataDecoder.Decode(request.DocumentFileData, request.DocumentFileName);
+            if (bytes.LongLength > MaxFileBytes) throw new ValidationException("ไฟล์แนบเอกสารสัญญาต้องมีขนาดไม่เกิน 10 MB");
+            newContract.Documents.Add(NewDocument(bytes, mime, request.DocumentFileName));
+            newContract.DocumentFileName = request.DocumentFileName;
+            newContract.DocumentMimeType = mime;
+            newContract.DocumentFileSize = bytes.LongLength;
+            newContract.DocumentUploadedAt = DateTime.UtcNow;
+        }
+
+        _context.EmploymentContracts.Add(newContract);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // 4. บันทึกประวัติสถานะพนักงาน (Status History)
+        var statusHistory = new EmployeeStatusHistory
+        {
+            EmployeeId = oldContract.EmployeeId,
+            SourceContractId = newContract.Id,
+            Status = "ACTIVE",
+            EffectiveFrom = request.StartDate,
+            Reason = !string.IsNullOrWhiteSpace(request.Notes)
+                ? $"ต่ออายุสัญญา: {request.Notes}"
+                : $"ต่ออายุสัญญาจ้างงาน ({GetContractTypeDisplay(request.ContractType)})",
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.EmployeeStatusHistories.Add(statusHistory);
+
+        // 5. ปรับปรุงประเภทพนักงานของพนักงาน หากมีการเปลี่ยน
+        await TryApplyEmployeeTypeAsync(newContract, Today(), cancellationToken);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return await GetByIdAsync(newContract.Id, cancellationToken);
     }
 
     public async Task<bool> TerminateAsync(

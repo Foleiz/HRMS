@@ -7,7 +7,9 @@ public class ContractSummaryStatsDto
 {
     public int ProbationCount { get; set; }
     public int PermanentCount { get; set; }
+    public int FixedTermCount { get; set; }
     public int ProbationExpiring7DaysCount { get; set; }
+    public int ProbationExpiring30DaysCount { get; set; }
     public int ContractExpiring30DaysCount { get; set; }
     public int TotalActiveCount { get; set; }
 }

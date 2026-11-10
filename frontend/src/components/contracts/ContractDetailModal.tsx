@@ -13,6 +13,8 @@ import {
   ExternalLink,
   Plus,
   ImageIcon,
+  History,
+  Clock,
 } from 'lucide-react';
 import { EmploymentContract, ContractDocument } from '@/types/contract';
 import { contractService } from '@/services/contractService';
@@ -114,6 +116,53 @@ export default function ContractDetailModal({
     urlCache.current.clear();
   }, []);
 
+  // ประวัติสัญญาจ้างทั้งหมดของพนักงาน
+  const [contractHistory, setContractHistory] = useState<EmploymentContract[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  useEffect(() => {
+    const empId = contract?.employeeId;
+    if (!isOpen || !empId) {
+      setContractHistory([]);
+      return;
+    }
+    let alive = true;
+    setIsLoadingHistory(true);
+    contractService
+      .getByEmployeeId(empId)
+      .then((list) => {
+        if (alive) {
+          const sorted = [...list].sort((a, b) => {
+            if (a.status === 'ACTIVE' && b.status !== 'ACTIVE') return -1;
+            if (a.status !== 'ACTIVE' && b.status === 'ACTIVE') return 1;
+            return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+          });
+          setContractHistory(sorted);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load contract history:', err);
+      })
+      .finally(() => {
+        if (alive) setIsLoadingHistory(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [contract?.employeeId, isOpen]);
+
+  const handleSelectContract = (c: EmploymentContract) => {
+    if (c.id === currentContract?.id) return;
+    setShowTerminateForm(false);
+    setTerminateReason('');
+    setPreview(null);
+    setPreviewError(null);
+    revokeAll();
+    setCurrentContract(c);
+    const docs = c.documents || [];
+    setSelectedDocId(docs.length ? docs[docs.length - 1].id : null);
+  };
+
   // ข้อมูลสัญญาอัปเดตจากหน้าแม่ (เช่น หลังแนบ/ลบไฟล์) — ไม่รีเซ็ตไฟล์ที่เลือก
   useEffect(() => {
     setCurrentContract(contract);
@@ -181,6 +230,7 @@ export default function ContractDetailModal({
 
   const applyUpdated = (updated: EmploymentContract) => {
     setCurrentContract(updated);
+    setContractHistory((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     onUpdateContract?.(updated);
   };
 
@@ -329,9 +379,135 @@ export default function ContractDetailModal({
               </div>
             )}
 
+            {/* กล่องแจ้งเตือนหากกำลังดูสัญญาเดิม */}
+            {!isActive && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/80 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300 px-3.5 py-2.5 text-xs flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="truncate">
+                    กำลังดูสัญญาฉบับเดิม ({currentContract.status === 'TERMINATED' ? 'ยกเลิก' : 'สิ้นสุดแล้ว'})
+                  </span>
+                </div>
+                {contractHistory.some((c) => c.status === 'ACTIVE') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const activeC = contractHistory.find((c) => c.status === 'ACTIVE');
+                      if (activeC) handleSelectContract(activeC);
+                    }}
+                    className="shrink-0 px-2 py-0.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] transition cursor-pointer"
+                  >
+                    กลับสัญญาปัจจุบัน
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* ประวัติสัญญาจ้างทั้งหมด */}
+            {contractHistory.length > 1 && (
+              <div className={`${reviewCardCls} text-sm`}>
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className={reviewTitleCls.replace('mb-2.5', 'mb-0')}>
+                    <History className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>ประวัติสัญญาจ้าง</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">
+                      {contractHistory.length} ฉบับ
+                    </span>
+                  </div>
+                  {currentContract.id !== contractHistory.find((c) => c.status === 'ACTIVE')?.id && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const activeC = contractHistory.find((c) => c.status === 'ACTIVE');
+                        if (activeC) handleSelectContract(activeC);
+                      }}
+                      className="text-[11px] font-semibold text-primary dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      ดูสัญญาปัจจุบัน
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {contractHistory.map((item) => {
+                    const isSelected = item.id === currentContract.id;
+                    const isItemActive = item.status === 'ACTIVE';
+                    const docCount = item.documents?.length || (item.hasDocument ? 1 : 0);
+
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleSelectContract(item)}
+                        className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer flex items-start gap-2.5 ${
+                          isSelected
+                            ? 'border-primary bg-blue-50/70 dark:border-blue-500 dark:bg-blue-950/40 ring-1 ring-primary/40 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <div className="mt-1 shrink-0">
+                          {isItemActive ? (
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex rounded-full h-2 w-2 bg-slate-400 dark:bg-slate-500 ml-0.5"></span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1.5">
+                            <span
+                              className={`font-semibold text-xs truncate ${
+                                isSelected ? 'text-primary dark:text-blue-300' : 'text-slate-800 dark:text-slate-200'
+                              }`}
+                            >
+                              {item.employeeTypeName || item.contractTypeDisplay}
+                            </span>
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium shrink-0 ${
+                                isItemActive
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                  : item.status === 'TERMINATED'
+                                  ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                              }`}
+                            >
+                              {isItemActive ? 'สัญญาปัจจุบัน' : item.status === 'TERMINATED' ? 'ยกเลิกสัญญา' : 'สิ้นสุดแล้ว'}
+                            </span>
+                          </div>
+
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 flex items-center justify-between">
+                            <span className="truncate">
+                              {item.startDateDisplay || formatDateTh(item.startDate)} –{' '}
+                              {item.effectiveEndDateDisplay ||
+                                (item.contractEndDate
+                                  ? formatDateTh(item.contractEndDate)
+                                  : item.probationEndDate
+                                  ? formatDateTh(item.probationEndDate)
+                                  : 'ไม่มีกำหนด')}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-1 text-[11px] shrink-0 font-medium ${
+                                docCount > 0 ? 'text-primary dark:text-blue-400' : 'text-slate-400'
+                              }`}
+                            >
+                              <Paperclip className="w-3 h-3" />
+                              {docCount > 0 ? `${docCount} ไฟล์` : 'ไม่มีไฟล์'}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className={`${reviewCardCls} text-sm`}>
               <div className={reviewTitleCls}>
-                <FileText className="w-3.5 h-3.5 text-slate-500" /> ข้อมูลสัญญา
+                <FileText className="w-3.5 h-3.5 text-slate-500" /> ข้อมูลสัญญาฉบับที่เลือก
               </div>
               <dl className="m-0 divide-y divide-slate-100 dark:divide-slate-700/60">
                 <InfoRow label="ชื่อ-นามสกุล">

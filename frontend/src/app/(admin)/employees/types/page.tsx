@@ -31,7 +31,7 @@ import {
 import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
-import { Button, TabBar, TableToolbar, AvatarName } from '@/components/ui';
+import { Button, TabBar, TableToolbar } from '@/components/ui';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -306,43 +306,9 @@ export default function EmployeeTypesPage() {
 
 
 
-      {/* 4. KPI Stat Cards (3 Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: ประเภทพนักงานทั้งหมด */}
-        <div className="bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
-          <div>
-            <h4 className="text-xs font-bold text-sky-800 dark:text-sky-300 mb-1">ประเภทพนักงานทั้งหมด</h4>
-            <p className="text-xs text-sky-700/80 dark:text-sky-400">ประเภทพนักงานที่กำหนดในระบบ</p>
-          </div>
-          <div className="bg-white dark:bg-sky-900/60 shadow-xs border border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
-            {stats.totalTypes}
-          </div>
-        </div>
+      
 
-        {/* Card 2: จ่ายค่าจ้างรายเดือน */}
-        <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
-          <div>
-            <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">จ่ายค่าจ้างรายเดือน</h4>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400">ประเภทที่รับค่าจ้างเป็นเงินเดือน</p>
-          </div>
-          <div className="bg-white dark:bg-emerald-900/60 shadow-xs border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
-            {stats.monthlyWageCount}
-          </div>
-        </div>
-
-        {/* Card 3: รายวัน / รายชั่วโมง / เบี้ยเลี้ยง */}
-        <div className="bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
-          <div>
-            <h4 className="text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">รายวัน / รายชั่วโมง / อื่นๆ</h4>
-            <p className="text-xs text-purple-700/80 dark:text-purple-400">รายวัน รายชั่วโมง และนักศึกษาฝึกงาน</p>
-          </div>
-          <div className="bg-white dark:bg-purple-900/60 shadow-xs border border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
-            {stats.otherWageCount}
-          </div>
-        </div>
-      </div>
-
-      {/* 4. Main Card Container with Filters & Table (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
+        {/* 4. Main Card Container with Filters & Table (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
@@ -419,8 +385,8 @@ export default function EmployeeTypesPage() {
                       </td>
 
                       {/* ชื่อประเภท */}
-                      <td className="py-3.5 px-4">
-                        <AvatarName id={item.id} name={item.typeName} />
+                      <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                        {item.typeName}
                       </td>
 
                       {/* รูปแบบค่าตอบแทน */}

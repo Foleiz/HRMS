@@ -17,6 +17,7 @@ import {
   Eye,
   Trash2,
   Clock,
+  CalendarClock,
   Briefcase,
   Layers,
   X,
@@ -32,9 +33,10 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { contractService } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
-import { EmploymentContract, ContractSummaryStats, CreateContractRequest } from '@/types/contract';
+import { EmploymentContract, ContractSummaryStats, CreateContractRequest, RenewContractRequest } from '@/types/contract';
 import { Employee } from '@/types/employee';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
+import RenewContractModal from '@/components/contracts/RenewContractModal';
 import ContractDetailModal from '@/components/contracts/ContractDetailModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 import AttachContractModal from '@/components/contracts/AttachContractModal';
@@ -127,7 +129,10 @@ function ContractsPageContent() {
   const [stats, setStats] = useState<ContractSummaryStats>({
     probationCount: 0,
     permanentCount: 0,
+    fixedTermCount: 0,
     probationExpiring7DaysCount: 0,
+    probationExpiring30DaysCount: 0,
+    contractExpiring30DaysCount: 0,
     totalActiveCount: 0,
   });
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -151,6 +156,10 @@ function ContractsPageContent() {
     code: string;
   } | null>(null);
 
+  // Renew Modal States
+  const [selectedContractForRenew, setSelectedContractForRenew] = useState<EmploymentContract | null>(null);
+  const [isRenewModalOpen, setIsRenewModalOpen] = useState(false);
+
   // Document Attach & Preview Modals
   const [selectedContractForAttach, setSelectedContractForAttach] = useState<EmploymentContract | null>(null);
   const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
@@ -173,18 +182,78 @@ function ContractsPageContent() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      const isCustomFilter =
+        selectedStatus === 'CONTRACT_EXPIRING' || selectedStatus === 'PROBATION_EXPIRING';
+
       const [contractsData, statsData, employeesData] = await Promise.all([
         contractService.getAll({
           search: searchTerm || undefined,
           contractType: selectedContractType !== 'ALL' ? selectedContractType : undefined,
-          status: selectedStatus !== 'ALL' ? selectedStatus : undefined,
+          status: selectedStatus !== 'ALL' && !isCustomFilter ? selectedStatus : undefined,
         }),
         contractService.getStats(),
         employeeService.getAll(),
       ]);
 
-      setContracts(contractsData);
-      setStats(statsData);
+      // ไม่ให้พนักงานคนเดิมขึ้นแถวซ้ำ โดยเลือกสัญญาหลักปัจจุบันเพียงสัญญาเดียวต่อพนักงาน 1 คน (ACTIVE ก่อน)
+      const uniqueByEmp = new Map<number, EmploymentContract>();
+      for (const c of contractsData) {
+        const existing = uniqueByEmp.get(c.employeeId);
+        if (!existing) {
+          uniqueByEmp.set(c.employeeId, c);
+        } else if (existing.status !== 'ACTIVE' && c.status === 'ACTIVE') {
+          uniqueByEmp.set(c.employeeId, c);
+        }
+      }
+      let filtered = Array.from(uniqueByEmp.values());
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (selectedStatus === 'CONTRACT_EXPIRING') {
+        filtered = contractsData.filter((c) => {
+          if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED') return false;
+          const cEnd = new Date(c.contractEndDate);
+          cEnd.setHours(0, 0, 0, 0);
+          const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays >= 0 && diffDays <= 30;
+        });
+      } else if (selectedStatus === 'PROBATION_EXPIRING') {
+        filtered = contractsData.filter((c) => {
+          if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED') return false;
+          const pEnd = new Date(c.probationEndDate);
+          pEnd.setHours(0, 0, 0, 0);
+          const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays >= 0 && diffDays <= 30;
+        });
+      }
+
+      setContracts(filtered);
+      setStats({
+        ...statsData,
+        fixedTermCount:
+          statsData.fixedTermCount ??
+          contractsData.filter((c) => c.contractType === 'FIXED_TERM' && c.status === 'ACTIVE').length,
+        contractExpiring30DaysCount:
+          statsData.contractExpiring30DaysCount ??
+          contractsData.filter((c) => {
+            if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
+              return false;
+            const cEnd = new Date(c.contractEndDate);
+            cEnd.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return diffDays >= 0 && diffDays <= 30;
+          }).length,
+        probationExpiring30DaysCount:
+          statsData.probationExpiring30DaysCount ??
+          contractsData.filter((c) => {
+            if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
+              return false;
+            const pEnd = new Date(c.probationEndDate);
+            pEnd.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            return diffDays >= 0 && diffDays <= 30;
+          }).length,
+      });
       setEmployees(employeesData);
     } catch (err: any) {
       console.error('Failed to load contracts data:', err);
@@ -202,6 +271,13 @@ function ContractsPageContent() {
   const handleCreateContract = async (payload: CreateContractRequest) => {
     await contractService.create(payload);
     toast.success('สร้างสัญญาจ้างงานใหม่สำเร็จเรียบร้อย');
+    await fetchData();
+  };
+
+  // Handle Renew Contract
+  const handleRenewContract = async (contractId: number, payload: RenewContractRequest) => {
+    await contractService.renew(contractId, payload);
+    toast.success('ต่ออายุสัญญาจ้างงานสำเร็จเรียบร้อย');
     await fetchData();
   };
 
@@ -257,6 +333,99 @@ function ContractsPageContent() {
     }
   };
 
+    // ฟังก์ชันคำนวณและแสดงสถานะสัญญาจ้าง (แสดงใกล้ครบกำหนดทดลองงาน ... วัน)
+  const renderContractStatus = (contract: EmploymentContract) => {
+    if (contract.status === 'COMPLETED' || contract.status === 'TERMINATED' || contract.status === 'CANCELLED') {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+          สิ้นสุดสัญญาแล้ว
+        </span>
+      );
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // 1. ตรวจสอบวันสิ้นสุดสัญญาจ้าง (Fixed-Term)
+    if (contract.contractEndDate) {
+      const contractEnd = new Date(contract.contractEndDate);
+      contractEnd.setHours(0, 0, 0, 0);
+      const diffTime = contractEnd.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0 && diffDays <= 30) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-800/40">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            ใกล้สิ้นสุดสัญญา {diffDays} วัน
+          </span>
+        );
+      } else if (diffDays === 0) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200/60 dark:border-rose-800/40">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            สิ้นสุดสัญญาวันนี้
+          </span>
+        );
+      } else if (diffDays < 0 && contract.contractType === 'FIXED_TERM') {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            หมดสัญญาแล้ว
+          </span>
+        );
+      }
+    }
+
+    // 2. ตรวจสอบวันครบกำหนดทดลองงาน (Probation)
+    if (contract.probationEndDate) {
+      const probEnd = new Date(contract.probationEndDate);
+      probEnd.setHours(0, 0, 0, 0);
+      const diffTime = probEnd.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0 && diffDays <= 30) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-800/40">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            ใกล้ครบกำหนดทดลองงาน {diffDays} วัน
+          </span>
+        );
+      } else if (diffDays === 0) {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full border border-rose-200/60 dark:border-rose-800/40">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            ครบกำหนดทดลองงานวันนี้
+          </span>
+        );
+      } else if (diffDays < 0 && contract.contractType === 'PROBATION') {
+        return (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-rose-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            ครบกำหนดทดลองงานแล้ว
+          </span>
+        );
+      }
+    }
+
+    if (contract.status === 'PENDING_APPROVAL') {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-800/40">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+          ใกล้สิ้นสุดสัญญา
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        กำลังจ้างงาน
+      </span>
+    );
+  };
+
   const getContractActionItems = (contract: EmploymentContract): ActionDropdownItem[] => {
     const items: ActionDropdownItem[] = [
       {
@@ -304,6 +473,18 @@ function ContractsPageContent() {
       },
     });
 
+    if (canEditContracts) {
+      items.push({ divider: true, label: '' });
+      items.push({
+        label: 'ต่ออายุสัญญา',
+        icon: <CalendarClock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />,
+        onClick: () => {
+          setSelectedContractForRenew(contract);
+          setIsRenewModalOpen(true);
+        },
+      });
+    }
+
     if (contract.status === 'ACTIVE' && canEditContracts) {
       items.push({ divider: true, label: '' });
       items.push({
@@ -335,38 +516,89 @@ function ContractsPageContent() {
 
 
 
-      {/* 4. KPI Stat Cards (3 Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: ทดลองงาน */}
-        <div className="bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
+      {/* 4. KPI Stat Cards (4 Cards: กำลังจ้างงาน, สัญญาจ้างชั่วคราว, ใกล้ครบทดลองงาน, ใกล้สิ้นสุดสัญญา) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: กำลังจ้างงาน */}
+        <div
+          onClick={() => {
+            setSelectedStatus((prev) => (prev === 'ACTIVE' ? 'ALL' : 'ACTIVE'));
+            setSelectedContractType('ALL');
+            setCurrentPage(1);
+          }}
+          className={`bg-sky-100 dark:bg-sky-950/60 border border-sky-300 dark:border-sky-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
+            selectedStatus === 'ACTIVE' ? 'ring-2 ring-sky-500 shadow-md' : ''
+          }`}
+          title="คลิกเพื่อกรองสัญญาที่มีสถานะกำลังจ้างงานทั้งหมด"
+        >
           <div>
-            <h4 className="text-sm font-bold text-sky-800 dark:text-sky-300 mb-1">ทดลองงาน</h4>
-            <p className="text-xs text-sky-700/80 dark:text-sky-400">พนักงานที่อยู่ระหว่างทดลองงาน</p>
+            <h4 className="text-sm font-bold text-sky-800 dark:text-sky-300 mb-1 group-hover:text-sky-900 transition-colors">กำลังจ้างงาน</h4>
+            <p className="text-xs text-sky-700/80 dark:text-sky-400">พนักงานที่อยู่ระหว่างสัญญาจ้าง</p>
           </div>
-          <div className="bg-white dark:bg-sky-900/60 shadow-xs border border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
-            {stats.probationCount}
+          <div className="bg-white dark:bg-sky-900/60 shadow-xs border border-sky-200 dark:border-sky-700 text-sky-700 dark:text-sky-200 px-3.5 py-1.5 rounded-xl font-black text-2xl tracking-tight">
+            {stats.totalActiveCount}
           </div>
         </div>
 
-        {/* Card 2: ประจำ */}
-        <div className="bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
+        {/* Card 2: สัญญาจ้างชั่วคราวทั้งหมด (Fixed-Term) */}
+        <div
+          onClick={() => {
+            setSelectedContractType((prev) => (prev === 'FIXED_TERM' ? 'ALL' : 'FIXED_TERM'));
+            setSelectedStatus('ALL');
+            setCurrentPage(1);
+          }}
+          className={`bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-300 dark:border-indigo-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
+            selectedContractType === 'FIXED_TERM' ? 'ring-2 ring-indigo-500 shadow-md' : ''
+          }`}
+          title="คลิกเพื่อกรองสัญญาจ้างชั่วคราว/มีกำหนดเวลา"
+        >
           <div>
-            <h4 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1">ประจำ</h4>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400">พนักงานประจำที่ได้รับการบรรจุ</p>
+            <h4 className="text-sm font-bold text-indigo-800 dark:text-indigo-300 mb-1 group-hover:text-indigo-900 transition-colors">สัญญาจ้างชั่วคราว</h4>
+            <p className="text-xs text-indigo-700/80 dark:text-indigo-400">สัญญาแบบมีกำหนดเวลา</p>
           </div>
-          <div className="bg-white dark:bg-emerald-900/60 shadow-xs border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
-            {stats.permanentCount}
+          <div className="bg-white dark:bg-indigo-900/60 shadow-xs border border-indigo-200 dark:border-indigo-700 text-indigo-700 dark:text-indigo-200 px-3.5 py-1.5 rounded-xl font-black text-2xl tracking-tight">
+            {stats.fixedTermCount ?? 0}
           </div>
         </div>
 
-        {/* Card 3: ใกล้ครบทดลองงาน (7 วัน) */}
-        <div className="bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between">
+        {/* Card 3: ใกล้ครบทดลองงาน (30 วัน) */}
+        <div
+          onClick={() => {
+            setSelectedStatus((prev) => (prev === 'PROBATION_EXPIRING' ? 'ALL' : 'PROBATION_EXPIRING'));
+            setSelectedContractType('ALL');
+            setCurrentPage(1);
+          }}
+          className={`bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
+            selectedStatus === 'PROBATION_EXPIRING' ? 'ring-2 ring-amber-500 shadow-md' : ''
+          }`}
+          title="คลิกเพื่อกรองสัญญาที่ใกล้ครบกำหนดทดลองงาน"
+        >
           <div>
-            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-1">ใกล้ครบทดลองงาน (7 วัน)</h4>
-            <p className="text-xs text-amber-700/80 dark:text-amber-400">ต้องประเมินผลการผ่านงานใน 7 วัน</p>
+            <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-1 group-hover:text-amber-900 transition-colors">ใกล้ครบทดลองงาน</h4>
+            <p className="text-xs text-amber-700/80 dark:text-amber-400">ต้องประเมินผลใน 30 วัน</p>
           </div>
-          <div className="bg-white dark:bg-amber-900/60 shadow-xs border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200 px-4 py-1.5 rounded-xl font-black text-2xl tracking-tight">
-            {stats.probationExpiring7DaysCount}
+          <div className="bg-white dark:bg-amber-900/60 shadow-xs border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200 px-3.5 py-1.5 rounded-xl font-black text-2xl tracking-tight">
+            {stats.probationExpiring30DaysCount ?? stats.probationExpiring7DaysCount ?? 0}
+          </div>
+        </div>
+
+        {/* Card 4: ใกล้สิ้นสุดสัญญา (30 วัน) */}
+        <div
+          onClick={() => {
+            setSelectedStatus((prev) => (prev === 'CONTRACT_EXPIRING' ? 'ALL' : 'CONTRACT_EXPIRING'));
+            setSelectedContractType('ALL');
+            setCurrentPage(1);
+          }}
+          className={`bg-rose-100 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
+            selectedStatus === 'CONTRACT_EXPIRING' ? 'ring-2 ring-rose-500 shadow-md' : ''
+          }`}
+          title="คลิกเพื่อกรองสัญญาจ้างที่ใกล้หมดอายุใน 30 วัน"
+        >
+          <div>
+            <h4 className="text-sm font-bold text-rose-800 dark:text-rose-300 mb-1 group-hover:text-rose-900 transition-colors">ใกล้สิ้นสุดสัญญา</h4>
+            <p className="text-xs text-rose-700/80 dark:text-rose-400">สัญญาหมดอายุใน 30 วัน</p>
+          </div>
+          <div className="bg-white dark:bg-rose-900/60 shadow-xs border border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-200 px-3.5 py-1.5 rounded-xl font-black text-2xl tracking-tight">
+            {stats.contractExpiring30DaysCount ?? 0}
           </div>
         </div>
       </div>
@@ -383,7 +615,10 @@ function ContractsPageContent() {
               <>
                 <CustomSelect
                   value={selectedContractType}
-                  onChange={(val) => setSelectedContractType(String(val))}
+                  onChange={(val) => {
+                    setSelectedContractType(String(val));
+                    setCurrentPage(1);
+                  }}
                   placeholder="ประเภทสัญญาทั้งหมด"
                   className="min-w-[170px]"
                   options={[
@@ -396,14 +631,18 @@ function ContractsPageContent() {
                 />
                 <CustomSelect
                   value={selectedStatus}
-                  onChange={(val) => setSelectedStatus(String(val))}
+                  onChange={(val) => {
+                    setSelectedStatus(String(val));
+                    setCurrentPage(1);
+                  }}
                   placeholder="สถานะทั้งหมด"
-                  className="min-w-[150px]"
+                  className="min-w-[195px]"
                   options={[
                     { value: 'ALL', label: 'สถานะทั้งหมด' },
-                    { value: 'ACTIVE', label: 'ใช้งาน' },
-                    { value: 'PENDING_APPROVAL', label: 'รออนุมัติ' },
-                    { value: 'TERMINATED', label: 'สิ้นสุดแล้ว' },
+                    { value: 'ACTIVE', label: '1. กำลังจ้างงาน' },
+                    { value: 'CONTRACT_EXPIRING', label: '2. ใกล้สิ้นสุดสัญญา' },
+                    { value: 'PROBATION_EXPIRING', label: '3. ใกล้ครบกำหนดทดลองงาน' },
+                    { value: 'TERMINATED', label: '4. สิ้นสุดสัญญาแล้ว' },
                   ]}
                 />
               </>
@@ -430,17 +669,15 @@ function ContractsPageContent() {
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทสัญญา</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">เริ่มสัญญา</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">สิ้นสุด / ครบทดลองงาน</th>
                 <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">เอกสารสัญญา</th>
                 <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <TableLoading colSpan={7} text="กำลังโหลดข้อมูลสัญญาจ้างงาน..." />
+                <TableLoading colSpan={5} text="กำลังโหลดข้อมูลสัญญาจ้างงาน..." />
               ) : paginatedContracts.length === 0 ? (
-                <TableEmpty colSpan={7} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
+                <TableEmpty colSpan={5} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
               ) : (
                 paginatedContracts.map((contract) => (
                   <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
@@ -470,56 +707,9 @@ function ContractsPageContent() {
                       {contract.startDateDisplay}
                     </td>
 
-                    {/* สิ้นสุด / ครบทดลองงาน: 30/09/2569, - */}
-                    <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {contract.effectiveEndDateDisplay || '-'}
-                    </td>
-
-                    {/* สถานะ: • ใช้งาน (เขียว), • สิ้นสุดแล้ว (เทา), • รออนุมัติ (ส้ม) */}
+                    {/* สถานะ: กำลังจ้างงาน (เขียว), สิ้นสุดสัญญาแล้ว (เทา), ใกล้ครบกำหนดทดลองงาน ... วัน (ส้ม) */}
                     <td className="py-4 px-6 whitespace-nowrap">
-                      {contract.status === 'ACTIVE' ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          ใช้งาน
-                        </span>
-                      ) : contract.status === 'PENDING_APPROVAL' ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-500">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                          รออนุมัติ
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 dark:text-slate-500">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                          สิ้นสุดแล้ว
-                        </span>
-                      )}
-                    </td>
-
-                    {/* เอกสารสัญญา: มีไฟล์แนบแล้ว (เขียว) หรือ รอไฟล์แนบ (ฟ้า) */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      {contract.hasDocument ? (
-                        <span
-                          title={contract.documentFileName ? `มีไฟล์แนบแล้ว: ${contract.documentFileName}` : 'มีไฟล์แนบแล้ว'}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/60 shadow-2xs select-none cursor-default"
-                        >
-                          <Paperclip className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          <span>มีไฟล์แนบแล้ว</span>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedContractForAttach(contract);
-                            setIsAttachModalOpen(true);
-                          }}
-                          title={`คลิกเพื่อแนบเอกสารสัญญาสำหรับ ${contract.employeeName}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100 hover:border-sky-300 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/50 transition cursor-pointer hover:shadow-xs"
-                        >
-                          <Paperclip className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
-                          <span>รอไฟล์แนบ</span>
-                        </button>
-                      )}
+                      {renderContractStatus(contract)}
                     </td>
 
                     {/* 3-Dots Action Menu */}
@@ -554,6 +744,17 @@ function ContractsPageContent() {
       </div>
 
       {/* 8. Modals */}
+      {/* Modal ต่ออายุสัญญาจ้างงาน */}
+      <RenewContractModal
+        contract={selectedContractForRenew}
+        isOpen={isRenewModalOpen}
+        onClose={() => {
+          setIsRenewModalOpen(false);
+          setSelectedContractForRenew(null);
+        }}
+        onSubmit={handleRenewContract}
+      />
+
       <CreateContractModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -584,6 +785,10 @@ function ContractsPageContent() {
         employeeId={selectedTimelineEmployee?.id ?? null}
         employeeName={selectedTimelineEmployee?.name ?? ''}
         employeeCode={selectedTimelineEmployee?.code ?? ''}
+        onViewContractDoc={(ct) => {
+          setSelectedContractForDocPreview(ct);
+          setIsDocPreviewModalOpen(true);
+        }}
       />
 
       {/* 9. แนบเอกสารสัญญาจ้างงานรายบุคคล */}

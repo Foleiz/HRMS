@@ -17,16 +17,14 @@ import {
   Lock,
   Download,
   Loader2,
-  CreditCard,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   PieChart as PieChartIcon,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, StatusBadge, RowActions, RowActionButton, inputClass, TableToolbar } from '@/components/ui';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { TableEmpty } from '@/components/ui/TableState';
+import { SalaryPinModal } from '@/components/payroll/SalaryPinModal';
 
 export default function MySalaryPage() {
   return (
@@ -51,6 +49,7 @@ function MySalaryContent() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [overview, setOverview] = useState<MySalaryOverview | null>(null);
+  const [rightChartTab, setRightChartTab] = useState<'composition' | 'trend'>('composition');
   const otherIncomeAmount = Math.max(
     0,
     (overview?.latestGrossIncome || 0) -
@@ -69,6 +68,40 @@ function MySalaryContent() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  // Security PIN state
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+  const [hasPin, setHasPin] = useState<boolean>(false);
+  const [isCheckingPin, setIsCheckingPin] = useState<boolean>(true);
+
+  // Check PIN status on entry
+  useEffect(() => {
+    // Clear any previous session unlock so it asks for PIN on every visit/refresh
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('my_salary_unlocked');
+    }
+
+    const checkPin = async () => {
+      try {
+        const res = await mySalaryService.getPinStatus();
+        setHasPin(res.hasPin);
+      } catch (e) {
+        console.error('Failed to get PIN status:', e);
+      } finally {
+        setIsCheckingPin(false);
+      }
+    };
+    checkPin();
+  }, []);
+
+  const handleUnlock = () => {
+    setIsUnlocked(true);
+    success('ยืนยันตัวตนสำเร็จ เข้าสู่ระบบเงินเดือนเรียบร้อย');
+  };
+
+  const handleLock = () => {
+    setIsUnlocked(false);
+  };
 
   // Breadcrumb sync
   useEffect(() => {
@@ -205,7 +238,15 @@ function MySalaryContent() {
     const isTransferred = detailData?.status === 'โอนแล้ว';
 
     return (
-      <div className="space-y-6 font-sans animate-in fade-in duration-200">
+      <>
+        {!isUnlocked && !isCheckingPin && (
+          <SalaryPinModal
+            hasPin={hasPin}
+            onUnlocked={handleUnlock}
+            onPinConfigured={() => setHasPin(true)}
+          />
+        )}
+        <div className={`space-y-6 font-sans transition-all duration-300 ${!isUnlocked ? 'filter blur-md pointer-events-none select-none' : ''}`}>
         {/* ========================================================= */}
         {/* B1: TOP HEADER: เหลือชุดเดียว ชื่อพนักงาน · ตำแหน่ง · แผนก และปุ่มดาวน์โหลด */}
         {/* ========================================================= */}
@@ -225,6 +266,16 @@ function MySalaryContent() {
               icon={downloadingId === selectedPayrollId ? undefined : <Download className="w-4 h-4 text-emerald-400" />}
             >
               {downloadingId === selectedPayrollId ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดสลิปเงินเดือน (PDF)'}
+            </Button>
+
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleLock}
+              icon={<Lock className="w-3.5 h-3.5 text-amber-500" />}
+              title="ล็อกหน้าจอเพื่อความปลอดภัย"
+            >
+              ล็อกหน้าจอ
             </Button>
 
             {/* A3: Top Right Security Notice Pill with dynamic password hint */}
@@ -404,146 +455,23 @@ function MySalaryContent() {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
   // ─────────────────────────────────────────────────────────────
   // VIEW 1: OVERVIEW & HISTORY
-  // รวมยอดสะสมทุกเดือนในปี (fallback คำนวณจาก overview.history)
-  const totalNetPay =
-    overview?.totalNetPay ??
-    (overview?.history && overview.history.length > 0
-      ? overview.history.reduce((sum, h) => sum + (h.netPayableSalary || 0), 0)
-      : overview?.latestNetPay ?? 0);
-
-  const totalGrossIncome =
-    overview?.totalGrossIncome ??
-    (overview?.history && overview.history.length > 0
-      ? overview.history.reduce((sum, h) => sum + (h.totalGrossIncome || 0), 0)
-      : overview?.latestGrossIncome ?? 0);
-
-  const totalDeductions =
-    overview?.totalDeductions ??
-    (overview?.history && overview.history.length > 0
-      ? overview.history.reduce((sum, h) => sum + (h.totalDeductions || 0), 0)
-      : overview?.latestTotalDeductions ?? 0);
-
-  const cleanPeriodRange = overview?.ytdPeriodRange
-    ? overview.ytdPeriodRange.replace(/\s*\*.*$/, '').trim()
-    : 'สะสมทั้งปี';
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6 font-sans animate-in fade-in duration-200">
-      {/* ========================================================= */}
-      {/* 4 SUMMARY METRIC CARDS                                    */}
-      {/* ========================================================= */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 shadow-sm space-y-4 animate-pulse min-h-[140px]"
-            >
-              <div className="h-4 w-28 bg-slate-200 dark:bg-slate-700 rounded" />
-              <div className="h-8 w-36 bg-slate-200 dark:bg-slate-700 rounded mt-4" />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          {/* Card 1: เงินเดือนสุทธิ (Net Pay) */}
-          <div className="bg-blue-100 dark:bg-blue-950/60 rounded-2xl border border-blue-300 dark:border-blue-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-bold text-blue-800 dark:text-blue-300">
-                เงินเดือนสุทธิรวม (Net Pay)
-              </span>
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-blue-900/60 shadow-xs flex items-center justify-center shrink-0 text-blue-600 dark:text-blue-300">
-                <CreditCard className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums text-blue-950 dark:text-blue-100">
-                  {formatMoneyInt(totalNetPay)}
-                </span>
-                <span className="text-xs font-semibold text-blue-700/80 dark:text-blue-300/80">บาท</span>
-              </div>
-              <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 mt-1 tabular-nums truncate">
-                ยอดรับสุทธิสะสม ({cleanPeriodRange})
-              </p>
-            </div>
-          </div>
-
-          {/* Card 2: รายได้รวม */}
-          <div className="bg-amber-100 dark:bg-amber-950/60 rounded-2xl border border-amber-300 dark:border-amber-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
-                รายได้รวม
-              </span>
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-amber-900/60 shadow-xs flex items-center justify-center shrink-0 text-amber-600 dark:text-amber-400">
-                <ArrowUpRight className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-amber-900 dark:text-amber-100 tracking-tight tabular-nums">
-                  {formatMoneyInt(totalGrossIncome)}
-                </span>
-                <span className="text-xs font-semibold text-amber-700/80 dark:text-amber-300/80">บาท</span>
-              </div>
-              <p className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-1 truncate" title={overview?.grossSubtext}>
-                ยอดรายได้สะสม ({cleanPeriodRange})
-              </p>
-            </div>
-          </div>
-
-          {/* Card 3: รายการหักรวม */}
-          <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-bold text-rose-800 dark:text-rose-300">
-                รายการหักรวม
-              </span>
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-rose-900/60 shadow-xs flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
-                <ArrowDownRight className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-rose-900 dark:text-rose-100 tracking-tight tabular-nums">
-                  {formatMoneyInt(totalDeductions)}
-                </span>
-                <span className="text-xs font-semibold text-rose-700/80 dark:text-rose-300/80">บาท</span>
-              </div>
-              <p className="text-[11px] text-rose-700/80 dark:text-rose-400 mt-1 truncate" title={overview?.deductionSubtext}>
-                ยอดหักสะสม ({cleanPeriodRange})
-              </p>
-            </div>
-          </div>
-
-          {/* Card 4: เงินเดือนสุทธิงวดล่าสุด */}
-          <div className="bg-purple-100 dark:bg-purple-950/60 rounded-2xl border border-purple-300 dark:border-purple-800 p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[140px]">
-            <div className="flex items-start justify-between gap-2">
-              <span className="text-xs font-bold text-purple-800 dark:text-purple-300">
-                เงินเดือนสุทธิงวดล่าสุด
-              </span>
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-purple-900/60 shadow-xs flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400">
-                <TrendingUp className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-extrabold text-purple-900 dark:text-purple-100 tracking-tight tabular-nums">
-                  {formatMoneyInt(overview?.latestNetPay)}
-                </span>
-                <span className="text-xs font-semibold text-purple-700/80 dark:text-purple-300/80">บาท</span>
-              </div>
-              <p className="text-[11px] text-purple-700/80 dark:text-purple-400 mt-1 truncate">
-                งวด {overview?.latestPeriodMonthName || overview?.history?.[0]?.periodMonthName || 'ล่าสุด'} • บัญชี {overview?.bankAccountMasked || 'xxx-xxx-xxx-x'}
-              </p>
-            </div>
-          </div>
-        </div>
+    <>
+      {!isUnlocked && !isCheckingPin && (
+        <SalaryPinModal
+          hasPin={hasPin}
+          onUnlocked={handleUnlock}
+          onPinConfigured={() => setHasPin(true)}
+        />
       )}
+      <div className={`space-y-6 font-sans transition-all duration-300 ${!isUnlocked ? 'filter blur-md pointer-events-none select-none' : ''}`}>
 
       {/* ========================================================= */}
       {/* MAIN SECTION: History Table (8 cols) + Visual Charts (4 cols) */}
@@ -560,6 +488,17 @@ function MySalaryContent() {
                 setCurrentPage(1);
               }}
               searchPlaceholder="ค้นหาเดือน / พ.ศ...."
+              actions={
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleLock}
+                  icon={<Lock className="w-3.5 h-3.5 text-amber-500" />}
+                  title="ล็อกหน้าจอเพื่อความปลอดภัย"
+                >
+                  ล็อกหน้าจอ
+                </Button>
+              }
             />
 
             {/* Desktop View: Slips History Table */}
@@ -713,170 +652,342 @@ function MySalaryContent() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: 2 Visual Charts */}
+        {/* RIGHT COLUMN: 2 Visual Charts (ออกแบบใหม่ตรงหัวข้อเงินเดือนของฉัน) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Top Chart: Pie / Donut Chart */}
-          {/* รายได้อื่น = รายได้รวมงวดล่าสุด − เงินเดือนพื้นฐาน − OT/เบี้ยขยัน (ให้ยอดในกราฟเท่ารายได้รวม) */}
+          {/* Card 1: สัดส่วนเงินเดือนสุทธิ vs รายการหัก (Take-Home Pay Ratio) */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <PieChartIcon className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              สัดส่วนเงินเดือนงวดล่าสุด
-            </h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <PieChartIcon className="w-4 h-4 text-emerald-500" />
+                  สัดส่วนเงินเดือนสุทธิ
+                </h3>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                  เงินโอนรับสุทธิเทียบกับยอดหัก (งวดล่าสุด)
+                </p>
+              </div>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium">
+                {overview?.latestPeriodMonthName || '-'}
+              </span>
+            </div>
 
-            {/* SVG Donut Chart — สัดส่วนจากข้อมูลจริงของงวดล่าสุด (เดิมวาดค่าคงที่) */}
+            {/* Donut Chart: Net Pay vs Deductions */}
             {(() => {
-              const C = 2 * Math.PI * 30;
-              const parts = [
-                { v: overview?.chartData?.baseSalaryAmount || 0, color: '#10B981' },
-                { v: (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0), color: '#F59E0B' },
-                { v: otherIncomeAmount, color: '#8B5CF6' },
-                { v: overview?.chartData?.deductionsAmount || 0, color: '#3B82F6' },
-              ];
-              const total = parts.reduce((sum, x) => sum + Math.max(0, x.v), 0);
-              if (total <= 0) {
+              const gross = overview?.latestGrossIncome || 0;
+              const net = overview?.latestNetPay || 0;
+              const deductions = overview?.latestTotalDeductions || Math.max(0, gross - net);
+
+              if (gross <= 0) {
                 return (
-                  <div className="h-36 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
-                    ไม่มีข้อมูลงวดล่าสุด
+                  <div className="h-44 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+                    ยังไม่มีข้อมูลเงินเดือนงวดล่าสุด
                   </div>
                 );
               }
-              let offset = 0;
+
+              const netPercent = gross > 0 ? (net / gross) * 100 : 0;
+              const dedPercent = gross > 0 ? (deductions / gross) * 100 : 0;
+
+              const radius = 38;
+              const circumference = 2 * Math.PI * radius; // ~238.76
+              const netDash = (netPercent / 100) * circumference;
+              const dedDash = (dedPercent / 100) * circumference;
+
               return (
-                <div className="relative flex items-center justify-center py-2">
-                  <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90" role="img" aria-label="สัดส่วนเงินเดือนงวดล่าสุด">
-                    <circle cx="50" cy="50" r="38" fill="#F8FAFC" />
-                    {parts.map((x, i) => {
-                      const len = (Math.max(0, x.v) / total) * C;
-                      const el = (
-                        <circle
-                          key={i}
-                          cx="50"
-                          cy="50"
-                          r="30"
-                          fill="transparent"
-                          stroke={x.color}
-                          strokeWidth="20"
-                          strokeDasharray={`${len} ${C}`}
-                          strokeDashoffset={-offset}
-                        />
-                      );
-                      offset += len;
-                      return el;
-                    })}
-                  </svg>
+                <div className="space-y-4">
+                  {/* Donut with Center Stat */}
+                  <div className="relative flex items-center justify-center py-2">
+                    <svg viewBox="0 0 100 100" className="w-40 h-40 -rotate-90">
+                      {/* Background Track */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="transparent"
+                        stroke="#F1F5F9"
+                        className="dark:stroke-slate-700/60"
+                        strokeWidth="14"
+                      />
+                      {/* Net Pay Arc (Emerald) */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="transparent"
+                        stroke="#10B981"
+                        strokeWidth="14"
+                        strokeDasharray={`${netDash} ${circumference}`}
+                        strokeDashoffset="0"
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                      {/* Deductions Arc (Rose) */}
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r={radius}
+                        fill="transparent"
+                        stroke="#F43F5E"
+                        strokeWidth="14"
+                        strokeDasharray={`${dedDash} ${circumference}`}
+                        strokeDashoffset={-netDash}
+                        strokeLinecap="round"
+                        className="transition-all duration-500"
+                      />
+                    </svg>
+
+                    {/* Donut Center Display */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">รับสุทธิ</span>
+                      <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100 tabular-nums">
+                        {formatMoney(net)}
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 px-1.5 py-0.2 bg-emerald-50 dark:bg-emerald-950/40 rounded-full">
+                        {netPercent.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Summary Breakdown List */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/80 text-xs">
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50/70 dark:bg-slate-700/30">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                        <span className="text-slate-600 dark:text-slate-300 font-medium">รายได้รวมทั้งหมด</span>
+                      </div>
+                      <span className="font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                        {formatMoney(gross)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-100/60 dark:border-rose-900/30">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#F43F5E]" />
+                        <span className="text-rose-700 dark:text-rose-300 font-medium">รายการหักรวม ({dedPercent.toFixed(1)}%)</span>
+                      </div>
+                      <span className="font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                        -{formatMoney(deductions)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100/80 dark:border-emerald-900/30">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+                        <span className="text-emerald-800 dark:text-emerald-300 font-bold">เงินเดือนสุทธิ (รับจริง)</span>
+                      </div>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        {formatMoney(net)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               );
             })()}
-
-            {/* Chart Legend */}
-            <div className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-                  <span>เงินเดือนพื้นฐาน</span>
-                </div>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                  {formatMoney(overview?.chartData?.baseSalaryAmount)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-                  <span>ค่าล่วงเวลา / เบี้ยขยัน</span>
-                </div>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                  {formatMoney(
-                    (overview?.chartData?.overtimeAmount || 0) +
-                      (overview?.chartData?.allowanceAmount || 0)
-                  )}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#8B5CF6]" />
-                  <span>รายได้อื่น / โบนัส / สวัสดิการ</span>
-                </div>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                  {formatMoney(otherIncomeAmount)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#3B82F6]" />
-                  <span>รายการหักรวม</span>
-                </div>
-                <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
-                  {formatMoney(overview?.chartData?.deductionsAmount)}
-                </span>
-              </div>
-            </div>
           </div>
 
-          {/* Bottom Chart: Bar Chart */}
+          {/* Card 2: โครงสร้างรายได้ & แนวโน้มเงินเดือน */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
-            <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <TrendingUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              แนวโน้มเงินเดือนสุทธิ
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                {rightChartTab === 'composition' ? 'โครงสร้างรายได้ของฉัน' : 'แนวโน้มเงินเดือนรายงวด'}
+              </h3>
+              
+              {/* Tab Switcher */}
+              <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/60 p-0.5 text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => setRightChartTab('composition')}
+                  className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                    rightChartTab === 'composition'
+                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
+                  }`}
+                >
+                  โครงสร้าง
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRightChartTab('trend')}
+                  className={`px-2 py-0.5 rounded-md font-medium transition-all ${
+                    rightChartTab === 'trend'
+                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
+                  }`}
+                >
+                  แนวโน้ม
+                </button>
+              </div>
+            </div>
 
-            {/* Custom Simple Bar Chart */}
-            <div className="h-36 flex items-end justify-center gap-4 pt-4 px-2 border-b border-slate-200 dark:border-slate-700">
-              {overview?.chartData?.monthlyTrends && overview.chartData.monthlyTrends.length > 0 ? (
-                overview.chartData.monthlyTrends.map((t, idx) => (
-                  <div key={idx} className="flex flex-col items-center gap-1.5 flex-1 max-w-[60px]">
-                    <div className="w-full flex items-end justify-center gap-1 h-28">
-                      {/* Gross Bar (Green) */}
-                      <div
-                        style={{
-                          height: `${Math.min(100, Math.max(20, (t.grossIncome / 35000) * 100))}%`,
-                        }}
-                        title={`รายได้: ${formatMoney(t.grossIncome)}`}
-                        className="w-3.5 bg-[#10B981] rounded-t transition-all hover:opacity-80"
-                      />
-                      {/* Net Bar (Blue) */}
-                      <div
-                        style={{
-                          height: `${Math.min(100, Math.max(20, (t.netPay / 35000) * 100))}%`,
-                        }}
-                        title={`สุทธิ: ${formatMoney(t.netPay)}`}
-                        className="w-3.5 bg-[#3B82F6] rounded-t transition-all hover:opacity-80"
-                      />
-                      {/* Deductions Bar (Yellow) */}
-                      <div
-                        style={{
-                          height: `${Math.min(100, Math.max(8, (t.deductions / 5000) * 40))}%`,
-                        }}
-                        title={`หัก: ${formatMoney(t.deductions)}`}
-                        className="w-3.5 bg-[#F59E0B] rounded-t transition-all hover:opacity-80"
-                      />
+            {rightChartTab === 'composition' ? (
+              // TAB A: โครงสร้างรายได้ (Earnings Composition)
+              (() => {
+                const base = overview?.chartData?.baseSalaryAmount || 0;
+                const ot = (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0);
+                const other = otherIncomeAmount;
+                const totalGross = base + ot + other || overview?.latestGrossIncome || 1;
+
+                const basePct = Math.min(100, (base / totalGross) * 100);
+                const otPct = Math.min(100, (ot / totalGross) * 100);
+                const otherPct = Math.min(100, (other / totalGross) * 100);
+
+                return (
+                  <div className="space-y-4">
+                    {/* Visual Segmented Progress Bar */}
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                        <div
+                          style={{ width: `${basePct}%` }}
+                          className="bg-emerald-500 h-full transition-all duration-500"
+                          title={`เงินเดือนพื้นฐาน: ${basePct.toFixed(1)}%`}
+                        />
+                        <div
+                          style={{ width: `${otPct}%` }}
+                          className="bg-amber-500 h-full transition-all duration-500"
+                          title={`OT / เบี้ยขยัน: ${otPct.toFixed(1)}%`}
+                        />
+                        <div
+                          style={{ width: `${otherPct}%` }}
+                          className="bg-purple-500 h-full transition-all duration-500"
+                          title={`รายได้อื่น / พิเศษ: ${otherPct.toFixed(1)}%`}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>เงินเดือนหลัก: {basePct.toFixed(1)}%</span>
+                        <span>OT/เงินเพิ่ม: {(otPct + otherPct).toFixed(1)}%</span>
+                      </div>
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                      {t.monthLabel}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">
-                  ไม่มีข้อมูลแนวโน้ม
-                </div>
-              )}
-            </div>
 
-            {/* Legend for Bar Chart */}
-            <div className="flex items-center justify-center gap-4 text-[10px] text-slate-500 dark:text-slate-400">
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded bg-[#10B981]" /> รายได้รวม
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded bg-[#3B82F6]" /> สุทธิ
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded bg-[#F59E0B]" /> รายการหัก
-              </span>
-            </div>
+                    {/* Breakdown Items List */}
+                    <div className="space-y-2 text-xs">
+                      <div className="flex items-center justify-between p-2 rounded-xl border border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <div>
+                            <span className="block font-semibold text-slate-800 dark:text-slate-200">เงินเดือนประจำ / พื้นฐาน</span>
+                            <span className="block text-[10px] text-slate-400">ฐานเงินเดือนตามสัญญาจ้าง</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="block font-bold text-slate-800 dark:text-slate-200 tabular-nums">
+                            {formatMoney(base)}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 font-medium">
+                            {basePct.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-2 rounded-xl border border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                          <div>
+                            <span className="block font-semibold text-slate-800 dark:text-slate-200">ค่าล่วงเวลา (OT) & เบี้ยขยัน</span>
+                            <span className="block text-[10px] text-slate-400">ทำงานล่วงเวลาและเบี้ยขยัน</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="block font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                            {formatMoney(ot)}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 font-medium">
+                            {otPct.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-2 rounded-xl border border-slate-100 dark:border-slate-700/60 hover:bg-slate-50/50 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                          <div>
+                            <span className="block font-semibold text-slate-800 dark:text-slate-200">รายได้อื่น / โบนัส / พิเศษ</span>
+                            <span className="block text-[10px] text-slate-400">เงินช่วยเหลือและรางวัล</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="block font-bold text-purple-600 dark:text-purple-400 tabular-nums">
+                            {formatMoney(other)}
+                          </span>
+                          <span className="block text-[10px] text-slate-400 font-medium">
+                            {otherPct.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              // TAB B: แนวโน้มเงินเดือน (Monthly Trend with Dynamic Scale)
+              (() => {
+                const trends = overview?.chartData?.monthlyTrends || [];
+                if (trends.length === 0) {
+                  return (
+                    <div className="h-44 flex items-center justify-center text-xs text-slate-400">
+                      ไม่มีข้อมูลแนวโน้มรายงวด
+                    </div>
+                  );
+                }
+
+                const maxVal = Math.max(...trends.map((t) => Math.max(t.grossIncome, t.netPay)), 1000) * 1.15;
+                const avgNet = trends.reduce((acc, t) => acc + t.netPay, 0) / trends.length;
+
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                      <span>เปรียบเทียบ {trends.length} งวดล่าสุด</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        เฉลี่ย ฿{formatMoney(avgNet)}/งวด
+                      </span>
+                    </div>
+
+                    {/* Bar Chart Container */}
+                    <div className="h-36 flex items-end justify-center gap-3 pt-4 px-2 border-b border-slate-200 dark:border-slate-700">
+                      {trends.map((t, idx) => {
+                        const grossHeight = Math.min(100, Math.max(12, (t.grossIncome / maxVal) * 100));
+                        const netHeight = Math.min(100, Math.max(10, (t.netPay / maxVal) * 100));
+                        return (
+                          <div key={idx} className="flex flex-col items-center gap-1.5 flex-1 max-w-[65px] group">
+                            <div className="w-full flex items-end justify-center gap-1.5 h-24">
+                              {/* Gross Bar */}
+                              <div
+                                style={{ height: `${grossHeight}%` }}
+                                title={`รายได้รวม: ฿${formatMoney(t.grossIncome)}`}
+                                className="w-3.5 bg-slate-300 dark:bg-slate-600 rounded-t transition-all group-hover:bg-slate-400"
+                              />
+                              {/* Net Bar */}
+                              <div
+                                style={{ height: `${netHeight}%` }}
+                                title={`รับสุทธิ: ฿${formatMoney(t.netPay)}`}
+                                className="w-3.5 bg-emerald-500 rounded-t transition-all group-hover:bg-emerald-600 shadow-xs"
+                              />
+                            </div>
+                            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">
+                              {t.monthLabel}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex items-center justify-center gap-5 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-slate-300 dark:bg-slate-600" /> รายได้รวม
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded bg-emerald-500" /> เงินเดือนสุทธิ
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }

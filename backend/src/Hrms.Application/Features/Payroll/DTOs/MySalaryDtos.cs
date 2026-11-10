@@ -90,3 +90,27 @@ public class MySalaryLineItemDto
     public decimal Amount { get; set; }
     public string? SubDescription { get; set; }
 }
+
+public class SalaryPinStatusDto
+{
+    public bool HasPin { get; set; }
+}
+
+public class SetupSalaryPinRequest
+{
+    public string Pin { get; set; } = string.Empty;
+    public string ConfirmPin { get; set; } = string.Empty;
+}
+
+public class VerifySalaryPinRequest
+{
+    public string Pin { get; set; } = string.Empty;
+}
+
+public class ResetSalaryPinRequest
+{
+    public string? CurrentPin { get; set; }
+    public string? CurrentPassword { get; set; }
+    public string NewPin { get; set; } = string.Empty;
+    public string ConfirmPin { get; set; } = string.Empty;
+}

@@ -128,6 +128,21 @@ public class EmploymentContractsController : ControllerBase
     }
 
     /// <summary>
+    /// ต่ออายุสัญญาจ้างงาน (Renew Employment Contract)
+    /// </summary>
+    [HttpPost("{id:long}/renew")]
+    [ProducesResponseType(typeof(ApiResponse<EmploymentContractDto>), StatusCodes.Status200OK)]
+    [RequirePermission("EMP_CONTRACT_EDIT")]
+    public async Task<ActionResult<ApiResponse<EmploymentContractDto>>> Renew(
+        long id,
+        [FromBody] RenewEmploymentContractRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _contractService.RenewAsync(id, request, cancellationToken);
+        return Ok(ApiResponse<EmploymentContractDto>.Ok(result, "ต่ออายุสัญญาจ้างงานสำเร็จ"));
+    }
+
+    /// <summary>
     /// บันทึกสิ้นสุด/บอกเลิกสัญญาจ้างงาน
     /// </summary>
     [HttpPut("{id:long}/terminate")]

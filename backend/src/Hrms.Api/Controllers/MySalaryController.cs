@@ -57,4 +57,51 @@ public class MySalaryController : ControllerBase
         var (fileBytes, fileName) = await _payslipService.GetMyPayslipPdfAsync(payrollId, cancellationToken);
         return File(fileBytes, "application/pdf", fileName);
     }
+
+    /// <summary>
+    /// ตรวจสอบสถานะว่าผู้ใช้งานมีรหัส PIN สำหรับเข้าดูเงินเดือนแล้วหรือไม่
+    /// </summary>
+    [HttpGet("pin/status")]
+    public async Task<ActionResult<ApiResponse<SalaryPinStatusDto>>> GetSalaryPinStatus(
+        CancellationToken cancellationToken)
+    {
+        var result = await _mySalaryService.GetSalaryPinStatusAsync(cancellationToken);
+        return Ok(ApiResponse<SalaryPinStatusDto>.Ok(result, "ดึงสถานะรหัส PIN สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ตั้งรหัส PIN 6 หลักครั้งแรก
+    /// </summary>
+    [HttpPost("pin/setup")]
+    public async Task<ActionResult<ApiResponse<object>>> SetupSalaryPin(
+        [FromBody] SetupSalaryPinRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _mySalaryService.SetupSalaryPinAsync(request, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new { }, "ตั้งรหัส PIN สำเร็จ"));
+    }
+
+    /// <summary>
+    /// ตรวจสอบรหัส PIN 6 หลักเพื่อปลดล็อกเข้าดูข้อมูลเงินเดือน
+    /// </summary>
+    [HttpPost("pin/verify")]
+    public async Task<ActionResult<ApiResponse<object>>> VerifySalaryPin(
+        [FromBody] VerifySalaryPinRequest request,
+        CancellationToken cancellationToken)
+    {
+        var verified = await _mySalaryService.VerifySalaryPinAsync(request, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new { verified }, "ยืนยันรหัส PIN สำเร็จ"));
+    }
+
+    /// <summary>
+    /// รีเซ็ตรหัส PIN 6 หลักโดยการยืนยันรหัสผ่านปัจจุบัน
+    /// </summary>
+    [HttpPost("pin/reset")]
+    public async Task<ActionResult<ApiResponse<object>>> ResetSalaryPin(
+        [FromBody] ResetSalaryPinRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _mySalaryService.ResetSalaryPinAsync(request, cancellationToken);
+        return Ok(ApiResponse<object>.Ok(new { }, "เปลี่ยนรหัส PIN สำเร็จ"));
+    }
 }

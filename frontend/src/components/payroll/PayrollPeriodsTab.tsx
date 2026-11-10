@@ -192,7 +192,7 @@ export default function PayrollPeriodsTab({
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-700/80 dark:text-amber-300 font-medium">
-            <span>ต้องดำเนินการก่อนปิดรอบ</span>
+            <span>{overview?.pendingApprovalCount === 0 ? 'ดำเนินการครบถ้วนแล้ว' : 'ต้องดำเนินการก่อนปิดรอบ'}</span>
           </div>
         </div>
 

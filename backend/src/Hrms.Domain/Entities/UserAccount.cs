@@ -11,6 +11,8 @@ public class UserAccount : BaseEntity
     public long EmployeeId { get; set; }
     public string Username { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
+    /// <summary>รหัส PIN 6 หลักสำหรับเข้าดูข้อมูลเงินเดือน (BCrypt hash)</summary>
+    public string? SalaryPinHash { get; set; }
     public string Status { get; set; } = "ACTIVE"; // ACTIVE, INACTIVE, LOCKED
     public DateTime? LastLoginAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

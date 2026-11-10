@@ -47,7 +47,9 @@ export interface EmploymentContract {
 export interface ContractSummaryStats {
   probationCount: number;
   permanentCount: number;
+  fixedTermCount?: number;
   probationExpiring7DaysCount: number;
+  probationExpiring30DaysCount?: number;
   contractExpiring30DaysCount?: number;
   totalActiveCount: number;
 }
@@ -91,4 +93,15 @@ export interface EmployeeCareerTimeline {
   isCurrent: boolean;
   dateRangeDisplay: string;
   hierarchyDisplay: string;
+}
+
+export interface RenewContractRequest {
+  contractType: string;
+  employeeTypeId?: number;
+  wageType?: string;
+  startDate: string;
+  endDate?: string;
+  notes?: string;
+  documentFileName?: string;
+  documentFileData?: string;
 }

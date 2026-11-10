@@ -2,7 +2,7 @@
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell, Button, TabBar } from '@/components/ui';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { authService } from '@/services/authService';
+import { mySalaryService } from '@/services/mySalaryService';
+import { SalaryPinSettingsModal } from '@/components/profile/SalaryPinSettingsModal';
 import { Employee } from '@/types/employee';
 import { useToast } from '@/context/ToastContext';
 import { getAvatarUrl } from '@/lib/api-client';
@@ -252,6 +254,29 @@ export default function EmployeeDetailView({
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
+
+  // Salary PIN State
+  const [pinStatus, setPinStatus] = useState<{ hasPin: boolean } | null>(null);
+  const [isPinModalOpen, setIsPinModalOpen] = useState<boolean>(false);
+
+  const isSelf = isProfilePage || (!!user?.employeeId && user.employeeId === employee.id);
+
+  const fetchPinStatus = useCallback(async () => {
+    if (isSelf) {
+      try {
+        const res = await mySalaryService.getPinStatus();
+        setPinStatus(res);
+      } catch {
+        // ignore
+      }
+    }
+  }, [isSelf]);
+
+  useEffect(() => {
+    if (activeTab === 'user') {
+      fetchPinStatus();
+    }
+  }, [activeTab, fetchPinStatus]);
 
   const handleAvatarClick = () => {
     if (!canEditEmployee) return;
@@ -1087,6 +1112,37 @@ export default function EmployeeDetailView({
                     <ChevronRight className="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" />
                   </button>
                 </li>
+                {isSelf && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setIsPinModalOpen(true)}
+                      className="w-full flex items-center gap-4 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl px-2 -mx-2 transition-colors cursor-pointer"
+                    >
+                      <span className="w-12 h-12 shrink-0 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300">
+                        <KeyRound className="w-5 h-5" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-slate-900 dark:text-slate-100">รหัส PIN ดูเงินเดือน</span>
+                          <span
+                            className={`text-xs ${
+                              pinStatus?.hasPin
+                                ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+                                : 'text-slate-400 dark:text-slate-500'
+                            }`}
+                          >
+                            {pinStatus?.hasPin ? 'ตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่า'}
+                          </span>
+                        </span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          รหัส PIN 6 หลักสำหรับความปลอดภัยในการเข้าดูข้อมูลเงินเดือนและสลิปเงินเดือน
+                        </span>
+                      </span>
+                      <ChevronRight className="w-5 h-5 shrink-0 text-slate-500 dark:text-slate-400" />
+                    </button>
+                  </li>
+                )}
               </ul>
             </div>
           )}
@@ -1341,6 +1397,18 @@ export default function EmployeeDetailView({
             </form>
           </div>
         </ModalShell>
+      )}
+
+            {/* Salary PIN Settings Modal */}
+      {isPinModalOpen && (
+        <SalaryPinSettingsModal
+          isOpen={isPinModalOpen}
+          onClose={() => setIsPinModalOpen(false)}
+          hasPin={pinStatus?.hasPin ?? false}
+          onSuccess={() => {
+            fetchPinStatus();
+          }}
+        />
       )}
 
       {/* Edit Employee Modal */}

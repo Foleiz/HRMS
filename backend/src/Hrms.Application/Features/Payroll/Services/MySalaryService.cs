@@ -10,15 +10,18 @@ public class MySalaryService : IMySalaryService
     private readonly IHrmsDbContext _context;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAesEncryptionService _encryptionService;
+    private readonly IPasswordHasher _passwordHasher;
 
     public MySalaryService(
         IHrmsDbContext context,
         ICurrentUserService currentUserService,
-        IAesEncryptionService encryptionService)
+        IAesEncryptionService encryptionService,
+        IPasswordHasher passwordHasher)
     {
         _context = context;
         _currentUserService = currentUserService;
         _encryptionService = encryptionService;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<MySalaryOverviewDto> GetMySalaryOverviewAsync(int? year, CancellationToken cancellationToken = default)
@@ -352,4 +355,143 @@ public class MySalaryService : IMySalaryService
             || p.Period?.Status == "PAID" || p.Period?.Status == "CLOSED";
         return transferred ? "โอนแล้ว" : "รอโอน";
     }
+
+    #region Salary PIN Methods
+
+    public async Task<SalaryPinStatusDto> GetSalaryPinStatusAsync(CancellationToken cancellationToken = default)
+    {
+        var userId = _currentUserService.UserId;
+        if (!userId.HasValue)
+        {
+            throw new ForbiddenException("ไม่พบข้อมูลผู้ใช้งานที่เข้าสู่ระบบ");
+        }
+
+        var user = await _context.UserAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId.Value, cancellationToken);
+
+        return new SalaryPinStatusDto
+        {
+            HasPin = !string.IsNullOrWhiteSpace(user?.SalaryPinHash)
+        };
+    }
+
+    public async Task SetupSalaryPinAsync(SetupSalaryPinRequest request, CancellationToken cancellationToken = default)
+    {
+        var userId = _currentUserService.UserId;
+        if (!userId.HasValue)
+        {
+            throw new ForbiddenException("ไม่พบข้อมูลผู้ใช้งานที่เข้าสู่ระบบ");
+        }
+
+        var pin = request.Pin?.Trim() ?? string.Empty;
+        var confirmPin = request.ConfirmPin?.Trim() ?? string.Empty;
+
+        if (pin.Length != 6 || !pin.All(char.IsDigit))
+        {
+            throw new BusinessRuleException("รหัส PIN ต้องเป็นตัวเลข 6 หลักเท่านั้น");
+        }
+
+        if (pin != confirmPin)
+        {
+            throw new BusinessRuleException("รหัส PIN ทั้งสองช่องไม่ตรงกัน");
+        }
+
+        var user = await _context.UserAccounts
+            .FirstOrDefaultAsync(u => u.Id == userId.Value, cancellationToken);
+        if (user == null)
+        {
+            throw new NotFoundException("ไม่พบบัญชีผู้ใช้งาน");
+        }
+
+        user.SalaryPinHash = _passwordHasher.HashPassword(pin);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> VerifySalaryPinAsync(VerifySalaryPinRequest request, CancellationToken cancellationToken = default)
+    {
+        var userId = _currentUserService.UserId;
+        if (!userId.HasValue)
+        {
+            throw new ForbiddenException("ไม่พบข้อมูลผู้ใช้งานที่เข้าสู่ระบบ");
+        }
+
+        var pin = request.Pin?.Trim() ?? string.Empty;
+        if (pin.Length != 6 || !pin.All(char.IsDigit))
+        {
+            throw new BusinessRuleException("กรุณากรอกรหัส PIN ให้ครบ 6 หลัก");
+        }
+
+        var user = await _context.UserAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.Id == userId.Value, cancellationToken);
+        if (user == null || string.IsNullOrWhiteSpace(user.SalaryPinHash))
+        {
+            throw new BusinessRuleException("ยังไม่ได้ตั้งค่ารหัส PIN กรุณาตั้งค่าก่อนเข้าใช้งาน");
+        }
+
+        bool isValid = _passwordHasher.VerifyPassword(pin, user.SalaryPinHash);
+        if (!isValid)
+        {
+            throw new BusinessRuleException("รหัส PIN ไม่ถูกต้อง");
+        }
+
+        return true;
+    }
+
+    public async Task ResetSalaryPinAsync(ResetSalaryPinRequest request, CancellationToken cancellationToken = default)
+    {
+        var userId = _currentUserService.UserId;
+        if (!userId.HasValue)
+        {
+            throw new ForbiddenException("ไม่พบข้อมูลผู้ใช้งานที่เข้าสู่ระบบ");
+        }
+
+        var user = await _context.UserAccounts
+            .FirstOrDefaultAsync(u => u.Id == userId.Value, cancellationToken);
+        if (user == null)
+        {
+            throw new NotFoundException("ไม่พบบัญชีผู้ใช้งาน");
+        }
+
+        // Verify either CurrentPin or CurrentPassword
+        if (!string.IsNullOrWhiteSpace(request.CurrentPin))
+        {
+            if (string.IsNullOrWhiteSpace(user.SalaryPinHash) || !_passwordHasher.VerifyPassword(request.CurrentPin.Trim(), user.SalaryPinHash))
+            {
+                throw new BusinessRuleException("รหัส PIN เดิมไม่ถูกต้อง");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(request.CurrentPassword))
+        {
+            if (!_passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+            {
+                throw new BusinessRuleException("รหัสผ่านบัญชีผู้ใช้ไม่ถูกต้อง");
+            }
+        }
+        else
+        {
+            throw new BusinessRuleException("กรุณากรอกรหัส PIN เดิม หรือรหัสผ่านบัญชีผู้ใช้เพื่อยืนยันตัวตน");
+        }
+
+        var pin = request.NewPin?.Trim() ?? string.Empty;
+        var confirmPin = request.ConfirmPin?.Trim() ?? string.Empty;
+
+        if (pin.Length != 6 || !pin.All(char.IsDigit))
+        {
+            throw new BusinessRuleException("รหัส PIN ใหม่ต้องเป็นตัวเลข 6 หลักเท่านั้น");
+        }
+
+        if (pin != confirmPin)
+        {
+            throw new BusinessRuleException("รหัส PIN ใหม่ทั้งสองช่องไม่ตรงกัน");
+        }
+
+        user.SalaryPinHash = _passwordHasher.HashPassword(pin);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    #endregion
 }

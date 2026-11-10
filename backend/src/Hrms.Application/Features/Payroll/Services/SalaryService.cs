@@ -986,9 +986,53 @@ public class SalaryService : ISalaryService
             ? latestPayrolls.Sum(p => p.NetPayableSalary)
             : totalSalaries;
 
-        int calculatedCount = latestPeriod != null ? latestPayrolls.Count : activeSalaries.Count;
-        int totalCount = totalEmps;
+        int calculatedCount;
+        int totalCount;
+
+        if (latestPeriod != null)
+        {
+            if (latestPayrolls.Any())
+            {
+                totalCount = latestPayrolls.Count;
+                calculatedCount = latestPayrolls.Count;
+            }
+            else
+            {
+                var allActiveEmps = await _context.Employees
+                    .Where(e => e.EmploymentStatus == "ACTIVE")
+                    .AsNoTracking()
+                    .ToListAsync(cancellationToken);
+                var windows = await LoadEmploymentWindowsAsync(allActiveEmps, cancellationToken);
+                var eligibleCount = allActiveEmps.Count(e => IsEligibleForPeriod(e, windows.TryGetValue(e.Id, out var w) ? w : new EmploymentWindow(null, null), latestPeriod));
+
+                totalCount = eligibleCount > 0 ? eligibleCount : (permittedIds?.Count ?? allActiveEmps.Count);
+                calculatedCount = 0;
+            }
+        }
+        else
+        {
+            totalCount = totalEmps;
+            calculatedCount = activeSalaries.Count;
+        }
+
         int calcPercent = totalCount > 0 ? (int)Math.Round((double)calculatedCount / totalCount * 100) : 0;
+
+        int pendingApprovalCount = 0;
+        if (latestPeriod != null)
+        {
+            if (latestPeriod.Status is "CLOSED" or "PAID" or "APPROVED")
+            {
+                pendingApprovalCount = 0;
+            }
+            else if (latestPeriod.Status is "REVIEW" or "SUBMITTED_TO_FINANCE" or "FINANCE_VERIFIED" or "PENDING_APPROVAL")
+            {
+                pendingApprovalCount = latestPayrolls.Count;
+            }
+            else
+            {
+                pendingApprovalCount = 0;
+            }
+        }
 
         string currentMonthPeriod = latestPeriod != null
             ? $"{ThaiMonths[latestPeriod.Month <= 12 ? latestPeriod.Month : 1]} {latestPeriod.Year + 543}"
@@ -1054,7 +1098,7 @@ public class SalaryService : ISalaryService
             CalculatedEmployeesCount = calculatedCount,
             TotalEmployeesCount = totalCount,
             CalculatedPercentage = calcPercent,
-            PendingApprovalCount = Math.Max(0, totalCount - calculatedCount),
+            PendingApprovalCount = pendingApprovalCount,
             NextClosingDate = nextClosingDate,
             RemainingDays = remainingDays,
             OverdueOpenPeriodCount = overdueOpenCount,

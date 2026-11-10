@@ -438,6 +438,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.EmployeeId).HasColumnName("employee_id").IsRequired();
             entity.Property(e => e.Username).HasColumnName("username").IsRequired().HasMaxLength(100);
             entity.Property(e => e.PasswordHash).HasColumnName("password_hash").IsRequired();
+            entity.Property(e => e.SalaryPinHash).HasColumnName("salary_pin_hash").HasMaxLength(255);
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(20);
             entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");

@@ -4,6 +4,7 @@ import {
   EmploymentContract,
   ContractSummaryStats,
   CreateContractRequest,
+  RenewContractRequest,
   UpdateContractRequest,
   EmployeeCareerTimeline,
 } from '@/types/contract';
@@ -51,6 +52,12 @@ export const contractService = {
   // แก้ไขสัญญาจ้างงาน
   async update(id: number, data: UpdateContractRequest): Promise<EmploymentContract> {
     const res = await apiClient.put<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}`, data);
+    return res.data.data;
+  },
+
+  // ต่ออายุสัญญาจ้างงาน
+  async renew(id: number, data: RenewContractRequest): Promise<EmploymentContract> {
+    const res = await apiClient.post<ApiResponse<EmploymentContract>>(`/employment-contracts/${id}/renew`, data);
     return res.data.data;
   },
 

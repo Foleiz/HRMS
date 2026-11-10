@@ -173,6 +173,10 @@ export default function CreateContractModal({
       toast.warning('กรุณาระบุวันที่เริ่มสัญญา');
       return;
     }
+    if (!fileData) {
+      toast.warning('กรุณาแนบไฟล์เอกสารสัญญาจ้างงาน');
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -295,7 +299,7 @@ export default function CreateContractModal({
           {/* 5. แนบเอกสารสัญญาจ้างงาน */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              แนบเอกสารสัญญาจ้าง (ไม่บังคับ)
+              แนบเอกสารสัญญาจ้าง <span className="text-rose-500">*</span>
             </label>
             {!fileData ? (
               <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary dark:hover:border-blue-500 rounded-xl cursor-pointer bg-slate-50/50 dark:bg-slate-800/40 hover:bg-blue-50/20 transition-all group">
