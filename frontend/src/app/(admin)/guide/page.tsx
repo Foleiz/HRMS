@@ -51,40 +51,40 @@ interface ModuleGuide {
 
 const FLOW_STEPS: FlowStep[] = [
   {
-    id: 'profile',
+    id: 'employees',
     stepNumber: 1,
-    title: 'ข้อมูลส่วนตัวและรูปโปรไฟล์',
-    subtitle: 'ตรวจทานข้อมูลพนักงาน อัปเดตที่อยู่ เบอร์ติดต่อ และรูปถ่าย',
-    route: '/profile?tab=personal',
-    tourParam: 'onboarding-1',
-    permissionCode: 'ESS_PROFILE_VIEW',
-    permissionLabel: 'ดูและแก้ไขโปรไฟล์ตนเอง (ESS_PROFILE_VIEW)',
-    icon: User,
-    highlights: ['การ์ดสรุปข้อมูลและรูปโปรไฟล์', 'แท็บข้อมูลติดต่อ & ประกันสังคม', 'ปุ่มแก้ไขข้อมูลส่วนตัว'],
+    title: '1. เพิ่มข้อมูลและประวัติพนักงาน',
+    subtitle: 'ไปที่เมนู "พนักงาน" เพื่อบันทึกประวัติพนักงานใหม่ รหัสพนักงาน แผนก และตำแหน่ง',
+    route: '/employees',
+    tourParam: 'hr-onboarding-1',
+    permissionCode: 'EMP_PROFILE_VIEW',
+    permissionLabel: 'ดูและจัดการประวัติพนักงาน (EMP_PROFILE_VIEW)',
+    icon: Users,
+    highlights: ['ปุ่มเพิ่มพนักงานใหม่ (+ เพิ่มพนักงาน)', 'ตารางรายชื่อและสถานะพนักงานทั้งหมด', 'การกำหนดแผนกและตำแหน่งเริ่มต้น'],
   },
   {
-    id: 'attendance',
+    id: 'contracts',
     stepNumber: 2,
-    title: 'ตรวจบันทึกเวลาทำงาน & กะงาน',
-    subtitle: 'ดูประวัติสแกนนิ้ว วันทำงาน มาสาย และวิธียื่นขอปรับปรุงเวลา',
-    route: '/ess/attendance',
-    tourParam: 'onboarding-2',
-    permissionCode: 'ESS_TIME_VIEW',
-    permissionLabel: 'ดูบันทึกเวลาทำงานตนเอง (ESS_TIME_VIEW)',
-    icon: Clock,
-    highlights: ['การ์ดสรุปเวลาทำงานประจำเดือน', 'ตารางประวัติการเข้า-ออกงาน', 'แท็บยื่นคำขอปรับปรุงเวลา'],
+    title: '2. บันทึกและสร้างสัญญาจ้างงาน',
+    subtitle: 'ไปที่เมนู "สัญญาจ้าง" เพื่อสร้างสัญญาจ้าง กำหนดระยะเวลา วันเริ่มงาน และเงินเดือน',
+    route: '/employees/contracts',
+    tourParam: 'hr-onboarding-2',
+    permissionCode: 'EMP_CONTRACT_VIEW',
+    permissionLabel: 'ดูและสร้างสัญญาจ้างงาน (EMP_CONTRACT_VIEW)',
+    icon: FileText,
+    highlights: ['ปุ่มสร้างสัญญาใหม่ (+ สร้างสัญญาใหม่)', 'ตารางและสถานะสัญญาจ้างของพนักงาน', 'การผูกสัญญาจ้างกับพนักงานที่เพิ่งเพิ่ม'],
   },
   {
-    id: 'leave',
+    id: 'users',
     stepNumber: 3,
-    title: 'วิธียื่นคำขอลา & ดูโควตาคงเหลือ',
-    subtitle: 'เลือกประเภทการลา เช็คสิทธิ์วันลา แนบไฟล์ และส่งใบลา',
-    route: '/documents/leave',
-    tourParam: 'onboarding-3',
-    permissionCode: 'ESS_LEAVE_VIEW',
-    permissionLabel: 'ยื่นคำขอลาและดูสิทธิ์วันลา (ESS_LEAVE_VIEW)',
-    icon: FileText,
-    highlights: ['ประเภทการลา & สิทธิ์คงเหลือ', 'การเลือกวันที่ & รูปแบบเต็ม/ครึ่งวัน', 'แถบปุ่มบันทึกและส่งคำขอ'],
+    title: '3. ผูกบัญชีผู้ใช้งานและกำหนดสิทธิ์',
+    subtitle: 'ไปที่เมนู "ผู้ใช้งาน" เพื่อสร้าง Username, รหัสผ่าน และมอบหมายบทบาท (Role) สำหรับเข้าระบบ',
+    route: '/settings?tab=users',
+    tourParam: 'hr-onboarding-3',
+    permissionCode: 'SETTINGS_USERS_VIEW',
+    permissionLabel: 'จัดการบัญชีผู้ใช้งาน (SETTINGS_USERS_VIEW)',
+    icon: User,
+    highlights: ['ปุ่มเพิ่มผู้ใช้งาน (+ เพิ่มผู้ใช้งาน)', 'การค้นหาและเลือกพนักงานเพื่อผูกบัญชี', 'การกำหนดบทบาท (Role) ในระบบ'],
   },
 ];
 
@@ -160,13 +160,14 @@ function GuidePageContent() {
   const { user, hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
 
-  const isCompletedFlow = searchParams?.get('completed') === '1';
+  const isCompletedFlow =
+    searchParams?.get('completed') === 'hr-onboarding' || searchParams?.get('completed') === '1';
 
   // State: สำหรับจำลองการเปิด-ปิด Permission ในการทดสอบ
   const [mockPermissions, setMockPermissions] = useState<Record<string, boolean>>({
-    ESS_PROFILE_VIEW: true,
-    ESS_TIME_VIEW: true,
-    ESS_LEAVE_VIEW: true,
+    EMP_PROFILE_VIEW: true,
+    EMP_CONTRACT_VIEW: true,
+    SETTINGS_USERS_VIEW: true,
   });
 
   const [activeCategory, setActiveCategory] = useState<string>('ทั้งหมด');
@@ -244,10 +245,10 @@ function GuidePageContent() {
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
-              🎉 ยินดีด้วย! คุณทำ Onboarding Flow พนักงานใหม่สำเร็จครบทุกขั้นตอนแล้ว
+              🎉 ยินดีด้วย! คุณทำ Flow เพิ่มพนักงานใหม่ (HR Onboarding) สำเร็จครบทั้ง 3 ขั้นตอนแล้ว
             </h3>
             <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
-              ระบบได้บันทึกสถานะการเรียนรู้เรียบร้อยแล้ว คุณสามารถกลับมาทบทวนคู่มือแต่ละโมดูลได้ทุกเมื่อที่ต้องการ
+              ขั้นตอน: 1. บันทึกข้อมูลพนักงาน (/employees) → 2. สร้างสัญญาจ้าง (/employees/contracts) → 3. ผูกบัญชีผู้ใช้งานระบบ (/settings?tab=users)
             </p>
           </div>
         </div>
@@ -261,13 +262,13 @@ function GuidePageContent() {
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">
               <Sparkles className="w-4 h-4" />
-              LIVE DEMO: MULTI-PAGE JOURNEY
+              HR ONBOARDING JOURNEY: 3 หน้าจอต่อเนื่อง
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              จำลอง Onboarding Flow พนักงานใหม่ (เชื่อมต่อ 3 หน้าจอ)
+              Flow เพิ่มพนักงานใหม่ (HR Onboarding Flow — เชื่อมต่อ 3 หน้าจอ)
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              แสดงการทำงานของระบบทัวร์ที่เชื่อมต่อข้ามเมนู พร้อมกลไกตรวจเช็ค Permission ในแต่ละขั้นตอน
+              ขั้นตอนมาตรฐานฝ่ายบุคคล (HR): 1. ทะเบียนประวัติพนักงาน → 2. สัญญาจ้างงาน → 3. ผูกบัญชีผู้ใช้งานระบบ พร้อมระบบตรวจเช็ค Permission ในแต่ละขั้นตอน
             </p>
           </div>
 
@@ -278,7 +279,7 @@ function GuidePageContent() {
             onClick={handleStartOnboardingJourney}
             className="shadow-md shadow-blue-600/20"
           >
-            🚀 เริ่มทดสอบ Cross-Page Tour
+            🚀 เริ่ม Flow เพิ่มพนักงานใหม่
           </Button>
         </div>
 
@@ -397,7 +398,7 @@ function GuidePageContent() {
           <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-white/70 dark:bg-slate-800/70 p-3 rounded-xl border border-slate-200 dark:border-slate-700/60">
             <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
             <span>
-              <strong>สรุปผล:</strong> หากผู้ใช้ไม่มีสิทธิ์ในหน้า 2 (เวลา) เมื่อกดถัดไปจากหน้า 1 (โปรไฟล์) ระบบจะกระโดดข้ามไปยังหน้า 3 (ลา) ทันทีโดยไม่เกิดหน้า 403 Forbidden!
+              <strong>สรุปผล:</strong> หากผู้ใช้ไม่มีสิทธิ์ในหน้า 2 (สัญญาจ้าง) เมื่อกดถัดไปจากหน้า 1 (พนักงาน) ระบบจะกระโดดข้ามไปยังหน้า 3 (ผู้ใช้งาน) ทันทีโดยไม่เกิดหน้า 403 Forbidden!
             </span>
           </div>
         </div>

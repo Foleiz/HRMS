@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import {
   Plus,
   Search,
@@ -45,8 +46,44 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
-export default function ContractsPage() {
+const CONTRACT_TOUR_STEPS: TourStep[] = [
+  {
+    element: '#tour-contract-add-btn',
+    popover: {
+      title: '1. สร้างสัญญาจ้างใหม่',
+      description: 'คลิกปุ่มนี้เพื่อเปิดแบบฟอร์มสร้างสัญญาจ้าง กำหนดประเภทสัญญา วันเริ่มงาน สิ้นสุด และเงื่อนไขค่าจ้าง',
+      side: 'bottom',
+      align: 'end',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+  {
+    element: '#tour-contract-table-container',
+    popover: {
+      title: '2. ตารางสัญญาจ้างงาน',
+      description: 'ตรวจสอบสถานะสัญญาจ้างของพนักงานทุกคน (ทดลองงาน / ประจำ) ดูเอกสารแนบ และประวัติการต่อสัญญา',
+      side: 'top',
+      align: 'start',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+];
+
+function ContractsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tourParam = searchParams?.get('tour');
+  const mockParam = searchParams?.get('mock');
+
+  useOnboardingTour('hr-onboarding-contracts', CONTRACT_TOUR_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-2',
+    doneBtnText: 'ไปยังขั้นตอนที่ 3: บัญชีผู้ใช้งาน →',
+    onComplete: () => {
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
+    },
+  });
+
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
@@ -302,7 +339,7 @@ export default function ContractsPage() {
       </div>
 
       {/* 5. Main Card Container with Filters & Table (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+      <div id="tour-contract-table-container" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
           <TableToolbar
@@ -341,6 +378,7 @@ export default function ContractsPage() {
             actions={
               canCreateContracts ? (
                 <Button
+                  id="tour-contract-add-btn"
                   onClick={() => setIsCreateModalOpen(true)}
                   icon={<Plus className="w-4 h-4" />}
                   className="shrink-0 self-start sm:self-auto"
@@ -540,5 +578,13 @@ export default function ContractsPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ContractsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ContractsPageContent />
+    </Suspense>
   );
 }

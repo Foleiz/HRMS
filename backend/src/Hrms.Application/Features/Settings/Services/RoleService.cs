@@ -140,7 +140,10 @@ public class RoleService : IRoleService
         // 19. ตั้งค่า (SETTINGS)
         new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่า", "SETTINGS"),
         new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "ตั้งค่า", "SETTINGS"),
-        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่า", "SETTINGS")
+        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่า", "SETTINGS"),
+
+        // 20. วิธีการใช้งาน (GUIDE)
+        new("GUIDE_ONBOARDING", "Flow เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)

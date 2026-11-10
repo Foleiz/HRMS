@@ -24,6 +24,8 @@ import {
   Eye,
   X,
   LayoutDashboard,
+  Compass,
+  Info,
   Wallet,
   User,
   CalendarDays,
@@ -124,6 +126,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   ANNOUNCEMENTS: Megaphone,
   MASTER_DATA: Database,
   SETTINGS: Settings,
+  GUIDE: Compass,
 };
 
 /** ชื่อหมวดหมู่ตรงตามหัวข้อเมนู Sidebar */
@@ -152,7 +155,39 @@ const CATEGORY_NAMES: Record<string, string> = {
   ANNOUNCEMENTS: 'จัดการประกาศ',
   MASTER_DATA: 'ข้อมูลหลัก (Master Data)',
   SETTINGS: 'ตั้งค่า',
+  GUIDE: 'วิธีการใช้งาน',
 };
+
+/** รายการเมนูย่อยของ Flow เพิ่มพนักงานใหม่ (Two-way Sync กับโมดูลหลัก) */
+const ONBOARDING_FLOW_ITEMS = [
+  {
+    step: 1,
+    targetModuleCode: 'EMP_PROFILE',
+    label: '1. เมนูพนักงาน',
+    route: '/employees',
+    badge: 'ทะเบียนประวัติพนักงาน',
+    desc: 'สำหรับบันทึกและจัดการประวัติพนักงานใหม่เข้าสู่ระบบ',
+    icon: Users,
+  },
+  {
+    step: 2,
+    targetModuleCode: 'EMP_CONTRACT',
+    label: '2. เมนูสัญญาจ้าง',
+    route: '/employees/contracts',
+    badge: 'สัญญาจ้างงาน',
+    desc: 'สำหรับบันทึกรายละเอียดสัญญาจ้างและเงินเดือนเริ่มต้น',
+    icon: FileText,
+  },
+  {
+    step: 3,
+    targetModuleCode: 'SETTINGS_USERS',
+    label: '3. เมนูผู้ใช้งาน',
+    route: '/settings?tab=users',
+    badge: 'บัญชีผู้ใช้งานระบบ',
+    desc: 'สำหรับผูกบัญชีพนักงานกับ Username & Password เพื่อเข้าใช้งานระบบ',
+    icon: User,
+  },
+];
 
 /** หมวดหมู่ของระบบ ESS ที่จำกัดขอบเขตเฉพาะข้อมูลตนเอง (Self Only) เท่านั้น */
 const ESS_CATEGORY_CODES = new Set<string>([
@@ -317,6 +352,29 @@ export const RolesTab: React.FC<RolesTabProps> = ({
           division: def(),
           organization: def(),
         };
+      });
+    }
+
+    // ตรวจสอบโมดูลหมวด GUIDE: หากยังไม่มี GUIDE_ONBOARDING ใน matrix ให้เพิ่มเข้ามาอัตโนมัติ
+    const hasGuideOnboarding = normalized.some((m) => m.moduleCode === 'GUIDE_ONBOARDING');
+    if (!hasGuideOnboarding) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'GUIDE_ONBOARDING',
+        moduleName: 'Flow เพิ่มพนักงานใหม่',
+        groupName: 'GUIDE',
+        categoryCode: 'GUIDE',
+        categoryName: 'วิธีการใช้งาน',
+        dataScope: 'SELF',
+        canView: false,
+        canCreate: false,
+        canEdit: false,
+        canApprove: false,
+        self: def(),
+        team: def(),
+        department: def(),
+        division: def(),
+        organization: def(),
       });
     }
 
@@ -500,6 +558,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   // Master switch per category
   const handleToggleCategory = (catCode: string) => {
+    if (catCode === 'GUIDE') {
+      handleToggleGuideOnboarding();
+      return;
+    }
+
     const cat = categories.find((c) => c.code === catCode);
     if (!cat) return;
 
@@ -557,6 +620,49 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         }
       })
     );
+    setIsDirty(true);
+  };
+
+  // Handler สำหรับติ๊กเมนูย่อยใน Flow เพิ่มพนักงานใหม่ (Two-way sync กับโมดูลภายนอก)
+  const handleToggleFlowSubItem = (targetModuleCode: string) => {
+    handleToggleModule(targetModuleCode);
+  };
+
+  // Handler สำหรับ Master Toggle ของ Flow เพิ่มพนักงานใหม่ (เปิด/ปิดทั้ง 3 เมนูย่อยพร้อมกัน)
+  const handleToggleGuideOnboarding = () => {
+    const targetCodes = ['EMP_PROFILE', 'EMP_CONTRACT', 'SETTINGS_USERS'];
+    const anyActive = targetCodes.some((code) => {
+      const m = localModules.find((mod) => mod.moduleCode === code);
+      return m ? isModuleActive(m) : false;
+    });
+
+    setLocalModules((prev) => {
+      const empty = { view: false, create: false, edit: false, approve: false };
+      return prev.map((m) => {
+        if (targetCodes.includes(m.moduleCode) || m.moduleCode === 'GUIDE_ONBOARDING') {
+          if (anyActive) {
+            // ปิดทั้ง 3 เมนูย่อย + GUIDE_ONBOARDING
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
+          } else {
+            // เปิดทั้ง 3 เมนูย่อย + GUIDE_ONBOARDING
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+        }
+        return m;
+      });
+    });
     setIsDirty(true);
   };
 
@@ -1035,10 +1141,26 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 filteredCategories.map((cat) => {
                   const isExpanded = expandedCategories.has(cat.code);
                   const IconComp = CATEGORY_ICONS[cat.code] || Layers;
-                  const activeModulesCount = cat.modules.filter((m) => isModuleActive(m)).length;
-                  const isCatAllActive = activeModulesCount === cat.modules.length && cat.modules.length > 0;
-                  const isCatPartial = activeModulesCount > 0 && activeModulesCount < cat.modules.length;
-                  const isCatOff = activeModulesCount === 0; // ปิดทั้งหมด → พื้นเทา
+                  const isGuideCat = cat.code === 'GUIDE';
+
+                  // สำหรับหมวดหมู่ GUIDE คำนวณจำนวนเมนูย่อยที่เปิดอยู่ (จาก 3 เมนูใน Flow)
+                  const guideActiveSubCount = isGuideCat
+                    ? ONBOARDING_FLOW_ITEMS.filter((item) => {
+                        const m = localModules.find((mod) => mod.moduleCode === item.targetModuleCode);
+                        return m ? isModuleActive(m) : false;
+                      }).length
+                    : 0;
+
+                  const activeModulesCount = isGuideCat
+                    ? (guideActiveSubCount > 0 ? 1 : 0)
+                    : cat.modules.filter((m) => isModuleActive(m)).length;
+                  const isCatAllActive = isGuideCat
+                    ? guideActiveSubCount === ONBOARDING_FLOW_ITEMS.length
+                    : activeModulesCount === cat.modules.length && cat.modules.length > 0;
+                  const isCatPartial = isGuideCat
+                    ? guideActiveSubCount > 0 && guideActiveSubCount < ONBOARDING_FLOW_ITEMS.length
+                    : activeModulesCount > 0 && activeModulesCount < cat.modules.length;
+                  const isCatOff = isGuideCat ? guideActiveSubCount === 0 : activeModulesCount === 0; // ปิดทั้งหมด → พื้นเทา
 
                   return (
                     <div
@@ -1090,12 +1212,18 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             )}
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                activeModulesCount > 0
+                                isGuideCat
+                                  ? guideActiveSubCount > 0
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                    : 'bg-slate-100 text-slate-400'
+                                  : activeModulesCount > 0
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
                                   : 'bg-slate-100 text-slate-400'
                               }`}
                             >
-                              {activeModulesCount}/{cat.modules.length} เปิดใช้
+                              {isGuideCat
+                                ? `${guideActiveSubCount}/${ONBOARDING_FLOW_ITEMS.length} เมนูเปิดใช้`
+                                : `${activeModulesCount}/${cat.modules.length} เปิดใช้`}
                             </span>
                           </div>
                         </div>
@@ -1117,7 +1245,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               : 'ปิดทั้งหมด'}
                           </span>
                           <ToggleSwitch
-                            checked={activeModulesCount > 0}
+                            checked={isGuideCat ? guideActiveSubCount > 0 : activeModulesCount > 0}
                             onChange={() => handleToggleCategory(cat.code)}
                             disabled={!canEditRole}
                           />
@@ -1126,6 +1254,132 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                       {/* Group Content (Modules) */}
                       {isExpanded && (
+                        isGuideCat ? (
+                          /* Custom View สำหรับหมวด "วิธีการใช้งาน": แสดง Flow เพิ่มพนักงานใหม่ และ 3 เมนูย่อย */
+                          <div className="p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-slate-900/40">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                    <Compass className="w-5 h-5" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                        Flow เพิ่มพนักงานใหม่ (HR Onboarding Flow)
+                                      </h4>
+                                      <span
+                                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                          guideActiveSubCount === ONBOARDING_FLOW_ITEMS.length
+                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                            : guideActiveSubCount > 0
+                                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                            : 'bg-slate-100 text-slate-400'
+                                        }`}
+                                      >
+                                        {guideActiveSubCount}/{ONBOARDING_FLOW_ITEMS.length} เมนูเปิดใช้งาน
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                      ขั้นตอนต่อเนื่องสำหรับการเตรียมความพร้อมและบันทึกข้อมูลพนักงานใหม่เข้าสู่ระบบ (เชื่อมต่อ 3 เมนูหลัก)
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                                  <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                                    {guideActiveSubCount > 0 ? 'เปิดใช้งาน Flow' : 'ปิด Flow'}
+                                  </span>
+                                  <ToggleSwitch
+                                    checked={guideActiveSubCount > 0}
+                                    onChange={handleToggleGuideOnboarding}
+                                    disabled={!canEditRole}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* 3 Sub-item Checkbox List */}
+                              <div className="mt-4 space-y-2.5">
+                                <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                                  รายการเมนูใน Flow นี้ (ติ๊กเลือกเพื่อกำหนดสิทธิ์ — มีผลเชื่อมโยงกับเมนูหลักภายนอกทันที):
+                                </div>
+
+                                {ONBOARDING_FLOW_ITEMS.map((item) => {
+                                  const targetMod = localModules.find((m) => m.moduleCode === item.targetModuleCode);
+                                  const isActive = targetMod ? isModuleActive(targetMod) : false;
+                                  const ItemIcon = item.icon;
+
+                                  return (
+                                    <div
+                                      key={item.targetModuleCode}
+                                      onClick={() => canEditRole && handleToggleFlowSubItem(item.targetModuleCode)}
+                                      className={`p-3.5 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
+                                        isActive
+                                          ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 shadow-2xs'
+                                          : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75 hover:opacity-100'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3 min-w-0">
+                                        <input
+                                          type="checkbox"
+                                          checked={isActive}
+                                          onChange={() => {}} // handled by parent onClick
+                                          disabled={!canEditRole}
+                                          className="w-4 h-4 rounded text-primary focus:ring-primary/20 cursor-pointer shrink-0"
+                                        />
+                                        <div
+                                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                            isActive
+                                              ? 'bg-primary text-white shadow-2xs'
+                                              : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                                          }`}
+                                        >
+                                          <ItemIcon className="w-4 h-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                                              {item.label}
+                                            </span>
+                                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                              {item.route}
+                                            </span>
+                                            <span className="text-[10px] text-primary dark:text-blue-400 font-semibold hidden md:inline">
+                                              ({item.badge})
+                                            </span>
+                                          </div>
+                                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                                            {item.desc}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span
+                                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                            isActive
+                                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200'
+                                              : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                          }`}
+                                        >
+                                          {isActive ? '✓ มีสิทธิ์' : '✕ ไม่มีสิทธิ์'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+
+                              {/* Two-way Sync Note */}
+                              <div className="mt-4 p-3 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+                                <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                                <p className="leading-relaxed text-[11px]">
+                                  <strong>การเชื่อมโยงสิทธิ์แบบเรียลไทม์ (Two-Way Sync):</strong> การติ๊กเลือกเมนูย่อยทั้ง 3 รายการข้างต้นนี้ จะเชื่อมโยงและอัปเดตสิทธิ์ของโมดูลหลักภายนอก (<code>ทะเบียนประวัติพนักงาน</code>, <code>สัญญาจ้างงาน</code>, <code>บัญชีผู้ใช้งาน</code>) โดยอัตโนมัติทันที
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
                         <div className="divide-y divide-slate-100">
                           {cat.modules.map((mod) => {
                             const modActive = isModuleActive(mod);
@@ -1206,6 +1460,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             );
                           })}
                         </div>
+                        )
                       )}
                     </div>
                   );

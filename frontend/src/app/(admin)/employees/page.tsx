@@ -2,11 +2,12 @@
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import { employeeService } from '@/services/employeeService';
 import { apiClient, getAvatarUrl } from '@/lib/api-client';
 import { Employee } from '@/types/employee';
@@ -160,8 +161,44 @@ export const formatHireDateAndTenure = (val?: string | null): string => {
 };
 
 
-export default function EmployeesPage() {
+const EMPLOYEE_TOUR_STEPS: TourStep[] = [
+  {
+    element: '#tour-employee-add-btn',
+    popover: {
+      title: '1. ปุ่มเพิ่มพนักงานใหม่',
+      description: 'คลิกเพื่อเปิดหน้าต่างกรอกประวัติพนักงาน รหัสพนักงาน แผนก และตำแหน่งงานเริ่มต้น',
+      side: 'bottom',
+      align: 'end',
+    },
+    requiredPermission: 'EMP_PROFILE_VIEW',
+  },
+  {
+    element: '#tour-employee-table-container',
+    popover: {
+      title: '2. ทะเบียนประวัติพนักงาน',
+      description: 'ตารางแสดงรายชื่อพนักงานทั้งหมดในระบบ คุณสามารถค้นหา กรองตามแผนก และคลิกดูรายละเอียดหรือแก้ไขข้อมูลได้ที่นี่',
+      side: 'top',
+      align: 'start',
+    },
+    requiredPermission: 'EMP_PROFILE_VIEW',
+  },
+];
+
+function EmployeesPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tourParam = searchParams?.get('tour');
+  const mockParam = searchParams?.get('mock');
+
+  useOnboardingTour('hr-onboarding-employees', EMPLOYEE_TOUR_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-1',
+    doneBtnText: 'ไปยังขั้นตอนที่ 2: สัญญาจ้าง →',
+    onComplete: () => {
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
+    },
+  });
+
   const { user, hasPermission, hasRole, getDataScope } = useAuth();
   const toast = useToast();
   const { setBreadcrumb } = useBreadcrumb();
@@ -718,7 +755,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
   return (
     <div className="space-y-6 font-sans pb-12">
       {/* 2. Main Content Card (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+      <div id="tour-employee-table-container" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มมุมมอง & ปุ่มเพิ่มด้านขวา */}
           <TableToolbar
@@ -776,6 +813,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
 
                 {canCreateEmp && (
                   <Button
+                    id="tour-employee-add-btn"
                     onClick={() => setIsCreateModalOpen(true)}
                     icon={<Plus className="w-4 h-4" />}
                     className="shrink-0 self-start sm:self-auto"
@@ -1693,6 +1731,14 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
         document.body
       )}
     </div>
+  );
+}
+
+export default function EmployeesPage() {
+  return (
+    <Suspense fallback={null}>
+      <EmployeesPageContent />
+    </Suspense>
   );
 }
 

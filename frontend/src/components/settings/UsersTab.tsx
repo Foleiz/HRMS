@@ -2,6 +2,8 @@
 
 import { TableToolbar } from '@/components/ui';
 import React, { useState, useRef, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import {
   Search,
   Plus,
@@ -47,6 +49,29 @@ interface UsersTabProps {
   canEditUser?: boolean;
 }
 
+const USERS_TOUR_STEPS: TourStep[] = [
+  {
+    element: '#tour-user-add-btn',
+    popover: {
+      title: '1. เพิ่มบัญชีผู้ใช้งานใหม่',
+      description: 'คลิกปุ่มนี้เพื่อผูกพนักงานกับ Username & Password และเลือกบทบาท (Role) สำหรับเข้าสู่ระบบ',
+      side: 'bottom',
+      align: 'end',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+  {
+    element: '#tour-users-table-container',
+    popover: {
+      title: '2. ตารางบัญชีผู้ใช้งาน',
+      description: 'ตรวจสอบรายชื่อผู้ใช้งานทั้งหมด สถานะการเปิดใช้งาน (Active/Inactive) และจัดการรีเซ็ตรหัสผ่านหรือเปลี่ยนสิทธิ์ได้ที่นี่',
+      side: 'top',
+      align: 'start',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+];
+
 export const UsersTab: React.FC<UsersTabProps> = ({
   users,
   totalCount,
@@ -70,6 +95,18 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
   const [selectedStatus, setSelectedStatus] = useState<string>('ทั้งหมด');
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tourParam = searchParams?.get('tour');
+
+  useOnboardingTour('hr-onboarding-users', USERS_TOUR_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-3',
+    doneBtnText: 'เสร็จสิ้น Flow เพิ่มพนักงานใหม่ 🎉',
+    onComplete: () => {
+      router.push('/guide?completed=hr-onboarding');
+    },
+  });
 
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -126,7 +163,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+    <div id="tour-users-table-container" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
       <div className="space-y-4">
         {/* Toolbar: ค้นหา + ตัวกรอง (ซ้าย) | เพิ่มผู้ใช้งาน (ขวา) */}
         <TableToolbar
@@ -163,6 +200,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           actions={
             canCreateUser ? (
               <Button
+                id="tour-user-add-btn"
                 onClick={onAddUserClick}
                 icon={<Plus className="w-4 h-4" />}
               >
