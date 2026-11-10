@@ -985,143 +985,167 @@ export default function DocumentHistoryPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {pagedDocuments.map((doc) => {
-                      const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
-                      const hasAttachments = !!doc.documents && doc.documents.length > 0;
-                      return (
-                        <tr key={doc.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
-                          <td className="px-5 py-4 font-medium whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDocumentPreview(doc)}
-                              className="text-primary dark:text-blue-300 hover:text-primary-hover hover:underline font-semibold transition-colors cursor-pointer text-left"
-                              title="คลิกเพื่อดูตัวอย่างเอกสาร"
-                            >
-                              {doc.code}
-                            </button>
-                          </td>
-                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
-                          <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {doc.subType && (
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                  {doc.subType}
-                                </span>
-                              )}
-                              <span className="whitespace-nowrap">{doc.detailDate}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-4">
-                            <SourceBadge source={doc.source} />
-                          </td>
-                          <td className="px-4 py-4">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
-                              {statusConf.icon}
-                              {statusConf.label}
-                            </span>
-                            <div className="mt-1">
-                              <DocumentDueBadge
-                                leave={doc.rawLeave}
-                                hasAttachments={hasAttachments}
-                                onClick={
-                                  hasAttachments
-                                    ? () => handleViewAttachment(doc)
-                                    : doc.rawLeave?.documentStatus
-                                      ? () => {
-                                          setUploadDoc(doc);
-                                          setUploadFile(null);
-                                        }
-                                      : undefined
-                                }
-                                className=""
-                              />
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 text-right">
-                            <div className="flex items-center justify-end">
-                              <ActionDropdown
-                                align="right"
-                                menuClassName="w-52"
-                                triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
-                                items={getDocumentActionItems(doc)}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {(() => {
+                      const firstResignationIndex = pagedDocuments.findIndex((d) => d.source === 'RESIGNATION');
+                      return pagedDocuments.map((doc, idx) => {
+                        const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                        const hasAttachments = !!doc.documents && doc.documents.length > 0;
+                        const isTargetResignation = idx === firstResignationIndex;
+                        const isFirstRow = idx === 0;
+                        const actionButtonId = isTargetResignation
+                          ? 'tour-doc-action-resignation'
+                          : isFirstRow
+                            ? 'tour-doc-action-btn'
+                            : undefined;
+                        return (
+                          <tr key={doc.id} className="hover:bg-gray-50 dark:bg-slate-800/50 transition-colors">
+                            <td className="px-5 py-4 font-medium whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDocumentPreview(doc)}
+                                className="text-primary dark:text-blue-300 hover:text-primary-hover hover:underline font-semibold transition-colors cursor-pointer text-left"
+                                title="คลิกเพื่อดูตัวอย่างเอกสาร"
+                              >
+                                {doc.code}
+                              </button>
+                            </td>
+                            <td className="px-4 py-4 text-gray-600 dark:text-slate-400 whitespace-nowrap">{formatShortDate(doc.submittedDate)}</td>
+                            <td className="px-4 py-4 text-gray-600 dark:text-slate-400">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {doc.subType && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                    {doc.subType}
+                                  </span>
+                                )}
+                                <span className="whitespace-nowrap">{doc.detailDate}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4">
+                              <SourceBadge source={doc.source} />
+                            </td>
+                            <td className="px-4 py-4">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                                {statusConf.icon}
+                                {statusConf.label}
+                              </span>
+                              <div className="mt-1">
+                                <DocumentDueBadge
+                                  leave={doc.rawLeave}
+                                  hasAttachments={hasAttachments}
+                                  onClick={
+                                    hasAttachments
+                                      ? () => handleViewAttachment(doc)
+                                      : doc.rawLeave?.documentStatus
+                                        ? () => {
+                                            setUploadDoc(doc);
+                                            setUploadFile(null);
+                                          }
+                                        : undefined
+                                  }
+                                  className=""
+                                />
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-right">
+                              <div className="flex items-center justify-end">
+                                <ActionDropdown
+                                  id={actionButtonId}
+                                  dataTour={isTargetResignation ? 'tour-doc-action-resignation' : 'tour-doc-action-btn'}
+                                  align="right"
+                                  menuClassName="w-52"
+                                  triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
+                                  items={getDocumentActionItems(doc)}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile View: Stacked Cards */}
               <div className="md:hidden divide-y divide-gray-100">
-                {pagedDocuments.map((doc) => {
-                  const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
-                  const hasAttachments = !!doc.documents && doc.documents.length > 0;
-                  return (
-                    <div key={doc.id} className="p-4 space-y-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDocumentPreview(doc)}
-                            className="text-primary dark:text-blue-300 hover:text-primary-hover font-bold text-sm text-left flex items-center gap-1.5"
-                          >
-                            <span>{doc.code}</span>
-                            <Eye className="w-3.5 h-3.5 text-slate-400" />
-                          </button>
-                          <span className="text-2xs text-slate-400 block mt-0.5">
-                            ยื่นเมื่อ: {formatShortDate(doc.submittedDate)}
-                          </span>
+                {(() => {
+                  const firstResignationIndex = pagedDocuments.findIndex((d) => d.source === 'RESIGNATION');
+                  return pagedDocuments.map((doc, idx) => {
+                    const statusConf = STATUS_CONFIG[doc.status] ?? STATUS_CONFIG['PENDING'];
+                    const hasAttachments = !!doc.documents && doc.documents.length > 0;
+                    const isTargetResignation = idx === firstResignationIndex;
+                    const isFirstRow = idx === 0;
+                    const actionButtonId = isTargetResignation
+                      ? 'm-tour-doc-action-resignation'
+                      : isFirstRow
+                        ? 'm-tour-doc-action-btn'
+                        : undefined;
+                    return (
+                      <div key={doc.id} className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDocumentPreview(doc)}
+                              className="text-primary dark:text-blue-300 hover:text-primary-hover font-bold text-sm text-left flex items-center gap-1.5"
+                            >
+                              <span>{doc.code}</span>
+                              <Eye className="w-3.5 h-3.5 text-slate-400" />
+                            </button>
+                            <span className="text-2xs text-slate-400 block mt-0.5">
+                              ยื่นเมื่อ: {formatShortDate(doc.submittedDate)}
+                            </span>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
+                              {statusConf.icon}
+                              {statusConf.label}
+                            </span>
+                            <DocumentDueBadge
+                              leave={doc.rawLeave}
+                              hasAttachments={hasAttachments}
+                              onClick={
+                                hasAttachments
+                                  ? () => handleViewAttachment(doc)
+                                  : doc.rawLeave?.documentStatus
+                                    ? () => {
+                                        setUploadDoc(doc);
+                                        setUploadFile(null);
+                                      }
+                                    : undefined
+                              }
+                              className=""
+                            />
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${statusConf.color}`}>
-                            {statusConf.icon}
-                            {statusConf.label}
-                          </span>
-                          <DocumentDueBadge
-                            leave={doc.rawLeave}
-                            hasAttachments={hasAttachments}
-                            onClick={
-                              hasAttachments
-                                ? () => handleViewAttachment(doc)
-                                : doc.rawLeave?.documentStatus
-                                  ? () => {
-                                      setUploadDoc(doc);
-                                      setUploadFile(null);
-                                    }
-                                  : undefined
-                            }
-                            className=""
+
+                        <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-400">ประเภท:</span>
+                            <span className="font-semibold text-slate-800">{doc.documentType}</span>
+                          </div>
+                          {doc.detailDate && doc.detailDate.trim() !== '' && doc.detailDate !== '-' && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-slate-400">รายละเอียด:</span>
+                              <span className="text-slate-700">{doc.detailDate}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <ActionDropdown
+                            id={actionButtonId}
+                            dataTour={isTargetResignation ? 'tour-doc-action-resignation' : 'tour-doc-action-btn'}
+                            align="right"
+                            menuClassName="w-52"
+                            triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
+                            items={getDocumentActionItems(doc)}
                           />
                         </div>
                       </div>
-
-                      <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400">ประเภท:</span>
-                          <span className="font-semibold text-slate-800">{doc.documentType}</span>
-                        </div>
-                        {doc.detailDate && doc.detailDate.trim() !== '' && doc.detailDate !== '-' && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-slate-400">รายละเอียด:</span>
-                            <span className="text-slate-700">{doc.detailDate}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex justify-end pt-1">
-                        <ActionDropdown
-                          align="right"
-                          menuClassName="w-52"
-                          triggerClassName="w-8 h-8 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 inline-flex items-center justify-center transition-colors cursor-pointer"
-                          items={getDocumentActionItems(doc)}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
 
               {/* Standard TablePagination */}

@@ -20,6 +20,9 @@ export interface ActionDropdownItem {
 }
 
 export interface ActionDropdownProps {
+  id?: string;
+  triggerId?: string;
+  dataTour?: string;
   items?: ActionDropdownItem[];
   children?: React.ReactNode | ((close: () => void) => React.ReactNode);
   trigger?: React.ReactNode;
@@ -33,6 +36,9 @@ export interface ActionDropdownProps {
 }
 
 export const ActionDropdown: React.FC<ActionDropdownProps> = ({
+  id,
+  triggerId,
+  dataTour,
   items,
   children,
   trigger,
@@ -169,6 +175,8 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
     <>
       <button
         ref={triggerRef}
+        id={triggerId || id}
+        data-tour={dataTour}
         type="button"
         title={title}
         disabled={disabled}

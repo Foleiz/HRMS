@@ -310,6 +310,8 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                       {/* 8. จัดการ (3 dots actions menu) */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <ActionDropdown
+                          id={idx === 0 ? 'tour-user-action-btn' : undefined}
+                          dataTour="tour-user-action-btn"
                           menuClassName="w-44"
                           triggerClassName="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 flex items-center justify-center transition-colors mx-auto cursor-pointer"
                           items={[

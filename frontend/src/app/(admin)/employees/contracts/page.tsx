@@ -612,7 +612,7 @@ function ContractsPageContent() {
               ) : paginatedContracts.length === 0 ? (
                 <TableEmpty colSpan={5} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
               ) : (
-                paginatedContracts.map((contract) => (
+                paginatedContracts.map((contract, index) => (
                   <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
                     {/* พนักงาน: อรวรรณ ใจดี · EMP-0142 */}
                     <td className="py-4 px-6 whitespace-nowrap">
@@ -648,6 +648,8 @@ function ContractsPageContent() {
                     {/* 3-Dots Action Menu */}
                     <td className="py-4 px-6 text-right whitespace-nowrap">
                       <ActionDropdown
+                        id={index === 0 ? 'tour-contract-action-btn' : undefined}
+                        dataTour="tour-contract-action-btn"
                         menuClassName="w-52"
                         items={getContractActionItems(contract)}
                       />
