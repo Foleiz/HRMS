@@ -7,7 +7,6 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import { employeeService } from '@/services/employeeService';
 import { apiClient, getAvatarUrl } from '@/lib/api-client';
 import { Employee } from '@/types/employee';
@@ -56,6 +55,7 @@ import { AccessDenied } from '@/components/common/AccessDenied';
 import CreateEmployeeModal from '@/components/employees/CreateEmployeeModal';
 import { Button, inputClass, TabBar } from '@/components/ui';
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
+import { FloatingOnboardingGuide } from '@/components/guide/FloatingOnboardingGuide';
 
 interface DepartmentItem {
   id: number;
@@ -161,92 +161,10 @@ export const formatHireDateAndTenure = (val?: string | null): string => {
 };
 
 
-const EMPLOYEE_BUTTON_STEPS: TourStep[] = [
-  {
-    element: '#tour-employee-add-btn',
-    popover: {
-      title: 'ขั้นตอนที่ 1: คลิกปุ่ม "เพิ่มพนักงาน"',
-      description: 'เริ่มต้นกระบวนการด้วยการคลิกปุ่มนี้ เพื่อเปิดแบบฟอร์มบันทึกข้อมูลและประวัติพนักงานใหม่เข้าสู่ระบบ',
-      side: 'bottom',
-      align: 'end',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-];
-
-const EMPLOYEE_MODAL_STEPS: TourStep[] = [
-  {
-    element: '#tour-emp-code-field',
-    popover: {
-      title: '1. กรอกรหัสพนักงาน & เลขสแกนนิ้ว',
-      description: 'ระบบจะสร้างรหัสแนะนำให้อัตโนมัติ (เช่น EMP-001) สามารถแก้ไขให้ตรงกับโครงสร้างขององค์กรได้ และระบุรหัสเครื่องสแกนนิ้วเพื่อเชื่อมต่อเวลากับระบบตอกบัตร',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-  {
-    element: '#tour-emp-names-field',
-    popover: {
-      title: '2. กรอกคำนำหน้า ชื่อ และนามสกุล',
-      description: 'ระบุคำนำหน้า (นาย/นาง/น.ส.), ชื่อจริง และนามสกุลภาษาไทย ซึ่งเป็นข้อมูลจำเป็นตามกฎหมายแรงงาน',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-  {
-    element: '#tour-emp-position-field',
-    popover: {
-      title: '3. เลือกตำแหน่ง แผนก และประเภทพนักงาน',
-      description: 'เลือกตำแหน่งงาน แผนกที่สังกัด และประเภทพนักงาน (เช่น ทดลองงาน) เพื่อให้ระบบเชื่อมโยงสายการบังคับบัญชาและการอนุมัติให้อัตโนมัติ',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-  {
-    element: '#tour-emp-save-btn',
-    popover: {
-      title: '4. บันทึกข้อมูล & ไปยังขั้นตอนถัดไป 📋',
-      description: 'เมื่อกรอกข้อมูลเรียบร้อย กดปุ่ม "บันทึกข้อมูล" พนักงานจะถูกเพิ่มเข้าสู่ระบบ และขั้นตอนถัดไปคือการไปสร้าง "สัญญาจ้างงาน" เพื่อระบุประเภทสัญญาและค่าจ้างเริ่มต้น',
-      side: 'top',
-      align: 'end',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-];
-
 function EmployeesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tourParam = searchParams?.get('tour');
-  const mockParam = searchParams?.get('mock');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [modalTourActive, setModalTourActive] = useState(false);
-
-  // Phase 1: Tour ชี้ที่ปุ่มเพิ่มพนักงาน
-  useOnboardingTour('hr-onboarding-emp-btn', EMPLOYEE_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-1' && !isCreateModalOpen && !modalTourActive,
-    doneBtnText: 'ดูช่องที่ต้องกรอกในแบบฟอร์ม →',
-    onComplete: () => {
-      setIsCreateModalOpen(true);
-      setModalTourActive(true);
-    },
-  });
-
-  // Phase 2: Tour ชี้ช่องต่างๆ ในแบบฟอร์มเมื่อ Modal เปิด
-  useOnboardingTour('hr-onboarding-emp-modal', EMPLOYEE_MODAL_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-1' && isCreateModalOpen,
-    delayMs: 350,
-    doneBtnText: 'ไปยังขั้นตอนที่ 2: สัญญาจ้าง →',
-    onComplete: () => {
-      setIsCreateModalOpen(false);
-      setModalTourActive(false);
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
-    },
-  });
 
   const { user, hasPermission, hasRole, getDataScope } = useAuth();
   const toast = useToast();
@@ -1778,6 +1696,9 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
         })(),
         document.body
       )}
+
+      {/* Floating Onboarding Step Guide (Non-intrusive) */}
+      <FloatingOnboardingGuide currentStep={1} />
     </div>
   );
 }
