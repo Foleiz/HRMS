@@ -24,7 +24,8 @@ export function GlobalWizardTour() {
     }
 
     const checkModal = () => {
-      const modalEl = document.querySelector('.modal-backdrop, [role="dialog"]');
+      // ตรวจจับเฉพาะ modal-backdrop ของหน้าต่างแบบฟอร์มในระบบ (ไม่รวม .driver-popover ของ Driver.js เอง)
+      const modalEl = document.querySelector('.modal-backdrop, [role="dialog"]:not(.driver-popover):not([class*="driver-"])');
       const hasModal = Boolean(modalEl);
       if (hasModal) {
         document.body.classList.add('driver-modal-active');
