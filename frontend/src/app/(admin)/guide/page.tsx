@@ -1,159 +1,88 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import {
-  Compass,
-  CheckCircle2,
-  Lock,
-  ArrowRight,
-  Sparkles,
+  Search,
+  Flag,
   Users,
-  FileText,
-  UserCheck,
-  Play,
-  RotateCcw,
-  Check,
-  Clock,
-  Layers,
   CalendarDays,
   ShieldCheck,
+  Check,
+  X,
+  BookOpen,
 } from 'lucide-react';
-import { Button } from '@/components/ui';
 
-interface TutorialQuest {
+interface GuideItem {
   id: string;
-  title: string;
-  category: 'HR' | 'ESS' | 'APPROVAL';
+  category: 'ONBOARDING' | 'EMPLOYEE' | 'LEAVE' | 'SETTINGS';
   categoryLabel: string;
-  duration: string;
-  stepCount: number;
+  title: string;
   description: string;
-  isAvailable: boolean;
-  route?: string;
-  steps: {
-    number: number;
-    title: string;
-    detail: string;
-    routeText: string;
-    icon: React.ElementType;
-  }[];
+  stepCount: number;
+  duration: string;
+  icon: React.ElementType;
+  route: string;
+  defaultViewed?: boolean;
 }
 
-const TUTORIAL_QUESTS: TutorialQuest[] = [
+const CATEGORIES = [
+  { key: 'ALL', label: 'ทั้งหมด' },
+  { key: 'ONBOARDING', label: 'เริ่มต้นใช้งาน' },
+  { key: 'EMPLOYEE', label: 'พนักงาน' },
+  { key: 'LEAVE', label: 'การลา' },
+  { key: 'SETTINGS', label: 'ผู้ใช้งานและสิทธิ์' },
+] as const;
+
+const GUIDE_ITEMS: GuideItem[] = [
   {
-    id: 'hr-onboarding',
-    title: 'เพิ่มพนักงานใหม่ (HR Onboarding)',
-    category: 'HR',
-    categoryLabel: 'ฝ่ายบุคคล (HR)',
-    duration: '~2 นาที',
-    stepCount: 3,
-    description: 'บันทึกประวัติพนักงานใหม่ จัดทำสัญญาจ้าง และผูกบัญชีผู้ใช้เข้าสู่ระบบ',
-    isAvailable: true,
+    id: 'system-overview',
+    category: 'ONBOARDING',
+    categoryLabel: 'เริ่มต้นใช้งาน',
+    title: 'เริ่มต้นใช้งานระบบ',
+    description: 'ทำความรู้จักเมนูหลักและการตั้งค่าเริ่มต้นของบริษัท',
+    stepCount: 4,
+    duration: 'ประมาณ 3 นาที',
+    icon: Flag,
     route: '/employees?tour=hr-onboarding-1',
-    steps: [
-      {
-        number: 1,
-        title: 'ข้อมูลพนักงาน',
-        detail: 'รหัสพนักงาน, ชื่อ-นามสกุล, ตำแหน่ง และแผนก',
-        routeText: '/employees',
-        icon: Users,
-      },
-      {
-        number: 2,
-        title: 'สัญญาจ้างงาน',
-        detail: 'ประเภทสัญญา, วันเริ่มงาน และเงินเดือนเริ่มต้น',
-        routeText: '/employees/contracts',
-        icon: FileText,
-      },
-      {
-        number: 3,
-        title: 'บัญชีผู้ใช้งาน',
-        detail: 'กำหนด Username, รหัสผ่าน และมอบหมายสิทธิ์ (Role)',
-        routeText: '/settings?tab=users',
-        icon: UserCheck,
-      },
-    ],
+    defaultViewed: true,
+  },
+  {
+    id: 'manage-employees',
+    category: 'EMPLOYEE',
+    categoryLabel: 'พนักงาน',
+    title: 'จัดการพนักงาน',
+    description: 'เพิ่ม แก้ไข และค้นหาข้อมูลพนักงาน',
+    stepCount: 3,
+    duration: 'ประมาณ 2 นาที',
+    icon: Users,
+    route: '/employees?tour=hr-onboarding-1',
+    defaultViewed: false,
   },
   {
     id: 'leave-request',
-    title: 'การยื่นคำขอลาหยุดงาน (Leave Request)',
-    category: 'ESS',
-    categoryLabel: 'พนักงานทั่วไป (ESS)',
-    duration: '~1 นาที',
+    category: 'LEAVE',
+    categoryLabel: 'การลา',
+    title: 'การยื่นคำขอลาและวันหยุด',
+    description: 'เลือกประเภทการลา ตรวจสอบสิทธิ์คงเหลือ และส่งคำขอให้อนุมัติ',
     stepCount: 2,
-    description: 'เลือกประเภทการลา ตรวจสอบโควตาวันลาคงเหลือ และส่งคำขออนุมัติ',
-    isAvailable: false,
-    steps: [
-      {
-        number: 1,
-        title: 'เลือกประเภทวันลา',
-        detail: 'ลาพักร้อน, ลาป่วย, ลากิจ และตรวจวันลาคงเหลือ',
-        routeText: '/documents/leave',
-        icon: FileText,
-      },
-      {
-        number: 2,
-        title: 'ระบุวันที่และส่งคำขอ',
-        detail: 'เลือกวันลา แนบไฟล์เอกสาร และส่งให้หัวหน้าอนุมัติ',
-        routeText: '/documents/leave',
-        icon: Clock,
-      },
-    ],
+    duration: 'ประมาณ 1 นาที',
+    icon: CalendarDays,
+    route: '/documents/leave',
+    defaultViewed: false,
   },
   {
-    id: 'attendance-check',
-    title: 'บันทึกเวลาและการตอกบัตร (Attendance)',
-    category: 'ESS',
-    categoryLabel: 'พนักงานทั่วไป (ESS)',
-    duration: '~1 นาที',
-    stepCount: 2,
-    description: 'ตรวจเช็คเวลาเข้า-ออกงาน สถิติการมาสาย และยื่นขอปรับปรุงเวลา',
-    isAvailable: false,
-    steps: [
-      {
-        number: 1,
-        title: 'ตรวจสถิติเวลาทำงาน',
-        detail: 'ตรวจสอบบันทึกเวลาเข้างาน ขาด ลา มาสาย รายเดือน',
-        routeText: '/ess/attendance',
-        icon: CalendarDays,
-      },
-      {
-        number: 2,
-        title: 'ขอปรับปรุงเวลา',
-        detail: 'ยื่นคำร้องขอปรับเวลาทำงานเมื่อลืมสแกนนิ้ว',
-        routeText: '/ess/attendance',
-        icon: CheckCircle2,
-      },
-    ],
-  },
-  {
-    id: 'manager-approvals',
-    title: 'การอนุมัติคำขอของลูกทีม (Approvals)',
-    category: 'APPROVAL',
-    categoryLabel: 'หัวหน้างาน (Approval)',
-    duration: '~1 นาที',
-    stepCount: 2,
-    description: 'ตรวจสอบรายการคำขอลาและเวลาทำงานของลูกทีม พร้อมกดอนุมัติ',
-    isAvailable: false,
-    steps: [
-      {
-        number: 1,
-        title: 'ตรวจสอบรายการคำขอ',
-        detail: 'ดูคำขอลาคงค้าง และเหตุผลประกอบการลา',
-        routeText: '/approvals',
-        icon: Layers,
-      },
-      {
-        number: 2,
-        title: 'อนุมัติ / ไม่อนุมัติ',
-        detail: 'กดอนุมัติหรือส่งกลับแก้ไขพร้อมระบุเหตุผล',
-        routeText: '/approvals',
-        icon: CheckCircle2,
-      },
-    ],
+    id: 'roles-permissions',
+    category: 'SETTINGS',
+    categoryLabel: 'ผู้ใช้งานและสิทธิ์',
+    title: 'การกำหนดบทบาทและสิทธิ์การใช้งาน',
+    description: 'สร้างผู้ใช้งาน กำหนดบทบาท และจัดการสิทธิ์การเข้าถึงเมนูต่างๆ',
+    stepCount: 3,
+    duration: 'ประมาณ 2 นาที',
+    icon: ShieldCheck,
+    route: '/settings?tab=users&tour=hr-onboarding-3',
+    defaultViewed: false,
   },
 ];
 
@@ -161,231 +90,380 @@ function GuidePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
-  const isCompletedFlow =
-    searchParams?.get('completed') === 'hr-onboarding' || searchParams?.get('completed') === '1';
+  const [activeCategory, setActiveCategory] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [viewedGuides, setViewedGuides] = useState<Record<string, boolean>>({
+    'system-overview': true,
+  });
+
+  // ตรวจสอบสถานะการทำ Flow Onboarding
+  const completedParam = searchParams?.get('completed');
+  const [isCompletedFlow, setIsCompletedFlow] = useState<boolean>(false);
+  const [currentStep, setCurrentStep] = useState<number>(2); // Default ที่ขั้น 2 ตามตัวอย่างในภาพ
 
   useEffect(() => {
     setBreadcrumb({ section: 'ภาพรวม', page: 'วิธีการใช้งาน' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  const filteredQuests =
-    selectedCategory === 'ALL'
-      ? TUTORIAL_QUESTS
-      : TUTORIAL_QUESTS.filter((q) => q.category === selectedCategory);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-  const startTutorial = (route?: string) => {
-    if (!route) return;
-    router.push(route);
+    // โหลดสถานะการดูจาก localStorage
+    const savedViewed = localStorage.getItem('hrms_guide_viewed_items');
+    if (savedViewed) {
+      try {
+        setViewedGuides(JSON.parse(savedViewed));
+      } catch {}
+    }
+
+    if (completedParam === 'hr-onboarding') {
+      setIsCompletedFlow(true);
+      setCurrentStep(3);
+      localStorage.setItem('hrms_guide_hr_onboarding_completed', 'true');
+    } else {
+      const isDone = localStorage.getItem('hrms_guide_hr_onboarding_completed') === 'true';
+      if (isDone) {
+        setIsCompletedFlow(true);
+        setCurrentStep(3);
+      }
+    }
+  }, [completedParam]);
+
+  const handleStartGuide = (item: GuideItem) => {
+    // บันทึกสถานะว่าดูแล้ว
+    const updated = { ...viewedGuides, [item.id]: true };
+    setViewedGuides(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hrms_guide_viewed_items', JSON.stringify(updated));
+    }
+    router.push(item.route);
   };
 
-  return (
-    <div className="space-y-6 pb-16 max-w-6xl mx-auto">
-      {/* ─────────────────────────────────────────────────────────────
-          1. Header Banner (Compact & Game-Style)
-      ───────────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-primary to-blue-900 text-white p-6 sm:p-7 shadow-md">
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-semibold">
-              <Compass className="w-3.5 h-3.5 text-blue-300" />
-              Tutorial Hub • คู่มือแนะนำการใช้งาน
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight">
-              วิธีการใช้งานระบบ (Tutorials & Guides)
-            </h1>
-            <p className="text-slate-300 text-xs sm:text-sm">
-              เลือกบทเรียนที่คุณต้องการ ระบบจะพาทำทีละขั้นตอนอย่างรวดเร็ว
-            </p>
-          </div>
+  const handleHeroAction = () => {
+    if (isCompletedFlow) {
+      router.push('/employees?tour=hr-onboarding-1');
+      return;
+    }
+    if (currentStep === 1) {
+      router.push('/employees?tour=hr-onboarding-1');
+    } else if (currentStep === 2) {
+      router.push('/employees/contracts?tour=hr-onboarding-2');
+    } else {
+      router.push('/settings?tab=users&tour=hr-onboarding-3');
+    }
+  };
 
-          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-            <div className="px-3 py-1.5 rounded-xl bg-white/10 border border-white/15 text-xs text-white flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>พร้อมใช้งาน 1 หัวข้อ</span>
-            </div>
-          </div>
+  // กรองและจัดกลุ่มคู่มือตามหมวดหมู่และการค้นหา
+  const filteredItems = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return GUIDE_ITEMS.filter((item) => {
+      const matchesCategory =
+        activeCategory === 'ALL' || item.category === activeCategory;
+      const matchesSearch =
+        !q ||
+        item.title.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.categoryLabel.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [activeCategory, searchQuery]);
+
+  // จัดกลุ่มตาม Category เพื่อแสดง Header หมวดหมู่
+  const groupedGuides = useMemo(() => {
+    const map = new Map<string, { label: string; items: GuideItem[] }>();
+
+    filteredItems.forEach((item) => {
+      if (!map.has(item.category)) {
+        map.set(item.category, {
+          label: item.categoryLabel,
+          items: [],
+        });
+      }
+      map.get(item.category)!.items.push(item);
+    });
+
+    return Array.from(map.entries()).map(([cat, val]) => ({
+      category: cat,
+      categoryLabel: val.label,
+      items: val.items,
+    }));
+  }, [filteredItems]);
+
+  const heroButtonText = useMemo(() => {
+    if (isCompletedFlow) return 'ดูคู่มืออีกครั้ง';
+    if (currentStep === 1) return 'เริ่มขั้นตอนที่ 1';
+    if (currentStep === 2) return 'ทำต่อจากขั้นที่ 2';
+    return 'ทำต่อจากขั้นที่ 3';
+  }, [isCompletedFlow, currentStep]);
+
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto pb-16 font-sans">
+      {/* ─────────────────────────────────────────────────────────────
+          1. Header Section: Title & Search Bar
+      ───────────────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+            วิธีการใช้งาน
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            คู่มือแบบทีละขั้นตอนสำหรับทุกฟีเจอร์ของระบบ เลือกหัวข้อที่ต้องการเพื่อเริ่มดู
+          </p>
         </div>
 
-        {/* Ambient Glow */}
-        <div className="absolute -right-12 -top-12 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
+        {/* ช่องค้นหาคู่มือ */}
+        <div className="relative shrink-0">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="ค้นหาคู่มือ เช่น เพิ่มพนักงาน, ลา"
+            className="w-full sm:w-80 pl-10 pr-9 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* แจ้งเตือนเมื่อทำ Onboarding Flow สำเร็จ (Quest Completed Banner) */}
-      {isCompletedFlow && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 shadow-xs animate-in fade-in">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-              <Sparkles className="w-5 h-5" />
+      {/* ─────────────────────────────────────────────────────────────
+          2. Category Filter Pills
+      ───────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat.key;
+          return (
+            <button
+              key={cat.key}
+              type="button"
+              onClick={() => setActiveCategory(cat.key)}
+              className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/60 shadow-2xs'
+              }`}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          3. Featured Hero Banner ("รับพนักงานใหม่ครบวงจร")
+      ───────────────────────────────────────────────────────────── */}
+      {(!searchQuery || 'รับพนักงานใหม่ครบวงจร'.includes(searchQuery)) && (
+        <div className="bg-[#0b172a] dark:bg-slate-950 border border-slate-800 rounded-2xl p-6 sm:p-7 text-white shadow-md relative overflow-hidden">
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            {/* ฝั่งซ้าย: ข้อมูลหัวข้อและ Steps */}
+            <div className="space-y-3">
+              <div className="text-xs text-slate-400 font-medium flex items-center gap-2">
+                <span>แนะนำ · ทำต่อจากที่ค้างไว้</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+                รับพนักงานใหม่ครบวงจร
+              </h2>
+
+              {/* 3 Step Badges */}
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                {/* ขั้นที่ 1: เพิ่มพนักงาน */}
+                <button
+                  type="button"
+                  onClick={() => router.push('/employees?tour=hr-onboarding-1')}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-medium inline-flex items-center gap-2 bg-slate-800/90 border border-slate-700 hover:border-slate-500 text-slate-200 transition-colors cursor-pointer"
+                >
+                  <span className="w-4 h-4 rounded-full bg-slate-700 text-white flex items-center justify-center text-[10px] font-bold">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </span>
+                  <span>เพิ่มพนักงาน</span>
+                </button>
+
+                {/* ขั้นที่ 2: เพิ่มสัญญาจ้าง */}
+                <button
+                  type="button"
+                  onClick={() => router.push('/employees/contracts?tour=hr-onboarding-2')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium inline-flex items-center gap-2 border transition-colors cursor-pointer ${
+                    currentStep === 2 && !isCompletedFlow
+                      ? 'bg-slate-800/90 border-slate-500 text-white font-semibold'
+                      : isCompletedFlow
+                      ? 'bg-slate-800/90 border-slate-700 text-slate-200 hover:border-slate-500'
+                      : 'bg-slate-800/50 border-slate-700/60 text-slate-400 hover:border-slate-600'
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-slate-700 text-white flex items-center justify-center text-[10px] font-bold">
+                    {isCompletedFlow ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '2'}
+                  </span>
+                  <span>เพิ่มสัญญาจ้าง</span>
+                </button>
+
+                {/* ขั้นที่ 3: เพิ่มผู้ใช้งาน */}
+                <button
+                  type="button"
+                  onClick={() => router.push('/settings?tab=users&tour=hr-onboarding-3')}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium inline-flex items-center gap-2 border transition-colors cursor-pointer ${
+                    currentStep === 3 && !isCompletedFlow
+                      ? 'bg-slate-800/90 border-slate-500 text-white font-semibold'
+                      : isCompletedFlow
+                      ? 'bg-slate-800/90 border-slate-700 text-slate-200 hover:border-slate-500'
+                      : 'bg-slate-800/50 border-slate-700/60 text-slate-400 hover:border-slate-600'
+                  }`}
+                >
+                  <span className="w-4 h-4 rounded-full bg-slate-700 text-white flex items-center justify-center text-[10px] font-bold">
+                    {isCompletedFlow ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '3'}
+                  </span>
+                  <span>เพิ่มผู้ใช้งาน</span>
+                </button>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-200">
-                🎉 ยินดีด้วย! คุณทำไกด์ "เพิ่มพนักงานใหม่" สำเร็จครบทั้ง 3 ขั้นตอนแล้ว
-              </h3>
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 truncate mt-0.5">
-                พนักงานมีข้อมูลครบถ้วน: ประวัติพนักงาน → สัญญาจ้างงาน → บัญชีผู้ใช้งานระบบ
-              </p>
+
+            {/* ฝั่งขวา: Progress bar & ปุ่มทำต่อ */}
+            <div className="flex flex-col items-start lg:items-end justify-center gap-3 shrink-0">
+              <div className="w-full sm:w-64">
+                <div className="flex items-center justify-between text-xs text-slate-300 font-medium mb-1.5">
+                  <span>
+                    {isCompletedFlow
+                      ? 'เสร็จแล้ว 3 จาก 3 ขั้นตอน'
+                      : `เสร็จแล้ว ${currentStep - 1} จาก 3 ขั้นตอน`}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                    style={{
+                      width: isCompletedFlow
+                        ? '100%'
+                        : `${Math.round(((currentStep - 1) / 3) * 100)}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleHeroAction}
+                className="w-full sm:w-auto bg-white text-slate-900 hover:bg-slate-100 font-bold px-6 py-2.5 rounded-xl text-xs sm:text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {heroButtonText}
+              </button>
             </div>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={<RotateCcw className="w-3.5 h-3.5" />}
-            onClick={() => startTutorial('/employees?tour=hr-onboarding-1')}
-            className="shrink-0 text-xs"
-          >
-            ทำซ้ำอีกครั้ง
-          </Button>
         </div>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          2. Category Filter Tabs (สไตล์ Game Quest Tab)
+          4. Grouped Guide Cards List
       ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-        {[
-          { key: 'ALL', label: 'ทั้งหมด' },
-          { key: 'HR', label: 'ฝ่ายบุคคล (HR)' },
-          { key: 'ESS', label: 'พนักงานทั่วไป' },
-          { key: 'APPROVAL', label: 'หัวหน้างาน' },
-        ].map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setSelectedCategory(tab.key)}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-              selectedCategory === tab.key
-                ? 'bg-primary text-white shadow-xs'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {groupedGuides.length > 0 ? (
+        <div className="space-y-6">
+          {groupedGuides.map((group) => (
+            <div key={group.category} className="space-y-2.5">
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wide">
+                {group.categoryLabel}
+              </h3>
 
-      {/* ─────────────────────────────────────────────────────────────
-          3. Tutorial Quests List
-      ───────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-4">
-        {filteredQuests.map((quest) => {
-          const isCompleted = quest.id === 'hr-onboarding' && isCompletedFlow;
+              <div className="space-y-3">
+                {group.items.map((item) => {
+                  const isViewed = Boolean(viewedGuides[item.id] || item.defaultViewed);
+                  const Icon = item.icon;
 
-          return (
-            <div
-              key={quest.id}
-              className={`rounded-2xl border transition-all ${
-                quest.isAvailable
-                  ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-2xs hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500'
-                  : 'bg-slate-50/70 dark:bg-slate-900/30 border-slate-200/80 dark:border-slate-800/80 opacity-60'
-              }`}
-            >
-              <div className="p-5 sm:p-6 space-y-4">
-                {/* Header Row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
+                  return (
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
-                        quest.isAvailable
-                          ? 'bg-primary text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
-                      }`}
+                      key={item.id}
+                      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-md hover:border-blue-400 dark:hover:border-blue-600 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
-                      <Compass className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                          {quest.title}
-                        </h2>
-                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                          {quest.categoryLabel}
-                        </span>
-                        <span className="text-[11px] text-slate-400 font-medium">
-                          • {quest.stepCount} ขั้นตอน ({quest.duration})
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {quest.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Status & Action */}
-                  <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-                    {quest.isAvailable ? (
-                      <>
-                        {isCompleted && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 px-2 py-1 rounded-lg">
-                            <Check className="w-3.5 h-3.5" /> สำเร็จแล้ว
-                          </span>
-                        )}
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<Play className="w-3.5 h-3.5 fill-current" />}
-                          onClick={() => startTutorial(quest.route)}
-                          className="shadow-xs text-xs font-semibold"
-                        >
-                          {isCompleted ? 'เปิดดูอีกครั้ง' : 'เริ่มไกด์ทันที'}
-                        </Button>
-                      </>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        <Lock className="w-3.5 h-3.5" /> เร็วๆ นี้
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Steps Mini-Timeline (สไตล์เควสต์ 3 ด่านในเกม) */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                  {quest.steps.map((st) => {
-                    const StepIcon = st.icon;
-                    return (
-                      <div
-                        key={st.number}
-                        className={`p-3 rounded-xl border flex items-start gap-2.5 ${
-                          quest.isAvailable
-                            ? 'bg-slate-50/70 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800'
-                            : 'bg-transparent border-slate-200/40 dark:border-slate-800/40'
-                        }`}
-                      >
-                        <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          {st.number}
-                        </span>
+                      {/* Left: Icon & Title/Description */}
+                      <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                        <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 shadow-2xs">
+                          <Icon className="w-5 h-5" />
+                        </div>
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <StepIcon className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
-                              {st.title}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                            {st.detail}
+                          <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                            {item.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                            {item.description}
                           </p>
-                          <span className="text-[10px] font-mono text-slate-400 block mt-1">
-                            {st.routeText}
-                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      {/* Right: Step count, Badge & Button */}
+                      <div className="flex items-center gap-3 sm:gap-4 self-end sm:self-center shrink-0">
+                        <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                          {item.stepCount} ขั้นตอน · {item.duration}
+                        </span>
+
+                        <span
+                          className={`text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap ${
+                            isViewed
+                              ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800'
+                              : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {isViewed ? 'ดูแล้ว' : 'ยังไม่ได้ดู'}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleStartGuide(item)}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer whitespace-nowrap ${
+                            isViewed
+                              ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white'
+                              : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {isViewed ? 'ดูคู่มืออีกครั้ง' : 'เริ่มดูคู่มือ'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      ) : (
+        /* Empty State */
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-12 text-center shadow-xs">
+          <BookOpen className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+            ไม่พบคู่มือที่ตรงกับคำค้นหา
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+            ลองค้นหาด้วยคำอื่น เช่น &ldquo;พนักงาน&rdquo;, &ldquo;ลา&rdquo;, &ldquo;สัญญา&rdquo; หรือเลือกหมวดหมู่ทั้งหมด
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setActiveCategory('ALL');
+            }}
+            className="mt-4 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 transition-colors"
+          >
+            ล้างคำค้นหา
+          </button>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function GuidePage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">กำลังโหลดวิธีการใช้งาน...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-xs text-slate-400">
+          กำลังโหลดวิธีการใช้งาน...
+        </div>
+      }
+    >
       <GuidePageContent />
     </Suspense>
   );
