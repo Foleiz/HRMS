@@ -232,3 +232,26 @@ body.driver-active * {
 :is(.dark .hrms-driver-popover .driver-popover-arrow.driver-popover-arrow-side-right) {
   border-right-color: #0f172a !important;
 }
+
+/* ==========================================================================
+   3. Auto-Hide Popover & Un-highlight when Modal/Drawer is Opened
+   ป้องกันไม่ให้กล่องข้อความ Wizard หรือเส้นเรืองแสงของปุ่มเดิม ลอยทับหน้าต่างแบบฟอร์ม
+   ========================================================================== */
+body:has(.modal-backdrop) .hrms-driver-popover,
+body:has([role="dialog"]) .hrms-driver-popover,
+body.driver-modal-active .hrms-driver-popover {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  transform: translateY(8px) scale(0.96) !important;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease !important;
+}
+
+body:has(.modal-backdrop) .driver-active-element,
+body:has([role="dialog"]) .driver-active-element,
+body.driver-modal-active .driver-active-element {
+  z-index: auto !important;
+  outline: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+}

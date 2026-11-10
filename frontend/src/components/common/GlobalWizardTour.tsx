@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { driver, DriveStep } from 'driver.js';
+import { ArrowRight, X } from 'lucide-react';
 import { WIZARD_PAGE_LOOKUP } from '@/config/wizardTours';
 
 export function GlobalWizardTour() {
@@ -11,6 +12,45 @@ export function GlobalWizardTour() {
   const pathname = usePathname();
   const tourParam = searchParams?.get('tour');
   const driverInstanceRef = useRef<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // ตรวจจับว่ามี Modal หรือ Drawer ของระบบเปิดอยู่ในหน้าจอหรือไม่
+  // หากมี ให้ซ่อน Tour Popover ใหญ่ และปลดไฮไลต์ เพื่อไม่ให้บังช่องกรอกข้อมูลในแบบฟอร์ม
+  useEffect(() => {
+    if (!tourParam) {
+      setIsModalOpen(false);
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('driver-modal-active');
+      }
+      return;
+    }
+
+    const checkModal = () => {
+      const modalEl = document.querySelector('.modal-backdrop, [role="dialog"]');
+      const hasModal = Boolean(modalEl);
+      setIsModalOpen(hasModal);
+      if (hasModal) {
+        document.body.classList.add('driver-modal-active');
+      } else {
+        document.body.classList.remove('driver-modal-active');
+      }
+    };
+
+    checkModal();
+
+    const observer = new MutationObserver(() => {
+      checkModal();
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('driver-modal-active');
+      }
+    };
+  }, [tourParam]);
 
   useEffect(() => {
     if (!tourParam) {
@@ -191,16 +231,103 @@ export function GlobalWizardTour() {
       driverObj.drive();
     }, 450);
 
-    return () => {
-      clearTimeout(timer);
-      if (driverInstanceRef.current) {
-        try {
-          driverInstanceRef.current.destroy();
-        } catch {}
-        driverInstanceRef.current = null;
-      }
-    };
-  }, [tourParam, router, pathname]);
+      return () => {
+        clearTimeout(timer);
+        if (driverInstanceRef.current) {
+          try {
+            driverInstanceRef.current.destroy();
+          } catch {}
+          driverInstanceRef.current = null;
+        }
+      };
+    }, [tourParam, router, pathname]);
 
-  return null;
-}
+    const ctx = tourParam ? WIZARD_PAGE_LOOKUP[tourParam] : null;
+
+    const handleNextFromModal = () => {
+      if (!ctx) return;
+      try {
+        driverInstanceRef.current?.destroy();
+      } catch {}
+      router.push(ctx.nextPageRoute);
+    };
+
+    const handlePrevFromModal = () => {
+      if (!ctx) return;
+      try {
+        driverInstanceRef.current?.destroy();
+      } catch {}
+      router.push(ctx.prevPageRoute);
+    };
+
+    const handleCloseFromModal = () => {
+      try {
+        driverInstanceRef.current?.destroy();
+      } catch {}
+      router.replace(pathname);
+    };
+
+    if (!isModalOpen || !ctx) return null;
+
+    const { pageStep } = ctx;
+    const isLastPage = pageStep.stepNumber === pageStep.totalSteps;
+    const currentActionStep =
+      pageStep.subSteps[pageStep.subSteps.length - 1] || pageStep.subSteps[0];
+    const stepTitle = currentActionStep?.title?.replace(/^ขั้นตอนที่ \d+:\s*/, '') || '';
+
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="fixed bottom-6 left-6 z-[100030] flex items-center gap-3 px-4 py-2.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-700/80 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 font-sans"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+          </span>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-bold tracking-wider uppercase text-blue-600 dark:text-blue-400">
+                คู่มือขั้นตอนที่ {pageStep.stepNumber}/{pageStep.totalSteps}
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">· แบบฟอร์มเปิดอยู่</span>
+            </div>
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 max-w-[200px] sm:max-w-[260px] truncate">
+              {stepTitle}
+            </span>
+          </div>
+        </div>
+
+        <div className="h-5 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handlePrevFromModal}
+            className="px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            ย้อนกลับ
+          </button>
+
+          <button
+            type="button"
+            onClick={handleNextFromModal}
+            className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary hover:bg-primary-hover text-white text-xs font-semibold rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <span>{isLastPage ? 'เสร็จสิ้น ✨' : 'ถัดไป'}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCloseFromModal}
+            title="ปิดคู่มือ"
+            className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-0.5 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
