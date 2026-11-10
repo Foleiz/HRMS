@@ -2,8 +2,6 @@
 
 import { TableToolbar } from '@/components/ui';
 import React, { useState, useRef, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import {
   Search,
   Plus,
@@ -51,32 +49,6 @@ interface UsersTabProps {
   onCloseDrawer?: () => void;
 }
 
-const USER_BUTTON_STEPS: TourStep[] = [
-  {
-    element: '#tour-user-add-btn',
-    popover: {
-      title: 'ขั้นตอนที่ 3: เพิ่มผู้ใช้งาน',
-      description: 'คลิกปุ่ม "+ เพิ่มผู้ใช้งาน" เพื่อสร้างบัญชีเข้าใช้งานระบบ',
-      side: 'bottom',
-      align: 'end',
-    },
-    requiredPermission: 'SETTINGS_USERS_VIEW',
-  },
-];
-
-const USER_DRAWER_STEPS: TourStep[] = [
-  {
-    element: '#tour-user-drawer-dialog',
-    popover: {
-      title: 'ขั้นตอนที่ 3: ผูกบัญชีผู้ใช้และกำหนดสิทธิ์',
-      description: 'เลือกพนักงาน กำหนดชื่อผู้ใช้ รหัสผ่าน และเลือกบทบาท (Role) เพื่อเสร็จสิ้นขั้นตอน',
-      side: 'left',
-      align: 'start',
-    },
-    requiredPermission: 'SETTINGS_USERS_VIEW',
-  },
-];
-
 export const UsersTab: React.FC<UsersTabProps> = ({
   users,
   totalCount,
@@ -102,50 +74,6 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
   const [selectedStatus, setSelectedStatus] = useState<string>('ทั้งหมด');
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tourParam = searchParams?.get('tour');
-  const mockParam = searchParams?.get('mock');
-
-  // Phase 1: Tour ชี้ปุ่มเพิ่มผู้ใช้งาน
-  useOnboardingTour('hr-onboarding-user-btn', USER_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-3' && !isDrawerOpen,
-    prevBtnText: 'ย้อนกลับ',
-    doneBtnText: 'ถัดไป',
-    onPrev: () => {
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
-    },
-    onDone: () => {
-      const mockQuery = mockParam ? `?completed=hr-onboarding&mock=${encodeURIComponent(mockParam)}` : '?completed=hr-onboarding';
-      router.push(`/guide${mockQuery}`);
-    },
-    onClose: () => {
-      router.replace('/settings?tab=users');
-    },
-  });
-
-  // Phase 2: Tour ชี้ที่แบบฟอร์ม Drawer ภาพรวมเมื่อเปิด
-  useOnboardingTour('hr-onboarding-user-drawer', USER_DRAWER_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-3' && Boolean(isDrawerOpen),
-    delayMs: 250,
-    showPrevBtn: true,
-    prevBtnText: 'ย้อนกลับ',
-    doneBtnText: 'ถัดไป',
-    onPrev: () => {
-      if (onCloseDrawer) onCloseDrawer();
-    },
-    onDone: () => {
-      if (onCloseDrawer) onCloseDrawer();
-      const mockQuery = mockParam ? `?completed=hr-onboarding&mock=${encodeURIComponent(mockParam)}` : '?completed=hr-onboarding';
-      router.push(`/guide${mockQuery}`);
-    },
-    onClose: () => {
-      if (onCloseDrawer) onCloseDrawer();
-      router.replace('/settings?tab=users');
-    },
-  });
 
 
   const handleSearchSubmit = (e: React.FormEvent) => {

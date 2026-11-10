@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import {
   Plus,
   Search,
@@ -48,77 +47,10 @@ import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
 
-const CONTRACT_BUTTON_STEPS: TourStep[] = [
-  {
-    element: '#tour-contract-add-btn',
-    popover: {
-      title: 'ขั้นตอนที่ 2: เพิ่มสัญญาจ้าง',
-      description: 'คลิกปุ่ม "+ สร้างสัญญาใหม่" เพื่อจัดทำสัญญาจ้างงานให้พนักงาน',
-      side: 'bottom',
-      align: 'end',
-    },
-    requiredPermission: 'EMP_CONTRACT_VIEW',
-  },
-];
-
-const CONTRACT_MODAL_STEPS: TourStep[] = [
-  {
-    element: '#tour-contract-modal-dialog',
-    popover: {
-      title: 'ขั้นตอนที่ 2: กรอกข้อมูลสัญญาจ้างงาน',
-      description: 'เลือกพนักงานและระบุรายละเอียดสัญญา หรือกด "ถัดไป" เพื่อไปขั้นตอนผู้ใช้งาน',
-      side: 'left',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_CONTRACT_VIEW',
-  },
-];
-
 function ContractsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tourParam = searchParams?.get('tour');
-  const mockParam = searchParams?.get('mock');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Phase 1: Tour ชี้ปุ่มสร้างสัญญาใหม่
-  useOnboardingTour('hr-onboarding-contract-btn', CONTRACT_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-2' && !isCreateModalOpen,
-    prevBtnText: 'ย้อนกลับ',
-    doneBtnText: 'ถัดไป',
-    onPrev: () => {
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/employees?tour=hr-onboarding-1${mockQuery}`);
-    },
-    onDone: () => {
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
-    },
-    onClose: () => {
-      router.replace(window.location.pathname);
-    },
-  });
-
-  // Phase 2: Tour ชี้ที่แบบฟอร์มสัญญาภาพรวมเมื่อ Modal เปิด
-  useOnboardingTour('hr-onboarding-contract-modal', CONTRACT_MODAL_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-2' && isCreateModalOpen,
-    delayMs: 250,
-    showPrevBtn: true,
-    prevBtnText: 'ย้อนกลับ',
-    doneBtnText: 'ถัดไป',
-    onPrev: () => {
-      setIsCreateModalOpen(false);
-    },
-    onDone: () => {
-      setIsCreateModalOpen(false);
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
-    },
-    onClose: () => {
-      setIsCreateModalOpen(false);
-      router.replace(window.location.pathname);
-    },
-  });
 
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();

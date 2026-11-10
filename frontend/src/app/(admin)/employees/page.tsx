@@ -7,7 +7,6 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import { employeeService } from '@/services/employeeService';
 import { apiClient, getAvatarUrl } from '@/lib/api-client';
 import { Employee } from '@/types/employee';
@@ -161,76 +160,10 @@ export const formatHireDateAndTenure = (val?: string | null): string => {
 };
 
 
-const EMPLOYEE_BUTTON_STEPS: TourStep[] = [
-  {
-    element: '#tour-employee-add-btn',
-    popover: {
-      title: 'ขั้นตอนที่ 1: เพิ่มพนักงาน',
-      description: 'คลิกปุ่ม "+ เพิ่มพนักงาน" เพื่อกรอกประวัติพนักงานใหม่เข้าสู่ระบบ',
-      side: 'bottom',
-      align: 'end',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-];
-
-const EMPLOYEE_MODAL_STEPS: TourStep[] = [
-  {
-    element: '#tour-emp-modal-dialog',
-    popover: {
-      title: 'ขั้นตอนที่ 1: กรอกข้อมูลพนักงานใหม่',
-      description: 'กรอกข้อมูลพนักงานแล้วกดบันทึก หรือกด "ถัดไป" เพื่อไปขั้นตอนสัญญาจ้าง',
-      side: 'left',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-];
-
 function EmployeesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tourParam = searchParams?.get('tour');
-  const mockParam = searchParams?.get('mock');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
-  // Phase 1: Tour ชี้ที่ปุ่มเพิ่มพนักงาน
-  useOnboardingTour('hr-onboarding-emp-btn', EMPLOYEE_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-1' && !isCreateModalOpen,
-    prevBtnText: 'ย้อนกลับ',
-    doneBtnText: 'ถัดไป',
-    onPrev: () => {
-      router.push('/guide');
-    },
-    onDone: () => {
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
-    },
-    onClose: () => {
-      router.replace(window.location.pathname);
-    },
-  });
-
-  // Phase 2: Tour ชี้ที่แบบฟอร์มภาพรวมเมื่อ Modal เปิด
-  useOnboardingTour('hr-onboarding-emp-modal', EMPLOYEE_MODAL_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-1' && isCreateModalOpen,
-    delayMs: 250,
-    showPrevBtn: true,
-    prevBtnText: 'ย้อนกลับ',
-    doneBtnText: 'ถัดไป',
-    onPrev: () => {
-      setIsCreateModalOpen(false);
-    },
-    onDone: () => {
-      setIsCreateModalOpen(false);
-      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
-      router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
-    },
-    onClose: () => {
-      setIsCreateModalOpen(false);
-      router.replace(window.location.pathname);
-    },
-  });
 
   const { user, hasPermission, hasRole, getDataScope } = useAuth();
   const toast = useToast();

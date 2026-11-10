@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { driver, DriveStep } from 'driver.js';
-import { WIZARD_STEP_LOOKUP } from '@/config/wizardTours';
+import { WIZARD_PAGE_LOOKUP } from '@/config/wizardTours';
 
 export function GlobalWizardTour() {
   const router = useRouter();
@@ -13,8 +13,7 @@ export function GlobalWizardTour() {
   const driverInstanceRef = useRef<any>(null);
 
   useEffect(() => {
-    // หากไม่มี tour param หรือเป็น hr-onboarding (ซึ่งมี in-page handler รองรับ modal อยู่แล้ว) ให้ข้าม
-    if (!tourParam || tourParam.startsWith('hr-onboarding')) {
+    if (!tourParam) {
       if (driverInstanceRef.current) {
         try {
           driverInstanceRef.current.destroy();
@@ -24,44 +23,48 @@ export function GlobalWizardTour() {
       return;
     }
 
-    const ctx = WIZARD_STEP_LOOKUP[tourParam];
+    const ctx = WIZARD_PAGE_LOOKUP[tourParam];
     if (!ctx) return;
 
-    const { step, prevRoute, nextRoute } = ctx;
-    const isLastStep = step.stepNumber === step.totalSteps;
+    const { pageStep, prevPageRoute, nextPageRoute } = ctx;
+    const isLastPage = pageStep.stepNumber === pageStep.totalSteps;
 
-    // หน่วงเวลาเล็กน้อยเพื่อให้ DOM ของหน้านั้น render เสร็จสมบูรณ์
+    // หน่วงเวลาเล็กน้อยเพื่อให้ DOM ของหน้าและ Sidebar render เสร็จสมบูรณ์
     const timer = setTimeout(() => {
-      // ค้นหา Element แรกที่จับคู่ได้จาก selectors ที่ระบุไว้
-      let matchedEl: Element | null = null;
-      for (const sel of step.selectors) {
-        try {
-          const el = document.querySelector(sel);
-          if (el && el.getBoundingClientRect().height > 0) {
-            matchedEl = el;
-            break;
+      // แปลง subSteps ให้เป็น DriveStep ของ Driver.js
+      const driveSteps: DriveStep[] = [];
+
+      for (const sub of pageStep.subSteps) {
+        let matchedEl: Element | null = null;
+        for (const sel of sub.selectors) {
+          try {
+            const el = document.querySelector(sel);
+            if (el && (el.getBoundingClientRect().width > 0 || el.getBoundingClientRect().height > 0)) {
+              matchedEl = el;
+              break;
+            }
+          } catch {
+            // ignore invalid selector syntax
           }
-        } catch {
-          // ignore invalid selector syntax
         }
-      }
 
-      // หากไม่พบ element ใดๆ เลย ให้ fallback ไปที่ main หรือ body
-      if (!matchedEl) {
-        matchedEl = document.querySelector('main') || document.body;
-      }
+        // Fallback
+        if (!matchedEl) {
+          matchedEl = document.querySelector('main') || document.body;
+        }
 
-      const validSteps: DriveStep[] = [
-        {
+        driveSteps.push({
           element: matchedEl as HTMLElement,
           popover: {
-            title: step.title,
-            description: step.description,
-            side: step.side || 'bottom',
-            align: step.align || 'start',
+            title: sub.title,
+            description: sub.description,
+            side: sub.side || 'bottom',
+            align: sub.align || 'start',
           },
-        },
-      ];
+        });
+      }
+
+      if (driveSteps.length === 0) return;
 
       // ทำลาย instance เดิมก่อนเริ่มใหม่
       if (driverInstanceRef.current) {
@@ -71,11 +74,13 @@ export function GlobalWizardTour() {
         driverInstanceRef.current = null;
       }
 
+      const totalSubSteps = driveSteps.length;
+
       const driverObj = driver({
         showProgress: false,
-        nextBtnText: isLastStep ? 'เสร็จสิ้น ✨' : 'ถัดไป',
+        nextBtnText: 'ถัดไป',
         prevBtnText: 'ย้อนกลับ',
-        doneBtnText: isLastStep ? 'เสร็จสิ้น ✨' : 'ถัดไป',
+        doneBtnText: isLastPage ? 'เสร็จสิ้น ✨' : 'ถัดไป',
         popoverClass: 'hrms-driver-popover',
         popoverOffset: 16,
         overlayColor: 'transparent',
@@ -86,24 +91,36 @@ export function GlobalWizardTour() {
         overlayClickBehavior: 'none',
         allowKeyboardControl: false,
         disableActiveInteraction: false,
-        steps: validSteps,
+        steps: driveSteps,
         onNextClick: () => {
-          try {
-            driverObj.destroy();
-          } catch {}
-          router.push(nextRoute);
+          const activeIndex = driverObj.getActiveIndex() ?? 0;
+          if (activeIndex < totalSubSteps - 1) {
+            driverObj.moveNext();
+          } else {
+            // จบสเต็ปบนหน้านี้แล้ว -> นำทางไปหน้าถัดไป
+            try {
+              driverObj.destroy();
+            } catch {}
+            router.push(nextPageRoute);
+          }
         },
         onDoneClick: () => {
           try {
             driverObj.destroy();
           } catch {}
-          router.push(nextRoute);
+          router.push(nextPageRoute);
         },
         onPrevClick: () => {
-          try {
-            driverObj.destroy();
-          } catch {}
-          router.push(prevRoute);
+          const activeIndex = driverObj.getActiveIndex() ?? 0;
+          if (activeIndex > 0) {
+            driverObj.movePrevious();
+          } else {
+            // อยู่ที่สเต็ปแรกของหน้านี้แล้ว -> นำทางกลับหน้าก่อนหน้า
+            try {
+              driverObj.destroy();
+            } catch {}
+            router.push(prevPageRoute);
+          }
         },
         onCloseClick: () => {
           try {
@@ -113,7 +130,11 @@ export function GlobalWizardTour() {
           router.replace(pathname);
         },
         onPopoverRender: (popover) => {
-          // ปุ่ม ย้อนกลับ
+          const activeIndex = driverObj.getActiveIndex() ?? 0;
+          const isFirstSub = activeIndex === 0;
+          const isLastSub = activeIndex === totalSubSteps - 1;
+
+          // ควบคุมปุ่ม ย้อนกลับ
           if (popover.previousButton) {
             popover.previousButton.classList.remove('driver-popover-btn-disabled');
             popover.previousButton.classList.add('hrms-btn-enabled');
@@ -123,12 +144,16 @@ export function GlobalWizardTour() {
             popover.previousButton.innerText = 'ย้อนกลับ';
           }
 
-          // ปุ่ม ถัดไป / เสร็จสิ้น
+          // ควบคุมปุ่ม ถัดไป / เสร็จสิ้น
           if (popover.nextButton) {
-            popover.nextButton.innerText = isLastStep ? 'เสร็จสิ้น ✨' : 'ถัดไป';
+            if (isLastSub && isLastPage) {
+              popover.nextButton.innerText = 'เสร็จสิ้น ✨';
+            } else {
+              popover.nextButton.innerText = 'ถัดไป';
+            }
           }
 
-          // ปุ่มกากบาท (✕) ขวาบน นูนออกนอกกรอบตามดีไซน์
+          // ปุ่มกากบาท (✕) ขวาบน นูนออกนอกกรอบตามสไตล์ระบบ
           if (popover.closeButton) {
             popover.closeButton.style.display = 'flex';
             popover.closeButton.innerHTML =
@@ -140,7 +165,7 @@ export function GlobalWizardTour() {
 
       driverInstanceRef.current = driverObj;
       driverObj.drive();
-    }, 350);
+    }, 400);
 
     return () => {
       clearTimeout(timer);

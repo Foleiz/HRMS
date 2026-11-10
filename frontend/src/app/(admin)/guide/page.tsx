@@ -18,9 +18,9 @@ interface GuideItem {
 const GUIDE_ITEMS: GuideItem[] = WIZARD_FLOWS.map((flow) => ({
   id: flow.id,
   title: flow.title,
-  stepCount: flow.steps.length,
+  stepCount: flow.pages.length,
   icon: flow.icon,
-  route: flow.steps[0].route,
+  route: flow.pages[0].route,
 }));
 
 function GuidePageContent() {

@@ -650,12 +650,13 @@ export const Sidebar: React.FC = () => {
     [isChildActive, isSingleItemActive]
   );
 
-  // Auto-expand เมนูที่มีลูก active หรือตรงกับคำค้นหา
+  // Auto-expand เมนูที่มีลูก active หรือตรงกับคำค้นหา หรืออยู่ในโหมด Tour
   useEffect(() => {
+    const hasTour = Boolean(searchParams.get('tour'));
     allAccessibleItems.forEach((item) => {
       if (item.children && item.children.length > 0) {
         const hasActiveChild = item.children.some(isChildActive);
-        if (hasActiveChild) {
+        if (hasActiveChild || hasTour) {
           setOpenMenus((prev) => ({ ...prev, [item.title]: true }));
         }
       }
@@ -809,6 +810,8 @@ export const Sidebar: React.FC = () => {
                   <div key={item.href} className="space-y-0.5">
                     {/* Parent Menu Row with Expand/Collapse */}
                     <div
+                      data-sidebar-path={item.href}
+                      data-sidebar-title={item.title}
                       onClick={(e) => handleParentClick(item, e)}
                       title={isCollapsed && isDesktop ? item.title : undefined}
                       className={`flex items-center justify-between px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ease-out cursor-pointer select-none active:scale-[0.99] ${
@@ -855,6 +858,8 @@ export const Sidebar: React.FC = () => {
                             <Link
                               key={child.href}
                               href={child.href}
+                              data-sidebar-path={child.href}
+                              data-sidebar-title={child.title}
                               onClick={handleSelectMenu}
                               className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150 ${
                                 childActive
@@ -893,6 +898,8 @@ export const Sidebar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={resolveItemHref(item)}
+                  data-sidebar-path={item.href}
+                  data-sidebar-title={item.title}
                   onClick={handleSelectMenu}
                   title={isCollapsed && isDesktop ? item.title : undefined}
                   className={`flex items-center px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200 ease-out active:scale-[0.98] ${
