@@ -203,11 +203,13 @@ export default function CreateContractModal({
     <ModalShell className="z-50 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200 font-sans" innerClassName="items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700/60 w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <ModalHeader
-          icon={FilePlus}
-          title="สร้างสัญญาจ้างใหม่"
-          onClose={onClose}
-        />
+        <div id="tour-contract-modal-header">
+          <ModalHeader
+            icon={FilePlus}
+            title="สร้างสัญญาจ้างใหม่"
+            onClose={onClose}
+          />
+        </div>
 
         {/* Error Alert */}
         {errorMessage && (

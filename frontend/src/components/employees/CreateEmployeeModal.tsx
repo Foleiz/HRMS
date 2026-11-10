@@ -634,11 +634,13 @@ export default function CreateEmployeeModal({
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-5xl shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
         {/* Header (ตรงตามสไตล์เดียวกับ EditEmployeeModal) */}
-        <ModalHeader
-          icon={UserPlus}
-          title="เพิ่มพนักงานใหม่"
-          onClose={onClose}
-        />
+        <div id="tour-emp-modal-header">
+          <ModalHeader
+            icon={UserPlus}
+            title="เพิ่มพนักงานใหม่"
+            onClose={onClose}
+          />
+        </div>
 
         {/* Modal Tab Switcher — แถบแท็บมาตรฐานของระบบ */}
         <div className="border-b border-slate-200 dark:border-slate-700 px-6 shrink-0">

@@ -4,8 +4,9 @@
    HRMS Theme for Driver.js Tour Guide Popover (Highlight-Only Mode)
    ========================================================================== */
 
-/* 1. ซ่อน Overlay มืดทั้งหมด — หน้าจอไม่มีพื้นหลังมืดหรือเบลอใดๆ 100% */
-.driver-overlay {
+/* 1. ซ่อน Overlay มืดทั้งหมด และปลดล็อก Pointer Events ให้ผู้ใช้คลิก พิมพ์ และบันทึกข้อมูลได้ตามปกติ 100% */
+.driver-overlay,
+.driver-layer::backdrop {
   display: none !important;
   background: transparent !important;
   background-color: transparent !important;
@@ -13,6 +14,21 @@
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   pointer-events: none !important;
+}
+
+.driver-layer {
+  pointer-events: none !important;
+}
+
+/* ปลดล็อกให้อิลิเมนต์ทั้งหมดบนหน้าจอและในโมดอลสามารถคลิก พิมพ์ กรอก และกดปุ่มได้ตามปกติ */
+body.driver-active,
+body.driver-active * {
+  pointer-events: auto !important;
+}
+
+.driver-popover,
+.driver-popover * {
+  pointer-events: auto !important;
 }
 
 /* 2. ไฮไลต์รอบ Element ที่กำลังแนะนำด้วยเส้นขอบเรืองแสงสีฟ้าสดใส (Pulsing Highlight Ring) */
@@ -129,6 +145,12 @@
   padding: 0.4rem 0.75rem !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
+}
+
+.hrms-driver-popover .driver-popover-prev-btn.hrms-btn-enabled {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  display: inline-flex !important;
 }
 
 .hrms-driver-popover .driver-popover-prev-btn:hover {

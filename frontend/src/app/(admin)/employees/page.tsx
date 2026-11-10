@@ -176,42 +176,12 @@ const EMPLOYEE_BUTTON_STEPS: TourStep[] = [
 
 const EMPLOYEE_MODAL_STEPS: TourStep[] = [
   {
-    element: '#tour-emp-code-field',
+    element: '#tour-emp-modal-header',
     popover: {
-      title: '1. กรอกรหัสพนักงาน & เลขสแกนนิ้ว',
-      description: 'ระบบจะสร้างรหัสแนะนำให้อัตโนมัติ (เช่น EMP-001) สามารถแก้ไขให้ตรงกับโครงสร้างขององค์กรได้ และระบุรหัสเครื่องสแกนนิ้วเพื่อเชื่อมต่อเวลากับระบบตอกบัตร',
+      title: 'กรอกข้อมูลพนักงานใหม่ให้ครบถ้วน',
+      description: 'กรอกข้อมูลตามหัวข้อต่างๆ ให้ครบถ้วน (เช่น ข้อมูลส่วนตัว ข้อมูลการทำงาน ตำแหน่ง และแผนก) คุณสามารถพิมพ์ แก้ไข หรือกดปุ่ม "บันทึกข้อมูล" ได้ทันที หรือกด "ไปยังขั้นตอนที่ 2: สัญญาจ้าง" เพื่อดำเนินการต่อ',
       side: 'bottom',
       align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-  {
-    element: '#tour-emp-names-field',
-    popover: {
-      title: '2. กรอกคำนำหน้า ชื่อ และนามสกุล',
-      description: 'ระบุคำนำหน้า (นาย/นาง/น.ส.), ชื่อจริง และนามสกุลภาษาไทย ซึ่งเป็นข้อมูลจำเป็นตามกฎหมายแรงงาน',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-  {
-    element: '#tour-emp-position-field',
-    popover: {
-      title: '3. เลือกตำแหน่ง แผนก และประเภทพนักงาน',
-      description: 'เลือกตำแหน่งงาน แผนกที่สังกัด และประเภทพนักงาน (เช่น ทดลองงาน) เพื่อให้ระบบเชื่อมโยงสายการบังคับบัญชาและการอนุมัติให้อัตโนมัติ',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_PROFILE_VIEW',
-  },
-  {
-    element: '#tour-emp-save-btn',
-    popover: {
-      title: '4. บันทึกข้อมูล & ไปยังขั้นตอนถัดไป 📋',
-      description: 'เมื่อกรอกข้อมูลเรียบร้อย กดปุ่ม "บันทึกข้อมูล" พนักงานจะถูกเพิ่มเข้าสู่ระบบ และขั้นตอนถัดไปคือการไปสร้าง "สัญญาจ้างงาน" เพื่อระบุประเภทสัญญาและค่าจ้างเริ่มต้น',
-      side: 'top',
-      align: 'end',
     },
     requiredPermission: 'EMP_PROFILE_VIEW',
   },
@@ -223,26 +193,28 @@ function EmployeesPageContent() {
   const tourParam = searchParams?.get('tour');
   const mockParam = searchParams?.get('mock');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [modalTourActive, setModalTourActive] = useState(false);
 
   // Phase 1: Tour ชี้ที่ปุ่มเพิ่มพนักงาน
   useOnboardingTour('hr-onboarding-emp-btn', EMPLOYEE_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-1' && !isCreateModalOpen && !modalTourActive,
-    doneBtnText: 'ดูช่องที่ต้องกรอกในแบบฟอร์ม →',
-    onComplete: () => {
+    triggerCondition: tourParam === 'hr-onboarding-1' && !isCreateModalOpen,
+    doneBtnText: 'เปิดแบบฟอร์มพนักงาน →',
+    onDone: () => {
       setIsCreateModalOpen(true);
-      setModalTourActive(true);
     },
   });
 
-  // Phase 2: Tour ชี้ช่องต่างๆ ในแบบฟอร์มเมื่อ Modal เปิด
+  // Phase 2: Tour ชี้ที่แบบฟอร์มภาพรวมเมื่อ Modal เปิด
   useOnboardingTour('hr-onboarding-emp-modal', EMPLOYEE_MODAL_STEPS, {
     triggerCondition: tourParam === 'hr-onboarding-1' && isCreateModalOpen,
-    delayMs: 350,
+    delayMs: 250,
+    showPrevBtn: true,
+    prevBtnText: '← ย้อนกลับ',
     doneBtnText: 'ไปยังขั้นตอนที่ 2: สัญญาจ้าง →',
-    onComplete: () => {
+    onPrev: () => {
       setIsCreateModalOpen(false);
-      setModalTourActive(false);
+    },
+    onDone: () => {
+      setIsCreateModalOpen(false);
       const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
       router.push(`/employees/contracts?tour=hr-onboarding-2${mockQuery}`);
     },

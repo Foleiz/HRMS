@@ -245,13 +245,13 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
     >
       <div className="w-screen max-w-md bg-white dark:bg-slate-900 min-h-screen h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 border-l border-slate-200 dark:border-slate-700">
           {/* Header */}
-          <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+          <div id="tour-user-drawer-header" className="px-6 py-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
               {isEditMode ? 'แก้ไขข้อมูลผู้ใช้' : 'เพิ่มผู้ใช้'}
             </h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
+              className="w-8 h-8 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition-colors"
             >
               <X className="w-5 h-5" />
             </button>

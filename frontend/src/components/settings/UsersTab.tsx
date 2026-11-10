@@ -66,52 +66,12 @@ const USER_BUTTON_STEPS: TourStep[] = [
 
 const USER_DRAWER_STEPS: TourStep[] = [
   {
-    element: '#tour-user-employee-select',
+    element: '#tour-user-drawer-header',
     popover: {
-      title: '1. เลือกพนักงานที่ต้องการผูกบัญชี',
-      description: 'ค้นหาและเลือกพนักงานที่เพิ่มจากขั้นตอนที่ 1 และทำสัญญาจ้างในขั้นตอนที่ 2 เพื่อผูกบัญชีการเข้าใช้งานระบบ',
+      title: 'ผูกบัญชีพนักงานและกำหนดสิทธิ์ (Role)',
+      description: 'เลือกพนักงานที่ต้องการผูกบัญชี กำหนดชื่อผู้ใช้ (Username), รหัสผ่าน และเลือกบทบาท (Role) สำหรับเข้าสู่ระบบ จากนั้นกดปุ่ม "บันทึก" เพื่อเสร็จสิ้นขั้นตอนทั้งหมด',
       side: 'left',
       align: 'start',
-    },
-    requiredPermission: 'SETTINGS_USERS_VIEW',
-  },
-  {
-    element: '#tour-user-username-field',
-    popover: {
-      title: '2. กำหนดชื่อผู้ใช้งาน (Username)',
-      description: 'กำหนดชื่อบัญชีสำหรับใช้ในการเข้าสู่ระบบ (เช่น รหัสพนักงาน หรือชื่อภาษาอังกฤษตัวพิมพ์เล็ก)',
-      side: 'left',
-      align: 'start',
-    },
-    requiredPermission: 'SETTINGS_USERS_VIEW',
-  },
-  {
-    element: '#tour-user-password-field',
-    popover: {
-      title: '3. กำหนดรหัสผ่านเริ่มต้น (Password)',
-      description: 'สร้างรหัสผ่านเริ่มต้นสำหรับให้พนักงานล็อกอินใช้งานครั้งแรก (แนะนำให้พนักงานเปลี่ยนรหัสผ่านหลังเข้าสู่ระบบ)',
-      side: 'left',
-      align: 'start',
-    },
-    requiredPermission: 'SETTINGS_USERS_VIEW',
-  },
-  {
-    element: '#tour-user-role-select',
-    popover: {
-      title: '4. กำหนดบทบาทและสิทธิ์การใช้งาน (Role)',
-      description: 'เลือกบทบาทที่เหมาะสมกับตำแหน่ง เช่น "พนักงานทั่วไป" สำหรับการขอลาและดูสลิป หรือ "HR / ผู้จัดการ" ตามความรับผิดชอบ',
-      side: 'left',
-      align: 'start',
-    },
-    requiredPermission: 'SETTINGS_USERS_VIEW',
-  },
-  {
-    element: '#tour-user-submit-btn',
-    popover: {
-      title: '5. บันทึกบัญชี — จบขั้นตอนสมบูรณ์ 🎉',
-      description: 'กดปุ่มบันทึกเพื่อเปิดใช้งานบัญชีทันที! พนักงานใหม่ของคุณจะมีทั้งประวัติพนักงาน สัญญาจ้างงาน และสิทธิ์เข้าใช้งานระบบ HRMS ครบถ้วนตามมาตรฐาน',
-      side: 'top',
-      align: 'end',
     },
     requiredPermission: 'SETTINGS_USERS_VIEW',
   },
@@ -142,7 +102,6 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
   const [selectedStatus, setSelectedStatus] = useState<string>('ทั้งหมด');
-  const [drawerTourActive, setDrawerTourActive] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -151,22 +110,25 @@ export const UsersTab: React.FC<UsersTabProps> = ({
 
   // Phase 1: Tour ชี้ปุ่มเพิ่มผู้ใช้งาน
   useOnboardingTour('hr-onboarding-user-btn', USER_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-3' && !isDrawerOpen && !drawerTourActive,
-    doneBtnText: 'ดูช่องที่ต้องกรอกในแบบฟอร์ม →',
-    onComplete: () => {
+    triggerCondition: tourParam === 'hr-onboarding-3' && !isDrawerOpen,
+    doneBtnText: 'เปิดแบบฟอร์มผู้ใช้งาน →',
+    onDone: () => {
       onAddUserClick();
-      setDrawerTourActive(true);
     },
   });
 
-  // Phase 2: Tour ชี้ช่องต่างๆ ใน Drawer เมื่อเปิด
+  // Phase 2: Tour ชี้ที่แบบฟอร์ม Drawer ภาพรวมเมื่อเปิด
   useOnboardingTour('hr-onboarding-user-drawer', USER_DRAWER_STEPS, {
     triggerCondition: tourParam === 'hr-onboarding-3' && Boolean(isDrawerOpen),
-    delayMs: 350,
+    delayMs: 250,
+    showPrevBtn: true,
+    prevBtnText: '← ย้อนกลับ',
     doneBtnText: 'เสร็จสิ้น Flow เพิ่มพนักงานใหม่ 🎉',
-    onComplete: () => {
+    onPrev: () => {
       if (onCloseDrawer) onCloseDrawer();
-      setDrawerTourActive(false);
+    },
+    onDone: () => {
+      if (onCloseDrawer) onCloseDrawer();
       const mockQuery = mockParam ? `?completed=hr-onboarding&mock=${encodeURIComponent(mockParam)}` : '?completed=hr-onboarding';
       router.push(`/guide${mockQuery}`);
     },

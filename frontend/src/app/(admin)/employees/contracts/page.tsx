@@ -61,42 +61,12 @@ const CONTRACT_BUTTON_STEPS: TourStep[] = [
 
 const CONTRACT_MODAL_STEPS: TourStep[] = [
   {
-    element: '#tour-contract-employee-field',
+    element: '#tour-contract-modal-header',
     popover: {
-      title: '1. เลือกพนักงานที่ต้องการทำสัญญา',
-      description: 'ค้นหาและเลือกพนักงานใหม่ที่เพิ่งเพิ่มจากขั้นตอนที่ 1 เพื่อนำมาจัดทำสัญญาจ้างงาน',
+      title: 'กรอกรายละเอียดสัญญาจ้างงาน',
+      description: 'เลือกพนักงานที่เพิ่งเพิ่มเข้ามา กำหนดประเภทสัญญา วันเริ่มงาน ฐานเงินเดือน และแนบเอกสารสัญญา คุณสามารถกรอกข้อมูลและกดปุ่ม "บันทึกสัญญา" ได้ทันที หรือกด "ไปยังขั้นตอนที่ 3: บัญชีผู้ใช้งาน" เพื่อดำเนินการต่อ',
       side: 'bottom',
       align: 'start',
-    },
-    requiredPermission: 'EMP_CONTRACT_VIEW',
-  },
-  {
-    element: '#tour-contract-type-field',
-    popover: {
-      title: '2. กำหนดประเภทสัญญา/ประเภทการจ้าง',
-      description: 'เลือกประเภทสัญญา เช่น สัญญาทดลองงาน (Probation), สัญญาจ้างประจำ (Permanent), หรือสัญญาจ้างชั่วคราว',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_CONTRACT_VIEW',
-  },
-  {
-    element: '#tour-contract-dates-field',
-    popover: {
-      title: '3. กำหนดวันเริ่มสัญญา และวันสิ้นสุด',
-      description: 'ระบุวันเริ่มสัญญา ระบบจะคำนวณวันสิ้นสุดทดลองงาน 119 วันตามเกณฑ์กฎหมายแรงงานให้อัตโนมัติ (หรือระบุเองได้)',
-      side: 'bottom',
-      align: 'start',
-    },
-    requiredPermission: 'EMP_CONTRACT_VIEW',
-  },
-  {
-    element: '#tour-contract-submit-btn',
-    popover: {
-      title: '4. แนบเอกสาร & บันทึกสัญญาจ้าง 👤',
-      description: 'สามารถแนบไฟล์สัญญาตัวจริง (PDF/รูป) แล้วกดปุ่ม "บันทึก" เพื่อเปิดสถานะสัญญา จากนั้นขั้นตอนสุดท้ายคือการไปสร้างบัญชีผู้ใช้งาน',
-      side: 'top',
-      align: 'end',
     },
     requiredPermission: 'EMP_CONTRACT_VIEW',
   },
@@ -108,26 +78,28 @@ function ContractsPageContent() {
   const tourParam = searchParams?.get('tour');
   const mockParam = searchParams?.get('mock');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [modalTourActive, setModalTourActive] = useState(false);
 
   // Phase 1: Tour ชี้ปุ่มสร้างสัญญาใหม่
   useOnboardingTour('hr-onboarding-contract-btn', CONTRACT_BUTTON_STEPS, {
-    triggerCondition: tourParam === 'hr-onboarding-2' && !isCreateModalOpen && !modalTourActive,
-    doneBtnText: 'ดูช่องที่ต้องกรอกในสัญญาจ้าง →',
-    onComplete: () => {
+    triggerCondition: tourParam === 'hr-onboarding-2' && !isCreateModalOpen,
+    doneBtnText: 'เปิดแบบฟอร์มสัญญา →',
+    onDone: () => {
       setIsCreateModalOpen(true);
-      setModalTourActive(true);
     },
   });
 
-  // Phase 2: Tour ชี้ฟิลด์ต่างๆ ในแบบฟอร์มสัญญาเมื่อ Modal เปิด
+  // Phase 2: Tour ชี้ที่แบบฟอร์มสัญญาภาพรวมเมื่อ Modal เปิด
   useOnboardingTour('hr-onboarding-contract-modal', CONTRACT_MODAL_STEPS, {
     triggerCondition: tourParam === 'hr-onboarding-2' && isCreateModalOpen,
-    delayMs: 350,
+    delayMs: 250,
+    showPrevBtn: true,
+    prevBtnText: '← ย้อนกลับ',
     doneBtnText: 'ไปยังขั้นตอนที่ 3: บัญชีผู้ใช้งาน →',
-    onComplete: () => {
+    onPrev: () => {
       setIsCreateModalOpen(false);
-      setModalTourActive(false);
+    },
+    onDone: () => {
+      setIsCreateModalOpen(false);
       const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
       router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
     },
