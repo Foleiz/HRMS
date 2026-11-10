@@ -144,6 +144,33 @@ export function useOnboardingTour(
       allowKeyboardControl: false,
       disableActiveInteraction: false,
       steps: validDriveSteps,
+      // Callbacks หลักของ Driver.js เมื่อมีการคลิกปุ่มใน Popover
+      onNextClick: () => {
+        try {
+          driverObj.destroy();
+        } catch {}
+        optionsRef.current.onDone?.();
+        optionsRef.current.onComplete?.();
+      },
+      onDoneClick: () => {
+        try {
+          driverObj.destroy();
+        } catch {}
+        optionsRef.current.onDone?.();
+        optionsRef.current.onComplete?.();
+      },
+      onPrevClick: () => {
+        try {
+          driverObj.destroy();
+        } catch {}
+        optionsRef.current.onPrev?.();
+      },
+      onCloseClick: () => {
+        try {
+          driverObj.destroy();
+        } catch {}
+        optionsRef.current.onClose?.();
+      },
       onPopoverRender: (popover) => {
         // ควบคุมปุ่ม Previous / ย้อนกลับ
         if (popover.previousButton) {
@@ -154,14 +181,6 @@ export function useOnboardingTour(
             popover.previousButton.style.opacity = '1';
             popover.previousButton.style.pointerEvents = 'auto';
             popover.previousButton.innerText = prevBtnText;
-            popover.previousButton.onclick = (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              try {
-                driverObj.destroy();
-              } catch {}
-              optionsRef.current.onPrev?.();
-            };
           } else {
             popover.previousButton.style.display = 'none';
           }
@@ -170,16 +189,6 @@ export function useOnboardingTour(
         // ควบคุมปุ่ม Next / ถัดไป
         if (popover.nextButton) {
           popover.nextButton.innerText = doneBtnText || nextBtnText || 'ถัดไป';
-          popover.nextButton.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            isNavigatingRef.current = true;
-            try {
-              driverObj.destroy();
-            } catch {}
-            optionsRef.current.onDone?.();
-            optionsRef.current.onComplete?.();
-          };
         }
 
         // ปุ่มกากบาท (✕) ที่มุมขวาบน — เมื่อกดจะปิดเมนูคำแนะนำทิ้งไป
@@ -187,14 +196,6 @@ export function useOnboardingTour(
           popover.closeButton.style.display = 'flex';
           popover.closeButton.innerHTML = '&times;';
           popover.closeButton.title = 'ปิดคำแนะนำ';
-          popover.closeButton.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            try {
-              driverObj.destroy();
-            } catch {}
-            optionsRef.current.onClose?.();
-          };
         }
       },
       onDestroyed: () => {
