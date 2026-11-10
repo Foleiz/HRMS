@@ -212,10 +212,18 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
           },
           {
             title: 'ขั้นตอนที่ 4: สั่งคำนวณเงินเดือนสุทธิ',
-            description: 'คลิกปุ่ม "คำนวณเงินเดือน" ระบบจะดึงฐานเงินเดือน โอที เบี้ยเลี้ยง ภาษี ประกันสังคม และยอดหักมาคำนวณยอดสุทธิให้อัตโนมัติ',
-            selectors: ['main button.bg-primary', 'main button', 'main .bg-white', 'main'],
+            description: 'คลิกปุ่ม "คำนวณเงินเดือน" (ปุ่มสีเขียวด้านบนขวา) เพื่อให้ระบบดึงเวลาทำงาน โอที สวัสดิการ ภาษี และประกันสังคมมาคำนวณยอดสุทธิ (หากรอบเงินเดือนถูกปิดรอบแล้ว ปุ่มนี้จะถูกปิดใช้งานอัตโนมัติ) หรือกด "ถัดไป" เพื่อตรวจสลิป',
+            selectors: [
+              '#tour-payroll-calc-btn',
+              '[data-tour="tour-payroll-calc-btn"]',
+              'main button:has(svg.lucide-scale)',
+              'main button.bg-emerald-600',
+              'main table',
+              'main .bg-white',
+              'main',
+            ],
             side: 'bottom',
-            align: 'start',
+            align: 'end',
           },
           {
             title: 'ขั้นตอนที่ 5: ตรวจสลิปเงินเดือนและยืนยันปิดงวด',

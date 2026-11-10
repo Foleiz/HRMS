@@ -3936,6 +3936,8 @@ export default function PayrollPage() {
 
                           {/* คำนวณเงินเดือน */}
                           <Button
+                            id="tour-payroll-calc-btn"
+                            data-tour="tour-payroll-calc-btn"
                             variant="success"
                             size="sm"
                             className="h-9"
