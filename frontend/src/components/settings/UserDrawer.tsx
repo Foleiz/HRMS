@@ -266,7 +266,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
             )}
 
             {/* 1. ชื่อผู้ใช้งาน */}
-            <div>
+            <div id="tour-user-username-field">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 ชื่อผู้ใช้งาน <span className="text-rose-500">*</span>
               </label>
@@ -287,7 +287,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
 
             {/* 2. รหัสผ่าน */}
             {!isEditMode && (
-              <div>
+              <div id="tour-user-password-field">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   รหัสผ่าน <span className="text-rose-500">*</span>
                 </label>
@@ -320,7 +320,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
             )}
 
             {/* 3. เลือกพนักงาน */}
-            <div>
+            <div id="tour-user-employee-select">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 เลือกพนักงาน <span className="text-rose-500">*</span>
               </label>
@@ -351,7 +351,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
             </div>
 
             {/* 5. เลือกบทบาท */}
-            <div className="pt-2">
+            <div id="tour-user-role-select" className="pt-2">
               <div className="flex items-center justify-between mb-2">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   เลือกบทบาท <span className="text-rose-500">*</span>
@@ -458,6 +458,7 @@ export const UserDrawer: React.FC<UserDrawerProps> = ({
               ยกเลิก
             </Button>
             <Button
+              id="tour-user-submit-btn"
               type="submit"
               form="user-drawer-form"
               loading={isSubmitting}

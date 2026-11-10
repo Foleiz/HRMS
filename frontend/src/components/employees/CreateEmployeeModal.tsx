@@ -688,7 +688,7 @@ export default function CreateEmployeeModal({
                 {/* --- Column 1 --- */}
                 <div className="space-y-4">
                   {/* รหัสพนักงาน — ระบบแนะนำ แก้ได้ */}
-                  <div>
+                  <div id="tour-emp-code-field">
                     <CodeInput
                       type="employee"
                       label="รหัสพนักงาน"
@@ -727,7 +727,7 @@ export default function CreateEmployeeModal({
                   </div>
 
                   {/* ตำแหน่งงาน */}
-                  <div>
+                  <div id="tour-emp-position-field">
                     <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
                       <span>
                         ตำแหน่ง <span className="text-rose-500">*</span>
@@ -835,13 +835,14 @@ export default function CreateEmployeeModal({
                     })()}
                   </div>
 
-                  {/* คำนำหน้า */}
-                  <div>
-                    <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
-                      <span>
-                        คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
-                      </span>
-                    </label>
+                  {/* คำนำหน้า + ชื่อ + นามสกุล */}
+                  <div id="tour-emp-names-field" className="space-y-4 pt-1">
+                    <div>
+                      <label className="font-semibold text-slate-700 dark:text-slate-300 flex items-center mb-1 text-xs">
+                        <span>
+                          คำนำหน้า (Prefix) <span className="text-rose-500">*</span>
+                        </span>
+                      </label>
                     <CustomSelect
                       value={formData.prefix}
                       onChange={(e) => {
@@ -903,6 +904,7 @@ export default function CreateEmployeeModal({
                       className={getFieldClass('lastName')}
                     />
                     {renderFieldError('lastName')}
+                  </div>
                   </div>
                 </div>
 
@@ -1601,6 +1603,7 @@ export default function CreateEmployeeModal({
             </Button>
 
             <Button
+              id="tour-emp-save-btn"
               type="submit"
               variant="primary"
               loading={isSubmitting}

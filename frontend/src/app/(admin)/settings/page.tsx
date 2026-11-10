@@ -530,6 +530,11 @@ function SettingsPageContent() {
               isLoading={isUsersLoading}
               canCreateUser={canCreateUser}
               canEditUser={canEditUser}
+              isDrawerOpen={isUserDrawerOpen}
+              onCloseDrawer={() => {
+                setIsUserDrawerOpen(false);
+                setUserToEdit(null);
+              }}
             />
           )}
 

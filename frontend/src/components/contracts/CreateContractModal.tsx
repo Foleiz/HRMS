@@ -220,7 +220,7 @@ export default function CreateContractModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
           {/* 1. พนักงาน * */}
-          <div>
+          <div id="tour-contract-employee-field">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               พนักงาน <span className="text-rose-500">*</span>
             </label>
@@ -234,7 +234,7 @@ export default function CreateContractModal({
           </div>
 
           {/* 2. ประเภทพนักงาน * */}
-          <div>
+          <div id="tour-contract-type-field">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               ประเภทพนักงาน <span className="text-rose-500">*</span>
             </label>
@@ -262,7 +262,7 @@ export default function CreateContractModal({
           </div>
 
           {/* 3–4. วันที่เริ่ม / วันที่สิ้นสุด (แถวเดียวกัน) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div id="tour-contract-dates-field" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
               วันที่เริ่มสัญญา <span className="text-rose-500">*</span>
@@ -347,6 +347,7 @@ export default function CreateContractModal({
               ยกเลิก
             </Button>
             <Button
+              id="tour-contract-submit-btn"
               type="submit"
               variant="primary"
               loading={isSubmitting}

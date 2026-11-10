@@ -39,16 +39,6 @@ interface FlowStep {
   highlights: string[];
 }
 
-interface ModuleGuide {
-  id: string;
-  title: string;
-  category: 'พนักงานทั่วไป (ESS)' | 'หัวหน้างาน (Approval)' | 'ฝ่ายบุคคล (HR)' | 'ผู้ดูแลระบบ (Admin)';
-  description: string;
-  route: string;
-  requiredPermissions: string[];
-  icon: React.ElementType;
-}
-
 const FLOW_STEPS: FlowStep[] = [
   {
     id: 'employees',
@@ -60,19 +50,19 @@ const FLOW_STEPS: FlowStep[] = [
     permissionCode: 'EMP_PROFILE_VIEW',
     permissionLabel: 'ดูและจัดการประวัติพนักงาน (EMP_PROFILE_VIEW)',
     icon: Users,
-    highlights: ['ปุ่มเพิ่มพนักงานใหม่ (+ เพิ่มพนักงาน)', 'ตารางรายชื่อและสถานะพนักงานทั้งหมด', 'การกำหนดแผนกและตำแหน่งเริ่มต้น'],
+    highlights: ['ปุ่มเพิ่มพนักงานใหม่ (+ เพิ่มพนักงาน)', 'กรอกรหัสพนักงาน, ชื่อ-นามสกุล', 'เลือกตำแหน่ง, แผนก และประเภทพนักงาน'],
   },
   {
     id: 'contracts',
     stepNumber: 2,
     title: '2. บันทึกและสร้างสัญญาจ้างงาน',
-    subtitle: 'ไปที่เมนู "สัญญาจ้าง" เพื่อสร้างสัญญาจ้าง กำหนดระยะเวลา วันเริ่มงาน และเงินเดือน',
+    subtitle: 'ไปที่เมนู "สัญญาจ้าง" เพื่อสร้างสัญญาจ้าง กำหนดประเภทสัญญา วันเริ่มงาน และเงินเดือน',
     route: '/employees/contracts',
     tourParam: 'hr-onboarding-2',
     permissionCode: 'EMP_CONTRACT_VIEW',
     permissionLabel: 'ดูและสร้างสัญญาจ้างงาน (EMP_CONTRACT_VIEW)',
     icon: FileText,
-    highlights: ['ปุ่มสร้างสัญญาใหม่ (+ สร้างสัญญาใหม่)', 'ตารางและสถานะสัญญาจ้างของพนักงาน', 'การผูกสัญญาจ้างกับพนักงานที่เพิ่งเพิ่ม'],
+    highlights: ['ปุ่มสร้างสัญญาใหม่ (+ สร้างสัญญาใหม่)', 'เลือกพนักงานที่เพิ่มจากขั้นตอนที่ 1', 'กำหนดประเภทสัญญา, วันเริ่มสัญญา และแนบเอกสาร'],
   },
   {
     id: 'users',
@@ -84,73 +74,7 @@ const FLOW_STEPS: FlowStep[] = [
     permissionCode: 'SETTINGS_USERS_VIEW',
     permissionLabel: 'จัดการบัญชีผู้ใช้งาน (SETTINGS_USERS_VIEW)',
     icon: User,
-    highlights: ['ปุ่มเพิ่มผู้ใช้งาน (+ เพิ่มผู้ใช้งาน)', 'การค้นหาและเลือกพนักงานเพื่อผูกบัญชี', 'การกำหนดบทบาท (Role) ในระบบ'],
-  },
-];
-
-const MODULE_GUIDES: ModuleGuide[] = [
-  {
-    id: 'guide-leave',
-    title: 'การยื่นคำขอลาหยุดงาน',
-    category: 'พนักงานทั่วไป (ESS)',
-    description: 'เรียนรู้วิธีการเลือกประเภทการลา ตรวจสอบวันลาคงเหลือ แนบเอกสารประกอบ และส่งคำขอไปยังสายการอนุมัติ',
-    route: '/documents/leave?tour=direct',
-    requiredPermissions: ['ESS_LEAVE_VIEW', 'ESS_DOCS_CREATE', 'ESS_DOCS_VIEW'],
-    icon: FileText,
-  },
-  {
-    id: 'guide-attendance',
-    title: 'ตรวจบันทึกเวลาทำงานและการตอกบัตร',
-    category: 'พนักงานทั่วไป (ESS)',
-    description: 'ตรวจสอบสถิติเวลาทำงานรายเดือน วันเข้างาน มาสาย ขาดงาน และวิธียื่นคำขอปรับปรุงเวลาเมื่อลืมสแกนนิ้ว',
-    route: '/ess/attendance?tour=direct',
-    requiredPermissions: ['ESS_TIME_VIEW', 'TIME_DAILY_VIEW'],
-    icon: Clock,
-  },
-  {
-    id: 'guide-profile',
-    title: 'ข้อมูลส่วนตัวและรูปโปรไฟล์',
-    category: 'พนักงานทั่วไป (ESS)',
-    description: 'ดูข้อมูลประวัติการทำงาน สัญญาจ้าง สิทธิประโยชน์ และวิธีการอัปเดตข้อมูลติดต่อกับรูปถ่ายส่วนตัว',
-    route: '/profile?tour=direct',
-    requiredPermissions: ['ESS_PROFILE_VIEW'],
-    icon: User,
-  },
-  {
-    id: 'guide-approvals',
-    title: 'การอนุมัติคำขอของลูกทีม',
-    category: 'หัวหน้างาน (Approval)',
-    description: 'หน้าจอสำหรับผู้บังคับบัญชา ตรวจสอบใบลา คำขอปรับปรุงเวลา และการกดอนุมัติ/ปฏิเสธพร้อมเหตุผล',
-    route: '/approvals?tour=direct',
-    requiredPermissions: ['APPROVAL_LEAVE_VIEW', 'APPROVAL_LEAVE_APPROVE', 'APPROVALS_VIEW'],
-    icon: CheckCircle2,
-  },
-  {
-    id: 'guide-employees',
-    title: 'การบริหารจัดการพนักงาน',
-    category: 'ฝ่ายบุคคล (HR)',
-    description: 'ค้นหาพนักงาน เพิ่มพนักงานใหม่ จัดการสายงาน สัญญาจ้าง และเอกสารสำคัญของบุคลากรในองค์กร',
-    route: '/employees?tour=direct',
-    requiredPermissions: ['EMP_VIEW', 'EMP_MANAGE', 'EMP_PROFILE_VIEW'],
-    icon: Users,
-  },
-  {
-    id: 'guide-payroll',
-    title: 'การประมวลผลเงินเดือน',
-    category: 'ฝ่ายบุคคล (HR)',
-    description: 'จัดการรอบคำนวณเงินเดือน ฐานเงินเดือนพนักงาน โบนัส ค่าล่วงเวลา ภาษี และการส่งออกสลิปเงินเดือน',
-    route: '/payroll?tour=direct',
-    requiredPermissions: ['PAYROLL_HR_VIEW', 'PAYROLL_ADMIN_VIEW', 'PAYROLL_CALC_VIEW'],
-    icon: Coins,
-  },
-  {
-    id: 'guide-settings-roles',
-    title: 'การจัดการบทบาทและสิทธิ์ (RBAC Matrix)',
-    category: 'ผู้ดูแลระบบ (Admin)',
-    description: 'สร้างบทบาท (Roles) กำหนดสิทธิ์การเข้าถึงเมนู และจัดขอบเขตข้อมูล (Self, Team, Dept, Org)',
-    route: '/settings?tab=roles&tour=direct',
-    requiredPermissions: ['SETTINGS_ROLES_VIEW'],
-    icon: Settings,
+    highlights: ['ปุ่มเพิ่มผู้ใช้งาน (+ เพิ่มผู้ใช้งาน)', 'เลือกพนักงานที่ผูกสัญญาจ้างแล้ว', 'กำหนด Username, Password และสิทธิ์บทบาท (Role)'],
   },
 ];
 
@@ -169,8 +93,6 @@ function GuidePageContent() {
     EMP_CONTRACT_VIEW: true,
     SETTINGS_USERS_VIEW: true,
   });
-
-  const [activeCategory, setActiveCategory] = useState<string>('ทั้งหมด');
 
   useEffect(() => {
     setBreadcrumb({ section: 'ภาพรวม', page: 'วิธีการใช้งาน' });
@@ -207,11 +129,6 @@ function GuidePageContent() {
     alert('คุณไม่มีสิทธิ์เข้าถึงขั้นตอนใดเลยใน Flow นี้');
   };
 
-  const filteredGuides =
-    activeCategory === 'ทั้งหมด'
-      ? MODULE_GUIDES
-      : MODULE_GUIDES.filter((g) => g.category === activeCategory);
-
   return (
     <div className="space-y-8 pb-16">
       {/* ─────────────────────────────────────────────────────────────
@@ -221,14 +138,14 @@ function GuidePageContent() {
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-semibold backdrop-blur-xs">
             <Compass className="w-3.5 h-3.5" />
-            ระบบแนะนำการใช้งานเสมือนจริง (Interactive Onboarding)
+            ระบบแนะนำการใช้งานเสมือนจริง (Action-Oriented Onboarding)
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            วิธีการใช้งานและคู่มือระบบ HRMS
+            วิธีการใช้งาน: Flow เพิ่มพนักงานใหม่ (HR Onboarding)
           </h1>
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-            ศูนย์รวมคำแนะนำการใช้งานและระบบพาเดินชมแบบ Spotlight ทีละขั้นตอน
-            ระบบจะปรับแต่งคู่มือให้อัตโนมัติโดยอิงตามบทบาท (Role) และสิทธิ์ (Permission) ของคุณ
+            คู่มือการปฏิบัติงานแบบเป็นลำดับขั้นตอนสำหรับฝ่ายบุคคล (HR) ในการรับพนักงานใหม่เข้าสู่ระบบ HRMS
+            ระบบจะพาคุณเปิดแบบฟอร์ม แนะนำช่องที่ต้องกรอก และเชื่อมต่อไปยังหน้าถัดไปแบบอัตโนมัติ
           </p>
         </div>
 
@@ -265,10 +182,10 @@ function GuidePageContent() {
               HR ONBOARDING JOURNEY: 3 หน้าจอต่อเนื่อง
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Flow เพิ่มพนักงานใหม่ (HR Onboarding Flow — เชื่อมต่อ 3 หน้าจอ)
+              Flow เพิ่มพนักงานใหม่ (เชื่อมต่อ 3 หน้าจอแบบ Interactive Tour)
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              ขั้นตอนมาตรฐานฝ่ายบุคคล (HR): 1. ทะเบียนประวัติพนักงาน → 2. สัญญาจ้างงาน → 3. ผูกบัญชีผู้ใช้งานระบบ พร้อมระบบตรวจเช็ค Permission ในแต่ละขั้นตอน
+              ลำดับขั้นตอน: 1. ทะเบียนประวัติพนักงาน → 2. สัญญาจ้างงาน → 3. ผูกบัญชีผู้ใช้งานระบบ พร้อมระบบตรวจสอบ Permission อัตโนมัติ
             </p>
           </div>
 
@@ -279,13 +196,13 @@ function GuidePageContent() {
             onClick={handleStartOnboardingJourney}
             className="shadow-md shadow-blue-600/20"
           >
-            🚀 เริ่ม Flow เพิ่มพนักงานใหม่
+            🚀 เริ่มต้น Tour แนะนำทีละขั้นตอน
           </Button>
         </div>
 
         {/* Stepper Cards 3 ขั้นตอน */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 relative">
-          {FLOW_STEPS.map((step, idx) => {
+          {FLOW_STEPS.map((step) => {
             const hasPerm = checkEffectivePermission(step.permissionCode);
             const StepIcon = step.icon;
 
@@ -330,7 +247,7 @@ function GuidePageContent() {
 
                   <div className="space-y-1.5 pt-2 border-t border-slate-200/60 dark:border-slate-800">
                     <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                      จุดไฮไลต์บนหน้าจอ:
+                      ข้อมูลที่ไกด์จะแนะนำให้กรอก:
                     </span>
                     {step.highlights.map((h, hIdx) => (
                       <div key={hIdx} className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
@@ -405,109 +322,58 @@ function GuidePageContent() {
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          3. All System Guides Catalog
+          3. Detailed Checklist for HR
       ───────────────────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Compass className="w-5 h-5 text-primary dark:text-blue-400" />
-              คลังคู่มือแนะนำการใช้งานทั้งหมดแยกตามโมดูล
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              คลิกเพื่อเปิดดูทัวร์ของแต่ละโมดูลได้โดยตรงตามที่คุณมีสิทธิ์เข้าถึง
-            </p>
-          </div>
-
-          {/* Filter Categories */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-            {['ทั้งหมด', 'พนักงานทั่วไป (ESS)', 'หัวหน้างาน (Approval)', 'ฝ่ายบุคคล (HR)', 'ผู้ดูแลระบบ (Admin)'].map(
-              (cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors ${
-                    activeCategory === cat
-                      ? 'bg-primary text-white shadow-xs'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  {cat}
-                </button>
-              )
-            )}
-          </div>
+      <div className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700/70 p-6 sm:p-8 shadow-xs space-y-5">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            ข้อแนะนำและข้อมูลที่ต้องเตรียมก่อนเริ่มดำเนินการ (Prerequisites & Checklist)
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            เตรียมข้อมูลสำคัญเหล่านี้ไว้ล่วงหน้าเพื่อให้การกรอกข้อมูลในแต่ละหน้าจอเป็นไปอย่างรวดเร็วและครบถ้วน:
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredGuides.map((guide) => {
-            const GuideIcon = guide.icon;
-            // เช็คว่ามีสิทธิ์อย่างน้อย 1 สิทธิ์ใน requiredPermissions
-            const hasAnyPerm =
-              hasRole('ADMIN') ||
-              hasRole('SYSTEM_SUPER') ||
-              guide.requiredPermissions.some((perm) => hasPermission(perm) || mockPermissions[perm]);
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-2">
+            <div className="text-xs font-bold text-blue-700 dark:text-blue-300 flex items-center gap-1.5">
+              <Users className="w-4 h-4" /> ข้อมูลพนักงาน (หน้า 1)
+            </div>
+            <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+              <li>รหัสพนักงาน (EMP-xxx) และรหัสสแกนนิ้ว</li>
+              <li>คำนำหน้า, ชื่อ-นามสกุลภาษาไทย</li>
+              <li>ตำแหน่งงานและแผนกที่สังกัด</li>
+              <li>ประเภทการจ้างงาน (เช่น พนักงานทดลองงาน)</li>
+              <li>วันเริ่มงาน (Effective Date)</li>
+            </ul>
+          </div>
 
-            return (
-              <div
-                key={guide.id}
-                className={`bg-white dark:bg-slate-800 rounded-2xl border p-5 flex flex-col justify-between transition-all ${
-                  hasAnyPerm
-                    ? 'border-slate-200 dark:border-slate-700/70 shadow-2xs hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500'
-                    : 'border-slate-200/60 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30'
-                }`}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0">
-                      <GuideIcon className="w-5 h-5" />
-                    </div>
-                    {hasAnyPerm ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <Check className="w-3 h-3" /> มีสิทธิ์ใช้งาน
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                        <Lock className="w-3 h-3" /> ล็อก (ไม่มีสิทธิ์)
-                      </span>
-                    )}
-                  </div>
+          <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-2">
+            <div className="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+              <FileText className="w-4 h-4" /> สัญญาจ้างงาน (หน้า 2)
+            </div>
+            <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+              <li>ชื่อพนักงาน (เลือกจากที่บันทึกไว้ในขั้นตอนที่ 1)</li>
+              <li>ประเภทสัญญา (ทดลองงาน, ประจำ, ชั่วคราว)</li>
+              <li>วันเริ่มต้นสัญญา และวันสิ้นสุด (ถ้ามี)</li>
+              <li>ฐานเงินเดือนเริ่มต้นและค่าตอบแทน</li>
+              <li>ไฟล์เอกสารสัญญาจ้าง (PDF / Word)</li>
+            </ul>
+          </div>
 
-                  <span className="text-[11px] font-semibold text-slate-400 block mb-1">
-                    {guide.category}
-                  </span>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-1.5">
-                    {guide.title}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3 mb-4">
-                    {guide.description}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
-                  <div className="text-[11px] text-slate-400 truncate max-w-[150px]" title={guide.requiredPermissions.join(', ')}>
-                    สิทธิ์: {guide.requiredPermissions[0]}
-                  </div>
-
-                  {hasAnyPerm ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      icon={<PlayCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
-                      onClick={() => router.push(guide.route)}
-                    >
-                      เริ่มดูวิธีใช้งาน
-                    </Button>
-                  ) : (
-                    <Button variant="ghost" size="sm" disabled className="text-slate-400 cursor-not-allowed">
-                      ไม่มีสิทธิ์ใช้งาน
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40 space-y-2">
+            <div className="text-xs font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+              <User className="w-4 h-4" /> บัญชีผู้ใช้งานระบบ (หน้า 3)
+            </div>
+            <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1 list-disc list-inside">
+              <li>ชื่อผู้ใช้ (Username) สำหรับเข้าสู่ระบบ</li>
+              <li>รหัสผ่านชั่วคราวเริ่มต้น (Initial Password)</li>
+              <li>เลือกพนักงานที่เชื่อมต่อกับบัญชี</li>
+              <li>กำหนดบทบาท (Role) ในระบบ HRMS</li>
+              <li>เปิดสถานะบัญชีให้เป็น "เปิดใช้งาน (Active)"</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
