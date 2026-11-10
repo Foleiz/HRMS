@@ -583,6 +583,7 @@ function ContractsPageContent() {
               canCreateContracts ? (
                 <Button
                   id="tour-contract-add-btn"
+                  data-tour="tour-contract-add-btn"
                   onClick={() => setIsCreateModalOpen(true)}
                   icon={<Plus className="w-4 h-4" />}
                   className="shrink-0 self-start sm:self-auto"

@@ -168,6 +168,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
             canCreateUser ? (
               <Button
                 id="tour-user-add-btn"
+                data-tour="tour-user-add-btn"
                 onClick={onAddUserClick}
                 icon={<Plus className="w-4 h-4" />}
               >

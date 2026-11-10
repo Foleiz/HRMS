@@ -35,11 +35,23 @@ export function GlobalWizardTour() {
       const driveSteps: DriveStep[] = [];
 
       for (const sub of pageStep.subSteps) {
+        const isSidebarStep =
+          sub.title.startsWith('ตำแหน่งเมนู') ||
+          sub.selectors.some((s) => s.includes('data-sidebar-path') || s.includes('aside'));
+
         let matchedEl: Element | null = null;
         for (const sel of sub.selectors) {
           try {
             const el = document.querySelector(sel);
             if (el && (el.getBoundingClientRect().width > 0 || el.getBoundingClientRect().height > 0)) {
+              // ถ้าไม่ใช่สเต็ปชี้ Sidebar ห้ามไฮไลท์ element ภายใน aside เด็ดขาด (ป้องกัน highlight ปุ่ม toggle ย่อ sidebar)
+              if (!isSidebarStep && el.closest('aside')) {
+                continue;
+              }
+              // ถ้าเป็นสเต็ปชี้ Sidebar ห้ามจับปุ่ม toggle ย่อขยาย sidebar ที่หัว aside
+              if (isSidebarStep && el.closest('aside') && el.tagName.toLowerCase() === 'button' && !el.getAttribute('data-sidebar-path')) {
+                continue;
+              }
               matchedEl = el;
               break;
             }
@@ -48,9 +60,21 @@ export function GlobalWizardTour() {
           }
         }
 
-        // Fallback
+        // Fallback ที่ปลอดภัย แยกตามประเภท step
         if (!matchedEl) {
-          matchedEl = document.querySelector('main') || document.body;
+          if (isSidebarStep) {
+            matchedEl =
+              document.querySelector('aside [data-sidebar-path]') ||
+              document.querySelector('aside nav') ||
+              document.querySelector('aside') ||
+              document.body;
+          } else {
+            matchedEl =
+              document.querySelector('main button.bg-primary') ||
+              document.querySelector('main table') ||
+              document.querySelector('main') ||
+              document.body;
+          }
         }
 
         driveSteps.push({
@@ -165,7 +189,7 @@ export function GlobalWizardTour() {
 
       driverInstanceRef.current = driverObj;
       driverObj.drive();
-    }, 400);
+    }, 450);
 
     return () => {
       clearTimeout(timer);

@@ -779,6 +779,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                 {canCreateEmp && (
                   <Button
                     id="tour-employee-add-btn"
+                    data-tour="tour-employee-add-btn"
                     onClick={() => setIsCreateModalOpen(true)}
                     icon={<Plus className="w-4 h-4" />}
                     className="shrink-0 self-start sm:self-auto"
