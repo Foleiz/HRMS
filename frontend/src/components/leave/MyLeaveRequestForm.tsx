@@ -13,7 +13,6 @@ import { FileDropzone } from '@/components/ui/FileDropzone';
 import { FormActionBar } from '@/components/documents/FormActionBar';
 import { Button } from '@/components/ui';
 import { useOnboardingTour, type TourStep } from '@/hooks/useOnboardingTour';
-import { TourGuideButton } from '@/components/common/TourGuideButton';
 
 interface EmployeeProfileSummary {
   fullName: string;
@@ -179,7 +178,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   const isOnboardingFlow = tourParam === 'onboarding-3';
   const isDirectTour = tourParam === 'direct';
 
-  const { startTour } = useOnboardingTour('leave-request-form', LEAVE_FORM_TOUR_STEPS, {
+  useOnboardingTour('leave-request-form', LEAVE_FORM_TOUR_STEPS, {
     autoStart: true,
     delayMs: 600,
     doneBtnText: isOnboardingFlow ? 'เสร็จสิ้น Onboarding ภารกิจพนักงานใหม่ 🎉' : 'เสร็จสิ้น ✨',
@@ -606,12 +605,9 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         positionTitle={profile.positionTitle}
         departmentName={profile.departmentName}
         action={
-          <div className="flex items-center gap-2">
-            <TourGuideButton onClick={startTour} />
-            <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
-              ล้างฟอร์ม
-            </Button>
-          </div>
+          <Button variant="secondary" type="button" onClick={resetForm} icon={<RotateCcw className="w-4 h-4" />}>
+            ล้างฟอร์ม
+          </Button>
         }
       />
 

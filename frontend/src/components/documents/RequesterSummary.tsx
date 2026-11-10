@@ -90,7 +90,7 @@ export function RequesterSummary({ variant = 'general', fullName, positionTitle,
   const meta = FIELDS[variant].map((k) => all[k]).filter((m): m is MetaItem => !!m);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/90 dark:border-slate-700/80 p-4 sm:p-5 shadow-xs flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3.5 min-w-0">
         <span className="relative shrink-0">
           {avatar ? (
@@ -111,7 +111,7 @@ export function RequesterSummary({ variant = 'general', fullName, positionTitle,
           )}
           <span
             title="ทำงานอยู่"
-            className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900"
+            className="absolute -right-0.5 -bottom-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-800"
           />
         </span>
         <div className="min-w-0">
