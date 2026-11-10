@@ -59,14 +59,9 @@ function GuidePageContent() {
 
   return (
     <div className="space-y-6 font-sans pb-12">
-      {/* 1. Page Header (เฉพาะชื่อหัวข้อหลัก) */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-          วิธีการใช้งาน
-        </h1>
-      </div>
+      <h1 className="sr-only">วิธีการใช้งาน</h1>
 
-      {/* 2. Main Content Card (Panel พื้นหลังครอบตามมาตรฐานเดียวกับหน้าอื่นๆ ในระบบ) */}
+      {/* Main Content Card (Panel พื้นหลังครอบตามมาตรฐานเดียวกับหน้าอื่นๆ ในระบบ) */}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
           {/* Toolbar: ช่องค้นหาจัดวางฝั่งซ้ายมาตรฐานกลางระบบ */}
@@ -104,7 +99,7 @@ function GuidePageContent() {
                       </span>
 
                       <Button
-                        variant="secondary"
+                        variant="primary"
                         size="sm"
                         onClick={() => router.push(item.route)}
                         className="shadow-2xs text-xs font-semibold"
