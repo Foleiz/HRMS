@@ -3,6 +3,7 @@
 import { TableToolbar } from '@/components/ui';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import {
   Search,
   Plus,
@@ -26,7 +27,6 @@ import { Button } from '@/components/ui/Button';
 import { formatRoleName } from '@/lib/roleUtils';
 import { TH_MONTHS_SHORT } from '@/lib/thaiDate';
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
-import { FloatingOnboardingGuide } from '@/components/guide/FloatingOnboardingGuide';
 
 interface UsersTabProps {
   users: UserAccount[];
@@ -50,6 +50,72 @@ interface UsersTabProps {
   isDrawerOpen?: boolean;
   onCloseDrawer?: () => void;
 }
+
+const USER_BUTTON_STEPS: TourStep[] = [
+  {
+    element: '#tour-user-add-btn',
+    popover: {
+      title: 'ขั้นตอนที่ 3: คลิกปุ่ม "เพิ่มผู้ใช้งาน"',
+      description: 'ขั้นตอนสุดท้ายในการรับพนักงานใหม่เข้าสู่ระบบ คือการสร้างบัญชีผู้ใช้งาน (User Account) เพื่อกำหนด Username, รหัสผ่าน และบทบาทสำหรับเข้าสู่ระบบ HRMS',
+      side: 'bottom',
+      align: 'end',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+];
+
+const USER_DRAWER_STEPS: TourStep[] = [
+  {
+    element: '#tour-user-employee-select',
+    popover: {
+      title: '1. เลือกพนักงานที่ต้องการผูกบัญชี',
+      description: 'ค้นหาและเลือกพนักงานที่เพิ่มจากขั้นตอนที่ 1 และทำสัญญาจ้างในขั้นตอนที่ 2 เพื่อผูกบัญชีการเข้าใช้งานระบบ',
+      side: 'left',
+      align: 'start',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+  {
+    element: '#tour-user-username-field',
+    popover: {
+      title: '2. กำหนดชื่อผู้ใช้งาน (Username)',
+      description: 'กำหนดชื่อบัญชีสำหรับใช้ในการเข้าสู่ระบบ (เช่น รหัสพนักงาน หรือชื่อภาษาอังกฤษตัวพิมพ์เล็ก)',
+      side: 'left',
+      align: 'start',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+  {
+    element: '#tour-user-password-field',
+    popover: {
+      title: '3. กำหนดรหัสผ่านเริ่มต้น (Password)',
+      description: 'สร้างรหัสผ่านเริ่มต้นสำหรับให้พนักงานล็อกอินใช้งานครั้งแรก (แนะนำให้พนักงานเปลี่ยนรหัสผ่านหลังเข้าสู่ระบบ)',
+      side: 'left',
+      align: 'start',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+  {
+    element: '#tour-user-role-select',
+    popover: {
+      title: '4. กำหนดบทบาทและสิทธิ์การใช้งาน (Role)',
+      description: 'เลือกบทบาทที่เหมาะสมกับตำแหน่ง เช่น "พนักงานทั่วไป" สำหรับการขอลาและดูสลิป หรือ "HR / ผู้จัดการ" ตามความรับผิดชอบ',
+      side: 'left',
+      align: 'start',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+  {
+    element: '#tour-user-submit-btn',
+    popover: {
+      title: '5. บันทึกบัญชี — จบขั้นตอนสมบูรณ์ 🎉',
+      description: 'กดปุ่มบันทึกเพื่อเปิดใช้งานบัญชีทันที! พนักงานใหม่ของคุณจะมีทั้งประวัติพนักงาน สัญญาจ้างงาน และสิทธิ์เข้าใช้งานระบบ HRMS ครบถ้วนตามมาตรฐาน',
+      side: 'top',
+      align: 'end',
+    },
+    requiredPermission: 'SETTINGS_USERS_VIEW',
+  },
+];
 
 export const UsersTab: React.FC<UsersTabProps> = ({
   users,
@@ -76,9 +142,35 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
   const [selectedStatus, setSelectedStatus] = useState<string>('ทั้งหมด');
+  const [drawerTourActive, setDrawerTourActive] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const tourParam = searchParams?.get('tour');
+  const mockParam = searchParams?.get('mock');
+
+  // Phase 1: Tour ชี้ปุ่มเพิ่มผู้ใช้งาน
+  useOnboardingTour('hr-onboarding-user-btn', USER_BUTTON_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-3' && !isDrawerOpen && !drawerTourActive,
+    doneBtnText: 'ดูช่องที่ต้องกรอกในแบบฟอร์ม →',
+    onComplete: () => {
+      onAddUserClick();
+      setDrawerTourActive(true);
+    },
+  });
+
+  // Phase 2: Tour ชี้ช่องต่างๆ ใน Drawer เมื่อเปิด
+  useOnboardingTour('hr-onboarding-user-drawer', USER_DRAWER_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-3' && Boolean(isDrawerOpen),
+    delayMs: 350,
+    doneBtnText: 'เสร็จสิ้น Flow เพิ่มพนักงานใหม่ 🎉',
+    onComplete: () => {
+      if (onCloseDrawer) onCloseDrawer();
+      setDrawerTourActive(false);
+      const mockQuery = mockParam ? `?completed=hr-onboarding&mock=${encodeURIComponent(mockParam)}` : '?completed=hr-onboarding';
+      router.push(`/guide${mockQuery}`);
+    },
+  });
 
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -372,9 +464,6 @@ export const UsersTab: React.FC<UsersTabProps> = ({
           />
         </div>
       </div>
-
-      {/* Floating Onboarding Step Guide (Non-intrusive) */}
-      <FloatingOnboardingGuide currentStep={3} />
     </div>
   );
 };

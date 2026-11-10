@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useOnboardingTour, TourStep } from '@/hooks/useOnboardingTour';
 import {
   Plus,
   Search,
@@ -44,12 +45,93 @@ import { Button, TabBar, TableToolbar, AvatarName } from '@/components/ui';
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { TableEmpty, TableLoading } from '@/components/ui/TableState';
-import { FloatingOnboardingGuide } from '@/components/guide/FloatingOnboardingGuide';
+
+const CONTRACT_BUTTON_STEPS: TourStep[] = [
+  {
+    element: '#tour-contract-add-btn',
+    popover: {
+      title: 'ขั้นตอนที่ 2: คลิกปุ่ม "สร้างสัญญาใหม่"',
+      description: 'เมื่อเพิ่มข้อมูลพนักงานเรียบร้อยแล้ว ขั้นตอนสำคัญถัดไปคือกดปุ่มนี้เพื่อเปิดแบบฟอร์มจัดทำสัญญาจ้างงาน',
+      side: 'bottom',
+      align: 'end',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+];
+
+const CONTRACT_MODAL_STEPS: TourStep[] = [
+  {
+    element: '#tour-contract-employee-field',
+    popover: {
+      title: '1. เลือกพนักงานที่ต้องการทำสัญญา',
+      description: 'ค้นหาและเลือกพนักงานใหม่ที่เพิ่งเพิ่มจากขั้นตอนที่ 1 เพื่อนำมาจัดทำสัญญาจ้างงาน',
+      side: 'bottom',
+      align: 'start',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+  {
+    element: '#tour-contract-type-field',
+    popover: {
+      title: '2. กำหนดประเภทสัญญา/ประเภทการจ้าง',
+      description: 'เลือกประเภทสัญญา เช่น สัญญาทดลองงาน (Probation), สัญญาจ้างประจำ (Permanent), หรือสัญญาจ้างชั่วคราว',
+      side: 'bottom',
+      align: 'start',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+  {
+    element: '#tour-contract-dates-field',
+    popover: {
+      title: '3. กำหนดวันเริ่มสัญญา และวันสิ้นสุด',
+      description: 'ระบุวันเริ่มสัญญา ระบบจะคำนวณวันสิ้นสุดทดลองงาน 119 วันตามเกณฑ์กฎหมายแรงงานให้อัตโนมัติ (หรือระบุเองได้)',
+      side: 'bottom',
+      align: 'start',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+  {
+    element: '#tour-contract-submit-btn',
+    popover: {
+      title: '4. แนบเอกสาร & บันทึกสัญญาจ้าง 👤',
+      description: 'สามารถแนบไฟล์สัญญาตัวจริง (PDF/รูป) แล้วกดปุ่ม "บันทึก" เพื่อเปิดสถานะสัญญา จากนั้นขั้นตอนสุดท้ายคือการไปสร้างบัญชีผู้ใช้งาน',
+      side: 'top',
+      align: 'end',
+    },
+    requiredPermission: 'EMP_CONTRACT_VIEW',
+  },
+];
 
 function ContractsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const tourParam = searchParams?.get('tour');
+  const mockParam = searchParams?.get('mock');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [modalTourActive, setModalTourActive] = useState(false);
+
+  // Phase 1: Tour ชี้ปุ่มสร้างสัญญาใหม่
+  useOnboardingTour('hr-onboarding-contract-btn', CONTRACT_BUTTON_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-2' && !isCreateModalOpen && !modalTourActive,
+    doneBtnText: 'ดูช่องที่ต้องกรอกในสัญญาจ้าง →',
+    onComplete: () => {
+      setIsCreateModalOpen(true);
+      setModalTourActive(true);
+    },
+  });
+
+  // Phase 2: Tour ชี้ฟิลด์ต่างๆ ในแบบฟอร์มสัญญาเมื่อ Modal เปิด
+  useOnboardingTour('hr-onboarding-contract-modal', CONTRACT_MODAL_STEPS, {
+    triggerCondition: tourParam === 'hr-onboarding-2' && isCreateModalOpen,
+    delayMs: 350,
+    doneBtnText: 'ไปยังขั้นตอนที่ 3: บัญชีผู้ใช้งาน →',
+    onComplete: () => {
+      setIsCreateModalOpen(false);
+      setModalTourActive(false);
+      const mockQuery = mockParam ? `&mock=${encodeURIComponent(mockParam)}` : '';
+      router.push(`/settings?tab=users&tour=hr-onboarding-3${mockQuery}`);
+    },
+  });
 
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
@@ -543,9 +625,6 @@ function ContractsPageContent() {
           setSelectedContractForDocPreview(null);
         }}
       />
-
-      {/* Floating Onboarding Step Guide (Non-intrusive) */}
-      <FloatingOnboardingGuide currentStep={2} />
     </div>
   );
 }

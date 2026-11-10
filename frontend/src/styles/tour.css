@@ -1,17 +1,47 @@
 @import "driver.js/dist/driver.css";
 
 /* ==========================================================================
-   HRMS Theme for Driver.js Tour Guide Popover
+   HRMS Theme for Driver.js Tour Guide Popover (Highlight-Only Mode)
    ========================================================================== */
 
-/* Overlay SVG: ต้องไม่มี background-color หรือ backdrop-filter ใดๆ
-   เพราะ driver.js ใช้ SVG path ในการเจาะรู (evenodd cutout) ให้เห็น element ด้านล่างอย่างชัดเจน 100%
-   หากใส่ background/backdrop-filter ที่ตัว overlay จะทำให้รูที่เจาะไว้เบลอและมืด */
+/* 1. ซ่อน Overlay มืดทั้งหมด — หน้าจอไม่มีพื้นหลังมืดหรือเบลอใดๆ 100% */
 .driver-overlay {
+  display: none !important;
   background: transparent !important;
   background-color: transparent !important;
+  opacity: 0 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  pointer-events: none !important;
+}
+
+/* 2. ไฮไลต์รอบ Element ที่กำลังแนะนำด้วยเส้นขอบเรืองแสงสีฟ้าสดใส (Pulsing Highlight Ring) */
+.driver-active-element {
+  position: relative !important;
+  outline: 3px solid #2563eb !important;
+  outline-offset: 4px !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 0 25px rgba(37, 99, 235, 0.45) !important;
+  animation: hrms-tour-pulse 1.8s ease-in-out infinite !important;
+  z-index: 100001 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+:is(.dark .driver-active-element) {
+  outline-color: #3b82f6 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.35), 0 0 30px rgba(59, 130, 246, 0.6) !important;
+}
+
+@keyframes hrms-tour-pulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.6), 0 0 15px rgba(37, 99, 235, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.15), 0 0 30px rgba(37, 99, 235, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.6), 0 0 15px rgba(37, 99, 235, 0.4);
+  }
 }
 
 .hrms-driver-popover {
