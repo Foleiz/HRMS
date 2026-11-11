@@ -1,19 +1,69 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Calendar, ChevronRight } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { announcementService } from '@/services/announcementService';
 import { Announcement } from '@/types/announcement';
 
 interface EventItem {
-  id: number | string;
-  date: string;
+  id: number;
   title: string;
+  isPinned: boolean;
+  timeRange: string;
+  startTimeSort: string;
+  dateStr: string; // YYYY-MM-DD
 }
 
+interface GroupedEvents {
+  dateStr: string;
+  dateLabel: string;
+  events: EventItem[];
+}
+
+const THAI_SHORT_MONTHS = [
+  'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
+];
+
+// ดึงเวลาสำหรับกิจกรรม (เช่น "10:00", "09:00 - 12:00")
+const parseActivityTime = (content: string): string => {
+  if (!content) return '09:00';
+  const match = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
+  if (match) {
+    return match[1].trim();
+  }
+  return '09:00';
+};
+
+const getStartTimeSort = (timeStr: string): string => {
+  if (timeStr.includes('-')) {
+    return timeStr.split('-')[0].trim();
+  }
+  return timeStr.trim();
+};
+
+const getDateLabel = (targetDate: Date, today: Date): string => {
+  const d = new Date(targetDate);
+  d.setHours(0, 0, 0, 0);
+  const t = new Date(today);
+  t.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round((d.getTime() - t.getTime()) / (1000 * 60 * 60 * 24));
+  const dayNum = d.getDate();
+  const monthShort = THAI_SHORT_MONTHS[d.getMonth()];
+
+  if (diffDays === 0) {
+    return `วันนี้ · ${dayNum} ${monthShort}`;
+  }
+  if (diffDays === 1) {
+    return `พรุ่งนี้ · ${dayNum} ${monthShort}`;
+  }
+  return `${dayNum} ${monthShort}`;
+};
+
 export const UpcomingEventsWidget: React.FC = () => {
-  const [events, setEvents] = useState<EventItem[]>([]);
+  const [activities, setActivities] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,58 +72,19 @@ export const UpcomingEventsWidget: React.FC = () => {
     const loadUpcomingEvents = async () => {
       setLoading(true);
       try {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-        // ดึงเฉพาะประกาศกิจกรรม (category: 'ACTIVITY') เท่านั้น ไม่นำวันหยุดมาแสดง
+        // ดึงเฉพาะประกาศกิจกรรม (category: 'ACTIVITY')
         const res = await announcementService.getAnnouncements({
           category: 'ACTIVITY',
           pageSize: 100,
         });
 
-        const list: Announcement[] = res?.items || [];
-
-        // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่รวม DRAFT) และยังไม่สิ้นสุด (วันสิ้นสุด >= วันนี้)
-        const upcoming = list.filter((act) => {
-          if (act.status === 'DRAFT') return false;
-          const startStr = act.publishedAt || act.createdAt;
-          if (!startStr) return false;
-          const startDateOnly = startStr.substring(0, 10);
-          const endDateOnly = act.expireAt ? act.expireAt.substring(0, 10) : startDateOnly;
-          return endDateOnly >= todayStr;
-        });
-
-        // เรียงลำดับจากวันที่จัดใกล้ที่สุดไปไกลที่สุด
-        upcoming.sort((a, b) => {
-          const dateA = a.publishedAt || a.createdAt || '';
-          const dateB = b.publishedAt || b.createdAt || '';
-          return dateA.localeCompare(dateB);
-        });
-
-        const formatted: EventItem[] = upcoming.slice(0, 4).map((act) => {
-          const startStr = act.publishedAt || act.createdAt || '';
-          const d = new Date(startStr);
-
-          const dateStr = d.toLocaleDateString('th-TH', {
-            day: 'numeric',
-            month: 'long',
-          });
-
-          return {
-            id: act.id,
-            date: dateStr,
-            title: act.title,
-          };
-        });
-
         if (isMounted) {
-          setEvents(formatted);
+          setActivities(res?.items || []);
         }
       } catch (err) {
-        console.error('Failed to load upcoming activity announcements:', err);
+        console.error('Failed to load upcoming activities:', err);
         if (isMounted) {
-          setEvents([]);
+          setActivities([]);
         }
       } finally {
         if (isMounted) {
@@ -89,58 +100,163 @@ export const UpcomingEventsWidget: React.FC = () => {
     };
   }, []);
 
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-xs flex flex-col justify-between h-full min-h-[170px]">
-      <div>
-        {/* หัวข้อ: กำหนด whitespace-nowrap และ gap เพื่อป้องกันข้อความตกบรรทัดผิดตำแหน่ง */}
-        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-3.5 flex items-center justify-between gap-2">
-          <span className="whitespace-nowrap">กิจกรรมที่กำลังจะมาถึง</span>
-          <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
-            ประกาศกิจกรรม
-          </span>
-        </h3>
+  // กรองเฉพาะกิจกรรมที่จัดขึ้นใน 7 วันข้างหน้า (นับจากวันนี้)
+  const groupedEvents = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
+    const next7Days = new Date(today);
+    next7Days.setDate(next7Days.getDate() + 7);
+    next7Days.setHours(23, 59, 59, 999);
+
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const next7DaysStr = `${next7Days.getFullYear()}-${String(next7Days.getMonth() + 1).padStart(2, '0')}-${String(next7Days.getDate()).padStart(2, '0')}`;
+
+    // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่รวม DRAFT) และอยู่ในช่วง 7 วันข้างหน้า
+    const validActivities = activities.filter((act) => {
+      if (act.status === 'DRAFT') return false;
+      const startStr = act.publishedAt || act.createdAt;
+      if (!startStr) return false;
+      const startDateOnly = startStr.substring(0, 10);
+      const endDateOnly = act.expireAt ? act.expireAt.substring(0, 10) : startDateOnly;
+
+      return startDateOnly <= next7DaysStr && endDateOnly >= todayStr;
+    });
+
+    // แมปกิจกรรมลงในแต่ละวันของช่วง 7 วันข้างหน้า
+    const dayMap = new Map<string, EventItem[]>();
+
+    for (const act of validActivities) {
+      const startStr = act.publishedAt || act.createdAt || '';
+      const startDate = new Date(startStr);
+      const endDate = act.expireAt ? new Date(act.expireAt) : startDate;
+      const time = parseActivityTime(act.content);
+      const startTimeSort = getStartTimeSort(time);
+
+      const cur = new Date(startDate);
+      let count = 0;
+      while (cur <= endDate && count < 31) {
+        cur.setHours(0, 0, 0, 0);
+        if (cur >= today && cur <= next7Days) {
+          const dateStr = `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`;
+          const list = dayMap.get(dateStr) || [];
+
+          const exists = list.some((e) => e.title.trim().toLowerCase() === act.title.trim().toLowerCase());
+          if (!exists) {
+            list.push({
+              id: act.id,
+              title: act.title,
+              isPinned: act.isPinned ?? false,
+              timeRange: time,
+              startTimeSort,
+              dateStr,
+            });
+            dayMap.set(dateStr, list);
+          }
+        }
+        cur.setDate(cur.getDate() + 1);
+        count++;
+      }
+    }
+
+    // แปลง Map เป็น Array เรียงตามวันที่
+    const sortedDateKeys = Array.from(dayMap.keys()).sort();
+    const result: GroupedEvents[] = [];
+
+    for (const dateKey of sortedDateKeys) {
+      const [y, m, d] = dateKey.split('-').map(Number);
+      const targetDate = new Date(y, m - 1, d);
+      const items = dayMap.get(dateKey) || [];
+
+      // เรียงลำดับ: กิจกรรมปักหมุดก่อน -> เวลาเริ่มก่อน
+      items.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1;
+        if (!a.isPinned && b.isPinned) return 1;
+        return a.startTimeSort.localeCompare(b.startTimeSort);
+      });
+
+      result.push({
+        dateStr: dateKey,
+        dateLabel: getDateLabel(targetDate, today),
+        events: items,
+      });
+    }
+
+    return result;
+  }, [activities]);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs flex flex-col justify-between h-full min-h-[170px]">
+      <div className="flex-1 flex flex-col">
+        {/* Header: กิจกรรมที่กำลังจะมาถึง (ซ้าย) | ดูทั้งหมด › (ขวา) */}
+        <div className="flex items-center justify-between mb-3.5 shrink-0">
+          <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
+            กิจกรรมที่กำลังจะมาถึง
+          </h3>
+          <Link
+            href="/announcements"
+            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-0.5 transition-colors cursor-pointer"
+          >
+            <span>ดูทั้งหมด</span>
+            <span className="text-xs leading-none">›</span>
+          </Link>
+        </div>
+
+        {/* Content: โหลดข้อมูล / ไม่มีกิจกรรม / แสดงรายการตามกลุ่มวันที่ */}
         {loading ? (
-          <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
+          <div className="flex-1 flex items-center justify-center py-6 text-xs text-slate-400 dark:text-slate-500">
             กำลังโหลดกิจกรรม...
           </div>
-        ) : events.length === 0 ? (
-          <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-            ยังไม่มีประกาศกิจกรรมที่กำลังจะมาถึง
+        ) : groupedEvents.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-6 text-center">
+            <Calendar className="w-9 h-9 text-slate-400 dark:text-slate-500 mb-2 stroke-[1.5]" />
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              ไม่มีกิจกรรมใน 7 วันข้างหน้า
+            </p>
           </div>
         ) : (
-          <div className="space-y-2.5">
-            {events.map((ev) => (
-              <div
-                key={ev.id}
-                className="text-xs text-slate-700 dark:text-slate-300 flex items-center gap-2 py-0.5"
-              >
-                <span className="font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap min-w-[92px] shrink-0">
-                  {ev.date}
-                </span>
-                <span className="text-slate-300 dark:text-slate-600">|</span>
-                <span
-                  className="text-slate-600 dark:text-slate-400 truncate flex-1"
-                  title={ev.title}
-                >
-                  {ev.title}
-                </span>
+          <div className="space-y-3.5 overflow-y-auto max-h-[220px] pr-0.5">
+            {groupedEvents.map((group) => (
+              <div key={group.dateStr} className="space-y-2">
+                {/* วันที่ เช่น "วันนี้ · 11 พ.ย." หรือ "พรุ่งนี้ · 12 พ.ย." */}
+                <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                  {group.dateLabel}
+                </h4>
+
+                {/* รายการกิจกรรมในวันนั้น */}
+                <div className="space-y-2 pl-0.5">
+                  {group.events.map((ev) => (
+                    <div
+                      key={ev.id}
+                      className="flex items-center justify-between gap-2 text-xs py-0.5"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
+                          กิจกรรม
+                        </span>
+                        {ev.isPinned && (
+                          <span className="px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                            ปักหมุด
+                          </span>
+                        )}
+                        <span
+                          className="text-slate-800 dark:text-slate-200 font-semibold text-xs sm:text-[13px] truncate"
+                          title={ev.title}
+                        >
+                          {ev.title}
+                        </span>
+                      </div>
+                      <span className="text-slate-500 dark:text-slate-400 font-mono text-xs shrink-0">
+                        {ev.timeRange}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
-
-      <Link
-        href="/announcements"
-        className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-300 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between mt-auto transition-colors cursor-pointer group"
-      >
-        <div className="flex items-center gap-1.5">
-          <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-hover:text-primary dark:hover:text-blue-300 transition-colors" />
-          <span>ปฏิทินกิจกรรมองค์กร</span>
-        </div>
-        <ChevronRight className="w-3 h-3 text-slate-400 dark:text-slate-500 group-hover:translate-x-0.5 transition-transform" />
-      </Link>
     </div>
   );
 };
