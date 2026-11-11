@@ -234,11 +234,6 @@ export const UpcomingEventsWidget: React.FC = () => {
                         <span className="px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
                           กิจกรรม
                         </span>
-                        {ev.isPinned && (
-                          <span className="px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                            ปักหมุด
-                          </span>
-                        )}
                         <span
                           className="text-slate-800 dark:text-slate-200 font-semibold text-xs sm:text-[13px] truncate"
                           title={ev.title}

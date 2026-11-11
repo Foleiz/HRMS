@@ -394,11 +394,6 @@ export const CalendarWidget: React.FC = () => {
                   >
                     {ev.typeLabel}
                   </span>
-                  {ev.isPinned && (
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                      ปักหมุด
-                    </span>
-                  )}
                   <span
                     className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
                     title={ev.title}
@@ -486,11 +481,6 @@ export const CalendarWidget: React.FC = () => {
                       >
                         {ev.typeLabel}
                       </span>
-                      {ev.isPinned && (
-                        <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                          ปักหมุด
-                        </span>
-                      )}
                       <span
                         className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
                         title={ev.title}
