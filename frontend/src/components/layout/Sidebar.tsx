@@ -300,10 +300,14 @@ const menuGroups: MenuGroup[] = [
       },
       {
         title: 'จัดการประกาศ',
-        href: '/announcements',
+        href: '/announcements?tab=general',
         matchPrefix: '/announcements',
         icon: Megaphone,
         requiredPermissions: ['ANNOUNCEMENTS_VIEW', 'ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
+        children: [
+          { title: 'ประกาศข่าวสารทั่วไป', href: '/announcements?tab=general', icon: Megaphone, requiredPermissions: ['ANNOUNCEMENTS_VIEW'] },
+          { title: 'ประกาศกิจกรรม', href: '/announcements?tab=activities', icon: Sparkles, requiredPermissions: ['ANNOUNCEMENTS_VIEW'] },
+        ],
       },
     ],
   },
@@ -597,6 +601,7 @@ export const Sidebar: React.FC = () => {
         if (childPath === '/work-calendar' && childTab === 'work-week') return true;
         if (childPath === '/reports' && childTab === 'department') return true;
         if (childPath === '/master' && childTab === 'document-types') return true;
+        if (childPath === '/announcements' && (childTab === 'general' ? (!currentTab || currentTab === 'general') : currentTab === childTab)) return true;
         if (childPath === '/ess/attendance' && childTab === 'history') return true;
         return false;
       }
