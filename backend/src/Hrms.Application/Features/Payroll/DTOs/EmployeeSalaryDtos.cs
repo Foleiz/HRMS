@@ -25,6 +25,26 @@ public class AdjustEmployeeSalaryRequest
     public long? ApprovedByEmployeeId { get; set; }
 }
 
+public class BulkAdjustEmployeeSalaryItemRequest
+{
+    public long EmployeeId { get; set; }
+    public decimal BaseSalary { get; set; }
+}
+
+public class BulkAdjustEmployeeSalaryRequest
+{
+    public List<BulkAdjustEmployeeSalaryItemRequest> Items { get; set; } = new();
+    public DateOnly EffectiveFrom { get; set; }
+    public string? Reason { get; set; }
+    public long? ApprovedByEmployeeId { get; set; }
+}
+
+public class BulkAdjustEmployeeSalaryResultDto
+{
+    public int AdjustedCount { get; set; }
+    public List<EmployeeSalaryDto> Results { get; set; } = new();
+}
+
 public class EmployeeSalaryOverviewDto
 {
     public long EmployeeId { get; set; }
@@ -38,6 +58,9 @@ public class EmployeeSalaryOverviewDto
     /// <summary>การปรับเงินเดือนที่ตั้งล่วงหน้าไว้ (มีผลหลังวันนี้)</summary>
     public decimal? PendingSalary { get; set; }
     public DateOnly? PendingEffectiveFrom { get; set; }
+    /// <summary>ปี ค.ศ. และวันที่มีผลของการปรับฐานเงินเดือนล่าสุด (มีค่าเมื่อ SalaryRecordCount > 1)</summary>
+    public int? LastAdjustedYear { get; set; }
+    public DateOnly? LastAdjustedEffectiveFrom { get; set; }
     public decimal? SalaryStructureMin { get; set; }
     public decimal? SalaryStructureMax { get; set; }
     public int SalaryRecordCount { get; set; }

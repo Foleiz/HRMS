@@ -100,9 +100,29 @@ export interface EmployeeSalaryOverview {
   /** การปรับเงินเดือนที่ตั้งล่วงหน้าไว้ (มีผลหลังวันนี้) */
   pendingSalary?: number | null;
   pendingEffectiveFrom?: string | null;
+  /** ปี ค.ศ. และวันที่มีผลของการปรับฐานเงินเดือนล่าสุด (มีค่าเมื่อ salaryRecordCount > 1) */
+  lastAdjustedYear?: number | null;
+  lastAdjustedEffectiveFrom?: string | null;
   salaryStructureMin?: number | null;
   salaryStructureMax?: number | null;
   salaryRecordCount: number;
+}
+
+export interface BulkAdjustEmployeeSalaryItemPayload {
+  employeeId: number;
+  baseSalary: number;
+}
+
+export interface BulkAdjustEmployeeSalaryPayload {
+  items: BulkAdjustEmployeeSalaryItemPayload[];
+  effectiveFrom: string;
+  reason?: string | null;
+  approvedByEmployeeId?: number | null;
+}
+
+export interface BulkAdjustEmployeeSalaryResult {
+  adjustedCount: number;
+  results: EmployeeSalary[];
 }
 
 export interface EmployeeSalary {

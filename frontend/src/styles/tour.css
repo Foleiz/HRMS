@@ -39,7 +39,7 @@ body.driver-active * {
   border-radius: 1rem !important;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 0 25px rgba(37, 99, 235, 0.45) !important;
   animation: hrms-tour-pulse 1.8s ease-in-out infinite !important;
-  z-index: 100001 !important;
+  z-index: 20 !important;
   transition: all 0.2s ease-in-out !important;
 }
 

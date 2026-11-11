@@ -7,7 +7,7 @@ import {
   Eye,
   Trash2,
   Search,
-  Wallet,
+  CheckCircle2,
   Users,
   Clock,
 } from 'lucide-react';
@@ -135,56 +135,112 @@ export default function PayrollPeriodsTab({
     }
   };
 
+  // Summary metrics across filtered periods (by selected year / search)
+  const summaryStats = useMemo(() => {
+    const totalPeriodsCount = filteredPeriods.length;
+    const completedPeriodsCount = filteredPeriods.filter(
+      (p) => p.status === 'CLOSED' || p.status === 'PAID'
+    ).length;
+    const inProgressPeriods = filteredPeriods.filter(
+      (p) => p.status !== 'CLOSED' && p.status !== 'PAID'
+    );
+    const inProgressPeriodsCount = inProgressPeriods.length;
+    const completedPercent =
+      totalPeriodsCount > 0
+        ? Math.round((completedPeriodsCount / totalPeriodsCount) * 100)
+        : 0;
+
+    // Breakdown for in-progress periods
+    const draftCount = inProgressPeriods.filter((p) => p.status === 'DRAFT').length;
+    const waitingCount = inProgressPeriodsCount - draftCount;
+    let inProgressSubtext = 'ปิดรอบครบทุกรายการแล้ว';
+    if (totalPeriodsCount === 0) {
+      inProgressSubtext = 'ยังไม่มีรอบเงินเดือน';
+    } else if (inProgressPeriodsCount > 0) {
+      const parts: string[] = [];
+      if (draftCount > 0) parts.push(`ฉบับร่าง ${draftCount} รอบ`);
+      if (waitingCount > 0) parts.push(`รออนุมัติ/การเงิน ${waitingCount} รอบ`);
+      inProgressSubtext = parts.join(' · ');
+    }
+
+    // Employee count per period (Option A)
+    const empCounts = filteredPeriods
+      .map((p) => p.employeeCount ?? p.totalEmployees ?? 0)
+      .filter((c) => c > 0);
+    const avgEmployees =
+      empCounts.length > 0
+        ? Math.round(empCounts.reduce((acc, c) => acc + c, 0) / empCounts.length)
+        : 0;
+    const maxEmployees = empCounts.length > 0 ? Math.max(...empCounts) : 0;
+    const minEmployees = empCounts.length > 0 ? Math.min(...empCounts) : 0;
+
+    return {
+      totalPeriodsCount,
+      completedPeriodsCount,
+      completedPercent,
+      inProgressPeriodsCount,
+      inProgressSubtext,
+      avgEmployees,
+      maxEmployees,
+      minEmployees,
+      hasEmpData: empCounts.length > 0,
+    };
+  }, [filteredPeriods]);
+
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
       {/* 4 Summary Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: ยอดเงินเดือนรวมเดือนนี้ (Solid Blue Panel) */}
+        {/* Card 1: รอบเงินเดือนทั้งหมด (Solid Blue Panel) */}
         <div className="bg-blue-100/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/80 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-blue-700 dark:text-blue-300 font-semibold">ยอดเงินเดือนรวมเดือนนี้</span>
+              <span className="text-xs text-blue-700 dark:text-blue-300 font-semibold">รอบเงินเดือนทั้งหมด</span>
               <div className="text-2xl font-bold text-blue-950 dark:text-white tracking-tight">
-                {overview ? `฿${(overview.currentMonthTotal ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                {summaryStats.totalPeriodsCount} รอบ
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0 shadow-2xs">
-              <Wallet className="w-5 h-5" />
+              <Calendar className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/60 text-xs text-blue-700/80 dark:text-blue-300 font-medium">
-            <span>{overview?.currentMonthPeriod || '-'}</span>
+            <span>
+              {yearFilter === 'ALL'
+                ? 'รวมทุกปีในระบบ'
+                : `ประจำปี พ.ศ. ${Number(yearFilter) + 543}`}
+            </span>
           </div>
         </div>
 
-        {/* Card 2: พนักงานที่คำนวณแล้ว (Solid Emerald Panel) */}
+        {/* Card 2: ปิดรอบ / จ่ายสำเร็จแล้ว (Solid Emerald Panel) */}
         <div className="bg-emerald-100/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">พนักงานที่คำนวณแล้ว</span>
+              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">ปิดรอบ / จ่ายสำเร็จแล้ว</span>
               <div className="text-2xl font-bold text-emerald-950 dark:text-white tracking-tight">
-                {overview ? `${overview.calculatedEmployeesCount}/${overview.totalEmployeesCount}` : '-'}
+                {summaryStats.completedPeriodsCount} / {summaryStats.totalPeriodsCount} รอบ
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-center shrink-0 shadow-2xs">
-              <Users className="w-5 h-5" />
+              <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-700/80 dark:text-emerald-300">
             <span>ความคืบหน้า</span>
             <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
-              คิดเป็น {overview?.calculatedPercentage ?? 0}%
+              ครบถ้วน {summaryStats.completedPercent}%
             </span>
           </div>
         </div>
 
-        {/* Card 3: รอตรวจสอบ/อนุมัติ (Solid Amber Panel) */}
+        {/* Card 3: รอบที่กำลังดำเนินการ (Solid Amber Panel) */}
         <div className="bg-amber-100/60 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800/80 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">รอตรวจสอบ/อนุมัติ</span>
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">รอบที่กำลังดำเนินการ</span>
               <div className="text-2xl font-bold text-amber-950 dark:text-white tracking-tight">
-                {overview ? `${overview.pendingApprovalCount} คน` : '-'}
+                {summaryStats.inProgressPeriodsCount} รอบ
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center shrink-0 shadow-2xs">
@@ -192,46 +248,28 @@ export default function PayrollPeriodsTab({
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-700/80 dark:text-amber-300 font-medium">
-            <span>{overview?.pendingApprovalCount === 0 ? 'ดำเนินการครบถ้วนแล้ว' : 'ต้องดำเนินการก่อนปิดรอบ'}</span>
+            <span>{summaryStats.inProgressSubtext}</span>
           </div>
         </div>
 
-        {/* Card 4: กำหนดปิดรอบถัดไป (Solid Purple Panel) */}
+        {/* Card 4: จำนวนพนักงานในระบบเงินเดือน เฉลี่ยต่อรอบ (Solid Purple Panel) */}
         <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">กำหนดปิดรอบถัดไป</span>
+              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">พนักงานในระบบเงินเดือน</span>
               <div className="text-2xl font-bold text-purple-950 dark:text-white tracking-tight">
-                {overview?.nextClosingDate || '-'}
+                {summaryStats.hasEmpData ? `${summaryStats.avgEmployees} คน / รอบ` : '-'}
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
-              <Calendar className="w-5 h-5" />
+              <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs flex items-center justify-between gap-1.5">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-purple-700/80 dark:text-purple-300 font-medium whitespace-nowrap">สถานะ</span>
-              {(overview?.overdueOpenPeriodCount ?? 0) > 0 && (
-                <span className="px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-slate-800 text-rose-600 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-800 shadow-2xs whitespace-nowrap text-[11px]">
-                  ค้าง {overview!.overdueOpenPeriodCount} รอบ
-                </span>
-              )}
-            </div>
-            <span className={`font-bold whitespace-nowrap shrink-0 ${
-              overview?.remainingDays != null && overview.remainingDays < 0
-                ? 'text-rose-600 dark:text-rose-400'
-                : overview?.remainingDays === 0
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-purple-700 dark:text-purple-300'
-            }`}>
-              {overview?.remainingDays != null
-                ? overview.remainingDays < 0
-                  ? `เลยกำหนด ${Math.abs(overview.remainingDays)} วัน`
-                  : overview.remainingDays === 0
-                  ? 'ครบกำหนดวันนี้'
-                  : `เหลืออีก ${overview.remainingDays} วัน`
-                : '-'}
+          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs text-purple-700/80 dark:text-purple-300 font-medium">
+            <span>
+              {summaryStats.hasEmpData
+                ? `สูงสุด ${summaryStats.maxEmployees} คน · ต่ำสุด ${summaryStats.minEmployees} คน`
+                : 'ยังไม่มีข้อมูลพนักงาน'}
             </span>
           </div>
         </div>

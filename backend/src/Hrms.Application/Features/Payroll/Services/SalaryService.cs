@@ -691,6 +691,7 @@ public class SalaryService : ISalaryService
             .Where(s => employeeIds.Contains(s.EmployeeId))
             .AsNoTracking()
             .OrderByDescending(s => s.EffectiveFrom)
+            .ThenByDescending(s => s.Id)
             .ToListAsync(cancellationToken);
 
         // Load salary structures for Min/Max reference
@@ -708,30 +709,11 @@ public class SalaryService : ISalaryService
                 ?? empSalaries.LastOrDefault();
             // การปรับที่ตั้งล่วงหน้าไว้ (มีผลหลังวันนี้) — รายการล่าสุด
             var pendingSalary = empSalaries.FirstOrDefault(s => s.EffectiveFrom > todayTh && s != currentSalary);
+            // ถ้ามีมากกว่า 1 รายการ แปลว่าเคยมีการปรับฐานเงินเดือนแล้ว (เก็บปีและวันที่มีผลของครั้งล่าสุด)
+            var latestAdjustedRecord = empSalaries.Count > 1 ? empSalaries.FirstOrDefault() : null;
 
             // Find matching salary structure
-            SalaryStructure? matchingStructure = null;
-            if (activeAssignment != null)
-            {
-                var levelId = activeAssignment.EmployeeLevelId ?? activeAssignment.Position?.EmployeeLevelId;
-
-                if (activeAssignment.PositionId != 0 && levelId.HasValue)
-                {
-                    matchingStructure = structures.FirstOrDefault(s =>
-                        s.PositionId == activeAssignment.PositionId &&
-                        s.EmployeeLevelId == levelId.Value);
-                }
-
-                if (matchingStructure == null && activeAssignment.PositionId != 0)
-                {
-                    matchingStructure = structures.FirstOrDefault(s => s.PositionId == activeAssignment.PositionId);
-                }
-
-                if (matchingStructure == null && levelId.HasValue)
-                {
-                    matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == levelId.Value);
-                }
-            }
+            var matchingStructure = FindMatchingSalaryStructure(activeAssignment, structures);
 
             // ถ้ากำหนดฐานเงินเดือนปัจจุบันแล้ว แต่ต่ำกว่าโครงสร้างเงินเดือนขั้นต่ำของตำแหน่ง/ระดับ (เช่น เลื่อนตำแหน่ง/เปลี่ยนระดับงาน)
             // ให้ปรับฐานเงินเดือนปัจจุบันให้เท่ากับขั้นต่ำของโครงสร้างเงินเดือนโดยอัตโนมัติ
@@ -763,6 +745,8 @@ public class SalaryService : ISalaryService
                 CurrentEffectiveFrom = currentSalary?.EffectiveFrom,
                 PendingSalary = pendingSalary?.BaseSalary,
                 PendingEffectiveFrom = pendingSalary?.EffectiveFrom,
+                LastAdjustedYear = latestAdjustedRecord?.EffectiveFrom.Year,
+                LastAdjustedEffectiveFrom = latestAdjustedRecord?.EffectiveFrom,
                 SalaryStructureMin = matchingStructure?.MinSalary,
                 SalaryStructureMax = matchingStructure?.MaxSalary,
                 SalaryRecordCount = empSalaries.Count
@@ -848,35 +832,8 @@ public class SalaryService : ISalaryService
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            var levelId = activeAssignment.EmployeeLevelId ?? activeAssignment.Position?.EmployeeLevelId;
-            SalaryStructure? matchingStructure = null;
-            if (activeAssignment.PositionId != 0 && levelId.HasValue)
-            {
-                matchingStructure = structures.FirstOrDefault(s =>
-                    s.PositionId == activeAssignment.PositionId &&
-                    s.EmployeeLevelId == levelId.Value);
-            }
-            if (matchingStructure == null && activeAssignment.PositionId != 0)
-            {
-                matchingStructure = structures.FirstOrDefault(s => s.PositionId == activeAssignment.PositionId);
-            }
-            if (matchingStructure == null && levelId.HasValue)
-            {
-                matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == levelId.Value);
-            }
-
-            if (matchingStructure != null)
-            {
-                if (matchingStructure.MinSalary > 0 && request.BaseSalary < matchingStructure.MinSalary)
-                {
-                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่ต่ำกว่าเงินเดือนขั้นต่ำของตำแหน่ง/ระดับ (฿{matchingStructure.MinSalary:N0})");
-                }
-
-                if (matchingStructure.MaxSalary > 0 && request.BaseSalary > matchingStructure.MaxSalary)
-                {
-                    throw new BusinessRuleException($"เงินเดือนใหม่ (฿{request.BaseSalary:N0}) ต้องไม่สูงกว่าเงินเดือนสูงสุดของตำแหน่ง/ระดับ (฿{matchingStructure.MaxSalary:N0})");
-                }
-            }
+            var matchingStructure = FindMatchingSalaryStructure(activeAssignment, structures);
+            ValidateSalaryAgainstStructure(request.BaseSalary, matchingStructure, null);
         }
 
         // Get existing salaries
@@ -922,21 +879,178 @@ public class SalaryService : ISalaryService
             }
         }
 
+        return MapToEmployeeSalaryDto(newSalary, employee, activeAssignment, approverName);
+    }
+
+    public async Task<BulkAdjustEmployeeSalaryResultDto> BulkAdjustEmployeeSalaryAsync(BulkAdjustEmployeeSalaryRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.Items == null || request.Items.Count == 0)
+        {
+            throw new BusinessRuleException("กรุณาเลือกพนักงานที่ต้องการปรับฐานเงินเดือนอย่างน้อย 1 คน");
+        }
+
+        var duplicateIds = request.Items
+            .GroupBy(x => x.EmployeeId)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+        if (duplicateIds.Count > 0)
+        {
+            throw new BusinessRuleException("พบข้อมูลพนักงานซ้ำในรายการปรับฐานเงินเดือน");
+        }
+
+        var employeeIds = request.Items.Select(x => x.EmployeeId).ToList();
+
+        var employees = await _context.Employees
+            .Include(e => e.Assignments).ThenInclude(a => a.Department)
+            .Include(e => e.Assignments).ThenInclude(a => a.Position)
+            .Where(e => employeeIds.Contains(e.Id))
+            .ToListAsync(cancellationToken);
+
+        var empDict = employees.ToDictionary(e => e.Id);
+        var missingIds = employeeIds.Where(id => !empDict.ContainsKey(id)).ToList();
+        if (missingIds.Count > 0)
+        {
+            throw new NotFoundException("Employee", missingIds.First());
+        }
+
+        var structures = await _context.SalaryStructures
+            .Where(s => s.Status == "ACTIVE")
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var existingSalaries = await _context.EmployeeSalaries
+            .Where(s => employeeIds.Contains(s.EmployeeId))
+            .OrderByDescending(s => s.EffectiveFrom)
+            .ToListAsync(cancellationToken);
+
+        string? approverName = null;
+        if (request.ApprovedByEmployeeId.HasValue)
+        {
+            var approver = await _context.Employees.FindAsync(new object[] { request.ApprovedByEmployeeId.Value }, cancellationToken);
+            approverName = approver?.FullName;
+        }
+
+        var createdEntries = new List<(EmployeeSalary Entity, Employee Employee, EmployeeAssignment? Assignment)>();
+
+        foreach (var item in request.Items)
+        {
+            var employee = empDict[item.EmployeeId];
+            var empLabel = $"{employee.EmployeeCode} {employee.FullName}";
+
+            if (item.BaseSalary <= 0)
+            {
+                throw new BusinessRuleException($"จำนวนเงินเดือนของ {empLabel} ต้องมากกว่า 0 บาท");
+            }
+
+            var activeAssignment = employee.Assignments.FirstOrDefault(a => a.IsCurrent) ?? employee.Assignments.FirstOrDefault();
+            if (activeAssignment != null)
+            {
+                var matchingStructure = FindMatchingSalaryStructure(activeAssignment, structures);
+                ValidateSalaryAgainstStructure(item.BaseSalary, matchingStructure, empLabel);
+            }
+
+            var currentActive = existingSalaries
+                .Where(s => s.EmployeeId == item.EmployeeId && s.EffectiveTo == null)
+                .OrderByDescending(s => s.EffectiveFrom)
+                .FirstOrDefault();
+
+            if (currentActive != null)
+            {
+                if (request.EffectiveFrom <= currentActive.EffectiveFrom)
+                {
+                    throw new BusinessRuleException($"วันที่มีผลของ {empLabel} ({request.EffectiveFrom:yyyy-MM-dd}) ต้องมากกว่าวันที่มีผลของเงินเดือนปัจจุบัน ({currentActive.EffectiveFrom:yyyy-MM-dd})");
+                }
+
+                currentActive.EffectiveTo = request.EffectiveFrom.AddDays(-1);
+            }
+
+            var newSalary = new EmployeeSalary
+            {
+                EmployeeId = item.EmployeeId,
+                BaseSalary = item.BaseSalary,
+                EffectiveFrom = request.EffectiveFrom,
+                EffectiveTo = null,
+                Reason = request.Reason,
+                ApprovedByEmployeeId = request.ApprovedByEmployeeId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.EmployeeSalaries.Add(newSalary);
+            createdEntries.Add((newSalary, employee, activeAssignment));
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var results = createdEntries
+            .Select(x => MapToEmployeeSalaryDto(x.Entity, x.Employee, x.Assignment, approverName))
+            .ToList();
+
+        return new BulkAdjustEmployeeSalaryResultDto
+        {
+            AdjustedCount = results.Count,
+            Results = results
+        };
+    }
+
+    private static SalaryStructure? FindMatchingSalaryStructure(EmployeeAssignment? activeAssignment, List<SalaryStructure> structures)
+    {
+        if (activeAssignment == null) return null;
+
+        var levelId = activeAssignment.EmployeeLevelId ?? activeAssignment.Position?.EmployeeLevelId;
+        SalaryStructure? matchingStructure = null;
+
+        if (activeAssignment.PositionId != 0 && levelId.HasValue)
+        {
+            matchingStructure = structures.FirstOrDefault(s =>
+                s.PositionId == activeAssignment.PositionId &&
+                s.EmployeeLevelId == levelId.Value);
+        }
+        if (matchingStructure == null && activeAssignment.PositionId != 0)
+        {
+            matchingStructure = structures.FirstOrDefault(s => s.PositionId == activeAssignment.PositionId);
+        }
+        if (matchingStructure == null && levelId.HasValue)
+        {
+            matchingStructure = structures.FirstOrDefault(s => s.EmployeeLevelId == levelId.Value);
+        }
+
+        return matchingStructure;
+    }
+
+    private static void ValidateSalaryAgainstStructure(decimal baseSalary, SalaryStructure? matchingStructure, string? employeeLabel)
+    {
+        if (matchingStructure == null) return;
+        var prefix = string.IsNullOrWhiteSpace(employeeLabel) ? string.Empty : $"ของ {employeeLabel} ";
+
+        if (matchingStructure.MinSalary > 0 && baseSalary < matchingStructure.MinSalary)
+        {
+            throw new BusinessRuleException($"เงินเดือนใหม่{prefix}(฿{baseSalary:N0}) ต้องไม่ต่ำกว่าเงินเดือนขั้นต่ำของตำแหน่ง/ระดับ (฿{matchingStructure.MinSalary:N0})");
+        }
+
+        if (matchingStructure.MaxSalary > 0 && baseSalary > matchingStructure.MaxSalary)
+        {
+            throw new BusinessRuleException($"เงินเดือนใหม่{prefix}(฿{baseSalary:N0}) ต้องไม่สูงกว่าเงินเดือนสูงสุดของตำแหน่ง/ระดับ (฿{matchingStructure.MaxSalary:N0})");
+        }
+    }
+
+    private static EmployeeSalaryDto MapToEmployeeSalaryDto(EmployeeSalary entity, Employee employee, EmployeeAssignment? activeAssignment, string? approverName)
+    {
         return new EmployeeSalaryDto
         {
-            Id = newSalary.Id,
-            EmployeeId = employeeId,
+            Id = entity.Id,
+            EmployeeId = employee.Id,
             EmployeeCode = employee.EmployeeCode,
             EmployeeName = employee.FullName,
             DepartmentName = activeAssignment?.Department?.DepartmentName,
             PositionName = activeAssignment?.Position?.PositionName,
-            BaseSalary = newSalary.BaseSalary,
-            EffectiveFrom = newSalary.EffectiveFrom,
-            EffectiveTo = newSalary.EffectiveTo,
-            Reason = newSalary.Reason,
-            ApprovedByEmployeeId = newSalary.ApprovedByEmployeeId,
+            BaseSalary = entity.BaseSalary,
+            EffectiveFrom = entity.EffectiveFrom,
+            EffectiveTo = entity.EffectiveTo,
+            Reason = entity.Reason,
+            ApprovedByEmployeeId = entity.ApprovedByEmployeeId,
             ApprovedByName = approverName,
-            CreatedAt = newSalary.CreatedAt
+            CreatedAt = entity.CreatedAt
         };
     }
 

@@ -72,6 +72,7 @@ import {
   CreateSalaryStructurePayload,
   UpdateSalaryStructurePayload,
   AdjustEmployeeSalaryPayload,
+  BulkAdjustEmployeeSalaryPayload,
   PayrollOverview,
   PayrollItem,
   PayrollPeriod,
@@ -95,6 +96,7 @@ import { getAutoPullSource } from '@/components/payroll/autoPullItems';
 import { Button, ActiveStatus, RowActions, RowActionButton, TabBar, TableToolbar } from '@/components/ui';
 import { PARAM_TEMPLATES, parseFormulaParams, serializeFormulaParams } from '@/components/payroll/FormulaParamsEditor';
 import { AdjustSalaryModal } from '@/components/payroll/AdjustSalaryModal';
+import { BulkAdjustSalaryModal } from '@/components/payroll/BulkAdjustSalaryModal';
 import { SalaryHistoryModal } from '@/components/payroll/SalaryHistoryModal';
 import { PayrollDetailDrawer } from '@/components/payroll/PayrollDetailDrawer';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -492,6 +494,10 @@ export default function PayrollPage() {
   // Filters for Employee Salaries
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedDeptId, setSelectedDeptId] = useState<string>('');
+  const [salaryAdjustmentFilter, setSalaryAdjustmentFilter] = useState<
+    'ALL' | 'UNADJUSTED' | 'UNADJUSTED_THIS_YEAR' | 'ADJUSTED' | 'NO_SALARY'
+  >('ALL');
+  const [isBulkAdjustModalOpen, setIsBulkAdjustModalOpen] = useState<boolean>(false);
 
   // Tab 4: Payroll Processing (ประมวลเงินเดือน)
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
@@ -511,11 +517,49 @@ export default function PayrollPage() {
   }, [selectedPeriod?.year]);
 
   const lastAlignedPeriodRef = useRef<{ id: number; status: string } | null>(null);
+  const lastAlignedTourRoleRef = useRef<string | null>(null);
+  const tourRoleParam = searchParams?.get('tourRole');
 
   // Auto-align process subtab when period or its status changes to match the active workflow stage
   useEffect(() => {
+    const isNewTourRole = tourRoleParam && lastAlignedTourRoleRef.current !== tourRoleParam;
+    if (isNewTourRole) {
+      lastAlignedTourRoleRef.current = tourRoleParam;
+      if (tourRoleParam === 'HR' && (canAccessHrView || isAdmin)) {
+        setProcessSubTab('HR');
+        setViewMode('HR');
+        return;
+      }
+      if (tourRoleParam === 'FINANCE' && (canAccessFinanceView || isAdmin)) {
+        setProcessSubTab('FINANCE');
+        setViewMode('FINANCE');
+        return;
+      }
+      if (tourRoleParam === 'APPROVER' && (canAccessApproverView || isCEO || isAdmin)) {
+        setProcessSubTab('APPROVER');
+        setViewMode('ALL');
+        return;
+      }
+      if (tourRoleParam === 'BANK' && (canAccessBankView || isAdmin)) {
+        setProcessSubTab('BANK');
+        setViewMode('FINANCE');
+        return;
+      }
+    } else if (!tourRoleParam) {
+      lastAlignedTourRoleRef.current = null;
+    }
+
     if (!selectedPeriod) {
-      if (canAccessHrView || isAdmin) {
+      if (tourRoleParam === 'BANK' && (canAccessBankView || isAdmin)) {
+        setProcessSubTab('BANK');
+        setViewMode('FINANCE');
+      } else if (tourRoleParam === 'FINANCE' && (canAccessFinanceView || isAdmin)) {
+        setProcessSubTab('FINANCE');
+        setViewMode('FINANCE');
+      } else if (tourRoleParam === 'APPROVER' && (canAccessApproverView || isCEO || isAdmin)) {
+        setProcessSubTab('APPROVER');
+        setViewMode('ALL');
+      } else if (canAccessHrView || isAdmin) {
         setProcessSubTab('HR');
         setViewMode('HR');
       } else if (canAccessFinanceView) {
@@ -538,6 +582,27 @@ export default function PayrollPage() {
     }
 
     lastAlignedPeriodRef.current = { id: selectedPeriod.id, status: selectedPeriod.status };
+
+    if (tourRoleParam === 'HR' && (canAccessHrView || isAdmin)) {
+      setProcessSubTab('HR');
+      setViewMode('HR');
+      return;
+    }
+    if (tourRoleParam === 'FINANCE' && (canAccessFinanceView || isAdmin)) {
+      setProcessSubTab('FINANCE');
+      setViewMode('FINANCE');
+      return;
+    }
+    if (tourRoleParam === 'APPROVER' && (canAccessApproverView || isCEO || isAdmin)) {
+      setProcessSubTab('APPROVER');
+      setViewMode('ALL');
+      return;
+    }
+    if (tourRoleParam === 'BANK' && (canAccessBankView || isAdmin)) {
+      setProcessSubTab('BANK');
+      setViewMode('FINANCE');
+      return;
+    }
 
     const s = selectedPeriod.status;
     if (s === 'APPROVED' || s === 'PROCESSING' || s === 'PROCESSING_BANK' || s === 'PAID' || s === 'CLOSED') {
@@ -588,7 +653,7 @@ export default function PayrollPage() {
         setViewMode('ALL');
       }
     }
-  }, [selectedPeriod?.id, selectedPeriod?.status, canAccessFinanceView, canAccessApproverView, canAccessBankView, canAccessHrView, isCEO]);
+  }, [selectedPeriod?.id, selectedPeriod?.status, canAccessFinanceView, canAccessApproverView, canAccessBankView, canAccessHrView, isCEO, isAdmin, tourRoleParam]);
   const [payrolls, setPayrolls] = useState<PayrollRecord[]>([]);
   const [isPeriodLoading, setIsPeriodLoading] = useState(false);
   const [selectedPayrollRecord, setSelectedPayrollRecord] = useState<PayrollRecord | null>(null);
@@ -790,7 +855,28 @@ export default function PayrollPage() {
       setPeriods(periodsData || []);
       setBonusPeriods(bonusData || []);
 
-      if (periodsData && periodsData.length > 0) {
+      const isWizardTour =
+        typeof window !== 'undefined' &&
+        new URLSearchParams(window.location.search).get('tour') === 'payroll-cycle-hr-2';
+
+      if (isWizardTour && (canAccessHrView || isAdmin)) {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1;
+        const existingMonths = new Set(
+          (periodsData || []).filter((p) => p.year === currentYear).map((p) => p.month)
+        );
+        const uncreatedMonth = !existingMonths.has(currentMonth)
+          ? currentMonth
+          : Array.from({ length: 12 }, (_, i) => i + 1).find((m) => !existingMonths.has(m)) ?? currentMonth;
+        setSelectedYearFilter(currentYear);
+        setSelectedProcessMonth(uncreatedMonth);
+        setSelectedPeriod(null);
+        setPayrolls([]);
+        setTransferList(null);
+        setBankSummary(null);
+        setTaxSsoSummary(null);
+      } else if (periodsData && periodsData.length > 0) {
         const today = new Date();
         const openPeriods = periodsData.filter((p) => p.status !== 'CLOSED');
         const targetPeriod =
@@ -1577,6 +1663,16 @@ export default function PayrollPage() {
   const handleSaveAdjustSalary = async (employeeId: number, payload: AdjustEmployeeSalaryPayload) => {
     await salaryService.adjustEmployeeSalary(employeeId, payload);
     showToast('บันทึกปรับฐานเงินเดือนพนักงานสำเร็จ');
+    const updatedEmps = await salaryService.getEmployeesOverview(
+      searchQuery,
+      selectedDeptId ? parseInt(selectedDeptId) : undefined
+    );
+    setEmployees(updatedEmps);
+  };
+
+  const handleSaveBulkAdjustSalary = async (payload: BulkAdjustEmployeeSalaryPayload) => {
+    const res = await salaryService.bulkAdjustEmployeeSalary(payload);
+    showToast(`บันทึกปรับฐานเงินเดือนพนักงาน ${res.adjustedCount} คนสำเร็จ`);
     const updatedEmps = await salaryService.getEmployeesOverview(
       searchQuery,
       selectedDeptId ? parseInt(selectedDeptId) : undefined
@@ -2488,116 +2584,247 @@ export default function PayrollPage() {
 
           {/* Sub-view 2: ข้อมูลเงินเดือนพนักงาน */}
           {structureSubTab === 'employees' && (() => {
-            const totalEmployeeCount = employees.length;
+            const currentRealYear = new Date().getFullYear();
+            const currentThaiYear = currentRealYear + 543;
+
+            const getLatestAdjustedYear = (emp: EmployeeSalaryOverview): number | null => {
+              if ((emp.salaryRecordCount ?? 0) <= 1) return null;
+              if (emp.lastAdjustedYear != null) return emp.lastAdjustedYear;
+              const dateStr = emp.pendingEffectiveFrom || emp.currentEffectiveFrom;
+              if (!dateStr) return null;
+              const parsed = Number(dateStr.slice(0, 4));
+              return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+            };
+
+            const filteredSalaryEmployees = employees.filter((emp) => {
+              const hasSalary = (emp.currentSalary || 0) > 0;
+              const isAdjusted = (emp.salaryRecordCount ?? 0) > 1;
+              const latestAdjYear = getLatestAdjustedYear(emp);
+
+              switch (salaryAdjustmentFilter) {
+                case 'UNADJUSTED':
+                  return hasSalary && !isAdjusted;
+                case 'UNADJUSTED_THIS_YEAR':
+                  return hasSalary && (!isAdjusted || latestAdjYear !== currentRealYear);
+                case 'ADJUSTED':
+                  return isAdjusted;
+                case 'NO_SALARY':
+                  return !hasSalary;
+                default:
+                  return true;
+              }
+            });
+
+            const totalEmployeeCount = filteredSalaryEmployees.length;
             const totalEmployeePages = Math.max(1, Math.ceil(totalEmployeeCount / employeeSalaryPageSize));
             const safeEmployeePage = Math.min(Math.max(1, employeeSalaryPage), totalEmployeePages);
             const startEmployeeIdx = (safeEmployeePage - 1) * employeeSalaryPageSize;
-            const paginatedEmployees = employees.slice(startEmployeeIdx, startEmployeeIdx + employeeSalaryPageSize);
+            const paginatedEmployees = filteredSalaryEmployees.slice(startEmployeeIdx, startEmployeeIdx + employeeSalaryPageSize);
 
             return (
               <div className="space-y-4">
                 {/* Filter Toolbar */}
                 <TableToolbar
                   searchValue={searchQuery}
-                  onSearchChange={setSearchQuery}
+                  onSearchChange={(val) => {
+                    setSearchQuery(val);
+                    setEmployeeSalaryPage(1);
+                  }}
                   searchPlaceholder="ค้นหารหัส หรือชื่อพนักงาน..."
                   filters={
-                    <div className="w-full sm:w-48">
-                      <CustomSelect
-                        value={selectedDeptId}
-                        onChange={(val) => setSelectedDeptId(String(val))}
-                        placeholder="ทุกแผนก"
-                        className="w-full"
-                        options={[
-                          { value: '', label: 'ทุกแผนก' },
-                          ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
-                        ]}
-                      />
+                    <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                      <div className="w-full sm:w-48">
+                        <CustomSelect
+                          value={selectedDeptId}
+                          onChange={(val) => {
+                            setSelectedDeptId(String(val));
+                            setEmployeeSalaryPage(1);
+                          }}
+                          placeholder="ทุกแผนก"
+                          className="w-full"
+                          options={[
+                            { value: '', label: 'ทุกแผนก' },
+                            ...departments.map((d) => ({ value: String(d.id), label: d.departmentName })),
+                          ]}
+                        />
+                      </div>
+                      <div className="w-full sm:w-60">
+                        <CustomSelect
+                          value={salaryAdjustmentFilter}
+                          onChange={(val) => {
+                            setSalaryAdjustmentFilter(
+                              String(val) as 'ALL' | 'UNADJUSTED' | 'UNADJUSTED_THIS_YEAR' | 'ADJUSTED' | 'NO_SALARY'
+                            );
+                            setEmployeeSalaryPage(1);
+                          }}
+                          placeholder="ทุกสถานะการปรับเงินเดือน"
+                          className="w-full"
+                          options={[
+                            { value: 'ALL', label: 'ทุกสถานะการปรับเงินเดือน' },
+                            { value: 'UNADJUSTED', label: 'ยังไม่ถูกปรับฐานเงินเดือน' },
+                            {
+                              value: 'UNADJUSTED_THIS_YEAR',
+                              label: `ยังไม่ได้ปรับในปี ${currentThaiYear}`,
+                            },
+                            { value: 'ADJUSTED', label: 'ปรับฐานเงินเดือนแล้ว' },
+                            { value: 'NO_SALARY', label: 'ยังไม่ระบุฐานเงินเดือน' },
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  }
+                  actions={
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                        {filteredSalaryEmployees.length} คน
+                      </span>
+                      {canAdjustSalary && (
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          icon={<Users className="w-3.5 h-3.5" />}
+                          onClick={() => setIsBulkAdjustModalOpen(true)}
+                        >
+                          ปรับฐานเงินเดือนหลายคน
+                        </Button>
+                      )}
                     </div>
                   }
                 />
 
                 {/* Table */}
                 <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                  <table className="table-standard text-xs w-full min-w-[880px] text-left border-collapse whitespace-nowrap">
+                  <table className="table-standard text-xs w-full min-w-[980px] text-left border-collapse whitespace-nowrap">
                     <thead>
-                      <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
+                      <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-300 whitespace-nowrap">
                         <th className="py-3.5 px-4">รหัส / ชื่อพนักงาน</th>
-                        <th className="py-3.5 px-4">แผนก / ตำแหน่ง</th>
+                        <th className="py-3.5 px-4">แผนก</th>
                         <th className="py-3.5 px-4">ระดับพนักงาน</th>
                         <th className="py-3.5 px-4">กรอบเงินเดือนอ้างอิง</th>
                         <th className="py-3.5 px-4 text-right">ฐานเงินเดือนปัจจุบัน</th>
+                        <th className="py-3.5 px-4">สถานะการปรับเงินเดือน</th>
                         <th className="py-3.5 px-4 text-center">จัดการ</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                      {paginatedEmployees.map((emp) => {
-                        const hasSalary = (emp.currentSalary || 0) > 0;
-                        return (
-                          <tr key={emp.employeeId} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="py-3.5 px-4">
-                              <div className="font-semibold text-slate-900 dark:text-slate-100">{emp.employeeName}</div>
-                              <div className="text-xs text-slate-400 font-mono mt-0.5">{emp.employeeCode}</div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <div className="text-slate-800 dark:text-slate-200 text-xs font-medium">
-                                {emp.departmentName || 'ไม่ระบุแผนก'}
-                              </div>
-                              <div className="text-xs text-slate-400 mt-0.5">
-                                {emp.positionName || 'ไม่ระบุตำแหน่ง'}
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              {emp.levelName ? (
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300">
-                                  {emp.levelName}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400">-</span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4">
-                              {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
-                                <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg whitespace-nowrap font-mono">
-                                  ฿{emp.salaryStructureMin.toLocaleString()} – ฿{emp.salaryStructureMax.toLocaleString()}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-slate-400 dark:text-slate-400">-</span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 text-right">
-                              {hasSalary ? (
-                                <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs">
-                                  ฿{emp.currentSalary?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full font-medium">
-                                  ยังไม่ระบุ
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 text-center">
-                              <div className="inline-flex items-center gap-2">
-                                {canAdjustSalary && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleOpenAdjustSalary(emp)}
-                                  >
-                                    {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
-                                  </Button>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700 text-sm">
+                      {paginatedEmployees.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="py-12 text-center text-xs text-slate-400 dark:text-slate-500"
+                          >
+                            ไม่พบข้อมูลพนักงานตามตัวกรองที่เลือก
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedEmployees.map((emp) => {
+                          const hasSalary = (emp.currentSalary || 0) > 0;
+                          const isAdjusted = (emp.salaryRecordCount ?? 0) > 1;
+                          const latestAdjYear = getLatestAdjustedYear(emp);
+                          const latestAdjThaiYear = latestAdjYear ? latestAdjYear + 543 : null;
+
+                          return (
+                            <tr
+                              key={emp.employeeId}
+                              className="hover:bg-slate-50/60 dark:hover:bg-slate-700/30 transition-colors"
+                            >
+                              <td className="py-3.5 px-4">
+                                <div className="font-semibold text-slate-900 dark:text-slate-100">{emp.employeeName}</div>
+                                <div className="text-xs text-slate-400 font-mono mt-0.5">{emp.employeeCode}</div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <div className="text-slate-800 dark:text-slate-200 text-xs font-medium">
+                                  {emp.departmentName || 'ไม่ระบุแผนก'}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {emp.levelName ? (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300">
+                                    {emp.levelName}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-400">-</span>
                                 )}
-                                <button
-                                  onClick={() => handleOpenSalaryHistory(emp)}
-                                  title="ดูประวัติการปรับเงินเดือน"
-                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  <History className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {emp.salaryStructureMin != null && emp.salaryStructureMax != null ? (
+                                  <span className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg whitespace-nowrap font-mono">
+                                    ฿{emp.salaryStructureMin.toLocaleString()} – ฿{emp.salaryStructureMax.toLocaleString()}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-slate-400 dark:text-slate-400">-</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                {hasSalary ? (
+                                  <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs">
+                                    ฿{emp.currentSalary?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 px-2.5 py-1 rounded-full font-medium">
+                                    ยังไม่ระบุ
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                {!hasSalary ? (
+                                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                    ยังไม่ระบุฐานเงินเดือน
+                                  </span>
+                                ) : isAdjusted ? (
+                                  <div className="space-y-1">
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                      {latestAdjThaiYear
+                                        ? `ปรับแล้วในปี ${latestAdjThaiYear}`
+                                        : 'ปรับฐานเงินเดือนแล้ว'}
+                                    </span>
+                                    {emp.pendingSalary != null && emp.pendingEffectiveFrom ? (
+                                      <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                                        มีผลล่วงหน้า ฿{emp.pendingSalary.toLocaleString()} ({formatThaiDate(emp.pendingEffectiveFrom)})
+                                      </div>
+                                    ) : emp.currentEffectiveFrom ? (
+                                      <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                                        มีผลตั้งแต่ {formatThaiDate(emp.currentEffectiveFrom)}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                                      ยังไม่ถูกปรับฐานเงินเดือน
+                                    </span>
+                                    {emp.currentEffectiveFrom && (
+                                      <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                                        ฐานเริ่มต้น {formatThaiDate(emp.currentEffectiveFrom)}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="inline-flex items-center gap-2">
+                                  {canAdjustSalary && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleOpenAdjustSalary(emp)}
+                                    >
+                                      {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
+                                    </Button>
+                                  )}
+                                  <button
+                                    onClick={() => handleOpenSalaryHistory(emp)}
+                                    title="ดูประวัติการปรับเงินเดือน"
+                                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <History className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -3754,83 +3981,89 @@ export default function PayrollPage() {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 {/* Left: Period Selector & Status Badge */}
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
-                      <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div
+                    id="tour-payroll-period-selector"
+                    data-tour="tour-payroll-period-selector"
+                    className="flex flex-wrap items-center gap-2.5"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
+                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
+                        รอบเงินเดือน:
+                      </span>
                     </div>
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap">
-                      รอบเงินเดือน:
-                    </span>
-                  </div>
 
-                  {/* 1. ตัวเลือกรอบเดือน (แสดงครบทั้ง 12 เดือน) */}
-                  <div className="relative inline-block">
-                    <CustomSelect
-                      value={
-                        selectedProcessMonth != null
-                          ? `UNCREATED_${selectedProcessMonth}`
-                          : selectedPeriod && selectedPeriod.year === activeYear
-                          ? selectedPeriod.id
-                          : (periodsInSelectedYear[0]?.id || '')
-                      }
-                      onChange={(e) => {
-                        const val = String(e?.target?.value ?? e ?? '');
-                        if (val.startsWith('UNCREATED_')) {
-                          const monthNum = parseInt(val.replace('UNCREATED_', ''), 10);
-                          setSelectedProcessMonth(monthNum);
-                          setSelectedPeriod(null);
-                          setPayrolls([]);
-                        } else if (val) {
-                          setSelectedProcessMonth(null);
-                          handlePeriodChange(Number(val));
+                    {/* 1. ตัวเลือกรอบเดือน (แสดงครบทั้ง 12 เดือน) */}
+                    <div className="relative inline-block">
+                      <CustomSelect
+                        value={
+                          selectedProcessMonth != null
+                            ? `UNCREATED_${selectedProcessMonth}`
+                            : selectedPeriod && selectedPeriod.year === activeYear
+                            ? selectedPeriod.id
+                            : (periodsInSelectedYear[0]?.id || '')
                         }
-                      }}
-                      numbered={false}
-                      size="sm"
-                      className="min-w-[150px] sm:min-w-[180px]"
-                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                      title="เลือกรอบเดือน"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const m = i + 1;
-                        const p = periodsInSelectedYear.find((x) => x.month === m);
-                        if (p) {
-                          const statusHint =
-                            p.status === 'CLOSED' ? 'ปิดรอบแล้ว' : p.status === 'PAID' ? 'จ่ายแล้ว' : undefined;
+                        onChange={(e) => {
+                          const val = String(e?.target?.value ?? e ?? '');
+                          if (val.startsWith('UNCREATED_')) {
+                            const monthNum = parseInt(val.replace('UNCREATED_', ''), 10);
+                            setSelectedProcessMonth(monthNum);
+                            setSelectedPeriod(null);
+                            setPayrolls([]);
+                          } else if (val) {
+                            setSelectedProcessMonth(null);
+                            handlePeriodChange(Number(val));
+                          }
+                        }}
+                        numbered={false}
+                        size="sm"
+                        className="min-w-[150px] sm:min-w-[180px]"
+                        buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
+                        title="เลือกรอบเดือน"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const m = i + 1;
+                          const p = periodsInSelectedYear.find((x) => x.month === m);
+                          if (p) {
+                            const statusHint =
+                              p.status === 'CLOSED' ? 'ปิดรอบแล้ว' : p.status === 'PAID' ? 'จ่ายแล้ว' : undefined;
+                            return (
+                              <option
+                                key={p.id}
+                                value={p.id}
+                                data-hint={statusHint}
+                                className="text-slate-900 dark:text-slate-100 dark:bg-slate-800"
+                              >
+                                {THAI_MONTH_NAMES[i]}
+                              </option>
+                            );
+                          }
                           return (
                             <option
-                              key={p.id}
-                              value={p.id}
-                              data-hint={statusHint}
-                              className="text-slate-900 dark:text-slate-100 dark:bg-slate-800"
+                              key={`UNCREATED_${m}`}
+                              value={`UNCREATED_${m}`}
+                              data-hint="ยังไม่มีรอบ"
+                              className="text-slate-400 dark:text-slate-500 italic dark:bg-slate-800"
                             >
                               {THAI_MONTH_NAMES[i]}
                             </option>
                           );
-                        }
-                        return (
-                          <option
-                            key={`UNCREATED_${m}`}
-                            value={`UNCREATED_${m}`}
-                            data-hint="ยังไม่มีรอบ"
-                            className="text-slate-400 dark:text-slate-500 italic dark:bg-slate-800"
-                          >
-                            {THAI_MONTH_NAMES[i]}
-                          </option>
-                        );
-                      })}
-                    </CustomSelect>
-                  </div>
+                        })}
+                      </CustomSelect>
+                    </div>
 
-                  {/* 2. ตัวเลือกปี พ.ศ. (เลือกปีตามหลัง) */}
-                  <div className="relative inline-block">
-                    <YearPicker
-                      value={activeYear}
-                      onChange={(y) => handleYearFilterChange(y)}
-                      className="w-28 sm:w-32"
-                      buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
-                      title="เลือกปีรอบเงินเดือน"
-                    />
+                    {/* 2. ตัวเลือกปี พ.ศ. (เลือกปีตามหลัง) */}
+                    <div className="relative inline-block">
+                      <YearPicker
+                        value={activeYear}
+                        onChange={(y) => handleYearFilterChange(y)}
+                        className="w-28 sm:w-32"
+                        buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
+                        title="เลือกปีรอบเงินเดือน"
+                      />
+                    </div>
                   </div>
 
                   {/* สถานะรอบ */}
@@ -3892,10 +4125,16 @@ export default function PayrollPage() {
                 </div>
 
                 {/* Right: Primary Role Workflow Actions */}
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <div
+                  id="tour-payroll-workflow-actions"
+                  data-tour="tour-payroll-workflow-actions"
+                  className="flex flex-wrap items-center gap-2 shrink-0"
+                >
                   {(!selectedPeriod || selectedProcessMonth != null) ? (
                     (canAccessHrView || isAdmin) ? (
                       <Button
+                        id="tour-payroll-create-btn"
+                        data-tour="tour-payroll-create-btn"
                         type="button"
                         variant="primary"
                         size="sm"
@@ -4299,6 +4538,8 @@ export default function PayrollPage() {
                       return (
                         <React.Fragment key={st.subTab}>
                           <button
+                            id={`tour-payroll-step-${st.subTab}`}
+                            data-tour={`tour-payroll-step-${st.subTab}`}
                             type="button"
                             disabled={!st.canAccess}
                             onClick={() => {
@@ -4518,18 +4759,22 @@ export default function PayrollPage() {
                   </div>
 
                   <div className="p-4">
-                    <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                      <table className="table-standard text-xs w-full min-w-[700px] text-left border-collapse whitespace-nowrap">
+                    <div
+                      id="tour-payroll-table-wrap"
+                      data-tour="tour-payroll-table-wrap"
+                      className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto"
+                    >
+                      <table className="table-standard text-xs w-full min-w-[680px] text-left border-collapse whitespace-nowrap">
                       <thead>
                         <tr className="bg-slate-50/80 border-b border-slate-100 text-xs font-semibold text-slate-500 whitespace-nowrap">
-                          <th className="py-3.5 px-5">พนักงาน</th>
-                          <th className="py-3.5 px-5">แผนก</th>
-                          <th className="py-3.5 px-5">วันลา</th>
-                          <th className="py-3.5 px-5 text-right">รายได้รวม</th>
-                          <th className="py-3.5 px-5 text-right">รายการหัก</th>
-                          <th className="py-3.5 px-5 text-right">เงินเดือนสุทธิ</th>
-                          <th className="py-3.5 px-5">สถานะข้อมูล</th>
-                          <th className="py-3.5 px-5 text-center">ดูรายละเอียด</th>
+                          <th className="py-3.5 px-3.5">พนักงาน</th>
+                          <th className="py-3.5 px-3.5">แผนก</th>
+                          <th className="py-3.5 px-3.5">วันลา</th>
+                          <th className="py-3.5 px-3.5 text-right">รายได้รวม</th>
+                          <th className="py-3.5 px-3.5 text-right">รายการหัก</th>
+                          <th className="py-3.5 px-3.5 text-right">เงินเดือนสุทธิ</th>
+                          <th className="py-3.5 px-3.5">สถานะข้อมูล</th>
+                          <th className="py-3.5 px-3.5 text-center">ดูรายละเอียด</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-xs">
@@ -4543,12 +4788,12 @@ export default function PayrollPage() {
                             const hasGross = pr.totalGrossIncome != null && pr.totalGrossIncome > 0;
                             return (
                               <tr key={pr.id} className="hover:bg-slate-50/60 transition-colors">
-                                <td className="py-4 px-5">
+                                <td className="py-4 px-3.5">
                                   <div className="font-semibold text-slate-900 dark:text-slate-100">{pr.employeeName}</div>
                                   <div className="font-mono text-slate-400 text-[11px]">{pr.employeeCode}</div>
                                 </td>
-                                <td className="py-4 px-5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
-                                <td className="py-4 px-5">
+                                <td className="py-4 px-3.5 text-slate-600 dark:text-slate-400">{pr.departmentName}</td>
+                                <td className="py-4 px-3.5">
                                   {pr.leaveDays && pr.leaveDays > 0 ? (
                                     <div>
                                       <span className="font-semibold text-slate-900 dark:text-slate-100">{pr.leaveDays} วัน</span>
@@ -4560,20 +4805,20 @@ export default function PayrollPage() {
                                     <span className="text-slate-400">-</span>
                                   )}
                                 </td>
-                                <td className="py-4 px-5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
+                                <td className="py-4 px-3.5 text-right font-mono text-slate-700 dark:text-slate-300 font-medium">
                                   {hasGross ? `฿${pr.totalGrossIncome!.toLocaleString(undefined, { minimumFractionDigits: 0 })}` : '-'}
                                 </td>
-                                <td className="py-4 px-5 text-right font-mono text-rose-600 font-medium">
+                                <td className="py-4 px-3.5 text-right font-mono text-rose-600 font-medium">
                                   {hasGross && pr.totalDeductionAmount != null
                                     ? `-฿${pr.totalDeductionAmount.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
                                     : '-'}
                                 </td>
-                                <td className="py-4 px-5 text-right font-mono font-bold text-emerald-600 text-sm">
+                                <td className="py-4 px-3.5 text-right font-mono font-bold text-emerald-600 text-sm">
                                   {hasGross && pr.netPayableSalary != null
                                     ? `฿${pr.netPayableSalary.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                     : '-'}
                                 </td>
-                                <td className="py-4 px-5">
+                                <td className="py-4 px-3.5">
                                   {pr.inputStatus === 'COMPLETE' ? (
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -4591,7 +4836,7 @@ export default function PayrollPage() {
                                     </span>
                                   )}
                                 </td>
-                                <td className="py-4 px-5 text-center">
+                                <td className="py-4 px-3.5 text-center">
                                   <button
                                     onClick={() => handleOpenDetailDrawer(pr)}
                                     title="ดูรายละเอียดการคำนวณ"
@@ -5042,7 +5287,11 @@ export default function PayrollPage() {
                 )}
 
                 {/* ── Header ── */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5">
+                <div
+                  id="tour-payroll-bank-summary"
+                  data-tour="tour-payroll-bank-summary"
+                  className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-xs p-5"
+                >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 mb-1">
@@ -5130,7 +5379,11 @@ export default function PayrollPage() {
 
                 {/* ── PHASE 2a: BANK_BATCH SLIP & RECEIPT (Option 1: Compact Clean Bar) ── */}
                 {selectedPeriod?.paymentMethod === 'BANK_BATCH' && selectedPeriod?.status !== 'CLOSED' && (
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-4">
+                  <div
+                    id="tour-payroll-bank-receipt"
+                    data-tour="tour-payroll-bank-receipt"
+                    className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-4"
+                  >
                     {/* กรณีมีสลิปแล้ว (ทั้ง PAID และยังไม่ PAID) */}
                     {selectedPeriod?.hasBankReceipt && (
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
@@ -5900,6 +6153,13 @@ export default function PayrollPage() {
         onClose={() => setIsAdjustModalOpen(false)}
         employee={selectedEmployeeForAdjust}
         onSubmit={handleSaveAdjustSalary}
+      />
+
+      <BulkAdjustSalaryModal
+        isOpen={isBulkAdjustModalOpen}
+        onClose={() => setIsBulkAdjustModalOpen(false)}
+        allEmployees={employees}
+        onSubmit={handleSaveBulkAdjustSalary}
       />
 
       <SalaryHistoryModal

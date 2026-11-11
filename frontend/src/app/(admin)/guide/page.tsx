@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useAuth } from '@/context/AuthContext';
+import { isPathAccessible, getPayrollViewAccess } from '@/lib/routePermissions';
 import { Inbox } from 'lucide-react';
 import { Button, TableToolbar } from '@/components/ui';
 import { WIZARD_FLOWS } from '@/config/wizardTours';
@@ -15,17 +17,10 @@ interface GuideItem {
   route: string;
 }
 
-const GUIDE_ITEMS: GuideItem[] = WIZARD_FLOWS.map((flow) => ({
-  id: flow.id,
-  title: flow.title,
-  stepCount: flow.pages.length,
-  icon: flow.icon,
-  route: flow.pages[0].route,
-}));
-
 function GuidePageContent() {
   const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
@@ -33,14 +28,42 @@ function GuidePageContent() {
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
+  // กรองเฉพาะคู่มือและหน้าที่ผู้ใช้งานปัจจุบันมีสิทธิ์เข้าถึงได้จริง (รวมถึงการแยกบทบาท HR / ฝ่ายการเงิน / CEO)
+  const roleAccessibleItems = useMemo<GuideItem[]>(() => {
+    const payrollAccess = getPayrollViewAccess(user);
+
+    return WIZARD_FLOWS.map((flow) => {
+      if (user && flow.requiredPayrollView) {
+        if (flow.requiredPayrollView === 'HR' && !payrollAccess.canAccessHrView) return null;
+        if (flow.requiredPayrollView === 'FINANCE' && !payrollAccess.canAccessFinanceView) return null;
+        if (flow.requiredPayrollView === 'APPROVER' && !payrollAccess.canAccessApproverView) return null;
+        if (flow.requiredPayrollView === 'BANK' && !payrollAccess.canAccessBankView) return null;
+      }
+
+      const accessiblePages = flow.pages.filter((page) => {
+        if (!user) return true;
+        const cleanPath = page.route.split('?')[0];
+        return isPathAccessible(cleanPath, user).allowed;
+      });
+      if (accessiblePages.length === 0) return null;
+      return {
+        id: flow.id,
+        title: flow.title,
+        stepCount: accessiblePages.length,
+        icon: flow.icon,
+        route: accessiblePages[0].route,
+      };
+    }).filter((item): item is GuideItem => item !== null);
+  }, [user]);
+
   // กรองคู่มือตามคำค้นหา
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return GUIDE_ITEMS;
-    return GUIDE_ITEMS.filter((item) =>
+    if (!q) return roleAccessibleItems;
+    return roleAccessibleItems.filter((item) =>
       item.title.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, roleAccessibleItems]);
 
   return (
     <div className="space-y-6 font-sans pb-12">

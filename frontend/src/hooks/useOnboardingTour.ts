@@ -176,6 +176,8 @@ export function useOnboardingTour(
         // ควบคุมปุ่ม Previous / ย้อนกลับ
         if (popover.previousButton) {
           if (showPrevBtn || Boolean(currentOpts.onPrev)) {
+            popover.previousButton.disabled = false;
+            popover.previousButton.removeAttribute('disabled');
             popover.previousButton.classList.remove('driver-popover-btn-disabled');
             popover.previousButton.classList.add('hrms-btn-enabled');
             popover.previousButton.style.display = 'inline-flex';

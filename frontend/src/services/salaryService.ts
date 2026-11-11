@@ -11,6 +11,8 @@ import {
   EmployeeSalaryOverview,
   EmployeeSalary,
   AdjustEmployeeSalaryPayload,
+  BulkAdjustEmployeeSalaryPayload,
+  BulkAdjustEmployeeSalaryResult,
   PayrollOverview,
   PayrollItem,
   PayrollPeriod,
@@ -117,6 +119,11 @@ export const salaryService = {
 
   async adjustEmployeeSalary(employeeId: number, payload: AdjustEmployeeSalaryPayload): Promise<EmployeeSalary> {
     const res = await apiClient.post<ApiResponse<EmployeeSalary>>(`/salary/employees/${employeeId}/adjust`, payload);
+    return res.data.data;
+  },
+
+  async bulkAdjustEmployeeSalary(payload: BulkAdjustEmployeeSalaryPayload): Promise<BulkAdjustEmployeeSalaryResult> {
+    const res = await apiClient.post<ApiResponse<BulkAdjustEmployeeSalaryResult>>('/salary/employees/bulk-adjust', payload);
     return res.data.data;
   },
 

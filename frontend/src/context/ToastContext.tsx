@@ -147,7 +147,7 @@ function ToastContainer({
     <div
       aria-live="polite"
       aria-atomic="true"
-      className="fixed top-5 right-5 z-[99999] flex flex-col gap-3 max-w-md w-full pointer-events-none px-4 sm:px-0"
+      className="fixed top-5 right-5 z-[100050] flex flex-col gap-3 max-w-md w-full pointer-events-none px-4 sm:px-0"
     >
       {toasts.map((toast) => (
         <ToastCard key={toast.id} toast={toast} onDismiss={() => onDismiss(toast.id)} />

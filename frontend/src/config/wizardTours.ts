@@ -3,6 +3,8 @@ import {
   Users,
   UserX,
   Wallet,
+  Banknote,
+  ShieldCheck,
   Clock,
   ArrowRightLeft,
   CalendarDays,
@@ -17,6 +19,13 @@ export interface WizardSubStep {
   selectors: string[];
   side?: 'top' | 'right' | 'bottom' | 'left';
   align?: 'start' | 'center' | 'end';
+  skipIfMissing?: string;
+  autoAdvanceWhenAppears?: string;
+  fallbackWhenMissing?: {
+    primarySelector: string;
+    title: string;
+    description: string;
+  };
 }
 
 export interface WizardPageStep {
@@ -31,6 +40,7 @@ export interface WizardFlowDef {
   id: string;
   title: string;
   icon: ElementType;
+  requiredPayrollView?: 'HR' | 'FINANCE' | 'APPROVER' | 'BANK';
   pages: WizardPageStep[];
 }
 
@@ -125,17 +135,18 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
     ],
   },
 
-  // ─── 2. การประมวลผลรอบเงินเดือนประจำเดือน (ละเอียดเจาะลึก) ────
+  // ─── 2. การประมวลผลรอบเงินเดือนประจำเดือน (แยกตามบทบาท HR / การเงิน / ผู้บริหาร) ────
   {
-    id: 'payroll-cycle',
-    title: 'การประมวลผลรอบเงินเดือนประจำเดือน',
+    id: 'payroll-cycle-hr',
+    title: 'การประมวลผลรอบเงินเดือนประจำเดือน (ฝ่ายบุคคล / HR)',
     icon: Wallet,
+    requiredPayrollView: 'HR',
     pages: [
       {
-        pageTourKey: 'payroll-cycle-1',
+        pageTourKey: 'payroll-cycle-hr-1',
         stepNumber: 1,
-        totalSteps: 4,
-        route: '/attendance/daily?tab=daily&tour=payroll-cycle-1',
+        totalSteps: 2,
+        route: '/attendance/daily?tab=daily&tour=payroll-cycle-hr-1',
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ตรวจบันทึกเวลาประจำวัน',
@@ -154,54 +165,10 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
         ],
       },
       {
-        pageTourKey: 'payroll-cycle-2',
+        pageTourKey: 'payroll-cycle-hr-2',
         stepNumber: 2,
-        totalSteps: 4,
-        route: '/benefits/balances?tour=payroll-cycle-2',
-        subSteps: [
-          {
-            title: 'ตำแหน่งเมนู: สวัสดิการ',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การจัดการบุคคล" ➔ "สวัสดิการ"',
-            selectors: ['a[data-sidebar-path="/benefits/balances"]', '[data-sidebar-path="/benefits/balances"]'],
-            side: 'right',
-            align: 'center',
-          },
-          {
-            title: 'ขั้นตอนที่ 2: ตรวจสอบยอดเบิกจ่ายสวัสดิการพนักงาน',
-            description: 'ตรวจสอบรายการเบิกค่ารักษาพยาบาลและสวัสดิการพนักงานที่ได้รับการอนุมัติในรอบเดือน เพื่อนำไปจ่ายสมทบพร้อมเงินเดือน',
-            selectors: ['main table', 'main .bg-white', 'main'],
-            side: 'bottom',
-            align: 'start',
-          },
-        ],
-      },
-      {
-        pageTourKey: 'payroll-cycle-3',
-        stepNumber: 3,
-        totalSteps: 4,
-        route: '/payroll?tab=periods&tour=payroll-cycle-3',
-        subSteps: [
-          {
-            title: 'ตำแหน่งเมนู: รอบเงินเดือน',
-            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "รอบเงินเดือน"',
-            selectors: ['a[data-sidebar-path="/payroll?tab=periods"]', '[data-sidebar-path="/payroll?tab=periods"]'],
-            side: 'right',
-            align: 'center',
-          },
-          {
-            title: 'ขั้นตอนที่ 3: ตรวจสอบและสร้างรอบเงินเดือนใหม่',
-            description: 'ตรวจสอบรอบการจ่ายเงินเดือน (Payroll Period) เช่น งวดสิ้นเดือน กำหนดวันที่ตัดรอบเวลาทำงาน และวันที่จ่ายเงินเดือนจริง',
-            selectors: ['main button.bg-primary', 'main button', 'main table', 'main .bg-white', 'main'],
-            side: 'bottom',
-            align: 'start',
-          },
-        ],
-      },
-      {
-        pageTourKey: 'payroll-cycle-4',
-        stepNumber: 4,
-        totalSteps: 4,
-        route: '/payroll?tab=process&tour=payroll-cycle-4',
+        totalSteps: 2,
+        route: '/payroll?tab=process&tour=payroll-cycle-hr-2&tourRole=HR',
         subSteps: [
           {
             title: 'ตำแหน่งเมนู: ประมวลเงินเดือน',
@@ -211,14 +178,40 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
             align: 'center',
           },
           {
+            title: 'ขั้นตอนที่ 2: เลือกเดือนและปีของรอบเงินเดือน',
+            description: 'เลือกเดือน (ที่มีข้อความ "ยังไม่มีรอบ") และปี พ.ศ. ที่ต้องการเปิดรอบเงินเดือนใหม่จากช่อง "รอบเงินเดือน" ด้านบนซ้าย',
+            selectors: [
+              '#tour-payroll-period-selector',
+              '[data-tour="tour-payroll-period-selector"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'start',
+          },
+          {
+            title: 'ขั้นตอนที่ 3: สร้างรอบเงินเดือนประจำงวด',
+            description: 'คลิกปุ่ม "+ สร้างรอบเงินเดือน" ด้านขวาบนเพื่อสร้างงวดเงินเดือนใหม่ เมื่อสร้างรอบสำเร็จระบบจะพาไปขั้นตอนกดคำนวณเงินเดือนทันที',
+            selectors: [
+              '#tour-payroll-create-btn',
+              '[data-tour="tour-payroll-create-btn"]',
+              '#tour-payroll-workflow-actions',
+              '[data-tour="tour-payroll-workflow-actions"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'end',
+            autoAdvanceWhenAppears: '#tour-payroll-calc-btn',
+          },
+          {
             title: 'ขั้นตอนที่ 4: สั่งคำนวณเงินเดือนสุทธิ',
-            description: 'คลิกปุ่ม "คำนวณเงินเดือน" (ปุ่มสีเขียวด้านบนขวา) เพื่อให้ระบบดึงเวลาทำงาน โอที สวัสดิการ ภาษี และประกันสังคมมาคำนวณยอดสุทธิ (หากรอบเงินเดือนถูกปิดรอบแล้ว ปุ่มนี้จะถูกปิดใช้งานอัตโนมัติ) หรือกด "ถัดไป" เพื่อตรวจสลิป',
+            description: 'หลังจากสร้างรอบเงินเดือนแล้ว ปุ่มสีเขียว "คำนวณเงินเดือน" จะแสดงขึ้นมา ให้คลิกเพื่อให้ระบบดึงเวลาทำงาน โอที สวัสดิการ ภาษี และประกันสังคมมาคำนวณยอดสุทธิ',
             selectors: [
               '#tour-payroll-calc-btn',
               '[data-tour="tour-payroll-calc-btn"]',
-              'main button:has(svg.lucide-scale)',
-              'main button.bg-emerald-600',
-              'main table',
+              '#tour-payroll-workflow-actions',
+              '[data-tour="tour-payroll-workflow-actions"]',
               'main .bg-white',
               'main',
             ],
@@ -226,11 +219,194 @@ export const WIZARD_FLOWS: WizardFlowDef[] = [
             align: 'end',
           },
           {
-            title: 'ขั้นตอนที่ 5: ตรวจสลิปเงินเดือนและยืนยันปิดงวด',
-            description: 'คลิกตรวจดูตัวอย่างสลิปเงินเดือนของพนักงานแต่ละคน และกดยืนยันปิดงวดเพื่อส่งสลิปเงินเดือนให้พนักงานดูผ่านระบบ ESS',
+            title: 'ขั้นตอนที่ 5: ตรวจสลิปและส่งให้ฝ่ายการเงินตรวจสอบ',
+            description: 'คลิกไอคอนรูปตา (ดูรายละเอียด) เพื่อตรวจดูตัวอย่างสลิปเงินเดือนของพนักงานแต่ละคน จากนั้นกดปุ่ม "ส่งให้ฝ่ายการเงินตรวจสอบ" ด้านบนเพื่อส่งต่อให้ฝ่ายการเงินดำเนินการต่อ',
             selectors: ['main table', 'main .bg-white', 'main'],
-            side: 'top',
+            side: 'bottom',
+            align: 'center',
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'payroll-cycle-finance',
+    title: 'การตรวจสอบและจ่ายเงินเดือนประจำเดือน (ฝ่ายการเงิน)',
+    icon: Banknote,
+    requiredPayrollView: 'FINANCE',
+    pages: [
+      {
+        pageTourKey: 'payroll-cycle-finance-1',
+        stepNumber: 1,
+        totalSteps: 1,
+        route: '/payroll?tab=process&tour=payroll-cycle-finance-1&tourRole=FINANCE',
+        subSteps: [
+          {
+            title: 'ตำแหน่งเมนู: ประมวลเงินเดือน',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
+            selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
+            side: 'right',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 1: เลือกเดือนและปีของรอบเงินเดือน',
+            description: 'เลือกเดือนและปี พ.ศ. ของรอบเงินเดือนที่ฝ่ายบุคคล (HR) คำนวณและส่งมาให้ตรวจสอบจากช่อง "รอบเงินเดือน" ด้านบนซ้าย',
+            selectors: [
+              '#tour-payroll-period-selector',
+              '[data-tour="tour-payroll-period-selector"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
             align: 'start',
+          },
+          {
+            title: 'ขั้นตอนที่ 2: ตรวจสอบรายการเงินเดือนและสลิปพนักงาน',
+            description: 'ตรวจสอบยอดรายได้รวม รายการหัก เงินเดือนสุทธิ ภาษี/ประกันสังคม และคลิกไอคอนรูปตา (ดูรายละเอียด) เพื่อตรวจทานสลิปของพนักงานแต่ละคน',
+            selectors: ['main table', 'main .bg-white', 'main'],
+            side: 'bottom',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 3: ยืนยันความถูกต้อง / โอนเงินและปิดรอบ',
+            description: 'เมื่อ HR ส่งเรื่องมาแล้ว ปุ่มมุมขวาบนจะเปิดให้กด "การเงินยืนยันความถูกต้อง" (ส่งขออนุมัติจาก CEO) และเมื่อ CEO อนุมัติแล้ว ให้กดดาวน์โหลดไฟล์โอนเงินธนาคาร บันทึกว่าจ่ายแล้ว และปิดรอบเงินเดือน (หากขึ้น "รอ HR ส่งเรื่องให้การเงิน" แสดงว่า HR กำลังตรวจสอบและยังไม่ส่งต่อ)',
+            selectors: [
+              '#tour-payroll-workflow-actions',
+              '[data-tour="tour-payroll-workflow-actions"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'end',
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'payroll-cycle-ceo',
+    title: 'การอนุมัติรอบเงินเดือนประจำเดือน (ผู้บริหาร / CEO)',
+    icon: ShieldCheck,
+    requiredPayrollView: 'APPROVER',
+    pages: [
+      {
+        pageTourKey: 'payroll-cycle-ceo-1',
+        stepNumber: 1,
+        totalSteps: 1,
+        route: '/payroll?tab=process&tour=payroll-cycle-ceo-1&tourRole=APPROVER',
+        subSteps: [
+          {
+            title: 'ตำแหน่งเมนู: ประมวลเงินเดือน',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน"',
+            selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
+            side: 'right',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 1: เลือกเดือนและปีของรอบเงินเดือน',
+            description: 'เลือกเดือนและปี พ.ศ. ของรอบเงินเดือนที่ฝ่ายการเงินตรวจสอบและส่งขออนุมัติมาจากช่อง "รอบเงินเดือน" ด้านบนซ้าย',
+            selectors: [
+              '#tour-payroll-period-selector',
+              '[data-tour="tour-payroll-period-selector"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'start',
+          },
+          {
+            title: 'ขั้นตอนที่ 2: ตรวจสอบยอดรวมและรายการเงินเดือน',
+            description: 'ตรวจสอบสรุปยอดจ่ายรวม ภาษี และเงินเดือนสุทธิของพนักงานแต่ละคน หากต้องการดูรายละเอียดสามารถคลิกไอคอนรูปตาด้านขวาได้',
+            selectors: ['main table', 'main .bg-white', 'main'],
+            side: 'bottom',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 3: อนุมัติรอบเงินเดือน (หรือส่งคืน HR แก้ไข)',
+            description: 'เมื่อฝ่ายการเงินยืนยันความถูกต้องแล้ว ปุ่มมุมขวาบนจะเปิดให้กด "อนุมัติรอบเงินเดือน" เพื่อให้ฝ่ายการเงินนำไปจ่ายเงินและปิดรอบ หรือกด "ไม่อนุมัติ (ส่งคืน HR)" หากพบข้อผิดพลาด',
+            selectors: [
+              '#tour-payroll-workflow-actions',
+              '[data-tour="tour-payroll-workflow-actions"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'end',
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    id: 'payroll-cycle-bank',
+    title: 'การชำระเงิน โอนเงินธนาคาร และปิดรอบเงินเดือน (ขั้นตอนที่ 4)',
+    icon: Banknote,
+    requiredPayrollView: 'BANK',
+    pages: [
+      {
+        pageTourKey: 'payroll-cycle-bank-1',
+        stepNumber: 1,
+        totalSteps: 1,
+        route: '/payroll?tab=process&tour=payroll-cycle-bank-1&tourRole=BANK',
+        subSteps: [
+          {
+            title: 'ตำแหน่งเมนู: ประมวลเงินเดือน (ขั้นที่ 4: ชำระเงิน)',
+            description: 'เมนูนี้อยู่ที่แถบเมนูด้านซ้าย: หมวด "การเงินและค่าตอบแทน" ➔ "เงินเดือน" ➔ "ประมวลเงินเดือน" แล้วเลือกขั้นตอนหมายเลข 4 (ชำระเงิน โอนเงินธนาคาร)',
+            selectors: ['a[data-sidebar-path="/payroll?tab=process"]', '[data-sidebar-path="/payroll?tab=process"]'],
+            side: 'right',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 1: เลือกเดือน/ปี และขั้นตอน "4. ชำระเงิน"',
+            description: 'เลือกรอบเดือนที่ CEO อนุมัติแล้วจากช่อง "รอบเงินเดือน" ด้านบนซ้าย และดูภาพรวมยอดโอน/จำนวนพนักงานที่มีบัญชีรับเงินในแท็บขั้นตอนที่ 4',
+            selectors: [
+              '#tour-payroll-step-BANK',
+              '#tour-payroll-period-selector',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 2: ดาวน์โหลดไฟล์โอนเงินธนาคาร',
+            description: 'เมื่อ CEO อนุมัติรอบแล้ว ปุ่ม "↓ ไฟล์โอนเงินธนาคาร" มุมขวาบนจะเปิดให้กดดาวน์โหลดไฟล์สำหรับส่งเข้าธนาคาร (หากยังไม่สามารถกดได้ แสดงว่ารอบยังไม่ผ่านการอนุมัติจาก CEO)',
+            selectors: [
+              '#tour-payroll-workflow-actions',
+              '[data-tour="tour-payroll-workflow-actions"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'end',
+          },
+          {
+            title: 'ขั้นตอนที่ 3: อัปโหลดสลิปการโอนเงิน / บันทึกโอนรายบุคคล',
+            description: 'หลังธนาคารโอนเงินเสร็จ ให้แนบไฟล์สลิป/ใบเสร็จการโอนเงินรวมของธนาคาร หรือตรวจดูรายการโอนเงินรายบุคคลและบันทึกสลิปในตารางด้านล่าง',
+            selectors: [
+              '#tour-payroll-bank-receipt',
+              'main table',
+              '#tour-payroll-bank-summary',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'center',
+          },
+          {
+            title: 'ขั้นตอนที่ 4: บันทึกว่าจ่ายแล้วและปิดรอบเงินเดือน',
+            description: 'เมื่อโอนเงินสำเร็จครบถ้วน ให้คลิกปุ่ม "บันทึกว่าจ่ายแล้ว" จากนั้นกด "ปิดรอบเงินเดือน" ที่มุมขวาบน เพื่อสิ้นสุดงวดและส่งสลิปเงินเดือนให้พนักงานดูในระบบ ESS',
+            selectors: [
+              '#tour-payroll-workflow-actions',
+              '[data-tour="tour-payroll-workflow-actions"]',
+              'main .bg-white',
+              'main',
+            ],
+            side: 'bottom',
+            align: 'end',
           },
         ],
       },

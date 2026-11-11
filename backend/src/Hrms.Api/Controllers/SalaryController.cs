@@ -280,6 +280,21 @@ public class SalaryController : ControllerBase
         return Ok(ApiResponse<EmployeeSalaryDto>.Ok(result, "ปรับฐานเงินเดือนพนักงานสำเร็จ"));
     }
 
+    /// <summary>
+    /// บันทึกปรับฐานเงินเดือนพนักงานแบบหลายรายการพร้อมกัน
+    /// </summary>
+    [HttpPost("employees/bulk-adjust")]
+    [ProducesResponseType(typeof(ApiResponse<BulkAdjustEmployeeSalaryResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<BulkAdjustEmployeeSalaryResultDto>>> BulkAdjustEmployeeSalary(
+        [FromBody] BulkAdjustEmployeeSalaryRequest request,
+        CancellationToken cancellationToken)
+    {
+        PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        var result = await _salaryService.BulkAdjustEmployeeSalaryAsync(request, cancellationToken);
+        return Ok(ApiResponse<BulkAdjustEmployeeSalaryResultDto>.Ok(result, $"ปรับฐานเงินเดือนพนักงาน {result.AdjustedCount} คนสำเร็จ"));
+    }
+
     #endregion
 
     #region Overview & Payroll Items

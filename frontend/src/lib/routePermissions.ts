@@ -240,3 +240,94 @@ export function isPathAccessible(pathname: string, user: UserProfile | null): { 
 
   return { allowed: true, rule: bestMatch };
 }
+
+export interface PayrollViewAccess {
+  isAdmin: boolean;
+  isHR: boolean;
+  isFinance: boolean;
+  isCEO: boolean;
+  canAccessHrView: boolean;
+  canAccessFinanceView: boolean;
+  canAccessApproverView: boolean;
+  canAccessBankView: boolean;
+}
+
+/**
+ * ตรวจสอบสิทธิ์มุมมองการทำงานฝั่งเงินเดือน (HR / ฝ่ายการเงิน / ผู้บริหาร / ธนาคาร) จากบทบาทและสิทธิ์ของผู้ใช้
+ */
+export function getPayrollViewAccess(user: UserProfile | null): PayrollViewAccess {
+  if (!user) {
+    return {
+      isAdmin: false,
+      isHR: false,
+      isFinance: false,
+      isCEO: false,
+      canAccessHrView: false,
+      canAccessFinanceView: false,
+      canAccessApproverView: false,
+      canAccessBankView: false,
+    };
+  }
+
+  const hasRole = (role: string) =>
+    Boolean(user.roles?.some((r) => r.toUpperCase() === role.toUpperCase()));
+  const hasPermission = (perm: string) =>
+    Boolean(user.permissions?.includes(perm));
+
+  const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+
+  const PAYROLL_HR_PERMS = ['PAYROLL_CALC_CREATE', 'PAYROLL_CALC_EDIT', 'PAYROLL_HR_CREATE', 'PAYROLL_HR_EDIT'];
+  const PAYROLL_FINANCE_PERMS = [
+    'PAYROLL_FINANCE_CREATE',
+    'PAYROLL_FINANCE_EDIT',
+    'PAYROLL_FINANCE_APPROVE',
+    'PAYROLL_BANK_CREATE',
+    'PAYROLL_BANK_EDIT',
+    'PAYROLL_TAX_EDIT',
+    'PAYROLL_TAX_MANAGE',
+  ];
+  const PAYROLL_APPROVER_PERMS = ['APPROVAL_PAYROLL_APPROVE', 'PAYROLL_ADMIN_APPROVE', 'PAYROLL_APPROVE'];
+
+  const hasHrPayrollPerm = PAYROLL_HR_PERMS.some(hasPermission);
+  const hasFinancePayrollPerm = PAYROLL_FINANCE_PERMS.some(hasPermission);
+  const hasApproverPayrollPerm = PAYROLL_APPROVER_PERMS.some(hasPermission);
+
+  const isCEO = isAdmin || hasRole('CEO') || hasRole('EXECUTIVE') || hasApproverPayrollPerm;
+  const isFinance = isAdmin || hasRole('PAYROLL_ADMIN') || hasFinancePayrollPerm;
+  const isHR = isAdmin || hasRole('HR_MGR') || hasHrPayrollPerm;
+
+  const hasConfiguredExplicitViews =
+    hasPermission('PAYROLL_HR_VIEW') ||
+    hasPermission('PAYROLL_FINANCE_VIEW') ||
+    hasPermission('PAYROLL_ADMIN_VIEW');
+
+  const canAccessHrView =
+    isAdmin || hasPermission('PAYROLL_HR_VIEW') || (!hasConfiguredExplicitViews && hasHrPayrollPerm);
+
+  const canAccessFinanceView =
+    isAdmin || hasPermission('PAYROLL_FINANCE_VIEW') || (!hasConfiguredExplicitViews && hasFinancePayrollPerm);
+
+  const canAccessApproverView =
+    isAdmin ||
+    hasPermission('PAYROLL_ADMIN_VIEW') ||
+    (!hasConfiguredExplicitViews && (hasApproverPayrollPerm || hasPermission('APPROVAL_PAYROLL_VIEW')));
+
+  const canAccessBankView =
+    isAdmin ||
+    isCEO ||
+    canAccessApproverView ||
+    hasPermission('PAYROLL_BANK_VIEW') ||
+    canAccessFinanceView ||
+    isFinance;
+
+  return {
+    isAdmin,
+    isHR,
+    isFinance,
+    isCEO,
+    canAccessHrView,
+    canAccessFinanceView,
+    canAccessApproverView,
+    canAccessBankView,
+  };
+}

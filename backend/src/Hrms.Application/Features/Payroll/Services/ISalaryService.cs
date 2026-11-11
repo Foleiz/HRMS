@@ -27,6 +27,7 @@ public interface ISalaryService
     Task<List<EmployeeSalaryOverviewDto>> GetEmployeeSalariesOverviewAsync(string? search, long? departmentId, CancellationToken cancellationToken = default);
     Task<List<EmployeeSalaryDto>> GetEmployeeSalaryHistoryAsync(long employeeId, CancellationToken cancellationToken = default);
     Task<EmployeeSalaryDto> AdjustEmployeeSalaryAsync(long employeeId, AdjustEmployeeSalaryRequest request, CancellationToken cancellationToken = default);
+    Task<BulkAdjustEmployeeSalaryResultDto> BulkAdjustEmployeeSalaryAsync(BulkAdjustEmployeeSalaryRequest request, CancellationToken cancellationToken = default);
 
     // Overview & Items (Dashboard and Earnings/Deductions)
     Task<PayrollOverviewDto> GetPayrollOverviewAsync(CancellationToken cancellationToken = default);
