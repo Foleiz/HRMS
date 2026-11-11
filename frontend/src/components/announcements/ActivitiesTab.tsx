@@ -153,7 +153,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'UPCOMING' | 'ONGOING' | 'COMPLETED' | 'DRAFT'>('ALL');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -876,20 +876,8 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
           }
           actions={
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {/* View Switcher: List vs Calendar */}
+              {/* View Switcher: Calendar vs List */}
               <div className="flex items-center bg-slate-100 dark:bg-slate-700/60 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('list')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    viewMode === 'list'
-                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
-                  }`}
-                >
-                  <List className="w-3.5 h-3.5" />
-                  <span>รายการ</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => setViewMode('calendar')}
@@ -901,6 +889,18 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                 >
                   <Calendar className="w-3.5 h-3.5" />
                   <span>ปฏิทิน</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    viewMode === 'list'
+                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>รายการ</span>
                 </button>
               </div>
 

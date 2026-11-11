@@ -270,7 +270,7 @@ function WorkCalendarPageContent() {
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('ALL');
-  const [holidayView, setHolidayView] = useState<'list' | 'calendar'>('list');
+  const [holidayView, setHolidayView] = useState<'list' | 'calendar'>('calendar');
 
   // Data states
   const [workWeek, setWorkWeek] = useState<WorkWeekDay[]>([]);
@@ -592,11 +592,11 @@ function WorkCalendarPageContent() {
               }
               actions={
                 <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-                  {/* สลับมุมมอง รายการ / ปฏิทิน */}
+                  {/* สลับมุมมอง ปฏิทิน / รายการ */}
                   <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg dark:bg-slate-800">
                     {([
-                      { key: 'list', label: 'รายการ', icon: List },
                       { key: 'calendar', label: 'ปฏิทิน', icon: Calendar },
+                      { key: 'list', label: 'รายการ', icon: List },
                     ] as const).map(({ key, label, icon: Icon }) => (
                       <button
                         key={key}
