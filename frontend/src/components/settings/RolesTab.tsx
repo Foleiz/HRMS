@@ -586,7 +586,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   /* ── Normalize legacy data ── */
   const normalizeModules = (mods: ModulePermissionScope[]): ModulePermissionScope[] => {
-    const normalized = mods.map((m) => {
+    let normalized = mods.map((m) => {
       const def = () => ({ view: false, create: false, edit: false, approve: false });
       const self = m.self ? { ...m.self } : def();
       const team = m.team ? { ...m.team } : def();
@@ -685,6 +685,57 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         });
       }
     });
+
+    // ตรวจสอบโมดูลหมวด ANNOUNCEMENTS: หากมีโมดูลเก่า ANNOUNCEMENTS หรือยังไม่มี ANNOUNCEMENTS_GENERAL / ANNOUNCEMENTS_ACTIVITY ให้แปลง/เพิ่มเข้ามา
+    const legacyAnnounce = normalized.find((m) => m.moduleCode === 'ANNOUNCEMENTS');
+    const hasGeneral = normalized.some((m) => m.moduleCode === 'ANNOUNCEMENTS_GENERAL');
+    const hasActivity = normalized.some((m) => m.moduleCode === 'ANNOUNCEMENTS_ACTIVITY');
+
+    if (!hasGeneral) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'ANNOUNCEMENTS_GENERAL',
+        moduleName: 'ประกาศข่าวสารทั่วไป',
+        groupName: 'ANNOUNCEMENTS',
+        categoryCode: 'ANNOUNCEMENTS',
+        categoryName: 'จัดการประกาศ',
+        dataScope: legacyAnnounce?.dataScope || 'ORGANIZATION',
+        canView: legacyAnnounce?.canView || false,
+        canCreate: legacyAnnounce?.canCreate || false,
+        canEdit: legacyAnnounce?.canEdit || false,
+        canApprove: legacyAnnounce?.canApprove || false,
+        self: legacyAnnounce?.self ? { ...legacyAnnounce.self } : def(),
+        team: legacyAnnounce?.team ? { ...legacyAnnounce.team } : def(),
+        department: legacyAnnounce?.department ? { ...legacyAnnounce.department } : def(),
+        division: legacyAnnounce?.division ? { ...legacyAnnounce.division } : def(),
+        organization: legacyAnnounce?.organization ? { ...legacyAnnounce.organization } : def(),
+      });
+    }
+
+    if (!hasActivity) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'ANNOUNCEMENTS_ACTIVITY',
+        moduleName: 'ประกาศกิจกรรม',
+        groupName: 'ANNOUNCEMENTS',
+        categoryCode: 'ANNOUNCEMENTS',
+        categoryName: 'จัดการประกาศ',
+        dataScope: legacyAnnounce?.dataScope || 'ORGANIZATION',
+        canView: legacyAnnounce?.canView || false,
+        canCreate: legacyAnnounce?.canCreate || false,
+        canEdit: legacyAnnounce?.canEdit || false,
+        canApprove: legacyAnnounce?.canApprove || false,
+        self: legacyAnnounce?.self ? { ...legacyAnnounce.self } : def(),
+        team: legacyAnnounce?.team ? { ...legacyAnnounce.team } : def(),
+        department: legacyAnnounce?.department ? { ...legacyAnnounce.department } : def(),
+        division: legacyAnnounce?.division ? { ...legacyAnnounce.division } : def(),
+        organization: legacyAnnounce?.organization ? { ...legacyAnnounce.organization } : def(),
+      });
+    }
+
+    if (legacyAnnounce) {
+      normalized = normalized.filter((m) => m.moduleCode !== 'ANNOUNCEMENTS');
+    }
 
     return normalized;
   };
