@@ -36,6 +36,12 @@ import {
   Database,
   Gift,
   Network,
+  Calculator,
+  UserX,
+  ArrowRightLeft,
+  ClipboardCheck,
+  FileSpreadsheet,
+  Shield,
 } from 'lucide-react';
 import {
   RoleSummary,
@@ -158,34 +164,324 @@ const CATEGORY_NAMES: Record<string, string> = {
   GUIDE: 'วิธีการใช้งาน',
 };
 
-/** รายการเมนูย่อยของ Flow เพิ่มพนักงานใหม่ (Two-way Sync กับโมดูลหลัก) */
-const ONBOARDING_FLOW_ITEMS = [
+/** โครงสร้างเมนูย่อยของแต่ละ Flow ในวิธีการใช้งาน (Two-way Sync กับโมดูลหลัก) */
+interface GuideStepConfig {
+  step: number;
+  targetModuleCode: string;
+  label: string;
+  route: string;
+  badge: string;
+  desc?: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface GuideFlowConfig {
+  id: string;
+  moduleCode: string;
+  title: string;
+  subtitle: string;
+  icon: React.ComponentType<{ className?: string }>;
+  steps: GuideStepConfig[];
+}
+
+/** รายการไกด์วิธีการใช้งานทั้ง 9 Flows ในระบบ พร้อมผูกเมนูย่อยและ Target Module Code */
+const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
   {
-    step: 1,
-    targetModuleCode: 'EMP_PROFILE',
-    label: '1. เมนูพนักงาน',
-    route: '/employees',
-    badge: 'ทะเบียนประวัติพนักงาน',
-    desc: 'สำหรับบันทึกและจัดการประวัติพนักงานใหม่เข้าสู่ระบบ',
+    id: 'hr-onboarding',
+    moduleCode: 'GUIDE_ONBOARDING',
+    title: 'ไกด์: เพิ่มพนักงานใหม่',
+    subtitle: 'บันทึกประวัติพนักงาน สัญญาจ้าง และสร้างบัญชีผู้ใช้งานระบบ',
     icon: Users,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'EMP_PROFILE',
+        label: '1. จัดการพนักงาน',
+        route: '/employees',
+        badge: 'ทะเบียนประวัติพนักงาน',
+        icon: Users,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'EMP_CONTRACT',
+        label: '2. สัญญาจ้าง',
+        route: '/employees/contracts',
+        badge: 'สัญญาจ้างงาน',
+        icon: FileText,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'SETTINGS_USERS',
+        label: '3. ผู้ใช้งาน',
+        route: '/settings?tab=users',
+        badge: 'บัญชีผู้ใช้งานระบบ',
+        icon: User,
+      },
+    ],
   },
   {
-    step: 2,
-    targetModuleCode: 'EMP_CONTRACT',
-    label: '2. เมนูสัญญาจ้าง',
-    route: '/employees/contracts',
-    badge: 'สัญญาจ้างงาน',
-    desc: 'สำหรับบันทึกรายละเอียดสัญญาจ้างและเงินเดือนเริ่มต้น',
-    icon: FileText,
+    id: 'payroll-cycle',
+    moduleCode: 'GUIDE_PAYROLL',
+    title: 'ไกด์: การประมวลผลรอบเงินเดือนประจำเดือน',
+    subtitle: 'ตรวจสอบเวลาทำงาน สวัสดิการ รอบเงินเดือน และประมวลเงินเดือนสุทธิ',
+    icon: Wallet,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'TIME_DAILY',
+        label: '1. ตรวจบันทึกเวลาประจำวัน',
+        route: '/attendance/daily?tab=daily',
+        badge: 'เวลาทำงาน & โอที',
+        icon: Clock,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'BENEFIT_BALANCE',
+        label: '2. สวัสดิการ',
+        route: '/benefits/balances',
+        badge: 'ยอดสวัสดิการพนักงาน',
+        icon: Gift,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'PAYROLL_PERIOD',
+        label: '3. รอบเงินเดือน',
+        route: '/payroll?tab=periods',
+        badge: 'รอบเงินเดือน (Payroll Periods)',
+        icon: CreditCard,
+      },
+      {
+        step: 4,
+        targetModuleCode: 'PAYROLL_CALC',
+        label: '4. ประมวลเงินเดือน',
+        route: '/payroll?tab=process',
+        badge: 'คำนวณเงินเดือนสุทธิ / ปิดงวด',
+        icon: Calculator,
+      },
+    ],
   },
   {
-    step: 3,
-    targetModuleCode: 'SETTINGS_USERS',
-    label: '3. เมนูผู้ใช้งาน',
-    route: '/settings?tab=users',
-    badge: 'บัญชีผู้ใช้งานระบบ',
-    desc: 'สำหรับผูกบัญชีพนักงานกับ Username & Password เพื่อเข้าใช้งานระบบ',
-    icon: User,
+    id: 'offboarding',
+    moduleCode: 'GUIDE_OFFBOARDING',
+    title: 'ไกด์: การพ้นสภาพพนักงาน (ลาออก)',
+    subtitle: 'อนุมัติใบลาออก สิ้นสุดสัญญาจ้าง และระงับสิทธิ์เข้าใช้งานระบบ',
+    icon: UserX,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'ESS_DOCS',
+        label: '1. ประวัติเอกสาร (คำขอลาออก)',
+        route: '/documents/history',
+        badge: 'ยื่นคำร้องและเอกสาร',
+        icon: FileText,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'EMP_CONTRACT',
+        label: '2. สัญญาจ้าง',
+        route: '/employees/contracts',
+        badge: 'สิ้นสุดสัญญาจ้างงาน',
+        icon: FileSpreadsheet,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'SETTINGS_USERS',
+        label: '3. ผู้ใช้งานและสิทธิ์',
+        route: '/settings?tab=users',
+        badge: 'ระงับบัญชีผู้ใช้งาน',
+        icon: User,
+      },
+    ],
+  },
+  {
+    id: 'shift-schedule',
+    moduleCode: 'GUIDE_SHIFT_SCHEDULE',
+    title: 'ไกด์: การจัดตารางกะงานพนักงาน',
+    subtitle: 'กำหนดรอบเวลาและรูปแบบกะ จัดตารางกะรายแผนก และตรวจเทียบเวลาจริง',
+    icon: CalendarRange,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'TIME_SCHEDULE',
+        label: '1. กะการทำงาน',
+        route: '/attendance/schedules?tab=shifts',
+        badge: 'รอบเวลาและรูปแบบกะ',
+        icon: Clock,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'TIME_SCHEDULE',
+        label: '2. มอบหมายกะให้พนักงาน',
+        route: '/attendance/schedules?tab=roster',
+        badge: 'จัดตารางกะงาน',
+        icon: CalendarDays,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'TIME_DAILY',
+        label: '3. ตรวจบันทึกเวลาประจำวัน',
+        route: '/attendance/daily?tab=daily',
+        badge: 'ตรวจการลงเวลาจริง',
+        icon: ClipboardCheck,
+      },
+    ],
+  },
+  {
+    id: 'attendance-import',
+    moduleCode: 'GUIDE_ATTENDANCE_IMPORT',
+    title: 'ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน',
+    subtitle: 'อัปโหลดไฟล์เวลาสแกนนิ้วเข้าสู่ระบบและตรวจสอบผลการบันทึกเวลาประจำวัน',
+    icon: Clock,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'TIME_IMPORT',
+        label: '1. นำเข้าไฟล์บันทึกเวลา',
+        route: '/attendance/daily?tab=import',
+        badge: 'อัปโหลดไฟล์เวลาสแกนนิ้ว',
+        icon: FileSpreadsheet,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'TIME_DAILY',
+        label: '2. ตรวจบันทึกเวลาประจำวัน',
+        route: '/attendance/daily?tab=daily',
+        badge: 'ตรวจผลการบันทึกเวลา',
+        icon: Clock,
+      },
+    ],
+  },
+  {
+    id: 'transfer-flow',
+    moduleCode: 'GUIDE_TRANSFER',
+    title: 'ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง',
+    subtitle: 'บันทึกคำสั่งโอนย้าย ปรับปรุงสัญญาจ้างฐานเงินเดือน และตรวจสอบผังองค์กร',
+    icon: ArrowRightLeft,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'EMP_TRANSFER',
+        label: '1. การย้ายแผนก/เลื่อนตำแหน่ง',
+        route: '/employees/transfers',
+        badge: 'คำสั่งโอนย้ายและเลื่อนตำแหน่ง',
+        icon: ArrowRightLeft,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'EMP_CONTRACT',
+        label: '2. สัญญาจ้าง',
+        route: '/employees/contracts',
+        badge: 'สัญญาจ้างและเงินเดือนใหม่',
+        icon: FileText,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'ORG_CHART',
+        label: '3. แผนผังองค์กร',
+        route: '/org-chart',
+        badge: 'ผังองค์กร',
+        icon: Network,
+      },
+    ],
+  },
+  {
+    id: 'leave-setup',
+    moduleCode: 'GUIDE_LEAVE_SETUP',
+    title: 'ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี',
+    subtitle: 'กำหนดประเภทการลา กำหนดวันหยุดประจำปี และจัดสรรโควตาวันลาพนักงาน',
+    icon: CalendarCheck,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'LEAVE_TYPE',
+        label: '1. ประเภทการลา',
+        route: '/leave?tab=types',
+        badge: 'ประเภทการลา & สีประจำประเภท',
+        icon: CalendarDays,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'WORK_CALENDAR',
+        label: '2. วันหยุดประจำปี',
+        route: '/work-calendar?tab=holidays',
+        badge: 'วันหยุดประจำปีของบริษัท',
+        icon: CalendarRange,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'LEAVE_BALANCE',
+        label: '3. ยอดวันลาคงเหลือ',
+        route: '/leave-balances',
+        badge: 'สิทธิ์วันลาคงเหลือ & จัดสรรโควตา',
+        icon: CalendarCheck,
+      },
+    ],
+  },
+  {
+    id: 'leave-approval',
+    moduleCode: 'GUIDE_LEAVE_APPROVAL',
+    title: 'ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม',
+    subtitle: 'ตรวจสอบรายละเอียดและอนุมัติคำขอลา พร้อมตรวจปฏิทินกำลังคนของทีม',
+    icon: ClipboardCheck,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'APPROVAL_LEAVE',
+        label: '1. เอกสารรอดำเนินการ',
+        route: '/approvals/leave-requests',
+        badge: 'อนุมัติคำขอลา',
+        icon: CheckCircle2,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'LEAVE_BALANCE',
+        label: '2. ปฏิทินการลาของทีม',
+        route: '/team-leave-calendar',
+        badge: 'ปฏิทินกำลังคนของทีม',
+        icon: CalendarDays,
+      },
+    ],
+  },
+  {
+    id: 'company-setup',
+    moduleCode: 'GUIDE_COMPANY_SETUP',
+    title: 'ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่',
+    subtitle: 'ตั้งค่าฝ่าย แผนก ตำแหน่ง กำหนดวันทำงานปกติ สิทธิ์การลา และสายการอนุมัติ',
+    icon: Building2,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'ORG_STRUCT',
+        label: '1. โครงสร้างองค์กร (ฝ่าย)',
+        route: '/organization?tab=divisions',
+        badge: 'ฝ่าย แผนก ตำแหน่ง',
+        icon: Building2,
+      },
+      {
+        step: 2,
+        targetModuleCode: 'WORK_CALENDAR',
+        label: '2. วันทำงานประจำสัปดาห์',
+        route: '/work-calendar?tab=work-week',
+        badge: 'วันทำงานปกติ & วันหยุดประจำสัปดาห์',
+        icon: CalendarDays,
+      },
+      {
+        step: 3,
+        targetModuleCode: 'LEAVE_POLICY',
+        label: '3. กำหนดสิทธิ์การลา',
+        route: '/leave?tab=policies',
+        badge: 'นโยบายและเงื่อนไขการลา',
+        icon: FileText,
+      },
+      {
+        step: 4,
+        targetModuleCode: 'SETTINGS_ROLES',
+        label: '4. สายการอนุมัติ',
+        route: '/settings?tab=approval-flows',
+        badge: 'สายการอนุมัติ & สิทธิ์',
+        icon: Shield,
+      },
+    ],
   },
 ];
 
@@ -245,6 +541,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   // Accordion expanded categories
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Accordion expanded guide flows
+  const [expandedGuideFlows, setExpandedGuideFlows] = useState<Record<string, boolean>>({});
+
+  const toggleGuideFlowExpand = (flowId: string) => {
+    setExpandedGuideFlows((prev) => ({
+      ...prev,
+      [flowId]: !prev[flowId],
+    }));
+  };
+
   // Active Scope Popover Portal State
   const [activePopover, setActivePopover] = useState<ActivePopoverState | null>(null);
 
@@ -280,7 +586,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   /* ── Normalize legacy data ── */
   const normalizeModules = (mods: ModulePermissionScope[]): ModulePermissionScope[] => {
-    const normalized = mods.map((m) => {
+    let normalized = mods.map((m) => {
       const def = () => ({ view: false, create: false, edit: false, approve: false });
       const self = m.self ? { ...m.self } : def();
       const team = m.team ? { ...m.team } : def();
@@ -355,27 +661,80 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       });
     }
 
-    // ตรวจสอบโมดูลหมวด GUIDE: หากยังไม่มี GUIDE_ONBOARDING ใน matrix ให้เพิ่มเข้ามาอัตโนมัติ
-    const hasGuideOnboarding = normalized.some((m) => m.moduleCode === 'GUIDE_ONBOARDING');
-    if (!hasGuideOnboarding) {
+    // ตรวจสอบโมดูลหมวด GUIDE: หากยังไม่มีครบทั้ง 9 Flows ใน matrix ให้เพิ่มเข้ามาอัตโนมัติ
+    GUIDE_FLOW_CONFIGS.forEach((flow) => {
+      const exists = normalized.some((m) => m.moduleCode === flow.moduleCode);
+      if (!exists) {
+        const def = () => ({ view: false, create: false, edit: false, approve: false });
+        normalized.push({
+          moduleCode: flow.moduleCode,
+          moduleName: flow.title,
+          groupName: 'GUIDE',
+          categoryCode: 'GUIDE',
+          categoryName: 'วิธีการใช้งาน',
+          dataScope: 'SELF',
+          canView: false,
+          canCreate: false,
+          canEdit: false,
+          canApprove: false,
+          self: def(),
+          team: def(),
+          department: def(),
+          division: def(),
+          organization: def(),
+        });
+      }
+    });
+
+    // ตรวจสอบโมดูลหมวด ANNOUNCEMENTS: หากมีโมดูลเก่า ANNOUNCEMENTS หรือยังไม่มี ANNOUNCEMENTS_GENERAL / ANNOUNCEMENTS_ACTIVITY ให้แปลง/เพิ่มเข้ามา
+    const legacyAnnounce = normalized.find((m) => m.moduleCode === 'ANNOUNCEMENTS');
+    const hasGeneral = normalized.some((m) => m.moduleCode === 'ANNOUNCEMENTS_GENERAL');
+    const hasActivity = normalized.some((m) => m.moduleCode === 'ANNOUNCEMENTS_ACTIVITY');
+
+    if (!hasGeneral) {
       const def = () => ({ view: false, create: false, edit: false, approve: false });
       normalized.push({
-        moduleCode: 'GUIDE_ONBOARDING',
-        moduleName: 'Flow เพิ่มพนักงานใหม่',
-        groupName: 'GUIDE',
-        categoryCode: 'GUIDE',
-        categoryName: 'วิธีการใช้งาน',
-        dataScope: 'SELF',
-        canView: false,
-        canCreate: false,
-        canEdit: false,
-        canApprove: false,
-        self: def(),
-        team: def(),
-        department: def(),
-        division: def(),
-        organization: def(),
+        moduleCode: 'ANNOUNCEMENTS_GENERAL',
+        moduleName: 'ประกาศข่าวสารทั่วไป',
+        groupName: 'ANNOUNCEMENTS',
+        categoryCode: 'ANNOUNCEMENTS',
+        categoryName: 'จัดการประกาศ',
+        dataScope: legacyAnnounce?.dataScope || 'ORGANIZATION',
+        canView: legacyAnnounce?.canView || false,
+        canCreate: legacyAnnounce?.canCreate || false,
+        canEdit: legacyAnnounce?.canEdit || false,
+        canApprove: legacyAnnounce?.canApprove || false,
+        self: legacyAnnounce?.self ? { ...legacyAnnounce.self } : def(),
+        team: legacyAnnounce?.team ? { ...legacyAnnounce.team } : def(),
+        department: legacyAnnounce?.department ? { ...legacyAnnounce.department } : def(),
+        division: legacyAnnounce?.division ? { ...legacyAnnounce.division } : def(),
+        organization: legacyAnnounce?.organization ? { ...legacyAnnounce.organization } : def(),
       });
+    }
+
+    if (!hasActivity) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'ANNOUNCEMENTS_ACTIVITY',
+        moduleName: 'ประกาศกิจกรรม',
+        groupName: 'ANNOUNCEMENTS',
+        categoryCode: 'ANNOUNCEMENTS',
+        categoryName: 'จัดการประกาศ',
+        dataScope: legacyAnnounce?.dataScope || 'ORGANIZATION',
+        canView: legacyAnnounce?.canView || false,
+        canCreate: legacyAnnounce?.canCreate || false,
+        canEdit: legacyAnnounce?.canEdit || false,
+        canApprove: legacyAnnounce?.canApprove || false,
+        self: legacyAnnounce?.self ? { ...legacyAnnounce.self } : def(),
+        team: legacyAnnounce?.team ? { ...legacyAnnounce.team } : def(),
+        department: legacyAnnounce?.department ? { ...legacyAnnounce.department } : def(),
+        division: legacyAnnounce?.division ? { ...legacyAnnounce.division } : def(),
+        organization: legacyAnnounce?.organization ? { ...legacyAnnounce.organization } : def(),
+      });
+    }
+
+    if (legacyAnnounce) {
+      normalized = normalized.filter((m) => m.moduleCode !== 'ANNOUNCEMENTS');
     }
 
     return normalized;
@@ -556,10 +915,142 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
+  // Helper: ตรวจสอบว่า Flow ไกด์ใดๆ เปิดใช้งานอยู่หรือไม่ (เช็คทั้งตัวโมดูล GUIDE_xxx และ targetModuleCodes)
+  const isGuideFlowActive = (flow: GuideFlowConfig) => {
+    const guideMod = localModules.find((m) => m.moduleCode === flow.moduleCode);
+    const hasGuidePerm = guideMod ? isModuleActive(guideMod) : false;
+    const hasActiveStep = flow.steps.some((s) => {
+      const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
+      return m ? isModuleActive(m) : false;
+    });
+    return hasGuidePerm || hasActiveStep;
+  };
+
+  // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์อยู่ใน Flow
+  const getGuideFlowActiveStepsCount = (flow: GuideFlowConfig) => {
+    return flow.steps.filter((s) => {
+      const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
+      return m ? isModuleActive(m) : false;
+    }).length;
+  };
+
+  // Handler สำหรับติ๊กเปิด/ปิดสเต็ปย่อยใน Flow (Two-way sync กับโมดูลภายนอก)
+  const handleToggleFlowStep = (step: GuideStepConfig, flow: GuideFlowConfig) => {
+    const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
+    const willBeActive = targetMod ? !isModuleActive(targetMod) : true;
+
+    // สลับสถานะของโมดูลเป้าหมาย
+    handleToggleModule(step.targetModuleCode);
+
+    // Sync สถานะของตัวโมดูล GUIDE_xxx
+    setLocalModules((prev) =>
+      prev.map((m) => {
+        if (m.moduleCode === flow.moduleCode) {
+          if (willBeActive) {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          } else {
+            const otherStepsActive = flow.steps.some(
+              (s) =>
+                s.targetModuleCode !== step.targetModuleCode &&
+                prev.some((pm) => pm.moduleCode === s.targetModuleCode && isModuleActive(pm))
+            );
+            if (!otherStepsActive) {
+              const empty = { view: false, create: false, edit: false, approve: false };
+              return {
+                ...m,
+                canView: false,
+                self: { ...empty },
+                team: { ...empty },
+                department: { ...empty },
+                division: { ...empty },
+                organization: { ...empty },
+              };
+            }
+          }
+        }
+        return m;
+      })
+    );
+  };
+
+  // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดทั้งโมดูล GUIDE_xxx และทุกเมนูย่อยใน Flow)
+  const handleToggleGuideFlow = (flow: GuideFlowConfig) => {
+    const currentlyActive = isGuideFlowActive(flow);
+    const targetCodes = new Set([flow.moduleCode, ...flow.steps.map((s) => s.targetModuleCode)]);
+
+    setLocalModules((prev) => {
+      const empty = { view: false, create: false, edit: false, approve: false };
+      return prev.map((m) => {
+        if (targetCodes.has(m.moduleCode)) {
+          if (currentlyActive) {
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
+          } else {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+        }
+        return m;
+      });
+    });
+    setIsDirty(true);
+  };
+
+  // Handler สำหรับ Master Toggle ของหมวด "วิธีการใช้งาน" ทั้งหมด (เปิด/ปิดทั้ง 9 Flows)
+  const handleToggleGuideCategory = () => {
+    const anyActive = GUIDE_FLOW_CONFIGS.some((flow) => isGuideFlowActive(flow));
+    const allTargetCodes = new Set<string>();
+    GUIDE_FLOW_CONFIGS.forEach((flow) => {
+      allTargetCodes.add(flow.moduleCode);
+      flow.steps.forEach((s) => allTargetCodes.add(s.targetModuleCode));
+    });
+
+    setLocalModules((prev) => {
+      const empty = { view: false, create: false, edit: false, approve: false };
+      return prev.map((m) => {
+        if (allTargetCodes.has(m.moduleCode)) {
+          if (anyActive) {
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
+          } else {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          }
+        }
+        return m;
+      });
+    });
+    setIsDirty(true);
+  };
+
   // Master switch per category
   const handleToggleCategory = (catCode: string) => {
     if (catCode === 'GUIDE') {
-      handleToggleGuideOnboarding();
+      handleToggleGuideCategory();
       return;
     }
 
@@ -620,49 +1111,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
         }
       })
     );
-    setIsDirty(true);
-  };
-
-  // Handler สำหรับติ๊กเมนูย่อยใน Flow เพิ่มพนักงานใหม่ (Two-way sync กับโมดูลภายนอก)
-  const handleToggleFlowSubItem = (targetModuleCode: string) => {
-    handleToggleModule(targetModuleCode);
-  };
-
-  // Handler สำหรับ Master Toggle ของ Flow เพิ่มพนักงานใหม่ (เปิด/ปิดทั้ง 3 เมนูย่อยพร้อมกัน)
-  const handleToggleGuideOnboarding = () => {
-    const targetCodes = ['EMP_PROFILE', 'EMP_CONTRACT', 'SETTINGS_USERS'];
-    const anyActive = targetCodes.some((code) => {
-      const m = localModules.find((mod) => mod.moduleCode === code);
-      return m ? isModuleActive(m) : false;
-    });
-
-    setLocalModules((prev) => {
-      const empty = { view: false, create: false, edit: false, approve: false };
-      return prev.map((m) => {
-        if (targetCodes.includes(m.moduleCode) || m.moduleCode === 'GUIDE_ONBOARDING') {
-          if (anyActive) {
-            // ปิดทั้ง 3 เมนูย่อย + GUIDE_ONBOARDING
-            return {
-              ...m,
-              canView: false,
-              self: { ...empty },
-              team: { ...empty },
-              department: { ...empty },
-              division: { ...empty },
-              organization: { ...empty },
-            };
-          } else {
-            // เปิดทั้ง 3 เมนูย่อย + GUIDE_ONBOARDING
-            return {
-              ...m,
-              canView: true,
-              self: { view: true, create: false, edit: false, approve: false },
-            };
-          }
-        }
-        return m;
-      });
-    });
     setIsDirty(true);
   };
 
@@ -1143,24 +1591,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   const IconComp = CATEGORY_ICONS[cat.code] || Layers;
                   const isGuideCat = cat.code === 'GUIDE';
 
-                  // สำหรับหมวดหมู่ GUIDE คำนวณจำนวนเมนูย่อยที่เปิดอยู่ (จาก 3 เมนูใน Flow)
-                  const guideActiveSubCount = isGuideCat
-                    ? ONBOARDING_FLOW_ITEMS.filter((item) => {
-                        const m = localModules.find((mod) => mod.moduleCode === item.targetModuleCode);
-                        return m ? isModuleActive(m) : false;
-                      }).length
+                  // สำหรับหมวดหมู่ GUIDE คำนวณจำนวนไกด์ที่เปิดใช้งานอยู่
+                  const guideActiveFlowsCount = isGuideCat
+                    ? GUIDE_FLOW_CONFIGS.filter((flow) => isGuideFlowActive(flow)).length
                     : 0;
 
                   const activeModulesCount = isGuideCat
-                    ? (guideActiveSubCount > 0 ? 1 : 0)
+                    ? guideActiveFlowsCount
                     : cat.modules.filter((m) => isModuleActive(m)).length;
                   const isCatAllActive = isGuideCat
-                    ? guideActiveSubCount === ONBOARDING_FLOW_ITEMS.length
+                    ? guideActiveFlowsCount === GUIDE_FLOW_CONFIGS.length
                     : activeModulesCount === cat.modules.length && cat.modules.length > 0;
                   const isCatPartial = isGuideCat
-                    ? guideActiveSubCount > 0 && guideActiveSubCount < ONBOARDING_FLOW_ITEMS.length
+                    ? guideActiveFlowsCount > 0 && guideActiveFlowsCount < GUIDE_FLOW_CONFIGS.length
                     : activeModulesCount > 0 && activeModulesCount < cat.modules.length;
-                  const isCatOff = isGuideCat ? guideActiveSubCount === 0 : activeModulesCount === 0; // ปิดทั้งหมด → พื้นเทา
+                  const isCatOff = isGuideCat ? guideActiveFlowsCount === 0 : activeModulesCount === 0; // ปิดทั้งหมด → พื้นเทา
 
                   return (
                     <div
@@ -1213,16 +1658,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             <span
                               className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                 isGuideCat
-                                  ? guideActiveSubCount > 0
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                                    : 'bg-slate-100 text-slate-400'
+                                  ? guideActiveFlowsCount > 0
+                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
+                                    : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
                                   : activeModulesCount > 0
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                                  : 'bg-slate-100 text-slate-400'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
+                                  : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
                               }`}
                             >
                               {isGuideCat
-                                ? `${guideActiveSubCount}/${ONBOARDING_FLOW_ITEMS.length} เมนูเปิดใช้`
+                                ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} ไกด์เปิดใช้`
                                 : `${activeModulesCount}/${cat.modules.length} เปิดใช้`}
                             </span>
                           </div>
@@ -1245,7 +1690,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                               : 'ปิดทั้งหมด'}
                           </span>
                           <ToggleSwitch
-                            checked={isGuideCat ? guideActiveSubCount > 0 : activeModulesCount > 0}
+                            checked={isGuideCat ? guideActiveFlowsCount > 0 : activeModulesCount > 0}
                             onChange={() => handleToggleCategory(cat.code)}
                             disabled={!canEditRole}
                           />
@@ -1255,110 +1700,152 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       {/* Group Content (Modules) */}
                       {isExpanded && (
                         isGuideCat ? (
-                          /* Custom View สำหรับหมวด "วิธีการใช้งาน": แสดงหัวข้อไกด์ในระบบ */
-                          <div className="p-4 sm:p-5 space-y-3 bg-slate-50/50 dark:bg-slate-900/40">
-                            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs">
-                              {/* Header */}
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-700/60">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                                    <Compass className="w-5 h-5" />
-                                  </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                        ไกด์: เพิ่มพนักงานใหม่ (HR Onboarding)
-                                      </h4>
+                          /* View สำหรับหมวด "วิธีการใช้งาน": แสดงรายการไกด์ทั้ง 9 Flows สอดคล้องกับธีมหลัก */
+                          <div className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-800">
+                            {GUIDE_FLOW_CONFIGS.map((flow) => {
+                              const isFlowActive = isGuideFlowActive(flow);
+                              const activeStepsCount = getGuideFlowActiveStepsCount(flow);
+                              const isFlowExpanded = Boolean(expandedGuideFlows[flow.id]);
+                              const FlowIcon = flow.icon;
+
+                              return (
+                                <div key={flow.id} className="transition-colors">
+                                  {/* Flow Row */}
+                                  <div
+                                    className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${
+                                      isFlowActive
+                                        ? 'bg-white dark:bg-slate-800'
+                                        : 'bg-slate-50/70 dark:bg-slate-900/40'
+                                    }`}
+                                  >
+                                    {/* Left: Indicator, Icon, Title, Badge, Subtitle */}
+                                    <div className="flex items-start gap-3 min-w-[200px] flex-1">
                                       <span
-                                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                          guideActiveSubCount === ONBOARDING_FLOW_ITEMS.length
-                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                            : guideActiveSubCount > 0
-                                            ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                            : 'bg-slate-100 text-slate-400'
+                                        className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${
+                                          isFlowActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                                        }`}
+                                      />
+                                      <div
+                                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
+                                          isFlowActive
+                                            ? 'bg-blue-50/80 dark:bg-blue-950/40 text-primary dark:text-blue-400 border-blue-200/60 dark:border-blue-900/50 shadow-2xs'
+                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200/60 dark:border-slate-700'
                                         }`}
                                       >
-                                        {guideActiveSubCount}/{ONBOARDING_FLOW_ITEMS.length} เปิดใช้งาน
-                                      </span>
+                                        <FlowIcon className="w-4 h-4" />
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 leading-snug">
+                                            {flow.title}
+                                          </span>
+                                          <span
+                                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
+                                              activeStepsCount === flow.steps.length
+                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/70'
+                                                : activeStepsCount > 0
+                                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/70'
+                                                : 'bg-slate-200/70 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                            }`}
+                                          >
+                                            {activeStepsCount}/{flow.steps.length} เมนูเปิดใช้
+                                          </span>
+                                        </div>
+                                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                                          {flow.subtitle}
+                                        </p>
+                                      </div>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                      กำหนดสิทธิ์เข้าถึง 3 เมนูในขั้นตอนรับพนักงานใหม่ (เชื่อมโยงกับเมนูหลักภายนอกอัตโนมัติ)
-                                    </p>
+
+                                    {/* Right: Expand Sub-steps & Flow Master Toggle */}
+                                    <div className="flex items-center gap-2.5 shrink-0 self-end md:self-center">
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleGuideFlowExpand(flow.id)}
+                                        className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-600 flex items-center gap-1 cursor-pointer transition-colors"
+                                      >
+                                        <span>เมนูย่อย ({flow.steps.length})</span>
+                                        {isFlowExpanded ? (
+                                          <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                                        ) : (
+                                          <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                                        )}
+                                      </button>
+
+                                      <ToggleSwitch
+                                        checked={isFlowActive}
+                                        onChange={() => handleToggleGuideFlow(flow)}
+                                        disabled={!canEditRole}
+                                      />
+                                    </div>
                                   </div>
-                                </div>
 
-                                <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                                  <ToggleSwitch
-                                    checked={guideActiveSubCount > 0}
-                                    onChange={handleToggleGuideOnboarding}
-                                    disabled={!canEditRole}
-                                  />
-                                </div>
-                              </div>
+                                  {/* Expanded Sub-steps */}
+                                  {isFlowExpanded && (
+                                    <div className="bg-slate-50/60 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800/80 px-4 py-2.5 space-y-1.5 pl-6 sm:pl-11">
+                                      {flow.steps.map((step) => {
+                                        const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
+                                        const isStepActive = targetMod ? isModuleActive(targetMod) : false;
+                                        const StepIcon = step.icon;
 
-                              {/* 3 Sub-item Checkbox List */}
-                              <div className="mt-3.5 space-y-2">
-                                {ONBOARDING_FLOW_ITEMS.map((item) => {
-                                  const targetMod = localModules.find((m) => m.moduleCode === item.targetModuleCode);
-                                  const isActive = targetMod ? isModuleActive(targetMod) : false;
-                                  const ItemIcon = item.icon;
+                                        return (
+                                          <div
+                                            key={`${flow.id}-${step.step}-${step.targetModuleCode}`}
+                                            onClick={() => canEditRole && handleToggleFlowStep(step, flow)}
+                                            className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
+                                              isStepActive
+                                                ? 'bg-white dark:bg-slate-800/90 border-slate-200/90 dark:border-slate-700 shadow-2xs hover:border-slate-300'
+                                                : 'bg-white/50 dark:bg-slate-800/40 border-slate-200/50 dark:border-slate-800 opacity-60 hover:opacity-90'
+                                            }`}
+                                          >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                              <div
+                                                className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                                                  isStepActive
+                                                    ? 'bg-primary/10 text-primary dark:text-blue-400'
+                                                    : 'bg-slate-200/80 dark:bg-slate-700 text-slate-400'
+                                                }`}
+                                              >
+                                                <StepIcon className="w-3.5 h-3.5" />
+                                              </div>
+                                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                                                  {step.label}
+                                                </span>
+                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400">
+                                                  {step.route}
+                                                </span>
+                                                <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                                                  • {step.badge}
+                                                </span>
+                                              </div>
+                                            </div>
 
-                                  return (
-                                    <div
-                                      key={item.targetModuleCode}
-                                      onClick={() => canEditRole && handleToggleFlowSubItem(item.targetModuleCode)}
-                                      className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
-                                        isActive
-                                          ? 'bg-blue-50/40 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 shadow-2xs'
-                                          : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 opacity-75 hover:opacity-100'
-                                      }`}
-                                    >
-                                      <div className="flex items-center gap-3 min-w-0">
-                                        <input
-                                          type="checkbox"
-                                          checked={isActive}
-                                          onChange={() => {}} // handled by parent onClick
-                                          disabled={!canEditRole}
-                                          className="w-4 h-4 rounded text-primary focus:ring-primary/20 cursor-pointer shrink-0"
-                                        />
-                                        <div
-                                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                                            isActive
-                                              ? 'bg-primary text-white shadow-2xs'
-                                              : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
-                                          }`}
-                                        >
-                                          <ItemIcon className="w-3.5 h-3.5" />
-                                        </div>
-                                        <div className="flex items-center gap-2 min-w-0">
-                                          <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
-                                            {item.label}
-                                          </span>
-                                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                            {item.route}
-                                          </span>
-                                          <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
-                                            • {item.badge}
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        <span
-                                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                            isActive
-                                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200'
-                                              : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-                                          }`}
-                                        >
-                                          {isActive ? '✓ มีสิทธิ์' : '✕ ปิด'}
-                                        </span>
-                                      </div>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                              <span
+                                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                                  isStepActive
+                                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80'
+                                                    : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                                }`}
+                                              >
+                                                {isStepActive ? '✓ มีสิทธิ์' : '✕ ปิด'}
+                                              </span>
+                                              <ToggleSwitch
+                                                size="sm"
+                                                checked={isStepActive}
+                                                onChange={() => handleToggleFlowStep(step, flow)}
+                                                disabled={!canEditRole}
+                                              />
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                         <div className="divide-y divide-slate-100">

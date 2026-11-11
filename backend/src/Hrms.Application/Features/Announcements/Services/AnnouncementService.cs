@@ -64,14 +64,16 @@ public class AnnouncementService : IAnnouncementService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        // Preload department, division, level dictionaries
+        // Preload department, division, level, team, employee dictionaries
         var departments = await _context.Departments.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DepartmentName, cancellationToken);
         var divisions = await _context.Divisions.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DivisionName, cancellationToken);
         var levels = await _context.EmployeeLevels.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.LevelName, cancellationToken);
+        var teams = await _context.Teams.AsNoTracking().ToDictionaryAsync(t => t.Id, t => t.TeamName, cancellationToken);
+        var employees = await _context.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => $"{e.EmployeeCode} - {e.FullName}", cancellationToken);
 
         var audience = await LoadAudienceAsync(cancellationToken);
 
-        var dtos = items.Select(a => MapToDto(a, null, departments, divisions, levels, CountTargetEmployees(a, audience))).ToList();
+        var dtos = items.Select(a => MapToDto(a, null, departments, divisions, levels, teams, employees, CountTargetEmployees(a, audience))).ToList();
 
         return new PagedResult<AnnouncementDto>(dtos, totalCount, page, pageSize);
     }
@@ -86,6 +88,7 @@ public class AnnouncementService : IAnnouncementService
 
         var deptId = assignment?.DepartmentId;
         var divId = assignment?.DivisionId;
+        var teamId = assignment?.TeamId;
         var levelId = assignment?.EmployeeLevelId;
 
         var now = DateTime.UtcNow;
@@ -106,8 +109,10 @@ public class AnnouncementService : IAnnouncementService
             if (!a.Targets.Any()) return true;
             return a.Targets.Any(t =>
                 t.TargetType == "ALL" ||
-                (t.TargetType == "DEPARTMENT" && deptId.HasValue && t.TargetEntityId == deptId.Value) ||
                 (t.TargetType == "DIVISION" && divId.HasValue && t.TargetEntityId == divId.Value) ||
+                (t.TargetType == "DEPARTMENT" && deptId.HasValue && t.TargetEntityId == deptId.Value) ||
+                (t.TargetType == "TEAM" && teamId.HasValue && t.TargetEntityId == teamId.Value) ||
+                ((t.TargetType == "EMPLOYEE" || t.TargetType == "INDIVIDUAL") && t.TargetEntityId == employeeId) ||
                 (t.TargetType == "EMPLOYEE_LEVEL" && levelId.HasValue && t.TargetEntityId == levelId.Value)
             );
         })
@@ -138,9 +143,11 @@ public class AnnouncementService : IAnnouncementService
         var departments = await _context.Departments.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DepartmentName, cancellationToken);
         var divisions = await _context.Divisions.AsNoTracking().ToDictionaryAsync(d => d.Id, d => d.DivisionName, cancellationToken);
         var levels = await _context.EmployeeLevels.AsNoTracking().ToDictionaryAsync(l => l.Id, l => l.LevelName, cancellationToken);
+        var teams = await _context.Teams.AsNoTracking().ToDictionaryAsync(t => t.Id, t => t.TeamName, cancellationToken);
+        var employees = await _context.Employees.AsNoTracking().ToDictionaryAsync(e => e.Id, e => $"{e.EmployeeCode} - {e.FullName}", cancellationToken);
         var audience = await LoadAudienceAsync(cancellationToken);
 
-        return MapToDto(announcement, currentEmployeeId, departments, divisions, levels, CountTargetEmployees(announcement, audience));
+        return MapToDto(announcement, currentEmployeeId, departments, divisions, levels, teams, employees, CountTargetEmployees(announcement, audience));
     }
 
     public async Task<AnnouncementDto> CreateAsync(
@@ -362,16 +369,23 @@ public class AnnouncementService : IAnnouncementService
             {
                 var assignments = await _context.EmployeeAssignments.AsNoTracking()
                     .Where(a => a.IsCurrent)
-                    .Select(a => new { a.EmployeeId, a.DepartmentId, a.DivisionId, a.EmployeeLevelId })
+                    .Select(a => new { a.EmployeeId, a.DepartmentId, a.DivisionId, a.TeamId, a.EmployeeLevelId })
                     .ToListAsync(cancellationToken);
 
                 targetEmployeeIds = assignments
                     .Where(a => targets.Any(t =>
-                        (t.TargetType == "DEPARTMENT" && t.TargetEntityId == a.DepartmentId) ||
                         (t.TargetType == "DIVISION" && t.TargetEntityId == a.DivisionId) ||
+                        (t.TargetType == "DEPARTMENT" && t.TargetEntityId == a.DepartmentId) ||
+                        (t.TargetType == "TEAM" && a.TeamId.HasValue && t.TargetEntityId == a.TeamId) ||
+                        ((t.TargetType == "EMPLOYEE" || t.TargetType == "INDIVIDUAL") && t.TargetEntityId == a.EmployeeId) ||
                         (t.TargetType == "EMPLOYEE_LEVEL" && a.EmployeeLevelId.HasValue && t.TargetEntityId == a.EmployeeLevelId)))
                     .Select(a => a.EmployeeId)
                     .ToHashSet();
+
+                foreach (var t in targets.Where(t => (t.TargetType == "EMPLOYEE" || t.TargetType == "INDIVIDUAL") && t.TargetEntityId.HasValue))
+                {
+                    targetEmployeeIds.Add(t.TargetEntityId!.Value);
+                }
             }
 
             var users = await _context.UserAccounts.AsNoTracking()
@@ -492,19 +506,19 @@ public class AnnouncementService : IAnnouncementService
     }
 
     /// <summary>สังกัดปัจจุบันของพนักงานที่ยังทำงานอยู่ — ใช้นับกลุ่มเป้าหมายของประกาศ</summary>
-    private sealed record AudienceMember(long EmployeeId, long DepartmentId, long DivisionId, long? LevelId);
+    private sealed record AudienceMember(long EmployeeId, long DepartmentId, long DivisionId, long? TeamId, long? LevelId);
 
     private async Task<List<AudienceMember>> LoadAudienceAsync(CancellationToken cancellationToken)
     {
         var rows = await _context.EmployeeAssignments
             .AsNoTracking()
             .Where(a => a.IsCurrent && a.Employee != null && a.Employee.EmploymentStatus == "ACTIVE")
-            .Select(a => new { a.EmployeeId, a.DepartmentId, a.DivisionId, a.EmployeeLevelId })
+            .Select(a => new { a.EmployeeId, a.DepartmentId, a.DivisionId, a.TeamId, a.EmployeeLevelId })
             .ToListAsync(cancellationToken);
         return rows
             .GroupBy(r => r.EmployeeId)
             .Select(g => g.First())
-            .Select(r => new AudienceMember(r.EmployeeId, r.DepartmentId, r.DivisionId, r.EmployeeLevelId))
+            .Select(r => new AudienceMember(r.EmployeeId, r.DepartmentId, r.DivisionId, r.TeamId, r.EmployeeLevelId))
             .ToList();
     }
 
@@ -514,8 +528,10 @@ public class AnnouncementService : IAnnouncementService
         var targets = a.Targets ?? new List<AnnouncementTarget>();
         if (!targets.Any() || targets.Any(t => t.TargetType == "ALL")) return audience.Count;
         return audience.Count(m => targets.Any(t => t.TargetEntityId.HasValue && (
-            (t.TargetType == "DEPARTMENT" && t.TargetEntityId.Value == m.DepartmentId) ||
             (t.TargetType == "DIVISION" && t.TargetEntityId.Value == m.DivisionId) ||
+            (t.TargetType == "DEPARTMENT" && t.TargetEntityId.Value == m.DepartmentId) ||
+            (t.TargetType == "TEAM" && m.TeamId.HasValue && t.TargetEntityId.Value == m.TeamId.Value) ||
+            ((t.TargetType == "EMPLOYEE" || t.TargetType == "INDIVIDUAL") && t.TargetEntityId.Value == m.EmployeeId) ||
             (t.TargetType == "EMPLOYEE_LEVEL" && m.LevelId.HasValue && t.TargetEntityId.Value == m.LevelId.Value))));
     }
 
@@ -525,6 +541,8 @@ public class AnnouncementService : IAnnouncementService
         Dictionary<long, string>? departments = null,
         Dictionary<long, string>? divisions = null,
         Dictionary<long, string>? levels = null,
+        Dictionary<long, string>? teams = null,
+        Dictionary<long, string>? employees = null,
         int totalTargetCount = 0)
     {
         var targetDtos = a.Targets.Select(t =>
@@ -537,6 +555,8 @@ public class AnnouncementService : IAnnouncementService
                     "DEPARTMENT" => departments?.GetValueOrDefault(t.TargetEntityId.Value),
                     "DIVISION" => divisions?.GetValueOrDefault(t.TargetEntityId.Value),
                     "EMPLOYEE_LEVEL" => levels?.GetValueOrDefault(t.TargetEntityId.Value),
+                    "TEAM" => teams?.GetValueOrDefault(t.TargetEntityId.Value),
+                    "EMPLOYEE" or "INDIVIDUAL" => employees?.GetValueOrDefault(t.TargetEntityId.Value),
                     _ => null
                 };
             }

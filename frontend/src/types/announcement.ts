@@ -1,7 +1,7 @@
 export type AnnouncementCategory = 'GENERAL' | 'POLICY' | 'ACTIVITY' | 'WELFARE' | 'URGENT';
 export type AnnouncementPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 export type AnnouncementStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
-export type TargetType = 'ALL' | 'DEPARTMENT' | 'DIVISION' | 'EMPLOYEE_LEVEL';
+export type TargetType = 'ALL' | 'DIVISION' | 'DEPARTMENT' | 'TEAM' | 'EMPLOYEE' | 'EMPLOYEE_LEVEL';
 
 export interface PagedResult<T> {
   items: T[];

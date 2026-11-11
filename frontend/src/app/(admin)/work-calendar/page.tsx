@@ -155,10 +155,24 @@ function HolidayYearCalendar({
                     const weeklyOff = !workingDays.has(dow);
                     const isToday = key === todayKey;
                     const base = 'h-7 rounded-md text-[11px] flex items-center justify-center transition-colors';
+                    const colIndex = idx % 7;
+                    const tooltipAlignClass =
+                      colIndex >= 4
+                        ? 'right-0 left-auto translate-x-0'
+                        : colIndex <= 1
+                        ? 'left-0 translate-x-0'
+                        : 'left-1/2 -translate-x-1/2';
+                    const arrowAlignClass =
+                      colIndex >= 4
+                        ? 'ml-auto mr-3'
+                        : colIndex <= 1
+                        ? 'ml-3 mr-auto'
+                        : 'mx-auto';
+
                     if (hs) {
                       const st = holidayStyle(hs[0].holidayType);
                       return (
-                        <div key={idx} className="relative group/hol">
+                        <div key={idx} className="relative group/hol hover:z-50">
                           <button
                             type="button"
                             aria-label={hs.map((h) => h.holidayName).join(', ')}
@@ -170,7 +184,7 @@ function HolidayYearCalendar({
                             {day}
                           </button>
                           {/* ป้ายรายละเอียดเมื่อชี้เมาส์ */}
-                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 w-max max-w-[220px] opacity-0 translate-y-1 group-hover/hol:opacity-100 group-hover/hol:translate-y-0 transition-all duration-150">
+                          <div className={`pointer-events-none absolute bottom-full mb-2 z-50 w-max max-w-[220px] opacity-0 translate-y-1 group-hover/hol:opacity-100 group-hover/hol:translate-y-0 transition-all duration-150 ${tooltipAlignClass}`}>
                             <div className="rounded-lg bg-slate-900 text-white px-2.5 py-1.5 shadow-lg space-y-1 text-left">
                               {hs.map((h) => (
                                 <div key={h.id} className="text-[11px] leading-snug">
@@ -185,7 +199,7 @@ function HolidayYearCalendar({
                               ))}
                               {onSelectHoliday && <div className="text-[10px] text-slate-400 pl-3">คลิกเพื่อแก้ไข</div>}
                             </div>
-                            <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1" />
+                            <div className={`w-2 h-2 bg-slate-900 rotate-45 -mt-1 ${arrowAlignClass}`} />
                           </div>
                         </div>
                       );
@@ -740,7 +754,7 @@ function WorkCalendarPageContent() {
       {/* ========================================================= */}
       {modalOpen && (
         <ModalShell className="bg-slate-900/40 backdrop-blur-sm z-50 animate-in fade-in duration-150" innerClassName="items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
             <ModalHeader
               icon={CalendarDays}
               title={modalMode === 'create' ? 'เพิ่มวันหยุดประจำปี' : 'แก้ไขข้อมูลวันหยุด'}
@@ -748,39 +762,49 @@ function WorkCalendarPageContent() {
             />
 
             <form onSubmit={handleSaveHoliday} className="space-y-4 pt-4">
+              {/* Row 1: ชื่อวันหยุด (Full Width) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">วันที่วันหยุด <span className="text-rose-500">*</span></label>
-                <ThaiDatePicker
-                  value={holidayForm.holidayDate}
-                  onChange={(val) => setHolidayForm({ ...holidayForm, holidayDate: val })}
-                  placeholder="เลือกวันที่วันหยุด"
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ชื่อวันหยุด <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  ชื่อวันหยุด <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="เช่น วันขึ้นปีใหม่, วันสงกรานต์..."
+                  placeholder="เช่น วันขึ้นปีใหม่, วันสงกรานต์"
                   value={holidayForm.holidayName}
                   onChange={(e) => setHolidayForm({ ...holidayForm, holidayName: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20 dark:focus:border-blue-500"
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 dark:text-slate-300">ประเภทวันหยุด <span className="text-rose-500">*</span></label>
-                <CustomSelect
-                  value={holidayForm.holidayType}
-                  onChange={(e) => setHolidayForm({ ...holidayForm, holidayType: e.target.value })}
-                  className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:text-slate-200 dark:focus:ring-blue-500/20"
-                >
-                  <option value="PUBLIC">วันหยุดตามประเพณี</option>
-                  <option value="COMPANY_SPECIAL">วันหยุดพิเศษบริษัท</option>
-                  <option value="SUBSTITUTE">วันหยุดชดเชย</option>
-                </CustomSelect>
+              {/* Row 2: วันที่วันหยุด & ประเภทวันหยุด (2 Columns) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วันที่วันหยุด <span className="text-rose-500">*</span>
+                  </label>
+                  <ThaiDatePicker
+                    value={holidayForm.holidayDate}
+                    onChange={(val) => setHolidayForm({ ...holidayForm, holidayDate: val })}
+                    placeholder="เลือกวันที่วันหยุด"
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    ประเภทวันหยุด <span className="text-rose-500">*</span>
+                  </label>
+                  <CustomSelect
+                    value={holidayForm.holidayType}
+                    onChange={(e) => setHolidayForm({ ...holidayForm, holidayType: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-[#F1F5F9] border border-slate-200 rounded-xl text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
+                  >
+                    <option value="PUBLIC">วันหยุดตามประเพณี</option>
+                    <option value="COMPANY_SPECIAL">วันหยุดพิเศษบริษัท</option>
+                    <option value="SUBSTITUTE">วันหยุดชดเชย</option>
+                  </CustomSelect>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700/60">

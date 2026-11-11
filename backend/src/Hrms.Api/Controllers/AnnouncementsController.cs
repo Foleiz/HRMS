@@ -28,11 +28,10 @@ public class AnnouncementsController : ControllerBase
     }
 
     /// <summary>
-    /// ดึงรายการประกาศสำหรับผู้ดูแลระบบ (Admin List with Pagination & Filters)
+    /// ดึงรายการประกาศ (พร้อมตัวกรองและการแบ่งหน้า)
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AnnouncementDto>>), StatusCodes.Status200OK)]
-    [RequirePermission("ANNOUNCEMENTS_VIEW")]
     public async Task<ActionResult<ApiResponse<PagedResult<AnnouncementDto>>>> GetAnnouncements(
         [FromQuery] AnnouncementFilterParams filter,
         CancellationToken cancellationToken)
@@ -81,7 +80,7 @@ public class AnnouncementsController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<AnnouncementDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [RequirePermission("ANNOUNCEMENTS_CREATE")]
+    [RequirePermission("ANNOUNCEMENTS_CREATE,ANNOUNCEMENTS_GENERAL_CREATE,ANNOUNCEMENTS_ACTIVITY_CREATE")]
     public async Task<ActionResult<ApiResponse<AnnouncementDto>>> Create(
         [FromBody] CreateAnnouncementRequest request,
         CancellationToken cancellationToken)
@@ -105,7 +104,7 @@ public class AnnouncementsController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<AnnouncementDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [RequirePermission("ANNOUNCEMENTS_EDIT")]
+    [RequirePermission("ANNOUNCEMENTS_EDIT,ANNOUNCEMENTS_GENERAL_EDIT,ANNOUNCEMENTS_ACTIVITY_EDIT")]
     public async Task<ActionResult<ApiResponse<AnnouncementDto>>> Update(
         long id,
         [FromBody] UpdateAnnouncementRequest request,
@@ -132,7 +131,7 @@ public class AnnouncementsController : ControllerBase
     [HttpDelete("{id:long}")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("ANNOUNCEMENTS_EDIT")]
+    [RequirePermission("ANNOUNCEMENTS_EDIT,ANNOUNCEMENTS_GENERAL_EDIT,ANNOUNCEMENTS_ACTIVITY_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(
         long id,
         CancellationToken cancellationToken)
@@ -152,7 +151,7 @@ public class AnnouncementsController : ControllerBase
     [HttpPut("{id:long}/pin")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("ANNOUNCEMENTS_EDIT")]
+    [RequirePermission("ANNOUNCEMENTS_EDIT,ANNOUNCEMENTS_GENERAL_EDIT,ANNOUNCEMENTS_ACTIVITY_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> TogglePin(
         long id,
         CancellationToken cancellationToken)
@@ -168,7 +167,7 @@ public class AnnouncementsController : ControllerBase
     [HttpPut("{id:long}/publish")]
     [ProducesResponseType(typeof(ApiResponse<bool>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("ANNOUNCEMENTS_EDIT")]
+    [RequirePermission("ANNOUNCEMENTS_EDIT,ANNOUNCEMENTS_GENERAL_EDIT,ANNOUNCEMENTS_ACTIVITY_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> SetPublishStatus(
         long id,
         [FromQuery] bool publish = true,
@@ -210,7 +209,7 @@ public class AnnouncementsController : ControllerBase
     [HttpGet("{id:long}/read-stats")]
     [ProducesResponseType(typeof(ApiResponse<AnnouncementReadStatsDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [RequirePermission("ANNOUNCEMENTS_VIEW")]
+    [RequirePermission("ANNOUNCEMENTS_VIEW,ANNOUNCEMENTS_GENERAL_VIEW,ANNOUNCEMENTS_ACTIVITY_VIEW")]
     public async Task<ActionResult<ApiResponse<AnnouncementReadStatsDto>>> GetReadStats(
         long id,
         CancellationToken cancellationToken)

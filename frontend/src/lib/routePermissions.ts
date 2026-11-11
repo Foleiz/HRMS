@@ -192,7 +192,13 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/announcements',
     title: 'จัดการประกาศ',
-    requiredPermissions: ['ANNOUNCEMENTS_VIEW', 'ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
+    requiredPermissions: [
+      'ANNOUNCEMENTS_VIEW',
+      'ANNOUNCEMENTS_CREATE',
+      'ANNOUNCEMENTS_EDIT',
+      'ANNOUNCEMENTS_GENERAL_VIEW',
+      'ANNOUNCEMENTS_ACTIVITY_VIEW',
+    ],
   },
   {
     matchPrefix: '/master',

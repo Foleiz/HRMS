@@ -119,6 +119,18 @@ const menuGroups: MenuGroup[] = [
         href: '/guide',
         matchPrefix: '/guide',
         icon: Compass,
+        requiredPermissions: [
+          'GUIDE_VIEW',
+          'GUIDE_ONBOARDING_VIEW',
+          'GUIDE_PAYROLL_VIEW',
+          'GUIDE_OFFBOARDING_VIEW',
+          'GUIDE_SHIFT_SCHEDULE_VIEW',
+          'GUIDE_ATTENDANCE_IMPORT_VIEW',
+          'GUIDE_TRANSFER_VIEW',
+          'GUIDE_LEAVE_SETUP_VIEW',
+          'GUIDE_LEAVE_APPROVAL_VIEW',
+          'GUIDE_COMPANY_SETUP_VIEW',
+        ],
       },
       {
         title: 'ข่าวสารสำหรับฉัน',
@@ -302,10 +314,30 @@ const menuGroups: MenuGroup[] = [
       },
       {
         title: 'จัดการประกาศ',
-        href: '/announcements',
+        href: '/announcements?tab=general',
         matchPrefix: '/announcements',
         icon: Megaphone,
-        requiredPermissions: ['ANNOUNCEMENTS_VIEW', 'ANNOUNCEMENTS_CREATE', 'ANNOUNCEMENTS_EDIT'],
+        requiredPermissions: [
+          'ANNOUNCEMENTS_VIEW',
+          'ANNOUNCEMENTS_CREATE',
+          'ANNOUNCEMENTS_EDIT',
+          'ANNOUNCEMENTS_GENERAL_VIEW',
+          'ANNOUNCEMENTS_ACTIVITY_VIEW',
+        ],
+        children: [
+          {
+            title: 'ประกาศข่าวสารทั่วไป',
+            href: '/announcements?tab=general',
+            icon: Megaphone,
+            requiredPermissions: ['ANNOUNCEMENTS_GENERAL_VIEW', 'ANNOUNCEMENTS_VIEW'],
+          },
+          {
+            title: 'ประกาศกิจกรรม',
+            href: '/announcements?tab=activities',
+            icon: Sparkles,
+            requiredPermissions: ['ANNOUNCEMENTS_ACTIVITY_VIEW'],
+          },
+        ],
       },
     ],
   },
@@ -599,6 +631,7 @@ export const Sidebar: React.FC = () => {
         if (childPath === '/work-calendar' && childTab === 'work-week') return true;
         if (childPath === '/reports' && childTab === 'department') return true;
         if (childPath === '/master' && childTab === 'document-types') return true;
+        if (childPath === '/announcements' && (childTab === 'general' ? (!currentTab || currentTab === 'general') : currentTab === childTab)) return true;
         if (childPath === '/ess/attendance' && childTab === 'history') return true;
         return false;
       }

@@ -132,7 +132,8 @@ public class RoleService : IRoleService
         new("REPORT_LEAVE", "รายงานสรุปการลา", "REPORT_LEAVE", "REPORT", "รายงาน", "REPORT"),
 
         // 17. จัดการประกาศ (ANNOUNCEMENTS)
-        new("ANNOUNCEMENTS", "จัดการข่าวสารและประกาศองค์กร", "ANNOUNCEMENTS", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),
+        new("ANNOUNCEMENTS_GENERAL", "ประกาศข่าวสารทั่วไป", "ANNOUNCEMENTS_GENERAL", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),
+        new("ANNOUNCEMENTS_ACTIVITY", "ประกาศกิจกรรม", "ANNOUNCEMENTS_ACTIVITY", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),
 
         // 18. ข้อมูลหลัก (Master Data) (MASTER_DATA)
         new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "MASTER_DATA", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "MASTER_DATA"),
@@ -143,7 +144,15 @@ public class RoleService : IRoleService
         new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่า", "SETTINGS"),
 
         // 20. วิธีการใช้งาน (GUIDE)
-        new("GUIDE_ONBOARDING", "Flow เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE")
+        new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_PAYROLL", "ไกด์: การประมวลผลรอบเงินเดือนประจำเดือน", "GUIDE_PAYROLL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_TRANSFER", "ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง", "GUIDE_TRANSFER", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_LEAVE_SETUP", "ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี", "GUIDE_LEAVE_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_LEAVE_APPROVAL", "ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม", "GUIDE_LEAVE_APPROVAL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_COMPANY_SETUP", "ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่", "GUIDE_COMPANY_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)
@@ -237,7 +246,7 @@ public class RoleService : IRoleService
             }
 
             // Parent permissions for backward compatibility and broad modules
-            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW", "ESS_BENEFIT_VIEW" };
+            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW", "ESS_BENEFIT_VIEW", "GUIDE_VIEW", "ANNOUNCEMENTS_VIEW" };
             foreach (var pCode in parentCodes)
             {
                 if (!existingPerms.Contains(pCode))
@@ -270,6 +279,69 @@ public class RoleService : IRoleService
                 .Select(kvp => kvp.Value)
                 .ToHashSet();
 
+            // Auto-migrate existing roles that have legacy ANNOUNCEMENTS permissions to ANNOUNCEMENTS_GENERAL and ANNOUNCEMENTS_ACTIVITY
+            var legacyAnnouncePerms = await _dbContext.RolePermissions
+                .Include(rp => rp.Permission)
+                .Where(rp => rp.Permission.PermissionCode.StartsWith("ANNOUNCEMENTS_") && !rp.Permission.PermissionCode.StartsWith("ANNOUNCEMENTS_GENERAL_") && !rp.Permission.PermissionCode.StartsWith("ANNOUNCEMENTS_ACTIVITY_"))
+                .ToListAsync(cancellationToken);
+
+            if (legacyAnnouncePerms.Count > 0)
+            {
+                var newRolePerms = new List<RolePermission>();
+                var newRoleScopes = new List<RoleDataScope>();
+
+                var legacyPermIds = legacyAnnouncePerms.Select(lp => lp.PermissionId).ToHashSet();
+                var legacyScopes = await _dbContext.RoleDataScopes
+                    .Where(rds => legacyPermIds.Contains(rds.PermissionId))
+                    .ToListAsync(cancellationToken);
+
+                var existingRolePermKeys = (await _dbContext.RolePermissions
+                    .Select(rp => $"{rp.RoleId}_{rp.PermissionId}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                var existingScopeKeys = (await _dbContext.RoleDataScopes
+                    .Select(rds => $"{rds.RoleId}_{rds.PermissionId}_{rds.DataVisibilityScope}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                foreach (var lp in legacyAnnouncePerms)
+                {
+                    var action = lp.Permission.PermissionCode.Replace("ANNOUNCEMENTS_", "");
+                    var targetCodes = new[] { $"ANNOUNCEMENTS_GENERAL_{action}", $"ANNOUNCEMENTS_ACTIVITY_{action}" };
+
+                    foreach (var tc in targetCodes)
+                    {
+                        if (_cachedPermMap.TryGetValue(tc, out var tcId))
+                        {
+                            if (existingRolePermKeys.Add($"{lp.RoleId}_{tcId}"))
+                            {
+                                newRolePerms.Add(new RolePermission { RoleId = lp.RoleId, PermissionId = tcId });
+                            }
+
+                            var matchedScopes = legacyScopes.Where(ls => ls.RoleId == lp.RoleId && ls.PermissionId == lp.PermissionId);
+                            foreach (var ms in matchedScopes)
+                            {
+                                if (existingScopeKeys.Add($"{lp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))
+                                {
+                                    newRoleScopes.Add(new RoleDataScope
+                                    {
+                                        RoleId = lp.RoleId,
+                                        PermissionId = tcId,
+                                        DataVisibilityScope = ms.DataVisibilityScope
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (newRolePerms.Count > 0) _dbContext.RolePermissions.AddRange(newRolePerms);
+                if (newRoleScopes.Count > 0) _dbContext.RoleDataScopes.AddRange(newRoleScopes);
+                if (newRolePerms.Count > 0 || newRoleScopes.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
             _permissionsInitialized = true;
             return (_cachedPermMap, _cachedRelevantPermIds);
         }
@@ -298,7 +370,19 @@ public class RoleService : IRoleService
             var editCode = $"{mod.Prefix}_EDIT";
             var approveCode = $"{mod.Prefix}_APPROVE";
 
-            bool HasScope(string permCode, string scopeName) => activeScopes.Contains((permCode, scopeName));
+            bool HasScope(string permCode, string scopeName)
+            {
+                if (activeScopes.Contains((permCode, scopeName))) return true;
+                if (!string.IsNullOrEmpty(mod.ParentPermissionPrefix))
+                {
+                    var action = permCode.Substring(permCode.LastIndexOf('_') + 1);
+                    if (activeScopes.Contains(($"{mod.ParentPermissionPrefix}_{action}", scopeName)))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
 
             var selfPerms = new ScopeActionPermissionsDto
             {
