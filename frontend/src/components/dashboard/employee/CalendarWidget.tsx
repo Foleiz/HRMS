@@ -104,10 +104,10 @@ export const CalendarWidget: React.FC = () => {
     const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
 
     // 1. เพิ่มวันหยุดประจำปี (สีแดง diamond)
+    // ทุกวันหยุดในตาราง holidays (PUBLIC, COMPANY_SPECIAL, SUBSTITUTE) ถือเป็น "วันหยุด" ทั้งหมด
     for (const h of holidays) {
       if (!h.holidayDate) continue;
-      const isCompanyEvent = h.holidayType === 'COMPANY_SPECIAL' || h.holidayType === 'ACTIVITY';
-      const isHoliday = !isCompanyEvent;
+      const isHoliday = h.holidayType !== 'ACTIVITY';
 
       if (h.holidayDate.startsWith(monthPrefix)) {
         const dayNum = parseInt(h.holidayDate.split('-')[2], 10);
@@ -117,7 +117,7 @@ export const CalendarWidget: React.FC = () => {
           day: dayNum,
           title: h.holidayName,
           type: h.holidayType,
-          typeLabel: isHoliday ? 'วันหยุด' : 'กิจกรรม',
+          typeLabel: isHoliday ? (h.holidayType === 'SUBSTITUTE' ? 'วันหยุดชดเชย' : 'วันหยุด') : 'กิจกรรม',
           isHoliday,
           isPinned: false,
           timeRange: isHoliday ? 'ทั้งวัน' : '09:00',
@@ -340,7 +340,7 @@ export const CalendarWidget: React.FC = () => {
             })}
           </div>
 
-          {/* Legend: คำอธิบายสัญลักษณ์และจำนวนวันสำคัญ */}
+          {/* Legend: คำอธิบายสัญลักษณ์ และ ลิงก์ดูทั้งหมด (ย้ายมาแทนตำแหน่ง 8 วันสำคัญ) */}
           <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10.5px] px-1">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
@@ -354,79 +354,61 @@ export const CalendarWidget: React.FC = () => {
             </div>
             <Link
               href="/work-calendar"
-              className="text-slate-700 dark:text-slate-300 hover:text-[#94292B] text-[11px] font-medium flex items-center gap-0.5 transition-colors cursor-pointer"
+              className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] text-[11px] font-bold flex items-center gap-0.5 transition-colors cursor-pointer"
             >
-              <span>{eventsThisMonth.length} วันสำคัญ</span>
-              <span className="text-xs leading-none">›</span>
+              <span>ดูทั้งหมด</span>
+              <span className="text-xs leading-none font-bold">›</span>
             </Link>
           </div>
         </div>
 
-        {/* Selected Date Details Box (Fixed height: h-[52px] matching previous form without date header row) */}
+        {/* Selected Date Details Box (Fixed height: h-[52px], ตัด "+ อีก X รายการ" ออก และแสดงรายการกิจกรรม/วันหยุด) */}
         {selectedEvents.length > 0 ? (
-          <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-between shrink-0 overflow-hidden text-[10.5px]">
-            {/* Top row: Event Badge + Title + Time */}
-            <div className="flex items-center justify-between gap-1.5 min-w-0">
-              <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                <span
-                  className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
-                    selectedEvents[0].isHoliday
-                      ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                      : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
-                  }`}
-                >
-                  {selectedEvents[0].typeLabel}
-                </span>
-                {selectedEvents[0].isPinned && (
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                    ปักหมุด
+          <div
+            className={`mt-1.5 h-[52px] min-h-[52px] max-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col shrink-0 overflow-hidden text-[10.5px] ${
+              selectedEvents.length === 1 ? 'justify-center p-2' : 'justify-between p-1.5'
+            }`}
+          >
+            {selectedEvents.slice(0, 2).map((ev, idx) => (
+              <div
+                key={ev.id}
+                className={`flex items-center justify-between gap-1.5 min-w-0 ${
+                  idx > 0 ? 'pt-1 border-t border-slate-100 dark:border-slate-700/60' : ''
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span
+                    className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
+                      ev.isHoliday
+                        ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                        : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                    }`}
+                  >
+                    {ev.typeLabel}
                   </span>
-                )}
-                <span
-                  className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
-                  title={selectedEvents[0].title}
-                >
-                  {selectedEvents[0].title}
+                  {ev.isPinned && (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                      ปักหมุด
+                    </span>
+                  )}
+                  <span
+                    className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
+                    title={ev.title}
+                  >
+                    {ev.title}
+                  </span>
+                </div>
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
+                  {ev.timeRange || (ev.isHoliday ? 'ทั้งวัน' : '09:00')}
                 </span>
               </div>
-              <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
-                {selectedEvents[0].timeRange || (selectedEvents[0].isHoliday ? 'ทั้งวัน' : '09:00')}
-              </span>
-            </div>
-
-            {/* Bottom row: + อีก X รายการ (Left) & ดูทั้งหมด › (Right) */}
-            <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700/60 text-[11px]">
-              {selectedEvents.length > 1 ? (
-                <Link
-                  href="/work-calendar"
-                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium transition-colors cursor-pointer"
-                >
-                  + อีก {selectedEvents.length - 1} รายการ
-                </Link>
-              ) : (
-                <span />
-              )}
-              <Link
-                href="/work-calendar"
-                className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] font-bold flex items-center gap-0.5 transition-colors cursor-pointer"
-              >
-                <span>ดูทั้งหมด</span>
-                <span className="text-xs leading-none font-bold">›</span>
-              </Link>
-            </div>
+            ))}
           </div>
         ) : (
           <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden">
             {/* Top row: Status message */}
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="text-slate-500 dark:text-slate-400 font-medium">ไม่มีวันหยุดหรือกิจกรรมในวันนี้</span>
-              <Link
-                href="/work-calendar"
-                className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] font-bold flex items-center gap-0.5 transition-colors cursor-pointer text-[11px]"
-              >
-                <span>ดูทั้งหมด</span>
-                <span className="text-xs leading-none font-bold">›</span>
-              </Link>
             </div>
 
             {/* Bottom row: Next upcoming event */}
