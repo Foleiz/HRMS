@@ -744,6 +744,38 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       normalized = normalized.filter((m) => m.moduleCode !== 'ANNOUNCEMENTS');
     }
 
+    // ตรวจสอบโมดูลหมวด GUIDE: หากขั้นตอนใน Flow ถูกติ๊กไม่ครบ ให้ถือว่า Flow นั้นไม่ถูกใช้งาน (ปิด canView ของ GUIDE_xxx)
+    GUIDE_FLOW_CONFIGS.forEach((flow) => {
+      const isScopeActive = (m: ModulePermissionScope) =>
+        m.canView ||
+        m.self?.view || m.self?.create || m.self?.edit || m.self?.approve ||
+        m.team?.view || m.team?.create || m.team?.edit || m.team?.approve ||
+        m.department?.view || m.department?.create || m.department?.edit || m.department?.approve ||
+        m.division?.view || m.division?.create || m.division?.edit || m.division?.approve ||
+        m.organization?.view || m.organization?.create || m.organization?.edit || m.organization?.approve;
+
+      const allStepsActive = flow.steps.length > 0 && flow.steps.every((s) => {
+        const m = normalized.find((mod) => mod.moduleCode === s.targetModuleCode);
+        return m ? isScopeActive(m) : false;
+      });
+
+      if (!allStepsActive) {
+        const idx = normalized.findIndex((m) => m.moduleCode === flow.moduleCode);
+        if (idx !== -1) {
+          const def = () => ({ view: false, create: false, edit: false, approve: false });
+          normalized[idx] = {
+            ...normalized[idx],
+            canView: false,
+            self: def(),
+            team: def(),
+            department: def(),
+            division: def(),
+            organization: def(),
+          };
+        }
+      }
+    });
+
     return normalized;
   };
 
@@ -922,15 +954,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Helper: ตรวจสอบว่า Flow ไกด์ใดๆ เปิดใช้งานอยู่หรือไม่ (เช็คทั้งตัวโมดูล GUIDE_xxx และ targetModuleCodes)
+  // Helper: ตรวจสอบว่า Flow ไกด์เปิดใช้งานอยู่หรือไม่ (ต้องติ๊กสเต็ปย่อยครบทุกขั้นตอนเท่านั้น หากไม่ครบจะถือว่าไม่ได้ใช้งาน)
   const isGuideFlowActive = (flow: GuideFlowConfig) => {
-    const guideMod = localModules.find((m) => m.moduleCode === flow.moduleCode);
-    const hasGuidePerm = guideMod ? isModuleActive(guideMod) : false;
-    const hasActiveStep = flow.steps.some((s) => {
+    if (!flow.steps.length) return false;
+    return flow.steps.every((s) => {
       const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
       return m ? isModuleActive(m) : false;
     });
-    return hasGuidePerm || hasActiveStep;
   };
 
   // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์อยู่ใน Flow
@@ -970,47 +1000,70 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     }).length;
   };
 
-  // Handler สำหรับติ๊กเปิด/ปิดสเต็ปย่อยใน Flow (Two-way sync กับโมดูลภายนอก)
+  // Handler สำหรับติ๊กเปิด/ปิดสเต็ปย่อยใน Flow (หากติ๊กไม่ครบทุกสเต็ป จะถือว่า Flow นี้ปิดใช้งาน)
   const handleToggleFlowStep = (step: GuideStepConfig, flow: GuideFlowConfig) => {
-    const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
-    const willBeActive = targetMod ? !isModuleActive(targetMod) : true;
+    setLocalModules((prev) => {
+      const targetMod = prev.find((m) => m.moduleCode === step.targetModuleCode);
+      const willStepBeActive = targetMod ? !isModuleActive(targetMod) : true;
 
-    // สลับสถานะของโมดูลเป้าหมาย
-    handleToggleModule(step.targetModuleCode);
+      // ตรวจสอบว่าหลังจากสลับสเต็ปนี้แล้ว ทุกสเต็ปใน Flow จะเปิดครบทั้งหมดหรือไม่
+      const allStepsWillBeActive = flow.steps.every((s) => {
+        if (s.targetModuleCode === step.targetModuleCode) {
+          return willStepBeActive;
+        }
+        const otherMod = prev.find((pm) => pm.moduleCode === s.targetModuleCode);
+        return otherMod ? isModuleActive(otherMod) : false;
+      });
 
-    // Sync สถานะของตัวโมดูล GUIDE_xxx
-    setLocalModules((prev) =>
-      prev.map((m) => {
-        if (m.moduleCode === flow.moduleCode) {
-          if (willBeActive) {
+      const empty = { view: false, create: false, edit: false, approve: false };
+
+      return prev.map((m) => {
+        // 1. อัปเดตโมดูลเป้าหมายของสเต็ปที่คลิก
+        if (m.moduleCode === step.targetModuleCode) {
+          if (willStepBeActive) {
             return {
               ...m,
               canView: true,
               self: { view: true, create: false, edit: false, approve: false },
             };
           } else {
-            const otherStepsActive = flow.steps.some(
-              (s) =>
-                s.targetModuleCode !== step.targetModuleCode &&
-                prev.some((pm) => pm.moduleCode === s.targetModuleCode && isModuleActive(pm))
-            );
-            if (!otherStepsActive) {
-              const empty = { view: false, create: false, edit: false, approve: false };
-              return {
-                ...m,
-                canView: false,
-                self: { ...empty },
-                team: { ...empty },
-                department: { ...empty },
-                division: { ...empty },
-                organization: { ...empty },
-              };
-            }
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
           }
         }
+
+        // 2. อัปเดตโมดูลหลักของ Flow (GUIDE_xxx): เปิดเฉพาะเมื่อทุกสเต็ปใน Flow ถูกติ๊กครบทั้งหมดเท่านั้น
+        if (m.moduleCode === flow.moduleCode) {
+          if (allStepsWillBeActive) {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          } else {
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
+          }
+        }
+
         return m;
-      })
-    );
+      });
+    });
+    setIsDirty(true);
   };
 
   // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดทั้งโมดูล GUIDE_xxx และทุกเมนูย่อยใน Flow)
@@ -1023,6 +1076,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       return prev.map((m) => {
         if (targetCodes.has(m.moduleCode)) {
           if (currentlyActive) {
+            // หากเปิดครบอยู่แล้ว เมื่อกดปิด → ปิดทั้ง Flow และทุกสเต็ป
             return {
               ...m,
               canView: false,
@@ -1033,6 +1087,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               organization: { ...empty },
             };
           } else {
+            // หากยังเปิดไม่ครบ หรือปิดอยู่ เมื่อกดเปิด → เปิดทั้ง Flow และทุกสเต็ปให้ครบสมบูรณ์
             return {
               ...m,
               canView: true,
@@ -1779,7 +1834,15 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                           <span className="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug">
                                             {cleanFlowTitle}
                                           </span>
-                                          <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50">
+                                          <span
+                                            className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                                              isFlowActive
+                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/50'
+                                                : activeStepsCount > 0
+                                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700'
+                                            }`}
+                                          >
                                             {activeStepsCount}/{flow.steps.length} ขั้นตอน
                                           </span>
                                           {warningCount > 0 && (

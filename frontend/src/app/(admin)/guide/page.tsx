@@ -17,15 +17,15 @@ interface GuideItem {
 }
 
 const GUIDE_FLOW_PERMISSIONS: Record<string, string[]> = {
-  'hr-onboarding': ['GUIDE_ONBOARDING_VIEW', 'EMP_PROFILE_VIEW'],
-  'payroll-cycle': ['GUIDE_PAYROLL_VIEW', 'PAYROLL_PERIOD_VIEW', 'PAYROLL_CALC_VIEW'],
-  'offboarding': ['GUIDE_OFFBOARDING_VIEW', 'ESS_DOCS_VIEW'],
-  'shift-schedule': ['GUIDE_SHIFT_SCHEDULE_VIEW', 'TIME_SCHEDULE_VIEW'],
-  'attendance-import': ['GUIDE_ATTENDANCE_IMPORT_VIEW', 'TIME_IMPORT_VIEW'],
-  'transfer-flow': ['GUIDE_TRANSFER_VIEW', 'EMP_TRANSFER_VIEW'],
-  'leave-setup': ['GUIDE_LEAVE_SETUP_VIEW', 'LEAVE_TYPE_VIEW'],
-  'leave-approval': ['GUIDE_LEAVE_APPROVAL_VIEW', 'APPROVAL_LEAVE_VIEW'],
-  'company-setup': ['GUIDE_COMPANY_SETUP_VIEW', 'ORG_STRUCT_VIEW'],
+  'hr-onboarding': ['GUIDE_ONBOARDING_VIEW'],
+  'payroll-cycle': ['GUIDE_PAYROLL_VIEW'],
+  'offboarding': ['GUIDE_OFFBOARDING_VIEW'],
+  'shift-schedule': ['GUIDE_SHIFT_SCHEDULE_VIEW'],
+  'attendance-import': ['GUIDE_ATTENDANCE_IMPORT_VIEW'],
+  'transfer-flow': ['GUIDE_TRANSFER_VIEW'],
+  'leave-setup': ['GUIDE_LEAVE_SETUP_VIEW'],
+  'leave-approval': ['GUIDE_LEAVE_APPROVAL_VIEW'],
+  'company-setup': ['GUIDE_COMPANY_SETUP_VIEW'],
 };
 
 const GUIDE_ITEMS: GuideItem[] = WIZARD_FLOWS.map((flow) => ({
@@ -49,13 +49,13 @@ function GuidePageContent() {
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  // กรองคู่มือตามสิทธิ์การเข้าถึงของผู้ใช้งาน
+  // กรองคู่มือตามสิทธิ์การเข้าถึงของผู้ใช้งาน (ต้องมีสิทธิ์โมดูลไกด์ ซึ่งจะได้รับเฉพาะเมื่อกำหนดสิทธิ์ขั้นตอนย่อยครบทั้งหมดเท่านั้น)
   const permittedItems = useMemo(() => {
     if (isSuper) return GUIDE_ITEMS;
     return GUIDE_ITEMS.filter((item) => {
       const perms = GUIDE_FLOW_PERMISSIONS[item.id];
       if (!perms || perms.length === 0) return true;
-      return perms.some((p) => hasPermission(p));
+      return perms.every((p) => hasPermission(p));
     });
   }, [isSuper, hasPermission]);
 
