@@ -1127,7 +1127,19 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
               <div ref={targetDropdownRef} className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60 relative">
-                <div className="flex items-center justify-between">
+                {/* Dark Backdrop Overlay when Target Dropdown is open */}
+                {formTargetType !== 'ALL' && isTargetDropdownOpen && (
+                  <div
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-[1px] z-40 transition-opacity animate-in fade-in duration-150 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsTargetDropdownOpen(false);
+                    }}
+                    aria-hidden="true"
+                  />
+                )}
+
+                <div className="relative z-50 flex items-center justify-between">
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     กลุ่มเป้าหมายผู้มองเห็นประกาศ
                   </label>
@@ -1141,7 +1153,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                 </div>
 
                 {/* Target Type Selector Segmented Controls */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
+                <div className="relative z-50 grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
                   {[
                     { id: 'ALL', label: 'ทุกคนในองค์กร', icon: Globe },
                     { id: 'DIVISION', label: 'ฝ่าย', icon: Building2 },
