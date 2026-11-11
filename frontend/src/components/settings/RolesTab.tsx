@@ -223,10 +223,10 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
     ],
   },
   {
-    id: 'payroll-cycle',
-    moduleCode: 'GUIDE_PAYROLL',
-    title: 'ไกด์: การประมวลผลรอบเงินเดือนประจำเดือน',
-    subtitle: 'ตรวจสอบเวลาทำงาน สวัสดิการ รอบเงินเดือน และประมวลเงินเดือนสุทธิ',
+    id: 'payroll-cycle-hr',
+    moduleCode: 'GUIDE_PAYROLL_HR',
+    title: 'ไกด์: การประมวลผลรอบเงินเดือนประจำเดือน (ฝ่ายบุคคล / HR)',
+    subtitle: 'ตรวจสอบเวลาทำงาน สรุปเวลาทำงาน สร้างรอบเงินเดือน และสั่งคำนวณเงินเดือนสุทธิ',
     icon: Wallet,
     steps: [
       {
@@ -234,33 +234,53 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
         targetModuleCode: 'TIME_DAILY',
         label: '1. ตรวจบันทึกเวลาประจำวัน',
         route: '/attendance/daily?tab=daily',
-        badge: 'เวลาทำงาน & โอที',
+        badge: 'เวลาทำงาน ขาด ลา มาสาย & โอที',
         icon: Clock,
       },
       {
         step: 2,
-        targetModuleCode: 'BENEFIT_BALANCE',
-        label: '2. สวัสดิการ',
-        route: '/benefits/balances',
-        badge: 'ยอดสวัสดิการพนักงาน',
-        icon: Gift,
-      },
-      {
-        step: 3,
-        targetModuleCode: 'PAYROLL_PERIOD',
-        label: '3. รอบเงินเดือน',
-        route: '/payroll?tab=periods',
-        badge: 'รอบเงินเดือน (Payroll Periods)',
-        icon: CreditCard,
-      },
-      {
-        step: 4,
         targetModuleCode: 'PAYROLL_CALC',
-        label: '4. ประมวลเงินเดือน',
+        label: '2. ประมวลเงินเดือน',
         route: '/payroll?tab=process',
-        badge: 'คำนวณเงินเดือนสุทธิ / ปิดงวด',
+        badge: 'สร้างรอบเงินเดือนและคำนวณเงินเดือนสุทธิ',
         requiresWrite: true,
         icon: Calculator,
+      },
+    ],
+  },
+  {
+    id: 'payroll-cycle-finance',
+    moduleCode: 'GUIDE_PAYROLL_FINANCE',
+    title: 'ไกด์: การตรวจสอบและจ่ายเงินเดือนประจำเดือน (ฝ่ายการเงิน)',
+    subtitle: 'ตรวจสอบรายการเงินเดือนและสลิปพนักงาน ยืนยันความถูกต้อง โอนเงิน และปิดรอบ',
+    icon: CreditCard,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'PAYROLL_CALC',
+        label: '1. ตรวจสอบและจ่ายเงินเดือน',
+        route: '/payroll?tab=process',
+        badge: 'ตรวจสอบสลิป ยืนยันความถูกต้อง และจ่ายเงินเดือน',
+        requiresWrite: true,
+        icon: Calculator,
+      },
+    ],
+  },
+  {
+    id: 'payroll-cycle-ceo',
+    moduleCode: 'GUIDE_PAYROLL_CEO',
+    title: 'ไกด์: การอนุมัติรอบเงินเดือนประจำเดือน (ผู้บริหาร / CEO)',
+    subtitle: 'ตรวจสอบยอดรวม รายการเงินเดือน และอนุมัติรอบเงินเดือนประจำงวด',
+    icon: Shield,
+    steps: [
+      {
+        step: 1,
+        targetModuleCode: 'PAYROLL_CALC',
+        label: '1. อนุมัติรอบเงินเดือน',
+        route: '/payroll?tab=process',
+        badge: 'ตรวจสอบยอดจ่ายรวมและอนุมัติรอบเงินเดือน',
+        requiresWrite: true,
+        icon: CheckCircle2,
       },
     ],
   },
@@ -742,6 +762,79 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
     if (legacyAnnounce) {
       normalized = normalized.filter((m) => m.moduleCode !== 'ANNOUNCEMENTS');
+    }
+
+    // ตรวจสอบโมดูลหมวด GUIDE: จัดการแปลง GUIDE_PAYROLL เดิมเป็น 3 เมนูย่อย
+    const legacyGuidePayroll = normalized.find((m) => m.moduleCode === 'GUIDE_PAYROLL');
+    const hasPayrollHr = normalized.some((m) => m.moduleCode === 'GUIDE_PAYROLL_HR');
+    const hasPayrollFinance = normalized.some((m) => m.moduleCode === 'GUIDE_PAYROLL_FINANCE');
+    const hasPayrollCeo = normalized.some((m) => m.moduleCode === 'GUIDE_PAYROLL_CEO');
+
+    if (!hasPayrollHr) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'GUIDE_PAYROLL_HR',
+        moduleName: 'ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)',
+        groupName: 'GUIDE',
+        categoryCode: 'GUIDE',
+        categoryName: 'วิธีการใช้งาน',
+        dataScope: legacyGuidePayroll?.dataScope || 'ORGANIZATION',
+        canView: legacyGuidePayroll?.canView || false,
+        canCreate: legacyGuidePayroll?.canCreate || false,
+        canEdit: legacyGuidePayroll?.canEdit || false,
+        canApprove: legacyGuidePayroll?.canApprove || false,
+        self: legacyGuidePayroll?.self ? { ...legacyGuidePayroll.self } : def(),
+        team: legacyGuidePayroll?.team ? { ...legacyGuidePayroll.team } : def(),
+        department: legacyGuidePayroll?.department ? { ...legacyGuidePayroll.department } : def(),
+        division: legacyGuidePayroll?.division ? { ...legacyGuidePayroll.division } : def(),
+        organization: legacyGuidePayroll?.organization ? { ...legacyGuidePayroll.organization } : def(),
+      });
+    }
+
+    if (!hasPayrollFinance) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'GUIDE_PAYROLL_FINANCE',
+        moduleName: 'ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)',
+        groupName: 'GUIDE',
+        categoryCode: 'GUIDE',
+        categoryName: 'วิธีการใช้งาน',
+        dataScope: legacyGuidePayroll?.dataScope || 'ORGANIZATION',
+        canView: legacyGuidePayroll?.canView || false,
+        canCreate: legacyGuidePayroll?.canCreate || false,
+        canEdit: legacyGuidePayroll?.canEdit || false,
+        canApprove: legacyGuidePayroll?.canApprove || false,
+        self: legacyGuidePayroll?.self ? { ...legacyGuidePayroll.self } : def(),
+        team: legacyGuidePayroll?.team ? { ...legacyGuidePayroll.team } : def(),
+        department: legacyGuidePayroll?.department ? { ...legacyGuidePayroll.department } : def(),
+        division: legacyGuidePayroll?.division ? { ...legacyGuidePayroll.division } : def(),
+        organization: legacyGuidePayroll?.organization ? { ...legacyGuidePayroll.organization } : def(),
+      });
+    }
+
+    if (!hasPayrollCeo) {
+      const def = () => ({ view: false, create: false, edit: false, approve: false });
+      normalized.push({
+        moduleCode: 'GUIDE_PAYROLL_CEO',
+        moduleName: 'ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)',
+        groupName: 'GUIDE',
+        categoryCode: 'GUIDE',
+        categoryName: 'วิธีการใช้งาน',
+        dataScope: legacyGuidePayroll?.dataScope || 'ORGANIZATION',
+        canView: legacyGuidePayroll?.canView || false,
+        canCreate: legacyGuidePayroll?.canCreate || false,
+        canEdit: legacyGuidePayroll?.canEdit || false,
+        canApprove: legacyGuidePayroll?.canApprove || false,
+        self: legacyGuidePayroll?.self ? { ...legacyGuidePayroll.self } : def(),
+        team: legacyGuidePayroll?.team ? { ...legacyGuidePayroll.team } : def(),
+        department: legacyGuidePayroll?.department ? { ...legacyGuidePayroll.department } : def(),
+        division: legacyGuidePayroll?.division ? { ...legacyGuidePayroll.division } : def(),
+        organization: legacyGuidePayroll?.organization ? { ...legacyGuidePayroll.organization } : def(),
+      });
+    }
+
+    if (legacyGuidePayroll) {
+      normalized = normalized.filter((m) => m.moduleCode !== 'GUIDE_PAYROLL');
     }
 
     // ตรวจสอบโมดูลหมวด GUIDE: หากขั้นตอนใน Flow ถูกติ๊กไม่ครบ ให้ถือว่า Flow นั้นไม่ถูกใช้งาน (ปิด canView ของ GUIDE_xxx)

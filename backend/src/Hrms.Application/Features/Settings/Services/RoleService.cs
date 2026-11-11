@@ -145,7 +145,9 @@ public class RoleService : IRoleService
 
         // 20. วิธีการใช้งาน (GUIDE)
         new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
-        new("GUIDE_PAYROLL", "ไกด์: การประมวลผลรอบเงินเดือนประจำเดือน", "GUIDE_PAYROLL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_PAYROLL_HR", "ไกด์: การประมวลผลรอบเงินเดือน (ฝ่ายบุคคล / HR)", "GUIDE_PAYROLL_HR", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
+        new("GUIDE_PAYROLL_FINANCE", "ไกด์: การตรวจสอบและจ่ายเงินเดือน (ฝ่ายการเงิน)", "GUIDE_PAYROLL_FINANCE", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
+        new("GUIDE_PAYROLL_CEO", "ไกด์: การอนุมัติรอบเงินเดือน (ผู้บริหาร / CEO)", "GUIDE_PAYROLL_CEO", "GUIDE", "วิธีการใช้งาน", "GUIDE_PAYROLL"),
         new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
         new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
         new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
@@ -307,6 +309,72 @@ public class RoleService : IRoleService
                 {
                     var action = lp.Permission.PermissionCode.Replace("ANNOUNCEMENTS_", "");
                     var targetCodes = new[] { $"ANNOUNCEMENTS_GENERAL_{action}", $"ANNOUNCEMENTS_ACTIVITY_{action}" };
+
+                    foreach (var tc in targetCodes)
+                    {
+                        if (_cachedPermMap.TryGetValue(tc, out var tcId))
+                        {
+                            if (existingRolePermKeys.Add($"{lp.RoleId}_{tcId}"))
+                            {
+                                newRolePerms.Add(new RolePermission { RoleId = lp.RoleId, PermissionId = tcId });
+                            }
+
+                            var matchedScopes = legacyScopes.Where(ls => ls.RoleId == lp.RoleId && ls.PermissionId == lp.PermissionId);
+                            foreach (var ms in matchedScopes)
+                            {
+                                if (existingScopeKeys.Add($"{lp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))
+                                {
+                                    newRoleScopes.Add(new RoleDataScope
+                                    {
+                                        RoleId = lp.RoleId,
+                                        PermissionId = tcId,
+                                        DataVisibilityScope = ms.DataVisibilityScope
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (newRolePerms.Count > 0) _dbContext.RolePermissions.AddRange(newRolePerms);
+                if (newRoleScopes.Count > 0) _dbContext.RoleDataScopes.AddRange(newRoleScopes);
+                if (newRolePerms.Count > 0 || newRoleScopes.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            // Auto-migrate existing roles that have legacy GUIDE_PAYROLL permissions to GUIDE_PAYROLL_HR, GUIDE_PAYROLL_FINANCE, and GUIDE_PAYROLL_CEO
+            var legacyPayrollPerms = await _dbContext.RolePermissions
+                .Include(rp => rp.Permission)
+                .Where(rp => rp.Permission.PermissionCode.StartsWith("GUIDE_PAYROLL_")
+                          && !rp.Permission.PermissionCode.StartsWith("GUIDE_PAYROLL_HR_")
+                          && !rp.Permission.PermissionCode.StartsWith("GUIDE_PAYROLL_FINANCE_")
+                          && !rp.Permission.PermissionCode.StartsWith("GUIDE_PAYROLL_CEO_"))
+                .ToListAsync(cancellationToken);
+
+            if (legacyPayrollPerms.Count > 0)
+            {
+                var newRolePerms = new List<RolePermission>();
+                var newRoleScopes = new List<RoleDataScope>();
+
+                var legacyPermIds = legacyPayrollPerms.Select(lp => lp.PermissionId).ToHashSet();
+                var legacyScopes = await _dbContext.RoleDataScopes
+                    .Where(rds => legacyPermIds.Contains(rds.PermissionId))
+                    .ToListAsync(cancellationToken);
+
+                var existingRolePermKeys = (await _dbContext.RolePermissions
+                    .Select(rp => $"{rp.RoleId}_{rp.PermissionId}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                var existingScopeKeys = (await _dbContext.RoleDataScopes
+                    .Select(rds => $"{rds.RoleId}_{rds.PermissionId}_{rds.DataVisibilityScope}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                foreach (var lp in legacyPayrollPerms)
+                {
+                    var action = lp.Permission.PermissionCode.Replace("GUIDE_PAYROLL_", "");
+                    var targetCodes = new[] { $"GUIDE_PAYROLL_HR_{action}", $"GUIDE_PAYROLL_FINANCE_{action}", $"GUIDE_PAYROLL_CEO_{action}" };
 
                     foreach (var tc in targetCodes)
                     {

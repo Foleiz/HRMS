@@ -19,11 +19,11 @@ interface GuideItem {
 
 const GUIDE_FLOW_PERMISSIONS: Record<string, string[]> = {
   'hr-onboarding': ['GUIDE_ONBOARDING_VIEW'],
-  'payroll-cycle-hr': ['GUIDE_PAYROLL_VIEW'],
-  'payroll-cycle-finance': ['GUIDE_PAYROLL_VIEW'],
-  'payroll-cycle-ceo': ['GUIDE_PAYROLL_VIEW'],
-  'payroll-cycle-bank': ['GUIDE_PAYROLL_VIEW'],
-  'payroll-cycle': ['GUIDE_PAYROLL_VIEW'],
+  'payroll-cycle-hr': ['GUIDE_PAYROLL_HR_VIEW'],
+  'payroll-cycle-finance': ['GUIDE_PAYROLL_FINANCE_VIEW'],
+  'payroll-cycle-ceo': ['GUIDE_PAYROLL_CEO_VIEW'],
+  'payroll-cycle-bank': ['GUIDE_PAYROLL_FINANCE_VIEW'],
+  'payroll-cycle': ['GUIDE_PAYROLL_HR_VIEW'],
   'offboarding': ['GUIDE_OFFBOARDING_VIEW'],
   'shift-schedule': ['GUIDE_SHIFT_SCHEDULE_VIEW'],
   'attendance-import': ['GUIDE_ATTENDANCE_IMPORT_VIEW'],
@@ -53,7 +53,11 @@ function GuidePageContent() {
     return WIZARD_FLOWS.map((flow) => {
       if (!isSuper) {
         const flowPerms = GUIDE_FLOW_PERMISSIONS[flow.id];
-        if (flowPerms && flowPerms.length > 0 && !flowPerms.every((p) => hasPermission(p))) {
+        if (
+          flowPerms &&
+          flowPerms.length > 0 &&
+          !flowPerms.some((p) => hasPermission(p) || (p.startsWith('GUIDE_PAYROLL_') && hasPermission('GUIDE_PAYROLL_VIEW')))
+        ) {
           return null;
         }
       }
