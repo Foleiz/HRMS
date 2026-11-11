@@ -368,13 +368,11 @@ export const CalendarWidget: React.FC = () => {
           </div>
         </div>
 
-        {/* Selected Date Details Box (Fixed height: h-[52px], แสดงบรรทัดเดียวแบบเดิม พร้อมเวลาเต็มช่วง) */}
+        {/* Selected Date Details Box (ขยายขอบ panel ขึ้นใกล้แถบสัญลักษณ์ ลดช่องว่าง) */}
         {selectedEvents.length > 0 ? (
           <div
             onClick={() => setIsAllEventsModalOpen(true)}
-            className={`mt-1.5 h-[52px] min-h-[52px] max-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col shrink-0 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors ${
-              selectedEvents.length === 1 ? 'justify-center p-2' : 'justify-between p-1.5'
-            }`}
+            className="mt-1 flex-1 min-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-center gap-1.5 px-2.5 py-1.5 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
             title="คลิกเพื่อดูรายการทั้งหมด"
           >
             {selectedEvents.slice(0, 2).map((ev, idx) => (
@@ -408,7 +406,7 @@ export const CalendarWidget: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden">
+          <div className="mt-1 flex-1 min-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-center gap-1 overflow-hidden">
             {/* Top row: Status message */}
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="text-slate-500 dark:text-slate-400 font-medium">ไม่มีวันหยุดหรือกิจกรรมในวันนี้</span>
