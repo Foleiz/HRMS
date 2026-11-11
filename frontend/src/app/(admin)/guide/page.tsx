@@ -18,18 +18,19 @@ interface GuideItem {
 }
 
 const GUIDE_FLOW_PERMISSIONS: Record<string, string[]> = {
-  'hr-onboarding': ['GUIDE_ONBOARDING_VIEW', 'EMP_PROFILE_VIEW'],
-  'payroll-cycle-hr': ['GUIDE_PAYROLL_VIEW', 'PAYROLL_PERIOD_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_HR_VIEW'],
-  'payroll-cycle-finance': ['GUIDE_PAYROLL_VIEW', 'PAYROLL_PERIOD_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_FINANCE_VIEW'],
-  'payroll-cycle-ceo': ['GUIDE_PAYROLL_VIEW', 'PAYROLL_PERIOD_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_ADMIN_VIEW', 'APPROVAL_PAYROLL_VIEW'],
-  'payroll-cycle-bank': ['GUIDE_PAYROLL_VIEW', 'PAYROLL_PERIOD_VIEW', 'PAYROLL_CALC_VIEW', 'PAYROLL_BANK_VIEW', 'PAYROLL_FINANCE_VIEW'],
-  'offboarding': ['GUIDE_OFFBOARDING_VIEW', 'ESS_DOCS_VIEW'],
-  'shift-schedule': ['GUIDE_SHIFT_SCHEDULE_VIEW', 'TIME_SCHEDULE_VIEW'],
-  'attendance-import': ['GUIDE_ATTENDANCE_IMPORT_VIEW', 'TIME_IMPORT_VIEW'],
-  'transfer-flow': ['GUIDE_TRANSFER_VIEW', 'EMP_TRANSFER_VIEW'],
-  'leave-setup': ['GUIDE_LEAVE_SETUP_VIEW', 'LEAVE_TYPE_VIEW'],
-  'leave-approval': ['GUIDE_LEAVE_APPROVAL_VIEW', 'APPROVAL_LEAVE_VIEW'],
-  'company-setup': ['GUIDE_COMPANY_SETUP_VIEW', 'ORG_STRUCT_VIEW'],
+  'hr-onboarding': ['GUIDE_ONBOARDING_VIEW'],
+  'payroll-cycle-hr': ['GUIDE_PAYROLL_VIEW'],
+  'payroll-cycle-finance': ['GUIDE_PAYROLL_VIEW'],
+  'payroll-cycle-ceo': ['GUIDE_PAYROLL_VIEW'],
+  'payroll-cycle-bank': ['GUIDE_PAYROLL_VIEW'],
+  'payroll-cycle': ['GUIDE_PAYROLL_VIEW'],
+  'offboarding': ['GUIDE_OFFBOARDING_VIEW'],
+  'shift-schedule': ['GUIDE_SHIFT_SCHEDULE_VIEW'],
+  'attendance-import': ['GUIDE_ATTENDANCE_IMPORT_VIEW'],
+  'transfer-flow': ['GUIDE_TRANSFER_VIEW'],
+  'leave-setup': ['GUIDE_LEAVE_SETUP_VIEW'],
+  'leave-approval': ['GUIDE_LEAVE_APPROVAL_VIEW'],
+  'company-setup': ['GUIDE_COMPANY_SETUP_VIEW'],
 };
 
 function GuidePageContent() {
@@ -45,14 +46,14 @@ function GuidePageContent() {
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
-  // กรองเฉพาะคู่มือและหน้าที่ผู้ใช้งานปัจจุบันมีสิทธิ์เข้าถึงได้จริง (รวมสิทธิ์ GUIDE_* และบทบาท HR / ฝ่ายการเงิน / CEO / ชำระเงิน)
+  // กรองเฉพาะคู่มือที่ผู้ใช้งานมีสิทธิ์เข้าถึงครบทุกขั้นตอนเท่านั้น (หากสิทธิ์ไม่ครบทุกขั้นตอน จะถือว่าคู่มือนั้นไม่ได้ใช้งาน)
   const roleAccessibleItems = useMemo<GuideItem[]>(() => {
     const payrollAccess = getPayrollViewAccess(user);
 
     return WIZARD_FLOWS.map((flow) => {
       if (!isSuper) {
         const flowPerms = GUIDE_FLOW_PERMISSIONS[flow.id];
-        if (flowPerms && flowPerms.length > 0 && !flowPerms.some((p) => hasPermission(p))) {
+        if (flowPerms && flowPerms.length > 0 && !flowPerms.every((p) => hasPermission(p))) {
           return null;
         }
       }
@@ -69,7 +70,10 @@ function GuidePageContent() {
         const cleanPath = page.route.split('?')[0];
         return isPathAccessible(cleanPath, user).allowed;
       });
-      if (accessiblePages.length === 0) return null;
+
+      // หากขั้นตอนในคู่มือเข้าถึงได้ไม่ครบทุกขั้นตอน ให้ถือว่าคู่มือนั้นไม่ถูกใช้งาน
+      if (accessiblePages.length < flow.pages.length) return null;
+
       return {
         id: flow.id,
         title: flow.title,

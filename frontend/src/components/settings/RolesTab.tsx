@@ -7,6 +7,7 @@ import {
   Plus,
   Check,
   AlertCircle,
+  AlertTriangle,
   Clock,
   Edit2,
   Trash2,
@@ -172,6 +173,7 @@ interface GuideStepConfig {
   route: string;
   badge: string;
   desc?: string;
+  requiresWrite?: boolean;
   icon: React.ComponentType<{ className?: string }>;
 }
 
@@ -215,6 +217,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
         label: '3. ผู้ใช้งาน',
         route: '/settings?tab=users',
         badge: 'บัญชีผู้ใช้งานระบบ',
+        requiresWrite: true,
         icon: User,
       },
     ],
@@ -256,6 +259,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
         label: '4. ประมวลเงินเดือน',
         route: '/payroll?tab=process',
         badge: 'คำนวณเงินเดือนสุทธิ / ปิดงวด',
+        requiresWrite: true,
         icon: Calculator,
       },
     ],
@@ -289,6 +293,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
         label: '3. ผู้ใช้งานและสิทธิ์',
         route: '/settings?tab=users',
         badge: 'ระงับบัญชีผู้ใช้งาน',
+        requiresWrite: true,
         icon: User,
       },
     ],
@@ -455,6 +460,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
         label: '1. โครงสร้างองค์กร (ฝ่าย)',
         route: '/organization?tab=divisions',
         badge: 'ฝ่าย แผนก ตำแหน่ง',
+        requiresWrite: true,
         icon: Building2,
       },
       {
@@ -479,6 +485,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
         label: '4. สายการอนุมัติ',
         route: '/settings?tab=approval-flows',
         badge: 'สายการอนุมัติ & สิทธิ์',
+        requiresWrite: true,
         icon: Shield,
       },
     ],
@@ -737,6 +744,38 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       normalized = normalized.filter((m) => m.moduleCode !== 'ANNOUNCEMENTS');
     }
 
+    // ตรวจสอบโมดูลหมวด GUIDE: หากขั้นตอนใน Flow ถูกติ๊กไม่ครบ ให้ถือว่า Flow นั้นไม่ถูกใช้งาน (ปิด canView ของ GUIDE_xxx)
+    GUIDE_FLOW_CONFIGS.forEach((flow) => {
+      const isScopeActive = (m: ModulePermissionScope) =>
+        m.canView ||
+        m.self?.view || m.self?.create || m.self?.edit || m.self?.approve ||
+        m.team?.view || m.team?.create || m.team?.edit || m.team?.approve ||
+        m.department?.view || m.department?.create || m.department?.edit || m.department?.approve ||
+        m.division?.view || m.division?.create || m.division?.edit || m.division?.approve ||
+        m.organization?.view || m.organization?.create || m.organization?.edit || m.organization?.approve;
+
+      const allStepsActive = flow.steps.length > 0 && flow.steps.every((s) => {
+        const m = normalized.find((mod) => mod.moduleCode === s.targetModuleCode);
+        return m ? isScopeActive(m) : false;
+      });
+
+      if (!allStepsActive) {
+        const idx = normalized.findIndex((m) => m.moduleCode === flow.moduleCode);
+        if (idx !== -1) {
+          const def = () => ({ view: false, create: false, edit: false, approve: false });
+          normalized[idx] = {
+            ...normalized[idx],
+            canView: false,
+            self: def(),
+            team: def(),
+            department: def(),
+            division: def(),
+            organization: def(),
+          };
+        }
+      }
+    });
+
     return normalized;
   };
 
@@ -915,15 +954,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     setIsDirty(true);
   };
 
-  // Helper: ตรวจสอบว่า Flow ไกด์ใดๆ เปิดใช้งานอยู่หรือไม่ (เช็คทั้งตัวโมดูล GUIDE_xxx และ targetModuleCodes)
+  // Helper: ตรวจสอบว่า Flow ไกด์เปิดใช้งานอยู่หรือไม่ (ต้องติ๊กสเต็ปย่อยครบทุกขั้นตอนเท่านั้น หากไม่ครบจะถือว่าไม่ได้ใช้งาน)
   const isGuideFlowActive = (flow: GuideFlowConfig) => {
-    const guideMod = localModules.find((m) => m.moduleCode === flow.moduleCode);
-    const hasGuidePerm = guideMod ? isModuleActive(guideMod) : false;
-    const hasActiveStep = flow.steps.some((s) => {
+    if (!flow.steps.length) return false;
+    return flow.steps.every((s) => {
       const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
       return m ? isModuleActive(m) : false;
     });
-    return hasGuidePerm || hasActiveStep;
   };
 
   // Helper: นับจำนวนสเต็ปที่เปิดสิทธิ์อยู่ใน Flow
@@ -934,47 +971,99 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     }).length;
   };
 
-  // Handler สำหรับติ๊กเปิด/ปิดสเต็ปย่อยใน Flow (Two-way sync กับโมดูลภายนอก)
+  // Helper: ตรวจสอบว่าสเต็ปนี้มีเงื่อนไขเตือน (ต้องแก้ไขสิทธิ์ เช่น ขาดสิทธิ์ Create/Edit)
+  const checkStepWarning = (step: GuideStepConfig, targetMod?: ModulePermissionScope): boolean => {
+    if (!targetMod) return true;
+    if (!isModuleActive(targetMod)) return true;
+
+    if (step.requiresWrite) {
+      const scopes: Array<'self' | 'team' | 'department' | 'division' | 'organization'> = [
+        'self',
+        'team',
+        'department',
+        'division',
+        'organization',
+      ];
+      const hasWrite = scopes.some((s) => targetMod[s]?.create || targetMod[s]?.edit);
+      return !hasWrite;
+    }
+
+    return false;
+  };
+
+  // Helper: นับจำนวนสเต็ปที่เปิดใช้แต่มีคำเตือนต้องแก้ไขสิทธิ์
+  const getGuideFlowWarningCount = (flow: GuideFlowConfig) => {
+    return flow.steps.filter((s) => {
+      const m = localModules.find((mod) => mod.moduleCode === s.targetModuleCode);
+      const isStepActive = m ? isModuleActive(m) : false;
+      return isStepActive && checkStepWarning(s, m);
+    }).length;
+  };
+
+  // Handler สำหรับติ๊กเปิด/ปิดสเต็ปย่อยใน Flow (หากติ๊กไม่ครบทุกสเต็ป จะถือว่า Flow นี้ปิดใช้งาน)
   const handleToggleFlowStep = (step: GuideStepConfig, flow: GuideFlowConfig) => {
-    const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
-    const willBeActive = targetMod ? !isModuleActive(targetMod) : true;
+    setLocalModules((prev) => {
+      const targetMod = prev.find((m) => m.moduleCode === step.targetModuleCode);
+      const willStepBeActive = targetMod ? !isModuleActive(targetMod) : true;
 
-    // สลับสถานะของโมดูลเป้าหมาย
-    handleToggleModule(step.targetModuleCode);
+      // ตรวจสอบว่าหลังจากสลับสเต็ปนี้แล้ว ทุกสเต็ปใน Flow จะเปิดครบทั้งหมดหรือไม่
+      const allStepsWillBeActive = flow.steps.every((s) => {
+        if (s.targetModuleCode === step.targetModuleCode) {
+          return willStepBeActive;
+        }
+        const otherMod = prev.find((pm) => pm.moduleCode === s.targetModuleCode);
+        return otherMod ? isModuleActive(otherMod) : false;
+      });
 
-    // Sync สถานะของตัวโมดูล GUIDE_xxx
-    setLocalModules((prev) =>
-      prev.map((m) => {
-        if (m.moduleCode === flow.moduleCode) {
-          if (willBeActive) {
+      const empty = { view: false, create: false, edit: false, approve: false };
+
+      return prev.map((m) => {
+        // 1. อัปเดตโมดูลเป้าหมายของสเต็ปที่คลิก
+        if (m.moduleCode === step.targetModuleCode) {
+          if (willStepBeActive) {
             return {
               ...m,
               canView: true,
               self: { view: true, create: false, edit: false, approve: false },
             };
           } else {
-            const otherStepsActive = flow.steps.some(
-              (s) =>
-                s.targetModuleCode !== step.targetModuleCode &&
-                prev.some((pm) => pm.moduleCode === s.targetModuleCode && isModuleActive(pm))
-            );
-            if (!otherStepsActive) {
-              const empty = { view: false, create: false, edit: false, approve: false };
-              return {
-                ...m,
-                canView: false,
-                self: { ...empty },
-                team: { ...empty },
-                department: { ...empty },
-                division: { ...empty },
-                organization: { ...empty },
-              };
-            }
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
           }
         }
+
+        // 2. อัปเดตโมดูลหลักของ Flow (GUIDE_xxx): เปิดเฉพาะเมื่อทุกสเต็ปใน Flow ถูกติ๊กครบทั้งหมดเท่านั้น
+        if (m.moduleCode === flow.moduleCode) {
+          if (allStepsWillBeActive) {
+            return {
+              ...m,
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
+            };
+          } else {
+            return {
+              ...m,
+              canView: false,
+              self: { ...empty },
+              team: { ...empty },
+              department: { ...empty },
+              division: { ...empty },
+              organization: { ...empty },
+            };
+          }
+        }
+
         return m;
-      })
-    );
+      });
+    });
+    setIsDirty(true);
   };
 
   // Handler สำหรับ Master Toggle ของแต่ละ Flow ไกด์ (เปิด/ปิดทั้งโมดูล GUIDE_xxx และทุกเมนูย่อยใน Flow)
@@ -987,6 +1076,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       return prev.map((m) => {
         if (targetCodes.has(m.moduleCode)) {
           if (currentlyActive) {
+            // หากเปิดครบอยู่แล้ว เมื่อกดปิด → ปิดทั้ง Flow และทุกสเต็ป
             return {
               ...m,
               canView: false,
@@ -997,6 +1087,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
               organization: { ...empty },
             };
           } else {
+            // หากยังเปิดไม่ครบ หรือปิดอยู่ เมื่อกดเปิด → เปิดทั้ง Flow และทุกสเต็ปให้ครบสมบูรณ์
             return {
               ...m,
               canView: true,
@@ -1700,78 +1791,78 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       {/* Group Content (Modules) */}
                       {isExpanded && (
                         isGuideCat ? (
-                          /* View สำหรับหมวด "วิธีการใช้งาน": แสดงรายการไกด์ทั้ง 9 Flows สอดคล้องกับธีมหลัก */
+                          /* View สำหรับหมวด "วิธีการใช้งาน": แสดงรายการไกด์ทั้ง 9 Flows ในรูปแบบ Accordion Stepper Timeline ตามดีไซน์ */
                           <div className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-800">
                             {GUIDE_FLOW_CONFIGS.map((flow) => {
                               const isFlowActive = isGuideFlowActive(flow);
                               const activeStepsCount = getGuideFlowActiveStepsCount(flow);
-                              const isFlowExpanded = Boolean(expandedGuideFlows[flow.id]);
+                              const warningCount = getGuideFlowWarningCount(flow);
+                              const isFlowExpanded = expandedGuideFlows[flow.id] ?? (flow.id === 'hr-onboarding');
                               const FlowIcon = flow.icon;
+                              const cleanFlowTitle = flow.title.replace(/^ไกด์:\s*/, '');
 
                               return (
                                 <div key={flow.id} className="transition-colors">
-                                  {/* Flow Row */}
+                                  {/* Flow Header Row */}
                                   <div
-                                    className={`px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-colors ${
+                                    onClick={() => toggleGuideFlowExpand(flow.id)}
+                                    className={`px-4 py-3 flex items-center justify-between gap-3 cursor-pointer select-none transition-colors ${
                                       isFlowActive
-                                        ? 'bg-white dark:bg-slate-800'
-                                        : 'bg-slate-50/70 dark:bg-slate-900/40'
+                                        ? 'bg-white dark:bg-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-700/40'
+                                        : 'bg-slate-50/70 dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-800/60'
                                     }`}
                                   >
-                                    {/* Left: Indicator, Icon, Title, Badge, Subtitle */}
-                                    <div className="flex items-start gap-3 min-w-[200px] flex-1">
-                                      <span
-                                        className={`w-1.5 h-1.5 rounded-full mt-2 shrink-0 ${
-                                          isFlowActive ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
-                                        }`}
-                                      />
-                                      <div
-                                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
-                                          isFlowActive
-                                            ? 'bg-blue-50/80 dark:bg-blue-950/40 text-primary dark:text-blue-400 border-blue-200/60 dark:border-blue-900/50 shadow-2xs'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200/60 dark:border-slate-700'
-                                        }`}
-                                      >
-                                        <FlowIcon className="w-4 h-4" />
+                                    {/* Left: Caret + Icon + Title + Badges + Subtitle */}
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                      {/* Chevron Expand Indicator */}
+                                      <div className="text-slate-400 dark:text-slate-500 shrink-0">
+                                        <ChevronDown
+                                          className={`w-4 h-4 transition-transform duration-200 ${
+                                            isFlowExpanded ? 'rotate-0' : '-rotate-90'
+                                          }`}
+                                        />
                                       </div>
-                                      <div className="min-w-0">
+
+                                      {/* Flow Icon Container */}
+                                      <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-center shrink-0 text-slate-500 dark:text-slate-400">
+                                        <FlowIcon className="w-4.5 h-4.5" />
+                                      </div>
+
+                                      {/* Title, Badges and Subtitle */}
+                                      <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                          <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 leading-snug">
-                                            {flow.title}
+                                          <span className="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug">
+                                            {cleanFlowTitle}
                                           </span>
                                           <span
-                                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors ${
-                                              activeStepsCount === flow.steps.length
-                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/70'
+                                            className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                                              isFlowActive
+                                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/50'
                                                 : activeStepsCount > 0
-                                                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/70'
-                                                : 'bg-slate-200/70 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                                                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60'
+                                                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700'
                                             }`}
                                           >
-                                            {activeStepsCount}/{flow.steps.length} เมนูเปิดใช้
+                                            {activeStepsCount}/{flow.steps.length} ขั้นตอน
                                           </span>
+                                          {warningCount > 0 && (
+                                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 flex items-center gap-1">
+                                              <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                                              <span>{warningCount} ต้องแก้ไข</span>
+                                            </span>
+                                          )}
                                         </div>
-                                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+                                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
                                           {flow.subtitle}
                                         </p>
                                       </div>
                                     </div>
 
-                                    {/* Right: Expand Sub-steps & Flow Master Toggle */}
-                                    <div className="flex items-center gap-2.5 shrink-0 self-end md:self-center">
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleGuideFlowExpand(flow.id)}
-                                        className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200/70 dark:bg-slate-700/60 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-600 flex items-center gap-1 cursor-pointer transition-colors"
-                                      >
-                                        <span>เมนูย่อย ({flow.steps.length})</span>
-                                        {isFlowExpanded ? (
-                                          <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
-                                        ) : (
-                                          <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-                                        )}
-                                      </button>
-
+                                    {/* Right: Master Toggle Switch */}
+                                    <div
+                                      className="shrink-0"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
                                       <ToggleSwitch
                                         checked={isFlowActive}
                                         onChange={() => handleToggleGuideFlow(flow)}
@@ -1780,67 +1871,96 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     </div>
                                   </div>
 
-                                  {/* Expanded Sub-steps */}
+                                  {/* Expanded Sub-steps (Stepper Timeline View) */}
                                   {isFlowExpanded && (
-                                    <div className="bg-slate-50/60 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800/80 px-4 py-2.5 space-y-1.5 pl-6 sm:pl-11">
-                                      {flow.steps.map((step) => {
-                                        const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
-                                        const isStepActive = targetMod ? isModuleActive(targetMod) : false;
-                                        const StepIcon = step.icon;
+                                    <div className="pt-1 pb-4 px-4 sm:px-6 bg-slate-50/40 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800/80">
+                                      <div className="relative pl-7 sm:pl-9 pr-2 py-2 space-y-4">
+                                        {flow.steps.map((step, idx) => {
+                                          const targetMod = localModules.find((m) => m.moduleCode === step.targetModuleCode);
+                                          const isStepActive = targetMod ? isModuleActive(targetMod) : false;
+                                          const isWarning = isStepActive && checkStepWarning(step, targetMod);
+                                          const isLast = idx === flow.steps.length - 1;
 
-                                        return (
-                                          <div
-                                            key={`${flow.id}-${step.step}-${step.targetModuleCode}`}
-                                            onClick={() => canEditRole && handleToggleFlowStep(step, flow)}
-                                            className={`p-2.5 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none ${
-                                              isStepActive
-                                                ? 'bg-white dark:bg-slate-800/90 border-slate-200/90 dark:border-slate-700 shadow-2xs hover:border-slate-300'
-                                                : 'bg-white/50 dark:bg-slate-800/40 border-slate-200/50 dark:border-slate-800 opacity-60 hover:opacity-90'
-                                            }`}
-                                          >
-                                            <div className="flex items-center gap-2.5 min-w-0">
+                                          return (
+                                            <div
+                                              key={`${flow.id}-${step.step}-${step.targetModuleCode}`}
+                                              className="relative flex items-center justify-between gap-3 group"
+                                            >
+                                              {/* Vertical Connecting Line to next step */}
+                                              {!isLast && (
+                                                <div
+                                                  className="absolute left-[11px] top-6 bottom-[-16px] w-[2px] bg-slate-200 dark:bg-slate-700"
+                                                  aria-hidden="true"
+                                                />
+                                              )}
+
+                                              {/* Step Number Circle + Title + Route */}
                                               <div
-                                                className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                                                  isStepActive
-                                                    ? 'bg-primary/10 text-primary dark:text-blue-400'
-                                                    : 'bg-slate-200/80 dark:bg-slate-700 text-slate-400'
-                                                }`}
+                                                onClick={() => canEditRole && handleToggleFlowStep(step, flow)}
+                                                className="flex items-center gap-3 min-w-0 z-10 cursor-pointer select-none flex-1"
                                               >
-                                                <StepIcon className="w-3.5 h-3.5" />
-                                              </div>
-                                              <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                                                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                                                  {step.label}
-                                                </span>
-                                                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-400">
-                                                  {step.route}
-                                                </span>
-                                                <span className="text-[10px] text-slate-400 dark:text-slate-500 hidden sm:inline">
-                                                  • {step.badge}
-                                                </span>
-                                              </div>
-                                            </div>
+                                                <div
+                                                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 transition-all ${
+                                                    isWarning
+                                                      ? 'bg-[#C2410C] ring-2 ring-orange-200 dark:ring-orange-950/60'
+                                                      : isStepActive
+                                                      ? 'bg-[#0B2046] dark:bg-blue-600'
+                                                      : 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                                                  }`}
+                                                  title={
+                                                    isWarning
+                                                      ? 'ขั้นตอนนี้ต้องการสิทธิ์ สร้าง/แก้ไข (Create/Edit) ในโมดูลเป้าหมายเพื่อทำรายการได้ครบถ้วน'
+                                                      : undefined
+                                                  }
+                                                >
+                                                  {step.step}
+                                                </div>
 
-                                            <div className="flex items-center gap-2 shrink-0">
-                                              <span
-                                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                                  isStepActive
-                                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/80'
-                                                    : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-                                                }`}
+                                                <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
+                                                  <span
+                                                    className={`text-xs sm:text-sm font-semibold transition-colors ${
+                                                      isStepActive
+                                                        ? 'text-slate-800 dark:text-slate-200'
+                                                        : 'text-slate-400 dark:text-slate-500'
+                                                    }`}
+                                                  >
+                                                    {step.label.replace(/^\d+\.\s*/, '')}
+                                                  </span>
+                                                  <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">
+                                                    {step.route}
+                                                  </span>
+                                                </div>
+                                              </div>
+
+                                              {/* Toggle Switch */}
+                                              <div
+                                                className="shrink-0 z-10"
+                                                onClick={(e) => e.stopPropagation()}
                                               >
-                                                {isStepActive ? '✓ มีสิทธิ์' : '✕ ปิด'}
-                                              </span>
-                                              <ToggleSwitch
-                                                size="sm"
-                                                checked={isStepActive}
-                                                onChange={() => handleToggleFlowStep(step, flow)}
-                                                disabled={!canEditRole}
-                                              />
+                                                <ToggleSwitch
+                                                  size="sm"
+                                                  checked={isStepActive}
+                                                  onChange={() => handleToggleFlowStep(step, flow)}
+                                                  disabled={!canEditRole}
+                                                />
+                                              </div>
                                             </div>
+                                          );
+                                        })}
+                                      </div>
+
+                                      {/* Alert Box when there are steps needing attention */}
+                                      {warningCount > 0 && (
+                                        <div className="mt-3 ml-7 sm:ml-9 p-3 rounded-xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-200">
+                                          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                                          <div className="space-y-0.5">
+                                            <p className="font-semibold">มี {warningCount} ขั้นตอนที่ต้องแก้ไขสิทธิ์เพิ่มเติม</p>
+                                            <p className="text-[11px] text-amber-700/90 dark:text-amber-300/80 leading-relaxed">
+                                              ขั้นตอนที่มีสัญลักษณ์สีส้มต้องการสิทธิ์ สร้าง/แก้ไข (Create/Edit) หรือการเปิดสิทธิ์ในโมดูลที่เกี่ยวข้อง เพื่อให้พนักงานที่มีบทบาทนี้สามารถทำรายการตามขั้นตอนได้ครบถ้วน
+                                            </p>
                                           </div>
-                                        );
-                                      })}
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
