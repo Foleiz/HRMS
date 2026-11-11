@@ -274,17 +274,17 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     if (isToday) {
       return {
         key: 'ONGOING',
-        label: 'จัดขึ้นวันนี้ / กำลังจัด',
-        color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
-        dot: 'bg-amber-500',
+        label: 'วันนี้',
+        color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+        dot: 'bg-emerald-500',
       };
     }
 
     return {
       key: 'UPCOMING',
       label: 'กำลังจะมาถึง',
-      color: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
-      dot: 'bg-emerald-500',
+      color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
+      dot: 'bg-amber-500',
     };
   }, []);
 
@@ -825,13 +825,13 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
           label="กำลังจะมาถึง"
           value={stats.upcoming}
           icon={Calendar}
-          tone="emerald"
+          tone="amber"
         />
         <StatCard
-          label="จัดขึ้นวันนี้ / กำลังจัด"
+          label="วันนี้"
           value={stats.ongoing}
           icon={Flame}
-          tone="amber"
+          tone="emerald"
         />
         <StatCard
           label="สิ้นสุดแล้ว"
@@ -868,7 +868,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                   options={[
                     { value: 'ALL', label: 'ทุกสถานะกิจกรรม' },
                     { value: 'UPCOMING', label: 'กำลังจะมาถึง' },
-                    { value: 'ONGOING', label: 'จัดขึ้นวันนี้ / กำลังจัด' },
+                    { value: 'ONGOING', label: 'วันนี้' },
                     { value: 'COMPLETED', label: 'สิ้นสุดแล้ว' },
                     { value: 'DRAFT', label: 'ฉบับร่าง' },
                   ]}
