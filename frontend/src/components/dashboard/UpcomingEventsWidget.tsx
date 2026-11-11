@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
 import { Calendar } from 'lucide-react';
 import { announcementService } from '@/services/announcementService';
 import { Announcement } from '@/types/announcement';
@@ -199,18 +198,11 @@ export const UpcomingEventsWidget: React.FC = () => {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 sm:p-5 shadow-xs flex flex-col justify-between h-full min-h-[170px]">
       <div className="flex-1 flex flex-col">
-        {/* Header: กิจกรรมที่กำลังจะมาถึง (ซ้าย) | ดูทั้งหมด › (ขวา) */}
+        {/* Header: กิจกรรมที่กำลังจะมาถึง */}
         <div className="flex items-center justify-between mb-3.5 shrink-0">
           <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100">
             กิจกรรมที่กำลังจะมาถึง
           </h3>
-          <Link
-            href="/announcements"
-            className="text-xs font-semibold text-slate-800 dark:text-slate-200 hover:text-black dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
-          >
-            <span>ดูทั้งหมด</span>
-            <span className="text-xs leading-none">›</span>
-          </Link>
         </div>
 
         {/* Content: โหลดข้อมูล / ไม่มีกิจกรรม / แสดงรายการตามกลุ่มวันที่ */}
@@ -227,36 +219,53 @@ export const UpcomingEventsWidget: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3.5 overflow-y-auto max-h-[220px] pr-0.5">
-            {groupedEvents.map((group) => (
-              <div key={group.dateStr} className="space-y-2">
-                {/* วันที่ เช่น "วันนี้ · 11 พ.ย." หรือ "พรุ่งนี้ · 12 พ.ย." */}
-                <h4 className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                  {group.dateLabel}
-                </h4>
+            {groupedEvents.map((group) => {
+              const isToday = group.dateLabel.startsWith('วันนี้');
+              const isTomorrow = group.dateLabel.startsWith('พรุ่งนี้');
 
-                {/* รายการกิจกรรมในวันนั้น */}
-                <div className="space-y-2 pl-0.5">
-                  {group.events.map((ev) => (
-                    <div
-                      key={ev.id}
-                      className="flex items-center justify-between gap-2 text-xs py-0.5"
+              return (
+                <div key={group.dateStr} className="space-y-1.5">
+                  {/* แถบหัวข้อวันที่พร้อมเส้นแบ่งแยกส่วนชัดเจน */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <span
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
+                        isToday
+                          ? 'bg-rose-50 text-[#94292B] border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50'
+                          : isTomorrow
+                          ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
+                          : 'bg-slate-100 text-slate-600 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                      }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span
-                          className="text-slate-800 dark:text-slate-200 font-semibold text-xs sm:text-[13px] truncate"
-                          title={ev.title}
-                        >
-                          {ev.title}
+                      {group.dateLabel}
+                    </span>
+                    <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+                  </div>
+
+                  {/* รายการกิจกรรมในวันนั้น: กล่องข้อความพร้อม dot สีน้ำเงินและเวลา */}
+                  <div className="space-y-1 pl-0.5">
+                    {group.events.map((ev) => (
+                      <div
+                        key={ev.id}
+                        className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-50/70 hover:bg-slate-100/70 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                          <span
+                            className="text-slate-800 dark:text-slate-200 font-medium text-xs sm:text-[13px] truncate"
+                            title={ev.title}
+                          >
+                            {ev.title}
+                          </span>
+                        </div>
+                        <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] sm:text-xs shrink-0 font-medium">
+                          {ev.timeRange}
                         </span>
                       </div>
-                      <span className="text-slate-500 dark:text-slate-400 font-mono text-xs shrink-0">
-                        {ev.timeRange}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
