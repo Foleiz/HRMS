@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Calendar } from 'lucide-react';
 import { announcementService } from '@/services/announcementService';
 import { Announcement } from '@/types/announcement';
+import { EventDetailModal, EventDetailData } from './EventDetailModal';
 
 interface EventItem {
   id: number;
@@ -12,6 +13,7 @@ interface EventItem {
   timeRange: string;
   startTimeSort: string;
   dateStr: string; // YYYY-MM-DD
+  rawActivity?: Announcement;
 }
 
 interface GroupedEvents {
@@ -72,9 +74,50 @@ const getDateLabel = (targetDate: Date, today: Date): string => {
   return `${dayNum} ${monthShort}`;
 };
 
+const THAI_FULL_MONTHS = [
+  'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+  'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
+];
+
 export const UpcomingEventsWidget: React.FC = () => {
   const [activities, setActivities] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDetail, setSelectedDetail] = useState<EventDetailData | null>(null);
+
+  const handleEventClick = (ev: EventItem) => {
+    const [y, m, d] = ev.dateStr.split('-').map(Number);
+    const thaiYear = y + 543;
+    const fullDateStr = `${d} ${THAI_FULL_MONTHS[m - 1]} ${thaiYear}`;
+
+    const desc = ev.rawActivity?.content
+      ? ev.rawActivity.content
+          .replace(/(?:📍\s*)?สถานที่:\s*[^\n\r]+[\r\n]*/g, '')
+          .replace(/(?:⏰\s*)?เวลา:\s*[^\n\r]+[\r\n]*/g, '')
+          .trim()
+      : '';
+
+    let targetAudience = 'ทุกคนในองค์กร';
+    if (ev.rawActivity?.targets && ev.rawActivity.targets.length > 0) {
+      if (ev.rawActivity.targets.some((t) => t.targetType === 'ALL')) {
+        targetAudience = 'ทุกคนในองค์กร';
+      } else {
+        targetAudience = ev.rawActivity.targets
+          .map((t) => t.targetEntityName || t.targetType)
+          .join(', ');
+      }
+    }
+
+    setSelectedDetail({
+      title: ev.title,
+      typeLabel: 'ประกาศกิจกรรม',
+      isHoliday: false,
+      dateStr: fullDateStr,
+      timeRange: ev.timeRange,
+      description: desc,
+      targetAudience,
+      isPinned: ev.isPinned,
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -160,6 +203,7 @@ export const UpcomingEventsWidget: React.FC = () => {
               timeRange: time,
               startTimeSort,
               dateStr,
+              rawActivity: act,
             });
             dayMap.set(dateStr, list);
           }
@@ -229,12 +273,14 @@ export const UpcomingEventsWidget: React.FC = () => {
                   <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
                 </div>
 
-                  {/* รายการกิจกรรมในวันนั้น: กล่องข้อความพร้อม dot สีน้ำเงินและเวลา */}
+                  {/* รายการกิจกรรมในวันนั้น: กล่องข้อความพร้อม dot สีน้ำเงินและเวลา (คลิกเพื่อดูรายละเอียด) */}
                   <div className="space-y-1 pl-0.5">
                     {group.events.map((ev) => (
                       <div
                         key={ev.id}
-                        className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-50/70 hover:bg-slate-100/70 dark:bg-slate-800/40 dark:hover:bg-slate-800/80 border border-slate-100 dark:border-slate-700/50 transition-colors"
+                        onClick={() => handleEventClick(ev)}
+                        className="flex items-center justify-between gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-slate-50/70 hover:bg-slate-100/90 dark:bg-slate-800/40 dark:hover:bg-slate-700/60 border border-slate-100 dark:border-slate-700/50 transition-colors cursor-pointer"
+                        title="คลิกเพื่อดูรายละเอียดแบบเต็ม"
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
@@ -256,6 +302,12 @@ export const UpcomingEventsWidget: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal รายละเอียดกิจกรรมแบบเต็ม */}
+      <EventDetailModal
+        event={selectedDetail}
+        onClose={() => setSelectedDetail(null)}
+      />
     </div>
   );
 };

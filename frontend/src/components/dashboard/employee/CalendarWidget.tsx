@@ -7,6 +7,7 @@ import { announcementService } from '@/services/announcementService';
 import { Holiday } from '@/types/workCalendar';
 import { Announcement } from '@/types/announcement';
 import { TH_MONTHS } from '@/lib/thaiDate';
+import { EventDetailModal, EventDetailData } from '../EventDetailModal';
 
 export interface CalendarEvent {
   id: string | number;
@@ -20,6 +21,8 @@ export interface CalendarEvent {
   timeRange?: string;
   dotColor: string; // Tailwind class
   badgeColor: string; // Tailwind class
+  rawActivity?: Announcement;
+  rawHoliday?: Holiday;
 }
 
 // แยกเวลาสำหรับกิจกรรมแบบเต็มช่วง (เช่น "09:00 - 12:00" หรือ "09:00 - 16:30" หรือ "09:00")
@@ -60,6 +63,52 @@ export const CalendarWidget: React.FC = () => {
   const [activities, setActivities] = useState<Announcement[]>([]);
   const [, setIsLoading] = useState<boolean>(false);
   const [isAllEventsModalOpen, setIsAllEventsModalOpen] = useState<boolean>(false);
+  const [selectedDetail, setSelectedDetail] = useState<EventDetailData | null>(null);
+
+  const handleOpenEventDetail = useCallback((ev: CalendarEvent) => {
+    const fullDateStr = `${ev.day} ${TH_MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear() + 543}`;
+
+    if (ev.isHoliday) {
+      setSelectedDetail({
+        title: ev.title,
+        typeLabel: ev.typeLabel,
+        isHoliday: true,
+        dateStr: fullDateStr,
+        timeRange: 'ตลอดทั้งวัน',
+        description: ev.rawHoliday?.holidayName || 'วันหยุดตามประกาศของบริษัท',
+      });
+      return;
+    }
+
+    const desc = ev.rawActivity?.content
+      ? ev.rawActivity.content
+          .replace(/(?:📍\s*)?สถานที่:\s*[^\n\r]+[\r\n]*/g, '')
+          .replace(/(?:⏰\s*)?เวลา:\s*[^\n\r]+[\r\n]*/g, '')
+          .trim()
+      : '';
+
+    let targetAudience = 'ทุกคนในองค์กร';
+    if (ev.rawActivity?.targets && ev.rawActivity.targets.length > 0) {
+      if (ev.rawActivity.targets.some((t) => t.targetType === 'ALL')) {
+        targetAudience = 'ทุกคนในองค์กร';
+      } else {
+        targetAudience = ev.rawActivity.targets
+          .map((t) => t.targetEntityName || t.targetType)
+          .join(', ');
+      }
+    }
+
+    setSelectedDetail({
+      title: ev.title,
+      typeLabel: 'ประกาศกิจกรรม',
+      isHoliday: false,
+      dateStr: fullDateStr,
+      timeRange: ev.timeRange || '09:00',
+      description: desc,
+      targetAudience,
+      isPinned: ev.isPinned,
+    });
+  }, [currentDate]);
 
   // ซิงค์กับวันเวลาปัจจุบันจริงของ Browser เมื่อโหลดหน้า
   useEffect(() => {
@@ -139,6 +188,7 @@ export const CalendarWidget: React.FC = () => {
           badgeColor: isHoliday
             ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
             : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+          rawHoliday: h,
         };
         const list = map.get(ev.day) || [];
         list.push(ev);
@@ -178,6 +228,7 @@ export const CalendarWidget: React.FC = () => {
               timeRange: time,
               dotColor: 'bg-blue-600',
               badgeColor: 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+              rawActivity: act,
             });
             map.set(dayNum, list);
           }
@@ -399,9 +450,14 @@ export const CalendarWidget: React.FC = () => {
             {selectedEvents.slice(0, 2).map((ev, idx) => (
               <div
                 key={ev.id}
-                className={`flex items-center justify-between gap-1.5 min-w-0 ${
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEventDetail(ev);
+                }}
+                className={`flex items-center justify-between gap-1.5 min-w-0 p-0.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors ${
                   idx > 0 ? 'pt-1 border-t border-slate-100 dark:border-slate-700/60' : ''
                 }`}
+                title="คลิกเพื่อดูรายละเอียดแบบเต็ม"
               >
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                   <span
@@ -486,9 +542,11 @@ export const CalendarWidget: React.FC = () => {
                 selectedEvents.map((ev, idx) => (
                   <div
                     key={ev.id}
-                    className={`flex items-center justify-between gap-1.5 min-w-0 ${
+                    onClick={() => handleOpenEventDetail(ev)}
+                    className={`flex items-center justify-between gap-1.5 min-w-0 p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors ${
                       idx > 0 ? 'pt-1.5' : ''
                     } ${idx < selectedEvents.length - 1 ? 'pb-1.5' : ''}`}
+                    title="คลิกเพื่อดูรายละเอียดแบบเต็ม"
                   >
                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
                       <span
@@ -530,6 +588,12 @@ export const CalendarWidget: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Event Detail Modal แบบเต็ม */}
+      <EventDetailModal
+        event={selectedDetail}
+        onClose={() => setSelectedDetail(null)}
+      />
     </div>
   );
 };
