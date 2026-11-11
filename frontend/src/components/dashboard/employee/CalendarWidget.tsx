@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { announcementService } from '@/services/announcementService';
 import { Holiday } from '@/types/workCalendar';
@@ -198,6 +198,12 @@ export const CalendarWidget: React.FC = () => {
     });
   }, [eventsByDayMap, selectedDay]);
 
+  // กิจกรรมถัดไปในเดือนนี้ (ถ้ามี) สำหรับแสดงกรณีไม่มีกิจกรรมในวันที่เลือก
+  const nextUpcomingEventThisMonth = useMemo(() => {
+    const baseDay = selectedDay ?? (year === today.getFullYear() && month === today.getMonth() ? today.getDate() : 1);
+    return eventsThisMonth.find((e) => e.day >= baseDay) || eventsThisMonth[0];
+  }, [eventsThisMonth, selectedDay, year, month, today]);
+
   // คำนวณวันในเดือนและวันเริ่มต้นของสัปดาห์
   const firstDayOfWeek = (new Date(year, month, 1).getDay() + 6) % 7; // จันทร์ = 0, อาทิตย์ = 6
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -219,7 +225,7 @@ export const CalendarWidget: React.FC = () => {
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden transition-all h-full flex flex-col">
       {/* Calendar Header: Deep Red (#94292B) */}
       <div className="bg-[#94292B] text-white px-4 py-3 flex items-center justify-between shrink-0">
-        <h3 className="text-base font-bold tracking-wide">ปฏิทิน</h3>
+        <h3 className="text-sm font-bold tracking-wide">ปฏิทิน</h3>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -227,9 +233,9 @@ export const CalendarWidget: React.FC = () => {
             className="p-1 hover:bg-white/20 rounded-md transition-colors cursor-pointer"
             title="เดือนก่อนหน้า"
           >
-            <ChevronLeft className="w-4 h-4 text-white" />
+            <ChevronLeft className="w-3.5 h-3.5 text-white" />
           </button>
-          <span className="text-sm font-semibold px-0.5 text-white/95">
+          <span className="text-xs font-semibold px-0.5 text-white/95">
             {monthName} {yearThai}
           </span>
           <button
@@ -238,13 +244,13 @@ export const CalendarWidget: React.FC = () => {
             className="p-1 hover:bg-white/20 rounded-md transition-colors cursor-pointer"
             title="เดือนถัดไป"
           >
-            <ChevronRight className="w-4 h-4 text-white" />
+            <ChevronRight className="w-3.5 h-3.5 text-white" />
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid & Details Container */}
-      <div className="p-3.5 flex-1 flex flex-col justify-between">
+      {/* Calendar Grid & Details Container (Fixed height layout matching previous form) */}
+      <div className="p-3 flex-1 flex flex-col justify-between">
         <div>
           {/* Day Headers */}
           <div className="grid grid-cols-7 text-center mb-1.5">
@@ -264,7 +270,7 @@ export const CalendarWidget: React.FC = () => {
           <div className="grid grid-cols-7 text-center gap-y-0.5">
             {days.map((d, idx) => {
               if (d === null) {
-                return <div key={`empty-${idx}`} className="h-9 w-9 mx-auto" />;
+                return <div key={`empty-${idx}`} className="h-7.5 w-7.5 mx-auto" />;
               }
               const isToday = isCurrentMonth && d === today.getDate();
               const isSelected = selectedDay !== null ? d === selectedDay : isToday;
@@ -291,19 +297,19 @@ export const CalendarWidget: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedDay(d)}
                   title={tooltipText}
-                  className={`h-9 w-9 mx-auto rounded-full text-xs flex flex-col items-center justify-center transition-all cursor-pointer relative ${
+                  className={`h-7.5 w-7.5 mx-auto rounded-full text-xs flex flex-col items-center justify-center transition-all cursor-pointer relative ${
                     isSelected
                       ? 'bg-[#FCE8E9] text-slate-900 font-bold border border-[#F3B6B9] shadow-2xs'
                       : isToday
                       ? 'text-[#94292B] font-bold ring-1.5 ring-[#94292B]/50'
                       : isWeekend
                       ? 'text-rose-500 font-medium hover:bg-slate-100 dark:hover:bg-slate-700/50'
-                      : 'text-slate-800 dark:text-slate-200 font-medium hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                      : 'text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700/50'
                   }`}
                 >
-                  <span className="leading-tight text-[12px]">{d}</span>
+                  <span className="leading-none text-[11.5px]">{d}</span>
                   {/* Indicators below day number */}
-                  <div className="flex items-center justify-center gap-0.5 h-2 mt-0.5">
+                  <div className="flex items-center justify-center gap-0.5 h-1.5 mt-0.5">
                     {hasEvents ? (
                       <>
                         {dayEvents.slice(0, 2).map((ev, evIdx) =>
@@ -335,7 +341,7 @@ export const CalendarWidget: React.FC = () => {
           </div>
 
           {/* Legend: คำอธิบายสัญลักษณ์และจำนวนวันสำคัญ */}
-          <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs px-1">
+          <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10.5px] px-1">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
                 <span className="w-1.5 h-1.5 bg-rose-600 rotate-45 inline-block shrink-0" />
@@ -356,78 +362,94 @@ export const CalendarWidget: React.FC = () => {
           </div>
         </div>
 
-        {/* Selected Date Details Box (Bottom Section) */}
-        <div className="mt-3 p-3 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs space-y-2.5">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <h4 className="font-bold text-xs sm:text-[13px] text-slate-900 dark:text-slate-100">
-              {selectedDay ? `${selectedDay} ${monthName} ${yearThai}` : `${monthName} ${yearThai}`}
-            </h4>
-            <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FCE8E9] text-[#94292B] dark:bg-rose-950/60 dark:text-rose-300">
-              {selectedEvents.length} รายการ
-            </span>
-          </div>
-
-          {/* Events List (Top 2 items) */}
-          {selectedEvents.length > 0 ? (
-            <div className="space-y-2">
-              {selectedEvents.slice(0, 2).map((ev) => (
-                <div key={ev.id} className="flex items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span
-                      className={`px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 ${
-                        ev.isHoliday
-                          ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                          : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
-                      }`}
-                    >
-                      {ev.typeLabel}
-                    </span>
-                    {ev.isPinned && (
-                      <span className="px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                        ปักหมุด
-                      </span>
-                    )}
-                    <span
-                      className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
-                      title={ev.title}
-                    >
-                      {ev.title}
-                    </span>
-                  </div>
-                  <span className="text-slate-400 dark:text-slate-500 text-xs shrink-0 font-normal">
-                    {ev.timeRange || (ev.isHoliday ? 'ทั้งวัน' : '09:00')}
+        {/* Selected Date Details Box (Fixed height: h-[52px] matching previous form without date header row) */}
+        {selectedEvents.length > 0 ? (
+          <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-between shrink-0 overflow-hidden text-[10.5px]">
+            {/* Top row: Event Badge + Title + Time */}
+            <div className="flex items-center justify-between gap-1.5 min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <span
+                  className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
+                    selectedEvents[0].isHoliday
+                      ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                      : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                  }`}
+                >
+                  {selectedEvents[0].typeLabel}
+                </span>
+                {selectedEvents[0].isPinned && (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                    ปักหมุด
                   </span>
-                </div>
-              ))}
+                )}
+                <span
+                  className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
+                  title={selectedEvents[0].title}
+                >
+                  {selectedEvents[0].title}
+                </span>
+              </div>
+              <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
+                {selectedEvents[0].timeRange || (selectedEvents[0].isHoliday ? 'ทั้งวัน' : '09:00')}
+              </span>
             </div>
-          ) : (
-            <div className="py-1 text-center text-xs text-slate-400 dark:text-slate-500 font-normal">
-              ไม่มีวันหยุดหรือกิจกรรมในวันนี้
-            </div>
-          )}
 
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 dark:border-slate-700/60 text-xs">
-            {selectedEvents.length > 2 ? (
+            {/* Bottom row: + อีก X รายการ (Left) & ดูทั้งหมด › (Right) */}
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700/60 text-[11px]">
+              {selectedEvents.length > 1 ? (
+                <Link
+                  href="/work-calendar"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium transition-colors cursor-pointer"
+                >
+                  + อีก {selectedEvents.length - 1} รายการ
+                </Link>
+              ) : (
+                <span />
+              )}
               <Link
                 href="/work-calendar"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-700 text-[11.5px] font-medium transition-colors"
+                className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] font-bold flex items-center gap-0.5 transition-colors cursor-pointer"
               >
-                + อีก {selectedEvents.length - 2} รายการ
+                <span>ดูทั้งหมด</span>
+                <span className="text-xs leading-none font-bold">›</span>
               </Link>
-            ) : (
-              <span />
-            )}
-            <Link
-              href="/work-calendar"
-              className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] text-[11.5px] font-bold flex items-center gap-0.5 transition-colors"
-            >
-              <span>ดูทั้งหมด</span>
-              <span className="text-sm leading-none font-bold">›</span>
-            </Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden">
+            {/* Top row: Status message */}
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+              <span className="text-slate-500 dark:text-slate-400 font-medium">ไม่มีวันหยุดหรือกิจกรรมในวันนี้</span>
+              <Link
+                href="/work-calendar"
+                className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] font-bold flex items-center gap-0.5 transition-colors cursor-pointer text-[11px]"
+              >
+                <span>ดูทั้งหมด</span>
+                <span className="text-xs leading-none font-bold">›</span>
+              </Link>
+            </div>
+
+            {/* Bottom row: Next upcoming event */}
+            {nextUpcomingEventThisMonth ? (
+              <div className="pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center gap-1 text-[10px]">
+                <Sparkles className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                <span className="text-slate-500 dark:text-slate-400 shrink-0">
+                  ถัดไป ({nextUpcomingEventThisMonth.day} {monthName}):
+                </span>
+                <span
+                  className="font-semibold text-slate-700 dark:text-slate-300 truncate flex-1 min-w-0"
+                  title={nextUpcomingEventThisMonth.title}
+                >
+                  {nextUpcomingEventThisMonth.title}
+                </span>
+              </div>
+            ) : (
+              <div className="pt-1 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-400 dark:text-slate-500">
+                ไม่มีกิจกรรมที่เหลือในเดือนนี้
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
