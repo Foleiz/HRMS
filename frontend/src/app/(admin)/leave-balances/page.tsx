@@ -70,7 +70,9 @@ export default function LeaveBalancesPage() {
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
   const totalOf = (c: LeaveTypeCard) => c.quotaDays + c.carriedForwardDays + c.adjustedDays;
   const timesLabel = (c: LeaveTypeCard) =>
-    c.maxTimes != null ? `${c.usedTimes ?? 0}/${c.maxTimes} ครั้ง${c.timesScope === 'LIFETIME' ? ' (ตลอดอายุงาน)' : ' (ต่อปี)'}` : '';
+    c.maxTimes != null
+      ? `${Math.max(0, c.maxTimes - (c.usedTimes ?? 0))}/${c.maxTimes} ครั้ง${c.timesScope === 'LIFETIME' ? ' (ตลอดอายุงาน)' : ' (ต่อปี)'}`
+      : '';
 
   // Handle Export Report (CSV / Excel format with UTF-8 BOM)
   const handleExport = () => {
@@ -96,7 +98,6 @@ export default function LeaveBalancesPage() {
             .join(',')
         );
       });
-
 
       // Encode UTF-8 with BOM
       const csvContent = '\uFEFF' + csvRows.join('\r\n');
@@ -162,7 +163,9 @@ export default function LeaveBalancesPage() {
       {/* LEAVE BALANCE CARDS — one per entitled leave type        */}
       {/* ========================================================= */}
       <section className="space-y-3">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">ยอดวันลาประจำปี พ.ศ. {selectedYear}</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          ยอดวันลาประจำปี พ.ศ. {selectedYear} (คงเหลือ/สิทธิ์)
+        </h2>
         <RefreshIndicator active={balancePhase.refreshing} />
         {balancePhase.initialLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -186,7 +189,7 @@ export default function LeaveBalancesPage() {
             {leaveCards.map((c) => {
               const color = resolveLeaveColor(c.color, c.code || c.leaveTypeId);
               const total = totalOf(c);
-              const pct = total > 0 ? Math.min(100, (c.usedDays / total) * 100) : 0;
+              const pct = total > 0 ? Math.min(100, Math.max(0, (c.remainingDays / total) * 100)) : 0;
               return (
                 <div
                   key={c.leaveTypeId}
@@ -204,21 +207,20 @@ export default function LeaveBalancesPage() {
                   </div>
                   <div className="mt-4 flex items-baseline gap-2">
                     <span className="text-5xl font-extrabold tracking-tight">
-                      {fmt(c.usedDays)}/{fmt(total)}
+                      {fmt(c.remainingDays)}/{fmt(total)}
                     </span>
-                    <span className="leave-muted text-sm font-medium">วัน (ใช้ไป/สิทธิ์)</span>
+                    <span className="leave-muted text-sm font-medium">วัน</span>
                   </div>
                   <div className="leave-track mt-5 h-2.5 w-full rounded-full overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
                   </div>
-                  <div className="leave-muted mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                    <span>
-                      คงเหลือ <b className="font-bold">{fmt(c.remainingDays)}</b> วัน
-                    </span>
-                    {c.carriedForwardDays > 0 && <span>ยกมา {fmt(c.carriedForwardDays)} วัน</span>}
-                    {c.adjustedDays !== 0 && <span>ปรับปรุง {c.adjustedDays > 0 ? '+' : ''}{fmt(c.adjustedDays)} วัน</span>}
-                    {c.maxTimes != null && <span>{timesLabel(c)}</span>}
-                  </div>
+                  {(c.carriedForwardDays > 0 || c.adjustedDays !== 0 || c.maxTimes != null) && (
+                    <div className="leave-muted mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      {c.carriedForwardDays > 0 && <span>ยกมา {fmt(c.carriedForwardDays)} วัน</span>}
+                      {c.adjustedDays !== 0 && <span>ปรับปรุง {c.adjustedDays > 0 ? '+' : ''}{fmt(c.adjustedDays)} วัน</span>}
+                      {c.maxTimes != null && <span>{timesLabel(c)}</span>}
+                    </div>
+                  )}
                 </div>
               );
             })}

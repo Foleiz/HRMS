@@ -1,4 +1,4 @@
-using Hrms.Application.Features.Attendance.Services;
+﻿using Hrms.Application.Features.Attendance.Services;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -37,10 +37,48 @@ public partial class LeaveRequestService
     /// คำนวณจำนวนวันลาจากช่วงวันที่ โดยนับเฉพาะวันทำงานตามการตั้งค่า "วันทำงานประจำสัปดาห์"
     /// และไม่นับวันหยุดบริษัท/วันหยุดนักขัตฤกษ์ในเมนูปฏิทินวันหยุด
     /// </summary>
+    public async Task<bool> ResolveIncludeHolidaysAsync(
+        long? employeeId,
+        long? leaveTypeId,
+        DateOnly onDate,
+        CancellationToken cancellationToken = default)
+    {
+        if (leaveTypeId.HasValue && leaveTypeId.Value > 0)
+        {
+            var policies = await _context.LeavePolicies
+                .AsNoTracking()
+                .Where(p => p.LeaveTypeId == leaveTypeId.Value)
+                .ToListAsync(cancellationToken);
+
+            if (policies.Count > 0)
+            {
+                if (employeeId.HasValue && employeeId.Value > 0)
+                {
+                    var group = await LeaveEmployeeGroups.ResolveAsync(_context, employeeId.Value, onDate, cancellationToken);
+                    var matched = LeavePolicyRules.SelectPolicy(policies, group.EmployeeTypeId, group.EmployeeLevelId, onDate);
+                    if (matched != null) return matched.IncludeHolidays;
+                }
+
+                var fallbackPolicy = LeavePolicyRules.SelectPolicy(policies, null, null, onDate)
+                    ?? policies.OrderByDescending(p => p.EffectiveFrom).FirstOrDefault();
+                if (fallbackPolicy != null) return fallbackPolicy.IncludeHolidays;
+            }
+        }
+
+        var companySetting = await _context.Companies
+            .AsNoTracking()
+            .OrderBy(c => c.Id)
+            .Select(c => (bool?)c.LeaveIncludeHolidays)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return companySetting ?? false;
+    }
+
     public async Task<LeaveDaysCalculationDto> CalculateLeaveDaysAsync(
         DateOnly startDate,
         DateOnly endDate,
         bool isHalfDay = false,
+        bool includeHolidays = false,
         CancellationToken cancellationToken = default)
     {
         if (endDate < startDate)
@@ -72,6 +110,7 @@ public partial class LeaveRequestService
             EndDate = endDate.ToString("yyyy-MM-dd"),
             CalendarDays = endDate.DayNumber - startDate.DayNumber + 1,
             IsHalfDay = isHalfDay && startDate == endDate,
+            IncludeHolidays = includeHolidays,
         };
 
         for (var d = startDate; d <= endDate; d = d.AddDays(1))
@@ -79,12 +118,12 @@ public partial class LeaveRequestService
             if (!workingDays.Contains((int)d.DayOfWeek))
             {
                 result.NonWorkingDays++;
-                continue;
+                if (!includeHolidays) continue;
             }
-            if (holidayByDate.TryGetValue(d, out var holidayName))
+            else if (holidayByDate.TryGetValue(d, out var holidayName))
             {
                 result.Holidays.Add(new LeaveHolidayDto { Date = d.ToString("yyyy-MM-dd"), Name = holidayName });
-                continue;
+                if (!includeHolidays) continue;
             }
             result.WorkingDates.Add(d.ToString("yyyy-MM-dd"));
         }
@@ -100,6 +139,8 @@ public partial class LeaveRequestService
     /// ครึ่งวัน = ลาวันเดียวและหน้าเว็บส่งจำนวนวันน้อยกว่า 1
     /// </summary>
     private async Task<LeaveDaysCalculationDto> ResolveLeaveDaysAsync(
+        long employeeId,
+        long leaveTypeId,
         DateTime startDatetime,
         DateTime endDatetime,
         decimal requestedDays,
@@ -109,7 +150,8 @@ public partial class LeaveRequestService
         var start = ToThaiDate(startDatetime);
         var end = ToThaiDate(endDatetime);
         var isHalfDay = start == end && requestedDays > 0 && requestedDays < 1;
-        var calc = await CalculateLeaveDaysAsync(start, end, isHalfDay, cancellationToken);
+        var includeHolidays = await ResolveIncludeHolidaysAsync(employeeId, leaveTypeId, start, cancellationToken);
+        var calc = await CalculateLeaveDaysAsync(start, end, isHalfDay, includeHolidays, cancellationToken);
 
         if (!allowZero && calc.LeaveDays <= 0)
         {

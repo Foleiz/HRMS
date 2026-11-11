@@ -1,4 +1,4 @@
-using Hrms.Application.Features.Leave.DTOs;
+﻿using Hrms.Application.Features.Leave.DTOs;
 
 namespace Hrms.Application.Features.Leave.Services;
 
@@ -9,4 +9,6 @@ public interface ILeavePolicyService
     Task<LeavePolicyDto> CreateAsync(CreateLeavePolicyRequest request, CancellationToken cancellationToken = default);
     Task<LeavePolicyDto> UpdateAsync(long id, UpdateLeavePolicyRequest request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(long id, CancellationToken cancellationToken = default);
+    Task<LeaveHolidaySettingsDto> GetHolidaySettingsAsync(CancellationToken cancellationToken = default);
+    Task<LeaveHolidaySettingsDto> UpdateHolidaySettingsAsync(UpdateLeaveHolidaySettingsRequest request, CancellationToken cancellationToken = default);
 }

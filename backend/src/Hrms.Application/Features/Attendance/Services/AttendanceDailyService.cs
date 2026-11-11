@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -339,15 +339,10 @@ public class AttendanceDailyService : IAttendanceDailyService
             }
         }
 
-        if (request.ClearActualIn) record.ActualIn = null;
-        else if (request.ActualIn.HasValue) record.ActualIn = request.ActualIn.Value;
-        if (request.ClearActualOut) record.ActualOut = null;
-        else if (request.ActualOut.HasValue) record.ActualOut = request.ActualOut.Value;
-
+        // ไม่อนุญาตให้แก้ไขเวลาเข้างาน-ออกงานที่สแกนจริง (แก้ไขได้เฉพาะสถานะการเข้างานเท่านั้น)
         var manualStatus = request.Status?.Trim().ToUpperInvariant();
         if (string.IsNullOrEmpty(manualStatus))
         {
-            // ให้ระบบคำนวณใหม่จากเวลาและกะ (เดิมหน้าเว็บส่งสถานะเก่ากลับมาทุกครั้ง ทำให้สาย/ออกก่อนไม่ถูกคำนวณใหม่)
             if (record.ActualIn == null && record.ActualOut == null)
             {
                 record.Status = "ABSENT";
@@ -360,7 +355,6 @@ public class AttendanceDailyService : IAttendanceDailyService
             {
                 record.IsAbsent = false;
                 record.Status = "PRESENT";
-                // มาทำงานในวันหยุด (วันหยุดประจำปี / นอกวันทำงานของกะ) → ทำงานวันหยุด ไม่คิดสาย/ออกก่อน
                 var dayShift = await _context.EmployeeShifts.AsNoTracking()
                     .Where(x => x.EmployeeId == record.EmployeeId && x.EffectiveFrom <= record.WorkDate && (x.EffectiveTo == null || x.EffectiveTo >= record.WorkDate))
                     .OrderByDescending(x => x.EffectiveFrom)
@@ -373,20 +367,40 @@ public class AttendanceDailyService : IAttendanceDailyService
         }
         else
         {
-            var allowed = new[] { "LEAVE", "ABSENT", "HOLIDAY", "OFF", "HOLIDAY_WORK" };
+            var allowed = new[] { "PRESENT", "LATE", "EARLY_LEAVE", "LATE_AND_EARLY", "LEAVE", "ABSENT", "HOLIDAY", "OFF", "HOLIDAY_WORK" };
             if (!allowed.Contains(manualStatus))
-                throw new InvalidOperationException($"สถานะ '{request.Status}' กำหนดเองไม่ได้ — ปล่อยว่างเพื่อให้ระบบคำนวณ");
+                throw new InvalidOperationException($"สถานะ '{request.Status}' ไม่ถูกต้อง");
+
             record.Status = manualStatus;
             record.IsAbsent = manualStatus == "ABSENT";
-            if (manualStatus == "HOLIDAY_WORK")
-            {
-                RecalculateAttendance(record); // คิดชั่วโมงทำงาน ไม่คิดสาย/ออกก่อน
-            }
-            else
+
+            if (manualStatus == "PRESENT")
             {
                 record.LateMinutes = 0;
                 record.EarlyLeaveMinutes = 0;
-                if (manualStatus != "LEAVE") record.WorkedMinutes = 0;
+            }
+            else if (manualStatus == "LATE")
+            {
+                record.EarlyLeaveMinutes = 0;
+            }
+            else if (manualStatus == "EARLY_LEAVE")
+            {
+                record.LateMinutes = 0;
+            }
+            else if (manualStatus == "HOLIDAY_WORK")
+            {
+                RecalculateAttendance(record); // คิดชั่วโมงทำงาน ไม่คิดสาย/ออกก่อน
+            }
+            else if (manualStatus == "LEAVE")
+            {
+                record.LateMinutes = 0;
+                record.EarlyLeaveMinutes = 0;
+            }
+            else if (manualStatus == "ABSENT" || manualStatus == "HOLIDAY" || manualStatus == "OFF")
+            {
+                record.LateMinutes = 0;
+                record.EarlyLeaveMinutes = 0;
+                record.WorkedMinutes = 0;
             }
         }
 

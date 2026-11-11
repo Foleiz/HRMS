@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { ClipboardList, Clock, Wallet, MessageSquareQuote } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
-import type { AttendanceAdjustment } from '@/types/attendanceAdjustment';
+import { type AttendanceAdjustment, getAttendanceStatusLabel } from '@/types/attendanceAdjustment';
 import type { BenefitClaimRequest } from '@/types/benefit';
 import type { CertificateRequest } from '@/types/certificates';
 import type { ResignationRequest } from '@/types/resignation';
@@ -215,11 +215,13 @@ export function GeneralReviewInfo({ request }: { request: GeneralDocumentRequest
 
 // ─── คำขอปรับเวลาเข้า-ออก ─────────────────────────────────────
 
+
 export function TimeAdjustReviewInfo({ adj }: { adj: AttendanceAdjustment }) {
-  const rows: { label: string; before: string | null; after: string | null }[] = [
-    { label: 'เวลาเข้า', before: adj.originalClockIn, after: adj.adjustedClockIn },
-    { label: 'เวลาออก', before: adj.originalClockOut, after: adj.adjustedClockOut },
-  ];
+  const beforeStatus = getAttendanceStatusLabel(adj.originalStatus);
+  const afterStatus = getAttendanceStatusLabel(adj.requestedStatus || 'PRESENT');
+  const scanInText = adj.originalClockIn ? `${thaiTime(adj.originalClockIn)} น.` : 'ไม่มีบันทึก';
+  const scanOutText = adj.originalClockOut ? `${thaiTime(adj.originalClockOut)} น.` : 'ไม่มีบันทึก';
+
   return (
     <div className="space-y-3 text-xs">
       <RequestSummaryCard
@@ -229,48 +231,42 @@ export function TimeAdjustReviewInfo({ adj }: { adj: AttendanceAdjustment }) {
         rows={[
           { label: 'วันที่ทำงาน', value: thaiDate(adj.workDate) },
           { label: 'กะงาน', value: adj.shiftName || '-' },
+          { label: 'เวลาสแกนเข้า - ออก', value: `${scanInText} – ${scanOutText}` },
           { label: 'ยื่นคำขอเมื่อ', value: `${thaiDate(adj.createdAt)} ${thaiTime(adj.createdAt)} น.` },
         ]}
-        noteLabel="เหตุผลในการขอปรับ"
+        noteLabel="เหตุผลในการขอปรับสถานะ"
         note={adj.reason}
       />
 
       <div className={reviewCardCls}>
         <div className={reviewTitleCls}>
-          <Clock className="w-3.5 h-3.5 text-slate-500" /> เวลาที่ขอปรับ
+          <Clock className="w-3.5 h-3.5 text-slate-500" /> สถานะการเข้างานที่ขอปรับ
         </div>
         <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
           <table className="w-full text-xs">
             <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400">
               <tr>
                 <th className="text-left font-medium px-3 py-2">รายการ</th>
-                <th className="text-right font-medium px-3 py-2">เวลาเดิม (สแกน)</th>
+                <th className="text-right font-medium px-3 py-2">สถานะเดิม</th>
                 <th className="text-right font-medium px-3 py-2">ขอปรับเป็น</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-              {rows.map((r) => {
-                const changed = thaiTime(r.before) !== thaiTime(r.after);
-                return (
-                  <tr key={r.label}>
-                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{r.label}</td>
-                    <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">
-                      {r.before ? `${thaiTime(r.before)} น.` : 'ไม่มีบันทึก'}
-                    </td>
-                    <td
-                      className={`px-3 py-2 text-right font-bold ${
-                        changed ? 'text-amber-700 dark:text-amber-300' : 'text-slate-800 dark:text-slate-200'
-                      }`}
-                    >
-                      {r.after ? `${thaiTime(r.after)} น.` : '-'}
-                    </td>
-                  </tr>
-                );
-              })}
+              <tr>
+                <td className="px-3 py-2 text-slate-700 dark:text-slate-300">สถานะการเข้างาน</td>
+                <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">
+                  {beforeStatus}
+                </td>
+                <td className="px-3 py-2 text-right font-bold text-amber-700 dark:text-amber-300">
+                  {afterStatus}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
-        <p className="mt-1.5 text-[11px] text-slate-400">อนุมัติแล้ว ระบบคำนวณเวลาทำงานของวันนั้นใหม่อัตโนมัติ</p>
+        <p className="mt-1.5 text-[11px] text-slate-400">
+          อนุมัติแล้ว ระบบจะปรับเฉพาะสถานะการเข้างานของวันนั้น โดยไม่เปลี่ยนแปลงเวลาเข้า-ออกที่สแกนจริง
+        </p>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-using Hrms.Domain.Common;
+﻿using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
@@ -18,6 +18,8 @@ public class Company : BaseEntity
     /// <summary>รูปตราประทับบริษัท (ใช้ในหนังสือรับรอง)</summary>
     public byte[]? SealData { get; set; }
     public long? CeoEmployeeId { get; set; }
+    /// <summary>ค่าเริ่มต้นของบริษัท: นับวันหยุดประจำสัปดาห์/วันหยุดบริษัทเป็นวันลาหรือไม่ (false = นับเฉพาะวันทำงาน)</summary>
+    public bool LeaveIncludeHolidays { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

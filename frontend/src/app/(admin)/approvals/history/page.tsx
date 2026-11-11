@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -55,7 +55,7 @@ import {
 import { openBlobInNewTab } from '@/lib/filePreview';
 import { DocumentDueBadge } from '@/components/leave/DocumentDueBadge';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
-import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
+import { AttendanceAdjustment, getAttendanceStatusLabel } from '@/types/attendanceAdjustment';
 import { ApprovalActionModal } from '@/components/approvals/ApprovalActionModal';
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -389,7 +389,7 @@ export default function ApprovalHistoryPage() {
         employeeCode: t.employeeCode,
         departmentName: t.departmentName || '-',
         subType: 'ปรับเวลา',
-        details: `${formatDate(t.workDate)} • เข้า ${formatTime(t.adjustedClockIn)} ออก ${formatTime(t.adjustedClockOut)}${t.reason ? ` • ${t.reason}` : ''}`,
+        details: `${formatDate(t.workDate)} • ขอปรับสถานะเป็น ${getAttendanceStatusLabel(t.requestedStatus || 'PRESENT')}${t.reason ? ` • ${t.reason}` : ''}`,
         status: t.status,
         hasAlreadyApproved: false,
         approvedByName: t.reviewedByEmployeeName ?? '-',

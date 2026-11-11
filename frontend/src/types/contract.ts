@@ -105,3 +105,15 @@ export interface RenewContractRequest {
   documentFileName?: string;
   documentFileData?: string;
 }
+
+/** การตั้งค่าเกณฑ์สัญญาจ้างงาน (ระยะเวลาเริ่มต้น & แจ้งเตือนล่วงหน้า) */
+export interface ContractSettings {
+  /** ระยะเวลาทดลองงานมาตรฐาน (วัน) เช่น 119 วัน (รวมวันเริ่มงาน = 120 วัน) */
+  probationDays: number;
+  /** ระยะเวลาสัญญาจ้างเริ่มต้น (Fixed-term) (วัน) เช่น 365 วัน */
+  fixedTermDays: number;
+  /** แจ้งเตือนประเมินผลทดลองงานล่วงหน้า (วัน) เช่น 30 วัน */
+  probationAlertDays: number;
+  /** แจ้งเตือนสัญญาจ้างใกล้หมดอายุล่วงหน้า (วัน) เช่น 30 วัน */
+  contractAlertDays: number;
+}

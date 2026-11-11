@@ -1,4 +1,4 @@
-namespace Hrms.Application.Features.Leave.DTOs;
+﻿namespace Hrms.Application.Features.Leave.DTOs;
 
 public record LeavePolicyDto
 {
@@ -30,6 +30,7 @@ public record LeavePolicyDto
     public decimal? CarryForwardMaxDays { get; init; }
     public int? DocumentGraceDays { get; init; }
     public string ProrationMethod { get; init; } = "FULL";
+    public bool IncludeHolidays { get; init; } = false;
 }
 
 public record CreateLeavePolicyRequest
@@ -54,6 +55,7 @@ public record CreateLeavePolicyRequest
     public decimal? CarryForwardMaxDays { get; init; }
     public int? DocumentGraceDays { get; init; }
     public string ProrationMethod { get; init; } = "FULL";
+    public bool IncludeHolidays { get; init; } = false;
 }
 
 public record UpdateLeavePolicyRequest
@@ -78,4 +80,16 @@ public record UpdateLeavePolicyRequest
     public decimal? CarryForwardMaxDays { get; init; }
     public int? DocumentGraceDays { get; init; }
     public string ProrationMethod { get; init; } = "FULL";
+    public bool IncludeHolidays { get; init; } = false;
+}
+public record LeaveHolidaySettingsDto
+{
+    public bool IncludeHolidays { get; init; }
+}
+
+public record UpdateLeaveHolidaySettingsRequest
+{
+    public bool IncludeHolidays { get; init; }
+    /// <summary>อัปเดตสิทธิ์การลาทุกประเภทที่มีอยู่ให้ตรงกับค่าบริษัททันทีหรือไม่ (ค่าเริ่มต้น true)</summary>
+    public bool ApplyToExistingPolicies { get; init; } = true;
 }

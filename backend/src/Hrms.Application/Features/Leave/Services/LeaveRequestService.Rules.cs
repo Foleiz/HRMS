@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -62,7 +62,7 @@ public partial class LeaveRequestService
         LeaveDaysCalculationDto calc;
         try
         {
-            calc = await ResolveLeaveDaysAsync(startDatetime, endDatetime, requestedDays, allowZero: false, cancellationToken);
+            calc = await ResolveLeaveDaysAsync(employeeId, leaveTypeId, startDatetime, endDatetime, requestedDays, allowZero: false, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -186,6 +186,7 @@ public partial class LeaveRequestService
         var parts = new List<string> { $"สิทธิ์ {Days(p.EntitlementDays)} วัน/ปี" };
         if (p.MinimumServiceDays > 0) parts.Add($"อายุงานครบ {p.MinimumServiceDays} วัน");
         parts.Add(p.AdvanceRequestDays > 0 ? $"ยื่นล่วงหน้า {p.AdvanceRequestDays} วัน" : "ยื่นวันเดียวกันได้");
+        parts.Add(p.IncludeHolidays ? "นับรวมวันหยุด" : "ไม่นับวันหยุด");
         if (p.MaxLifetimeOccurrences.HasValue) parts.Add($"ไม่เกิน {p.MaxLifetimeOccurrences.Value} ครั้งตลอดอายุงาน");
         if (p.IsDocumentRequired)
             parts.Add((p.DocumentRequiredAfterDays is > 0 ? $"แนบเอกสารเมื่อลา {Days(p.DocumentRequiredAfterDays.Value)} วันขึ้นไป" : "แนบเอกสารทุกครั้ง")

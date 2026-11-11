@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
@@ -10,6 +10,7 @@ import {
   CalendarPlus,
 } from 'lucide-react';
 import { LeaveType, LeavePolicy, CreateLeaveRequestPayload } from '@/types/leave';
+import { leaveService } from '@/services/leaveService';
 import { Employee } from '@/types/employee';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -68,22 +69,42 @@ export const LeaveRequestModal: React.FC<LeaveRequestModalProps> = ({
     }
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const [serverLeaveDays, setServerLeaveDays] = useState<number | null>(null);
 
-  // คำนวณจำนวนวันลาแบบง่าย (นับรวมวันเริ่มต้นและวันสิ้นสุด)
-  const leaveDays = useMemo(() => {
-    if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diff = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-    return diff > 0 ? diff : 0;
-  }, [startDate, endDate]);
+  useEffect(() => {
+    if (!isOpen || !startDate || !endDate || endDate < startDate) {
+      setServerLeaveDays(null);
+      return;
+    }
+    let active = true;
+    leaveService
+      .calculateLeaveDays(startDate, endDate, false, leaveTypeId ? Number(leaveTypeId) : undefined)
+      .then((res) => active && setServerLeaveDays(res.leaveDays))
+      .catch(() => active && setServerLeaveDays(null));
+    return () => {
+      active = false;
+    };
+  }, [isOpen, startDate, endDate, leaveTypeId]);
 
-  // หานโยบายที่เกี่ยวข้องกับประเภทการลาที่เลือก เพื่อเช็คว่าต้องแนบเอกสารหรือไม่
   const applicablePolicy = useMemo(() => {
     if (!leaveTypeId) return null;
     return leavePolicies.find((p) => p.leaveTypeId === leaveTypeId) || null;
   }, [leaveTypeId, leavePolicies]);
+
+  const leaveDays = useMemo(() => {
+    if (!startDate || !endDate) return 0;
+    if (serverLeaveDays !== null) return serverLeaveDays;
+    const includeHolidays = Boolean(applicablePolicy?.includeHolidays);
+    const start = new Date(`${startDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+    let count = 0;
+    for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      if (includeHolidays || (d.getDay() !== 0 && d.getDay() !== 6)) count++;
+    }
+    return count > 0 ? count : 0;
+  }, [startDate, endDate, serverLeaveDays, applicablePolicy?.includeHolidays]);
+
+  if (!isOpen) return null;
 
   const isDocumentRecommended =
     !!applicablePolicy?.isDocumentRequired &&

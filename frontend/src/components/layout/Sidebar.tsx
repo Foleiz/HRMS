@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -31,6 +31,8 @@ import {
   Gift,
   Network,
   ChevronDown,
+  ChevronsUpDown,
+  ChevronsDownUp,
   History,
   FileEdit,
   Receipt,
@@ -684,6 +686,28 @@ export const Sidebar: React.FC = () => {
     }
   }, [searchTerm, allAccessibleItems]);
 
+  const expandableItems = useMemo(
+    () => allAccessibleItems.filter((item) => item.children && item.children.length > 0),
+    [allAccessibleItems]
+  );
+
+  const isAllExpanded = useMemo(
+    () => expandableItems.length > 0 && expandableItems.every((item) => Boolean(openMenus[item.title])),
+    [expandableItems, openMenus]
+  );
+
+  const handleToggleAllMenus = () => {
+    if (isAllExpanded) {
+      setOpenMenus({});
+    } else {
+      const next: Record<string, boolean> = {};
+      expandableItems.forEach((item) => {
+        next[item.title] = true;
+      });
+      setOpenMenus(next);
+    }
+  };
+
   const toggleMenu = (title: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -778,6 +802,7 @@ export const Sidebar: React.FC = () => {
           />
         </div>
       </div>
+
 
       {/* 3. Navigation Menu Items Grouped by Category */}
       <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
@@ -927,6 +952,37 @@ export const Sidebar: React.FC = () => {
           </div>
         ))}
       </nav>
+
+      {/* 4. Bottom Footer: Expand / Collapse All Submenus */}
+      {expandableItems.length > 0 && (!isCollapsed || !isDesktop) && (
+        <div className="shrink-0 px-4 py-3 border-t border-slate-100/80 dark:border-slate-800 flex items-center justify-between gap-2">
+          <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 select-none">
+            แท็บเมนูทั้งหมด
+          </span>
+          <button
+            type="button"
+            onClick={handleToggleAllMenus}
+            title={isAllExpanded ? 'ปิดแท็บเมนูทั้งหมด' : 'เปิดแท็บเมนูทั้งหมด'}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all duration-150 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer select-none ${
+              isAllExpanded
+                ? 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                : 'bg-primary/10 text-primary hover:bg-primary/15 dark:bg-primary/20 dark:text-blue-300 dark:hover:bg-primary/30'
+            }`}
+          >
+            {isAllExpanded ? (
+              <>
+                <ChevronsDownUp className="w-3.5 h-3.5" />
+                <span>ปิดทั้งหมด</span>
+              </>
+            ) : (
+              <>
+                <ChevronsUpDown className="w-3.5 h-3.5" />
+                <span>เปิดทั้งหมด</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </>
   );
 

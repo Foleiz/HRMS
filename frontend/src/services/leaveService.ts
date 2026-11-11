@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api-client';
+﻿import { apiClient } from '@/lib/api-client';
 import { ApiResponse } from '@/types/api';
 import {
   LeaveType,
@@ -12,6 +12,7 @@ import {
   LeaveBalanceTransaction,
   LeaveRequest,
   LeaveDaysCalculation,
+  LeaveHolidaySettings,
   LeaveValidationResult,
   LeaveStats,
   CreateLeaveRequestPayload,
@@ -74,6 +75,16 @@ export const leaveService = {
 
   async deleteLeavePolicy(id: number): Promise<boolean> {
     const res = await apiClient.delete<ApiResponse<boolean>>(`/leave-policies/${id}`);
+    return res.data.data;
+  },
+
+  async getLeaveHolidaySettings(): Promise<LeaveHolidaySettings> {
+    const res = await apiClient.get<ApiResponse<LeaveHolidaySettings>>('/leave-policies/holiday-settings');
+    return res.data.data;
+  },
+
+  async updateLeaveHolidaySettings(data: { includeHolidays: boolean; applyToExistingPolicies?: boolean }): Promise<LeaveHolidaySettings> {
+    const res = await apiClient.put<ApiResponse<LeaveHolidaySettings>>('/leave-policies/holiday-settings', data);
     return res.data.data;
   },
 
@@ -167,9 +178,9 @@ export const leaveService = {
   // ข้อมูลถูก scope โดย EmployeeId จาก JWT Token อัตโนมัติ ไม่ต้องส่ง employeeId มาเอง
 
   /** คำนวณจำนวนวันลา (ไม่นับวันหยุดตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท) — ค่าเดียวกับที่ใช้ตัดโควตาจริง */
-  async calculateLeaveDays(startDate: string, endDate: string, halfDay = false): Promise<LeaveDaysCalculation> {
+  async calculateLeaveDays(startDate: string, endDate: string, halfDay = false, leaveTypeId?: number): Promise<LeaveDaysCalculation> {
     const res = await apiClient.get<ApiResponse<LeaveDaysCalculation>>('/leave-requests/calculate-days', {
-      params: { startDate, endDate, halfDay },
+      params: { startDate, endDate, halfDay, ...(leaveTypeId ? { leaveTypeId } : {}) },
     });
     return res.data.data;
   },

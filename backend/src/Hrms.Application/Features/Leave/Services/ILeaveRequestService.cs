@@ -1,4 +1,4 @@
-using Hrms.Application.Features.Leave.DTOs;
+﻿using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Domain.Entities;
 
 namespace Hrms.Application.Features.Leave.Services;
@@ -30,7 +30,8 @@ public interface ILeaveRequestService
     Task<LeaveRequestDto> UpdateDraftAsync(long id, CreateLeaveRequestDto request, CancellationToken cancellationToken = default);
 
     /// <summary>คำนวณจำนวนวันลา (นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท)</summary>
-    Task<LeaveDaysCalculationDto> CalculateLeaveDaysAsync(DateOnly startDate, DateOnly endDate, bool isHalfDay = false, CancellationToken cancellationToken = default);
+    Task<LeaveDaysCalculationDto> CalculateLeaveDaysAsync(DateOnly startDate, DateOnly endDate, bool isHalfDay = false, bool includeHolidays = false, CancellationToken cancellationToken = default);
+    Task<bool> ResolveIncludeHolidaysAsync(long? employeeId, long? leaveTypeId, DateOnly onDate, CancellationToken cancellationToken = default);
 
     /// <summary>ตรวจกฎการลาล่วงหน้า (dry-run) — ผลเดียวกับที่ใช้ตอนยื่นจริง</summary>
     Task<LeaveValidationResultDto> ValidateLeaveRequestAsync(long employeeId, long leaveTypeId, DateTime startDatetime, DateTime endDatetime, decimal requestedDays, bool hasAttachment, long? excludeRequestId, CancellationToken cancellationToken = default);

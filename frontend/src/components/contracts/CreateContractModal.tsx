@@ -14,9 +14,10 @@ import {
   FilePlus,
 } from 'lucide-react';
 import { Employee } from '@/types/employee';
-import { CreateContractRequest } from '@/types/contract';
+import { CreateContractRequest, ContractSettings } from '@/types/contract';
 import { EmployeeType } from '@/types/employeeType';
 import { employeeTypeService } from '@/services/employeeTypeService';
+import { contractService } from '@/services/contractService';
 import { EmployeeSelect } from '@/components/ui/EmployeeSelect';
 import { useToast } from '@/context/ToastContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -27,6 +28,7 @@ interface CreateContractModalProps {
   onClose: () => void;
   onSubmit: (data: CreateContractRequest) => Promise<void>;
   employees: Employee[];
+  contractSettings?: ContractSettings;
 }
 
 export default function CreateContractModal({
@@ -34,6 +36,7 @@ export default function CreateContractModal({
   onClose,
   onSubmit,
   employees,
+  contractSettings,
 }: CreateContractModalProps) {
   const toast = useToast();
   const [employeeId, setEmployeeId] = useState<number | ''>('');
@@ -48,6 +51,20 @@ export default function CreateContractModal({
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
 
+  const activeSettings = contractSettings || contractService.getSettings();
+
+  const calculateAutoEndDate = (baseStart: string, type: string): string => {
+    if (!baseStart || type === 'PERMANENT') return '';
+    const d = new Date(baseStart);
+    if (isNaN(d.getTime())) return '';
+    if (type === 'PROBATION') {
+      d.setDate(d.getDate() + activeSettings.probationDays);
+    } else {
+      d.setDate(d.getDate() + activeSettings.fixedTermDays);
+    }
+    return d.toISOString().split('T')[0];
+  };
+
   // โหลดรายการประเภทสัญญา/การจ้างงานแบบไดนามิกจากระบบ
   useEffect(() => {
     if (isOpen) {
@@ -55,10 +72,8 @@ export default function CreateContractModal({
       const todayStr = new Date().toISOString().split('T')[0];
       setStartDate(todayStr);
 
-      // คำนวณวันสิ้นสุดทดลองงาน 119 วันตามเกณฑ์กฎหมายแรงงานเริ่มต้น
-      const d = new Date();
-      d.setDate(d.getDate() + 119);
-      setEndDate(d.toISOString().split('T')[0]);
+      // คำนวณวันสิ้นสุดทดลองงานตามค่าที่ตั้งไว้ (ค่าเริ่มต้น 119 วัน)
+      setEndDate(calculateAutoEndDate(todayStr, 'PROBATION'));
       setErrorMessage(null);
       setFileData(null);
       setFileName(null);
@@ -80,6 +95,7 @@ export default function CreateContractModal({
           console.error('Failed to load employee types for modal:', err);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, employees]);
 
   // คำนวณวันสิ้นสุดอัตโนมัติเมื่อเปลี่ยนวันเริ่มสัญญา หรือเปลี่ยนประเภทสัญญา
@@ -105,17 +121,10 @@ export default function CreateContractModal({
 
     setContractType(mappedContractType);
 
-    if (mappedContractType === 'PROBATION' && startDate) {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + 119);
-      setEndDate(d.toISOString().split('T')[0]);
-    } else if (mappedContractType === 'PERMANENT') {
+    if (mappedContractType === 'PERMANENT') {
       setEndDate('');
     } else if (startDate) {
-      // ค่าเริ่มต้นสัญญาจ้าง 1 ปี
-      const d = new Date(startDate);
-      d.setFullYear(d.getFullYear() + 1);
-      setEndDate(d.toISOString().split('T')[0]);
+      setEndDate(calculateAutoEndDate(startDate, mappedContractType));
     }
   };
 
@@ -132,10 +141,8 @@ export default function CreateContractModal({
 
   const handleStartDateChange = (newStart: string) => {
     setStartDate(newStart);
-    if (contractType === 'PROBATION' && newStart) {
-      const d = new Date(newStart);
-      d.setDate(d.getDate() + 119);
-      setEndDate(d.toISOString().split('T')[0]);
+    if (contractType !== 'PERMANENT' && newStart) {
+      setEndDate(calculateAutoEndDate(newStart, contractType));
     }
   };
 
@@ -269,31 +276,35 @@ export default function CreateContractModal({
 
           {/* 3–4. วันที่เริ่ม / วันที่สิ้นสุด (แถวเดียวกัน) */}
           <div id="tour-contract-dates-field" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              วันที่เริ่มสัญญา <span className="text-rose-500">*</span>
-            </label>
-            <ThaiDatePicker
-              value={startDate}
-              onChange={(val) => handleStartDateChange(val)}
-              required
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                วันที่เริ่มสัญญา <span className="text-rose-500">*</span>
+              </label>
+              <ThaiDatePicker
+                value={startDate}
+                onChange={(val) => handleStartDateChange(val)}
+                required
+              />
+            </div>
 
-          {/* 4. วันที่สิ้นสุด / */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              วันที่สิ้นสุด / ครบทดลองงาน
-            </label>
-            <ThaiDatePicker
-              value={endDate}
-              minDate={startDate || undefined}
-              onChange={(val) => setEndDate(val)}
-            />
-            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 font-normal">
-              เว้นว่างได้หากเป็นสัญญาไม่มีกำหนด
-            </p>
-          </div>
+            {/* 4. วันที่สิ้นสุด / ครบทดลองงาน */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                วันที่สิ้นสุด / ครบทดลองงาน
+              </label>
+              <ThaiDatePicker
+                value={endDate}
+                minDate={startDate || undefined}
+                onChange={(val) => setEndDate(val)}
+              />
+              <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 font-normal">
+                {contractType === 'PROBATION'
+                  ? `คำนวณอัตโนมัติ +${activeSettings.probationDays} วัน ตามตั้งค่าทดลองงาน`
+                  : contractType === 'PERMANENT'
+                    ? 'เว้นว่างได้หากเป็นสัญญาไม่มีกำหนด'
+                    : `คำนวณอัตโนมัติ +${activeSettings.fixedTermDays} วัน ตามตั้งค่าสัญญาจ้าง`}
+              </p>
+            </div>
           </div>
 
           {/* 5. แนบเอกสารสัญญาจ้างงาน */}

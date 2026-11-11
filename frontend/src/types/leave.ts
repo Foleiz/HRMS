@@ -1,4 +1,4 @@
-export interface LeaveType {
+﻿export interface LeaveType {
   id: number;
   leaveCode: string;
   leaveName: string;
@@ -76,6 +76,7 @@ export interface LeavePolicy {
   /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
   documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
+  includeHolidays?: boolean;
 }
 
 export interface CreateLeavePolicyPayload {
@@ -102,6 +103,7 @@ export interface CreateLeavePolicyPayload {
   /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
   documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
+  includeHolidays?: boolean;
 }
 
 export interface UpdateLeavePolicyPayload {
@@ -127,6 +129,7 @@ export interface UpdateLeavePolicyPayload {
   /** แนบเอกสารภายหลังได้ภายในกี่วัน — ว่าง = ต้องแนบตอนยื่น */
   documentGraceDays?: number | null;
   prorationMethod?: LeaveProrationMethod | string;
+  includeHolidays?: boolean;
 }
 
 export interface LeaveBalance {
@@ -218,6 +221,7 @@ export interface LeaveRequest {
   startDate?: string | null;
   endDate?: string | null;
   leaveHours: number;
+  includeHolidays?: boolean;
   leaveDays: number;
   /** alias ที่ backend บางเวอร์ชันส่งมา */
   totalDays?: number | null;
@@ -258,6 +262,7 @@ export interface CreateLeaveRequestPayload {
   startDatetime: string;
   endDatetime: string;
   leaveHours: number;
+  includeHolidays?: boolean;
   leaveDays: number;
   reason?: string;
   contactDuringLeave?: string;
@@ -341,6 +346,7 @@ export interface LeaveDaysCalculation {
   workingDates: string[];
   leaveDays: number;
   leaveHours: number;
+  includeHolidays?: boolean;
 }
 
 /** ผลตรวจกฎการลาล่วงหน้า (dry-run) — ผลเดียวกับที่ server ใช้ตอนยื่นจริง */
@@ -352,4 +358,7 @@ export interface LeaveValidationResult {
   policySummary?: string | null;
   /** ยังไม่แนบ แต่แนบภายหลังได้ถึงวันนี้ (YYYY-MM-DD) */
   documentDueDate?: string | null;
+}
+export interface LeaveHolidaySettings {
+  includeHolidays: boolean;
 }

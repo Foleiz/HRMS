@@ -17,9 +17,10 @@ import {
 } from 'lucide-react';
 import { ModalShell, Button, AvatarName } from '@/components/ui';
 import { ModalHeader } from '@/components/ui/ModalHeader';
-import { EmploymentContract, RenewContractRequest } from '@/types/contract';
+import { EmploymentContract, RenewContractRequest, ContractSettings } from '@/types/contract';
 import { EmployeeType } from '@/types/employeeType';
 import { employeeTypeService } from '@/services/employeeTypeService';
+import { contractService } from '@/services/contractService';
 import { useToast } from '@/context/ToastContext';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -29,6 +30,7 @@ interface RenewContractModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (contractId: number, data: RenewContractRequest) => Promise<void>;
+  contractSettings?: ContractSettings;
 }
 
 export default function RenewContractModal({
@@ -36,6 +38,7 @@ export default function RenewContractModal({
   isOpen,
   onClose,
   onSubmit,
+  contractSettings,
 }: RenewContractModalProps) {
   const toast = useToast();
   const [employeeTypes, setEmployeeTypes] = useState<EmployeeType[]>([]);
@@ -51,6 +54,20 @@ export default function RenewContractModal({
   const [fileData, setFileData] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+
+  const activeSettings = contractSettings || contractService.getSettings();
+
+  const calculateAutoEndDate = (baseStart: string, type: string): string => {
+    if (!baseStart || type === 'PERMANENT') return '';
+    const d = new Date(baseStart);
+    if (isNaN(d.getTime())) return '';
+    if (type === 'PROBATION') {
+      d.setDate(d.getDate() + activeSettings.probationDays);
+    } else {
+      d.setDate(d.getDate() + activeSettings.fixedTermDays - 1);
+    }
+    return d.toISOString().split('T')[0];
+  };
 
   // Load employee types
   useEffect(() => {
@@ -86,16 +103,14 @@ export default function RenewContractModal({
       }
       setStartDate(defStartDate);
 
-      // วันที่สิ้นสุดสัญญาใหม่: เริ่มต้นคำนวณ +1 ปีให้ทันที
-      const endD = new Date(defStartDate);
-      endD.setFullYear(endD.getFullYear() + 1);
-      endD.setDate(endD.getDate() - 1); // เช่น 10/11/2569 ถึง 09/11/2570
-      setEndDate(endD.toISOString().split('T')[0]);
+      // วันที่สิ้นสุดสัญญาใหม่: เริ่มต้นคำนวณตามการตั้งค่าสัญญาจ้าง
+      setEndDate(calculateAutoEndDate(defStartDate, 'FIXED_TERM'));
 
       if (contract.employeeTypeId) {
         setEmployeeTypeId(contract.employeeTypeId);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, contract]);
 
   // จัดการอัปโหลดไฟล์
@@ -239,10 +254,8 @@ export default function RenewContractModal({
                 setContractType(nextType);
                 if (nextType === 'PERMANENT') {
                   setEndDate('');
-                } else if (!endDate && startDate) {
-                  const endD = new Date(startDate);
-                  endD.setFullYear(endD.getFullYear() + 1);
-                  setEndDate(endD.toISOString().split('T')[0]);
+                } else if (startDate) {
+                  setEndDate(calculateAutoEndDate(startDate, nextType));
                 }
               }}
               options={[
@@ -263,7 +276,12 @@ export default function RenewContractModal({
               </label>
               <ThaiDatePicker
                 value={startDate}
-                onChange={(val) => setStartDate(val)}
+                onChange={(val) => {
+                  setStartDate(val);
+                  if (contractType !== 'PERMANENT' && val) {
+                    setEndDate(calculateAutoEndDate(val, contractType));
+                  }
+                }}
                 placeholder="เลือกวันเริ่มสัญญาใหม่"
               />
             </div>
@@ -278,6 +296,11 @@ export default function RenewContractModal({
                   onChange={(val) => setEndDate(val)}
                   placeholder="เลือกวันสิ้นสุดสัญญาใหม่"
                 />
+                <p className="mt-1 text-[11px] text-slate-400 dark:text-slate-500 font-normal">
+                  {contractType === 'PROBATION'
+                    ? `คำนวณอัตโนมัติ +${activeSettings.probationDays} วัน ตามตั้งค่าทดลองงาน`
+                    : `คำนวณอัตโนมัติ ${activeSettings.fixedTermDays} วัน ตามตั้งค่าสัญญาจ้าง`}
+                </p>
               </div>
             ) : (
               <div className="flex items-center p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300">
@@ -286,7 +309,6 @@ export default function RenewContractModal({
               </div>
             )}
           </div>
-
 
           {/* 4. แนบเอกสารสัญญาฉบับต่ออายุ */}
           <div>

@@ -15,6 +15,8 @@ export interface AttendanceAdjustment {
   originalClockOut: string | null;
   adjustedClockIn: string | null;
   adjustedClockOut: string | null;
+  originalStatus?: string | null;
+  requestedStatus?: string | null;
   reason: string;
   status: AdjustmentStatus;
   createdAt: string;
@@ -26,8 +28,9 @@ export interface AttendanceAdjustment {
 export interface CreateAttendanceAdjustmentRequest {
   attendanceId: number;
   workDate?: string;
-  adjustedClockIn: string | null;
-  adjustedClockOut: string | null;
+  adjustedClockIn?: string | null;
+  adjustedClockOut?: string | null;
+  requestedStatus?: string | null;
   reason: string;
 }
 
@@ -53,4 +56,21 @@ export interface PagedAdjustmentResult {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+const ATTENDANCE_STATUS_LABELS: Record<string, string> = {
+  PRESENT: 'ตรงเวลา',
+  LATE: 'มาสาย',
+  EARLY_LEAVE: 'ออกก่อนเวลา',
+  LATE_AND_EARLY: 'มาสายและออกก่อนเวลา',
+  ABSENT: 'ขาดงาน',
+  LEAVE: 'ลา',
+  HOLIDAY_WORK: 'ทำงานวันหยุด',
+  HOLIDAY: 'วันหยุดประเพณี / บริษัท',
+  OFF: 'วันหยุดประจำสัปดาห์',
+};
+
+export function getAttendanceStatusLabel(status?: string | null): string {
+  if (!status) return 'ไม่ระบุ';
+  return ATTENDANCE_STATUS_LABELS[status.toUpperCase()] || status;
 }

@@ -242,22 +242,27 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     });
   };
 
-  // จำนวนวันลาคำนวณจาก server: นับเฉพาะวันทำงานตามเมนู "วันทำงานประจำสัปดาห์" และไม่นับวันหยุดบริษัท
+  // จำนวนวันลาคำนวณจาก server ตามนโยบายของประเภทการลา / ค่าตั้งต้นบริษัท
   // (ค่าเดียวกับที่ระบบใช้ตรวจโควตาและตัดยอดจริง)
-  const calcKey = startDate && endDate && endDate >= startDate ? `${startDate}|${endDate}|${leaveFormat}` : '';
+  const applicablePolicy = useMemo(() => {
+    if (!leaveTypeId) return null;
+    return leavePolicies.find((p) => p.leaveTypeId === leaveTypeId) || null;
+  }, [leaveTypeId, leavePolicies]);
+
+  const calcKey = startDate && endDate && endDate >= startDate ? `${startDate}|${endDate}|${leaveFormat}|${leaveTypeId || ''}` : '';
   const [dayCalc, setDayCalc] = useState<{ key: string; data: LeaveDaysCalculation | null } | null>(null);
 
   useEffect(() => {
     if (!calcKey) return;
     let active = true;
     leaveService
-      .calculateLeaveDays(startDate, endDate, leaveFormat === 'HALF_DAY')
+      .calculateLeaveDays(startDate, endDate, leaveFormat === 'HALF_DAY', leaveTypeId ? Number(leaveTypeId) : undefined)
       .then((data) => active && setDayCalc({ key: calcKey, data }))
       .catch(() => active && setDayCalc({ key: calcKey, data: null }));
     return () => {
       active = false;
     };
-  }, [calcKey, startDate, endDate, leaveFormat]);
+  }, [calcKey, startDate, endDate, leaveFormat, leaveTypeId]);
 
   const currentCalc = calcKey && dayCalc?.key === calcKey ? dayCalc : null;
   const isCalculatingDays = !!calcKey && !currentCalc;
@@ -265,16 +270,17 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
   const leaveDays = useMemo(() => {
     if (!calcKey) return 0;
     if (currentCalc?.data) return currentCalc.data.leaveDays;
-    // สำรองกรณีเรียก server ไม่ได้: นับจันทร์–ศุกร์ (server จะคำนวณซ้ำตอนยื่นจริงเสมอ)
+    // สำรองกรณีเรียก server ไม่ได้
+    const includeHolidays = Boolean(applicablePolicy?.includeHolidays);
     const start = new Date(`${startDate}T00:00:00`);
     const end = new Date(`${endDate}T00:00:00`);
     let count = 0;
     for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      if (d.getDay() !== 0 && d.getDay() !== 6) count++;
+      if (includeHolidays || (d.getDay() !== 0 && d.getDay() !== 6)) count++;
     }
     if (leaveFormat === 'HALF_DAY') return count > 0 ? 0.5 : 0;
     return count;
-  }, [calcKey, currentCalc, startDate, endDate, leaveFormat]);
+  }, [calcKey, currentCalc, startDate, endDate, leaveFormat, applicablePolicy?.includeHolidays]);
 
   const excludedDays = currentCalc?.data ? currentCalc.data.nonWorkingDays + currentCalc.data.holidays.length : 0;
 
@@ -313,10 +319,6 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
     };
   }, [leaveTypes, leaveTypeId, requests, draftId, employeeId, profile.fullName, profile.prefix, profile.positionTitle, reason, startDate, endDate, leaveDays, leaveFormat, contactDuringLeave]);
 
-  const applicablePolicy = useMemo(() => {
-    if (!leaveTypeId) return null;
-    return leavePolicies.find((p) => p.leaveTypeId === leaveTypeId) || null;
-  }, [leaveTypeId, leavePolicies]);
 
   // ตรวจกฎการลาล่วงหน้ากับ server (ผลเดียวกับตอนยื่นจริง): ลาซ้อน, สิทธิ์ตามกลุ่มพนักงาน, ทดลองงาน,
   // อายุงาน, ยื่นล่วงหน้า/ย้อนหลัง, จำนวนครั้ง, เอกสารแนบ
@@ -573,7 +575,15 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
         items.push({ icon: 'paperclip', text: 'ไม่ต้องแนบเอกสารประกอบ' });
       }
 
-      // 3. เงื่อนไขเพิ่มเติม (ถ้ามี)
+      // 3. การนับวันหยุด
+      items.push({
+        icon: 'check',
+        text: applicablePolicy.includeHolidays
+          ? 'นับรวมวันหยุดประจำสัปดาห์และวันหยุดบริษัท'
+          : 'ไม่นับรวมวันหยุดประจำสัปดาห์และวันหยุดบริษัท (นับเฉพาะวันทำงาน)',
+      });
+
+      // 4. เงื่อนไขเพิ่มเติม (ถ้ามี)
       if (applicablePolicy.isAllowedDuringProbation === false) {
         items.push({ icon: 'check', text: 'ไม่อนุญาตระหว่างทดลองงาน' });
       }
@@ -829,7 +839,9 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                   onChange={(newStart, newEnd) => setForm((f) => ({ ...f, startDate: newStart, endDate: newEnd }))}
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
-                  นับเฉพาะวันทำงาน ไม่นับวันหยุดบริษัท
+                  {(currentCalc?.data?.includeHolidays ?? applicablePolicy?.includeHolidays)
+                    ? 'นับรวมวันหยุดประจำสัปดาห์และวันหยุดบริษัท'
+                    : 'นับเฉพาะวันทำงาน ไม่นับวันหยุดบริษัท'}
                 </p>
               </div>
 

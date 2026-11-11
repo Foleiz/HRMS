@@ -1,4 +1,4 @@
-using Hrms.Api.Filters;
+﻿using Hrms.Api.Filters;
 using Hrms.Application.Common.Models;
 using Hrms.Application.Features.Leave.DTOs;
 using Hrms.Application.Features.Leave.Services;
@@ -98,5 +98,26 @@ public class LeavePoliciesController : ControllerBase
             return NotFound(ApiResponse<bool>.Fail($"ไม่พบนโยบายการลารหัส ID {id}"));
         }
         return Ok(ApiResponse<bool>.Ok(true, "ลบนโยบายการลาสำเร็จ"));
+    }
+
+    /// <summary>ดึงค่าเริ่มต้นระดับบริษัท: การนับวันหยุดระหว่างวันลา</summary>
+    [HttpGet("holiday-settings")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveHolidaySettingsDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApiResponse<LeaveHolidaySettingsDto>>> GetHolidaySettings(CancellationToken cancellationToken)
+    {
+        var result = await _policyService.GetHolidaySettingsAsync(cancellationToken);
+        return Ok(ApiResponse<LeaveHolidaySettingsDto>.Ok(result, "ดึงการตั้งค่าการนับวันหยุดสำเร็จ"));
+    }
+
+    /// <summary>บันทึกค่าเริ่มต้นระดับบริษัท: การนับวันหยุดระหว่างวันลา (เลือกได้ว่าจะอัปเดตสิทธิ์การลาที่มีอยู่ทั้งหมดด้วยหรือไม่)</summary>
+    [HttpPut("holiday-settings")]
+    [ProducesResponseType(typeof(ApiResponse<LeaveHolidaySettingsDto>), StatusCodes.Status200OK)]
+    [RequirePermission("LEAVE_POLICY_EDIT")]
+    public async Task<ActionResult<ApiResponse<LeaveHolidaySettingsDto>>> UpdateHolidaySettings(
+        [FromBody] UpdateLeaveHolidaySettingsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _policyService.UpdateHolidaySettingsAsync(request, cancellationToken);
+        return Ok(ApiResponse<LeaveHolidaySettingsDto>.Ok(result, "บันทึกการตั้งค่าการนับวันหยุดสำเร็จ"));
     }
 }
