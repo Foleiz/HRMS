@@ -22,19 +22,22 @@ export interface CalendarEvent {
   badgeColor: string; // Tailwind class
 }
 
-// แยกเวลาสำหรับกิจกรรม (เช่น "09:00 - 16:30" หรือ "09:00")
+// แยกเวลาสำหรับกิจกรรมแบบเต็มช่วง (เช่น "09:00 - 12:00" หรือ "09:00 - 16:30" หรือ "09:00")
 const parseActivityTime = (content: string): string => {
   if (!content) return '09:00';
   const match = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
   if (match) {
-    const raw = match[1].trim();
-    if (raw.includes('-')) {
-      const parts = raw.split('-').map((p) => p.trim());
-      return parts[0] || raw;
-    }
-    return raw;
+    return match[1].trim();
   }
   return '09:00';
+};
+
+// แปลงประเภทวันหยุดเป็นภาษาไทย (วันหยุดชดเชย, วันหยุดพิเศษ, วันหยุด)
+const getHolidayTypeLabel = (type: string, typeThai?: string): string => {
+  if (type === 'SUBSTITUTE') return 'วันหยุดชดเชย';
+  if (type === 'COMPANY_SPECIAL') return 'วันหยุดพิเศษ';
+  if (type === 'PUBLIC') return 'วันหยุด';
+  return typeThai || 'วันหยุด';
 };
 
 export const CalendarWidget: React.FC = () => {
@@ -97,14 +100,14 @@ export const CalendarWidget: React.FC = () => {
   const monthNames = TH_MONTHS;
   const yearThai = year + 543;
   const monthName = monthNames[month];
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
 
   // รวมวันหยุดและกิจกรรมในเดือนที่กำลังแสดงผล (แมปเป็น Map ของวันที่ -> CalendarEvent[])
   const eventsByDayMap = useMemo(() => {
     const map = new Map<number, CalendarEvent[]>();
-    const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
 
     // 1. เพิ่มวันหยุดประจำปี (สีแดง diamond)
-    // ทุกวันหยุดในตาราง holidays (PUBLIC, COMPANY_SPECIAL, SUBSTITUTE) ถือเป็น "วันหยุด" ทั้งหมด
+    // แสดงประเภทตามจริง: วันหยุดชดเชย, วันหยุดพิเศษ, วันหยุด (ใช้สีแดงเหมือนกันทั้งหมด)
     for (const h of holidays) {
       if (!h.holidayDate) continue;
       const isHoliday = h.holidayType !== 'ACTIVITY';
@@ -117,7 +120,7 @@ export const CalendarWidget: React.FC = () => {
           day: dayNum,
           title: h.holidayName,
           type: h.holidayType,
-          typeLabel: isHoliday ? (h.holidayType === 'SUBSTITUTE' ? 'วันหยุดชดเชย' : 'วันหยุด') : 'กิจกรรม',
+          typeLabel: isHoliday ? getHolidayTypeLabel(h.holidayType, h.holidayTypeThai) : 'กิจกรรม',
           isHoliday,
           isPinned: false,
           timeRange: isHoliday ? 'ทั้งวัน' : '09:00',
@@ -174,7 +177,28 @@ export const CalendarWidget: React.FC = () => {
     }
 
     return map;
-  }, [holidays, activities, year, month]);
+  }, [holidays, activities, year, month, monthPrefix]);
+
+  // คำนวณจำนวนวันหยุดและกิจกรรมในเดือนนี้สำหรับแสดงใน Legend
+  const holidaysThisMonthCount = useMemo(() => {
+    return holidays.filter(
+      (h) => h.holidayDate && h.holidayDate.startsWith(monthPrefix) && h.holidayType !== 'ACTIVITY'
+    ).length;
+  }, [holidays, monthPrefix]);
+
+  const activitiesThisMonthCount = useMemo(() => {
+    return activities.filter((act) => {
+      if (act.status === 'DRAFT') return false;
+      const startStr = act.publishedAt || act.createdAt;
+      if (!startStr) return false;
+      const startDate = new Date(startStr);
+      const endDate = act.expireAt ? new Date(act.expireAt) : startDate;
+
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0, 23, 59, 59);
+      return startDate <= monthEnd && endDate >= monthStart;
+    }).length;
+  }, [activities, year, month]);
 
   // รายการกิจกรรมทั้งหมดในเดือนนี้
   const eventsThisMonth = useMemo(() => {
@@ -266,7 +290,7 @@ export const CalendarWidget: React.FC = () => {
             ))}
           </div>
 
-          {/* Date Numbers with Dots / Indicators */}
+          {/* Date Numbers with Dots / Indicators (แสดงแค่จุดเดียวตามประเภท แม้มีมากกว่า 1 รายการ) */}
           <div className="grid grid-cols-7 text-center gap-y-0.5">
             {days.map((d, idx) => {
               if (d === null) {
@@ -277,18 +301,11 @@ export const CalendarWidget: React.FC = () => {
               const isWeekend = (idx % 7) >= 5;
               const rawDayEvents = eventsByDayMap.get(d) || [];
               const hasEvents = rawDayEvents.length > 0;
-
-              // เรียงวันหยุดขึ้นก่อน แล้วตามด้วยกิจกรรม
-              const dayEvents = [...rawDayEvents].sort((a, b) => {
-                if (a.isHoliday && !b.isHoliday) return -1;
-                if (!a.isHoliday && b.isHoliday) return 1;
-                if (a.isPinned && !b.isPinned) return -1;
-                if (!a.isPinned && b.isPinned) return 1;
-                return 0;
-              });
+              const hasHoliday = rawDayEvents.some((e) => e.isHoliday);
+              const hasActivity = rawDayEvents.some((e) => !e.isHoliday);
 
               const tooltipText = hasEvents
-                ? `${d} ${monthName}: ` + dayEvents.map((e) => `${e.title} (${e.typeLabel})`).join(', ')
+                ? `${d} ${monthName}: ` + rawDayEvents.map((e) => `${e.title} (${e.typeLabel})`).join(', ')
                 : undefined;
 
               return (
@@ -308,27 +325,15 @@ export const CalendarWidget: React.FC = () => {
                   }`}
                 >
                   <span className="leading-none text-[11.5px]">{d}</span>
-                  {/* Indicators below day number */}
+                  {/* Indicators below day number: แสดงเฉพาะสัญลักษณ์ประเภท (ไม่แสดงเครื่องหมาย + และไม่แสดงจุดซ้ำ) */}
                   <div className="flex items-center justify-center gap-0.5 h-1.5 mt-0.5">
                     {hasEvents ? (
                       <>
-                        {dayEvents.slice(0, 2).map((ev, evIdx) =>
-                          ev.isHoliday ? (
-                            <span
-                              key={evIdx}
-                              className="w-1.5 h-1.5 bg-rose-600 rotate-45 shrink-0"
-                            />
-                          ) : (
-                            <span
-                              key={evIdx}
-                              className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"
-                            />
-                          )
+                        {hasHoliday && (
+                          <span className="w-1.5 h-1.5 bg-rose-600 rotate-45 shrink-0" />
                         )}
-                        {dayEvents.length > 2 && (
-                          <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 leading-none -ml-0.5">
-                            +
-                          </span>
+                        {hasActivity && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
                         )}
                       </>
                     ) : (
@@ -340,16 +345,16 @@ export const CalendarWidget: React.FC = () => {
             })}
           </div>
 
-          {/* Legend: คำอธิบายสัญลักษณ์ และ ปุ่มดูทั้งหมด (เปิด Modal แสดงรายการทั้งหมดของวันที่เลือก) */}
+          {/* Legend: คำอธิบายสัญลักษณ์พร้อมจำนวนนับประเภทในเดือนนี้ และ ปุ่มดูทั้งหมด */}
           <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10.5px] px-1">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
                 <span className="w-1.5 h-1.5 bg-rose-600 rotate-45 inline-block shrink-0" />
-                <span>วันหยุด</span>
+                <span>วันหยุด ({holidaysThisMonthCount})</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block shrink-0" />
-                <span>กิจกรรม</span>
+                <span>กิจกรรม ({activitiesThisMonthCount})</span>
               </div>
             </div>
             <button
@@ -363,45 +368,49 @@ export const CalendarWidget: React.FC = () => {
           </div>
         </div>
 
-        {/* Selected Date Details Box (Fixed height: h-[52px], แสดงแค่ 1 รายการ: บรรทัดบนประเภท/เวลา, บรรทัดล่างหัวข้อ) */}
+        {/* Selected Date Details Box (Fixed height: h-[52px], แสดงบรรทัดเดียวแบบเดิม พร้อมเวลาเต็มช่วง) */}
         {selectedEvents.length > 0 ? (
           <div
             onClick={() => setIsAllEventsModalOpen(true)}
-            className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-between shrink-0 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+            className={`mt-1.5 h-[52px] min-h-[52px] max-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col shrink-0 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors ${
+              selectedEvents.length === 1 ? 'justify-center p-2' : 'justify-between p-1.5'
+            }`}
             title="คลิกเพื่อดูรายการทั้งหมด"
           >
-            {/* บรรทัดบน: ประเภท (กิจกรรม/วันหยุด), ปักหมุด (ถ้ามี) และเวลา */}
-            <div className="flex items-center justify-between gap-1.5 min-w-0">
-              <div className="flex items-center gap-1.5 shrink-0">
-                <span
-                  className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
-                    selectedEvents[0].isHoliday
-                      ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                      : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
-                  }`}
-                >
-                  {selectedEvents[0].typeLabel}
-                </span>
-                {selectedEvents[0].isPinned && (
-                  <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                    ปักหมุด
-                  </span>
-                )}
-              </div>
-              <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
-                {selectedEvents[0].timeRange || (selectedEvents[0].isHoliday ? 'ทั้งวัน' : '09:00')}
-              </span>
-            </div>
-
-            {/* บรรทัดที่สอง: หัวข้อกิจกรรมหรือวันหยุด */}
-            <div className="min-w-0">
-              <p
-                className="text-slate-800 dark:text-slate-200 font-semibold text-xs truncate leading-tight"
-                title={selectedEvents[0].title}
+            {selectedEvents.slice(0, 2).map((ev, idx) => (
+              <div
+                key={ev.id}
+                className={`flex items-center justify-between gap-1.5 min-w-0 ${
+                  idx > 0 ? 'pt-1 border-t border-slate-100 dark:border-slate-700/60' : ''
+                }`}
               >
-                {selectedEvents[0].title}
-              </p>
-            </div>
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <span
+                    className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
+                      ev.isHoliday
+                        ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                        : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                    }`}
+                  >
+                    {ev.typeLabel}
+                  </span>
+                  {ev.isPinned && (
+                    <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                      ปักหมุด
+                    </span>
+                  )}
+                  <span
+                    className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
+                    title={ev.title}
+                  >
+                    {ev.title}
+                  </span>
+                </div>
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
+                  {ev.timeRange || (ev.isHoliday ? 'ทั้งวัน' : '09:00')}
+                </span>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden">
