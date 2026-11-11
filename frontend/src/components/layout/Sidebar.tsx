@@ -119,6 +119,18 @@ const menuGroups: MenuGroup[] = [
         href: '/guide',
         matchPrefix: '/guide',
         icon: Compass,
+        requiredPermissions: [
+          'GUIDE_VIEW',
+          'GUIDE_ONBOARDING_VIEW',
+          'GUIDE_PAYROLL_VIEW',
+          'GUIDE_OFFBOARDING_VIEW',
+          'GUIDE_SHIFT_SCHEDULE_VIEW',
+          'GUIDE_ATTENDANCE_IMPORT_VIEW',
+          'GUIDE_TRANSFER_VIEW',
+          'GUIDE_LEAVE_SETUP_VIEW',
+          'GUIDE_LEAVE_APPROVAL_VIEW',
+          'GUIDE_COMPANY_SETUP_VIEW',
+        ],
       },
       {
         title: 'ข่าวสารสำหรับฉัน',

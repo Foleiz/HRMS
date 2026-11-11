@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
+import { useAuth } from '@/context/AuthContext';
 import { Inbox } from 'lucide-react';
 import { Button, TableToolbar } from '@/components/ui';
 import { WIZARD_FLOWS } from '@/config/wizardTours';
@@ -15,6 +16,18 @@ interface GuideItem {
   route: string;
 }
 
+const GUIDE_FLOW_PERMISSIONS: Record<string, string[]> = {
+  'hr-onboarding': ['GUIDE_ONBOARDING_VIEW', 'EMP_PROFILE_VIEW'],
+  'payroll-cycle': ['GUIDE_PAYROLL_VIEW', 'PAYROLL_PERIOD_VIEW', 'PAYROLL_CALC_VIEW'],
+  'offboarding': ['GUIDE_OFFBOARDING_VIEW', 'ESS_DOCS_VIEW'],
+  'shift-schedule': ['GUIDE_SHIFT_SCHEDULE_VIEW', 'TIME_SCHEDULE_VIEW'],
+  'attendance-import': ['GUIDE_ATTENDANCE_IMPORT_VIEW', 'TIME_IMPORT_VIEW'],
+  'transfer-flow': ['GUIDE_TRANSFER_VIEW', 'EMP_TRANSFER_VIEW'],
+  'leave-setup': ['GUIDE_LEAVE_SETUP_VIEW', 'LEAVE_TYPE_VIEW'],
+  'leave-approval': ['GUIDE_LEAVE_APPROVAL_VIEW', 'APPROVAL_LEAVE_VIEW'],
+  'company-setup': ['GUIDE_COMPANY_SETUP_VIEW', 'ORG_STRUCT_VIEW'],
+};
+
 const GUIDE_ITEMS: GuideItem[] = WIZARD_FLOWS.map((flow) => ({
   id: flow.id,
   title: flow.title,
@@ -26,21 +39,34 @@ const GUIDE_ITEMS: GuideItem[] = WIZARD_FLOWS.map((flow) => ({
 function GuidePageContent() {
   const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
+  const { hasPermission, hasRole } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
 
   useEffect(() => {
     setBreadcrumb({ section: 'ภาพรวม', page: 'วิธีการใช้งาน' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
+  // กรองคู่มือตามสิทธิ์การเข้าถึงของผู้ใช้งาน
+  const permittedItems = useMemo(() => {
+    if (isSuper) return GUIDE_ITEMS;
+    return GUIDE_ITEMS.filter((item) => {
+      const perms = GUIDE_FLOW_PERMISSIONS[item.id];
+      if (!perms || perms.length === 0) return true;
+      return perms.some((p) => hasPermission(p));
+    });
+  }, [isSuper, hasPermission]);
+
   // กรองคู่มือตามคำค้นหา
   const filteredItems = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return GUIDE_ITEMS;
-    return GUIDE_ITEMS.filter((item) =>
+    if (!q) return permittedItems;
+    return permittedItems.filter((item) =>
       item.title.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, permittedItems]);
 
   return (
     <div className="space-y-6 font-sans pb-12">

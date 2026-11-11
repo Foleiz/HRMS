@@ -143,7 +143,15 @@ public class RoleService : IRoleService
         new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่า", "SETTINGS"),
 
         // 20. วิธีการใช้งาน (GUIDE)
-        new("GUIDE_ONBOARDING", "Flow เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE")
+        new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_PAYROLL", "ไกด์: การประมวลผลรอบเงินเดือนประจำเดือน", "GUIDE_PAYROLL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_OFFBOARDING", "ไกด์: การพ้นสภาพพนักงาน (ลาออก)", "GUIDE_OFFBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_SHIFT_SCHEDULE", "ไกด์: การจัดตารางกะงานพนักงาน", "GUIDE_SHIFT_SCHEDULE", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_ATTENDANCE_IMPORT", "ไกด์: การนำเข้าเวลาสแกนนิ้วและตรวจเช็คประจำวัน", "GUIDE_ATTENDANCE_IMPORT", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_TRANSFER", "ไกด์: การโอนย้ายแผนกและปรับตำแหน่ง", "GUIDE_TRANSFER", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_LEAVE_SETUP", "ไกด์: การตั้งค่าเริ่มต้นระบบการลาประจำปี", "GUIDE_LEAVE_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_LEAVE_APPROVAL", "ไกด์: การอนุมัติคำขอลาและตรวจผลกระทบต่อทีม", "GUIDE_LEAVE_APPROVAL", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
+        new("GUIDE_COMPANY_SETUP", "ไกด์: การตั้งค่าระบบองค์กรสำหรับบริษัทใหม่", "GUIDE_COMPANY_SETUP", "GUIDE", "วิธีการใช้งาน", "GUIDE")
     };
 
     public RoleService(IHrmsDbContext dbContext, IAuditLogService auditLogService)
@@ -237,7 +245,7 @@ public class RoleService : IRoleService
             }
 
             // Parent permissions for backward compatibility and broad modules
-            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW", "ESS_BENEFIT_VIEW" };
+            var parentCodes = new[] { "DASHBOARD_VIEW", "EMP_VIEW", "LEAVE_VIEW", "TIME_VIEW", "PAYROLL_VIEW", "ORG_VIEW", "REPORT_VIEW", "SETTINGS_VIEW", "DOCS_VIEW", "APPROVALS_VIEW", "ORG_CHART_VIEW", "BENEFIT_VIEW", "ESS_BENEFIT_VIEW", "GUIDE_VIEW" };
             foreach (var pCode in parentCodes)
             {
                 if (!existingPerms.Contains(pCode))
