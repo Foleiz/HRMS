@@ -33,6 +33,7 @@ import {
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button } from '@/components/ui/Button';
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import { StatCard, type StatTone } from '@/components/ui/StatCard';
 import { TablePagination } from '@/components/ui/TablePagination';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
@@ -47,6 +48,7 @@ import { getSmartYearOptions } from '@/lib/yearUtils';
 import { announcementService } from '@/services/announcementService';
 import {
   Announcement,
+  AnnouncementStatus,
   AnnouncementReadStats,
   CreateAnnouncementPayload,
   UpdateAnnouncementPayload,
@@ -162,7 +164,8 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [submittingStatus, setSubmittingStatus] = useState<AnnouncementStatus | null>(null);
+  const submitting = submittingStatus !== null;
 
   // Delete Confirm Modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -517,8 +520,8 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   ]);
 
   // Save Activity Form (Create / Edit)
-  const handleSubmitForm = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitForm = async (targetStatus: AnnouncementStatus = 'PUBLISHED', e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!formTitle.trim()) {
       showToast('กรุณาระบุชื่อกิจกรรม');
       return;
@@ -571,11 +574,11 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
       isPinned: formIsPinned,
       category: 'ACTIVITY',
       priority: formPriority,
-      status: formStatus,
+      status: targetStatus,
       targets,
     };
 
-    setSubmitting(true);
+    setSubmittingStatus(targetStatus);
     try {
       if (modalMode === 'create') {
         const created = await announcementService.createAnnouncement(payload);
@@ -592,7 +595,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     } catch (err: any) {
       showToast(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการบันทึกกิจกรรม');
     } finally {
-      setSubmitting(false);
+      setSubmittingStatus(null);
     }
   };
 
@@ -1160,15 +1163,16 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
       {/* ─── 4. Create / Edit Activity Modal ─── */}
       {isModalOpen && (
         <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-xl w-full p-6 max-h-[92vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700">
             <ModalHeader
               icon={Sparkles}
               title={modalMode === 'create' ? 'เพิ่มประกาศกิจกรรมใหม่' : 'แก้ไขข้อมูลประกาศกิจกรรม'}
               onClose={() => setIsModalOpen(false)}
             />
 
-            <form onSubmit={handleSubmitForm} className="space-y-4 pt-4 text-xs font-sans">
-              {/* Title */}
+            <form onSubmit={(e) => handleSubmitForm('PUBLISHED', e)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-4 text-xs font-sans">
+                {/* Title */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   ชื่อกิจกรรม / หัวข้อประกาศ <span className="text-rose-500">*</span>
@@ -1587,56 +1591,59 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                 )}
               </div>
 
-              {/* Pin & Status Settings */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-                <label className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formIsPinned}
-                    onChange={(e) => setFormIsPinned(e.target.checked)}
-                    className="accent-primary w-4 h-4"
-                  />
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">ปักหมุดกิจกรรมนี้</span>
-                    <span className="text-2xs text-slate-400 block">แสดงไว้บนสุดของปฏิทินและตาราง</span>
-                  </div>
-                </label>
-
+              {/* Pin Settings Toggle */}
+              <div
+                onClick={() => setFormIsPinned(!formIsPinned)}
+                className="flex items-center gap-3.5 p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl cursor-pointer select-none transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-850"
+              >
+                <ToggleSwitch
+                  checked={formIsPinned}
+                  onChange={setFormIsPinned}
+                  ariaLabel="ปักหมุดกิจกรรมนี้"
+                />
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    สถานะเมื่อบันทึก
-                  </label>
-                  <CustomSelect
-                    value={formStatus}
-                    onChange={(val) => setFormStatus(val as any)}
-                    className="w-full"
-                    options={[
-                      { value: 'PUBLISHED', label: 'เผยแพร่กิจกรรม' },
-                      { value: 'DRAFT', label: 'บันทึกเป็นฉบับร่าง' },
-                    ]}
-                  />
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                    ปักหมุดกิจกรรมนี้
+                  </span>
+                  <span className="text-2xs text-slate-400 dark:text-slate-500 block mt-0.5">
+                    แสดงไว้บนสุดของปฏิทินและตาราง
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700/60">
+            {/* Sticky Footer: Cancel on left, Draft & Publish on right */}
+            <div className="shrink-0 px-6 py-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-100 dark:border-slate-700/80 flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={submitting}
+                onClick={() => setIsModalOpen(false)}
+              >
+                ยกเลิก
+              </Button>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="secondary"
                   disabled={submitting}
-                  onClick={() => setIsModalOpen(false)}
+                  loading={submittingStatus === 'DRAFT'}
+                  onClick={() => handleSubmitForm('DRAFT')}
                 >
-                  ยกเลิก
+                  บันทึกเป็นฉบับร่าง
                 </Button>
                 <Button
                   type="submit"
-                  loading={submitting}
+                  variant="primary"
+                  disabled={submitting}
+                  loading={submittingStatus === 'PUBLISHED'}
                 >
-                  {modalMode === 'create' ? 'สร้างประกาศกิจกรรม' : 'บันทึกการแก้ไข'}
+                  {modalMode === 'create' ? 'เผยแพร่กิจกรรม' : 'บันทึกการแก้ไข'}
                 </Button>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
+        </div>
         </ModalShell>
       )}
 
