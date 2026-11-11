@@ -25,9 +25,20 @@ export interface CalendarEvent {
 // แยกเวลาสำหรับกิจกรรมแบบเต็มช่วง (เช่น "09:00 - 12:00" หรือ "09:00 - 16:30" หรือ "09:00")
 const parseActivityTime = (content: string): string => {
   if (!content) return '09:00';
-  const match = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
+  // 1. ตรวจสอบรูปแบบ "เวลา: XX:XX - YY:YY" หรือ "⏰ เวลา: XX:XX - YY:YY"
+  const match = content.match(/(?:⏰\s*)?เวลา:\s*([^\n\r]+)/);
   if (match) {
     return match[1].trim();
+  }
+  // 2. ตรวจสอบรูปแบบช่วงเวลา เช่น "09:00 - 16:30" หรือ "09:00-16:30"
+  const rangeMatch = content.match(/(\d{1,2}:\d{2}\s*(?:-|–|ถึง)\s*\d{1,2}:\d{2})/);
+  if (rangeMatch) {
+    return rangeMatch[1].trim();
+  }
+  // 3. ตรวจสอบเวลาเดี่ยว เช่น "09:00"
+  const singleMatch = content.match(/(\d{1,2}:\d{2})/);
+  if (singleMatch) {
+    return singleMatch[1].trim();
   }
   return '09:00';
 };

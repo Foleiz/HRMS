@@ -26,12 +26,23 @@ const THAI_SHORT_MONTHS = [
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.',
 ];
 
-// ดึงเวลาสำหรับกิจกรรม (เช่น "10:00", "09:00 - 12:00")
+// ดึงเวลาสำหรับกิจกรรม (เช่น "10:00", "09:00 - 12:00", "09:00 - 16:30")
 const parseActivityTime = (content: string): string => {
   if (!content) return '09:00';
-  const match = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
+  // 1. ตรวจสอบรูปแบบ "เวลา: XX:XX - YY:YY" หรือ "⏰ เวลา: XX:XX - YY:YY"
+  const match = content.match(/(?:⏰\s*)?เวลา:\s*([^\n\r]+)/);
   if (match) {
     return match[1].trim();
+  }
+  // 2. ตรวจสอบรูปแบบช่วงเวลา เช่น "09:00 - 16:30" หรือ "09:00-16:30"
+  const rangeMatch = content.match(/(\d{1,2}:\d{2}\s*(?:-|–|ถึง)\s*\d{1,2}:\d{2})/);
+  if (rangeMatch) {
+    return rangeMatch[1].trim();
+  }
+  // 3. ตรวจสอบเวลาเดี่ยว เช่น "09:00"
+  const singleMatch = content.match(/(\d{1,2}:\d{2})/);
+  if (singleMatch) {
+    return singleMatch[1].trim();
   }
   return '09:00';
 };
@@ -195,7 +206,7 @@ export const UpcomingEventsWidget: React.FC = () => {
           </h3>
           <Link
             href="/announcements"
-            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-0.5 transition-colors cursor-pointer"
+            className="text-xs font-semibold text-slate-800 dark:text-slate-200 hover:text-black dark:hover:text-white flex items-center gap-0.5 transition-colors cursor-pointer"
           >
             <span>ดูทั้งหมด</span>
             <span className="text-xs leading-none">›</span>
@@ -231,9 +242,6 @@ export const UpcomingEventsWidget: React.FC = () => {
                       className="flex items-center justify-between gap-2 text-xs py-0.5"
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="px-2 py-0.5 rounded-md text-[10.5px] font-medium border shrink-0 bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800">
-                          กิจกรรม
-                        </span>
                         <span
                           className="text-slate-800 dark:text-slate-200 font-semibold text-xs sm:text-[13px] truncate"
                           title={ev.title}

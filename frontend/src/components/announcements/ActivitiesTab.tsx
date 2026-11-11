@@ -72,12 +72,17 @@ export interface ActivitiesTabProps {
 // ─── Helpers ──────────────────────────────────────────────────
 export const parseActivityMeta = (content: string) => {
   let timeRange = '';
-  const timeMatch = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
-  if (timeMatch) timeRange = timeMatch[1].trim();
+  const timeMatch = content.match(/(?:⏰\s*)?เวลา:\s*([^\n\r]+)/);
+  if (timeMatch) {
+    timeRange = timeMatch[1].trim();
+  } else {
+    const rangeMatch = content.match(/(\d{1,2}:\d{2}\s*(?:-|–|ถึง)\s*\d{1,2}:\d{2})/);
+    if (rangeMatch) timeRange = rangeMatch[1].trim();
+  }
 
   const description = content
-    .replace(/📍\s*สถานที่:\s*[^\n\r]+[\r\n]*/, '')
-    .replace(/⏰\s*เวลา:\s*[^\n\r]+[\r\n]*/, '')
+    .replace(/(?:📍\s*)?สถานที่:\s*[^\n\r]+[\r\n]*/, '')
+    .replace(/(?:⏰\s*)?เวลา:\s*[^\n\r]+[\r\n]*/, '')
     .trim();
 
   return { timeRange, description };
