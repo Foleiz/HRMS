@@ -1297,9 +1297,9 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                   })}
                 </div>
 
-                {/* Dropdown Popover directly below the tabs */}
+                {/* Dropdown Popover opening upwards above the tabs */}
                 {formTargetType !== 'ALL' && isTargetDropdownOpen && (
-                  <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute z-50 left-0 right-0 bottom-full mb-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-2 duration-150">
                     {/* DIVISION Dropdown Content */}
                     {formTargetType === 'DIVISION' && (
                       <>
