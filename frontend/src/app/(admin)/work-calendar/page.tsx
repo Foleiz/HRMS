@@ -155,10 +155,24 @@ function HolidayYearCalendar({
                     const weeklyOff = !workingDays.has(dow);
                     const isToday = key === todayKey;
                     const base = 'h-7 rounded-md text-[11px] flex items-center justify-center transition-colors';
+                    const colIndex = idx % 7;
+                    const tooltipAlignClass =
+                      colIndex >= 4
+                        ? 'right-0 left-auto translate-x-0'
+                        : colIndex <= 1
+                        ? 'left-0 translate-x-0'
+                        : 'left-1/2 -translate-x-1/2';
+                    const arrowAlignClass =
+                      colIndex >= 4
+                        ? 'ml-auto mr-3'
+                        : colIndex <= 1
+                        ? 'ml-3 mr-auto'
+                        : 'mx-auto';
+
                     if (hs) {
                       const st = holidayStyle(hs[0].holidayType);
                       return (
-                        <div key={idx} className="relative group/hol">
+                        <div key={idx} className="relative group/hol hover:z-50">
                           <button
                             type="button"
                             aria-label={hs.map((h) => h.holidayName).join(', ')}
@@ -170,7 +184,7 @@ function HolidayYearCalendar({
                             {day}
                           </button>
                           {/* ป้ายรายละเอียดเมื่อชี้เมาส์ */}
-                          <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-30 w-max max-w-[220px] opacity-0 translate-y-1 group-hover/hol:opacity-100 group-hover/hol:translate-y-0 transition-all duration-150">
+                          <div className={`pointer-events-none absolute bottom-full mb-2 z-50 w-max max-w-[220px] opacity-0 translate-y-1 group-hover/hol:opacity-100 group-hover/hol:translate-y-0 transition-all duration-150 ${tooltipAlignClass}`}>
                             <div className="rounded-lg bg-slate-900 text-white px-2.5 py-1.5 shadow-lg space-y-1 text-left">
                               {hs.map((h) => (
                                 <div key={h.id} className="text-[11px] leading-snug">
@@ -185,7 +199,7 @@ function HolidayYearCalendar({
                               ))}
                               {onSelectHoliday && <div className="text-[10px] text-slate-400 pl-3">คลิกเพื่อแก้ไข</div>}
                             </div>
-                            <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1" />
+                            <div className={`w-2 h-2 bg-slate-900 rotate-45 -mt-1 ${arrowAlignClass}`} />
                           </div>
                         </div>
                       );

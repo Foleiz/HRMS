@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, Clock, Users, Sparkles, Pin } from 'lucide-react';
+import { Calendar, Clock, Pin } from 'lucide-react';
 import { Announcement } from '@/types/announcement';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
@@ -45,10 +45,16 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
   const now = new Date();
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+  // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่นำแบบร่าง / DRAFT มาแสดงบนปฏิทิน)
+  const publishedActivities = React.useMemo(
+    () => activities.filter((act) => act.status !== 'DRAFT'),
+    [activities]
+  );
+
   // Map activities by date string (YYYY-MM-DD)
   const byDate = new Map<string, Announcement[]>();
 
-  activities.forEach((act) => {
+  publishedActivities.forEach((act) => {
     const startStr = act.publishedAt || act.createdAt;
     if (!startStr) return;
     const startKey = startStr.substring(0, 10);
@@ -76,15 +82,7 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
 
   const getActivityStyle = (act: Announcement) => {
     const isPast = act.expireAt ? new Date(act.expireAt) < now : (act.publishedAt ? new Date(act.publishedAt) < now : false);
-    const isDraft = act.status === 'DRAFT';
 
-    if (isDraft) {
-      return {
-        cell: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-600',
-        dot: 'bg-slate-400',
-        label: 'แบบร่าง',
-      };
-    }
     if (act.isPinned || act.priority === 'HIGH' || act.priority === 'URGENT') {
       return {
         cell: 'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-200 border border-amber-300 dark:border-amber-700 shadow-2xs',
@@ -96,13 +94,13 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
       return {
         cell: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
         dot: 'bg-slate-400',
-        label: 'สิ้นสุดแล้ว',
+        label: 'กิจกรรมที่สิ้นสุดแล้ว',
       };
     }
     return {
       cell: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-2xs font-semibold',
       dot: 'bg-emerald-500',
-      label: 'กำลังจะมาถึง',
+      label: 'กิจกรรมทั่วไป',
     };
   };
 
@@ -110,25 +108,17 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
     <div className="space-y-4 font-sans">
       {/* Legend คำอธิบายสี */}
       <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-200/60 dark:border-slate-700/60">
-        <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          สัญลักษณ์กิจกรรม:
-        </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-          กิจกรรมทั่วไป / กำลังจะมาถึง
+          กิจกรรมทั่วไป
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-          กิจกรรมสำคัญ / ปักหมุด
+          กิจกรรมสำคัญ
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-          กิจกรรมที่สิ้นสุดแล้ว / แบบร่าง
-        </span>
-        <span className="inline-flex items-center gap-1.5 text-slate-400">
-          <span className="w-2.5 h-2.5 rounded-md ring-2 ring-primary ring-offset-1" />
-          วันนี้
+          กิจกรรมที่สิ้นสุดแล้ว
         </span>
       </div>
 
@@ -144,8 +134,8 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
           ];
           while (cells.length % 7 !== 0) cells.push(null);
 
-          // หา activities ที่อยู่ในเดือนนี้
-          const monthActivities = activities.filter((act) => {
+          // หา activities ที่อยู่ในเดือนนี้ (เฉพาะที่เผยแพร่แล้ว)
+          const monthActivities = publishedActivities.filter((act) => {
             const startStr = act.publishedAt || act.createdAt;
             if (!startStr) return false;
             const startD = new Date(startStr);
@@ -158,10 +148,10 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
           return (
             <div
               key={m}
-              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 shadow-2xs flex flex-col overflow-hidden"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 shadow-2xs flex flex-col relative hover:z-30 transition-shadow"
             >
               {/* Month Header */}
-              <div className="px-3.5 py-2.5 bg-slate-800 text-white text-xs font-semibold flex items-center justify-between">
+              <div className="px-3.5 py-2.5 bg-slate-800 text-white text-xs font-semibold flex items-center justify-between rounded-t-xl">
                 <span>
                   {monthName} {year + 543}
                 </span>
@@ -191,6 +181,19 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                       const acts = byDate.get(key);
                       const isToday = key === todayKey;
                       const baseClass = 'h-7 rounded-md text-[11px] flex items-center justify-center transition-colors relative';
+                      const colIndex = idx % 7;
+                      const tooltipAlignClass =
+                        colIndex >= 4
+                          ? 'right-0 left-auto translate-x-0'
+                          : colIndex <= 1
+                          ? 'left-0 translate-x-0'
+                          : 'left-1/2 -translate-x-1/2';
+                      const arrowAlignClass =
+                        colIndex >= 4
+                          ? 'ml-auto mr-3'
+                          : colIndex <= 1
+                          ? 'ml-3 mr-auto'
+                          : 'mx-auto';
 
                       if (acts && acts.length > 0) {
                         const firstAct = acts[0];
@@ -198,7 +201,7 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                         const hasMultiple = acts.length > 1;
 
                         return (
-                          <div key={idx} className="relative group/act">
+                          <div key={idx} className="relative group/act hover:z-50">
                             <button
                               type="button"
                               aria-label={acts.map((a) => a.title).join(', ')}
@@ -219,7 +222,7 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                             </button>
 
                             {/* Tooltip รายละเอียดเมื่อชี้เมาส์ */}
-                            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-40 w-max max-w-[240px] opacity-0 translate-y-1 group-hover/act:opacity-100 group-hover/act:translate-y-0 transition-all duration-150">
+                            <div className={`pointer-events-none absolute bottom-full mb-2 z-50 w-max max-w-[240px] opacity-0 translate-y-1 group-hover/act:opacity-100 group-hover/act:translate-y-0 transition-all duration-150 ${tooltipAlignClass}`}>
                               <div className="rounded-xl bg-slate-900 text-white px-3 py-2 shadow-xl space-y-1.5 text-left border border-slate-700">
                                 {acts.map((a) => {
                                   const { timeRange } = parseActivityMeta(a.content);
@@ -245,7 +248,7 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                                   </div>
                                 )}
                               </div>
-                              <div className="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1 border-r border-b border-slate-700" />
+                              <div className={`w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700 ${arrowAlignClass}`} />
                             </div>
                           </div>
                         );
