@@ -26,7 +26,6 @@ import {
   User,
   ExternalLink,
   ChevronRight,
-  ChevronDown,
   X,
   FileText,
   BarChart2,
@@ -1239,12 +1238,12 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
               </div>
 
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
-              <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60">
+              <div ref={targetDropdownRef} className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60 relative">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                     กลุ่มเป้าหมายผู้เข้าร่วมกิจกรรม
                   </label>
-                  <span className="text-2xs text-slate-400">
+                  <span className="text-2xs text-slate-400 font-medium">
                     {formTargetType === 'ALL' && 'พนักงานทุกคนในองค์กร'}
                     {formTargetType === 'DIVISION' && `เลือกไว้ ${formTargetDivisionIds.length} ฝ่าย`}
                     {formTargetType === 'DEPARTMENT' && `เลือกไว้ ${formTargetDeptIds.length} แผนก`}
@@ -1277,341 +1276,301 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                         onClick={() => handleSelectTargetTab(tab.id as TargetType)}
                         className={`relative flex flex-col items-center justify-center py-2 px-1 rounded-lg text-2xs font-semibold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-white dark:bg-slate-800 text-primary dark:text-blue-300 shadow-2xs font-bold border-2 border-primary/30 dark:border-blue-400/30'
+                            ? 'bg-white dark:bg-slate-800 text-primary dark:text-blue-300 shadow-2xs font-bold border-2 border-primary/40 dark:border-blue-400/40'
                             : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
                         }`}
                       >
                         {badgeCount > 0 && !isSelected && (
                           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
                         )}
-                        <Icon className="w-3.5 h-3.5 mb-0.5" />
+                        <div className="flex items-center gap-1">
+                          <Icon className="w-3.5 h-3.5 mb-0.5" />
+                          {badgeCount > 0 && (
+                            <span className="text-[10px] bg-primary/10 dark:bg-blue-900/40 text-primary dark:text-blue-300 px-1 rounded-full font-bold">
+                              {badgeCount}
+                            </span>
+                          )}
+                        </div>
                         <span className="truncate">{tab.label}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Target Scope: ALL (info banner) or Dropdown Selector (DIVISION, DEPARTMENT, TEAM, EMPLOYEE) */}
-                {formTargetType === 'ALL' ? (
-                  <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-800/40 text-blue-700 dark:text-blue-300 text-xs flex items-center gap-2">
-                    <Globe className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
-                    <span>พนักงานทุกคนในทุกฝ่าย แผนก และทีม สามารถมองเห็นและเข้าร่วมกิจกรรมนี้ได้</span>
-                  </div>
-                ) : (
-                  <div ref={targetDropdownRef} className="relative w-full">
-                    {/* Dropdown Trigger Button */}
-                    <button
-                      type="button"
-                      onClick={() => setIsTargetDropdownOpen((prev) => !prev)}
-                      className={`w-full flex items-center justify-between px-3.5 py-2.5 bg-white dark:bg-slate-900 border rounded-xl text-xs transition-all cursor-pointer text-left ${
-                        isTargetDropdownOpen
-                          ? 'border-primary ring-2 ring-primary/20 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                      }`}
-                      title={targetSummary.label}
-                    >
-                      <div className="flex items-center gap-2 min-w-0 pr-2">
-                        <targetSummary.icon className="w-4 h-4 text-primary shrink-0" />
-                        <span
-                          className={`truncate font-medium ${
-                            targetSummary.count > 0
-                              ? 'text-slate-800 dark:text-slate-200 font-semibold'
-                              : 'text-slate-400 dark:text-slate-500'
-                          }`}
-                        >
-                          {targetSummary.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {targetSummary.count > 0 && (
-                          <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-primary/10 text-primary dark:bg-blue-950/60 dark:text-blue-300 border border-primary/20">
-                            {targetSummary.count} {targetSummary.unit}
+                {/* Dropdown Popover directly below the tabs */}
+                {formTargetType !== 'ALL' && isTargetDropdownOpen && (
+                  <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                    {/* DIVISION Dropdown Content */}
+                    {formTargetType === 'DIVISION' && (
+                      <>
+                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            เลือกฝ่ายที่ต้องการให้เข้าร่วม:
                           </span>
-                        )}
-                        <ChevronDown
-                          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                            isTargetDropdownOpen ? 'rotate-180 text-primary' : ''
-                          }`}
-                        />
-                      </div>
-                    </button>
-
-                    {/* Dropdown Popover sliding down below */}
-                    {isTargetDropdownOpen && (
-                      <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                        {/* DIVISION Dropdown Content */}
-                        {formTargetType === 'DIVISION' && (
-                          <>
-                            <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                เลือกฝ่ายที่ต้องการให้เข้าร่วม:
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetDivisionIds(divisions.map((d) => d.id))}
-                                  className="text-primary hover:underline cursor-pointer font-medium"
-                                >
-                                  เลือกทั้งหมด
-                                </button>
-                                <span className="text-slate-300 dark:text-slate-600">|</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetDivisionIds([])}
-                                  className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                                >
-                                  ยกเลิกทั้งหมด
-                                </button>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                              {divisions.length === 0 ? (
-                                <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                                  ยังไม่มีข้อมูลฝ่ายในระบบ
-                                </p>
-                              ) : (
-                                divisions.map((div) => {
-                                  const checked = formTargetDivisionIds.includes(div.id);
-                                  return (
-                                    <label
-                                      key={div.id}
-                                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                        checked
-                                          ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
-                                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={(e) => {
-                                          if (e.target.checked) setFormTargetDivisionIds([...formTargetDivisionIds, div.id]);
-                                          else setFormTargetDivisionIds(formTargetDivisionIds.filter((id) => id !== div.id));
-                                        }}
-                                        className="accent-primary"
-                                      />
-                                      <span className="truncate">{div.divisionName}</span>
-                                    </label>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* DEPARTMENT Dropdown Content */}
-                        {formTargetType === 'DEPARTMENT' && (
-                          <>
-                            <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                เลือกแผนกที่ต้องการให้เข้าร่วม:
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetDeptIds(departments.map((d) => d.id))}
-                                  className="text-primary hover:underline cursor-pointer font-medium"
-                                >
-                                  เลือกทั้งหมด
-                                </button>
-                                <span className="text-slate-300 dark:text-slate-600">|</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetDeptIds([])}
-                                  className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                                >
-                                  ยกเลิกทั้งหมด
-                                </button>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                              {departments.length === 0 ? (
-                                <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                                  ยังไม่มีข้อมูลแผนกในระบบ
-                                </p>
-                              ) : (
-                                departments.map((dept) => {
-                                  const checked = formTargetDeptIds.includes(dept.id);
-                                  return (
-                                    <label
-                                      key={dept.id}
-                                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                        checked
-                                          ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
-                                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={(e) => {
-                                          if (e.target.checked) setFormTargetDeptIds([...formTargetDeptIds, dept.id]);
-                                          else setFormTargetDeptIds(formTargetDeptIds.filter((id) => id !== dept.id));
-                                        }}
-                                        className="accent-primary"
-                                      />
-                                      <span className="truncate">{dept.departmentName}</span>
-                                    </label>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* TEAM Dropdown Content */}
-                        {formTargetType === 'TEAM' && (
-                          <>
-                            <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                เลือกทีมที่ต้องการให้เข้าร่วม:
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetTeamIds(teams.map((t) => t.id))}
-                                  className="text-primary hover:underline cursor-pointer font-medium"
-                                >
-                                  เลือกทั้งหมด
-                                </button>
-                                <span className="text-slate-300 dark:text-slate-600">|</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetTeamIds([])}
-                                  className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                                >
-                                  ยกเลิกทั้งหมด
-                                </button>
-                              </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                              {teams.length === 0 ? (
-                                <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                                  ยังไม่มีข้อมูลทีมในระบบ
-                                </p>
-                              ) : (
-                                teams.map((tm) => {
-                                  const checked = formTargetTeamIds.includes(tm.id);
-                                  return (
-                                    <label
-                                      key={tm.id}
-                                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                        checked
-                                          ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
-                                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={(e) => {
-                                          if (e.target.checked) setFormTargetTeamIds([...formTargetTeamIds, tm.id]);
-                                          else setFormTargetTeamIds(formTargetTeamIds.filter((id) => id !== tm.id));
-                                        }}
-                                        className="accent-primary"
-                                      />
-                                      <span className="truncate">{tm.teamName}</span>
-                                    </label>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* EMPLOYEE Dropdown Content */}
-                        {formTargetType === 'EMPLOYEE' && (
-                          <>
-                            <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                ระบุพนักงานที่ต้องการให้เข้าร่วม:
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetEmployeeIds(employees.map((e) => e.id))}
-                                  className="text-primary hover:underline cursor-pointer font-medium"
-                                >
-                                  เลือกทั้งหมด
-                                </button>
-                                <span className="text-slate-300 dark:text-slate-600">|</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setFormTargetEmployeeIds([])}
-                                  className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
-                                >
-                                  ยกเลิกทั้งหมด
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Employee Search Bar */}
-                            <div className="relative">
-                              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                              <input
-                                type="text"
-                                placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
-                                value={empSearchFilter}
-                                onChange={(e) => setEmpSearchFilter(e.target.value)}
-                                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                              {filteredEmployeesForSelection.length === 0 ? (
-                                <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
-                                  {employees.length === 0
-                                    ? 'ยังไม่มีข้อมูลพนักงานในระบบ'
-                                    : 'ไม่พบรายชื่อพนักงานที่ตรงกับคำค้นหา'}
-                                </p>
-                              ) : (
-                                filteredEmployeesForSelection.map((emp) => {
-                                  const checked = formTargetEmployeeIds.includes(emp.id);
-                                  return (
-                                    <label
-                                      key={emp.id}
-                                      className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
-                                        checked
-                                          ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
-                                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                                      }`}
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={checked}
-                                        onChange={(e) => {
-                                          if (e.target.checked) setFormTargetEmployeeIds([...formTargetEmployeeIds, emp.id]);
-                                          else setFormTargetEmployeeIds(formTargetEmployeeIds.filter((id) => id !== emp.id));
-                                        }}
-                                        className="accent-primary"
-                                      />
-                                      <div className="truncate text-2xs min-w-0">
-                                        <span className="font-bold">{emp.fullName}</span>
-                                        <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
-                                      </div>
-                                    </label>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </>
-                        )}
-
-                        {/* Dropdown Footer: Selected count & Done button */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 text-2xs">
-                          <span className="text-slate-500 dark:text-slate-400">
-                            เลือกแล้ว <strong className="text-primary font-bold">{targetSummary.count}</strong> {targetSummary.unit}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setIsTargetDropdownOpen(false)}
-                            className="px-3 py-1 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors cursor-pointer shadow-2xs text-2xs"
-                          >
-                            ตกลง / ปิดเมนู
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetDivisionIds(divisions.map((d) => d.id))}
+                              className="text-primary hover:underline cursor-pointer font-medium"
+                            >
+                              เลือกทั้งหมด
+                            </button>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetDivisionIds([])}
+                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
+                            >
+                              ยกเลิกทั้งหมด
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                          {divisions.length === 0 ? (
+                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                              ยังไม่มีข้อมูลฝ่ายในระบบ
+                            </p>
+                          ) : (
+                            divisions.map((div) => {
+                              const checked = formTargetDivisionIds.includes(div.id);
+                              return (
+                                <label
+                                  key={div.id}
+                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                    checked
+                                      ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
+                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setFormTargetDivisionIds([...formTargetDivisionIds, div.id]);
+                                      else setFormTargetDivisionIds(formTargetDivisionIds.filter((id) => id !== div.id));
+                                    }}
+                                    className="accent-primary"
+                                  />
+                                  <span className="truncate">{div.divisionName}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      </>
                     )}
+
+                    {/* DEPARTMENT Dropdown Content */}
+                    {formTargetType === 'DEPARTMENT' && (
+                      <>
+                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            เลือกแผนกที่ต้องการให้เข้าร่วม:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetDeptIds(departments.map((d) => d.id))}
+                              className="text-primary hover:underline cursor-pointer font-medium"
+                            >
+                              เลือกทั้งหมด
+                            </button>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetDeptIds([])}
+                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
+                            >
+                              ยกเลิกทั้งหมด
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                          {departments.length === 0 ? (
+                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                              ยังไม่มีข้อมูลแผนกในระบบ
+                            </p>
+                          ) : (
+                            departments.map((dept) => {
+                              const checked = formTargetDeptIds.includes(dept.id);
+                              return (
+                                <label
+                                  key={dept.id}
+                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                    checked
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setFormTargetDeptIds([...formTargetDeptIds, dept.id]);
+                                      else setFormTargetDeptIds(formTargetDeptIds.filter((id) => id !== dept.id));
+                                    }}
+                                    className="accent-primary"
+                                  />
+                                  <span className="truncate">{dept.departmentName}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* TEAM Dropdown Content */}
+                    {formTargetType === 'TEAM' && (
+                      <>
+                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            เลือกทีมที่ต้องการให้เข้าร่วม:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetTeamIds(teams.map((t) => t.id))}
+                              className="text-primary hover:underline cursor-pointer font-medium"
+                            >
+                              เลือกทั้งหมด
+                            </button>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetTeamIds([])}
+                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
+                            >
+                              ยกเลิกทั้งหมด
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                          {teams.length === 0 ? (
+                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                              ยังไม่มีข้อมูลทีมในระบบ
+                            </p>
+                          ) : (
+                            teams.map((tm) => {
+                              const checked = formTargetTeamIds.includes(tm.id);
+                              return (
+                                <label
+                                  key={tm.id}
+                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                    checked
+                                      ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
+                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setFormTargetTeamIds([...formTargetTeamIds, tm.id]);
+                                      else setFormTargetTeamIds(formTargetTeamIds.filter((id) => id !== tm.id));
+                                    }}
+                                    className="accent-primary"
+                                  />
+                                  <span className="truncate">{tm.teamName}</span>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* EMPLOYEE Dropdown Content */}
+                    {formTargetType === 'EMPLOYEE' && (
+                      <>
+                        <div className="flex items-center justify-between text-2xs text-slate-500 pb-1.5 border-b border-slate-100 dark:border-slate-700/60">
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            ระบุพนักงานที่ต้องการให้เข้าร่วม:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetEmployeeIds(employees.map((e) => e.id))}
+                              className="text-primary hover:underline cursor-pointer font-medium"
+                            >
+                              เลือกทั้งหมด
+                            </button>
+                            <span className="text-slate-300 dark:text-slate-600">|</span>
+                            <button
+                              type="button"
+                              onClick={() => setFormTargetEmployeeIds([])}
+                              className="text-slate-400 hover:text-rose-500 hover:underline cursor-pointer font-medium"
+                            >
+                              ยกเลิกทั้งหมด
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Employee Search Bar */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                          <input
+                            type="text"
+                            placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
+                            value={empSearchFilter}
+                            onChange={(e) => setEmpSearchFilter(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+                          {filteredEmployeesForSelection.length === 0 ? (
+                            <p className="text-center text-2xs text-slate-400 py-3 col-span-2">
+                              {employees.length === 0
+                                ? 'ยังไม่มีข้อมูลพนักงานในระบบ'
+                                : 'ไม่พบรายชื่อพนักงานที่ตรงกับคำค้นหา'}
+                            </p>
+                          ) : (
+                            filteredEmployeesForSelection.map((emp) => {
+                              const checked = formTargetEmployeeIds.includes(emp.id);
+                              return (
+                                <label
+                                  key={emp.id}
+                                  className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                    checked
+                                      ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
+                                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setFormTargetEmployeeIds([...formTargetEmployeeIds, emp.id]);
+                                      else setFormTargetEmployeeIds(formTargetEmployeeIds.filter((id) => id !== emp.id));
+                                    }}
+                                    className="accent-primary"
+                                  />
+                                  <div className="truncate text-2xs min-w-0">
+                                    <span className="font-bold">{emp.fullName}</span>
+                                    <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
+                                  </div>
+                                </label>
+                              );
+                            })
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Dropdown Footer: Selected count & Save button */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 text-2xs">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        เลือกแล้ว <strong className="text-primary font-bold">{targetSummary.count}</strong> {targetSummary.unit}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsTargetDropdownOpen(false)}
+                        className="px-4 py-1.5 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors cursor-pointer shadow-2xs text-xs"
+                      >
+                        บันทึก
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
