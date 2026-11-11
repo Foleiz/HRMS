@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { announcementService } from '@/services/announcementService';
@@ -46,6 +45,7 @@ export const CalendarWidget: React.FC = () => {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [activities, setActivities] = useState<Announcement[]>([]);
   const [, setIsLoading] = useState<boolean>(false);
+  const [isAllEventsModalOpen, setIsAllEventsModalOpen] = useState<boolean>(false);
 
   // ซิงค์กับวันเวลาปัจจุบันจริงของ Browser เมื่อโหลดหน้า
   useEffect(() => {
@@ -222,7 +222,7 @@ export const CalendarWidget: React.FC = () => {
   const weekHeaders = ['จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.', 'อา.'];
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden transition-all h-full flex flex-col">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden transition-all h-full flex flex-col relative">
       {/* Calendar Header: Deep Red (#94292B) */}
       <div className="bg-[#94292B] text-white px-4 py-3 flex items-center justify-between shrink-0">
         <h3 className="text-sm font-bold tracking-wide">ปฏิทิน</h3>
@@ -340,7 +340,7 @@ export const CalendarWidget: React.FC = () => {
             })}
           </div>
 
-          {/* Legend: คำอธิบายสัญลักษณ์ และ ลิงก์ดูทั้งหมด (ย้ายมาแทนตำแหน่ง 8 วันสำคัญ) */}
+          {/* Legend: คำอธิบายสัญลักษณ์ และ ปุ่มดูทั้งหมด (เปิด Modal แสดงรายการทั้งหมดของวันที่เลือก) */}
           <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-[10.5px] px-1">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium text-[11px]">
@@ -352,22 +352,25 @@ export const CalendarWidget: React.FC = () => {
                 <span>กิจกรรม</span>
               </div>
             </div>
-            <Link
-              href="/work-calendar"
+            <button
+              type="button"
+              onClick={() => setIsAllEventsModalOpen(true)}
               className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] text-[11px] font-bold flex items-center gap-0.5 transition-colors cursor-pointer"
             >
               <span>ดูทั้งหมด</span>
               <span className="text-xs leading-none font-bold">›</span>
-            </Link>
+            </button>
           </div>
         </div>
 
-        {/* Selected Date Details Box (Fixed height: h-[52px], ตัด "+ อีก X รายการ" ออก และแสดงรายการกิจกรรม/วันหยุด) */}
+        {/* Selected Date Details Box (Fixed height: h-[52px], ตัด "+ อีก X รายการ" ออก และคลิกเปิดดูทั้งหมดได้) */}
         {selectedEvents.length > 0 ? (
           <div
-            className={`mt-1.5 h-[52px] min-h-[52px] max-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col shrink-0 overflow-hidden text-[10.5px] ${
+            onClick={() => setIsAllEventsModalOpen(true)}
+            className={`mt-1.5 h-[52px] min-h-[52px] max-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col shrink-0 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors ${
               selectedEvents.length === 1 ? 'justify-center p-2' : 'justify-between p-1.5'
             }`}
+            title="คลิกเพื่อดูรายการทั้งหมด"
           >
             {selectedEvents.slice(0, 2).map((ev, idx) => (
               <div
@@ -433,6 +436,86 @@ export const CalendarWidget: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Full Events Bottom Sheet Modal (เปิดเมื่อกด "ดูทั้งหมด") */}
+      {isAllEventsModalOpen && (
+        <div className="absolute inset-0 z-30 bg-slate-900/40 backdrop-blur-[0.5px] flex flex-col justify-end transition-all animate-in fade-in duration-150">
+          {/* Backdrop click to close */}
+          <div
+            className="flex-1 cursor-pointer"
+            onClick={() => setIsAllEventsModalOpen(false)}
+          />
+
+          {/* Bottom Sheet Card */}
+          <div className="bg-white dark:bg-slate-800 rounded-t-2xl border-t border-x border-slate-200/90 dark:border-slate-700 shadow-2xl p-3 flex flex-col max-h-[85%] animate-in slide-in-from-bottom duration-200">
+            {/* Handle bar */}
+            <div className="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mb-2 shrink-0" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <h4 className="font-bold text-xs sm:text-[13px] text-slate-900 dark:text-slate-100">
+                {selectedDay ? `${selectedDay} ${monthName} ${yearThai}` : `${monthName} ${yearThai}`}
+              </h4>
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#FCE8E9] text-[#94292B] dark:bg-rose-950/60 dark:text-rose-300">
+                {selectedEvents.length} รายการ
+              </span>
+            </div>
+
+            {/* Events List Box */}
+            <div className="rounded-2xl border border-slate-200/90 dark:border-slate-700 p-2 overflow-y-auto max-h-[220px] divide-y divide-slate-100 dark:divide-slate-700/60">
+              {selectedEvents.length > 0 ? (
+                selectedEvents.map((ev, idx) => (
+                  <div
+                    key={ev.id}
+                    className={`flex items-center justify-between gap-1.5 min-w-0 ${
+                      idx > 0 ? 'pt-1.5' : ''
+                    } ${idx < selectedEvents.length - 1 ? 'pb-1.5' : ''}`}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                      <span
+                        className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
+                          ev.isHoliday
+                            ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                            : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                        }`}
+                      >
+                        {ev.typeLabel}
+                      </span>
+                      {ev.isPinned && (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                          ปักหมุด
+                        </span>
+                      )}
+                      <span
+                        className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
+                        title={ev.title}
+                      >
+                        {ev.title}
+                      </span>
+                    </div>
+                    <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
+                      {ev.timeRange || (ev.isHoliday ? 'ทั้งวัน' : '09:00')}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
+                  ไม่มีวันหยุดหรือกิจกรรมในวันนี้
+                </div>
+              )}
+            </div>
+
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setIsAllEventsModalOpen(false)}
+              className="mt-2.5 w-full py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 font-medium text-xs transition-colors cursor-pointer shrink-0"
+            >
+              ปิด
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
