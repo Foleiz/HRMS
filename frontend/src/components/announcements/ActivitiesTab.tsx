@@ -1183,8 +1183,8 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                 />
               </div>
 
-              {/* Dates: Start & End */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Row 2: วันที่เริ่มจัดกิจกรรม & เวลาเริ่มกิจกรรม */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     วันที่เริ่มจัดกิจกรรม <span className="text-rose-500">*</span>
@@ -1196,6 +1196,15 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                     className="w-full"
                   />
                 </div>
+                <ThaiTimePicker
+                  label="เวลาเริ่มกิจกรรม"
+                  value={formStartTime}
+                  onChange={setFormStartTime}
+                />
+              </div>
+
+              {/* Row 3: วันที่สิ้นสุดกิจกรรม & เวลาสิ้นสุดกิจกรรม */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     วันที่สิ้นสุดกิจกรรม (กรณีหลายวัน)
@@ -1207,15 +1216,6 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
                     className="w-full"
                   />
                 </div>
-              </div>
-
-              {/* Time Pickers */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <ThaiTimePicker
-                  label="เวลาเริ่มกิจกรรม"
-                  value={formStartTime}
-                  onChange={setFormStartTime}
-                />
                 <ThaiTimePicker
                   label="เวลาสิ้นสุดกิจกรรม"
                   value={formEndTime}

@@ -1048,7 +1048,20 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Row 2: วันที่เผยแพร่ & หมวดหมู่ประกาศ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วันที่เผยแพร่ <span className="text-rose-500">*</span>
+                  </label>
+                  <ThaiDatePicker
+                    value={formPublishedAt}
+                    onChange={setFormPublishedAt}
+                    placeholder="เลือกวันที่เริ่มเผยแพร่"
+                    className="w-full"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     หมวดหมู่ประกาศ
@@ -1066,6 +1079,21 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                     ]}
                   />
                 </div>
+              </div>
+
+              {/* Row 3: วันที่สิ้นสุดการแสดงผล & ระดับความสำคัญ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วันที่สิ้นสุดการแสดงผล (ไม่ระบุ = ตลอดไป)
+                  </label>
+                  <ThaiDatePicker
+                    value={formExpireAt}
+                    onChange={setFormExpireAt}
+                    placeholder="เลือกวันที่สิ้นสุด"
+                    className="w-full"
+                  />
+                </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1081,32 +1109,6 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                       { value: 'HIGH', label: 'สำคัญ' },
                       { value: 'URGENT', label: 'ด่วนที่สุด' },
                     ]}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่เผยแพร่ <span className="text-rose-500">*</span>
-                  </label>
-                  <ThaiDatePicker
-                    value={formPublishedAt}
-                    onChange={setFormPublishedAt}
-                    placeholder="เลือกวันที่เริ่มเผยแพร่"
-                    className="w-full"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่สิ้นสุดการแสดงผล (ไม่ระบุ = ตลอดไป)
-                  </label>
-                  <ThaiDatePicker
-                    value={formExpireAt}
-                    onChange={setFormExpireAt}
-                    placeholder="เลือกวันที่สิ้นสุด"
-                    className="w-full"
                   />
                 </div>
               </div>
