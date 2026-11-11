@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, Sparkles } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
+import { announcementService } from '@/services/announcementService';
 import { Holiday } from '@/types/workCalendar';
+import { Announcement } from '@/types/announcement';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
 export interface CalendarEvent {
@@ -23,6 +25,7 @@ export const CalendarWidget: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date());
   const [selectedDay, setSelectedDay] = useState<number | null>(() => new Date().getDate());
   const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [activities, setActivities] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // ซิงค์กับวันเวลาปัจจุบันจริงของ Browser เมื่อโหลดหน้า
@@ -36,14 +39,23 @@ export const CalendarWidget: React.FC = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  // ดึงข้อมูลวันหยุดและกิจกรรมบริษัทประจำปี
+  // ดึงข้อมูลวันหยุดและประกาศกิจกรรมบริษัทประจำปี
   const fetchCalendarEvents = useCallback(async (targetYear: number) => {
     setIsLoading(true);
     try {
-      const data = await workCalendarService.getHolidays(targetYear);
-      setHolidays(data || []);
+      const [holidaysRes, activitiesRes] = await Promise.allSettled([
+        workCalendarService.getHolidays(targetYear),
+        announcementService.getAnnouncements({ category: 'ACTIVITY', pageSize: 200 }),
+      ]);
+
+      if (holidaysRes.status === 'fulfilled') {
+        setHolidays(holidaysRes.value || []);
+      }
+      if (activitiesRes.status === 'fulfilled') {
+        setActivities(activitiesRes.value?.items || []);
+      }
     } catch (err) {
-      console.error('Failed to fetch holidays:', err);
+      console.error('Failed to fetch holidays and activities:', err);
     } finally {
       setIsLoading(false);
     }
@@ -74,57 +86,93 @@ export const CalendarWidget: React.FC = () => {
   const yearThai = year + 543;
   const monthName = monthNames[month];
 
-  // แมปประเภทของกิจกรรมและวันหยุดเข้ากับสีและชื่อป้าย
-  const formatEvent = useCallback((h: Holiday): CalendarEvent => {
-    const isCompanyEvent = h.holidayType === 'COMPANY_SPECIAL' || h.holidayType === 'ACTIVITY';
-    const isSubstitute = h.holidayType === 'SUBSTITUTE';
-
-    let typeLabel = 'วันหยุดตามประเพณี';
-    let dotColor = 'bg-rose-500';
-    let badgeColor = 'bg-rose-50 text-rose-700 border-rose-200';
-
-    if (isCompanyEvent) {
-      typeLabel = h.holidayTypeThai || 'วันหยุดพิเศษ / กิจกรรมบริษัท';
-      dotColor = 'bg-sky-500';
-      badgeColor = 'bg-sky-50 text-sky-700 border-sky-200';
-    } else if (isSubstitute) {
-      typeLabel = 'วันหยุดชดเชย';
-      dotColor = 'bg-amber-500';
-      badgeColor = 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200';
-    } else if (h.holidayTypeThai) {
-      typeLabel = h.holidayTypeThai;
-    }
-
-    const dayNum = parseInt(h.holidayDate.split('-')[2], 10);
-
-    return {
-      id: h.id,
-      dateStr: h.holidayDate,
-      day: dayNum,
-      title: h.holidayName,
-      type: h.holidayType,
-      typeLabel,
-      dotColor,
-      badgeColor,
-    };
-  }, []);
-
-  // รวมกิจกรรมในเดือนที่กำลังแสดงผล (แมปเป็น Map ของวันที่ -> CalendarEvent[])
+  // รวมวันหยุดและกิจกรรมในเดือนที่กำลังแสดงผล (แมปเป็น Map ของวันที่ -> CalendarEvent[])
   const eventsByDayMap = useMemo(() => {
     const map = new Map<number, CalendarEvent[]>();
     const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}-`;
 
+    // 1. เพิ่มวันหยุดประจำปี (สีแดง)
     for (const h of holidays) {
-      if (h.holidayDate && h.holidayDate.startsWith(monthPrefix)) {
-        const ev = formatEvent(h);
-        const list = map.get(ev.day) || [];
-        list.push(ev);
-        map.set(ev.day, list);
+      if (!h.holidayDate) continue;
+      const isCompanyEvent = h.holidayType === 'COMPANY_SPECIAL' || h.holidayType === 'ACTIVITY';
+
+      if (!isCompanyEvent) {
+        if (h.holidayDate.startsWith(monthPrefix)) {
+          const dayNum = parseInt(h.holidayDate.split('-')[2], 10);
+          const ev: CalendarEvent = {
+            id: `h-${h.id}`,
+            dateStr: h.holidayDate,
+            day: dayNum,
+            title: h.holidayName,
+            type: h.holidayType,
+            typeLabel: h.holidayTypeThai || (h.holidayType === 'SUBSTITUTE' ? 'วันหยุดชดเชย' : 'วันหยุด'),
+            dotColor: 'bg-rose-500', // สีแดงวันหยุด
+            badgeColor: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800',
+          };
+          const list = map.get(ev.day) || [];
+          list.push(ev);
+          map.set(ev.day, list);
+        }
+      } else {
+        // กิจกรรมพิเศษที่บันทึกในตารางวันหยุด (แสดงเป็นกิจกรรมสีน้ำเงิน)
+        if (h.holidayDate.startsWith(monthPrefix)) {
+          const dayNum = parseInt(h.holidayDate.split('-')[2], 10);
+          const ev: CalendarEvent = {
+            id: `h-${h.id}`,
+            dateStr: h.holidayDate,
+            day: dayNum,
+            title: h.holidayName,
+            type: 'ACTIVITY',
+            typeLabel: 'กิจกรรม',
+            dotColor: 'bg-blue-600', // สีน้ำเงินกิจกรรม
+            badgeColor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+          };
+          const list = map.get(ev.day) || [];
+          list.push(ev);
+          map.set(ev.day, list);
+        }
+      }
+    }
+
+    // 2. เพิ่มประกาศกิจกรรมจาก Announcement Hub (สีน้ำเงิน)
+    for (const act of activities) {
+      if (act.status === 'DRAFT') continue;
+      const startStr = act.publishedAt || act.createdAt;
+      if (!startStr) continue;
+
+      const startDate = new Date(startStr);
+      const endDate = act.expireAt ? new Date(act.expireAt) : startDate;
+
+      const cur = new Date(startDate);
+      let count = 0;
+      while (cur <= endDate && count < 31) {
+        if (cur.getFullYear() === year && cur.getMonth() === month) {
+          const dayNum = cur.getDate();
+          const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+
+          const list = map.get(dayNum) || [];
+          const exists = list.some((e) => e.title.trim().toLowerCase() === act.title.trim().toLowerCase());
+          if (!exists) {
+            list.push({
+              id: `act-${act.id}-${dayNum}`,
+              dateStr: dayStr,
+              day: dayNum,
+              title: act.title,
+              type: 'ACTIVITY',
+              typeLabel: 'กิจกรรม',
+              dotColor: 'bg-blue-600', // สีน้ำเงินกิจกรรม
+              badgeColor: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800',
+            });
+            map.set(dayNum, list);
+          }
+        }
+        cur.setDate(cur.getDate() + 1);
+        count++;
       }
     }
 
     return map;
-  }, [holidays, year, month, formatEvent]);
+  }, [holidays, activities, year, month]);
 
   // รายการกิจกรรมทั้งหมดในเดือนนี้
   const eventsThisMonth = useMemo(() => {
@@ -274,12 +322,12 @@ export const CalendarWidget: React.FC = () => {
               <span>วันหยุด</span>
             </span>
             <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0" />
-              <span>กิจกรรมบริษัท</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+              <span>กิจกรรม</span>
             </span>
           </div>
           {eventsThisMonth.length > 0 && (
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 dark:text-slate-400 font-medium">
+            <span className="text-[10px] text-slate-400 dark:text-slate-400 font-medium">
               {eventsThisMonth.length} วันสำคัญ
             </span>
           )}

@@ -28,11 +28,10 @@ public class AnnouncementsController : ControllerBase
     }
 
     /// <summary>
-    /// ดึงรายการประกาศสำหรับผู้ดูแลระบบ (Admin List with Pagination & Filters)
+    /// ดึงรายการประกาศ (พร้อมตัวกรองและการแบ่งหน้า)
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResult<AnnouncementDto>>), StatusCodes.Status200OK)]
-    [RequirePermission("ANNOUNCEMENTS_VIEW")]
     public async Task<ActionResult<ApiResponse<PagedResult<AnnouncementDto>>>> GetAnnouncements(
         [FromQuery] AnnouncementFilterParams filter,
         CancellationToken cancellationToken)

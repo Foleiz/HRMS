@@ -3,14 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, ChevronRight } from 'lucide-react';
-import { workCalendarService } from '@/services/workCalendarService';
-import { Holiday } from '@/types/workCalendar';
+import { announcementService } from '@/services/announcementService';
+import { Announcement } from '@/types/announcement';
 
 interface EventItem {
   id: number | string;
   date: string;
   title: string;
-  type?: string;
 }
 
 export const UpcomingEventsWidget: React.FC = () => {
@@ -27,31 +26,34 @@ export const UpcomingEventsWidget: React.FC = () => {
         const currentYear = now.getFullYear();
         const todayStr = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-        // ดึงวันหยุดและกิจกรรมประจำปีปัจจุบัน และปีถัดไปเพื่อความต่อเนื่อง
-        const [thisYearHolidays, nextYearHolidays] = await Promise.allSettled([
-          workCalendarService.getHolidays(currentYear),
-          workCalendarService.getHolidays(currentYear + 1),
-        ]);
+        // ดึงเฉพาะประกาศกิจกรรม (category: 'ACTIVITY') เท่านั้น ไม่นำวันหยุดมาแสดง
+        const res = await announcementService.getAnnouncements({
+          category: 'ACTIVITY',
+          pageSize: 100,
+        });
 
-        const allHolidays: Holiday[] = [];
-        if (thisYearHolidays.status === 'fulfilled' && Array.isArray(thisYearHolidays.value)) {
-          allHolidays.push(...thisYearHolidays.value);
-        }
-        if (nextYearHolidays.status === 'fulfilled' && Array.isArray(nextYearHolidays.value)) {
-          allHolidays.push(...nextYearHolidays.value);
-        }
+        const list: Announcement[] = res?.items || [];
 
-        // กรองเฉพาะรายการที่วันที่ >= วันนี้ (Upcoming จริง ไม่นำอดีตมาแสดง)
-        const upcoming = allHolidays
-          .filter((h) => h.holidayDate >= todayStr)
-          .sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
+        // กรองเฉพาะกิจกรรมที่เผยแพร่แล้ว (ไม่รวม DRAFT) และยังไม่สิ้นสุด (วันสิ้นสุด >= วันนี้)
+        const upcoming = list.filter((act) => {
+          if (act.status === 'DRAFT') return false;
+          const startStr = act.publishedAt || act.createdAt;
+          if (!startStr) return false;
+          const startDateOnly = startStr.substring(0, 10);
+          const endDateOnly = act.expireAt ? act.expireAt.substring(0, 10) : startDateOnly;
+          return endDateOnly >= todayStr;
+        });
 
-        const formatted: EventItem[] = upcoming.slice(0, 4).map((h) => {
-          const parts = h.holidayDate.split('-');
-          const year = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1;
-          const day = parseInt(parts[2], 10);
-          const d = new Date(year, month, day);
+        // เรียงลำดับจากวันที่จัดใกล้ที่สุดไปไกลที่สุด
+        upcoming.sort((a, b) => {
+          const dateA = a.publishedAt || a.createdAt || '';
+          const dateB = b.publishedAt || b.createdAt || '';
+          return dateA.localeCompare(dateB);
+        });
+
+        const formatted: EventItem[] = upcoming.slice(0, 4).map((act) => {
+          const startStr = act.publishedAt || act.createdAt || '';
+          const d = new Date(startStr);
 
           const dateStr = d.toLocaleDateString('th-TH', {
             day: 'numeric',
@@ -59,10 +61,9 @@ export const UpcomingEventsWidget: React.FC = () => {
           });
 
           return {
-            id: h.id,
+            id: act.id,
             date: dateStr,
-            title: h.holidayName,
-            type: h.holidayType,
+            title: act.title,
           };
         });
 
@@ -70,7 +71,7 @@ export const UpcomingEventsWidget: React.FC = () => {
           setEvents(formatted);
         }
       } catch (err) {
-        console.error('Failed to load upcoming events from work calendar:', err);
+        console.error('Failed to load upcoming activity announcements:', err);
         if (isMounted) {
           setEvents([]);
         }
@@ -95,7 +96,7 @@ export const UpcomingEventsWidget: React.FC = () => {
         <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mb-3.5 flex items-center justify-between gap-2">
           <span className="whitespace-nowrap">กิจกรรมที่กำลังจะมาถึง</span>
           <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500 whitespace-nowrap shrink-0">
-            ปฏิทินบริษัท
+            ประกาศกิจกรรม
           </span>
         </h3>
 
@@ -105,7 +106,7 @@ export const UpcomingEventsWidget: React.FC = () => {
           </div>
         ) : events.length === 0 ? (
           <div className="py-4 text-center text-xs text-slate-400 dark:text-slate-500">
-            ยังไม่มีกิจกรรมหรือวันหยุดที่กำลังจะมาถึงในเร็วๆ นี้
+            ยังไม่มีประกาศกิจกรรมที่กำลังจะมาถึง
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -131,7 +132,7 @@ export const UpcomingEventsWidget: React.FC = () => {
       </div>
 
       <Link
-        href="/work-calendar"
+        href="/announcements"
         className="pt-2 text-[11px] text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-blue-300 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between mt-auto transition-colors cursor-pointer group"
       >
         <div className="flex items-center gap-1.5">
