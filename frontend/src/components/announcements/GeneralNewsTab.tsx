@@ -1044,91 +1044,91 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                   <input
                     type="text"
                     required
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="เช่น สิทธิประโยชน์ใหม่ประจำปี, กำหนดการตรวจสุขภาพ..."
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-              </div>
-
-              {/* Row 2: วันที่เผยแพร่ & วันที่สิ้นสุดการแสดงผล */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่เผยแพร่ <span className="text-rose-500">*</span>
-                  </label>
-                  <ThaiDatePicker
-                    value={formPublishedAt}
-                    onChange={setFormPublishedAt}
-                    placeholder="เลือกวันที่เริ่มเผยแพร่"
-                    className="w-full"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="เช่น สิทธิประโยชน์ใหม่ประจำปี, กำหนดการตรวจสุขภาพ..."
+                    className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่สิ้นสุดการแสดงผล
+                    เนื้อหาประกาศ <span className="text-rose-500">*</span>
                   </label>
-                  <ThaiDatePicker
-                    value={formExpireAt}
-                    onChange={setFormExpireAt}
-                    placeholder="เลือกวันที่สิ้นสุด"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: หมวดหมู่ประกาศ & ระดับความสำคัญ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    หมวดหมู่ประกาศ
-                  </label>
-                  <CustomSelect
-                    value={formCategory}
-                    onChange={(val) => setFormCategory(val as AnnouncementCategory)}
-                    className="w-full"
-                    options={[
-                      { value: 'GENERAL', label: 'ข่าวทั่วไป' },
-                      { value: 'POLICY', label: 'นโยบายองค์กร' },
-                      { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
-                      { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
-                      { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
-                    ]}
+                  <textarea
+                    rows={5}
+                    required
+                    value={formContent}
+                    onChange={(e) => setFormContent(e.target.value)}
+                    placeholder="พิมพ์รายละเอียดประกาศที่ต้องการสื่อสารแก่พนักงาน..."
+                    className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ระดับความสำคัญ
-                  </label>
-                  <CustomSelect
-                    value={formPriority}
-                    onChange={(val) => setFormPriority(val as AnnouncementPriority)}
-                    className="w-full"
-                    options={[
-                      { value: 'LOW', label: 'ทั่วไป' },
-                      { value: 'NORMAL', label: 'ปกติ' },
-                      { value: 'HIGH', label: 'สำคัญ' },
-                      { value: 'URGENT', label: 'ด่วนที่สุด' },
-                    ]}
-                  />
-                </div>
-              </div>
+                {/* Row: วันที่เผยแพร่ & วันที่สิ้นสุดการแสดงผล */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      วันที่เผยแพร่ <span className="text-rose-500">*</span>
+                    </label>
+                    <ThaiDatePicker
+                      value={formPublishedAt}
+                      onChange={setFormPublishedAt}
+                      placeholder="เลือกวันที่เริ่มเผยแพร่"
+                      className="w-full"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  เนื้อหาประกาศ <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={5}
-                  required
-                  value={formContent}
-                  onChange={(e) => setFormContent(e.target.value)}
-                  placeholder="พิมพ์รายละเอียดประกาศที่ต้องการสื่อสารแก่พนักงาน..."
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      วันที่สิ้นสุดการแสดงผล
+                    </label>
+                    <ThaiDatePicker
+                      value={formExpireAt}
+                      onChange={setFormExpireAt}
+                      placeholder="เลือกวันที่สิ้นสุด"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Row: หมวดหมู่ประกาศ & ระดับความสำคัญ */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      หมวดหมู่ประกาศ
+                    </label>
+                    <CustomSelect
+                      value={formCategory}
+                      onChange={(val) => setFormCategory(val as AnnouncementCategory)}
+                      className="w-full"
+                      options={[
+                        { value: 'GENERAL', label: 'ข่าวทั่วไป' },
+                        { value: 'POLICY', label: 'นโยบายองค์กร' },
+                        { value: 'WELFARE', label: 'สวัสดิการและสิทธิประโยชน์' },
+                        { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
+                        { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
+                      ]}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      ระดับความสำคัญ
+                    </label>
+                    <CustomSelect
+                      value={formPriority}
+                      onChange={(val) => setFormPriority(val as AnnouncementPriority)}
+                      className="w-full"
+                      options={[
+                        { value: 'LOW', label: 'ทั่วไป' },
+                        { value: 'NORMAL', label: 'ปกติ' },
+                        { value: 'HIGH', label: 'สำคัญ' },
+                        { value: 'URGENT', label: 'ด่วนที่สุด' },
+                      ]}
+                    />
+                  </div>
+                </div>
 
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
               <div ref={targetDropdownRef} className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60 relative">

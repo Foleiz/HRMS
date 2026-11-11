@@ -1173,73 +1173,73 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
             <form onSubmit={(e) => handleSubmitForm('PUBLISHED', e)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto overflow-x-hidden p-6 space-y-4 text-xs font-sans">
                 {/* Title */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  ชื่อกิจกรรม / หัวข้อประกาศ <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="เช่น กิจกรรม Town Hall ประจำไตรมาส, สัมมนา AI for HR..."
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-              </div>
-
-              {/* Row 2: วันที่เริ่มจัดกิจกรรม & วันที่สิ้นสุดกิจกรรม */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่เริ่มจัดกิจกรรม <span className="text-rose-500">*</span>
+                    ชื่อกิจกรรม / หัวข้อประกาศ <span className="text-rose-500">*</span>
                   </label>
-                  <ThaiDatePicker
-                    value={formStartDate}
-                    onChange={setFormStartDate}
-                    placeholder="เลือกวันที่เริ่ม"
-                    className="w-full"
+                  <input
+                    type="text"
+                    required
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="เช่น กิจกรรม Town Hall ประจำไตรมาส, สัมมนา AI for HR..."
+                    className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
+
+                {/* Description */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่สิ้นสุดกิจกรรม
+                    รายละเอียดกิจกรรมและกำหนดการ
                   </label>
-                  <ThaiDatePicker
-                    value={formEndDate}
-                    onChange={setFormEndDate}
-                    placeholder="เลือกวันที่สิ้นสุด"
-                    className="w-full"
+                  <textarea
+                    rows={4}
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    placeholder="ระบุวัตถุประสงค์ กำหนดการ หรือสิ่งที่ต้องเตรียมมาร่วมกิจกรรม..."
+                    className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
                   />
                 </div>
-              </div>
 
-              {/* Row 3: เวลาเริ่มกิจกรรม & เวลาสิ้นสุดกิจกรรม */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <ThaiTimePicker
-                  label="เวลาเริ่มกิจกรรม"
-                  value={formStartTime}
-                  onChange={setFormStartTime}
-                />
-                <ThaiTimePicker
-                  label="เวลาสิ้นสุดกิจกรรม"
-                  value={formEndTime}
-                  onChange={setFormEndTime}
-                />
-              </div>
+                {/* Row: วันที่เริ่มจัดกิจกรรม & วันที่สิ้นสุดกิจกรรม */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      วันที่เริ่มจัดกิจกรรม <span className="text-rose-500">*</span>
+                    </label>
+                    <ThaiDatePicker
+                      value={formStartDate}
+                      onChange={setFormStartDate}
+                      placeholder="เลือกวันที่เริ่ม"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      วันที่สิ้นสุดกิจกรรม
+                    </label>
+                    <ThaiDatePicker
+                      value={formEndDate}
+                      onChange={setFormEndDate}
+                      placeholder="เลือกวันที่สิ้นสุด"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  รายละเอียดกิจกรรมและกำหนดการ
-                </label>
-                <textarea
-                  rows={4}
-                  value={formDescription}
-                  onChange={(e) => setFormDescription(e.target.value)}
-                  placeholder="ระบุวัตถุประสงค์ กำหนดการ หรือสิ่งที่ต้องเตรียมมาร่วมกิจกรรม..."
-                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
-                />
-              </div>
+                {/* Row: เวลาเริ่มกิจกรรม & เวลาสิ้นสุดกิจกรรม */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <ThaiTimePicker
+                    label="เวลาเริ่มกิจกรรม"
+                    value={formStartTime}
+                    onChange={setFormStartTime}
+                  />
+                  <ThaiTimePicker
+                    label="เวลาสิ้นสุดกิจกรรม"
+                    value={formEndTime}
+                    onChange={setFormEndTime}
+                  />
+                </div>
 
               {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
               <div ref={targetDropdownRef} className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60 relative">
