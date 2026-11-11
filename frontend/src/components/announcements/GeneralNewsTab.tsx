@@ -33,7 +33,8 @@ import {
   CreateAnnouncementPayload,
   UpdateAnnouncementPayload,
 } from '@/types/announcement';
-import { Department } from '@/types/organization';
+import { Division, Department, Team } from '@/types/organization';
+import { Employee } from '@/types/employee';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
 import { TableLoading } from '@/components/ui/TableState';
 import { StatCard } from '@/components/ui/StatCard';
@@ -108,14 +109,20 @@ const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export interface GeneralNewsTabProps {
+  divisions?: Division[];
   departments: Department[];
+  teams?: Team[];
+  employees?: Employee[];
   canCreate: boolean;
   canEdit: boolean;
   onRefreshNewsFeed?: () => void;
 }
 
 export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
+  divisions = [],
   departments,
+  teams = [],
+  employees = [],
   canCreate,
   canEdit,
   onRefreshNewsFeed,

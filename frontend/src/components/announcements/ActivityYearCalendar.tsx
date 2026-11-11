@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Calendar, MapPin, Clock, Users, Sparkles, Pin } from 'lucide-react';
+import { Calendar, Clock, Users, Sparkles, Pin } from 'lucide-react';
 import { Announcement } from '@/types/announcement';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
@@ -15,16 +15,11 @@ export interface ActivityYearCalendarProps {
 }
 
 const parseActivityMeta = (content: string) => {
-  let location = '';
   let timeRange = '';
-
-  const locMatch = content.match(/📍\s*สถานที่:\s*([^\n\r]+)/);
-  if (locMatch) location = locMatch[1].trim();
-
   const timeMatch = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
   if (timeMatch) timeRange = timeMatch[1].trim();
 
-  return { location, timeRange };
+  return { timeRange };
 };
 
 const formatThaiDate = (dateStr: string) => {
@@ -227,7 +222,7 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                             <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-40 w-max max-w-[240px] opacity-0 translate-y-1 group-hover/act:opacity-100 group-hover/act:translate-y-0 transition-all duration-150">
                               <div className="rounded-xl bg-slate-900 text-white px-3 py-2 shadow-xl space-y-1.5 text-left border border-slate-700">
                                 {acts.map((a) => {
-                                  const { location, timeRange } = parseActivityMeta(a.content);
+                                  const { timeRange } = parseActivityMeta(a.content);
                                   return (
                                     <div key={a.id} className="text-[11px] leading-snug border-b border-slate-800 last:border-b-0 pb-1.5 last:pb-0">
                                       <div className="flex items-center gap-1.5 font-bold text-slate-100">
@@ -239,12 +234,6 @@ export const ActivityYearCalendar: React.FC<ActivityYearCalendarProps> = ({
                                         <div className="text-[10px] text-slate-300 flex items-center gap-1 mt-0.5 pl-3">
                                           <Clock className="w-2.5 h-2.5 text-slate-400" />
                                           <span>{timeRange}</span>
-                                        </div>
-                                      )}
-                                      {location && (
-                                        <div className="text-[10px] text-slate-300 flex items-center gap-1 pl-3">
-                                          <MapPin className="w-2.5 h-2.5 text-slate-400" />
-                                          <span className="truncate">{location}</span>
                                         </div>
                                       )}
                                     </div>

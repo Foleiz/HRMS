@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { Megaphone, Sparkles } from 'lucide-react';
-import { TabBar, type TabBarItem } from '@/components/ui/TabBar';
+import { useSearchParams } from 'next/navigation';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useAuth } from '@/context/AuthContext';
 import { organizationService } from '@/services/organizationService';
-import { Department } from '@/types/organization';
+import { employeeService } from '@/services/employeeService';
+import { Division, Department, Team } from '@/types/organization';
+import { Employee } from '@/types/employee';
 import { GeneralNewsTab } from '@/components/announcements/GeneralNewsTab';
 import { ActivitiesTab } from '@/components/announcements/ActivitiesTab';
 
@@ -22,7 +22,6 @@ export default function AnnouncementsPage() {
 }
 
 function AnnouncementsPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
   const { hasRole, hasPermission } = useAuth();
@@ -31,9 +30,12 @@ function AnnouncementsPageContent() {
   const canCreate = Boolean(isSuper || hasPermission('ANNOUNCEMENTS_CREATE'));
   const canEdit = Boolean(isSuper || hasPermission('ANNOUNCEMENTS_EDIT'));
 
+  const [divisions, setDivisions] = useState<Division[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
-  // Sync tab from URL query params
+  // Sync tab from URL query params (default is 'general')
   const tabParam = searchParams.get('tab') as TabType;
   const activeTab: TabType = tabParam === 'activities' ? 'activities' : 'general';
 
@@ -45,44 +47,30 @@ function AnnouncementsPageContent() {
     });
   }, [setBreadcrumb, activeTab]);
 
-  // Load departments once for both tabs
+  // Load organizational structure & employees once for audience targeting
   useEffect(() => {
-    organizationService.getDepartments().then(setDepartments).catch(console.error);
+    Promise.all([
+      organizationService.getDivisions().catch(() => []),
+      organizationService.getDepartments().catch(() => []),
+      organizationService.getTeams().catch(() => []),
+      employeeService.getAll().catch(() => []),
+    ]).then(([divs, depts, tms, emps]) => {
+      setDivisions(divs);
+      setDepartments(depts);
+      setTeams(tms);
+      setEmployees(emps);
+    });
   }, []);
-
-  const handleTabChange = (key: TabType) => {
-    router.push(`/announcements?tab=${key}`);
-  };
-
-  const tabItems: TabBarItem<TabType>[] = [
-    {
-      key: 'general',
-      label: 'ประกาศข่าวสารทั่วไป',
-      icon: <Megaphone className="w-4 h-4" />,
-    },
-    {
-      key: 'activities',
-      label: 'ประกาศกิจกรรม',
-      icon: <Sparkles className="w-4 h-4" />,
-    },
-  ];
 
   return (
     <div className="space-y-6 pb-16">
-      {/* In-page TabBar Navigation */}
-      <div className="border-b border-slate-200 dark:border-slate-700">
-        <TabBar
-          items={tabItems}
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          memoryKey="announcements-tab"
-        />
-      </div>
-
-      {/* Tab Panels */}
+      {/* Content driven by sidebar submenu */}
       {activeTab === 'general' && (
         <GeneralNewsTab
+          divisions={divisions}
           departments={departments}
+          teams={teams}
+          employees={employees}
           canCreate={canCreate}
           canEdit={canEdit}
         />
@@ -90,7 +78,10 @@ function AnnouncementsPageContent() {
 
       {activeTab === 'activities' && (
         <ActivitiesTab
+          divisions={divisions}
           departments={departments}
+          teams={teams}
+          employees={employees}
           canCreate={canCreate}
           canEdit={canEdit}
         />

@@ -7,7 +7,6 @@ import {
   List,
   Plus,
   Clock,
-  MapPin,
   Users,
   Search,
   Eye,
@@ -21,7 +20,10 @@ import {
   CalendarCheck,
   Flame,
   Globe,
+  Building2,
   Building,
+  UserCheck,
+  User,
   ExternalLink,
   ChevronRight,
   X,
@@ -40,14 +42,26 @@ import { ModalShell } from '@/components/ui/ModalShell';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { TableLoading } from '@/components/ui/TableState';
+import { HoverList } from '@/components/ui/HoverList';
 import { getSmartYearOptions } from '@/lib/yearUtils';
 import { announcementService } from '@/services/announcementService';
-import { Announcement, AnnouncementReadStats } from '@/types/announcement';
-import { Department } from '@/types/organization';
+import {
+  Announcement,
+  AnnouncementReadStats,
+  CreateAnnouncementPayload,
+  UpdateAnnouncementPayload,
+  AnnouncementTargetInput,
+  TargetType,
+} from '@/types/announcement';
+import { Division, Department, Team } from '@/types/organization';
+import { Employee } from '@/types/employee';
 import { ActivityYearCalendar } from './ActivityYearCalendar';
 
 export interface ActivitiesTabProps {
+  divisions: Division[];
   departments: Department[];
+  teams: Team[];
+  employees: Employee[];
   canCreate: boolean;
   canEdit: boolean;
   onRefreshNewsFeed?: () => void;
@@ -55,12 +69,7 @@ export interface ActivitiesTabProps {
 
 // ─── Helpers ──────────────────────────────────────────────────
 export const parseActivityMeta = (content: string) => {
-  let location = '';
   let timeRange = '';
-
-  const locMatch = content.match(/📍\s*สถานที่:\s*([^\n\r]+)/);
-  if (locMatch) location = locMatch[1].trim();
-
   const timeMatch = content.match(/⏰\s*เวลา:\s*([^\n\r]+)/);
   if (timeMatch) timeRange = timeMatch[1].trim();
 
@@ -69,15 +78,14 @@ export const parseActivityMeta = (content: string) => {
     .replace(/⏰\s*เวลา:\s*[^\n\r]+[\r\n]*/, '')
     .trim();
 
-  return { location, timeRange, description };
+  return { timeRange, description };
 };
 
-export const buildActivityContent = (location: string, timeRange: string, description: string) => {
+export const buildActivityContent = (timeRange: string, description: string) => {
   const parts: string[] = [];
-  if (location.trim()) parts.push(`📍 สถานที่: ${location.trim()}`);
   if (timeRange.trim()) parts.push(`⏰ เวลา: ${timeRange.trim()}`);
-  if (parts.length > 0) parts.push('');
-  parts.push(description.trim());
+  if (parts.length > 0 && description.trim()) parts.push('');
+  if (description.trim()) parts.push(description.trim());
   return parts.join('\n');
 };
 
@@ -114,8 +122,25 @@ const formatDateForInput = (isoDateStr?: string | null) => {
   return `${year}-${month}-${day}`;
 };
 
+const toIsoStringFromDateInput = (dateStr: string) => {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d, 9, 0, 0);
+  return date.toISOString();
+};
+
+const toIsoStringFromExpireInput = (dateStr: string) => {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d, 23, 59, 59);
+  return date.toISOString();
+};
+
 export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
+  divisions,
   departments,
+  teams,
+  employees,
   canCreate,
   canEdit,
   onRefreshNewsFeed,
@@ -154,14 +179,18 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   const [formEndDate, setFormEndDate] = useState('');
   const [formStartTime, setFormStartTime] = useState('');
   const [formEndTime, setFormEndTime] = useState('');
-  const [formLocation, setFormLocation] = useState('');
   const [formDescription, setFormDescription] = useState('');
-  const [formBannerUrl, setFormBannerUrl] = useState('');
   const [formIsPinned, setFormIsPinned] = useState(false);
   const [formPriority, setFormPriority] = useState<'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'>('NORMAL');
   const [formStatus, setFormStatus] = useState<'PUBLISHED' | 'DRAFT'>('PUBLISHED');
-  const [formTargetType, setFormTargetType] = useState<'ALL' | 'DEPARTMENT'>('ALL');
+
+  // Rich Audience Target State: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE
+  const [formTargetType, setFormTargetType] = useState<TargetType>('ALL');
+  const [formTargetDivisionIds, setFormTargetDivisionIds] = useState<number[]>([]);
   const [formTargetDeptIds, setFormTargetDeptIds] = useState<number[]>([]);
+  const [formTargetTeamIds, setFormTargetTeamIds] = useState<number[]>([]);
+  const [formTargetEmployeeIds, setFormTargetEmployeeIds] = useState<number[]>([]);
+  const [empSearchFilter, setEmpSearchFilter] = useState('');
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -188,13 +217,13 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     fetchActivities();
   }, [fetchActivities]);
 
-  // Determine Activity Status
+  // Compute status for an activity item
   const getActivityStatusInfo = useCallback((act: Announcement) => {
     if (act.status === 'DRAFT') {
       return {
         key: 'DRAFT',
-        label: 'แบบร่าง',
-        color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+        label: 'ฉบับร่าง',
+        color: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border-slate-200 dark:border-slate-700',
         dot: 'bg-slate-400',
       };
     }
@@ -220,7 +249,7 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     if (isToday) {
       return {
         key: 'ONGOING',
-        label: 'จัดขึ้นวันนี้',
+        label: 'จัดขึ้นวันนี้ / กำลังจัด',
         color: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200 dark:border-amber-800',
         dot: 'bg-amber-500',
       };
@@ -239,14 +268,12 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     let upcoming = 0;
     let ongoing = 0;
     let completed = 0;
-    let draft = 0;
 
     activities.forEach((act) => {
       const st = getActivityStatusInfo(act);
       if (st.key === 'UPCOMING') upcoming++;
       else if (st.key === 'ONGOING') ongoing++;
       else if (st.key === 'COMPLETED') completed++;
-      else if (st.key === 'DRAFT') draft++;
     });
 
     return {
@@ -254,21 +281,19 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
       upcoming,
       ongoing,
       completed,
-      draft,
     };
   }, [activities, getActivityStatusInfo]);
 
-  // Filtered & Paginated Activities
+  // Filtered Activities
   const filteredActivities = useMemo(() => {
     return activities.filter((act) => {
-      // 1. Filter by Search Query
+      // 1. Search Query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const { location, description } = parseActivityMeta(act.content);
         const matchTitle = act.title.toLowerCase().includes(q);
-        const matchLoc = location.toLowerCase().includes(q);
+        const { description } = parseActivityMeta(act.content);
         const matchDesc = description.toLowerCase().includes(q);
-        if (!matchTitle && !matchLoc && !matchDesc) return false;
+        if (!matchTitle && !matchDesc) return false;
       }
 
       // 2. Filter by Year
@@ -305,27 +330,29 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     setFormEndDate(targetDate);
     setFormStartTime('09:00');
     setFormEndTime('16:30');
-    setFormLocation('');
     setFormDescription('');
-    setFormBannerUrl('');
     setFormIsPinned(false);
     setFormPriority('NORMAL');
     setFormStatus('PUBLISHED');
     setFormTargetType('ALL');
+    setFormTargetDivisionIds([]);
     setFormTargetDeptIds([]);
+    setFormTargetTeamIds([]);
+    setFormTargetEmployeeIds([]);
+    setEmpSearchFilter('');
     setIsModalOpen(true);
   };
 
   // Open Edit Modal
   const handleOpenEdit = (act: Announcement) => {
-    const { location, timeRange, description } = parseActivityMeta(act.content);
+    const { timeRange, description } = parseActivityMeta(act.content);
+
     let stTime = '09:00';
     let endTime = '16:30';
-
-    if (timeRange) {
-      const parts = timeRange.split('-').map((s) => s.replace(/น\./g, '').trim());
-      if (parts[0]) stTime = parts[0];
-      if (parts[1]) endTime = parts[1];
+    if (timeRange.includes('-')) {
+      const parts = timeRange.split('-').map((p) => p.trim());
+      stTime = parts[0] || '09:00';
+      endTime = parts[1] || '16:30';
     }
 
     setModalMode('edit');
@@ -335,22 +362,47 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     setFormEndDate(formatDateForInput(act.expireAt));
     setFormStartTime(stTime);
     setFormEndTime(endTime);
-    setFormLocation(location);
     setFormDescription(description);
-    setFormBannerUrl(act.bannerImageUrl || '');
     setFormIsPinned(act.isPinned);
     setFormPriority((act.priority as any) || 'NORMAL');
     setFormStatus((act.status as any) || 'PUBLISHED');
 
-    const deptTargets = act.targets?.filter((t) => t.targetType === 'DEPARTMENT' && t.targetEntityId).map((t) => Number(t.targetEntityId!)) || [];
-    if (deptTargets.length > 0) {
-      setFormTargetType('DEPARTMENT');
-      setFormTargetDeptIds(deptTargets);
-    } else {
+    // Parse target types from act.targets
+    const targets = act.targets || [];
+    if (targets.length === 0 || targets.some((t) => t.targetType === 'ALL')) {
       setFormTargetType('ALL');
+      setFormTargetDivisionIds([]);
       setFormTargetDeptIds([]);
+      setFormTargetTeamIds([]);
+      setFormTargetEmployeeIds([]);
+    } else {
+      const firstType = targets[0]?.targetType as TargetType;
+      setFormTargetType(firstType);
+
+      if (firstType === 'DIVISION') {
+        setFormTargetDivisionIds(targets.filter((t) => t.targetType === 'DIVISION' && t.targetEntityId).map((t) => Number(t.targetEntityId)));
+        setFormTargetDeptIds([]);
+        setFormTargetTeamIds([]);
+        setFormTargetEmployeeIds([]);
+      } else if (firstType === 'DEPARTMENT') {
+        setFormTargetDeptIds(targets.filter((t) => t.targetType === 'DEPARTMENT' && t.targetEntityId).map((t) => Number(t.targetEntityId)));
+        setFormTargetDivisionIds([]);
+        setFormTargetTeamIds([]);
+        setFormTargetEmployeeIds([]);
+      } else if (firstType === 'TEAM') {
+        setFormTargetTeamIds(targets.filter((t) => t.targetType === 'TEAM' && t.targetEntityId).map((t) => Number(t.targetEntityId)));
+        setFormTargetDivisionIds([]);
+        setFormTargetDeptIds([]);
+        setFormTargetEmployeeIds([]);
+      } else if (firstType === 'EMPLOYEE' || (firstType as string) === 'INDIVIDUAL') {
+        setFormTargetEmployeeIds(targets.filter((t) => (t.targetType === 'EMPLOYEE' || (t.targetType as string) === 'INDIVIDUAL') && t.targetEntityId).map((t) => Number(t.targetEntityId)));
+        setFormTargetDivisionIds([]);
+        setFormTargetDeptIds([]);
+        setFormTargetTeamIds([]);
+      }
     }
 
+    setEmpSearchFilter('');
     setIsModalOpen(true);
   };
 
@@ -366,55 +418,65 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
       return;
     }
 
+    // Build targets array
+    let targets: AnnouncementTargetInput[] = [{ targetType: 'ALL', targetEntityId: null }];
+    if (formTargetType === 'DIVISION') {
+      if (formTargetDivisionIds.length === 0) {
+        showToast('กรุณาเลือกฝ่ายอย่างน้อย 1 ฝ่าย');
+        return;
+      }
+      targets = formTargetDivisionIds.map((id) => ({ targetType: 'DIVISION', targetEntityId: id }));
+    } else if (formTargetType === 'DEPARTMENT') {
+      if (formTargetDeptIds.length === 0) {
+        showToast('กรุณาเลือกแผนกอย่างน้อย 1 แผนก');
+        return;
+      }
+      targets = formTargetDeptIds.map((id) => ({ targetType: 'DEPARTMENT', targetEntityId: id }));
+    } else if (formTargetType === 'TEAM') {
+      if (formTargetTeamIds.length === 0) {
+        showToast('กรุณาเลือกทีมอย่างน้อย 1 ทีม');
+        return;
+      }
+      targets = formTargetTeamIds.map((id) => ({ targetType: 'TEAM', targetEntityId: id }));
+    } else if (formTargetType === 'EMPLOYEE') {
+      if (formTargetEmployeeIds.length === 0) {
+        showToast('กรุณาเลือกพนักงานอย่างน้อย 1 ท่าน');
+        return;
+      }
+      targets = formTargetEmployeeIds.map((id) => ({ targetType: 'EMPLOYEE', targetEntityId: id }));
+    }
+
+    const timeRange = formStartTime && formEndTime ? `${formStartTime} - ${formEndTime}` : '';
+    const content = buildActivityContent(timeRange, formDescription);
+
+    const payload: CreateAnnouncementPayload = {
+      title: formTitle.trim(),
+      content,
+      publishedAt: toIsoStringFromDateInput(formStartDate),
+      expireAt: toIsoStringFromExpireInput(formEndDate || formStartDate),
+      isPinned: formIsPinned,
+      category: 'ACTIVITY',
+      priority: formPriority,
+      status: formStatus,
+      targets,
+    };
+
     setSubmitting(true);
     try {
-      const timeStr = formStartTime && formEndTime ? `${formStartTime} - ${formEndTime} น.` : '';
-      const finalContent = buildActivityContent(formLocation, timeStr, formDescription);
-
-      const [sy, sm, sd] = formStartDate.split('-').map(Number);
-      const startIso = new Date(Date.UTC(sy, sm - 1, sd, 1, 0, 0)).toISOString();
-
-      let endIso = startIso;
-      if (formEndDate) {
-        const [ey, em, ed] = formEndDate.split('-').map(Number);
-        endIso = new Date(Date.UTC(ey, em - 1, ed, 16, 59, 59)).toISOString();
-      }
-
-      const targets =
-        formTargetType === 'ALL'
-          ? [{ targetType: 'ALL' as const }]
-          : formTargetDeptIds.map((deptId) => ({
-              targetType: 'DEPARTMENT' as const,
-              departmentId: deptId,
-            }));
-
-      const payload = {
-        title: formTitle.trim(),
-        content: finalContent,
-        category: 'ACTIVITY' as const,
-        priority: formPriority,
-        isPinned: formIsPinned,
-        status: formStatus,
-        publishedAt: startIso,
-        expireAt: endIso,
-        bannerImageUrl: formBannerUrl.trim() || undefined,
-        targets,
-      };
-
       if (modalMode === 'create') {
         const created = await announcementService.createAnnouncement(payload);
         setActivities((prev) => [created, ...prev]);
-        showToast(`เพิ่มกิจกรรม "${created.title}" สำเร็จ`);
+        showToast('เพิ่มประกาศกิจกรรมใหม่เรียบร้อยแล้ว');
       } else if (editingId) {
-        const updated = await announcementService.updateAnnouncement(editingId, payload);
+        const updated = await announcementService.updateAnnouncement(editingId, payload as UpdateAnnouncementPayload);
         setActivities((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-        showToast(`บันทึกการแก้ไขกิจกรรม "${updated.title}" สำเร็จ`);
+        showToast('แก้ไขประกาศกิจกรรมเรียบร้อยแล้ว');
       }
 
       setIsModalOpen(false);
       onRefreshNewsFeed?.();
     } catch (err: any) {
-      showToast(err?.message || 'ไม่สามารถบันทึกกิจกรรมได้');
+      showToast(err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาดในการบันทึกกิจกรรม');
     } finally {
       setSubmitting(false);
     }
@@ -423,18 +485,34 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
   // Toggle Pin
   const handleTogglePin = async (act: Announcement) => {
     try {
-      await announcementService.togglePin(act.id);
+      const newPin = await announcementService.togglePin(act.id);
       setActivities((prev) =>
-        prev.map((a) => (a.id === act.id ? { ...a, isPinned: !a.isPinned } : a))
+        prev.map((a) => (a.id === act.id ? { ...a, isPinned: newPin } : a))
       );
-      showToast(act.isPinned ? 'ถอดหมุดกิจกรรมแล้ว' : 'ปักหมุดกิจกรรมแล้ว');
+      showToast(newPin ? 'ปักหมุดกิจกรรมขึ้นบนสุดแล้ว' : 'ยกเลิกการปักหมุดแล้ว');
+      onRefreshNewsFeed?.();
     } catch (err: any) {
-      showToast(err?.message || 'ไม่สามารถเปลี่ยนสถานะปักหมุดได้');
+      showToast(err?.message || 'ไม่สามารถเปลี่ยนสถานะการปักหมุดได้');
+    }
+  };
+
+  // Toggle Publish Status
+  const handleTogglePublish = async (act: Announcement) => {
+    const nextPublished = act.status !== 'PUBLISHED';
+    try {
+      await announcementService.setPublishStatus(act.id, nextPublished);
+      setActivities((prev) =>
+        prev.map((a) => (a.id === act.id ? { ...a, status: nextPublished ? 'PUBLISHED' : 'DRAFT' } : a))
+      );
+      showToast(nextPublished ? 'เผยแพร่กิจกรรมแล้ว' : 'เปลี่ยนเป็นฉบับร่างแล้ว');
+      onRefreshNewsFeed?.();
+    } catch (err: any) {
+      showToast(err?.message || 'ไม่สามารถสลับสถานะเผยแพร่ได้');
     }
   };
 
   // Delete Activity
-  const handleDelete = (act: Announcement) => {
+  const handleOpenDelete = (act: Announcement) => {
     setActivityToDelete(act);
     setDeleteModalOpen(true);
   };
@@ -472,143 +550,249 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
     const items: ActionDropdownItem[] = [
       {
         label: 'ดูรายละเอียด',
-        icon: <Eye className="w-4 h-4 text-slate-500" />,
+        icon: <Eye className="w-4 h-4" />,
         onClick: () => setReadingActivity(act),
       },
       {
         label: 'สถิติการเปิดอ่าน',
-        icon: <BarChart2 className="w-4 h-4 text-primary" />,
+        icon: <BarChart2 className="w-4 h-4" />,
         onClick: () => handleViewStats(act),
       },
     ];
 
     if (canEdit) {
-      items.push({ divider: true, label: '' });
       items.push({
-        label: act.isPinned ? 'ถอดหมุด' : 'ปักหมุดกิจกรรม',
-        icon: act.isPinned ? <PinOff className="w-4 h-4 text-amber-600" /> : <Pin className="w-4 h-4 text-amber-600" />,
+        label: act.isPinned ? 'ยกเลิกปักหมุด' : 'ปักหมุดบนสุด',
+        icon: act.isPinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />,
         onClick: () => handleTogglePin(act),
       });
+
       items.push({
-        label: 'แก้ไขข้อมูล',
-        icon: <Edit2 className="w-4 h-4 text-slate-600" />,
+        label: act.status === 'PUBLISHED' ? 'เก็บเป็นฉบับร่าง' : 'เผยแพร่กิจกรรม',
+        icon: <Sparkles className="w-4 h-4" />,
+        onClick: () => handleTogglePublish(act),
+      });
+
+      items.push({
+        label: 'แก้ไขข้อมูลกิจกรรม',
+        icon: <Edit2 className="w-4 h-4" />,
         onClick: () => handleOpenEdit(act),
       });
-      items.push({ divider: true, label: '' });
+
       items.push({
         label: 'ลบกิจกรรม',
-        icon: <Trash2 className="w-4 h-4 text-rose-600" />,
+        icon: <Trash2 className="w-4 h-4" />,
         danger: true,
-        onClick: () => handleDelete(act),
+        onClick: () => handleOpenDelete(act),
       });
     }
 
     return items;
   };
 
-  const statCards: { label: string; value: number; icon: React.ElementType; tone: StatTone }[] = [
-    { label: 'กิจกรรมทั้งหมด', value: stats.total, icon: Sparkles, tone: 'slate' },
-    { label: 'กำลังจะมาถึง', value: stats.upcoming, icon: CalendarDays, tone: 'emerald' },
-    { label: 'จัดขึ้นวันนี้ / กำลังจัด', value: stats.ongoing, icon: Flame, tone: 'amber' },
-    { label: 'สิ้นสุดแล้ว', value: stats.completed, icon: CheckCircle2, tone: 'purple' },
-  ];
+  // Helper to render target audience badge
+  const renderTargetBadge = (act: Announcement) => {
+    const targets = act.targets || [];
+    if (targets.length === 0 || targets.some((t) => t.targetType === 'ALL')) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+          <Globe className="w-3.5 h-3.5" />
+          <span>ทุกคนในองค์กร</span>
+        </span>
+      );
+    }
+
+    const tType = targets[0]?.targetType;
+    if (tType === 'DIVISION') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const d = divisions.find((div) => div.id === t.targetEntityId);
+        return d ? d.divisionName : `ฝ่ายรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อฝ่ายที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 cursor-pointer">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>{targets.length} ฝ่ายที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'DEPARTMENT') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const d = departments.find((dept) => dept.id === t.targetEntityId);
+        return d ? d.departmentName : `แผนกรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อแผนกที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 cursor-pointer">
+            <Building className="w-3.5 h-3.5" />
+            <span>{targets.length} แผนกที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'TEAM') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const tm = teams.find((item) => item.id === t.targetEntityId);
+        return tm ? tm.teamName : `ทีมรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อทีมที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 cursor-pointer">
+            <Users className="w-3.5 h-3.5" />
+            <span>{targets.length} ทีมที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    if (tType === 'EMPLOYEE' || (tType as string) === 'INDIVIDUAL') {
+      const names = targets.map((t) => {
+        if (t.targetEntityName) return t.targetEntityName;
+        const emp = employees.find((item) => item.id === t.targetEntityId);
+        return emp ? `${emp.employeeCode} - ${emp.fullName}` : `พนักงานรหัส ${t.targetEntityId}`;
+      });
+      return (
+        <HoverList title="รายชื่อพนักงานที่กำหนด" items={names.map((n) => ({ label: n }))}>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 cursor-pointer">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>{targets.length} พนักงานที่กำหนด</span>
+          </span>
+        </HoverList>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        <Users className="w-3.5 h-3.5" />
+        <span>กลุ่มเฉพาะ ({targets.length})</span>
+      </span>
+    );
+  };
+
+  // Filtered employees for target checkbox selector
+  const filteredEmployeesForSelection = useMemo(() => {
+    if (!empSearchFilter.trim()) return employees;
+    const q = empSearchFilter.toLowerCase().trim();
+    return employees.filter(
+      (e) =>
+        e.fullName.toLowerCase().includes(q) ||
+        e.employeeCode.toLowerCase().includes(q)
+    );
+  }, [employees, empSearchFilter]);
 
   return (
     <div className="space-y-6">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-3 bg-slate-900 text-white rounded-xl text-sm shadow-xl flex items-center gap-2 border border-slate-700 animate-in fade-in duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 text-white rounded-xl shadow-xl text-xs font-medium animate-in fade-in slide-in-from-top-3">
+          <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* 1. Stat Summary Cards */}
+      {/* ─── 1. Stat Cards KPI ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((s) => (
-          <StatCard
-            key={s.label}
-            label={s.label}
-            value={s.value}
-            icon={s.icon}
-            tone={s.tone}
-            layout="inline"
-          />
-        ))}
+        <StatCard
+          label="กิจกรรมทั้งหมด"
+          value={stats.total}
+          icon={Sparkles}
+          tone="sky"
+        />
+        <StatCard
+          label="กำลังจะมาถึง"
+          value={stats.upcoming}
+          icon={Calendar}
+          tone="emerald"
+        />
+        <StatCard
+          label="จัดขึ้นวันนี้ / กำลังจัด"
+          value={stats.ongoing}
+          icon={Flame}
+          tone="amber"
+        />
+        <StatCard
+          label="สิ้นสุดแล้ว"
+          value={stats.completed}
+          icon={CheckCircle2}
+          tone="purple"
+        />
       </div>
 
-      {/* 2. Main Container (Card) */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-xs space-y-4">
-        {/* Toolbar: Search + Filters + Mode Switcher + Action Button */}
+      {/* ─── 2. Main Card Container ─── */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+        {/* Table Toolbar */}
         <TableToolbar
+          searchPlaceholder="ค้นหาชื่อกิจกรรม หรือรายละเอียด..."
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          searchPlaceholder="ค้นหาชื่อกิจกรรม หรือสถานที่..."
           filters={
-            <>
-              {/* Year Select (เหมือนหน้าระบบวันหยุด) */}
-              <CustomSelect
-                value={selectedYear}
-                onChange={(val) => setSelectedYear(parseInt(val, 10))}
-                className="min-w-[170px]"
-                options={getSmartYearOptions(
-                  {
-                    forwardYears: 1,
-                    backYears: 4,
-                    historicalYears: activities
-                      .map((a) => (a.publishedAt || a.createdAt)?.substring(0, 4))
-                      .filter(Boolean),
-                    selectedYear,
-                  },
-                  'ปี พ.ศ. '
-                )}
-              />
-
-              {/* Status Select */}
-              <CustomSelect
-                value={statusFilter}
-                onChange={(val) => setStatusFilter(val as any)}
-                className="min-w-[170px]"
-                options={[
-                  { value: 'ALL', label: 'ทุกสถานะกิจกรรม' },
-                  { value: 'UPCOMING', label: 'กำลังจะมาถึง' },
-                  { value: 'ONGOING', label: 'จัดขึ้นวันนี้' },
-                  { value: 'COMPLETED', label: 'สิ้นสุดแล้ว' },
-                  { value: 'DRAFT', label: 'แบบร่าง' },
-                ]}
-              />
-            </>
-          }
-          actions={
-            <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
-              {/* สลับมุมมอง รายการ / ปฏิทิน (เหมือนหน้าวันหยุด) */}
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700/60 p-1 rounded-xl">
-                {([
-                  { key: 'list', label: 'รายการ', icon: List },
-                  { key: 'calendar', label: 'ปฏิทิน', icon: Calendar },
-                ] as const).map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setViewMode(key)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition whitespace-nowrap cursor-pointer ${
-                      viewMode === key
-                        ? 'bg-white dark:bg-slate-800 text-primary dark:text-blue-300 shadow-2xs font-bold'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{label}</span>
-                  </button>
-                ))}
+            <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              {/* Year Selector */}
+              <div className="w-full sm:w-36">
+                <CustomSelect
+                  value={selectedYear}
+                  onChange={(val) => setSelectedYear(Number(val))}
+                  options={getSmartYearOptions({ historicalYears: activities.map((a) => a.publishedAt || a.createdAt) })}
+                  className="w-full"
+                />
               </div>
 
-              {/* Add Activity Button */}
+              {/* Status Filter */}
+              <div className="w-full sm:w-44">
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={(val) => setStatusFilter(val as any)}
+                  options={[
+                    { value: 'ALL', label: 'ทุกสถานะกิจกรรม' },
+                    { value: 'UPCOMING', label: 'กำลังจะมาถึง' },
+                    { value: 'ONGOING', label: 'จัดขึ้นวันนี้ / กำลังจัด' },
+                    { value: 'COMPLETED', label: 'สิ้นสุดแล้ว' },
+                    { value: 'DRAFT', label: 'ฉบับร่าง' },
+                  ]}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          }
+          actions={
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              {/* View Switcher: List vs Calendar */}
+              <div className="flex items-center bg-slate-100 dark:bg-slate-700/60 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    viewMode === 'list'
+                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span>รายการ</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('calendar')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    viewMode === 'calendar'
+                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>ปฏิทิน</span>
+                </button>
+              </div>
+
+              {/* Create Activity Button */}
               {canCreate && (
                 <Button
-                  id="tour-activity-add-btn"
-                  variant="primary"
-                  size="sm"
                   onClick={() => handleOpenCreate()}
                   icon={<Plus className="w-4 h-4" />}
                 >
@@ -636,393 +820,632 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
           )
         )}
 
-        {/* ─── Mode 2: List View (Table) ─── */}
+        {/* ─── Mode 2: Table List View ─── */}
         {viewMode === 'list' && (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-            <table className="table-standard w-full min-w-[800px] text-xs whitespace-nowrap">
-              <thead className="bg-primary text-white font-semibold">
-                <tr>
-                  <th className="py-3.5 px-4 text-center w-12">ลำดับ</th>
-                  <th className="py-3.5 px-4">วันที่จัดกิจกรรม</th>
-                  <th className="py-3.5 px-4">ชื่อกิจกรรม</th>
-                  <th className="py-3.5 px-4">เวลาและสถานที่</th>
-                  <th className="py-3.5 px-4">กลุ่มเป้าหมาย</th>
-                  <th className="py-3.5 px-4 text-center">สถานะ</th>
-                  <th className="py-3.5 px-4 text-right">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 bg-white dark:bg-slate-900">
-                {loading ? (
-                  <TableLoading colSpan={7} text="กำลังโหลดรายการกิจกรรม..." />
-                ) : filteredActivities.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-16 text-center text-slate-400">
-                      <CalendarDays className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
-                      <p className="font-medium text-slate-500 dark:text-slate-400">
-                        ไม่พบกิจกรรมสำหรับปี {selectedYear + 543} ({selectedYear})
-                      </p>
-                      <p className="text-2xs text-slate-400 mt-0.5">
-                        ลองเปลี่ยนตัวกรอง หรือคลิกปุ่ม "+ เพิ่มประกาศกิจกรรม"
-                      </p>
-                    </td>
+          <div className="space-y-4">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="table-standard text-xs w-full min-w-[850px] text-left border-collapse whitespace-nowrap">
+                <thead>
+                  <tr className="bg-slate-50/80 dark:bg-slate-750/70 border-b border-slate-100 dark:border-slate-700/60 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    <th className="py-3 px-4 w-12 text-center">ลำดับ</th>
+                    <th className="py-3 px-4">วันที่จัดกิจกรรม</th>
+                    <th className="py-3 px-4">ชื่อกิจกรรม</th>
+                    <th className="py-3 px-4">เวลาจัดกิจกรรม</th>
+                    <th className="py-3 px-4">กลุ่มเป้าหมาย</th>
+                    <th className="py-3 px-4">สถานะ</th>
+                    <th className="py-3 px-4 text-center">จัดการ</th>
                   </tr>
-                ) : (
-                  pagedActivities.map((act, idx) => {
-                    const st = getActivityStatusInfo(act);
-                    const { location, timeRange, description } = parseActivityMeta(act.content);
-                    const startStr = act.publishedAt || act.createdAt;
-                    const dateNum = (page - 1) * pageSize + idx + 1;
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs">
+                  {loading ? (
+                    <TableLoading colSpan={7} text="กำลังโหลดประกาศกิจกรรม..." />
+                  ) : pagedActivities.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-14 text-center text-slate-400">
+                        <div className="flex flex-col items-center justify-center gap-1.5">
+                          <Sparkles className="w-8 h-8 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
+                          <span className="font-semibold text-slate-600 dark:text-slate-400">
+                            ไม่พบประกาศกิจกรรมสำหรับปี {selectedYear + 543}
+                          </span>
+                          <span className="text-[11px] text-slate-400">
+                            สามารถคลิก "+ เพิ่มประกาศกิจกรรม" เพื่อเริ่มต้นประชาสัมพันธ์กิจกรรมขององค์กร
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedActivities.map((act, idx) => {
+                      const { timeRange, description } = parseActivityMeta(act.content);
+                      const statusInfo = getActivityStatusInfo(act);
+                      const startDateStr = act.publishedAt || act.createdAt;
+                      const hasMultiDays = act.expireAt && act.expireAt.substring(0, 10) !== startDateStr?.substring(0, 10);
 
-                    return (
-                      <tr key={act.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                        {/* ลำดับ */}
-                        <td className="py-3.5 px-4 text-center font-mono text-slate-400">
-                          {dateNum}
-                        </td>
+                      return (
+                        <tr
+                          key={act.id}
+                          className="hover:bg-slate-50/70 dark:hover:bg-slate-750/50 transition-colors"
+                        >
+                          {/* Row Number */}
+                          <td className="py-3 px-4 text-center font-mono text-slate-400">
+                            {(page - 1) * pageSize + idx + 1}
+                          </td>
 
-                        {/* วันที่จัดกิจกรรม */}
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md">
-                              {formatThaiDate(startStr)}
-                            </span>
-                            <span className="text-slate-400 dark:text-slate-500 text-2xs">
-                              ({formatThaiDayOfWeek(startStr)})
-                            </span>
-                          </div>
-                        </td>
+                          {/* Activity Date */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-750 px-2.5 py-0.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                                {formatThaiDate(startDateStr)}
+                              </span>
+                              {hasMultiDays && (
+                                <span className="text-slate-400 text-2xs">
+                                  ถึง {formatThaiDate(act.expireAt)}
+                                </span>
+                              )}
+                              {!hasMultiDays && (
+                                <span className="text-slate-400 text-2xs">
+                                  ({formatThaiDayOfWeek(startDateStr)})
+                                </span>
+                              )}
+                            </div>
+                          </td>
 
-                        {/* ชื่อกิจกรรม */}
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            {act.bannerImageUrl ? (
-                              <img
-                                src={act.bannerImageUrl}
-                                alt={act.title}
-                                className="w-9 h-9 rounded-lg object-cover shrink-0 border border-slate-200 dark:border-slate-700"
-                              />
-                            ) : (
-                              <div className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-900/60">
-                                <Sparkles className="w-4 h-4" />
-                              </div>
-                            )}
-                            <div className="min-w-0 max-w-[280px]">
+                          {/* Title & Description */}
+                          <td className="py-3 px-4 max-w-xs">
+                            <div className="flex items-center gap-2">
+                              {act.isPinned && (
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                              )}
                               <button
                                 type="button"
                                 onClick={() => setReadingActivity(act)}
-                                className="font-bold text-slate-900 dark:text-slate-100 hover:text-primary transition-colors truncate block text-left cursor-pointer"
-                                title={act.title}
+                                className="font-semibold text-slate-800 dark:text-slate-200 hover:text-primary dark:hover:text-blue-300 transition-colors text-left cursor-pointer truncate max-w-xs block"
+                                title="คลิกเพื่อดูรายละเอียดกิจกรรม"
                               >
                                 {act.title}
                               </button>
-                              <p className="text-2xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                                {description || '-'}
-                              </p>
                             </div>
-                            {act.isPinned && (
-                              <span title="ปักหมุดกิจกรรมสำคัญ" className="shrink-0 text-amber-500">
-                                <Pin className="w-3.5 h-3.5 fill-amber-500" />
+                            {description && (
+                              <span className="text-[11px] text-slate-400 block truncate mt-0.5 max-w-xs">
+                                {description}
                               </span>
                             )}
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* เวลาและสถานที่ */}
-                        <td className="py-3.5 px-4">
-                          <div className="space-y-0.5 text-2xs">
-                            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                              <span className="truncate max-w-[180px]">{location || 'ไม่ระบุสถานที่'}</span>
+                          {/* Activity Time */}
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
+                            <div className="flex items-center gap-1.5 font-mono text-xs">
+                              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span>{timeRange || 'ตลอดทั้งวัน'}</span>
                             </div>
-                            {timeRange && (
-                              <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
-                                <Clock className="w-3 h-3 text-slate-400 shrink-0" />
-                                <span>{timeRange}</span>
-                              </div>
-                            )}
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* กลุ่มเป้าหมาย */}
-                        <td className="py-3.5 px-4">
-                          {act.targets && act.targets.some((t) => t.targetType === 'ALL') ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                              <Globe className="w-3 h-3" />
-                              ทุกคนในองค์กร
+                          {/* Target Audience */}
+                          <td className="py-3 px-4">
+                            {renderTargetBadge(act)}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3 px-4">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusInfo.color}`}
+                            >
+                              <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
+                              <span>{statusInfo.label}</span>
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                              <Building className="w-3 h-3" />
-                              {act.targets?.length || 1} แผนกเฉพาะ
-                            </span>
-                          )}
-                        </td>
+                          </td>
 
-                        {/* สถานะ */}
-                        <td className="py-3.5 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-semibold border ${st.color}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                            {st.label}
-                          </span>
-                        </td>
-
-                        {/* จัดการ */}
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end">
-                            <ActionDropdown
-                              align="right"
-                              menuClassName="w-48"
-                              items={getActivityActionItems(act)}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                          {/* Actions */}
+                          <td className="py-3 px-4 text-center">
+                            <ActionDropdown items={getActivityActionItems(act)} />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
 
             {/* Pagination */}
-            {viewMode === 'list' && filteredActivities.length > 0 && (
-              <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-                <TablePagination
-                  total={filteredActivities.length}
-                  page={page}
-                  pageSize={pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={(newSize) => {
-                    setPageSize(newSize);
-                    setPage(1);
-                  }}
-                />
-              </div>
-            )}
+            <div className="pt-2">
+              <TablePagination
+                total={filteredActivities.length}
+                page={page}
+                pageSize={pageSize}
+                onPageChange={setPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100]}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* ─── 3. Create / Edit Activity Modal ─── */}
-      {isModalOpen && (
-        <ModalShell
-          className="bg-slate-900/40 backdrop-blur-xs z-50 animate-in fade-in duration-150"
-          innerClassName="items-center justify-center p-4"
-        >
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 overflow-y-auto max-h-[90vh]">
+      {/* ─── 3. Detail Reading Modal ─── */}
+      {readingActivity && (
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
             <ModalHeader
               icon={Sparkles}
-              title={modalMode === 'create' ? 'เพิ่มประกาศกิจกรรมองค์กร' : 'แก้ไขข้อมูลประกาศกิจกรรม'}
+              title="รายละเอียดประกาศกิจกรรม"
+              onClose={() => setReadingActivity(null)}
+            />
+
+            <div className="p-6 overflow-y-auto space-y-4 text-xs">
+              {/* Activity Header */}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-2xs">
+                    ประกาศกิจกรรม
+                  </span>
+                  {readingActivity.isPinned && (
+                    <span className="font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-2xs flex items-center gap-1">
+                      <Pin className="w-2.5 h-2.5 fill-amber-500" /> ปักหมุด
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2">
+                  {readingActivity.title}
+                </h3>
+              </div>
+
+              {/* Schedule Info Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-700/60">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-primary dark:text-blue-300 flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-2xs text-slate-400 block">วันที่จัดกิจกรรม</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {formatThaiDate(readingActivity.publishedAt || readingActivity.createdAt)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-2xs text-slate-400 block">เวลาจัดกิจกรรม</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      {parseActivityMeta(readingActivity.content).timeRange || 'ตลอดทั้งวัน'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Target Audience */}
+              <div>
+                <span className="text-2xs text-slate-400 block mb-1">กลุ่มเป้าหมายผู้เข้าร่วม:</span>
+                <div>{renderTargetBadge(readingActivity)}</div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <span className="text-2xs text-slate-400 block mb-1">รายละเอียดกิจกรรม:</span>
+                <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60">
+                  {parseActivityMeta(readingActivity.content).description || 'ไม่มีรายละเอียดเพิ่มเติม'}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+              <Button variant="secondary" onClick={() => setReadingActivity(null)}>
+                ปิดหน้าต่าง
+              </Button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
+      {/* ─── 4. Create / Edit Activity Modal ─── */}
+      {isModalOpen && (
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-xl w-full p-6 max-h-[92vh] overflow-y-auto border border-slate-200 dark:border-slate-700">
+            <ModalHeader
+              icon={Sparkles}
+              title={modalMode === 'create' ? 'เพิ่มประกาศกิจกรรมใหม่' : 'แก้ไขข้อมูลประกาศกิจกรรม'}
               onClose={() => setIsModalOpen(false)}
             />
 
             <form onSubmit={handleSubmitForm} className="space-y-4 pt-4 text-xs font-sans">
-              {/* ชื่อกิจกรรม */}
+              {/* Title */}
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  ชื่อกิจกรรม / หัวข้ออีเวนต์ <span className="text-rose-500">*</span>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  ชื่อกิจกรรม / หัวข้อประกาศ <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="เช่น กิจกรรม Town Hall ประจำไตรมาส, อบรมความปลอดภัยในการทำงาน"
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"
+                  placeholder="เช่น กิจกรรม Town Hall ประจำไตรมาส, สัมมนา AI for HR..."
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
 
-              {/* วันที่จัดกิจกรรม (Start & End) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Dates: Start & End */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่จัดกิจกรรม <span className="text-rose-500">*</span>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วันที่เริ่มจัดกิจกรรม <span className="text-rose-500">*</span>
                   </label>
                   <ThaiDatePicker
                     value={formStartDate}
-                    onChange={(val) => {
-                      setFormStartDate(val);
-                      if (!formEndDate || formEndDate < val) setFormEndDate(val);
-                    }}
+                    onChange={setFormStartDate}
+                    placeholder="เลือกวันที่เริ่ม"
+                    className="w-full"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่สิ้นสุดกิจกรรม (กรณีจัดหลายวัน)
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วันที่สิ้นสุดกิจกรรม (กรณีหลายวัน)
                   </label>
                   <ThaiDatePicker
                     value={formEndDate}
-                    onChange={(val) => setFormEndDate(val)}
+                    onChange={setFormEndDate}
+                    placeholder="เลือกวันที่สิ้นสุด"
+                    className="w-full"
                   />
                 </div>
               </div>
 
-              {/* เวลาจัดกิจกรรม */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Time Pickers */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <ThaiTimePicker
                   label="เวลาเริ่มกิจกรรม"
                   value={formStartTime}
-                  onChange={(val) => setFormStartTime(val)}
+                  onChange={setFormStartTime}
                 />
                 <ThaiTimePicker
                   label="เวลาสิ้นสุดกิจกรรม"
                   value={formEndTime}
-                  onChange={(val) => setFormEndTime(val)}
+                  onChange={setFormEndTime}
                 />
               </div>
 
-              {/* สถานที่จัดกิจกรรม */}
+              {/* Description */}
               <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  สถานที่จัดกิจกรรม หรือ ลิงก์ห้องประชุมออนไลน์
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น ห้องประชุมใหญ่ ชั้น 4 หรือ Zoom Meeting / Google Meet"
-                  value={formLocation}
-                  onChange={(e) => setFormLocation(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"
-                />
-              </div>
-
-              {/* รายละเอียดและกำหนดการ */}
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   รายละเอียดกิจกรรมและกำหนดการ
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="ระบุวัตถุประสงค์ กำหนดการ หรือสิ่งที่ต้องเตรียมมาร่วมกิจกรรม..."
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs leading-relaxed"
+                  placeholder="ระบุวัตถุประสงค์ กำหนดการ หรือสิ่งที่ต้องเตรียมมาร่วมกิจกรรม..."
+                  className="w-full px-3.5 py-2.5 bg-[#F1F5F9] dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-y"
                 />
               </div>
 
-              {/* รูปภาพแบนเนอร์กิจกรรม */}
-              <div>
-                <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  URL รูปภาพแบนเนอร์กิจกรรม (ไม่บังคับ)
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://example.com/activity-banner.jpg"
-                  value={formBannerUrl}
-                  onChange={(e) => setFormBannerUrl(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"
-                />
-              </div>
-
-              {/* กลุ่มเป้าหมายผู้เข้าร่วม */}
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
-                <label className="block font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-primary" />
-                  กลุ่มเป้าหมายผู้เข้าร่วมกิจกรรม
-                </label>
-                <div className="flex items-center gap-4 pt-1">
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="targetType"
-                      checked={formTargetType === 'ALL'}
-                      onChange={() => setFormTargetType('ALL')}
-                      className="text-primary focus:ring-primary"
-                    />
-                    <span className="text-xs text-slate-700 dark:text-slate-300">ทุกคนในองค์กร (ทุกแผนก)</span>
+              {/* Rich Target Audience: ALL, DIVISION, DEPARTMENT, TEAM, EMPLOYEE */}
+              <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-700/60">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    กลุ่มเป้าหมายผู้เข้าร่วมกิจกรรม
                   </label>
-                  <label className="inline-flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="targetType"
-                      checked={formTargetType === 'DEPARTMENT'}
-                      onChange={() => setFormTargetType('DEPARTMENT')}
-                      className="text-primary focus:ring-primary"
-                    />
-                    <span className="text-xs text-slate-700 dark:text-slate-300">เฉพาะบางแผนก</span>
-                  </label>
+                  <span className="text-2xs text-slate-400">
+                    {formTargetType === 'ALL' && 'พนักงานทุกคนในองค์กร'}
+                    {formTargetType === 'DIVISION' && `เลือกไว้ ${formTargetDivisionIds.length} ฝ่าย`}
+                    {formTargetType === 'DEPARTMENT' && `เลือกไว้ ${formTargetDeptIds.length} แผนก`}
+                    {formTargetType === 'TEAM' && `เลือกไว้ ${formTargetTeamIds.length} ทีม`}
+                    {formTargetType === 'EMPLOYEE' && `เลือกไว้ ${formTargetEmployeeIds.length} ท่าน`}
+                  </span>
                 </div>
 
-                {formTargetType === 'DEPARTMENT' && (
-                  <div className="pt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 border-t border-slate-200 dark:border-slate-700 mt-2">
-                    {departments.map((dept) => {
-                      const checked = formTargetDeptIds.includes(dept.id);
-                      return (
-                        <label
-                          key={dept.id}
-                          className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition ${
-                            checked
-                              ? 'bg-primary/10 border-primary text-primary font-semibold'
-                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-                          }`}
+                {/* Target Type Selector Segmented Controls */}
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-center">
+                  {[
+                    { id: 'ALL', label: 'ทุกคนในองค์กร', icon: Globe },
+                    { id: 'DIVISION', label: 'ฝ่าย', icon: Building2 },
+                    { id: 'DEPARTMENT', label: 'แผนก', icon: Building },
+                    { id: 'TEAM', label: 'ทีม', icon: Users },
+                    { id: 'EMPLOYEE', label: 'รายบุคคล', icon: UserCheck },
+                  ].map((tab) => {
+                    const isSelected = formTargetType === tab.id;
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setFormTargetType(tab.id as TargetType)}
+                        className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg text-2xs font-semibold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white dark:bg-slate-800 text-primary dark:text-blue-300 shadow-2xs font-bold'
+                            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'
+                        }`}
+                      >
+                        <Icon className="w-3.5 h-3.5 mb-0.5" />
+                        <span className="truncate">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Target Scope Panels */}
+                {formTargetType === 'ALL' && (
+                  <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-200/60 dark:border-blue-800/40 text-blue-700 dark:text-blue-300 text-xs flex items-center gap-2">
+                    <Globe className="w-4 h-4 shrink-0" />
+                    <span>พนักงานทุกคนในทุกฝ่าย แผนก และทีม สามารถมองเห็นและเข้าร่วมกิจกรรมนี้ได้</span>
+                  </div>
+                )}
+
+                {formTargetType === 'DIVISION' && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between text-2xs text-slate-500">
+                      <span>เลือกฝ่ายที่ต้องการให้เข้าร่วม:</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetDivisionIds(divisions.map((d) => d.id))}
+                          className="text-primary hover:underline cursor-pointer"
                         >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFormTargetDeptIds([...formTargetDeptIds, dept.id]);
-                              } else {
-                                setFormTargetDeptIds(formTargetDeptIds.filter((id) => id !== dept.id));
-                              }
-                            }}
-                            className="rounded text-primary focus:ring-primary"
-                          />
-                          <span className="truncate">{dept.departmentName}</span>
-                        </label>
-                      );
-                    })}
+                          เลือกทั้งหมด
+                        </button>
+                        <span>|</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetDivisionIds([])}
+                          className="text-slate-400 hover:underline cursor-pointer"
+                        >
+                          ยกเลิกทั้งหมด
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                      {divisions.map((div) => {
+                        const checked = formTargetDivisionIds.includes(div.id);
+                        return (
+                          <label
+                            key={div.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                              checked
+                                ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-semibold'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked) setFormTargetDivisionIds([...formTargetDivisionIds, div.id]);
+                                else setFormTargetDivisionIds(formTargetDivisionIds.filter((id) => id !== div.id));
+                              }}
+                              className="accent-primary"
+                            />
+                            <span className="truncate">{div.divisionName}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {formTargetType === 'DEPARTMENT' && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between text-2xs text-slate-500">
+                      <span>เลือกแผนกที่ต้องการให้เข้าร่วม:</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetDeptIds(departments.map((d) => d.id))}
+                          className="text-primary hover:underline cursor-pointer"
+                        >
+                          เลือกทั้งหมด
+                        </button>
+                        <span>|</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetDeptIds([])}
+                          className="text-slate-400 hover:underline cursor-pointer"
+                        >
+                          ยกเลิกทั้งหมด
+                        </button>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                      {departments.map((dept) => {
+                        const checked = formTargetDeptIds.includes(dept.id);
+                        return (
+                          <label
+                            key={dept.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                              checked
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-semibold'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked) setFormTargetDeptIds([...formTargetDeptIds, dept.id]);
+                                else setFormTargetDeptIds(formTargetDeptIds.filter((id) => id !== dept.id));
+                              }}
+                              className="accent-primary"
+                            />
+                            <span className="truncate">{dept.departmentName}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {formTargetType === 'TEAM' && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between text-2xs text-slate-500">
+                      <span>เลือกทีมที่ต้องการให้เข้าร่วม:</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetTeamIds(teams.map((t) => t.id))}
+                          className="text-primary hover:underline cursor-pointer"
+                        >
+                          เลือกทั้งหมด
+                        </button>
+                        <span>|</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetTeamIds([])}
+                          className="text-slate-400 hover:underline cursor-pointer"
+                        >
+                          ยกเลิกทั้งหมด
+                        </button>
+                      </div>
+                    </div>
+                    {teams.length === 0 ? (
+                      <p className="text-center text-2xs text-slate-400 py-3">ยังไม่มีข้อมูลทีมในระบบ</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                        {teams.map((tm) => {
+                          const checked = formTargetTeamIds.includes(tm.id);
+                          return (
+                            <label
+                              key={tm.id}
+                              className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                checked
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
+                                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) => {
+                                  if (e.target.checked) setFormTargetTeamIds([...formTargetTeamIds, tm.id]);
+                                  else setFormTargetTeamIds(formTargetTeamIds.filter((id) => id !== tm.id));
+                                }}
+                                className="accent-primary"
+                              />
+                              <span className="truncate">{tm.teamName}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {formTargetType === 'EMPLOYEE' && (
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="flex items-center justify-between text-2xs text-slate-500">
+                      <span>ระบุพนักงานที่ต้องการให้เข้าร่วม:</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetEmployeeIds(employees.map((e) => e.id))}
+                          className="text-primary hover:underline cursor-pointer"
+                        >
+                          เลือกทั้งหมด
+                        </button>
+                        <span>|</span>
+                        <button
+                          type="button"
+                          onClick={() => setFormTargetEmployeeIds([])}
+                          className="text-slate-400 hover:underline cursor-pointer"
+                        >
+                          ยกเลิกทั้งหมด
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Employee Search Bar */}
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="พิมพ์ค้นหาชื่อ หรือรหัสพนักงาน..."
+                        value={empSearchFilter}
+                        onChange={(e) => setEmpSearchFilter(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-2xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-44 overflow-y-auto">
+                      {filteredEmployeesForSelection.map((emp) => {
+                        const checked = formTargetEmployeeIds.includes(emp.id);
+                        return (
+                          <label
+                            key={emp.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                              checked
+                                ? 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-200 font-semibold'
+                                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                if (e.target.checked) setFormTargetEmployeeIds([...formTargetEmployeeIds, emp.id]);
+                                else setFormTargetEmployeeIds(formTargetEmployeeIds.filter((id) => id !== emp.id));
+                              }}
+                              className="accent-primary"
+                            />
+                            <div className="truncate text-2xs">
+                              <span className="font-bold">{emp.fullName}</span>
+                              <span className="text-slate-400 ml-1 font-mono">({emp.employeeCode})</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* ตัวเลือกเสริม: ปักหมุด และ สถานะ */}
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-100 dark:border-slate-700">
-                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+              {/* Pin & Status Settings */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                <label className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer">
                   <input
                     type="checkbox"
                     checked={formIsPinned}
                     onChange={(e) => setFormIsPinned(e.target.checked)}
-                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                    className="accent-primary w-4 h-4"
                   />
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                    <Pin className="w-3.5 h-3.5 text-amber-500" />
-                    ปักหมุดกิจกรรมสำคัญไว้บนสุด
-                  </span>
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">ปักหมุดกิจกรรมนี้</span>
+                    <span className="text-2xs text-slate-400 block">แสดงไว้บนสุดของปฏิทินและตาราง</span>
+                  </div>
                 </label>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-500">สถานะ:</span>
-                  <select
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    สถานะเมื่อบันทึก
+                  </label>
+                  <CustomSelect
                     value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value as any)}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300"
-                  >
-                    <option value="PUBLISHED">เผยแพร่ทันที</option>
-                    <option value="DRAFT">บันทึกเป็นแบบร่าง</option>
-                  </select>
+                    onChange={(val) => setFormStatus(val as any)}
+                    className="w-full"
+                    options={[
+                      { value: 'PUBLISHED', label: 'เผยแพร่กิจกรรม' },
+                      { value: 'DRAFT', label: 'บันทึกเป็นฉบับร่าง' },
+                    ]}
+                  />
                 </div>
               </div>
 
-              {/* Modal Footer Buttons */}
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-700">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-700/60">
                 <Button
-                  variant="secondary"
-                  size="sm"
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  variant="secondary"
                   disabled={submitting}
+                  onClick={() => setIsModalOpen(false)}
                 >
                   ยกเลิก
                 </Button>
                 <Button
-                  variant="primary"
-                  size="sm"
                   type="submit"
                   loading={submitting}
                 >
-                  {modalMode === 'create' ? 'บันทึกและประกาศกิจกรรม' : 'บันทึกการแก้ไข'}
+                  {modalMode === 'create' ? 'สร้างประกาศกิจกรรม' : 'บันทึกการแก้ไข'}
                 </Button>
               </div>
             </form>
@@ -1030,113 +1453,9 @@ export const ActivitiesTab: React.FC<ActivitiesTabProps> = ({
         </ModalShell>
       )}
 
-      {/* ─── 4. Reading / Detail Modal ─── */}
-      {readingActivity && (
-        <ModalShell
-          className="bg-slate-900/40 backdrop-blur-xs z-50 animate-in fade-in duration-150"
-          innerClassName="items-center justify-center p-4"
-        >
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 overflow-y-auto max-h-[90vh] space-y-4 font-sans">
-            <ModalHeader
-              icon={Sparkles}
-              title={readingActivity.title}
-              onClose={() => setReadingActivity(null)}
-            />
-
-            {readingActivity.bannerImageUrl && (
-              <img
-                src={readingActivity.bannerImageUrl}
-                alt={readingActivity.title}
-                className="w-full h-48 sm:h-64 object-cover rounded-xl border border-slate-200 dark:border-slate-700"
-              />
-            )}
-
-            {/* Event Info Bar */}
-            {(() => {
-              const { location, timeRange, description } = parseActivityMeta(readingActivity.content);
-              const startStr = readingActivity.publishedAt || readingActivity.createdAt;
-              const endStr = readingActivity.expireAt;
-              const statusInfo = getActivityStatusInfo(readingActivity);
-
-              return (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2.5 text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-semibold border ${statusInfo.color}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
-                        {statusInfo.label}
-                      </span>
-                      {readingActivity.isPinned && (
-                        <span className="text-2xs text-amber-600 font-semibold flex items-center gap-1">
-                          <Pin className="w-3 h-3 fill-amber-500" /> ปักหมุด
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                        <CalendarCheck className="w-4 h-4 text-primary shrink-0" />
-                        <div>
-                          <p className="text-2xs text-slate-400">วันที่จัดกิจกรรม</p>
-                          <p className="font-bold">
-                            {formatThaiDate(startStr)}
-                            {endStr && endStr.substring(0, 10) !== startStr?.substring(0, 10) && ` - ${formatThaiDate(endStr)}`}
-                          </p>
-                        </div>
-                      </div>
-
-                      {timeRange && (
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                          <Clock className="w-4 h-4 text-primary shrink-0" />
-                          <div>
-                            <p className="text-2xs text-slate-400">เวลาจัดกิจกรรม</p>
-                            <p className="font-bold">{timeRange}</p>
-                          </div>
-                        </div>
-                      )}
-
-                      {location && (
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300 sm:col-span-2">
-                          <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
-                          <div>
-                            <p className="text-2xs text-slate-400">สถานที่ / ลิงก์</p>
-                            <p className="font-bold">{location}</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Content / Agenda */}
-                  <div className="p-4 rounded-xl border border-slate-100 dark:border-slate-700/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                    <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-2 text-sm">
-                      รายละเอียดและกำหนดการ
-                    </h4>
-                    {description || 'ไม่มีรายละเอียดเพิ่มเติม'}
-                  </div>
-
-                  <div className="flex items-center justify-end pt-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setReadingActivity(null)}
-                    >
-                      ปิดหน้าต่าง
-                    </Button>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </ModalShell>
-      )}
-
       {/* ─── 5. Read Stats Modal ─── */}
       {statsModalOpen && (
-        <ModalShell
-          className="bg-slate-900/40 backdrop-blur-xs z-50 animate-in fade-in duration-150"
-          innerClassName="items-center justify-center p-4"
-        >
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" innerClassName="items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 font-sans space-y-4">
             <ModalHeader
               icon={BarChart2}
