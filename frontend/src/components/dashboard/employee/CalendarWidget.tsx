@@ -368,23 +368,33 @@ export const CalendarWidget: React.FC = () => {
                 <span>กิจกรรม ({activitiesThisMonthCount})</span>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsAllEventsModalOpen(true)}
-              className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] text-[11px] font-bold flex items-center gap-0.5 transition-colors cursor-pointer"
-            >
-              <span>ดูทั้งหมด</span>
-              <span className="text-xs leading-none font-bold">›</span>
-            </button>
+            {selectedEvents.length > 2 && (
+              <button
+                type="button"
+                onClick={() => setIsAllEventsModalOpen(true)}
+                className="text-slate-800 dark:text-slate-200 hover:text-[#94292B] text-[11px] font-bold flex items-center gap-0.5 transition-colors cursor-pointer"
+              >
+                <span>ดูทั้งหมด</span>
+                <span className="text-xs leading-none font-bold">›</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Selected Date Details Box (ขยายขอบ panel ขึ้นใกล้แถบสัญลักษณ์ ลดช่องว่าง) */}
         {selectedEvents.length > 0 ? (
           <div
-            onClick={() => setIsAllEventsModalOpen(true)}
-            className="mt-1 flex-1 min-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-center gap-1.5 px-2.5 py-1.5 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-            title="คลิกเพื่อดูรายการทั้งหมด"
+            onClick={() => {
+              if (selectedEvents.length > 2) {
+                setIsAllEventsModalOpen(true);
+              }
+            }}
+            className={`mt-1 flex-1 min-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-center gap-1.5 px-2.5 py-1.5 overflow-hidden text-[10.5px] transition-colors ${
+              selectedEvents.length > 2
+                ? 'cursor-pointer hover:border-slate-300 dark:hover:border-slate-600'
+                : ''
+            }`}
+            title={selectedEvents.length > 2 ? 'คลิกเพื่อดูรายการทั้งหมด' : undefined}
           >
             {selectedEvents.slice(0, 2).map((ev, idx) => (
               <div
