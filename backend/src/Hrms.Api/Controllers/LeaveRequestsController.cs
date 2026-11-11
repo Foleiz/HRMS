@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Hrms.Api.Filters;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Common.Models;
@@ -124,6 +124,8 @@ public class LeaveRequestsController : ControllerBase
         [FromQuery] string startDate,
         [FromQuery] string endDate,
         [FromQuery] bool halfDay = false,
+        [FromQuery] long? leaveTypeId = null,
+        [FromQuery] bool? includeHolidays = null,
         CancellationToken cancellationToken = default)
     {
         if (!DateOnly.TryParseExact(startDate, "yyyy-MM-dd", out var start) ||
@@ -134,7 +136,9 @@ public class LeaveRequestsController : ControllerBase
 
         try
         {
-            var result = await _requestService.CalculateLeaveDaysAsync(start, end, halfDay, cancellationToken);
+            var resolvedIncludeHolidays = includeHolidays ?? await _requestService.ResolveIncludeHolidaysAsync(
+                _currentUser.EmployeeId, leaveTypeId, start, cancellationToken);
+            var result = await _requestService.CalculateLeaveDaysAsync(start, end, halfDay, resolvedIncludeHolidays, cancellationToken);
             return Ok(ApiResponse<LeaveDaysCalculationDto>.Ok(result, "คำนวณจำนวนวันลาสำเร็จ"));
         }
         catch (InvalidOperationException ex)

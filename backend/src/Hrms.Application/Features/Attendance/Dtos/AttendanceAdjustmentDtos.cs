@@ -19,6 +19,8 @@ public class AttendanceAdjustmentDto
     public DateTime? OriginalClockOut { get; set; }
     public DateTime? AdjustedClockIn { get; set; }
     public DateTime? AdjustedClockOut { get; set; }
+    public string? OriginalStatus { get; set; }
+    public string? RequestedStatus { get; set; }
     public string Reason { get; set; } = string.Empty;
     public string Status { get; set; } = "PENDING";
     public DateTime CreatedAt { get; set; }
@@ -33,6 +35,7 @@ public class CreateAttendanceAdjustmentRequest
     public string? WorkDate { get; set; }
     public DateTime? AdjustedClockIn { get; set; }
     public DateTime? AdjustedClockOut { get; set; }
+    public string? RequestedStatus { get; set; }
     public string Reason { get; set; } = string.Empty;
 }
 

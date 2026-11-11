@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useLoadPhase } from '@/hooks/useLoadPhase';
 import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
@@ -35,7 +35,7 @@ import { GeneralDocumentRequest } from '@/types/generalDocument';
 import { GeneralDocumentPreviewModal } from '@/components/documents/GeneralDocumentPreviewModal';
 import { benefitService } from '@/services/benefitService';
 import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
-import { AttendanceAdjustment } from '@/types/attendanceAdjustment';
+import { AttendanceAdjustment, getAttendanceStatusLabel } from '@/types/attendanceAdjustment';
 import { BenefitClaimRequest } from '@/types/benefit';
 import { BenefitClaimReviewModal, BenefitClaimReviewMode } from '@/components/benefits/BenefitClaimReviewModal';
 import { LeavePreviewModal, type LeavePreviewData } from '@/components/documents/LeavePreviewModal';
@@ -483,7 +483,7 @@ export default function LeaveRequestsApprovalPage() {
         departmentName: adj.departmentName || '-',
         positionName: adj.positionName || '-',
         subType: 'ปรับเวลา',
-        details: `${formatDate(adj.workDate)} • เข้า ${formatTime(adj.adjustedClockIn)} ออก ${formatTime(adj.adjustedClockOut)}${adj.reason ? ` • ${adj.reason}` : ''}`,
+        details: `${formatDate(adj.workDate)} • ขอปรับสถานะเป็น ${getAttendanceStatusLabel(adj.requestedStatus || 'PRESENT')}${adj.reason ? ` • ${adj.reason}` : ''}`,
         submittedAt: adj.createdAt || null,
         status: adj.status,
         currentApproverDisplay: isPending ? 'ผู้ดูแลเวลาทำงาน' : null,

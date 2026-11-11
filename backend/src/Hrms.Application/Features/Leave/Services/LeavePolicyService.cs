@@ -55,7 +55,8 @@ public class LeavePolicyService : ILeavePolicyService
                 MaxOccurrencesPerYear = p.MaxOccurrencesPerYear,
                 CarryForwardMaxDays = p.CarryForwardMaxDays,
                 DocumentGraceDays = p.DocumentGraceDays,
-                ProrationMethod = p.ProrationMethod
+                ProrationMethod = p.ProrationMethod,
+                IncludeHolidays = p.IncludeHolidays
             })
             .ToListAsync(cancellationToken);
     }
@@ -97,7 +98,8 @@ public class LeavePolicyService : ILeavePolicyService
             MaxOccurrencesPerYear = p.MaxOccurrencesPerYear,
             CarryForwardMaxDays = p.CarryForwardMaxDays,
             DocumentGraceDays = p.DocumentGraceDays,
-            ProrationMethod = p.ProrationMethod
+            ProrationMethod = p.ProrationMethod,
+            IncludeHolidays = p.IncludeHolidays
         };
     }
 
@@ -136,7 +138,8 @@ public class LeavePolicyService : ILeavePolicyService
             MaxDaysPerOccurrence = request.MaxDaysPerOccurrence,
             MaxOccurrencesPerYear = request.MaxOccurrencesPerYear,
             DocumentGraceDays = request.DocumentGraceDays is > 0 ? request.DocumentGraceDays : null,
-            ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod)
+            ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod),
+            IncludeHolidays = request.IncludeHolidays
         };
 
         _context.LeavePolicies.Add(policy);
@@ -181,6 +184,7 @@ public class LeavePolicyService : ILeavePolicyService
         policy.MaxOccurrencesPerYear = request.MaxOccurrencesPerYear;
         policy.DocumentGraceDays = request.DocumentGraceDays is > 0 ? request.DocumentGraceDays : null;
         policy.ProrationMethod = LeavePolicyRules.NormalizeProration(request.ProrationMethod);
+        policy.IncludeHolidays = request.IncludeHolidays;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -235,4 +239,45 @@ public class LeavePolicyService : ILeavePolicyService
                 "มีสิทธิ์การลาของประเภทการลาและกลุ่มพนักงานนี้อยู่แล้วในช่วงเวลาเดียวกัน กรุณาแก้ไขรายการเดิมแทนการสร้างใหม่");
     }
 
+    public async Task<LeaveHolidaySettingsDto> GetHolidaySettingsAsync(CancellationToken cancellationToken = default)
+    {
+        var company = await _context.Companies
+            .AsNoTracking()
+            .OrderBy(c => c.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return new LeaveHolidaySettingsDto
+        {
+            IncludeHolidays = company?.LeaveIncludeHolidays ?? false
+        };
+    }
+
+    public async Task<LeaveHolidaySettingsDto> UpdateHolidaySettingsAsync(UpdateLeaveHolidaySettingsRequest request, CancellationToken cancellationToken = default)
+    {
+        var company = await _context.Companies
+            .OrderBy(c => c.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (company != null)
+        {
+            company.LeaveIncludeHolidays = request.IncludeHolidays;
+            company.UpdatedAt = DateTime.UtcNow;
+        }
+
+        if (request.ApplyToExistingPolicies)
+        {
+            var policies = await _context.LeavePolicies.ToListAsync(cancellationToken);
+            foreach (var p in policies)
+            {
+                p.IncludeHolidays = request.IncludeHolidays;
+            }
+        }
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return new LeaveHolidaySettingsDto
+        {
+            IncludeHolidays = request.IncludeHolidays
+        };
+    }
 }

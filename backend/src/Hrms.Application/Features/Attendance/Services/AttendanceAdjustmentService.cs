@@ -140,7 +140,7 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
     {
         if (string.IsNullOrWhiteSpace(request.Reason))
         {
-            throw new ValidationException("กรุณาระบุเหตุผลในการขอปรับปรุงเวลา");
+            throw new ValidationException("กรุณาระบุเหตุผลในการขอปรับสถานะการเข้างาน");
         }
 
         var empId = requestedByEmployeeId > 0 ? requestedByEmployeeId : 0;
@@ -163,7 +163,7 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
         {
             if (workDate > DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7)))
             {
-                throw new ValidationException("ขอปรับเวลาได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว");
+                throw new ValidationException("ขอปรับสถานะได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว");
             }
 
             if (empId > 0)
@@ -189,11 +189,11 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             throw new KeyNotFoundException($"ไม่พบข้อมูลบันทึกเวลาประจำวันสำหรับวันที่ระบุ");
         }
 
-        // ห้ามขอปรับเวลาของวันที่ยังมาไม่ถึง (เวลาไทย UTC+7 ไม่มี DST)
+        // ห้ามขอปรับของวันที่ยังมาไม่ถึง (เวลาไทย UTC+7 ไม่มี DST)
         var todayTh = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         if (daily.WorkDate > todayTh)
         {
-            throw new ValidationException("ขอปรับเวลาได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว");
+            throw new ValidationException("ขอปรับสถานะได้เฉพาะวันนี้หรือวันที่ผ่านมาแล้ว");
         }
 
         if (empId == 0)
@@ -207,8 +207,12 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
 
         if (hasPending)
         {
-            throw new ValidationException("มีคำขอปรับปรุงเวลาสำหรับวันนี้ที่กำลังรอดำเนินการอยู่แล้ว");
+            throw new ValidationException("มีคำขอปรับสถานะสำหรับวันนี้ที่กำลังรอดำเนินการอยู่แล้ว");
         }
+
+        var requestedStatus = string.IsNullOrWhiteSpace(request.RequestedStatus)
+            ? "PRESENT"
+            : request.RequestedStatus.Trim().ToUpperInvariant();
 
         var adjustment = new AttendanceAdjustment
         {
@@ -216,8 +220,10 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             RequestedByEmployeeId = empId,
             OriginalClockIn = EnsureUtc(daily.ActualIn),
             OriginalClockOut = EnsureUtc(daily.ActualOut),
-            AdjustedClockIn = EnsureUtc(request.AdjustedClockIn),
-            AdjustedClockOut = EnsureUtc(request.AdjustedClockOut),
+            AdjustedClockIn = EnsureUtc(daily.ActualIn),
+            AdjustedClockOut = EnsureUtc(daily.ActualOut),
+            OriginalStatus = daily.Status,
+            RequestedStatus = requestedStatus,
             Reason = request.Reason.Trim(),
             Status = "PENDING",
             CreatedAt = DateTime.UtcNow
@@ -254,7 +260,7 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
         // ห้ามพิจารณาคำขอของตนเอง
         if (reviewedByEmployeeId > 0 && adjustment.RequestedByEmployeeId == reviewedByEmployeeId)
         {
-            throw new ValidationException("ไม่สามารถพิจารณาคำขอปรับเวลาของตนเองได้");
+            throw new ValidationException("ไม่สามารถพิจารณาคำขอปรับสถานะของตนเองได้");
         }
 
         var statusUpper = request.Status.Trim().ToUpperInvariant();
@@ -272,20 +278,33 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             var daily = adjustment.AttendanceDaily;
             if (daily != null)
             {
-                if (adjustment.AdjustedClockIn.HasValue)
-                {
-                    daily.ActualIn = EnsureUtc(adjustment.AdjustedClockIn.Value);
-                }
-                if (adjustment.AdjustedClockOut.HasValue)
-                {
-                    daily.ActualOut = EnsureUtc(adjustment.AdjustedClockOut.Value);
-                }
+                // แก้ไขเฉพาะสถานะการเข้างานตามที่ขอปรับ โดยไม่แก้ไขเวลาสแกนเข้า-ออกจริง
+                var targetStatus = !string.IsNullOrWhiteSpace(adjustment.RequestedStatus)
+                    ? adjustment.RequestedStatus.Trim().ToUpperInvariant()
+                    : "PRESENT";
 
-                daily.IsAbsent = false;
-                daily.Status = "PRESENT";
+                daily.Status = targetStatus;
+                daily.IsAbsent = targetStatus == "ABSENT";
 
-                // Recalculate attendance stats
-                AttendanceDailyService.RecalculateAttendance(daily, daily.Shift);
+                if (targetStatus == "PRESENT" || targetStatus == "HOLIDAY_WORK" || targetStatus == "LEAVE")
+                {
+                    daily.LateMinutes = 0;
+                    daily.EarlyLeaveMinutes = 0;
+                }
+                else if (targetStatus == "EARLY_LEAVE")
+                {
+                    daily.LateMinutes = 0;
+                }
+                else if (targetStatus == "LATE")
+                {
+                    daily.EarlyLeaveMinutes = 0;
+                }
+                else if (targetStatus == "ABSENT" || targetStatus == "HOLIDAY" || targetStatus == "OFF")
+                {
+                    daily.LateMinutes = 0;
+                    daily.EarlyLeaveMinutes = 0;
+                    daily.WorkedMinutes = 0;
+                }
             }
         }
 
@@ -347,6 +366,8 @@ public class AttendanceAdjustmentService : IAttendanceAdjustmentService
             OriginalClockOut = item.OriginalClockOut,
             AdjustedClockIn = item.AdjustedClockIn,
             AdjustedClockOut = item.AdjustedClockOut,
+            OriginalStatus = !string.IsNullOrWhiteSpace(item.OriginalStatus) ? item.OriginalStatus : daily?.Status,
+            RequestedStatus = !string.IsNullOrWhiteSpace(item.RequestedStatus) ? item.RequestedStatus : "PRESENT",
             Reason = item.Reason,
             Status = item.Status,
             CreatedAt = item.CreatedAt,

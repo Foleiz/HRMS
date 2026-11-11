@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -896,7 +896,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                 onClick={() => onSelectRole(role.id)}
                 className={`p-4 rounded-2xl border transition-all cursor-pointer relative ${
                   isSelected
-                    ? 'theme-light text-white shadow-md'
+                    ? 'stat-panel text-white shadow-md'
                     : 'bg-white dark:bg-slate-800 border-slate-200/80 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-xs'
                 }`}
                 style={

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 
 import { ModalShell } from '@/components/ui/ModalShell';
@@ -33,6 +33,7 @@ interface LeavePolicyModalProps {
   onClose: () => void;
   onSuccess: () => void;
   policyToEdit?: LeavePolicy | null;
+  defaultIncludeHolidays?: boolean;
   leaveTypes: LeaveType[];
   employeeLevels: EmployeeLevelOption[];
   onSubmitCreate: (data: CreateLeavePolicyPayload) => Promise<void>;
@@ -44,6 +45,7 @@ type NumInput = number | '';
 interface PolicyForm {
   entitlementDays: NumInput;
   prorationMethod: LeaveProrationMethod;
+  includeHolidays: boolean;
   minimumServiceDays: NumInput;
   advanceRequestDays: NumInput;
   maxLifetimeOccurrences: NumInput;
@@ -58,28 +60,28 @@ interface PolicyForm {
 /** ค่าแนะนำตามหมวดการลา (อ้างอิงแนวปฏิบัติทั่วไปตามกฎหมายแรงงาน — ปรับได้ทุกช่อง) */
 const TEMPLATES: Record<LeaveFormCategory, PolicyForm> = {
   SICK: {
-    entitlementDays: 30, prorationMethod: 'FULL', minimumServiceDays: 0,
+    entitlementDays: 30, prorationMethod: 'FULL', includeHolidays: false, minimumServiceDays: 0,
     advanceRequestDays: 0,
     maxLifetimeOccurrences: '',
     isDocumentRequired: true, documentRequiredAfterDays: 3, documentGraceDays: 7,
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   PERSONAL: {
-    entitlementDays: 3, prorationMethod: 'FULL', minimumServiceDays: 0,
+    entitlementDays: 3, prorationMethod: 'FULL', includeHolidays: false, minimumServiceDays: 0,
     advanceRequestDays: 1,
     maxLifetimeOccurrences: '',
     isDocumentRequired: false, documentRequiredAfterDays: '', documentGraceDays: '',
     isCarryForwardAllowed: false, carryForwardMaxDays: '', carryForwardExpiryMonths: '',
   },
   VACATION: {
-    entitlementDays: 6, prorationMethod: 'PRORATA_MONTHLY', minimumServiceDays: 365,
+    entitlementDays: 6, prorationMethod: 'PRORATA_MONTHLY', includeHolidays: false, minimumServiceDays: 365,
     advanceRequestDays: 7,
     maxLifetimeOccurrences: '',
     isDocumentRequired: false, documentRequiredAfterDays: '', documentGraceDays: '',
     isCarryForwardAllowed: true, carryForwardMaxDays: 6, carryForwardExpiryMonths: 3,
   },
   SPECIAL: {
-    entitlementDays: 0, prorationMethod: 'FULL', minimumServiceDays: 0,
+    entitlementDays: 0, prorationMethod: 'FULL', includeHolidays: false, minimumServiceDays: 0,
     advanceRequestDays: 7,
     maxLifetimeOccurrences: '',
     isDocumentRequired: true, documentRequiredAfterDays: '', documentGraceDays: 7,
@@ -98,6 +100,7 @@ const fromNum = (v?: number | null): NumInput => (v === null || v === undefined 
 const policyToForm = (p: LeavePolicy): PolicyForm => ({
   entitlementDays: p.entitlementDays,
   prorationMethod: (p.prorationMethod as LeaveProrationMethod) || 'FULL',
+  includeHolidays: Boolean(p.includeHolidays),
   minimumServiceDays: p.minimumServiceDays,
   advanceRequestDays: p.advanceRequestDays,
   maxLifetimeOccurrences: fromNum(p.maxLifetimeOccurrences),
@@ -174,6 +177,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
   onClose,
   onSuccess,
   policyToEdit,
+  defaultIncludeHolidays = false,
   leaveTypes,
   employeeLevels,
   onSubmitCreate,
@@ -223,7 +227,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
       setEmployeeTypeId('');
       setEmployeeLevelId('');
       setEffectiveFrom(todayIso());
-      setForm(TEMPLATES[categoryOf(firstId)]);
+      setForm({ ...TEMPLATES[categoryOf(firstId)], includeHolidays: defaultIncludeHolidays });
     }
     setError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -233,7 +237,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
   const handleLeaveTypeChange = (id: number) => {
     setLeaveTypeId(id);
-    if (!isEditing) setForm(TEMPLATES[categoryOf(id)]); // สร้างใหม่: ใช้ค่าแนะนำของหมวดนั้น
+    if (!isEditing) setForm({ ...TEMPLATES[categoryOf(id)], includeHolidays: defaultIncludeHolidays }); // สร้างใหม่: ใช้ค่าแนะนำของหมวดนั้น
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -250,6 +254,7 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
         employeeLevelId: employeeLevelId === '' ? null : Number(employeeLevelId),
         entitlementDays: Number(form.entitlementDays),
         prorationMethod: form.prorationMethod,
+        includeHolidays: form.includeHolidays,
         minimumServiceDays: toNum(form.minimumServiceDays) ?? 0,
         isAllowedDuringProbation: true,
         advanceRequestDays: toNum(form.advanceRequestDays) ?? 0,
@@ -356,6 +361,42 @@ export const LeavePolicyModal: React.FC<LeavePolicyModalProps> = ({
 
           {/* 3. เงื่อนไขการยื่น */}
           <Section no={3} title="เงื่อนไขการยื่นลา">
+            {/* การนับวันหยุดระหว่างช่วงลา */}
+            <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 space-y-2">
+              <div className="text-xs font-semibold text-gray-700 dark:text-slate-200">
+                การนับวันหยุดระหว่างช่วงลา
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => set('includeHolidays', false)}
+                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    !form.includeHolidays
+                      ? 'border-primary bg-primary/5 dark:bg-primary/15 ring-1 ring-primary/30'
+                      : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/40'
+                  }`}
+                >
+                  <div className="text-xs font-bold text-gray-900 dark:text-slate-100">ไม่นับรวมวันหยุด</div>
+                  <div className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                    นับเฉพาะวันทำงาน (เช่น ศ.–จ. = 2 วัน)
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set('includeHolidays', true)}
+                  className={`text-left p-2.5 rounded-xl border transition-all cursor-pointer ${
+                    form.includeHolidays
+                      ? 'border-primary bg-primary/5 dark:bg-primary/15 ring-1 ring-primary/30'
+                      : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/40'
+                  }`}
+                >
+                  <div className="text-xs font-bold text-gray-900 dark:text-slate-100">นับรวมวันหยุด</div>
+                  <div className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                    รวมวันหยุดสัปดาห์/บริษัท (เช่น ศ.–จ. = 4 วัน)
+                  </div>
+                </button>
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="ต้องยื่นล่วงหน้าอย่างน้อย">
                 <NumberBox value={form.advanceRequestDays} onChange={(v) => set('advanceRequestDays', v)} unit="วัน" />

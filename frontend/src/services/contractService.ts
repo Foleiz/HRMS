@@ -7,21 +7,87 @@ import {
   RenewContractRequest,
   UpdateContractRequest,
   EmployeeCareerTimeline,
+  ContractSettings,
 } from '@/types/contract';
+
+const CONTRACT_SETTINGS_STORAGE_KEY = 'hrms_contract_settings_v1';
+
+export const DEFAULT_CONTRACT_SETTINGS: ContractSettings = {
+  probationDays: 119,
+  fixedTermDays: 365,
+  probationAlertDays: 30,
+  contractAlertDays: 30,
+};
 
 /**
  * Service สำหรับเรียก API จัดการสัญญาจ้างงานและวงจรชีวิตพนักงาน
  */
 export const contractService = {
+  // ดึงค่าตั้งค่าเกณฑ์สัญญาจ้างงาน (จาก localStorage หรือค่าเริ่มต้น)
+  getSettings(): ContractSettings {
+    if (typeof window === 'undefined') return { ...DEFAULT_CONTRACT_SETTINGS };
+    try {
+      const raw = window.localStorage.getItem(CONTRACT_SETTINGS_STORAGE_KEY);
+      if (!raw) return { ...DEFAULT_CONTRACT_SETTINGS };
+      const parsed = JSON.parse(raw) as Partial<ContractSettings>;
+      return {
+        probationDays:
+          typeof parsed.probationDays === 'number' && parsed.probationDays >= 1 && parsed.probationDays <= 1825
+            ? Math.round(parsed.probationDays)
+            : DEFAULT_CONTRACT_SETTINGS.probationDays,
+        fixedTermDays:
+          typeof parsed.fixedTermDays === 'number' && parsed.fixedTermDays >= 1 && parsed.fixedTermDays <= 3650
+            ? Math.round(parsed.fixedTermDays)
+            : DEFAULT_CONTRACT_SETTINGS.fixedTermDays,
+        probationAlertDays:
+          typeof parsed.probationAlertDays === 'number' && parsed.probationAlertDays >= 1 && parsed.probationAlertDays <= 365
+            ? Math.round(parsed.probationAlertDays)
+            : DEFAULT_CONTRACT_SETTINGS.probationAlertDays,
+        contractAlertDays:
+          typeof parsed.contractAlertDays === 'number' && parsed.contractAlertDays >= 1 && parsed.contractAlertDays <= 365
+            ? Math.round(parsed.contractAlertDays)
+            : DEFAULT_CONTRACT_SETTINGS.contractAlertDays,
+      };
+    } catch {
+      return { ...DEFAULT_CONTRACT_SETTINGS };
+    }
+  },
+
+  // บันทึกค่าตั้งค่าเกณฑ์สัญญาจ้างงาน
+  saveSettings(settings: ContractSettings): ContractSettings {
+    const sanitized: ContractSettings = {
+      probationDays: Math.max(
+        1,
+        Math.min(1825, Math.round(Number(settings.probationDays) || DEFAULT_CONTRACT_SETTINGS.probationDays)),
+      ),
+      fixedTermDays: Math.max(
+        1,
+        Math.min(3650, Math.round(Number(settings.fixedTermDays) || DEFAULT_CONTRACT_SETTINGS.fixedTermDays)),
+      ),
+      probationAlertDays: Math.max(
+        1,
+        Math.min(365, Math.round(Number(settings.probationAlertDays) || DEFAULT_CONTRACT_SETTINGS.probationAlertDays)),
+      ),
+      contractAlertDays: Math.max(
+        1,
+        Math.min(365, Math.round(Number(settings.contractAlertDays) || DEFAULT_CONTRACT_SETTINGS.contractAlertDays)),
+      ),
+    };
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(CONTRACT_SETTINGS_STORAGE_KEY, JSON.stringify(sanitized));
+    }
+    return sanitized;
+  },
+
   // ดึงรายการสัญญาจ้างงานทั้งหมด พร้อมตัวกรอง
   async getAll(params?: { search?: string; contractType?: string; status?: string }): Promise<EmploymentContract[]> {
     const res = await apiClient.get<ApiResponse<EmploymentContract[]>>('/employment-contracts', { params });
     return res.data.data;
   },
 
-  // ดึงข้อมูลสถิติสรุป KPI (ทดลองงาน, ประจำ, ใกล้ครบกำหนด 7 วัน)
-  async getStats(): Promise<ContractSummaryStats> {
-    const res = await apiClient.get<ApiResponse<ContractSummaryStats>>('/employment-contracts/stats');
+  // ดึงข้อมูลสถิติสรุป KPI (ทดลองงาน, ประจำ, ใกล้ครบกำหนดตามเกณฑ์วันแจ้งเตือน)
+  async getStats(params?: { probationAlertDays?: number; contractAlertDays?: number }): Promise<ContractSummaryStats> {
+    const res = await apiClient.get<ApiResponse<ContractSummaryStats>>('/employment-contracts/stats', { params });
     return res.data.data;
   },
 

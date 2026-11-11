@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import Link from 'next/link';
@@ -24,15 +24,22 @@ import {
   Download,
   Upload,
   FileSearch,
+  Settings,
 } from 'lucide-react';
 import { openBlobInNewTab } from '@/lib/filePreview';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TablePagination } from '@/components/ui/TablePagination';
-import { contractService } from '@/services/contractService';
+import { contractService, DEFAULT_CONTRACT_SETTINGS } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
-import { EmploymentContract, ContractSummaryStats, CreateContractRequest, RenewContractRequest } from '@/types/contract';
+import {
+  EmploymentContract,
+  ContractSummaryStats,
+  CreateContractRequest,
+  RenewContractRequest,
+  ContractSettings,
+} from '@/types/contract';
 import { Employee } from '@/types/employee';
 import CreateContractModal from '@/components/contracts/CreateContractModal';
 import RenewContractModal from '@/components/contracts/RenewContractModal';
@@ -40,6 +47,7 @@ import ContractDetailModal from '@/components/contracts/ContractDetailModal';
 import EmployeeTimelineModal from '@/components/contracts/EmployeeTimelineModal';
 import AttachContractModal from '@/components/contracts/AttachContractModal';
 import ContractDocumentPreviewModal from '@/components/contracts/ContractDocumentPreviewModal';
+import ContractSettingsModal from '@/components/contracts/ContractSettingsModal';
 import { ActionDropdown, type ActionDropdownItem } from '@/components/ui/ActionDropdown';
 import { Button, TabBar, TableToolbar, AvatarName } from '@/components/ui';
 
@@ -51,6 +59,10 @@ function ContractsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [contractSettings, setContractSettings] = useState<ContractSettings>(() =>
+    contractService.getSettings(),
+  );
 
   const { hasPermission, hasRole } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
@@ -111,7 +123,7 @@ function ContractsPageContent() {
   }, [setBreadcrumb]);
 
   // Fetch initial data
-  const fetchData = async () => {
+  const fetchData = async (activeSettings: ContractSettings = contractSettings) => {
     try {
       setLoading(true);
       const isCustomFilter =
@@ -123,7 +135,10 @@ function ContractsPageContent() {
           contractType: selectedContractType !== 'ALL' ? selectedContractType : undefined,
           status: selectedStatus !== 'ALL' && !isCustomFilter ? selectedStatus : undefined,
         }),
-        contractService.getStats(),
+        contractService.getStats({
+          probationAlertDays: activeSettings.probationAlertDays,
+          contractAlertDays: activeSettings.contractAlertDays,
+        }),
         employeeService.getAll(),
       ]);
 
@@ -142,49 +157,50 @@ function ContractsPageContent() {
       today.setHours(0, 0, 0, 0);
 
       if (selectedStatus === 'CONTRACT_EXPIRING') {
-        filtered = contractsData.filter((c) => {
+        filtered = filtered.filter((c) => {
           if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED') return false;
           const cEnd = new Date(c.contractEndDate);
           cEnd.setHours(0, 0, 0, 0);
           const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return diffDays >= 0 && diffDays <= 30;
+          return diffDays >= 0 && diffDays <= activeSettings.contractAlertDays;
         });
       } else if (selectedStatus === 'PROBATION_EXPIRING') {
-        filtered = contractsData.filter((c) => {
+        filtered = filtered.filter((c) => {
           if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED') return false;
           const pEnd = new Date(c.probationEndDate);
           pEnd.setHours(0, 0, 0, 0);
           const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return diffDays >= 0 && diffDays <= 30;
+          return diffDays >= 0 && diffDays <= activeSettings.probationAlertDays;
         });
       }
+
+      const uniqueList = Array.from(uniqueByEmp.values());
+      const computedContractExpiringCount = uniqueList.filter((c) => {
+        if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
+          return false;
+        const cEnd = new Date(c.contractEndDate);
+        cEnd.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= 0 && diffDays <= activeSettings.contractAlertDays;
+      }).length;
+
+      const computedProbationExpiringCount = uniqueList.filter((c) => {
+        if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
+          return false;
+        const pEnd = new Date(c.probationEndDate);
+        pEnd.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        return diffDays >= 0 && diffDays <= activeSettings.probationAlertDays;
+      }).length;
 
       setContracts(filtered);
       setStats({
         ...statsData,
         fixedTermCount:
           statsData.fixedTermCount ??
-          contractsData.filter((c) => c.contractType === 'FIXED_TERM' && c.status === 'ACTIVE').length,
-        contractExpiring30DaysCount:
-          statsData.contractExpiring30DaysCount ??
-          contractsData.filter((c) => {
-            if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
-              return false;
-            const cEnd = new Date(c.contractEndDate);
-            cEnd.setHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-            return diffDays >= 0 && diffDays <= 30;
-          }).length,
-        probationExpiring30DaysCount:
-          statsData.probationExpiring30DaysCount ??
-          contractsData.filter((c) => {
-            if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
-              return false;
-            const pEnd = new Date(c.probationEndDate);
-            pEnd.setHours(0, 0, 0, 0);
-            const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-            return diffDays >= 0 && diffDays <= 30;
-          }).length,
+          uniqueList.filter((c) => c.contractType === 'FIXED_TERM' && c.status === 'ACTIVE').length,
+        contractExpiring30DaysCount: computedContractExpiringCount,
+        probationExpiring30DaysCount: computedProbationExpiringCount,
       });
       setEmployees(employeesData);
     } catch (err: any) {
@@ -196,8 +212,16 @@ function ContractsPageContent() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, [searchTerm, selectedContractType, selectedStatus]);
+    fetchData(contractSettings);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedContractType, selectedStatus, contractSettings]);
+
+  // Handle Save Settings
+  const handleSaveSettings = (newSettings: ContractSettings) => {
+    const saved = contractService.saveSettings(newSettings);
+    setContractSettings(saved);
+    toast.success('บันทึกการตั้งค่าเกณฑ์สัญญาจ้างงานเรียบร้อยแล้ว');
+  };
 
   // Handle Create Contract
   const handleCreateContract = async (payload: CreateContractRequest) => {
@@ -265,7 +289,7 @@ function ContractsPageContent() {
     }
   };
 
-    // ฟังก์ชันคำนวณและแสดงสถานะสัญญาจ้าง (แสดงใกล้ครบกำหนดทดลองงาน ... วัน)
+  // ฟังก์ชันคำนวณและแสดงสถานะสัญญาจ้าง (ตามเกณฑ์วันแจ้งเตือนที่ตั้งค่าไว้)
   const renderContractStatus = (contract: EmploymentContract) => {
     if (contract.status === 'COMPLETED' || contract.status === 'TERMINATED' || contract.status === 'CANCELLED') {
       return (
@@ -286,7 +310,7 @@ function ContractsPageContent() {
       const diffTime = contractEnd.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays > 0 && diffDays <= 30) {
+      if (diffDays > 0 && diffDays <= contractSettings.contractAlertDays) {
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-800/40">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -317,7 +341,7 @@ function ContractsPageContent() {
       const diffTime = probEnd.getTime() - today.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diffDays > 0 && diffDays <= 30) {
+      if (diffDays > 0 && diffDays <= contractSettings.probationAlertDays) {
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-800/40">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -444,10 +468,6 @@ function ContractsPageContent() {
 
   return (
     <div className="space-y-5 font-sans pb-12">
-
-
-
-
       {/* 4. KPI Stat Cards (4 Cards: กำลังจ้างงาน, สัญญาจ้างชั่วคราว, ใกล้ครบทดลองงาน, ใกล้สิ้นสุดสัญญา) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: กำลังจ้างงาน */}
@@ -492,7 +512,7 @@ function ContractsPageContent() {
           </div>
         </div>
 
-        {/* Card 3: ใกล้ครบทดลองงาน (30 วัน) */}
+        {/* Card 3: ใกล้ครบทดลองงาน (ตามค่าที่ตั้งไว้) */}
         <div
           onClick={() => {
             setSelectedStatus((prev) => (prev === 'PROBATION_EXPIRING' ? 'ALL' : 'PROBATION_EXPIRING'));
@@ -502,18 +522,20 @@ function ContractsPageContent() {
           className={`bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
             selectedStatus === 'PROBATION_EXPIRING' ? 'ring-2 ring-amber-500 shadow-md' : ''
           }`}
-          title="คลิกเพื่อกรองสัญญาที่ใกล้ครบกำหนดทดลองงาน"
+          title={`คลิกเพื่อกรองสัญญาที่ใกล้ครบกำหนดทดลองงานใน ${contractSettings.probationAlertDays} วัน`}
         >
           <div>
             <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300 mb-1 group-hover:text-amber-900 transition-colors">ใกล้ครบทดลองงาน</h4>
-            <p className="text-xs text-amber-700/80 dark:text-amber-400">ต้องประเมินผลใน 30 วัน</p>
+            <p className="text-xs text-amber-700/80 dark:text-amber-400">
+              ต้องประเมินผลใน {contractSettings.probationAlertDays} วัน
+            </p>
           </div>
           <div className="bg-white dark:bg-amber-900/60 shadow-xs border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200 px-3.5 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.probationExpiring30DaysCount ?? stats.probationExpiring7DaysCount ?? 0}
           </div>
         </div>
 
-        {/* Card 4: ใกล้สิ้นสุดสัญญา (30 วัน) */}
+        {/* Card 4: ใกล้สิ้นสุดสัญญา (ตามค่าที่ตั้งไว้) */}
         <div
           onClick={() => {
             setSelectedStatus((prev) => (prev === 'CONTRACT_EXPIRING' ? 'ALL' : 'CONTRACT_EXPIRING'));
@@ -523,11 +545,13 @@ function ContractsPageContent() {
           className={`bg-rose-100 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 rounded-2xl p-5 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center justify-between cursor-pointer select-none group ${
             selectedStatus === 'CONTRACT_EXPIRING' ? 'ring-2 ring-rose-500 shadow-md' : ''
           }`}
-          title="คลิกเพื่อกรองสัญญาจ้างที่ใกล้หมดอายุใน 30 วัน"
+          title={`คลิกเพื่อกรองสัญญาจ้างที่ใกล้หมดอายุใน ${contractSettings.contractAlertDays} วัน`}
         >
           <div>
             <h4 className="text-sm font-bold text-rose-800 dark:text-rose-300 mb-1 group-hover:text-rose-900 transition-colors">ใกล้สิ้นสุดสัญญา</h4>
-            <p className="text-xs text-rose-700/80 dark:text-rose-400">สัญญาหมดอายุใน 30 วัน</p>
+            <p className="text-xs text-rose-700/80 dark:text-rose-400">
+              สัญญาหมดอายุใน {contractSettings.contractAlertDays} วัน
+            </p>
           </div>
           <div className="bg-white dark:bg-rose-900/60 shadow-xs border border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-200 px-3.5 py-1.5 rounded-xl font-black text-2xl tracking-tight">
             {stats.contractExpiring30DaysCount ?? 0}
@@ -538,7 +562,7 @@ function ContractsPageContent() {
       {/* 5. Main Card Container with Filters & Table (มาตรฐานระบบแบบหน้าจัดการฝ่าย) */}
       <div id="tour-contract-table-container" className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm">
         <div className="space-y-4">
-          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มเพิ่มด้านขวา */}
+          {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มตั้งค่าและปุ่มเพิ่มด้านขวา */}
           <TableToolbar
             searchValue={searchTerm}
             onSearchChange={setSearchTerm}
@@ -572,25 +596,39 @@ function ContractsPageContent() {
                   options={[
                     { value: 'ALL', label: 'สถานะทั้งหมด' },
                     { value: 'ACTIVE', label: '1. กำลังจ้างงาน' },
-                    { value: 'CONTRACT_EXPIRING', label: '2. ใกล้สิ้นสุดสัญญา' },
-                    { value: 'PROBATION_EXPIRING', label: '3. ใกล้ครบกำหนดทดลองงาน' },
+                    { value: 'CONTRACT_EXPIRING', label: `2. ใกล้สิ้นสุดสัญญา (${contractSettings.contractAlertDays} วัน)` },
+                    { value: 'PROBATION_EXPIRING', label: `3. ใกล้ครบทดลองงาน (${contractSettings.probationAlertDays} วัน)` },
                     { value: 'TERMINATED', label: '4. สิ้นสุดสัญญาแล้ว' },
                   ]}
                 />
               </>
             }
             actions={
-              canCreateContracts ? (
-                <Button
-                  id="tour-contract-add-btn"
-                  data-tour="tour-contract-add-btn"
-                  onClick={() => setIsCreateModalOpen(true)}
-                  icon={<Plus className="w-4 h-4" />}
-                  className="shrink-0 self-start sm:self-auto"
-                >
-                  สร้างสัญญาใหม่
-                </Button>
-              ) : null
+              <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+                {(canCreateContracts || canEditContracts) && (
+                  <Button
+                    id="tour-contract-settings-btn"
+                    variant="secondary"
+                    onClick={() => setIsSettingsModalOpen(true)}
+                    icon={<Settings className="w-4 h-4" />}
+                    className="shrink-0"
+                    title="ตั้งค่าระยะเวลาทดลองงาน สัญญาจ้าง และเกณฑ์แจ้งเตือนล่วงหน้า"
+                  >
+                    ตั้งค่าสัญญา
+                  </Button>
+                )}
+                {canCreateContracts && (
+                  <Button
+                    id="tour-contract-add-btn"
+                    data-tour="tour-contract-add-btn"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    icon={<Plus className="w-4 h-4" />}
+                    className="shrink-0"
+                  >
+                    สร้างสัญญาใหม่
+                  </Button>
+                )}
+              </div>
             }
           />
 
@@ -599,68 +637,67 @@ function ContractsPageContent() {
             <table className="table-standard w-full min-w-[850px] text-left border-collapse text-xs whitespace-nowrap">
               <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทสัญญา</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">เริ่มสัญญา</th>
-                <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
-                <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {loading ? (
-                <TableLoading colSpan={5} text="กำลังโหลดข้อมูลสัญญาจ้างงาน..." />
-              ) : paginatedContracts.length === 0 ? (
-                <TableEmpty colSpan={5} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
-              ) : (
-                paginatedContracts.map((contract, index) => (
-                  <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
-                    {/* พนักงาน: อรวรรณ ใจดี · EMP-0142 */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      <Link
-                        href={`/employees/${contract.employeeId}`}
-                        className="inline-flex hover:opacity-80 transition-opacity"
-                        title={contract.employeeCode}
-                      >
-                        <AvatarName
-                          id={contract.employeeId}
-                          name={contract.employeeName}
-                          prefix={contract.employeePrefix ?? employeeById.get(contract.employeeId)?.prefix}
-                          avatarUrl={contract.avatarUrl ?? employeeById.get(contract.employeeId)?.avatarUrl}
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">พนักงาน</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">ประเภทสัญญา</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">เริ่มสัญญา</th>
+                  <th className="py-3.5 px-6 font-medium whitespace-nowrap">สถานะ</th>
+                  <th className="py-3.5 px-6 font-medium text-right whitespace-nowrap">การจัดการ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {loading ? (
+                  <TableLoading colSpan={5} text="กำลังโหลดข้อมูลสัญญาจ้างงาน..." />
+                ) : paginatedContracts.length === 0 ? (
+                  <TableEmpty colSpan={5} text="ไม่พบข้อมูลสัญญาจ้างงาน" />
+                ) : (
+                  paginatedContracts.map((contract, index) => (
+                    <tr key={contract.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                      {/* พนักงาน: อรวรรณ ใจดี · EMP-0142 */}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        <Link
+                          href={`/employees/${contract.employeeId}`}
+                          className="inline-flex hover:opacity-80 transition-opacity"
+                          title={contract.employeeCode}
+                        >
+                          <AvatarName
+                            id={contract.employeeId}
+                            name={contract.employeeName}
+                            prefix={contract.employeePrefix ?? employeeById.get(contract.employeeId)?.prefix}
+                            avatarUrl={contract.avatarUrl ?? employeeById.get(contract.employeeId)?.avatarUrl}
+                          />
+                        </Link>
+                      </td>
+
+                      {/* ประเภทสัญญา: ทดลองงาน, ประจำ, สัญญาจ้าง, ฝึกงาน */}
+                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {contract.employeeTypeName || contract.contractTypeDisplay}
+                      </td>
+
+                      {/* เริ่มสัญญา: 01/07/2569 */}
+                      <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {contract.startDateDisplay}
+                      </td>
+
+                      {/* สถานะ: กำลังจ้างงาน (เขียว), สิ้นสุดสัญญาแล้ว (เทา), ใกล้ครบกำหนดทดลองงาน ... วัน (ส้ม) */}
+                      <td className="py-4 px-6 whitespace-nowrap">
+                        {renderContractStatus(contract)}
+                      </td>
+
+                      {/* 3-Dots Action Menu */}
+                      <td className="py-4 px-6 text-right whitespace-nowrap">
+                        <ActionDropdown
+                          id={index === 0 ? 'tour-contract-action-btn' : undefined}
+                          dataTour="tour-contract-action-btn"
+                          menuClassName="w-52"
+                          items={getContractActionItems(contract)}
                         />
-                      </Link>
-                    </td>
-
-                    {/* ประเภทสัญญา: ทดลองงาน, ประจำ, สัญญาจ้าง, ฝึกงาน */}
-                    <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {contract.employeeTypeName || contract.contractTypeDisplay}
-                    </td>
-
-                    {/* เริ่มสัญญา: 01/07/2569 */}
-                    <td className="py-4 px-6 text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {contract.startDateDisplay}
-                    </td>
-
-                    {/* สถานะ: กำลังจ้างงาน (เขียว), สิ้นสุดสัญญาแล้ว (เทา), ใกล้ครบกำหนดทดลองงาน ... วัน (ส้ม) */}
-                    <td className="py-4 px-6 whitespace-nowrap">
-                      {renderContractStatus(contract)}
-                    </td>
-
-                    {/* 3-Dots Action Menu */}
-                    <td className="py-4 px-6 text-right whitespace-nowrap">
-                      <ActionDropdown
-                        id={index === 0 ? 'tour-contract-action-btn' : undefined}
-                        dataTour="tour-contract-action-btn"
-                        menuClassName="w-52"
-                        items={getContractActionItems(contract)}
-                      />
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-
-        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
           {/* Table Footer with TablePagination มาตรฐานระบบ */}
           {contracts.length > 0 && (
@@ -679,6 +716,14 @@ function ContractsPageContent() {
       </div>
 
       {/* 8. Modals */}
+      {/* Modal ตั้งค่าเกณฑ์สัญญาจ้างงาน */}
+      <ContractSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        currentSettings={contractSettings}
+        onSave={handleSaveSettings}
+      />
+
       {/* Modal ต่ออายุสัญญาจ้างงาน */}
       <RenewContractModal
         contract={selectedContractForRenew}
@@ -688,6 +733,7 @@ function ContractsPageContent() {
           setSelectedContractForRenew(null);
         }}
         onSubmit={handleRenewContract}
+        contractSettings={contractSettings}
       />
 
       <CreateContractModal
@@ -695,6 +741,7 @@ function ContractsPageContent() {
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateContract}
         employees={employees}
+        contractSettings={contractSettings}
       />
 
       <ContractDetailModal

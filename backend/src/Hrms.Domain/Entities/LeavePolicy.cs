@@ -1,4 +1,4 @@
-using Hrms.Domain.Common;
+﻿using Hrms.Domain.Common;
 
 namespace Hrms.Domain.Entities;
 
@@ -31,6 +31,8 @@ public class LeavePolicy : BaseEntity
     public int? DocumentGraceDays { get; set; }
     /// <summary>วิธีคิดสิทธิ์ปีแรกของพนักงานใหม่: FULL (เต็มปี) หรือ PRORATA_MONTHLY (ตามสัดส่วนเดือนที่เหลือ)</summary>
     public string ProrationMethod { get; set; } = "FULL";
+    /// <summary>นับรวมวันหยุดประจำสัปดาห์และวันหยุดบริษัทในวันลาหรือไม่ (false = นับเฉพาะวันทำงาน, true = นับทุกวัน)</summary>
+    public bool IncludeHolidays { get; set; } = false;
 
     // Navigation Properties
     public virtual LeaveType? LeaveType { get; set; }

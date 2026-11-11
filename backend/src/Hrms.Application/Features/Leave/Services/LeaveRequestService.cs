@@ -288,7 +288,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         }
 
         // คำนวณวันลาใหม่ฝั่ง server — นับเฉพาะวันทำงานตามวันทำงานประจำสัปดาห์ และไม่นับวันหยุดบริษัท
-        var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
+        var calc = await ResolveLeaveDaysAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
         var year = ToThaiDate(request.StartDatetime).Year;
 
         // ตรวจโควตา (ยื่นจริงเท่านั้น) — สร้างยอดวันลาให้อัตโนมัติถ้ายังไม่มี และหักยอดที่รออนุมัติของใบอื่นก่อน
@@ -377,7 +377,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         }
 
         // คำนวณวันลาใหม่ฝั่ง server (ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท)
-        var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
+        var calc = await ResolveLeaveDaysAsync(leaveRequest.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime, request.LeaveDays, request.IsDraft, cancellationToken);
 
         DateOnly? draftDocumentDueDate = null;
         if (!request.IsDraft)
@@ -462,7 +462,7 @@ public partial class LeaveRequestService : ILeaveRequestService
         await EnsurePayrollPeriodOpenAsync(request.StartDatetime, request.EndDatetime, "อนุมัติ", cancellationToken);
 
         // คำนวณวันลาใหม่ตามวันทำงานประจำสัปดาห์ / วันหยุดบริษัท (แก้ค่าที่อาจนับเสาร์–อาทิตย์มาจากหน้าเว็บเดิม)
-        var calc = await ResolveLeaveDaysAsync(request.StartDatetime, request.EndDatetime, request.LeaveDays, allowZero: true, cancellationToken);
+        var calc = await ResolveLeaveDaysAsync(request.EmployeeId, request.LeaveTypeId, request.StartDatetime, request.EndDatetime, request.LeaveDays, allowZero: true, cancellationToken);
         request.LeaveDays = calc.LeaveDays;
         request.LeaveHours = calc.LeaveHours;
 

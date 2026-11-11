@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Hrms.Api.Middlewares;
 using Hrms.Application.Common.Interfaces;
 using Hrms.Application.Features.Announcements.Services;
@@ -294,6 +294,10 @@ using (var scope = app.Services.CreateScope())
             ALTER TABLE hrms.employment_contract ADD COLUMN IF NOT EXISTS document_uploaded_at timestamptz NULL;
 
             ALTER TABLE hrms.approval_instance ADD COLUMN IF NOT EXISTS flow_snapshot_json text NULL;
+            ALTER TABLE hrms.attendance_adjustment ADD COLUMN IF NOT EXISTS original_status varchar(30) NULL;
+            ALTER TABLE hrms.attendance_adjustment ADD COLUMN IF NOT EXISTS requested_status varchar(30) NULL;
+            ALTER TABLE hrms.company ADD COLUMN IF NOT EXISTS leave_include_holidays boolean NOT NULL DEFAULT false;
+            ALTER TABLE hrms.leave_policy ADD COLUMN IF NOT EXISTS include_holidays boolean NOT NULL DEFAULT false;
 
             -- ระบบทีม (Team Master)
             CREATE TABLE IF NOT EXISTS hrms.team (

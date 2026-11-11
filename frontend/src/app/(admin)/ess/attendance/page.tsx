@@ -34,7 +34,6 @@ import {
   Calendar,
 } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
-import ThaiTimePicker from '@/components/common/ThaiTimePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { TH_MONTHS } from '@/lib/thaiDate';
 
@@ -179,11 +178,15 @@ function EssAttendancePageContent() {
     workDate: string;
     adjustedClockIn: string;
     adjustedClockOut: string;
+    originalStatus?: string;
+    requestedStatus: string;
     reason: string;
   }>({
     workDate: new Date().toISOString().split('T')[0],
-    adjustedClockIn: '08:30',
-    adjustedClockOut: '17:30',
+    adjustedClockIn: '',
+    adjustedClockOut: '',
+    originalStatus: undefined,
+    requestedStatus: 'PRESENT',
     reason: '',
   });
 
@@ -273,8 +276,10 @@ function EssAttendancePageContent() {
       setFormData({
         attendanceId: record.id > 0 ? record.id : undefined,
         workDate: record.workDate,
-        adjustedClockIn: record.actualIn ? formatInputTime(record.actualIn) : '08:30',
-        adjustedClockOut: record.actualOut ? formatInputTime(record.actualOut) : '17:30',
+        adjustedClockIn: record.actualIn ? formatInputTime(record.actualIn) : '',
+        adjustedClockOut: record.actualOut ? formatInputTime(record.actualOut) : '',
+        originalStatus: record.status,
+        requestedStatus: 'PRESENT',
         reason: '',
       });
     } else {
@@ -283,8 +288,10 @@ function EssAttendancePageContent() {
       setFormData({
         attendanceId: matched && matched.id > 0 ? matched.id : undefined,
         workDate: todayStr,
-        adjustedClockIn: matched?.actualIn ? formatInputTime(matched.actualIn) : '08:30',
-        adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : '17:30',
+        adjustedClockIn: matched?.actualIn ? formatInputTime(matched.actualIn) : '',
+        adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : '',
+        originalStatus: matched?.status,
+        requestedStatus: 'PRESENT',
         reason: '',
       });
     }
@@ -325,6 +332,7 @@ function EssAttendancePageContent() {
         workDate: formData.workDate,
         adjustedClockIn: formData.adjustedClockIn ? `${formData.workDate}T${formData.adjustedClockIn}:00` : null,
         adjustedClockOut: formData.adjustedClockOut ? `${formData.workDate}T${formData.adjustedClockOut}:00` : null,
+        requestedStatus: formData.requestedStatus || 'PRESENT',
         reason: formData.reason.trim(),
       };
 
@@ -450,6 +458,18 @@ function EssAttendancePageContent() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
             วันหยุดนักขัตฤกษ์
+          </span>
+        );
+      case 'LEAVE':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-50 text-sky-700 border border-sky-200">
+            ลา
+          </span>
+        );
+      case 'HOLIDAY_WORK':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+            ทำงานวันหยุด
           </span>
         );
       case 'OFF':
@@ -796,8 +816,9 @@ function EssAttendancePageContent() {
                     <thead className="bg-slate-50/80 text-xs font-semibold text-slate-500 border-b border-slate-200 whitespace-nowrap">
                       <tr className="whitespace-nowrap">
                         <th className="py-3.5 px-4 whitespace-nowrap">วันที่ขอปรับ</th>
-                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาเดิม</th>
-                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาที่ขอปรับ</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">เวลาเข้า-ออก (สแกน)</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">สถานะเดิม</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap">สถานะที่ขอปรับ</th>
                         <th className="py-3.5 px-4 whitespace-nowrap">เหตุผล</th>
                         <th className="py-3.5 px-4 whitespace-nowrap">สถานะคำขอ</th>
                         <th className="py-3.5 px-4 whitespace-nowrap">วันที่ยื่นคำขอ</th>
@@ -813,8 +834,11 @@ function EssAttendancePageContent() {
                           <td className="py-3 px-4 font-mono text-xs text-slate-500">
                             {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
                           </td>
-                          <td className="py-3 px-4 font-mono text-xs font-semibold text-blue-700">
-                            {formatTime(adj.adjustedClockIn)} - {formatTime(adj.adjustedClockOut)}
+                          <td className="py-3 px-4">
+                            {renderStatusBadge(adj.originalStatus || undefined)}
+                          </td>
+                          <td className="py-3 px-4">
+                            {renderStatusBadge(adj.requestedStatus || 'PRESENT')}
                           </td>
                           <td className="py-3 px-4 text-xs text-slate-600 max-w-xs truncate" title={adj.reason}>
                             {adj.reason}
@@ -862,18 +886,20 @@ function EssAttendancePageContent() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs">
+                      <div className="grid grid-cols-3 gap-2 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 text-xs">
                         <div>
-                          <span className="text-[11px] text-slate-400 block">เวลาเดิม</span>
-                          <span className="font-mono text-slate-500 font-medium">
+                          <span className="text-[11px] text-slate-400 block">เวลาสแกน</span>
+                          <span className="font-mono text-slate-600 font-medium">
                             {formatTime(adj.originalClockIn)} - {formatTime(adj.originalClockOut)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[11px] text-slate-400 block">เวลาที่ขอปรับ</span>
-                          <span className="font-mono font-bold text-blue-700">
-                            {formatTime(adj.adjustedClockIn)} - {formatTime(adj.adjustedClockOut)}
-                          </span>
+                          <span className="text-[11px] text-slate-400 block mb-0.5">สถานะเดิม</span>
+                          {renderStatusBadge(adj.originalStatus || undefined)}
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-slate-400 block mb-0.5">ขอปรับเป็น</span>
+                          {renderStatusBadge(adj.requestedStatus || 'PRESENT')}
                         </div>
                       </div>
 
@@ -926,8 +952,9 @@ function EssAttendancePageContent() {
                       ...prev,
                       workDate: newDate,
                       attendanceId: matched && matched.id > 0 ? matched.id : undefined,
-                      adjustedClockIn: matched?.actualIn ? formatInputTime(matched.actualIn) : (prev.adjustedClockIn || '08:30'),
-                      adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : (prev.adjustedClockOut || '17:30'),
+                      adjustedClockIn: matched?.actualIn ? formatInputTime(matched.actualIn) : '',
+                      adjustedClockOut: matched?.actualOut ? formatInputTime(matched.actualOut) : '',
+                      originalStatus: matched?.status,
                     }));
                   }}
                   maxDate={todayLocalStr}
@@ -936,30 +963,49 @@ function EssAttendancePageContent() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาเข้างานที่ขอปรับ <span className="text-rose-500">*</span></label>
-                  <ThaiTimePicker
-                    required
-                    value={formData.adjustedClockIn}
-                    onChange={(val) => setFormData({ ...formData, adjustedClockIn: val })}
-                    align="left"
-                  />
+              {/* ข้อมูลบันทึกเวลาเดิม (แสดงเพื่ออ้างอิง แก้ไขไม่ได้) */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">สถานะปัจจุบัน</span>
+                  {renderStatusBadge(formData.originalStatus)}
                 </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">เวลาออกงานที่ขอปรับ <span className="text-rose-500">*</span></label>
-                  <ThaiTimePicker
-                    required
-                    value={formData.adjustedClockOut}
-                    onChange={(val) => setFormData({ ...formData, adjustedClockOut: val })}
-                    align="right"
-                  />
+                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-slate-200/70 dark:border-slate-700/60">
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">เวลาเข้างาน (สแกน)</span>
+                    <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      {formData.adjustedClockIn ? `${formData.adjustedClockIn} น.` : '-'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-400 block">เวลาออกงาน (สแกน)</span>
+                    <span className="font-mono text-sm font-semibold text-slate-700 dark:text-slate-200">
+                      {formData.adjustedClockOut ? `${formData.adjustedClockOut} น.` : '-'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  สถานะการเข้างานที่ขอปรับ <span className="text-rose-500">*</span>
+                </label>
+                <CustomSelect
+                  value={formData.requestedStatus}
+                  onChange={(val) => setFormData({ ...formData, requestedStatus: String(val) })}
+                  options={[
+                    { value: 'PRESENT', label: 'ตรงเวลา (มาทำงานปกติ)' },
+                    { value: 'LATE', label: 'มาสาย' },
+                    { value: 'EARLY_LEAVE', label: 'ออกก่อนเวลา' },
+                    { value: 'HOLIDAY_WORK', label: 'ทำงานวันหยุด' },
+                    { value: 'LEAVE', label: 'ลา' },
+                  ]}
+                  buttonClassName="w-full text-sm border border-slate-200 rounded-xl px-3.5 py-2.5 bg-white dark:bg-slate-800"
+                />
+              </div>
+
+              <div>
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                  เหตุผลการขอปรับปรุงเวลา <span className="text-rose-500">*</span>
+                  เหตุผลการขอปรับสถานะ <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   required

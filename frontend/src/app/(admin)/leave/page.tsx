@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Wallet,
   Lock,
+  Settings,
 } from 'lucide-react';
 import { leaveService } from '@/services/leaveService';
 import { organizationService } from '@/services/organizationService';
@@ -44,6 +45,8 @@ import { getSmartYearRange } from '@/lib/yearUtils';
 import { LeaveYearEndModal } from '@/components/leave/LeaveYearEndModal';
 import { LeaveTransactionsModal } from '@/components/leave/LeaveTransactionsModal';
 import { ConfirmModal, ConfirmType } from '@/components/ui/ConfirmModal';
+import { ModalShell } from '@/components/ui/ModalShell';
+import { ModalHeader } from '@/components/ui/ModalHeader';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -146,6 +149,11 @@ function LeaveManagementPageContent() {
   const [typeToEdit, setTypeToEdit] = useState<LeaveType | null>(null);
 
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [companyIncludeHolidays, setCompanyIncludeHolidays] = useState<boolean>(false);
+  const [isHolidaySettingsOpen, setIsHolidaySettingsOpen] = useState(false);
+  const [holidaySettingDraft, setHolidaySettingDraft] = useState<boolean>(false);
+  const [applyToExistingPolicies, setApplyToExistingPolicies] = useState<boolean>(true);
+  const [savingHolidaySettings, setSavingHolidaySettings] = useState(false);
   const [policyToEdit, setPolicyToEdit] = useState<LeavePolicy | null>(null);
 
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
@@ -225,16 +233,18 @@ function LeaveManagementPageContent() {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      const [typesData, policiesData, levelsData, employeesData] = await Promise.all([
+      const [typesData, policiesData, levelsData, employeesData, holidaySettings] = await Promise.all([
         leaveService.getLeaveTypes(),
         leaveService.getLeavePolicies(),
         organizationService.getLevels(),
         employeeService.getAll(),
+        leaveService.getLeaveHolidaySettings().catch(() => ({ includeHolidays: false })),
       ]);
       setLeaveTypes(typesData);
       setLeavePolicies(policiesData);
       setEmployeeLevels(levelsData);
       setEmployees(employeesData);
+      setCompanyIncludeHolidays(Boolean(holidaySettings?.includeHolidays));
       await fetchBalances(selectedYear);
     } catch (err) {
       console.error('Failed to load leave data', err);
@@ -309,6 +319,34 @@ function LeaveManagementPageContent() {
   };
 
   // === Handlers: Leave Policies ===
+  const handleOpenHolidaySettings = () => {
+    setHolidaySettingDraft(companyIncludeHolidays);
+    setApplyToExistingPolicies(true);
+    setIsHolidaySettingsOpen(true);
+  };
+
+  const handleSaveHolidaySettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingHolidaySettings(true);
+    try {
+      const res = await leaveService.updateLeaveHolidaySettings({
+        includeHolidays: holidaySettingDraft,
+        applyToExistingPolicies,
+      });
+      setCompanyIncludeHolidays(Boolean(res.includeHolidays));
+      if (applyToExistingPolicies) {
+        const updated = await leaveService.getLeavePolicies();
+        setLeavePolicies(updated);
+      }
+      setIsHolidaySettingsOpen(false);
+      showToast('บันทึกการตั้งค่าการนับวันหยุดสำเร็จ');
+    } catch (err: any) {
+      showAlert('ไม่สามารถบันทึกได้', err?.response?.data?.message || err?.message || 'เกิดข้อผิดพลาด', 'danger');
+    } finally {
+      setSavingHolidaySettings(false);
+    }
+  };
+
   const handleOpenCreatePolicy = () => {
     setPolicyToEdit(null);
     setIsPolicyModalOpen(true);
@@ -633,21 +671,66 @@ function LeaveManagementPageContent() {
               }}
               searchPlaceholder="ค้นหาสิทธิ์การลา หรือประเภทการลา..."
               actions={
-                canCreatePolicy && (
-                  <Button
-                    onClick={handleOpenCreatePolicy}
-                    icon={<Plus className="w-4 h-4" />}
-                    className="shrink-0 self-start sm:self-auto"
-                  >
-                    เพิ่มสิทธิ์การลา
-                  </Button>
-                )
+                <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+                  {canEditPolicy && (
+                    <Button
+                      variant="secondary"
+                      onClick={handleOpenHolidaySettings}
+                      icon={<Settings className="w-4 h-4" />}
+                    >
+                      ตั้งค่าการนับวันหยุด
+                    </Button>
+                  )}
+                  {canCreatePolicy && (
+                    <Button
+                      onClick={handleOpenCreatePolicy}
+                      icon={<Plus className="w-4 h-4" />}
+                    >
+                      เพิ่มสิทธิ์การลา
+                    </Button>
+                  )}
+                </div>
               }
             />
 
+            {/* แถบแสดงกติกาการนับวันหยุดระหว่างการลาของบริษัท */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200/80 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/60 px-4 py-3 text-xs">
+              <div className="flex items-start sm:items-center gap-2.5">
+                <Calendar className="w-4 h-4 text-primary shrink-0 mt-0.5 sm:mt-0" />
+                <div>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200">
+                    กติกาการนับวันหยุดระหว่างลา (บริษัท):{' '}
+                  </span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                      companyIncludeHolidays
+                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                    }`}
+                  >
+                    {companyIncludeHolidays ? 'นับรวมวันหยุด' : 'ไม่นับรวมวันหยุด (เฉพาะวันทำงาน)'}
+                  </span>
+                  <span className="block sm:inline sm:ml-2 text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-0">
+                    {companyIncludeHolidays
+                      ? '(ตัวอย่าง: ลา 13–16 ศ.–จ. = นับเป็น 4 วัน)'
+                      : '(ตัวอย่าง: ลา 13–16 ศ.–จ. = นับเป็น 2 วัน)'}
+                  </span>
+                </div>
+              </div>
+              {canEditPolicy && (
+                <button
+                  type="button"
+                  onClick={handleOpenHolidaySettings}
+                  className="text-xs font-semibold text-primary hover:underline shrink-0 self-end sm:self-auto cursor-pointer"
+                >
+                  เปลี่ยนการตั้งค่า
+                </button>
+              )}
+            </div>
+
             {/* Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="table-standard text-xs w-full min-w-[750px] text-left border-collapse whitespace-nowrap">
+              <table className="table-standard text-xs w-full min-w-[820px] text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50/70 border-b border-gray-100 text-xs font-semibold text-gray-500 whitespace-nowrap">
                     <th className="py-3.5 px-5">ประเภทการลา</th>
@@ -655,6 +738,7 @@ function LeaveManagementPageContent() {
                     <th className="py-3.5 px-4 text-center">สิทธิ์/ปี</th>
                     <th className="py-3.5 px-4 text-center">ทำงานครบ</th>
                     <th className="py-3.5 px-4 text-center">ยื่นล่วงหน้า</th>
+                    <th className="py-3.5 px-4 text-center">นับวันหยุด</th>
                     <th className="py-3.5 px-4 text-center">แนบเอกสาร</th>
                     <th className="py-3.5 px-4">ยกยอด</th>
                     <th className="py-3.5 px-4 text-center">จัดการ</th>
@@ -662,9 +746,9 @@ function LeaveManagementPageContent() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
                   {loading ? (
-                    <TableLoading colSpan={8} text="กำลังโหลดข้อมูลสิทธิ์การลา..." />
+                    <TableLoading colSpan={9} text="กำลังโหลดข้อมูลสิทธิ์การลา..." />
                   ) : filteredLeavePolicies.length === 0 ? (
-                    <TableEmpty colSpan={8} text={leavePolicies.length === 0 ? 'ยังไม่มีนโยบายสิทธิ์การลาในระบบ' : 'ไม่พบนโยบายสิทธิ์การลาที่ตรงกับการค้นหา'} />
+                    <TableEmpty colSpan={9} text={leavePolicies.length === 0 ? 'ยังไม่มีนโยบายสิทธิ์การลาในระบบ' : 'ไม่พบนโยบายสิทธิ์การลาที่ตรงกับการค้นหา'} />
                   ) : (
                     pagedLeavePolicies.map((policy) => (
                       <tr key={policy.id} className="hover:bg-gray-50 dark:bg-slate-800/60 transition-colors">
@@ -683,6 +767,17 @@ function LeaveManagementPageContent() {
                         </td>
                         <td className="py-4 px-4 text-center text-gray-600 dark:text-slate-400">
                           {policy.advanceRequestDays > 0 ? `${policy.advanceRequestDays} วัน` : 'วันเดียวกันได้'}
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          {policy.includeHolidays ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-700/60">
+                              รวมวันหยุด
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700">
+                              ไม่รวมวันหยุด
+                            </span>
+                          )}
                         </td>
                         <td className="py-4 px-4 text-center">
                           {policy.isDocumentRequired ? (
@@ -965,11 +1060,95 @@ function LeaveManagementPageContent() {
         onClose={() => setIsPolicyModalOpen(false)}
         onSuccess={() => {}}
         policyToEdit={policyToEdit}
+        defaultIncludeHolidays={companyIncludeHolidays}
         leaveTypes={leaveTypes}
         employeeLevels={employeeLevels}
         onSubmitCreate={handleSubmitCreatePolicy}
         onSubmitUpdate={handleSubmitUpdatePolicy}
       />
+
+      {/* Modal: ตั้งค่าการนับวันหยุดระหว่างช่วงลา (ระดับบริษัท) */}
+      {isHolidaySettingsOpen && (
+        <ModalShell className="z-50 bg-black/45 backdrop-blur-sm" innerClassName="items-center justify-center p-4">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200/80 dark:border-slate-700/70">
+            <ModalHeader
+              icon={Settings}
+              title="ตั้งค่าการนับวันหยุดระหว่างช่วงลา"
+              subtitle="กำหนดวิธีคำนวณจำนวนวันลาเมื่อมีวันหยุดคั่นกลาง"
+              onClose={() => setIsHolidaySettingsOpen(false)}
+            />
+            <form onSubmit={handleSaveHolidaySettings} className="p-6 space-y-4 text-sm">
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={() => setHolidaySettingDraft(false)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                    !holidaySettingDraft
+                      ? 'border-primary bg-primary/5 dark:bg-primary/15 ring-2 ring-primary/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">ไม่นับรวมวันหยุด (เฉพาะวันทำงาน)</span>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      ตัวอย่าง: 2 วัน
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    นับเฉพาะวันทำงานตามตารางประจำสัปดาห์ ไม่รวมวันหยุดประจำสัปดาห์และวันหยุดบริษัท (เช่น ลา 13–16 ศ. ส. อา. จ. = นับเป็น 2 วัน)
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setHolidaySettingDraft(true)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-all cursor-pointer ${
+                    holidaySettingDraft
+                      ? 'border-primary bg-primary/5 dark:bg-primary/15 ring-2 ring-primary/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-slate-100">นับรวมวันหยุด (ทุกวันตามปฏิทิน)</span>
+                    <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                      ตัวอย่าง: 4 วัน
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                    นับรวมวันหยุดประจำสัปดาห์และวันหยุดบริษัทที่คั่นระหว่างวันลา (เช่น ลา 13–16 ศ. ส. อา. จ. = นับเป็น 4 วัน)
+                  </p>
+                </button>
+              </div>
+
+              <label className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={applyToExistingPolicies}
+                  onChange={(e) => setApplyToExistingPolicies(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary"
+                />
+                <div className="text-xs">
+                  <div className="font-semibold text-slate-700 dark:text-slate-200">
+                    อัปเดตสิทธิ์การลาทุกประเภทที่มีอยู่ให้ตรงกันทันที
+                  </div>
+                  <div className="text-slate-500 dark:text-slate-400 mt-0.5">
+                    หากต้องการตั้งค่าต่างกันบางประเภท (เช่น ลาคลอดบุตร) สามารถกดแก้ไขรายรายการในตารางได้ภายหลัง
+                  </div>
+                </div>
+              </label>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <Button variant="secondary" onClick={() => setIsHolidaySettingsOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button type="submit" loading={savingHolidaySettings}>
+                  บันทึกการตั้งค่า
+                </Button>
+              </div>
+            </form>
+          </div>
+        </ModalShell>
+      )}
 
       <AdjustBalanceModal
         isOpen={isAdjustModalOpen}

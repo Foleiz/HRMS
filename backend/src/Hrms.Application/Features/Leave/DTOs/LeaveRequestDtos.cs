@@ -1,4 +1,4 @@
-namespace Hrms.Application.Features.Leave.DTOs;
+﻿namespace Hrms.Application.Features.Leave.DTOs;
 
 public record LeaveRequestDto
 {
@@ -96,6 +96,8 @@ public class LeaveDaysCalculationDto
     public string StartDate { get; set; } = string.Empty;
     public string EndDate { get; set; } = string.Empty;
     public bool IsHalfDay { get; set; }
+    /// <summary>นับรวมวันหยุดประจำสัปดาห์/วันหยุดบริษัทด้วยหรือไม่</summary>
+    public bool IncludeHolidays { get; set; }
     /// <summary>จำนวนวันตามปฏิทิน (รวมวันหยุด)</summary>
     public int CalendarDays { get; set; }
     /// <summary>จำนวนวันที่ไม่ใช่วันทำงานตามวันทำงานประจำสัปดาห์ (เช่น เสาร์–อาทิตย์)</summary>

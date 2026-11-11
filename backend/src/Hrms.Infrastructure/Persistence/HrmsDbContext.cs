@@ -1,4 +1,4 @@
-using Hrms.Application.Common.Interfaces;
+﻿using Hrms.Application.Common.Interfaces;
 using Hrms.Domain.Entities;
 using Hrms.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -565,6 +565,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.LogoData).HasColumnName("logo_data");
             entity.Property(e => e.SealData).HasColumnName("seal_data");
             entity.Property(e => e.CeoEmployeeId).HasColumnName("ceo_employee_id");
+            entity.Property(e => e.LeaveIncludeHolidays).HasColumnName("leave_include_holidays").HasDefaultValue(false).IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             entity.HasIndex(e => e.CompanyCode).IsUnique();
@@ -1077,6 +1078,8 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.OriginalClockOut).HasColumnName("original_clock_out");
             entity.Property(e => e.AdjustedClockIn).HasColumnName("adjusted_clock_in");
             entity.Property(e => e.AdjustedClockOut).HasColumnName("adjusted_clock_out");
+            entity.Property(e => e.OriginalStatus).HasColumnName("original_status").HasMaxLength(30);
+            entity.Property(e => e.RequestedStatus).HasColumnName("requested_status").HasMaxLength(30);
             entity.Property(e => e.Reason).HasColumnName("reason").IsRequired();
             entity.Property(e => e.Status).HasColumnName("status").IsRequired().HasMaxLength(30).HasDefaultValue("PENDING");
             entity.Property(e => e.ReviewedAt).HasColumnName("reviewed_at");
@@ -1387,6 +1390,7 @@ public class HrmsDbContext : DbContext, IHrmsDbContext
             entity.Property(e => e.CarryForwardMaxDays).HasColumnName("carry_forward_max_days").HasPrecision(8, 2);
             entity.Property(e => e.DocumentGraceDays).HasColumnName("document_grace_days");
             entity.Property(e => e.ProrationMethod).HasColumnName("proration_method").HasMaxLength(20).IsRequired();
+            entity.Property(e => e.IncludeHolidays).HasColumnName("include_holidays").HasDefaultValue(false).IsRequired();
 
             entity.HasOne(e => e.LeaveType)
                 .WithMany(t => t.LeavePolicies)
