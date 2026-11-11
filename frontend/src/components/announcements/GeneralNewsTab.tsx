@@ -1188,14 +1188,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                         {badgeCount > 0 && !isSelected && (
                           <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary" />
                         )}
-                        <div className="flex items-center gap-1">
-                          <Icon className="w-3.5 h-3.5 mb-0.5" />
-                          {badgeCount > 0 && (
-                            <span className="text-[10px] bg-primary/10 dark:bg-blue-900/40 text-primary dark:text-blue-300 px-1 rounded-full font-bold">
-                              {badgeCount}
-                            </span>
-                          )}
-                        </div>
+                        <Icon className="w-4 h-4 mb-0.5" />
                         <span className="truncate">{tab.label}</span>
                       </button>
                     );
