@@ -1051,7 +1051,7 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                 />
               </div>
 
-              {/* Row 2: วันที่เผยแพร่ & หมวดหมู่ประกาศ */}
+              {/* Row 2: วันที่เผยแพร่ & วันที่สิ้นสุดการแสดงผล */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1067,6 +1067,21 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    วันที่สิ้นสุดการแสดงผล
+                  </label>
+                  <ThaiDatePicker
+                    value={formExpireAt}
+                    onChange={setFormExpireAt}
+                    placeholder="เลือกวันที่สิ้นสุด"
+                    className="w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: หมวดหมู่ประกาศ & ระดับความสำคัญ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     หมวดหมู่ประกาศ
                   </label>
                   <CustomSelect
@@ -1080,21 +1095,6 @@ export const GeneralNewsTab: React.FC<GeneralNewsTabProps> = ({
                       { value: 'URGENT', label: 'ประกาศด่วนสำคัญ' },
                       { value: 'ACTIVITY', label: 'กิจกรรมและสัมมนา' },
                     ]}
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: วันที่สิ้นสุดการแสดงผล & ระดับความสำคัญ */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    วันที่สิ้นสุดการแสดงผล (ไม่ระบุ = ตลอดไป)
-                  </label>
-                  <ThaiDatePicker
-                    value={formExpireAt}
-                    onChange={setFormExpireAt}
-                    placeholder="เลือกวันที่สิ้นสุด"
-                    className="w-full"
                   />
                 </div>
 
