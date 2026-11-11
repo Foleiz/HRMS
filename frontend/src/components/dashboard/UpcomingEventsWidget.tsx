@@ -219,27 +219,15 @@ export const UpcomingEventsWidget: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3.5 overflow-y-auto max-h-[220px] pr-0.5">
-            {groupedEvents.map((group) => {
-              const isToday = group.dateLabel.startsWith('วันนี้');
-              const isTomorrow = group.dateLabel.startsWith('พรุ่งนี้');
-
-              return (
-                <div key={group.dateStr} className="space-y-1.5">
-                  {/* แถบหัวข้อวันที่พร้อมเส้นแบ่งแยกส่วนชัดเจน */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span
-                      className={`text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 ${
-                        isToday
-                          ? 'bg-rose-50 text-[#94292B] border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50'
-                          : isTomorrow
-                          ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
-                          : 'bg-slate-100 text-slate-600 border-slate-200/60 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
-                      }`}
-                    >
-                      {group.dateLabel}
-                    </span>
-                    <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
-                  </div>
+            {groupedEvents.map((group) => (
+              <div key={group.dateStr} className="space-y-1.5">
+                {/* แถบหัวข้อวันที่: ใช้สีกรมหลักของระบบ (#0B2046) เหมือนกันทั้งหมด */}
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md border shrink-0 bg-[#0B2046]/5 dark:bg-[#0B2046]/30 text-[#0B2046] dark:text-blue-300 border-[#0B2046]/15 dark:border-blue-800/50">
+                    {group.dateLabel}
+                  </span>
+                  <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+                </div>
 
                   {/* รายการกิจกรรมในวันนั้น: กล่องข้อความพร้อม dot สีน้ำเงินและเวลา */}
                   <div className="space-y-1 pl-0.5">
@@ -264,8 +252,7 @@ export const UpcomingEventsWidget: React.FC = () => {
                     ))}
                   </div>
                 </div>
-              );
-            })}
+              ))}
           </div>
         )}
       </div>
