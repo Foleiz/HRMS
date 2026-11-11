@@ -363,49 +363,45 @@ export const CalendarWidget: React.FC = () => {
           </div>
         </div>
 
-        {/* Selected Date Details Box (Fixed height: h-[52px], ตัด "+ อีก X รายการ" ออก และคลิกเปิดดูทั้งหมดได้) */}
+        {/* Selected Date Details Box (Fixed height: h-[52px], แสดงแค่ 1 รายการ: บรรทัดบนประเภท/เวลา, บรรทัดล่างหัวข้อ) */}
         {selectedEvents.length > 0 ? (
           <div
             onClick={() => setIsAllEventsModalOpen(true)}
-            className={`mt-1.5 h-[52px] min-h-[52px] max-h-[52px] rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col shrink-0 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors ${
-              selectedEvents.length === 1 ? 'justify-center p-2' : 'justify-between p-1.5'
-            }`}
+            className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700 shadow-2xs flex flex-col justify-between shrink-0 overflow-hidden text-[10.5px] cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
             title="คลิกเพื่อดูรายการทั้งหมด"
           >
-            {selectedEvents.slice(0, 2).map((ev, idx) => (
-              <div
-                key={ev.id}
-                className={`flex items-center justify-between gap-1.5 min-w-0 ${
-                  idx > 0 ? 'pt-1 border-t border-slate-100 dark:border-slate-700/60' : ''
-                }`}
-              >
-                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  <span
-                    className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
-                      ev.isHoliday
-                        ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
-                        : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
-                    }`}
-                  >
-                    {ev.typeLabel}
-                  </span>
-                  {ev.isPinned && (
-                    <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
-                      ปักหมุด
-                    </span>
-                  )}
-                  <span
-                    className="text-slate-800 dark:text-slate-200 font-medium text-xs truncate"
-                    title={ev.title}
-                  >
-                    {ev.title}
-                  </span>
-                </div>
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
-                  {ev.timeRange || (ev.isHoliday ? 'ทั้งวัน' : '09:00')}
+            {/* บรรทัดบน: ประเภท (กิจกรรม/วันหยุด), ปักหมุด (ถ้ามี) และเวลา */}
+            <div className="flex items-center justify-between gap-1.5 min-w-0">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span
+                  className={`px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 ${
+                    selectedEvents[0].isHoliday
+                      ? 'bg-rose-50/70 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                      : 'bg-sky-50/70 text-sky-600 border-sky-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                  }`}
+                >
+                  {selectedEvents[0].typeLabel}
                 </span>
+                {selectedEvents[0].isPinned && (
+                  <span className="px-1.5 py-0.2 rounded text-[10px] font-medium border shrink-0 bg-amber-50/70 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                    ปักหมุด
+                  </span>
+                )}
               </div>
-            ))}
+              <span className="text-slate-400 dark:text-slate-500 text-[11px] shrink-0 font-normal">
+                {selectedEvents[0].timeRange || (selectedEvents[0].isHoliday ? 'ทั้งวัน' : '09:00')}
+              </span>
+            </div>
+
+            {/* บรรทัดที่สอง: หัวข้อกิจกรรมหรือวันหยุด */}
+            <div className="min-w-0">
+              <p
+                className="text-slate-800 dark:text-slate-200 font-semibold text-xs truncate leading-tight"
+                title={selectedEvents[0].title}
+              >
+                {selectedEvents[0].title}
+              </p>
+            </div>
           </div>
         ) : (
           <div className="mt-1.5 h-[52px] min-h-[52px] max-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-between shrink-0 overflow-hidden">
