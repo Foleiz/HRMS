@@ -935,26 +935,6 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                     />
                   </div>
                 </div>
-
-                {(mode === 'STRUCTURE_MIN' || mode === 'MANUAL') && (
-                  <div className="text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center gap-2">
-                    {mode === 'STRUCTURE_MIN' ? (
-                      <>
-                        <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
-                        <span>
-                          ระบบจะดึง <b>เงินเดือนขั้นต่ำของตำแหน่ง</b> มาตั้งให้พนักงานที่ยังไม่มีหรือต่ำกว่าเกณฑ์ให้อัตโนมัติ
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Edit3 className="w-4 h-4 text-primary shrink-0" />
-                        <span>
-                          สามารถพิมพ์กำหนดยอดในช่อง <b>เงินเดือนใหม่</b> ของพนักงานแต่ละคนในตารางด้านล่างได้โดยตรง
-                        </span>
-                      </>
-                    )}
-                  </div>
-                )}
               </div>
 
               {error && (
