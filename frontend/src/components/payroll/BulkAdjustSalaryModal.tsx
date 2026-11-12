@@ -498,7 +498,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
       className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       innerClassName="items-center justify-center p-3 sm:p-4"
     >
-      <div className="relative w-full max-w-4xl min-h-[580px] max-h-[92vh] my-auto flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-5xl lg:max-w-6xl h-[680px] max-h-[92vh] my-auto flex flex-col animate-in zoom-in-95 duration-200">
         {/* ปุ่มกากบาทที่ด้านนอกมุมขวาบน คล้ายแบบรูปที่ 1 */}
         <button
           type="button"
@@ -509,7 +509,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
           <X className="w-4 h-4 stroke-[2.5]" />
         </button>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full flex-1 min-h-[580px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full h-full flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60">
           <ModalHeader
             icon={TrendingUp}
             title={
@@ -584,9 +584,9 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
 
         {step === 'PICK' ? (
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+            <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-hidden">
               {/* Filter Pills */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="shrink-0 flex flex-wrap items-center gap-2">
                 {[
                   { id: 'ALL' as PickerFilter, label: `ทั้งหมด (${pickerCounts.all})` },
                   {
@@ -621,7 +621,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               </div>
 
               {/* Search & Department */}
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="shrink-0 flex flex-wrap items-center gap-2.5">
                 <div className="relative flex-1 min-w-[200px]">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
@@ -647,15 +647,15 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               </div>
 
               {error && (
-                <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs font-medium">
+                <div className="shrink-0 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs font-medium">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
               {/* Employee Picker Table */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
-                <div className="overflow-x-auto min-h-[340px] max-h-[340px]">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-0">
+                <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
                       <tr>
@@ -667,7 +667,8 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                             className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary cursor-pointer"
                           />
                         </th>
-                        <th className="py-2.5 px-3">รหัส / ชื่อพนักงาน</th>
+                        <th className="py-2.5 px-3 w-28">รหัส</th>
+                        <th className="py-2.5 px-3">ชื่อพนักงาน</th>
                         <th className="py-2.5 px-3">แผนก</th>
                         <th className="py-2.5 px-3 text-right">ฐานเงินเดือนปัจจุบัน</th>
                         <th className="py-2.5 px-3">สถานะการปรับ</th>
@@ -677,7 +678,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                       {filteredPickerEmployees.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={5}
+                            colSpan={6}
                             className="h-[280px] text-center text-slate-400 dark:text-slate-500"
                           >
                             ไม่พบพนักงานตามเงื่อนไขที่เลือก
@@ -708,20 +709,25 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                   className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary cursor-pointer"
                                 />
                               </td>
+                              <td className="py-2.5 px-3 font-mono text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+                                {emp.employeeCode}
+                              </td>
                               <td className="py-2.5 px-3">
                                 <div className="font-semibold text-slate-900 dark:text-slate-100">
                                   {emp.employeeName}
                                 </div>
-                                <div className="text-[11px] text-slate-400 font-mono">
-                                  {emp.employeeCode}
-                                </div>
+                                {emp.positionName && (
+                                  <div className="text-[11px] text-slate-400">
+                                    {emp.positionName}
+                                  </div>
+                                )}
                               </td>
                               <td className="py-2.5 px-3">
                                 <div className="text-slate-700 dark:text-slate-200">
                                   {emp.departmentName || '-'}
                                 </div>
                               </td>
-                              <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-800 dark:text-slate-200">
+                              <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                                 {hasSalary
                                   ? `฿${emp.currentSalary?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
                                   : 'ยังไม่ระบุ'}
@@ -779,9 +785,9 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
+            <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-y-auto">
               {/* Top Bar to go back and adjust employee selection */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -808,7 +814,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               </div>
 
               {/* Mode Selector & Quick Formula Controls */}
-              <div className="p-4 sm:p-5 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl space-y-4">
+              <div className="shrink-0 p-4 sm:p-4.5 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl space-y-3.5">
                 {/* Row 1: Segmented Mode Tabs */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -1034,12 +1040,13 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               )}
 
               {/* Preview & Inline Edit Table */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto max-h-[320px]">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-[160px]">
+                <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
                       <tr>
-                        <th className="py-2.5 px-3">พนักงาน</th>
+                        <th className="py-2.5 px-3 w-28">รหัส</th>
+                        <th className="py-2.5 px-3">ชื่อพนักงาน</th>
                         <th className="py-2.5 px-3 w-48 sm:w-52">ตำแหน่งในกรอบอ้างอิง</th>
                         <th className="py-2.5 px-3 text-right">ฐานปัจจุบัน</th>
                         <th className="py-2.5 px-3 w-44">เงินเดือนใหม่</th>
@@ -1051,8 +1058,8 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                       {visibleEvaluations.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
-                            className="py-8 text-center text-slate-400 dark:text-slate-500"
+                            colSpan={7}
+                            className="py-10 text-center text-slate-400 dark:text-slate-500"
                           >
                             ไม่มีรายการพนักงานที่เลือก
                           </td>
@@ -1069,6 +1076,9 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                   : 'hover:bg-slate-50/70 dark:hover:bg-slate-700/30'
                               }
                             >
+                              <td className="py-2.5 px-3 font-mono text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
+                                {emp.employeeCode}
+                              </td>
                               <td className="py-2.5 px-3">
                                 <div className="font-semibold text-slate-900 dark:text-slate-100">
                                   {emp.employeeName}
