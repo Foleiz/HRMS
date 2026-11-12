@@ -599,11 +599,11 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                   { id: 'ALL' as PickerFilter, label: `ทั้งหมด (${pickerCounts.all})` },
                   {
                     id: 'UNADJUSTED' as PickerFilter,
-                    label: `ยังไม่ถูกปรับฐานเงินเดือน (${pickerCounts.unadjusted})`,
+                    label: `ยังไม่เคยถูกปรับฐานเงินเดือน (${pickerCounts.unadjusted})`,
                   },
                   {
                     id: 'UNADJUSTED_THIS_YEAR' as PickerFilter,
-                    label: `ยังไม่ได้ปรับในปี ${currentThaiYear} (${pickerCounts.unadjustedThisYear})`,
+                    label: `ยังไม่ได้ปรับฐานเงินเดือนในปีนี้ (${pickerCounts.unadjustedThisYear})`,
                   },
                   {
                     id: 'NO_SALARY' as PickerFilter,
@@ -761,7 +761,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                   </span>
                                 ) : (
                                   <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                    ยังไม่ถูกปรับฐานเงินเดือน
+                                    ยังไม่เคยถูกปรับฐานเงินเดือน
                                   </span>
                                 )}
                               </td>
