@@ -42,6 +42,15 @@ const formatCurrencyInput = (raw: string) => {
   return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
 };
 
+const formatK = (val?: number | null) => {
+  if (val == null) return '-';
+  if (val >= 1000) {
+    const k = val / 1000;
+    return Number.isInteger(k) ? `฿${k}k` : `฿${k.toFixed(1)}k`;
+  }
+  return `฿${val.toLocaleString()}`;
+};
+
 const EMPTY_EMPLOYEES: EmployeeSalaryOverview[] = [];
 
 interface Props {
@@ -1031,7 +1040,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                     <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
                       <tr>
                         <th className="py-2.5 px-3">พนักงาน</th>
-                        <th className="py-2.5 px-3">กรอบอ้างอิง</th>
+                        <th className="py-2.5 px-3 w-48 sm:w-52">ตำแหน่งในกรอบอ้างอิง</th>
                         <th className="py-2.5 px-3 text-right">ฐานปัจจุบัน</th>
                         <th className="py-2.5 px-3 w-44">เงินเดือนใหม่</th>
                         <th className="py-2.5 px-3 text-right">ส่วนต่าง</th>
@@ -1064,9 +1073,8 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                 <div className="font-semibold text-slate-900 dark:text-slate-100">
                                   {emp.employeeName}
                                 </div>
-                                <div className="text-[11px] text-slate-400 font-mono">
-                                  {emp.employeeCode}
-                                  {emp.positionName ? ` · ${emp.positionName}` : ''}
+                                <div className="text-[11px] text-slate-400">
+                                  {emp.positionName || '-'}
                                 </div>
                                 {row.isDateConflict && (
                                   <div className="text-[11px] text-rose-600 dark:text-rose-400 mt-0.5">
@@ -1074,13 +1082,45 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                   </div>
                                 )}
                               </td>
-                              <td className="py-2.5 px-3 whitespace-nowrap">
+                              <td className="py-2.5 px-3">
                                 {row.minSal != null && row.maxSal != null ? (
-                                  <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                                    ฿{row.minSal.toLocaleString()}–฿{row.maxSal.toLocaleString()}
-                                  </span>
+                                  <div className="flex flex-col gap-1 w-36 sm:w-44 py-1">
+                                    <div className="relative flex items-center h-5">
+                                      {/* Midpoint notch marker */}
+                                      <div
+                                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-3 bg-slate-400 dark:bg-slate-500 rounded-full pointer-events-none z-0"
+                                        title={`จุดกึ่งกลาง ฿${Math.round((row.minSal + row.maxSal) / 2).toLocaleString()}`}
+                                      />
+                                      <input
+                                        type="range"
+                                        min={row.minSal}
+                                        max={row.maxSal}
+                                        step={100}
+                                        value={
+                                          row.newNum > 0
+                                            ? Math.min(row.maxSal, Math.max(row.minSal, row.newNum))
+                                            : row.currentNum > 0
+                                            ? Math.min(row.maxSal, Math.max(row.minSal, row.currentNum))
+                                            : row.minSal
+                                        }
+                                        onChange={(e) => {
+                                          const val = Number(e.target.value);
+                                          setDraftSalaries((prev) => ({
+                                            ...prev,
+                                            [emp.employeeId]: String(val),
+                                          }));
+                                          setMode('MANUAL');
+                                          if (error) setError(null);
+                                        }}
+                                        className="salary-range-slider w-full h-1.5 appearance-none cursor-pointer focus:outline-none relative z-10"
+                                      />
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                                      {formatK(row.minSal)} – {formatK(row.maxSal)}
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <span className="text-slate-400">-</span>
+                                  <span className="text-slate-400 text-xs">-</span>
                                 )}
                               </td>
                               <td className="py-2.5 px-3 text-right font-mono whitespace-nowrap text-slate-600 dark:text-slate-300">
