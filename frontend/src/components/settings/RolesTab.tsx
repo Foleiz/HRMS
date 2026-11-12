@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
@@ -630,37 +630,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
       return { ...m, self, team, department, division, organization };
     });
 
-    // ตรวจสอบโมดูลหมวด DASHBOARD: หากมีเปิดมากกว่า 1 อัน ให้คงเหลือไว้เพียงอันเดียว (Radio Behavior)
-    const activeDashboardIndices: number[] = [];
-    normalized.forEach((m, idx) => {
-      if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
-        const isActive =
-          m.canView ||
-          m.self?.view ||
-          m.team?.view ||
-          m.department?.view ||
-          m.division?.view ||
-          m.organization?.view;
-        if (isActive) activeDashboardIndices.push(idx);
-      }
-    });
-
-    if (activeDashboardIndices.length > 1) {
-      // เก็บอันแรกไว้ ปิดอันที่เหลือ
-      const def = () => ({ view: false, create: false, edit: false, approve: false });
-      activeDashboardIndices.slice(1).forEach((idx) => {
-        normalized[idx] = {
-          ...normalized[idx],
-          canView: false,
-          self: def(),
-          team: def(),
-          department: def(),
-          division: def(),
-          organization: def(),
-        };
-      });
-    }
-
     // ตรวจสอบโมดูลหมวด GUIDE: หากยังไม่มีครบทั้ง 9 Flows ใน matrix ให้เพิ่มเข้ามาอัตโนมัติ
     GUIDE_FLOW_CONFIGS.forEach((flow) => {
       const exists = normalized.some((m) => m.moduleCode === flow.moduleCode);
@@ -857,31 +826,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   // Master switch per module
   const handleToggleModule = (moduleCode: string) => {
-    setLocalModules((prev) => {
-      const targetMod = prev.find((m) => m.moduleCode === moduleCode);
-      const isDashboard =
-        targetMod?.categoryCode === 'DASHBOARD' || targetMod?.groupName === 'DASHBOARD';
-
-      return prev.map((m) => {
+    setLocalModules((prev) =>
+      prev.map((m) => {
         const isCurrentModDashboard =
           m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD';
 
-        if (m.moduleCode !== moduleCode) {
-          // หากโมดูลที่ถูกคลิกเป็นแดชบอร์ด ให้ปิดแดชบอร์ดอื่นๆ ทั้งหมดทันที (Single Select / Radio behavior)
-          if (isDashboard && isCurrentModDashboard) {
-            const empty = { view: false, create: false, edit: false, approve: false };
-            return {
-              ...m,
-              canView: false,
-              self: { ...empty },
-              team: { ...empty },
-              department: { ...empty },
-              division: { ...empty },
-              organization: { ...empty },
-            };
-          }
-          return m;
-        }
+        if (m.moduleCode !== moduleCode) return m;
 
         const active = isModuleActive(m);
         if (active) {
@@ -910,8 +860,8 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             self: { view: true, create: false, edit: false, approve: false },
           };
         }
-      });
-    });
+      })
+    );
     setIsDirty(true);
   };
 
@@ -1061,12 +1011,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     const anyActive = cat.modules.some((m) => isModuleActive(m));
     const modCodes = new Set(cat.modules.map((m) => m.moduleCode));
 
-    // หากเป็นหมวด DASHBOARD และกำลังจะเปิด (anyActive = false)
-    // ให้เปิดเฉพาะแดชบอร์ดแรก หรือ DASHBOARD_EMPLOYEE เพียง 1 อันเท่านั้น
-    const defaultDashboardCode =
-      cat.modules.find((m) => m.moduleCode === 'DASHBOARD_EMPLOYEE')?.moduleCode ||
-      cat.modules[0]?.moduleCode;
-
     setLocalModules((prev) =>
       prev.map((m) => {
         if (!modCodes.has(m.moduleCode)) return m;
@@ -1083,24 +1027,12 @@ export const RolesTab: React.FC<RolesTabProps> = ({
             organization: { ...empty },
           };
         } else {
-          // Turn on: ถ้าเป็น DASHBOARD ให้เปิดเพียงอันเดียว
+          // Turn all on
           if (isDashboardCat) {
-            if (m.moduleCode === defaultDashboardCode) {
-              return {
-                ...m,
-                canView: true,
-                self: { view: true, create: false, edit: false, approve: false },
-              };
-            }
-            const empty = { view: false, create: false, edit: false, approve: false };
             return {
               ...m,
-              canView: false,
-              self: { ...empty },
-              team: { ...empty },
-              department: { ...empty },
-              division: { ...empty },
-              organization: { ...empty },
+              canView: true,
+              self: { view: true, create: false, edit: false, approve: false },
             };
           }
 
@@ -1203,33 +1135,10 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
   // Global toolbar actions
   const handleSelectAll = () => {
-    // กำหนด dashboard เริ่มต้นเพียง 1 อัน (เช่น DASHBOARD_EMPLOYEE)
-    const targetDashboardCode =
-      localModules.find(
-        (m) =>
-          (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') &&
-          m.moduleCode === 'DASHBOARD_EMPLOYEE'
-      )?.moduleCode ||
-      localModules.find(
-        (m) => m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD'
-      )?.moduleCode;
-
     setLocalModules((prev) =>
       prev.map((m) => {
         if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
-          if (m.moduleCode === targetDashboardCode) {
-            return { ...m, canView: true, self: { view: true, create: false, edit: false, approve: false } };
-          }
-          const empty = { view: false, create: false, edit: false, approve: false };
-          return {
-            ...m,
-            canView: false,
-            self: { ...empty },
-            team: { ...empty },
-            department: { ...empty },
-            division: { ...empty },
-            organization: { ...empty },
-          };
+          return { ...m, canView: true, self: { view: true, create: false, edit: false, approve: false } };
         }
         const isEss = ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
         if (isEss) {
@@ -1645,11 +1554,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             <span className={`font-bold text-xs tracking-tight ${isCatOff ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
                               {cat.name}
                             </span>
-                            {cat.code === 'DASHBOARD' && (
-                              <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 px-2 py-0.5 rounded-full hidden sm:inline">
-                                เลือกได้เพียง 1 แดชบอร์ด
-                              </span>
-                            )}
+
                             {ESS_CATEGORY_CODES.has(cat.code) && (
                               <span className="text-[10px] font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200/60 px-2 py-0.5 rounded-full hidden sm:inline">
                                 เฉพาะข้อมูลตนเอง (Self Only)
@@ -1679,11 +1584,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           onClick={(e) => e.stopPropagation()}
                         >
                           <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 hidden sm:inline">
-                            {cat.code === 'DASHBOARD'
-                              ? activeModulesCount > 0
-                                ? 'เปิดใช้งาน'
-                                : 'ปิดทั้งหมด'
-                              : isCatAllActive
+                            {isCatAllActive
                               ? 'เปิดทั้งหมด'
                               : isCatPartial
                               ? 'เปิดบางส่วน'

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -16,14 +16,11 @@ import { UpcomingEventsWidget } from '@/components/dashboard/UpcomingEventsWidge
 import { RecentTransactionsTable } from '@/components/dashboard/RecentTransactionsTable';
 
 // Employee specific widgets
-import { EmployeeStatCards } from '@/components/dashboard/employee/EmployeeStatCards';
 import { CalendarWidget } from '@/components/dashboard/employee/CalendarWidget';
 import { NewsWidget } from '@/components/dashboard/employee/NewsWidget';
 
-// Manager specific widgets
-import { ManagerStatCards } from '@/components/dashboard/manager/ManagerStatCards';
-import { NotificationsWidget } from '@/components/dashboard/manager/NotificationsWidget';
-import { AttendancePieChart } from '@/components/dashboard/manager/AttendancePieChart';
+// Role-based stat cards banner carousel
+import { StatCardsBanner } from '@/components/dashboard/StatCardsBanner';
 
 export default function HomePage() {
   const { user, isLoading, hasRole, hasPermission, logout } = useAuth();
@@ -67,27 +64,6 @@ export default function HomePage() {
 
     return list.length > 0 ? list : ['EMPLOYEE'];
   }, [user, hasPermission]);
-
-  const [selectedRole, setSelectedRole] = useState<DashboardRole | null>(null);
-  const initializedForUserRef = React.useRef<string | number | null>(null);
-
-  const currentUid = user ? (user.id || user.username || 'current') : null;
-
-  useEffect(() => {
-    if (user && allowedDashboards.length > 0 && currentUid) {
-      if (initializedForUserRef.current !== currentUid) {
-        initializedForUserRef.current = currentUid;
-        setSelectedRole(allowedDashboards[0]);
-      } else if (selectedRole && !allowedDashboards.includes(selectedRole)) {
-        setSelectedRole(allowedDashboards[0]);
-      }
-    }
-  }, [user, allowedDashboards, currentUid, selectedRole]);
-
-  const activeRole: DashboardRole =
-    selectedRole && allowedDashboards.includes(selectedRole) && initializedForUserRef.current === currentUid
-      ? selectedRole
-      : allowedDashboards[0] || 'EMPLOYEE';
 
   const displayName = user?.fullName || user?.username || 'ผู้ใช้งาน';
 
@@ -169,13 +145,9 @@ export default function HomePage() {
                   <GreetingBanner displayName={displayName} />
 
                   <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch flex-1">
-                    {/* 6 Stat Cards: spans 2 cols on xl */}
+                    {/* 6 Stat Cards: spans 2 cols on xl (auto-rotating banner if user has multiple roles) */}
                     <div className="xl:col-span-2 h-full">
-                      {activeRole === 'EMPLOYEE' ? (
-                        <EmployeeStatCards />
-                      ) : (
-                        <ManagerStatCards role={activeRole} />
-                      )}
+                      <StatCardsBanner roles={allowedDashboards} />
                     </div>
 
                     {/* Upcoming Events Widget: spans 1 col on xl */}

@@ -9,8 +9,8 @@ import { employeeService } from '@/services/employeeService';
 import { contractService } from '@/services/contractService';
 import { certificateService } from '@/services/certificateService';
 import { salaryService } from '@/services/salaryService';
-import { commissionService } from '@/services/commissionService';
-import { attendanceService } from '@/services/attendanceService';
+import { resignationService } from '@/services/resignationService';
+import { attendanceAdjustmentService } from '@/services/attendanceAdjustmentService';
 import { DailyHeadcountSummary } from '@/types/reports';
 import { LeaveRequest, LeaveStats } from '@/types/leave';
 import { CountUp } from '@/components/ui/CountUp';
@@ -28,35 +28,24 @@ interface StatConfig {
   borderClass: string;
 }
 
-function formatCompactCurrency(amount: number): string {
-  if (!amount || amount <= 0) return '0';
-  if (amount >= 1_000_000) {
-    return `${(amount / 1_000_000).toFixed(2).replace(/\.00$/, '')}M`;
-  }
-  if (amount >= 10_000) {
-    return `${(amount / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
-  }
-  return amount.toLocaleString('th-TH');
-}
-
 export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
-  const { user } = useAuth();
+  const { user, hasRole, hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [statsData, setStatsData] = useState({
     headcount: 0,
-    permanentCount: 0,
-    probationCount: 0,
+    presentToday: 0,
+    attendanceRate: 0,
     onLeaveToday: 0,
     approvedThisMonth: 0,
     pendingDocs: 0,
+    pendingResignations: 0,
     submittedToday: 0,
     probationExpiring7Days: 0,
     contractExpiring30Days: 0,
     latestPayrollStatus: 'รอคำนวณ',
-    latestPayrollTotal: 0,
-    commissionAndOtTotal: 0,
-    joinedThisMonth: 0,
+    latestPayrollPeriodName: '',
     resignedThisMonth: 0,
+    retentionRate: 100,
   });
 
   useEffect(() => {
@@ -74,6 +63,12 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         const isManagerScope = role === 'DEPT_MGR' || role === 'DIV_MGR';
         const isCeo = role === 'CEO';
         const isAdmin = role === 'ADMIN';
+        const canViewPendingAdjustments =
+          isCeo &&
+          (hasRole('ADMIN') ||
+            hasRole('SYSTEM_SUPER') ||
+            hasPermission('TIME_DAILY_VIEW') ||
+            hasPermission('APPROVAL_TIME_VIEW'));
 
         // ดึงเฉพาะ API ที่จำเป็นตามบทบาท (Role) เพื่อลดจำนวน HTTP requests และภาระ Database
         const [
@@ -84,9 +79,9 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           contractStatsRes,
           activeContractsRes,
           certRequestsRes,
-          payrollOverviewRes,
+          resignationRequestsRes,
+          pendingAdjustmentsRes,
           payrollPeriodsRes,
-          commissionRes,
           turnoverRes,
         ] = await Promise.allSettled([
           reportService.getDailyHeadcount(),
@@ -96,9 +91,9 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           contractService.getStats(),
           role === 'DEPT_MGR' ? contractService.getAll({ status: 'ACTIVE' }) : Promise.resolve([]),
           isAdmin || isCeo ? certificateService.getAllRequests('PENDING') : Promise.resolve([]),
-          isCeo ? salaryService.getOverview() : Promise.resolve(null),
+          isCeo ? resignationService.getAllRequests('PENDING') : Promise.resolve([]),
+          canViewPendingAdjustments ? attendanceAdjustmentService.getPendingCount() : Promise.resolve(0),
           isAdmin || isCeo ? salaryService.getPayrollPeriods() : Promise.resolve([]),
-          isCeo ? commissionService.getCommissionPeriod(currentYear, currentMonth) : Promise.resolve(null),
           isCeo ? reportService.getMonthlyTurnover(currentYear, currentMonth) : Promise.resolve(null),
         ]);
 
@@ -122,14 +117,18 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
           certRequestsRes.status === 'fulfilled' && Array.isArray(certRequestsRes.value)
             ? certRequestsRes.value
             : [];
-        const payrollOverview =
-          payrollOverviewRes.status === 'fulfilled' ? payrollOverviewRes.value : null;
+        const pendingResignationsList =
+          resignationRequestsRes.status === 'fulfilled' && Array.isArray(resignationRequestsRes.value)
+            ? resignationRequestsRes.value
+            : [];
+        const pendingAdjustmentsCount =
+          pendingAdjustmentsRes.status === 'fulfilled' && typeof pendingAdjustmentsRes.value === 'number'
+            ? pendingAdjustmentsRes.value
+            : 0;
         const payrollPeriods =
           payrollPeriodsRes.status === 'fulfilled' && Array.isArray(payrollPeriodsRes.value)
             ? payrollPeriodsRes.value
             : [];
-        const commissionSummary =
-          commissionRes.status === 'fulfilled' ? commissionRes.value : null;
         const turnoverSummary =
           turnoverRes.status === 'fulfilled' ? turnoverRes.value : null;
 
@@ -263,55 +262,52 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
         } else {
           // ระดับองค์กร (ADMIN / CEO)
           targetHeadcount = headcount?.totalEmployees ?? contractStats?.totalActiveCount ?? 0;
-          targetOnLeaveToday = activeLeavesToday.length;
+          targetOnLeaveToday = Math.max(activeLeavesToday.length, headcount?.totalLeave ?? 0);
           targetApprovedMonth =
             leaveStats?.approvedThisMonthCount ?? approvedThisMonthRequests.length;
           targetPendingDocs =
             (leaveStats?.pendingRequestsCount ?? pendingRequests.length) +
-            pendingCerts.length;
+            pendingCerts.length +
+            pendingAdjustmentsCount;
           targetSubmittedToday = submittedTodayRequests.length;
         }
 
-        // ข้อมูลงวดเงินเดือนล่าสุด & คอมมิชชั่น (สำหรับ ADMIN / CEO)
+        // ข้อมูลงวดเงินเดือนล่าสุด (สำหรับ ADMIN / CEO — ไม่แสดงตัวเงิน)
         const latestPeriod = payrollPeriods[0];
         let latestStatusLabel = 'ยังไม่มีงวด';
-        let latestPayrollTotal = payrollOverview?.currentMonthTotal ?? 0;
+        let latestPayrollPeriodName = '';
 
         if (latestPeriod) {
-          if (latestPeriod.totalNetSalary > 0) {
-            latestPayrollTotal = latestPeriod.totalNetSalary;
-          }
+          latestPayrollPeriodName = latestPeriod.periodName || '';
           const st = (latestPeriod.status || '').toUpperCase();
           if (st === 'PAID' || st === 'CLOSED') latestStatusLabel = 'จ่ายแล้ว';
           else if (st === 'APPROVED') latestStatusLabel = 'อนุมัติแล้ว';
+          else if (st === 'FINANCE_VERIFIED' || st === 'PENDING_APPROVAL') latestStatusLabel = 'รอ CEO อนุมัติ';
           else if (st === 'DRAFT' || st === 'REVIEW') latestStatusLabel = 'รอปิดงวด';
           else latestStatusLabel = latestPeriod.statusText || latestPeriod.status;
         }
 
-        const totalComm =
-          commissionSummary?.totalCommissionAmount ??
-          commissionSummary?.totalCommission ??
-          0;
-
-        const joinedCount = turnoverSummary?.totalJoinedCount ?? 0;
         const resignedCount = turnoverSummary?.totalResignedCount ?? 0;
+        const retentionRate = Math.round(turnoverSummary?.overallRetentionRate ?? 100);
+        const presentToday = headcount?.totalPresent ?? 0;
+        const attendanceRate = Math.round(headcount?.overallAttendanceRate ?? 0);
 
         if (isMounted) {
           setStatsData({
             headcount: targetHeadcount,
-            permanentCount: contractStats?.permanentCount ?? Math.max(0, targetHeadcount - (contractStats?.probationCount ?? 0)),
-            probationCount: contractStats?.probationCount ?? 0,
+            presentToday,
+            attendanceRate,
             onLeaveToday: targetOnLeaveToday,
             approvedThisMonth: targetApprovedMonth,
             pendingDocs: targetPendingDocs,
+            pendingResignations: pendingResignationsList.length,
             submittedToday: targetSubmittedToday,
             probationExpiring7Days: targetProbation7Days,
             contractExpiring30Days: expiringContracts30Count,
             latestPayrollStatus: latestStatusLabel,
-            latestPayrollTotal,
-            commissionAndOtTotal: totalComm,
-            joinedThisMonth: joinedCount,
+            latestPayrollPeriodName,
             resignedThisMonth: resignedCount,
+            retentionRate,
           });
         }
       } catch (err) {
@@ -438,41 +434,37 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             borderClass: 'border-[#F6E5A6]',
           },
           {
-            title: 'พนักงานประจำ / ทดลองงาน',
-            value: loading
-              ? '–'
-              : `${statsData.permanentCount} / ${statsData.probationCount}`,
+            title: 'พนักงานลาออกเดือนนี้',
+            value: show(statsData.resignedThisMonth),
             unit: 'คน',
             bgClass: 'bg-[#FDE2E4]',
             borderClass: 'border-[#F9C3C8]',
           },
           {
-            title: 'ยอดเงินเดือนงวดล่าสุด',
-            value: loading ? '–' : formatCompactCurrency(statsData.latestPayrollTotal),
-            unit: 'บาท',
+            title: 'ความพร้อมกำลังคนวันนี้',
+            value: loading ? '–' : `${statsData.presentToday} / ${statsData.headcount}`,
+            unit: 'คน',
             bgClass: 'bg-[#D8F3DC]',
             borderClass: 'border-[#B7E4C7]',
           },
           {
-            title: 'ยอดคอมมิชชั่นเดือนนี้',
-            value: loading ? '–' : formatCompactCurrency(statsData.commissionAndOtTotal),
-            unit: 'บาท',
+            title: 'คำขอเอกสารค้างอนุมัติทั้งองค์กร',
+            value: show(statsData.pendingDocs),
+            unit: 'เอกสาร',
             bgClass: 'bg-[#D9EAFD]',
             borderClass: 'border-[#BFDBFE]',
           },
           {
-            title: 'เข้าใหม่ / ลาออกเดือนนี้',
-            value: loading
-              ? '–'
-              : `+${statsData.joinedThisMonth} / -${statsData.resignedThisMonth}`,
-            unit: 'คน',
+            title: 'คำร้องขอลาออกรออนุมัติ',
+            value: show(statsData.pendingResignations),
+            unit: 'รายการ',
             bgClass: 'bg-[#D7F9D9]',
             borderClass: 'border-[#BCE7BF]',
           },
           {
-            title: 'เอกสารรออนุมัติทั้งหมด',
-            value: show(statsData.pendingDocs),
-            unit: 'เอกสาร',
+            title: 'สถานะงวดเงินเดือนล่าสุด',
+            value: show(statsData.latestPayrollStatus),
+            unit: '',
             bgClass: 'bg-[#FFE5D9]',
             borderClass: 'border-[#FCD2BE]',
           },

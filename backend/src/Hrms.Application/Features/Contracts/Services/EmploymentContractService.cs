@@ -94,16 +94,26 @@ public class EmploymentContractService : IEmploymentContractService
 
     public async Task<ContractSummaryStatsDto> GetStatsAsync(CancellationToken cancellationToken = default)
     {
-        var activeContracts = await _context.EmploymentContracts
+        var rawContracts = await _context.EmploymentContracts
             .AsNoTracking()
-            .Where(c => c.Status == "ACTIVE")
+            .Where(c => c.Status == "ACTIVE"
+                && c.Employee != null
+                && (c.Employee.EmploymentStatus == "ACTIVE" || c.Employee.EmploymentStatus == "PROBATION"))
+            .OrderByDescending(c => c.StartDate)
+            .ThenByDescending(c => c.Id)
             .Select(c => new
             {
+                c.EmployeeId,
                 c.ContractType,
                 c.ProbationEndDate,
                 c.ContractEndDate
             })
             .ToListAsync(cancellationToken);
+
+        // นับ 1 สัญญาหลักล่าสุดต่อพนักงานที่ยังปฏิบัติงานอยู่ เพื่อไม่ให้ตัวเลขเกินจำนวนพนักงานจริงในองค์กร
+        var activeContracts = rawContracts
+            .DistinctBy(c => c.EmployeeId)
+            .ToList();
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow.AddHours(7));
         var in7Days = today.AddDays(7);

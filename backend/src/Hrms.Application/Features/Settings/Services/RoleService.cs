@@ -47,7 +47,7 @@ public class RoleService : IRoleService
         new("DASHBOARD_DEPT", "แดชบอร์ดหัวหน้าแผนก", "DASHBOARD_DEPT", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
         new("DASHBOARD_DIV", "แดชบอร์ดผู้จัดการฝ่าย", "DASHBOARD_DIV", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
         new("DASHBOARD_CEO", "แดชบอร์ดผู้บริหาร (CEO)", "DASHBOARD_CEO", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
-        new("DASHBOARD_ADMIN", "แดชบอร์ดผู้ดูแลระบบ (Admin)", "DASHBOARD_ADMIN", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
+        new("DASHBOARD_ADMIN", "แดชบอร์ดฝ่ายบุคคล", "DASHBOARD_ADMIN", "DASHBOARD", "แดชบอร์ด", "DASHBOARD"),
 
         // 1.1 แผนผังองค์กร (ORG_CHART)
         new("ORG_CHART", "แผนผังองค์กร", "ORG_CHART", "ORG_CHART", "แผนผังองค์กร", "ORG_CHART"),

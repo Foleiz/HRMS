@@ -10,7 +10,7 @@ export const ROLE_LABELS: Record<DashboardRole, { title: string; badge: string }
   DEPT_MGR: { title: 'หัวหน้าแผนก', badge: 'ผู้จัดการแผนก (Department Head)' },
   DIV_MGR: { title: 'หัวหน้าฝ่าย', badge: 'ผู้จัดการฝ่าย (Division Head)' },
   CEO: { title: 'CEO', badge: 'ผู้บริหารสูงสุด (CEO)' },
-  ADMIN: { title: 'แอดมิน', badge: 'ผู้ดูแลระบบ (Admin)' },
+  ADMIN: { title: 'ฝ่ายบุคคล', badge: 'ฝ่ายบุคคล' },
 };
 
 interface RoleSwitcherBarProps {

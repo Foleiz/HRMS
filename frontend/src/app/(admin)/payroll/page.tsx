@@ -3978,13 +3978,13 @@ export default function PayrollPage() {
             {/* ── PANEL 1: TOP PERIOD SELECTOR & ACTIONS BAR (คงเดิม) ── */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-5">
               {/* ── TIER 1: Period Selection & Period Management (สร้าง/ลบรอบ) ── */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div className="flex flex-col lg:flex-row lg:items-start xl:items-center justify-between gap-3">
                 {/* Left: Period Selector & Status Badge */}
-                <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <div
                     id="tour-payroll-period-selector"
                     data-tour="tour-payroll-period-selector"
-                    className="flex flex-wrap items-center gap-2.5"
+                    className="flex flex-wrap items-center gap-2"
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0">
@@ -4019,7 +4019,7 @@ export default function PayrollPage() {
                         }}
                         numbered={false}
                         size="sm"
-                        className="min-w-[150px] sm:min-w-[180px]"
+                        className="min-w-[130px] sm:min-w-[145px]"
                         buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 hover:border-slate-300"
                         title="เลือกรอบเดือน"
                       >
@@ -4059,7 +4059,7 @@ export default function PayrollPage() {
                       <YearPicker
                         value={activeYear}
                         onChange={(y) => handleYearFilterChange(y)}
-                        className="w-28 sm:w-32"
+                        className="w-24 sm:w-28"
                         buttonClassName="font-bold text-slate-800 dark:text-slate-100 rounded-xl bg-slate-50 dark:bg-slate-900/60"
                         title="เลือกปีรอบเงินเดือน"
                       />
@@ -4069,7 +4069,7 @@ export default function PayrollPage() {
                   {/* สถานะรอบ */}
                   {selectedPeriod ? (
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
                         selectedPeriod.status === 'PENDING_APPROVAL' || selectedPeriod.status === 'FINANCE_VERIFIED'
                           ? 'bg-amber-100 text-amber-800 border border-amber-200 shadow-2xs'
                           : selectedPeriod.status === 'REVIEW' || selectedPeriod.status === 'DRAFT'
@@ -4104,12 +4104,6 @@ export default function PayrollPage() {
                   ) : (
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                       ยังไม่มีรอบเงินเดือน
-                    </span>
-                  )}
-                  {isFuturePeriod(selectedPeriod) && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      <AlertTriangle className="w-3 h-3" />
-                      งวดล่วงหน้า (อนาคต)
                     </span>
                   )}
                   {(!isAdmin &&
@@ -4878,46 +4872,56 @@ export default function PayrollPage() {
               <div className="space-y-4">
                 {/* 4 Stat Cards for Finance */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-amber-100 dark:bg-amber-950/60 rounded-2xl border border-amber-300 dark:border-amber-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-amber-800 dark:text-amber-300 font-bold">ยอดจ่ายรวม (Gross)</span>
-                    <div className="text-2xl font-bold text-amber-900 dark:text-amber-100 mt-1">
+                  <div className="bg-amber-100 dark:bg-amber-950/60 rounded-2xl border border-amber-300 dark:border-amber-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-amber-800 dark:text-amber-300 font-bold tracking-tight">
+                      ยอดจ่ายรวม (Gross)
+                    </span>
+                    <div className="text-2xl font-extrabold text-amber-900 dark:text-amber-100 text-center tabular-nums tracking-tight my-1.5">
                       ฿{totalGross.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-amber-700/80 dark:text-amber-400 mt-1 block font-medium">{totalEmployees} คน</span>
+                    <span className="text-[11px] text-amber-700/85 dark:text-amber-400 text-center font-medium">
+                      จำนวน {totalEmployees} คน
+                    </span>
                   </div>
 
-                  <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-rose-800 dark:text-rose-300 font-bold">ภาษี + ประกันสังคมที่ต้องนำส่ง</span>
-                    <div className="text-2xl font-bold text-rose-700 dark:text-rose-300 mt-1">
+                  <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-rose-800 dark:text-rose-300 font-bold tracking-tight">
+                      ภาษี + ประกันสังคมที่ต้องนำส่ง
+                    </span>
+                    <div className="text-2xl font-extrabold text-rose-700 dark:text-rose-300 text-center tabular-nums tracking-tight my-1.5">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-rose-700/80 dark:text-rose-400 mt-1 block font-medium">
+                    <span className="text-[11px] text-rose-700/85 dark:text-rose-400 text-center font-medium">
                       กำหนดนำส่ง {(() => {
                         if (!selectedPeriod) return '-';
                         const nextMonth = selectedPeriod.month === 12 ? 1 : selectedPeriod.month + 1;
                         const nextYear = selectedPeriod.month === 12 ? selectedPeriod.year + 1 : selectedPeriod.year;
-                        const nextMonthName = THAI_MONTH_NAMES[nextMonth - 1];
-                        return `7 ${nextMonthName} ${nextYear + 543}`;
+                        const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                        return `7 ${shortMonths[nextMonth - 1]} ${nextYear + 543}`;
                       })()}
                     </span>
                   </div>
 
-                  <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl border border-emerald-300 dark:border-emerald-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">ยอดโอนสุทธิ (Net Pay)</span>
-                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+                  <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl border border-emerald-300 dark:border-emerald-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold tracking-tight">
+                      ยอดโอนสุทธิ (Net Pay)
+                    </span>
+                    <div className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300 text-center tabular-nums tracking-tight my-1.5">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                     </div>
-                    <span className="text-[11px] text-emerald-700/80 dark:text-emerald-400 mt-1 block font-medium">
+                    <span className="text-[11px] text-emerald-700/85 dark:text-emerald-400 text-center font-medium">
                       โอนวันที่ {formatThaiShortDate(selectedPeriod?.paymentDate)}
                     </span>
                   </div>
 
-                  <div className="bg-sky-100 dark:bg-sky-950/60 rounded-2xl border border-sky-300 dark:border-sky-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-sky-800 dark:text-sky-300 font-bold">สถานะการโอน</span>
-                    <div className="text-2xl font-bold text-sky-950 dark:text-sky-100 mt-1">
+                  <div className="bg-sky-100 dark:bg-sky-950/60 rounded-2xl border border-sky-300 dark:border-sky-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-sky-800 dark:text-sky-300 font-bold tracking-tight">
+                      สถานะการโอน
+                    </span>
+                    <div className="text-2xl font-extrabold text-sky-950 dark:text-sky-100 text-center tabular-nums tracking-tight my-1.5">
                       {transferredCount} / {transferTotal}
                     </div>
-                    <span className="text-[11px] text-sky-700/80 dark:text-sky-400 mt-1 block font-medium">
+                    <span className="text-[11px] text-sky-700/85 dark:text-sky-400 text-center font-medium">
                       {transferredCount === transferTotal ? 'สำเร็จครบทั้งหมด' : `${pendingTransferCount} รายการรอโอน`}
                     </span>
                   </div>
@@ -5081,37 +5085,56 @@ export default function PayrollPage() {
               <div className="space-y-4">
                 {/* 4 Stat Cards for Approver */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl border border-emerald-300 dark:border-emerald-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">งบประมาณเงินเดือนสุทธิรวม</span>
-                    <div className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+                  <div className="bg-emerald-100 dark:bg-emerald-950/60 rounded-2xl border border-emerald-300 dark:border-emerald-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-emerald-800 dark:text-emerald-300 font-bold tracking-tight">
+                      งบประมาณเงินเดือนสุทธิรวม
+                    </span>
+                    <div className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300 text-center tabular-nums tracking-tight my-1.5">
                       ฿{totalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
+                    <span className="text-[11px] text-emerald-700/85 dark:text-emerald-400 text-center font-medium">
+                      สุทธิพร้อมจ่ายทั้งงวด
+                    </span>
                   </div>
 
-                  <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-rose-800 dark:text-rose-300 font-bold">ภาระภาษีและประกันสังคม</span>
-                    <div className="text-2xl font-bold text-rose-700 dark:text-rose-300 mt-1">
+                  <div className="bg-rose-100 dark:bg-rose-950/60 rounded-2xl border border-rose-300 dark:border-rose-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-rose-800 dark:text-rose-300 font-bold tracking-tight">
+                      ภาระภาษีและประกันสังคม
+                    </span>
+                    <div className="text-2xl font-extrabold text-rose-700 dark:text-rose-300 text-center tabular-nums tracking-tight my-1.5">
                       ฿{taxAndSso.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <span className="text-[11px] text-rose-700/80 dark:text-rose-400 mt-1 block font-medium">ภ.ง.ด.1 + SSO รวม</span>
+                    <span className="text-[11px] text-rose-700/85 dark:text-rose-400 text-center font-medium">
+                      ภ.ง.ด.1 + SSO รวม
+                    </span>
                   </div>
 
-                  <div className="bg-slate-100 dark:bg-slate-800/90 rounded-2xl border border-slate-300 dark:border-slate-700 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-slate-700 dark:text-slate-300 font-bold">จำนวนพนักงานทั้งหมด</span>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <div className="bg-slate-100 dark:bg-slate-800/90 rounded-2xl border border-slate-300 dark:border-slate-700 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-slate-700 dark:text-slate-300 font-bold tracking-tight">
+                      จำนวนพนักงานทั้งหมด
+                    </span>
+                    <div className="text-2xl font-extrabold text-slate-900 dark:text-slate-100 text-center tabular-nums tracking-tight my-1.5">
                       {totalEmployees} <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">คน</span>
                     </div>
+                    <span className="text-[11px] text-slate-600/85 dark:text-slate-400 text-center font-medium">
+                      พนักงานในรอบเงินเดือน
+                    </span>
                   </div>
 
-                  <div className="bg-indigo-100 dark:bg-indigo-950/60 rounded-2xl border border-indigo-300 dark:border-indigo-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all">
-                    <span className="text-xs text-indigo-800 dark:text-indigo-300 font-bold">สถานะการตรวจทาน</span>
-                    <div className="text-base font-bold text-indigo-900 dark:text-indigo-200 mt-2">
+                  <div className="bg-indigo-100 dark:bg-indigo-950/60 rounded-2xl border border-indigo-300 dark:border-indigo-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
+                    <span className="text-xs text-indigo-800 dark:text-indigo-300 font-bold tracking-tight">
+                      สถานะการตรวจทาน
+                    </span>
+                    <div className="text-lg font-extrabold text-indigo-900 dark:text-indigo-200 text-center tracking-tight my-1.5">
                       {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
                         ? 'รอ CEO อนุมัติ'
                         : selectedPeriod?.status === 'APPROVED'
                         ? 'อนุมัติเรียบร้อยแล้ว'
-                        : selectedPeriod?.statusText}
+                        : selectedPeriod?.statusText || '-'}
                     </div>
+                    <span className="text-[11px] text-indigo-700/85 dark:text-indigo-400 text-center font-medium">
+                      {selectedPeriod?.periodName || 'งวดปัจจุบัน'}
+                    </span>
                   </div>
                 </div>
 
@@ -5350,27 +5373,54 @@ export default function PayrollPage() {
 
                   {/* Summary Stats */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                    <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/60 dark:border-slate-700">
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">พนักงานที่มียอดโอน</div>
-                      <div className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">{transferList?.payableEmployees ?? transferList?.totalEmployees ?? 0} คน</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        (จากทั้งหมด {transferList?.totalPeriodEmployees ?? selectedPeriod?.employeeCount ?? 0} คนในรอบ)
+                    <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/70 dark:border-slate-700 flex flex-col justify-between min-h-[104px]">
+                      <div className="text-xs text-slate-600 dark:text-slate-300 font-bold tracking-tight">
+                        พนักงานที่มียอดโอน
+                      </div>
+                      <div className="text-xl font-extrabold text-slate-900 dark:text-slate-100 text-center tabular-nums tracking-tight my-1">
+                        {transferList?.payableEmployees ?? transferList?.totalEmployees ?? 0}{' '}
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">คน</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 text-center font-medium">
+                        จากทั้งหมด {transferList?.totalPeriodEmployees ?? selectedPeriod?.employeeCount ?? 0} คนในรอบ
                       </div>
                     </div>
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-800/40">
-                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">โอนแล้ว</div>
-                      <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-0.5">{transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0} คน</div>
-                      <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">แนบสลิป/บันทึกแล้ว</div>
+
+                    <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/70 dark:border-emerald-800/40 flex flex-col justify-between min-h-[104px]">
+                      <div className="text-xs text-emerald-700 dark:text-emerald-300 font-bold tracking-tight">
+                        โอนแล้ว
+                      </div>
+                      <div className="text-xl font-extrabold text-emerald-700 dark:text-emerald-300 text-center tabular-nums tracking-tight my-1">
+                        {transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0}{' '}
+                        <span className="text-xs font-semibold text-emerald-600/80 dark:text-emerald-400">คน</span>
+                      </div>
+                      <div className="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 text-center font-medium">
+                        แนบสลิป/บันทึกแล้ว
+                      </div>
                     </div>
-                    <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-100 dark:border-amber-800/40">
-                      <div className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">รอโอน</div>
-                      <div className="text-lg font-bold text-amber-700 dark:text-amber-300 mt-0.5">{transferList?.pendingCount ?? Math.max(0, (transferList?.payableEmployees ?? transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0) - (transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0))} คน</div>
-                      <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">รอดำเนินการโอน</div>
+
+                    <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200/70 dark:border-amber-800/40 flex flex-col justify-between min-h-[104px]">
+                      <div className="text-xs text-amber-700 dark:text-amber-300 font-bold tracking-tight">
+                        รอโอน
+                      </div>
+                      <div className="text-xl font-extrabold text-amber-700 dark:text-amber-300 text-center tabular-nums tracking-tight my-1">
+                        {transferList?.pendingCount ?? Math.max(0, (transferList?.payableEmployees ?? transferList?.totalEmployees ?? selectedPeriod?.employeeCount ?? 0) - (transferList?.transferredCount ?? selectedPeriod?.totalTransferredCount ?? 0))}{' '}
+                        <span className="text-xs font-semibold text-amber-600/80 dark:text-amber-400">คน</span>
+                      </div>
+                      <div className="text-[11px] text-amber-600/80 dark:text-amber-400/80 text-center font-medium">
+                        รอดำเนินการโอน
+                      </div>
                     </div>
-                    <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-800/40">
-                      <div className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">รวมยอดทั้งหมด</div>
-                      <div className="text-base font-bold text-blue-900 dark:text-blue-300 mt-0.5">
+
+                    <div className="p-3.5 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200/70 dark:border-blue-800/40 flex flex-col justify-between min-h-[104px]">
+                      <div className="text-xs text-blue-700 dark:text-blue-300 font-bold tracking-tight">
+                        รวมยอดทั้งหมด
+                      </div>
+                      <div className="text-xl font-extrabold text-blue-900 dark:text-blue-200 text-center tabular-nums tracking-tight my-1">
                         ฿{(transferList?.totalNetSalary ?? selectedPeriod?.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="text-[11px] text-blue-600/80 dark:text-blue-400/80 text-center font-medium">
+                        ยอดสุทธิที่ต้องโอนจ่าย
                       </div>
                     </div>
                   </div>
