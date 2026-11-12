@@ -14,7 +14,6 @@ import {
   Users,
   ArrowLeft,
   ArrowRight,
-  UserPlus,
   X,
   Check,
 } from 'lucide-react';
@@ -786,8 +785,8 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-hidden">
-              {/* Top Bar to go back and adjust employee selection */}
-              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2">
+              {/* Top Bar to go back to employee selection */}
+              <div className="shrink-0 flex items-center">
                 <button
                   type="button"
                   onClick={() => {
@@ -798,18 +797,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline cursor-pointer"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>เปลี่ยน / เพิ่มรายชื่อพนักงาน</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPickedIds(new Set(targetEmployees.map((e) => e.employeeId)));
-                    setStep('PICK');
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors cursor-pointer"
-                >
-                  <UserPlus className="w-3.5 h-3.5" />
-                  <span>เพิ่มพนักงานในรายการนี้</span>
+                  <span>กลับ</span>
                 </button>
               </div>
 
