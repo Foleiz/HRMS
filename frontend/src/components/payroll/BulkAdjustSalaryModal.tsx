@@ -664,10 +664,18 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               {/* Employee Picker Table */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-0">
                 <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
+                  <table className="w-full min-w-[780px] table-fixed text-left border-collapse text-xs">
+                    <colgroup>
+                      <col style={{ width: '44px' }} />
+                      <col style={{ width: '90px' }} />
+                      <col style={{ width: 'auto' }} />
+                      <col style={{ width: '160px' }} />
+                      <col style={{ width: '160px' }} />
+                      <col style={{ width: '180px' }} />
+                    </colgroup>
+                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold select-none">
                       <tr>
-                        <th className="py-2.5 px-3 w-10 text-center">
+                        <th className="py-2.5 px-3 text-center">
                           <input
                             type="checkbox"
                             checked={allPickerVisibleSelected}
@@ -675,7 +683,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                             className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary cursor-pointer"
                           />
                         </th>
-                        <th className="py-2.5 px-3 w-28">รหัส</th>
+                        <th className="py-2.5 px-3">รหัส</th>
                         <th className="py-2.5 px-3">ชื่อพนักงาน</th>
                         <th className="py-2.5 px-3">แผนก</th>
                         <th className="py-2.5 px-3 text-right">ฐานเงินเดือนปัจจุบัน</th>
@@ -1003,16 +1011,25 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               {/* Preview & Inline Edit Table */}
               <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-[160px]">
                 <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
+                  <table className="w-full min-w-[920px] table-fixed text-left border-collapse text-xs">
+                    <colgroup>
+                      <col style={{ width: '90px' }} />
+                      <col style={{ width: 'auto' }} />
+                      <col style={{ width: '220px' }} />
+                      <col style={{ width: '130px' }} />
+                      <col style={{ width: '150px' }} />
+                      <col style={{ width: '175px' }} />
+                      <col style={{ width: '45px' }} />
+                    </colgroup>
+                    <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold select-none">
                       <tr>
-                        <th className="py-2.5 px-3 w-28">รหัส</th>
+                        <th className="py-2.5 px-3">รหัส</th>
                         <th className="py-2.5 px-3">ชื่อพนักงาน</th>
-                        <th className="py-2.5 px-3 w-48 sm:w-56">ตำแหน่งในกรอบอ้างอิง</th>
+                        <th className="py-2.5 px-3">ตำแหน่งในกรอบอ้างอิง</th>
                         <th className="py-2.5 px-3 text-right">ฐานปัจจุบัน</th>
-                        <th className="py-2.5 px-3 w-44">เงินเดือนใหม่</th>
+                        <th className="py-2.5 px-3 text-right">เงินเดือนใหม่</th>
                         <th className="py-2.5 px-3 text-right">ส่วนต่าง</th>
-                        <th className="py-2.5 px-2 text-center w-10">ลบ</th>
+                        <th className="py-2.5 px-2 text-center">ลบ</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -1055,7 +1072,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                               </td>
                               <td className="py-2.5 px-3">
                                 {row.minSal != null && row.maxSal != null ? (
-                                  <div className="flex flex-col gap-1 w-40 sm:w-48 py-1">
+                                  <div className="flex flex-col gap-1 w-full max-w-[200px] py-1">
                                     <div className="relative flex items-center h-5">
                                       {/* Midpoint notch marker */}
                                       <div
