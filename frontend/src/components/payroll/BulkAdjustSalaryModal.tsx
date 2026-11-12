@@ -487,7 +487,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
       className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       innerClassName="items-center justify-center p-3 sm:p-4"
     >
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-4xl min-h-[580px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
         <ModalHeader
           icon={TrendingUp}
           title={
@@ -536,44 +536,30 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                 })}
               </div>
 
-              {/* Search & Department + Quick Select All */}
-              <div className="flex flex-wrap items-center justify-between gap-2.5">
-                <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[240px]">
-                  <div className="relative flex-1 min-w-[180px]">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                    <input
-                      type="text"
-                      value={pickerSearch}
-                      onChange={(e) => setPickerSearch(e.target.value)}
-                      placeholder="ค้นหารหัส ชื่อ หรือตำแหน่ง..."
-                      className="w-full text-xs pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-200"
-                    />
-                  </div>
-                  <select
-                    value={pickerDept}
-                    onChange={(e) => setPickerDept(e.target.value)}
-                    className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-slate-700 dark:text-slate-200"
-                  >
-                    <option value="">ทุกแผนก</option>
-                    {departmentNames.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
+              {/* Search & Department */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={pickerSearch}
+                    onChange={(e) => setPickerSearch(e.target.value)}
+                    placeholder="ค้นหารหัส ชื่อ หรือตำแหน่ง..."
+                    className="w-full text-xs pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-slate-800 dark:text-slate-200"
+                  />
                 </div>
-
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={togglePickAllVisible}
-                  disabled={filteredPickerEmployees.length === 0}
+                <select
+                  value={pickerDept}
+                  onChange={(e) => setPickerDept(e.target.value)}
+                  className="text-xs px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-slate-700 dark:text-slate-200"
                 >
-                  {allPickerVisibleSelected
-                    ? `ยกเลิกที่แสดง (${filteredPickerEmployees.length})`
-                    : `เลือกทั้งหมดที่แสดง (${filteredPickerEmployees.length})`}
-                </Button>
+                  <option value="">ทุกแผนก</option>
+                  {departmentNames.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {error && (
@@ -584,8 +570,8 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               )}
 
               {/* Employee Picker Table */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="overflow-x-auto max-h-[340px]">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+                <div className="overflow-x-auto min-h-[340px] max-h-[340px]">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
                       <tr>
@@ -608,7 +594,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                         <tr>
                           <td
                             colSpan={5}
-                            className="py-10 text-center text-slate-400 dark:text-slate-500"
+                            className="h-[280px] text-center text-slate-400 dark:text-slate-500"
                           >
                             ไม่พบพนักงานตามเงื่อนไขที่เลือก
                           </td>
@@ -702,7 +688,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                   onClick={handleConfirmPickedEmployees}
                   icon={<ArrowRight className="w-4 h-4" />}
                 >
-                  ถัดไป: กำหนดเงินเดือน ({pickedIds.size} คน)
+                  ถัดไป
                 </Button>
               </div>
             </div>
