@@ -16,6 +16,7 @@ import {
   ArrowRight,
   UserPlus,
   X,
+  Check,
 } from 'lucide-react';
 import { ModalHeader } from '@/components/ui/ModalHeader';
 import { ModalShell, Button } from '@/components/ui';
@@ -502,10 +503,69 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full flex-1 min-h-[580px] max-h-[92vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60">
           <ModalHeader
             icon={TrendingUp}
-            title={
-              step === 'PICK'
-                ? 'ปรับฐานเงินเดือนหลายคน — ขั้นตอนที่ 1: เลือกพนักงาน'
-                : `ปรับฐานเงินเดือนหลายคน (${targetEmployees.length} คน)`
+            title="ปรับฐานเงินเดือนหลายคน"
+            className="px-6 sm:px-44"
+            actions={
+              <div className="flex items-center gap-2 mr-3">
+                {/* ขั้นตอนที่ 1: เลือกพนักงาน */}
+                <div
+                  onClick={() => {
+                    if (step === 'ADJUST') {
+                      setPickedIds(new Set(targetEmployees.map((e) => e.employeeId)));
+                      setStep('PICK');
+                      setError(null);
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 select-none transition-colors ${
+                    step === 'ADJUST' ? 'cursor-pointer hover:opacity-85' : ''
+                  }`}
+                  title={step === 'ADJUST' ? 'คลิกเพื่อกลับไปเลือกพนักงาน' : undefined}
+                >
+                  {step === 'ADJUST' ? (
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                    </span>
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs">
+                      1
+                    </span>
+                  )}
+                  <span
+                    className={`text-xs font-semibold whitespace-nowrap ${
+                      step === 'PICK'
+                        ? 'text-primary dark:text-blue-400 font-bold'
+                        : 'text-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    เลือกพนักงาน
+                  </span>
+                </div>
+
+                {/* Connector Line */}
+                <div className="w-5 sm:w-7 h-px bg-slate-200 dark:bg-slate-700 shrink-0" />
+
+                {/* ขั้นตอนที่ 2: กำหนดการปรับ */}
+                <div className="flex items-center gap-1.5 select-none">
+                  {step === 'ADJUST' ? (
+                    <span className="w-5 h-5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[11px] font-bold flex items-center justify-center shrink-0 shadow-2xs">
+                      2
+                    </span>
+                  ) : (
+                    <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-600 text-[11px] font-bold flex items-center justify-center shrink-0">
+                      2
+                    </span>
+                  )}
+                  <span
+                    className={`text-xs font-semibold whitespace-nowrap ${
+                      step === 'ADJUST'
+                        ? 'text-primary dark:text-blue-400 font-bold'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  >
+                    กำหนดการปรับ
+                  </span>
+                </div>
+              </div>
             }
           />
 
