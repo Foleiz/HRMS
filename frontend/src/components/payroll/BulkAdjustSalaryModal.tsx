@@ -496,7 +496,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
       className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       innerClassName="items-center justify-center p-3 sm:p-4"
     >
-      <div className="relative w-full max-w-5xl lg:max-w-6xl h-[680px] max-h-[92vh] my-auto flex flex-col animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-5xl lg:max-w-6xl h-[90vh] max-h-[860px] min-h-[580px] my-auto flex flex-col animate-in zoom-in-95 duration-200">
         {/* ปุ่มกากบาทที่ด้านนอกมุมขวาบน คล้ายแบบรูปที่ 1 */}
         <button
           type="button"
@@ -592,7 +592,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
 
         {step === 'PICK' ? (
           <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-hidden">
+            <div className="p-4 sm:p-5 flex flex-col flex-1 min-h-0 gap-3 overflow-hidden">
               {/* Filter Pills */}
               <div className="shrink-0 flex flex-wrap items-center gap-2">
                 {[
@@ -801,9 +801,9 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-hidden">
+            <div className="p-4 sm:p-5 flex flex-col flex-1 min-h-0 gap-3 overflow-y-auto">
               {/* Mode Selector & Quick Formula Controls */}
-              <div className="shrink-0 p-4 sm:p-4.5 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl space-y-3.5">
+              <div className="shrink-0 p-3.5 sm:p-4 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl space-y-3">
                 {/* Row 1: Segmented Mode Tabs */}
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300">
@@ -946,7 +946,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
               )}
 
               {invalidCount > 0 && (
-                <div className="p-3.5 bg-rose-50/90 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl space-y-2.5 text-xs text-rose-800 dark:text-rose-200">
+                <div className="shrink-0 p-3 sm:p-3.5 bg-rose-50/90 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 rounded-xl space-y-2 text-xs text-rose-800 dark:text-rose-200">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2 font-semibold">
                       <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
@@ -990,26 +990,28 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                       )}
                     </div>
                   </div>
-                  <ul className="space-y-1 pl-6 list-disc text-[11px] text-rose-700 dark:text-rose-300">
-                    {invalidRows.slice(0, 5).map((r) => (
-                      <li key={r.emp.employeeId}>
-                        <b>
-                          {r.emp.employeeCode} {r.emp.employeeName}
-                        </b>
-                        : {r.reasons.join(' · ')}
-                      </li>
-                    ))}
-                    {invalidRows.length > 5 && (
-                      <li className="list-none font-semibold">
-                        ...และอีก {invalidRows.length - 5} คน (กด &ldquo;กรองดูเฉพาะที่ไม่ผ่าน&rdquo; เพื่อตรวจสอบทั้งหมด)
-                      </li>
-                    )}
-                  </ul>
+                  <div className="max-h-20 overflow-y-auto pr-1">
+                    <ul className="space-y-0.5 pl-5 list-disc text-[11px] text-rose-700 dark:text-rose-300">
+                      {invalidRows.slice(0, 5).map((r) => (
+                        <li key={r.emp.employeeId}>
+                          <b>
+                            {r.emp.employeeCode} {r.emp.employeeName}
+                          </b>
+                          : {r.reasons.join(' · ')}
+                        </li>
+                      ))}
+                      {invalidRows.length > 5 && (
+                        <li className="list-none font-semibold pt-0.5">
+                          ...และอีก {invalidRows.length - 5} คน (กด &ldquo;กรองดูเฉพาะที่ไม่ผ่าน&rdquo; เพื่อตรวจสอบทั้งหมด)
+                        </li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
               )}
 
               {/* Preview & Inline Edit Table */}
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-[160px]">
+              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col flex-1 min-h-[260px]">
                 <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
                   <table className="w-full min-w-[920px] table-fixed text-left border-collapse text-xs">
                     <colgroup>
