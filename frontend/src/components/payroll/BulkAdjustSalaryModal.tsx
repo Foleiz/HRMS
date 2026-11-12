@@ -12,7 +12,6 @@ import {
   Wand2,
   Search,
   Users,
-  ArrowLeft,
   ArrowRight,
   X,
   Check,
@@ -511,6 +510,15 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full h-full flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60">
           <ModalHeader
             icon={TrendingUp}
+            onBack={
+              step === 'ADJUST'
+                ? () => {
+                    setPickedIds(new Set(targetEmployees.map((e) => e.employeeId)));
+                    setStep('PICK');
+                    setError(null);
+                  }
+                : undefined
+            }
             title={
               <div className="flex flex-col items-center gap-2">
                 <span className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -785,22 +793,6 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-hidden">
-              {/* Top Bar to go back to employee selection */}
-              <div className="shrink-0 flex items-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPickedIds(new Set(targetEmployees.map((e) => e.employeeId)));
-                    setStep('PICK');
-                    setError(null);
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>กลับ</span>
-                </button>
-              </div>
-
               {/* Mode Selector & Quick Formula Controls */}
               <div className="shrink-0 p-4 sm:p-4.5 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/60 rounded-2xl space-y-3.5">
                 {/* Row 1: Segmented Mode Tabs */}

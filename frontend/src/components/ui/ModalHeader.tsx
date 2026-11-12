@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 
 /**
  * หัวหน้าต่างมาตรฐานของระบบ — หัวข้ออยู่กึ่งกลาง + ปุ่มปิดมุมขวา
@@ -15,16 +15,45 @@ export interface ModalHeaderProps {
   /** ข้อมูลประกอบบรรทัดรอง (ใช้เฉพาะข้อมูลที่เปลี่ยนตามรายการ เช่น ชื่อพนักงาน / เลขที่ชุดข้อมูล) */
   subtitle?: React.ReactNode;
   onClose?: () => void;
+  /** ปุ่มย้อนกลับ (มุมซ้าย) */
+  onBack?: () => void;
+  backLabel?: string;
+  /** แอคชันหรือปุ่มเพิ่มเติมฝั่งซ้าย */
+  startAction?: React.ReactNode;
   /** ปุ่มเพิ่มเติมก่อนปุ่มปิด (มุมขวา) */
   actions?: React.ReactNode;
   className?: string;
 }
 
-export function ModalHeader({ title, subtitle, onClose, actions, className = '' }: ModalHeaderProps) {
+export function ModalHeader({
+  title,
+  subtitle,
+  onClose,
+  onBack,
+  backLabel = 'กลับ',
+  startAction,
+  actions,
+  className = '',
+}: ModalHeaderProps) {
   return (
     <div
       className={`relative px-14 py-4 text-center border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shrink-0 ${className}`}
     >
+      {(startAction || onBack) && (
+        <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10">
+          {startAction}
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{backLabel}</span>
+            </button>
+          )}
+        </div>
+      )}
       <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug">{title}</h3>
       {subtitle && <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{subtitle}</div>}
       {(actions || onClose) && (
