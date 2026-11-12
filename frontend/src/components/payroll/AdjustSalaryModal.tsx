@@ -138,13 +138,23 @@ export const AdjustSalaryModal: React.FC<Props> = ({
 
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200" innerClassName="items-center justify-center p-3 sm:p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 my-auto animate-in zoom-in-95 duration-200">
-        {/* Header */}
-        <ModalHeader
-          icon={TrendingUp}
-          title="ปรับฐานเงินเดือนพนักงาน"
-          onClose={onClose}
-        />
+      <div className="relative w-full max-w-lg max-h-[90vh] my-auto flex flex-col animate-in zoom-in-95 duration-200">
+        {/* ปุ่มกากบาทที่ด้านนอกมุมขวาบน คล้ายแบบรูปที่ 1 */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="ปิดหน้าต่าง"
+          className="absolute -top-3 -right-3 z-50 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all cursor-pointer"
+        >
+          <X className="w-4 h-4 stroke-[2.5]" />
+        </button>
+
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full flex-1 max-h-[90vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60">
+          {/* Header */}
+          <ModalHeader
+            icon={TrendingUp}
+            title="ปรับฐานเงินเดือนพนักงาน"
+          />
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -331,6 +341,7 @@ export const AdjustSalaryModal: React.FC<Props> = ({
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </ModalShell>
   );

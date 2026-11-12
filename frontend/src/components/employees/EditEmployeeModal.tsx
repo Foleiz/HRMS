@@ -569,13 +569,23 @@ export default function EditEmployeeModal({
 
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
-      <div className="relative w-full max-w-5xl shrink-0 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <ModalHeader
-          icon={UserCog}
-          title={<>แก้ไขข้อมูลพนักงาน {employeeInfo?.code && (<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-mono font-bold">{employeeInfo.code}</span>)}</>}
-          onClose={onClose}
-        />
+      <div className="relative w-full max-w-5xl shrink-0 my-auto flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
+        {/* ปุ่มกากบาทที่ด้านนอกมุมขวาบน คล้ายแบบรูปที่ 1 */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="ปิดหน้าต่าง"
+          className="absolute -top-3 -right-3 z-50 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all cursor-pointer"
+        >
+          <X className="w-4 h-4 stroke-[2.5]" />
+        </button>
+
+        <div className="w-full flex-1 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col min-h-0">
+          {/* Header */}
+          <ModalHeader
+            icon={UserCog}
+            title={<>แก้ไขข้อมูลพนักงาน {employeeInfo?.code && (<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-mono font-bold">{employeeInfo.code}</span>)}</>}
+          />
 
         {/* Modal Tab Switcher — แถบแท็บมาตรฐานของระบบ */}
         <div className="border-b border-slate-200 dark:border-slate-700 px-6 shrink-0">
@@ -1437,6 +1447,7 @@ export default function EditEmployeeModal({
             </div>
           </form>
         )}
+        </div>
       </div>
     </ModalShell>
   );
