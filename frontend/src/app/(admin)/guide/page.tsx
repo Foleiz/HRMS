@@ -33,13 +33,43 @@ const GUIDE_FLOW_PERMISSIONS: Record<string, string[]> = {
   'company-setup': ['GUIDE_COMPANY_SETUP_VIEW'],
 };
 
+const GUIDE_FLOW_STEP_MODULES: Record<string, string[]> = {
+  'hr-onboarding': ['EMP_PROFILE', 'EMP_CONTRACT', 'SETTINGS_USERS'],
+  'payroll-cycle-hr': ['TIME_DAILY', 'PAYROLL_CALC'],
+  'payroll-cycle-finance': ['PAYROLL_CALC'],
+  'payroll-cycle-ceo': ['PAYROLL_CALC'],
+  'payroll-cycle-bank': ['PAYROLL_CALC'],
+  'payroll-cycle': ['TIME_DAILY', 'PAYROLL_CALC'],
+  'offboarding': ['ESS_DOCS', 'EMP_CONTRACT', 'SETTINGS_USERS'],
+  'shift-schedule': ['TIME_SCHEDULE', 'TIME_DAILY'],
+  'attendance-import': ['TIME_IMPORT', 'TIME_DAILY'],
+  'transfer-flow': ['EMP_TRANSFER', 'EMP_CONTRACT', 'ORG_CHART'],
+  'leave-setup': ['LEAVE_TYPE', 'WORK_CALENDAR', 'LEAVE_BALANCE'],
+  'leave-approval': ['APPROVAL_LEAVE', 'LEAVE_BALANCE'],
+  'company-setup': ['MASTER_DATA', 'WORK_CALENDAR', 'ORG_STRUCT'],
+};
+
+const PARENT_PERM_MAP: Record<string, string> = {
+  EMP_PROFILE: 'EMP_VIEW',
+  EMP_CONTRACT: 'EMP_VIEW',
+  EMP_TRANSFER: 'EMP_VIEW',
+  SETTINGS_USERS: 'SETTINGS_VIEW',
+  TIME_DAILY: 'TIME_VIEW',
+  TIME_SCHEDULE: 'TIME_VIEW',
+  TIME_IMPORT: 'TIME_VIEW',
+  PAYROLL_CALC: 'PAYROLL_VIEW',
+  ESS_DOCS: 'DOCS_VIEW',
+  LEAVE_TYPE: 'LEAVE_VIEW',
+  LEAVE_BALANCE: 'LEAVE_VIEW',
+  APPROVAL_LEAVE: 'APPROVALS_VIEW',
+  ORG_STRUCT: 'ORG_VIEW',
+};
+
 function GuidePageContent() {
   const router = useRouter();
   const { setBreadcrumb } = useBreadcrumb();
-  const { user, hasPermission, hasRole } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
 
   useEffect(() => {
     setBreadcrumb({ section: 'ภาพรวม', page: 'วิธีการใช้งาน' });
@@ -51,17 +81,29 @@ function GuidePageContent() {
     const payrollAccess = getPayrollViewAccess(user);
 
     return WIZARD_FLOWS.map((flow) => {
-      if (!isSuper) {
-        const flowPerms = GUIDE_FLOW_PERMISSIONS[flow.id];
-        if (
-          flowPerms &&
-          flowPerms.length > 0 &&
-          !flowPerms.some((p) => hasPermission(p) || (p.startsWith('GUIDE_PAYROLL_') && hasPermission('GUIDE_PAYROLL_VIEW')))
-        ) {
-          return null;
-        }
+      // 1. ตรวจสอบสิทธิ์ระดับ Flow ไกด์ (GUIDE_xxx_VIEW) ต้องมีสิทธิ์เปิดใช้งานอยู่เสมอ
+      const flowPerms = GUIDE_FLOW_PERMISSIONS[flow.id];
+      if (
+        flowPerms &&
+        flowPerms.length > 0 &&
+        !flowPerms.some((p) => hasPermission(p) || (p.startsWith('GUIDE_PAYROLL_') && hasPermission('GUIDE_PAYROLL_VIEW')))
+      ) {
+        return null;
       }
 
+      // 2. ตรวจสอบสิทธิ์โมดูลย่อยของแต่ละขั้นตอนในคู่มือ (หากติ๊กสิทธิ์ขั้นตอนไม่ครบ ให้ถือว่าคู่มือนั้นไม่ถูกใช้งาน)
+      const stepModules = GUIDE_FLOW_STEP_MODULES[flow.id];
+      if (stepModules && stepModules.length > 0) {
+        const hasAllStepPerms = stepModules.every((modCode) => {
+          if (hasPermission(`${modCode}_VIEW`)) return true;
+          const parentPerm = PARENT_PERM_MAP[modCode];
+          if (parentPerm && hasPermission(parentPerm)) return true;
+          return false;
+        });
+        if (!hasAllStepPerms) return null;
+      }
+
+      // 3. ตรวจสอบสิทธิ์เฉพาะด้าน Payroll View
       if (user && flow.requiredPayrollView) {
         if (flow.requiredPayrollView === 'HR' && !payrollAccess.canAccessHrView) return null;
         if (flow.requiredPayrollView === 'FINANCE' && !payrollAccess.canAccessFinanceView) return null;
@@ -69,6 +111,7 @@ function GuidePageContent() {
         if (flow.requiredPayrollView === 'BANK' && !payrollAccess.canAccessBankView) return null;
       }
 
+      // 4. ตรวจสอบสิทธิ์การเข้าถึงหน้า (Route Access)
       const accessiblePages = flow.pages.filter((page) => {
         if (!user) return true;
         const cleanPath = page.route.split('?')[0];
@@ -86,7 +129,7 @@ function GuidePageContent() {
         route: accessiblePages[0].route,
       };
     }).filter((item): item is GuideItem => item !== null);
-  }, [user, isSuper, hasPermission]);
+  }, [user, hasPermission]);
 
   // กรองคู่มือตามคำค้นหา
   const filteredItems = useMemo(() => {

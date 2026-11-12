@@ -51,6 +51,7 @@ import {
   UpdateRoleMatrixRequest,
 } from '@/types/settings';
 import { useToast } from '@/context/ToastContext';
+import { useAuth } from '@/context/AuthContext';
 import { Button, ModalShell } from '@/components/ui';
 
 interface ActivePopoverState {
@@ -557,6 +558,7 @@ export const RolesTab: React.FC<RolesTabProps> = ({
   canEditRole = true,
 }) => {
   const toast = useToast();
+  const { user: currentUser } = useAuth();
 
   /* ── State ── */
   const [searchRole, setSearchRole] = useState('');
@@ -1556,20 +1558,41 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                       </span>
                     </div>
                   </div>
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
-                      isSelected
-                        ? 'text-white'
-                        : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
-                    }`}
-                    style={isSelected ? { backgroundColor: 'rgba(255, 255, 255, 0.2)' } : undefined}
-                  >
-                    <span
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: isSelected ? '#FFFFFF' : '#10B981' }}
-                    />
-                    ใช้งานอยู่
-                  </span>
+                  {(() => {
+                    const isCurrentUserRole = currentUser?.roles?.some(
+                      (r) => r.toUpperCase() === role.roleCode.toUpperCase()
+                    );
+                    const isRoleActive = role.status === 'ACTIVE';
+
+                    return (
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-0.5 rounded-full shrink-0 ${
+                          isSelected
+                            ? 'text-white'
+                            : isCurrentUserRole
+                            ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-800/60'
+                            : isRoleActive
+                            ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
+                            : 'text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'
+                        }`}
+                        style={isSelected ? { backgroundColor: 'rgba(255, 255, 255, 0.2)' } : undefined}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: isSelected
+                              ? '#FFFFFF'
+                              : isCurrentUserRole
+                              ? '#3B82F6'
+                              : isRoleActive
+                              ? '#10B981'
+                              : '#94A3B8',
+                          }}
+                        />
+                        {isCurrentUserRole ? 'บทบาทของคุณ' : isRoleActive ? 'เปิดใช้งาน' : 'ปิดใช้งาน'}
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {role.description && (
