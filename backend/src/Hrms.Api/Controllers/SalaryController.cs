@@ -276,6 +276,7 @@ public class SalaryController : ControllerBase
         CancellationToken cancellationToken)
     {
         PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        request.ApprovedByEmployeeId ??= GetCurrentEmployeeId();
         var result = await _salaryService.AdjustEmployeeSalaryAsync(employeeId, request, cancellationToken);
         return Ok(ApiResponse<EmployeeSalaryDto>.Ok(result, "ปรับฐานเงินเดือนพนักงานสำเร็จ"));
     }
@@ -291,6 +292,7 @@ public class SalaryController : ControllerBase
         CancellationToken cancellationToken)
     {
         PayrollAccess.Ensure(PayrollAccess.IsHr(_currentUser), "ดำเนินการเงินเดือนฝั่ง HR");
+        request.ApprovedByEmployeeId ??= GetCurrentEmployeeId();
         var result = await _salaryService.BulkAdjustEmployeeSalaryAsync(request, cancellationToken);
         return Ok(ApiResponse<BulkAdjustEmployeeSalaryResultDto>.Ok(result, $"ปรับฐานเงินเดือนพนักงาน {result.AdjustedCount} คนสำเร็จ"));
     }

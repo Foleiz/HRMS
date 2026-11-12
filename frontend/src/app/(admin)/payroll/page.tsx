@@ -2674,22 +2674,17 @@ export default function PayrollPage() {
                     </div>
                   }
                   actions={
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                        {filteredSalaryEmployees.length} คน
-                      </span>
-                      {canAdjustSalary && (
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          icon={<Users className="w-3.5 h-3.5" />}
-                          onClick={() => setIsBulkAdjustModalOpen(true)}
-                        >
-                          ปรับฐานเงินเดือนหลายคน
-                        </Button>
-                      )}
-                    </div>
+                    canAdjustSalary ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        icon={<Users className="w-3.5 h-3.5" />}
+                        onClick={() => setIsBulkAdjustModalOpen(true)}
+                      >
+                        ปรับฐานเงินเดือน
+                      </Button>
+                    ) : null
                   }
                 />
 
@@ -2803,23 +2798,13 @@ export default function PayrollPage() {
                                 )}
                               </td>
                               <td className="py-3.5 px-4 text-center">
-                                <div className="inline-flex items-center gap-2">
-                                  {canAdjustSalary && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleOpenAdjustSalary(emp)}
-                                    >
-                                      {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
-                                    </Button>
-                                  )}
-                                  <button
-                                    onClick={() => handleOpenSalaryHistory(emp)}
-                                    title="ดูประวัติการปรับเงินเดือน"
-                                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-                                  >
-                                    <History className="w-4 h-4" />
-                                  </button>
-                                </div>
+                                <button
+                                  onClick={() => handleOpenSalaryHistory(emp)}
+                                  title="ดูประวัติการปรับเงินเดือน"
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <History className="w-4 h-4" />
+                                </button>
                               </td>
                             </tr>
                           );
@@ -3891,7 +3876,7 @@ export default function PayrollPage() {
         const transferTotal = payableTransfers.length;
         const transferredCount = payableTransfers.filter(p => p.paymentStatus === 'TRANSFERRED').length;
         const pendingTransferCount = transferTotal - transferredCount;
-        const zeroSalaryCount = payrolls.filter(p => !p.netPayableSalary || p.netPayableSalary === 0).length;
+        const zeroSalaryCount = payrolls.filter(p => p.inputStatus === 'PENDING_SALARY').length;
         const openPeriods = periods.filter(p => p.status !== 'CLOSED');
 
         const availableYears = Array.from(
@@ -4649,7 +4634,7 @@ export default function PayrollPage() {
                   </div>
                   <div>
                     <div className="font-bold text-amber-900 dark:text-amber-200">
-                      พบพนักงาน {zeroSalaryCount} คนที่ยอดเงินเดือนเป็น ฿0.00 (ยังไม่มีฐานเงินเดือนเริ่มต้น)
+                      พบพนักงาน {zeroSalaryCount} คนที่ยังไม่มีฐานเงินเดือนเริ่มต้น
                     </div>
                     <div className="text-amber-700 dark:text-amber-400 text-[11px] mt-0.5">
                       พนักงานเหล่านี้จะไม่มีรายการเงินเดือนสุทธิ หากต้องการกำหนดเงินเดือน สามารถไปที่แท็บ &ldquo;ข้อมูลเงินเดือนพนักงาน&rdquo; ได้

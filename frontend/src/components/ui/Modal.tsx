@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { X } from 'lucide-react';
 import { Button } from './Button';
 import { ModalShell } from './ModalShell';
 import { ModalHeader } from './ModalHeader';
@@ -36,17 +37,29 @@ export const Modal: React.FC<{
   return (
     // popup สูงไม่เกิน 100dvh - ขอบ — เนื้อหาเลื่อนภายใน หัว/ปุ่มไม่โดนขอบจอบัง
     <ModalShell>
-      <div
-        className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full ${SIZES[size]} max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60 animate-in zoom-in-95 duration-200`}
-      >
-        <ModalHeader icon={icon} title={title} subtitle={subtitle} onClose={onClose} />
-        {onSubmit ? (
-          <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            {body}
-          </form>
-        ) : (
-          body
-        )}
+      <div className={`relative w-full ${SIZES[size]} max-h-[calc(100dvh-2rem)] my-auto flex flex-col animate-in zoom-in-95 duration-200`}>
+        {/* ปุ่มกากบาทที่ด้านนอกมุมขวาบน คล้ายแบบรูปที่ 1 */}
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="ปิดหน้าต่าง"
+          className="absolute -top-3 -right-3 z-50 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all cursor-pointer"
+        >
+          <X className="w-4 h-4 stroke-[2.5]" />
+        </button>
+
+        <div
+          className={`bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full flex-1 flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60`}
+        >
+          <ModalHeader icon={icon} title={title} subtitle={subtitle} />
+          {onSubmit ? (
+            <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              {body}
+            </form>
+          ) : (
+            body
+          )}
+        </div>
       </div>
     </ModalShell>
   );

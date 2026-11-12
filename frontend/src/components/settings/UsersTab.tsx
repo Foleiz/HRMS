@@ -72,28 +72,37 @@ export const UsersTab: React.FC<UsersTabProps> = ({
   onCloseDrawer,
 }) => {
   const [searchInput, setSearchInput] = useState('');
-  const [selectedRole, setSelectedRole] = useState<string>('ทั้งหมด');
-  const [selectedStatus, setSelectedStatus] = useState<string>('ทั้งหมด');
+  const [selectedRole, setSelectedRole] = useState<string>('ALL');
+  const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
 
+  // Debounce search input to notify parent
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      onSearchChange(searchInput.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput, onSearchChange]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearchChange(searchInput.trim());
-  };
-
-  const handleRoleSelect = (val: string) => {
-    setSelectedRole(val);
-    if (val === 'ทั้งหมด') {
+  const handleRoleSelect = (val: any) => {
+    const strVal = String(val?.target?.value ?? val ?? '');
+    setSelectedRole(strVal);
+    if (strVal === 'ALL' || strVal === 'ทั้งหมด' || !strVal) {
       onRoleFilterChange(undefined);
     } else {
-      const found = roles.find((r) => r.roleCode === val);
-      onRoleFilterChange(found ? found.id : undefined);
+      const roleId = Number(strVal);
+      onRoleFilterChange(isNaN(roleId) ? undefined : roleId);
     }
   };
 
-  const handleStatusSelect = (val: string) => {
-    setSelectedStatus(val);
-    onStatusFilterChange(val);
+  const handleStatusSelect = (val: any) => {
+    const strVal = String(val?.target?.value ?? val ?? '');
+    setSelectedStatus(strVal);
+    onStatusFilterChange(strVal === 'ALL' ? 'ทั้งหมด' : strVal);
   };
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -144,7 +153,7 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 onChange={handleStatusSelect}
                 className="min-w-[140px]"
                 options={[
-                  { value: 'ทั้งหมด', label: 'สถานะทั้งหมด' },
+                  { value: 'ALL', label: 'สถานะทั้งหมด' },
                   { value: 'ACTIVE', label: 'ใช้งานอยู่' },
                   { value: 'INACTIVE', label: 'ไม่ได้ใช้งาน' },
                   { value: 'LOCKED', label: 'ถูกระงับ/ล็อก' },
@@ -155,9 +164,9 @@ export const UsersTab: React.FC<UsersTabProps> = ({
                 onChange={handleRoleSelect}
                 className="min-w-[150px]"
                 options={[
-                  { value: 'ทั้งหมด', label: 'บทบาททั้งหมด' },
+                  { value: 'ALL', label: 'บทบาททั้งหมด' },
                   ...roles.map((r) => ({
-                    value: r.roleCode,
+                    value: String(r.id),
                     label: r.roleName || formatRoleName(r.roleCode),
                   })),
                 ]}

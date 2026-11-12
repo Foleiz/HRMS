@@ -75,10 +75,13 @@ public class UserService : IUserService
             var s = filter.Search.Trim().ToLower();
             baseQuery = baseQuery.Where(u =>
                 u.Username.ToLower().Contains(s) ||
+                u.UserRoles.Any(ur => ur.Role.RoleName.ToLower().Contains(s) || ur.Role.RoleCode.ToLower().Contains(s)) ||
                 (u.Employee != null && (
                     u.Employee.EmployeeCode.ToLower().Contains(s) ||
                     u.Employee.FirstName.ToLower().Contains(s) ||
                     u.Employee.LastName.ToLower().Contains(s) ||
+                    (u.Employee.FirstName + " " + u.Employee.LastName).ToLower().Contains(s) ||
+                    (u.Employee.Prefix != null && (u.Employee.Prefix + " " + u.Employee.FirstName + " " + u.Employee.LastName).ToLower().Contains(s)) ||
                     (u.Employee.Contact != null && u.Employee.Contact.OrganizationEmail != null && u.Employee.Contact.OrganizationEmail.ToLower().Contains(s))
                 ))
             );
