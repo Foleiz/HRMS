@@ -785,7 +785,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
-            <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-y-auto">
+            <div className="p-5 sm:p-6 flex flex-col flex-1 min-h-0 gap-3.5 overflow-hidden">
               {/* Top Bar to go back and adjust employee selection */}
               <div className="shrink-0 flex flex-wrap items-center justify-between gap-2">
                 <button
@@ -1047,7 +1047,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                       <tr>
                         <th className="py-2.5 px-3 w-28">รหัส</th>
                         <th className="py-2.5 px-3">ชื่อพนักงาน</th>
-                        <th className="py-2.5 px-3 w-48 sm:w-52">ตำแหน่งในกรอบอ้างอิง</th>
+                        <th className="py-2.5 px-3 w-48 sm:w-56">ตำแหน่งในกรอบอ้างอิง</th>
                         <th className="py-2.5 px-3 text-right">ฐานปัจจุบัน</th>
                         <th className="py-2.5 px-3 w-44">เงินเดือนใหม่</th>
                         <th className="py-2.5 px-3 text-right">ส่วนต่าง</th>
@@ -1094,7 +1094,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                               </td>
                               <td className="py-2.5 px-3">
                                 {row.minSal != null && row.maxSal != null ? (
-                                  <div className="flex flex-col gap-1 w-36 sm:w-44 py-1">
+                                  <div className="flex flex-col gap-1 w-40 sm:w-48 py-1">
                                     <div className="relative flex items-center h-5">
                                       {/* Midpoint notch marker */}
                                       <div
@@ -1119,14 +1119,14 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                             ...prev,
                                             [emp.employeeId]: String(val),
                                           }));
-                                          setMode('MANUAL');
                                           if (error) setError(null);
                                         }}
                                         className="salary-range-slider w-full h-1.5 appearance-none cursor-pointer focus:outline-none relative z-10"
                                       />
                                     </div>
-                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                                      {formatK(row.minSal)} – {formatK(row.maxSal)}
+                                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono select-none px-0.5">
+                                      <span>{formatK(row.minSal)}</span>
+                                      <span>{formatK(row.maxSal)}</span>
                                     </div>
                                   </div>
                                 ) : (
@@ -1152,7 +1152,6 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
                                         ...prev,
                                         [emp.employeeId]: rawVal,
                                       }));
-                                      setMode('MANUAL');
                                       if (error) setError(null);
                                     }}
                                     placeholder="ระบุเงินเดือนใหม่"

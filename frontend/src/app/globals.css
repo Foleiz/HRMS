@@ -534,6 +534,7 @@ html.dark .refresh-indicator__bar::before {
   background: #e2e8f0;
   border-radius: 9999px;
   outline: none;
+  touch-action: none;
 }
 :is(.dark .salary-range-slider) {
   background: #334155;
