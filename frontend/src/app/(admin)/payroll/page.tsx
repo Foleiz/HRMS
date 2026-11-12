@@ -2674,22 +2674,17 @@ export default function PayrollPage() {
                     </div>
                   }
                   actions={
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                        {filteredSalaryEmployees.length} คน
-                      </span>
-                      {canAdjustSalary && (
-                        <Button
-                          type="button"
-                          variant="primary"
-                          size="sm"
-                          icon={<Users className="w-3.5 h-3.5" />}
-                          onClick={() => setIsBulkAdjustModalOpen(true)}
-                        >
-                          ปรับฐานเงินเดือนหลายคน
-                        </Button>
-                      )}
-                    </div>
+                    canAdjustSalary ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        icon={<Users className="w-3.5 h-3.5" />}
+                        onClick={() => setIsBulkAdjustModalOpen(true)}
+                      >
+                        ปรับฐานเงินเดือน
+                      </Button>
+                    ) : null
                   }
                 />
 

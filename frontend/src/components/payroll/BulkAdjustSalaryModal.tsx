@@ -522,7 +522,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
             title={
               <div className="flex flex-col items-center gap-2">
                 <span className="text-base font-bold text-slate-900 dark:text-slate-100">
-                  ปรับฐานเงินเดือนหลายคน
+                  ปรับฐานเงินเดือน
                 </span>
                 {/* Stepper Status Indicator ด้านล่างของหัวข้อ */}
                 <div className="flex items-center gap-2 font-normal">
