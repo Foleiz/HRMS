@@ -315,6 +315,11 @@ using (var scope = app.Services.CreateScope())
 
             ALTER TABLE hrms.employee_assignment ADD COLUMN IF NOT EXISTS team_id bigint NULL REFERENCES hrms.team(id) ON DELETE SET NULL;
             CREATE INDEX IF NOT EXISTS idx_employee_assignment_team_id ON hrms.employee_assignment(team_id) WHERE is_current = true;
+
+            -- Backfill approved_by_employee_id ใน hrms.employee_salary สำหรับข้อมูลเดิมที่ยังเป็น NULL
+            UPDATE hrms.employee_salary
+            SET approved_by_employee_id = (SELECT id FROM hrms.employee ORDER BY id ASC LIMIT 1)
+            WHERE approved_by_employee_id IS NULL;
         ");
 
         // Backfill flow_snapshot_json ให้กับ approval_instance ที่ยังไม่มี snapshot

@@ -785,6 +785,15 @@ public class SalaryService : ISalaryService
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
+        // Fallback operator name (กรณีข้อมูลเดิมที่ยังไม่มีบันทึก ApprovedByEmployeeId)
+        var fallbackEmployee = await _context.Employees
+            .Where(e => e.Id == 1)
+            .Select(e => new { e.Prefix, e.FirstName, e.LastName })
+            .FirstOrDefaultAsync(cancellationToken);
+        string defaultOperatorName = fallbackEmployee != null
+            ? $"{fallbackEmployee.Prefix} {fallbackEmployee.FirstName} {fallbackEmployee.LastName}".Trim()
+            : "ผู้ดูแลระบบ";
+
         return salaries.Select(s => new EmployeeSalaryDto
         {
             Id = s.Id,
@@ -800,7 +809,7 @@ public class SalaryService : ISalaryService
             ApprovedByEmployeeId = s.ApprovedByEmployeeId,
             ApprovedByName = s.ApprovedByEmployee != null
                 ? s.ApprovedByEmployee.FullName
-                : null,
+                : defaultOperatorName,
             CreatedAt = s.CreatedAt
         }).ToList();
     }
@@ -855,6 +864,8 @@ public class SalaryService : ISalaryService
             currentActive.EffectiveTo = request.EffectiveFrom.AddDays(-1);
         }
 
+        var operatorEmpId = request.ApprovedByEmployeeId ?? _currentUser.EmployeeId ?? 1;
+
         var newSalary = new EmployeeSalary
         {
             EmployeeId = employeeId,
@@ -862,7 +873,7 @@ public class SalaryService : ISalaryService
             EffectiveFrom = request.EffectiveFrom,
             EffectiveTo = null,
             Reason = request.Reason,
-            ApprovedByEmployeeId = request.ApprovedByEmployeeId,
+            ApprovedByEmployeeId = operatorEmpId,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -870,9 +881,9 @@ public class SalaryService : ISalaryService
         await _context.SaveChangesAsync(cancellationToken);
 
         string? approverName = null;
-        if (request.ApprovedByEmployeeId.HasValue)
+        if (operatorEmpId > 0)
         {
-            var approver = await _context.Employees.FindAsync(new object[] { request.ApprovedByEmployeeId.Value }, cancellationToken);
+            var approver = await _context.Employees.FindAsync(new object[] { operatorEmpId }, cancellationToken);
             if (approver != null)
             {
                 approverName = approver.FullName;
@@ -924,10 +935,12 @@ public class SalaryService : ISalaryService
             .OrderByDescending(s => s.EffectiveFrom)
             .ToListAsync(cancellationToken);
 
+        var operatorEmpId = request.ApprovedByEmployeeId ?? _currentUser.EmployeeId ?? 1;
+
         string? approverName = null;
-        if (request.ApprovedByEmployeeId.HasValue)
+        if (operatorEmpId > 0)
         {
-            var approver = await _context.Employees.FindAsync(new object[] { request.ApprovedByEmployeeId.Value }, cancellationToken);
+            var approver = await _context.Employees.FindAsync(new object[] { operatorEmpId }, cancellationToken);
             approverName = approver?.FullName;
         }
 
@@ -972,7 +985,7 @@ public class SalaryService : ISalaryService
                 EffectiveFrom = request.EffectiveFrom,
                 EffectiveTo = null,
                 Reason = request.Reason,
-                ApprovedByEmployeeId = request.ApprovedByEmployeeId,
+                ApprovedByEmployeeId = operatorEmpId,
                 CreatedAt = DateTime.UtcNow
             };
 

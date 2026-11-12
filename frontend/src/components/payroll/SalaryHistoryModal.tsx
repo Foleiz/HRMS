@@ -82,7 +82,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
                       <th className="py-3 px-4 w-36 text-right whitespace-nowrap">ฐานเงินเดือน</th>
                       <th className="py-3 px-4 w-56 whitespace-nowrap">ช่วงเวลาที่มีผล</th>
                       <th className="py-3 px-4">เหตุผลในการปรับ</th>
-                      <th className="py-3 px-4 w-44 whitespace-nowrap">ผู้อนุมัติ</th>
+                      <th className="py-3 px-4 w-44 whitespace-nowrap">ดำเนินการโดย</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-xs text-slate-700 dark:text-slate-200">
@@ -126,7 +126,7 @@ export const SalaryHistoryModal: React.FC<Props> = ({
                           <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
                             {h.reason || '-'}
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                          <td className="py-3 px-4 text-xs font-medium text-slate-800 dark:text-slate-200 whitespace-nowrap">
                             {h.approvedByName || '-'}
                           </td>
                         </tr>

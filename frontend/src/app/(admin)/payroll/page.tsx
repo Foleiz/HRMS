@@ -2803,23 +2803,13 @@ export default function PayrollPage() {
                                 )}
                               </td>
                               <td className="py-3.5 px-4 text-center">
-                                <div className="inline-flex items-center gap-2">
-                                  {canAdjustSalary && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleOpenAdjustSalary(emp)}
-                                    >
-                                      {hasSalary ? 'ปรับเงินเดือน' : 'กำหนดเงินเดือน'}
-                                    </Button>
-                                  )}
-                                  <button
-                                    onClick={() => handleOpenSalaryHistory(emp)}
-                                    title="ดูประวัติการปรับเงินเดือน"
-                                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-                                  >
-                                    <History className="w-4 h-4" />
-                                  </button>
-                                </div>
+                                <button
+                                  onClick={() => handleOpenSalaryHistory(emp)}
+                                  title="ดูประวัติการปรับเงินเดือน"
+                                  className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+                                >
+                                  <History className="w-4 h-4" />
+                                </button>
                               </td>
                             </tr>
                           );
