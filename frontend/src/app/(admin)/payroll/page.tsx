@@ -2661,10 +2661,10 @@ export default function PayrollPage() {
                           className="w-full"
                           options={[
                             { value: 'ALL', label: 'ทุกสถานะการปรับเงินเดือน' },
-                            { value: 'UNADJUSTED', label: 'ยังไม่ถูกปรับฐานเงินเดือน' },
+                            { value: 'UNADJUSTED', label: 'ยังไม่เคยถูกปรับฐานเงินเดือน' },
                             {
                               value: 'UNADJUSTED_THIS_YEAR',
-                              label: `ยังไม่ได้ปรับในปี ${currentThaiYear}`,
+                              label: 'ยังไม่ได้ปรับฐานเงินเดือนในปีนี้',
                             },
                             { value: 'ADJUSTED', label: 'ปรับฐานเงินเดือนแล้ว' },
                             { value: 'NO_SALARY', label: 'ยังไม่ระบุฐานเงินเดือน' },
@@ -2787,7 +2787,7 @@ export default function PayrollPage() {
                                 ) : (
                                   <div className="space-y-1">
                                     <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-700/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                                      ยังไม่ถูกปรับฐานเงินเดือน
+                                      ยังไม่เคยถูกปรับฐานเงินเดือน
                                     </span>
                                     {emp.currentEffectiveFrom && (
                                       <div className="text-[11px] text-slate-400 dark:text-slate-500">

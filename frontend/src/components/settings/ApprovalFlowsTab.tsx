@@ -416,7 +416,11 @@ const FlowCardEditor: React.FC<FlowCardEditorProps> = ({
   const currentLevelName = levels.find((l) => l.id === form.levelId)?.levelName ?? 'ทุกระดับตำแหน่ง';
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 lg:p-6 shadow-sm space-y-5 animate-in fade-in duration-200">
+    <div
+      id={isNew ? 'tour-new-approval-flow-card' : 'tour-approval-flow-card'}
+      data-tour="approval-flow-card"
+      className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 lg:p-6 shadow-sm space-y-5 animate-in fade-in duration-200"
+    >
       {/* Header */}
       <div className="flex items-start justify-between pb-3.5 border-b border-slate-100 dark:border-slate-700/60 gap-4">
         {isNew ? (
@@ -1217,6 +1221,8 @@ export const ApprovalFlowsTab: React.FC = () => {
           actions={
             <Button
               type="button"
+              id="tour-add-approval-flow-btn"
+              data-tour="add-approval-flow-btn"
               onClick={() => setIsCreatingNew(true)}
               disabled={isCreatingNew}
               icon={<Plus className="w-4 h-4" />}
@@ -1236,7 +1242,7 @@ export const ApprovalFlowsTab: React.FC = () => {
             ยังไม่มีสายการอนุมัติในระบบ
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-5" data-tour="approval-flows-list">
             {/* ถ้ากำลังเพิ่มสายการอนุมัติใหม่ ให้แสดงการ์ดตัวแก้ไขแทรกไว้ที่ด้านบนสุด */}
             {isCreatingNew && (
               <FlowCardEditor
