@@ -3891,7 +3891,7 @@ export default function PayrollPage() {
         const transferTotal = payableTransfers.length;
         const transferredCount = payableTransfers.filter(p => p.paymentStatus === 'TRANSFERRED').length;
         const pendingTransferCount = transferTotal - transferredCount;
-        const zeroSalaryCount = payrolls.filter(p => !p.netPayableSalary || p.netPayableSalary === 0).length;
+        const zeroSalaryCount = payrolls.filter(p => p.inputStatus === 'PENDING_SALARY').length;
         const openPeriods = periods.filter(p => p.status !== 'CLOSED');
 
         const availableYears = Array.from(
@@ -4655,7 +4655,7 @@ export default function PayrollPage() {
                   </div>
                   <div>
                     <div className="font-bold text-amber-900 dark:text-amber-200">
-                      พบพนักงาน {zeroSalaryCount} คนที่ยอดเงินเดือนเป็น ฿0.00 (ยังไม่มีฐานเงินเดือนเริ่มต้น)
+                      พบพนักงาน {zeroSalaryCount} คนที่ยังไม่มีฐานเงินเดือนเริ่มต้น
                     </div>
                     <div className="text-amber-700 dark:text-amber-400 text-[11px] mt-0.5">
                       พนักงานเหล่านี้จะไม่มีรายการเงินเดือนสุทธิ หากต้องการกำหนดเงินเดือน สามารถไปที่แท็บ &ldquo;ข้อมูลเงินเดือนพนักงาน&rdquo; ได้
