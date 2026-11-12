@@ -18,6 +18,8 @@ export interface ModalHeaderProps {
   /** ปุ่มย้อนกลับ (มุมซ้าย) */
   onBack?: () => void;
   backLabel?: string;
+  /** ตำแหน่งปุ่มย้อนกลับ: 'center' (กึ่งกลางความสูง) หรือ 'bottom' (ระนาบเดียวกับแถวล่าง/สถานะ) */
+  backPosition?: 'center' | 'bottom';
   /** แอคชันหรือปุ่มเพิ่มเติมฝั่งซ้าย */
   startAction?: React.ReactNode;
   /** ปุ่มเพิ่มเติมก่อนปุ่มปิด (มุมขวา) */
@@ -31,6 +33,7 @@ export function ModalHeader({
   onClose,
   onBack,
   backLabel = 'กลับ',
+  backPosition = 'center',
   startAction,
   actions,
   className = '',
@@ -40,7 +43,13 @@ export function ModalHeader({
       className={`relative px-14 py-4 text-center border-b border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-800 shrink-0 ${className}`}
     >
       {(startAction || onBack) && (
-        <div className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10">
+        <div
+          className={`absolute left-4 sm:left-6 flex items-center gap-2 z-10 ${
+            backPosition === 'bottom'
+              ? 'bottom-4 h-5'
+              : 'top-1/2 -translate-y-1/2'
+          }`}
+        >
           {startAction}
           {onBack && (
             <button

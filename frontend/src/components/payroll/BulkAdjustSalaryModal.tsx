@@ -510,6 +510,7 @@ export const BulkAdjustSalaryModal: React.FC<Props> = ({
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full h-full flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/60">
           <ModalHeader
             icon={TrendingUp}
+            backPosition="bottom"
             onBack={
               step === 'ADJUST'
                 ? () => {
