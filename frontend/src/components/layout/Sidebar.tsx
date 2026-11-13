@@ -283,7 +283,7 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        title: 'สวัสดิการ',
+        title: 'ยอดสวัสดิการพนักงาน',
         href: '/benefits/balances',
         matchPrefix: '/benefits',
         icon: Gift,
