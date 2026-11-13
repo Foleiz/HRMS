@@ -52,7 +52,6 @@ export default function DocumentsHubPage() {
   const { hasPermission, hasRole } = useAuth();
   const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canCreateDoc = isAdmin || hasPermission('ESS_DOCS_CREATE');
-  const canCreateResign = isAdmin || hasPermission('ESS_RESIGN_CREATE');
 
   useEffect(() => {
     setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' });
@@ -67,7 +66,7 @@ export default function DocumentsHubPage() {
       {/* Option Cards — ตารางเต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {DOCUMENT_OPTIONS.map((opt) => {
-          const hasPerm = opt.href === '/documents/resignation' ? canCreateResign : canCreateDoc;
+          const hasPerm = canCreateDoc;
           const isAllowed = opt.available && hasPerm;
           const card = (
             <div

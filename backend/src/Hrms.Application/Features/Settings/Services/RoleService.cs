@@ -69,6 +69,9 @@ public class RoleService : IRoleService
         // 4. โปรไฟล์ของฉัน (MY_PROFILE)
         new("ESS_PROFILE", "ข้อมูลส่วนบุคคล", "ESS_PROFILE", "MY_PROFILE", "โปรไฟล์ของฉัน", "ESS_PROFILE"),
 
+        // 4.1 การลา (MY_LEAVE_REQUEST)
+        new("ESS_LEAVE_REQUEST", "ยื่นคำขอลา", "ESS_LEAVE_REQUEST", "MY_LEAVE_REQUEST", "การลา", "ESS_LEAVE_REQUEST"),
+
         // 5. ยอดวันลาคงเหลือ (MY_LEAVE)
         new("ESS_LEAVE", "ยอดวันลาคงเหลือและประวัติการลา", "ESS_LEAVE", "MY_LEAVE", "ยอดวันลาคงเหลือ", "ESS_LEAVE"),
 
@@ -79,8 +82,7 @@ public class RoleService : IRoleService
         new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ESS_NEWS", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ESS_NEWS"),
 
         // 8. ยื่นเอกสาร (MY_DOCS)
-        new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
-        new("ESS_RESIGN", "ยื่นคำขอลาออก", "ESS_RESIGN", "MY_DOCS", "ยื่นเอกสาร", "ESS_RESIGN"),
+        new("ESS_DOCS", "รายการเอกสารและประวัติเอกสาร (รวมคำขอลาออก)", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
 
         // 8.1 สวัสดิการของฉัน (MY_BENEFITS)
         new("ESS_BENEFIT", "สวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
@@ -418,64 +420,24 @@ public class RoleService : IRoleService
                 }
             }
 
-            // Auto-migrate existing roles that have ESS_DOCS permissions to ESS_RESIGN if not already present
-            var existingEssDocsPerms = await _dbContext.RolePermissions
-                .Include(rp => rp.Permission)
-                .Where(rp => rp.Permission.PermissionCode.StartsWith("ESS_DOCS_"))
-                .ToListAsync(cancellationToken);
+            // 1. ยุบรวมสิทธิ์ ESS_RESIGN_* (ยื่นคำขอลาออก) กลับเข้า ESS_DOCS_* (ยื่นเอกสาร) และล้างสิทธิ์เก่าที่ซ้ำซ้อนออก
+            await MigrateRolePermissionsByPrefixAsync(
+                new[] { "ESS_RESIGN_" },
+                "ESS_DOCS",
+                removeSource: true,
+                cancellationToken);
 
-            if (existingEssDocsPerms.Count > 0)
+            // 2. ย้ายสิทธิ์เริ่มต้นให้เมนูเดี่ยว "การลา" (ESS_LEAVE_REQUEST_*) ครั้งเดียว สำหรับบทบาทที่เคยมีสิทธิ์ ESS_DOCS_* หรือ ESS_LEAVE_* อยู่แล้ว
+            var hasAnyLeaveRequestPerm = await _dbContext.RolePermissions
+                .AnyAsync(rp => rp.Permission.PermissionCode.StartsWith("ESS_LEAVE_REQUEST_"), cancellationToken);
+
+            if (!hasAnyLeaveRequestPerm)
             {
-                var newRolePerms = new List<RolePermission>();
-                var newRoleScopes = new List<RoleDataScope>();
-
-                var essDocsPermIds = existingEssDocsPerms.Select(lp => lp.PermissionId).ToHashSet();
-                var essDocsScopes = await _dbContext.RoleDataScopes
-                    .Where(rds => essDocsPermIds.Contains(rds.PermissionId))
-                    .ToListAsync(cancellationToken);
-
-                var existingRolePermKeys = (await _dbContext.RolePermissions
-                    .Select(rp => $"{rp.RoleId}_{rp.PermissionId}")
-                    .ToListAsync(cancellationToken)).ToHashSet();
-
-                var existingScopeKeys = (await _dbContext.RoleDataScopes
-                    .Select(rds => $"{rds.RoleId}_{rds.PermissionId}_{rds.DataVisibilityScope}")
-                    .ToListAsync(cancellationToken)).ToHashSet();
-
-                foreach (var lp in existingEssDocsPerms)
-                {
-                    var action = lp.Permission.PermissionCode.Replace("ESS_DOCS_", "");
-                    var targetCode = $"ESS_RESIGN_{action}";
-
-                    if (_cachedPermMap.TryGetValue(targetCode, out var tcId))
-                    {
-                        if (existingRolePermKeys.Add($"{lp.RoleId}_{tcId}"))
-                        {
-                            newRolePerms.Add(new RolePermission { RoleId = lp.RoleId, PermissionId = tcId });
-                        }
-
-                        var matchedScopes = essDocsScopes.Where(ls => ls.RoleId == lp.RoleId && ls.PermissionId == lp.PermissionId);
-                        foreach (var ms in matchedScopes)
-                        {
-                            if (existingScopeKeys.Add($"{lp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))
-                            {
-                                newRoleScopes.Add(new RoleDataScope
-                                {
-                                    RoleId = lp.RoleId,
-                                    PermissionId = tcId,
-                                    DataVisibilityScope = ms.DataVisibilityScope
-                                });
-                            }
-                        }
-                    }
-                }
-
-                if (newRolePerms.Count > 0) _dbContext.RolePermissions.AddRange(newRolePerms);
-                if (newRoleScopes.Count > 0) _dbContext.RoleDataScopes.AddRange(newRoleScopes);
-                if (newRolePerms.Count > 0 || newRoleScopes.Count > 0)
-                {
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                }
+                await MigrateRolePermissionsByPrefixAsync(
+                    new[] { "ESS_DOCS_", "ESS_LEAVE_" },
+                    "ESS_LEAVE_REQUEST",
+                    removeSource: false,
+                    cancellationToken);
             }
 
             // Auto-migrate existing roles that have BENEFIT_CLAIM permissions to BENEFIT_BALANCE if not already present
@@ -544,6 +506,91 @@ public class RoleService : IRoleService
         finally
         {
             _permInitLock.Release();
+        }
+    }
+
+    /// <summary>ย้ายสิทธิ์และขอบเขตข้อมูลจาก prefix เดิมไปยัง prefix เป้าหมาย และสามารถลบสิทธิ์เดิมออกเมื่อควบรวมเมนู</summary>
+    private async Task MigrateRolePermissionsByPrefixAsync(
+        string[] sourcePrefixes,
+        string targetPrefix,
+        bool removeSource,
+        CancellationToken cancellationToken)
+    {
+        if (_cachedPermMap == null) return;
+
+        var sourcePermMap = _cachedPermMap
+            .Where(kvp => !kvp.Key.StartsWith(targetPrefix + "_")
+                       && sourcePrefixes.Any(pref => kvp.Key.StartsWith(pref)))
+            .ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+
+        if (sourcePermMap.Count == 0) return;
+
+        var sourcePermIds = sourcePermMap.Keys.ToHashSet();
+        var sourcePerms = await _dbContext.RolePermissions
+            .Where(rp => sourcePermIds.Contains(rp.PermissionId))
+            .ToListAsync(cancellationToken);
+
+        if (sourcePerms.Count == 0) return;
+
+        var sourceScopes = await _dbContext.RoleDataScopes
+            .Where(rds => sourcePermIds.Contains(rds.PermissionId))
+            .ToListAsync(cancellationToken);
+
+        var existingRolePermKeys = (await _dbContext.RolePermissions
+            .Select(rp => $"{rp.RoleId}_{rp.PermissionId}")
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var existingScopeKeys = (await _dbContext.RoleDataScopes
+            .Select(rds => $"{rds.RoleId}_{rds.PermissionId}_{rds.DataVisibilityScope}")
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        var newRolePerms = new List<RolePermission>();
+        var newRoleScopes = new List<RoleDataScope>();
+
+        foreach (var sp in sourcePerms)
+        {
+            var sourceCode = sourcePermMap[sp.PermissionId];
+            var matchedPrefix = sourcePrefixes.FirstOrDefault(pref => sourceCode.StartsWith(pref));
+            if (matchedPrefix == null) continue;
+
+            var action = sourceCode.Substring(matchedPrefix.Length);
+            var targetCode = $"{targetPrefix}_{action}";
+
+            if (_cachedPermMap.TryGetValue(targetCode, out var tcId))
+            {
+                if (existingRolePermKeys.Add($"{sp.RoleId}_{tcId}"))
+                {
+                    newRolePerms.Add(new RolePermission { RoleId = sp.RoleId, PermissionId = tcId });
+                }
+
+                var matchedScopes = sourceScopes.Where(ls => ls.RoleId == sp.RoleId && ls.PermissionId == sp.PermissionId);
+                foreach (var ms in matchedScopes)
+                {
+                    if (existingScopeKeys.Add($"{sp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))
+                    {
+                        newRoleScopes.Add(new RoleDataScope
+                        {
+                            RoleId = sp.RoleId,
+                            PermissionId = tcId,
+                            DataVisibilityScope = ms.DataVisibilityScope
+                        });
+                    }
+                }
+            }
+        }
+
+        if (newRolePerms.Count > 0) _dbContext.RolePermissions.AddRange(newRolePerms);
+        if (newRoleScopes.Count > 0) _dbContext.RoleDataScopes.AddRange(newRoleScopes);
+
+        if (removeSource)
+        {
+            if (sourceScopes.Count > 0) _dbContext.RoleDataScopes.RemoveRange(sourceScopes);
+            _dbContext.RolePermissions.RemoveRange(sourcePerms);
+        }
+
+        if (newRolePerms.Count > 0 || newRoleScopes.Count > 0 || removeSource)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
         }
     }
 

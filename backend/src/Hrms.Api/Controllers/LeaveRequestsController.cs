@@ -347,7 +347,7 @@ public class LeaveRequestsController : ControllerBase
     }
 
     [HttpPost("my")]
-    [RequirePermission("ESS_DOCS_CREATE,ESS_LEAVE_CREATE,LEAVE_BALANCE_CREATE")]
+    [RequirePermission("ESS_LEAVE_REQUEST_CREATE,ESS_LEAVE_REQUEST_EDIT,LEAVE_BALANCE_CREATE")]
     [ProducesResponseType(typeof(ApiResponse<LeaveRequestDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateMyRequest(

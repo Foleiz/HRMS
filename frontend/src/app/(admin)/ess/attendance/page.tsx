@@ -83,8 +83,10 @@ function EssAttendancePageContent() {
 
     const canViewLeave =
       (mock['ESS_LEAVE_VIEW'] ?? true) &&
-      (hasPermission('ESS_LEAVE_VIEW') ||
-        hasPermission('ESS_DOCS_CREATE') ||
+      (hasPermission('ESS_LEAVE_REQUEST_VIEW') ||
+        hasPermission('ESS_LEAVE_REQUEST_CREATE') ||
+        hasPermission('ESS_LEAVE_REQUEST_EDIT') ||
+        hasPermission('ESS_LEAVE_VIEW') ||
         hasRole('ADMIN') ||
         hasRole('SYSTEM_SUPER'));
 
