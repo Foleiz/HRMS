@@ -1755,12 +1755,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   const activeModulesCount = isGuideCat
                     ? guideActiveFlowsCount
                     : cat.modules.filter((m) => isModuleActive(m)).length;
-                  const isCatAllActive = isGuideCat
-                    ? guideActiveFlowsCount === GUIDE_FLOW_CONFIGS.length
-                    : activeModulesCount === cat.modules.length && cat.modules.length > 0;
-                  const isCatPartial = isGuideCat
-                    ? guideActiveFlowsCount > 0 && guideActiveFlowsCount < GUIDE_FLOW_CONFIGS.length
-                    : activeModulesCount > 0 && activeModulesCount < cat.modules.length;
                   const isCatOff = isGuideCat ? guideActiveFlowsCount === 0 : activeModulesCount === 0; // ปิดทั้งหมด → พื้นเทา
 
                   return (
@@ -1829,16 +1823,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           </span>
 
                           <div
-                            className="flex items-center gap-2"
+                            className="flex items-center"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:inline">
-                              {isCatAllActive
-                                ? 'เปิดทั้งหมด'
-                                : isCatPartial
-                                ? 'เปิดบางส่วน'
-                                : 'ปิดทั้งหมด'}
-                            </span>
                             <ToggleSwitch
                               checked={isGuideCat ? guideActiveFlowsCount > 0 : activeModulesCount > 0}
                               onChange={() => handleToggleCategory(cat.code)}
