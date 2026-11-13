@@ -1307,6 +1307,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     scopeKey: 'self' | 'team' | 'department' | 'division' | 'organization'
   ) => {
     e.stopPropagation();
+    const targetMod = localModules.find((m) => m.moduleCode === moduleCode);
+    const isEssMod = Boolean(
+      targetMod &&
+        (ESS_CATEGORY_CODES.has(targetMod.categoryCode || '') ||
+          ESS_CATEGORY_CODES.has(targetMod.groupName || ''))
+    );
+    if (isEssMod && scopeKey !== 'self') {
+      return;
+    }
+
     if (activePopover?.moduleCode === moduleCode && activePopover?.scopeKey === scopeKey) {
       setActivePopover(null);
       return;
@@ -2020,9 +2030,6 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                             const modActive = isModuleActive(mod);
                             const isDashboardCat = cat.code === 'DASHBOARD';
                             const isEssCat = ESS_CATEGORY_CODES.has(cat.code);
-                            const availableScopes = isEssCat
-                              ? SCOPES_CONFIG.filter((s) => s.key === 'self')
-                              : SCOPES_CONFIG;
 
                             return (
                               <div
@@ -2055,11 +2062,13 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                     disabled={!canEditRole}
                                   />
 
-                                  {/* Scope Pills (สำหรับโมดูลทั่วไปที่ไม่ใช่แดชบอร์ด) */}
+                                  {/* Scope Pills (สำหรับโมดูลทั่วไปที่ไม่ใช่แดชบอร์ด; หมวด ESS แสดงครบ 5 ระดับแต่บล็อกขอบเขตที่ไม่ใช่ "ตัวเอง") */}
                                   {!isDashboardCat && (
                                     <div className="flex items-center gap-1.5">
-                                      {availableScopes.map((scope) => {
-                                        const count = getScopeActiveCount(mod, scope.key);
+                                      {SCOPES_CONFIG.map((scope) => {
+                                        const isScopeBlocked = isEssCat && scope.key !== 'self';
+                                        const isButtonDisabled = !modActive || !canEditRole || isScopeBlocked;
+                                        const count = isScopeBlocked ? 0 : getScopeActiveCount(mod, scope.key);
                                         const isScopeActive = count > 0;
                                         const isPopoverOpen =
                                           activePopover?.moduleCode === mod.moduleCode &&
@@ -2069,14 +2078,21 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                           <button
                                             key={scope.key}
                                             type="button"
-                                            disabled={!modActive || !canEditRole}
+                                            disabled={isButtonDisabled}
+                                            title={
+                                              isScopeBlocked
+                                                ? 'หมวดนี้ใช้งานได้เฉพาะขอบเขต "ตัวเอง" (Self Only)'
+                                                : undefined
+                                            }
                                             onClick={(e) => handleOpenPopover(e, mod.moduleCode, scope.key)}
-                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer select-none ${ !modActive || !canEditRole ? 'bg-slate-100 text-slate-300 border-slate-200/60 cursor-not-allowed'
+                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border select-none ${
+                                              isButtonDisabled
+                                                ? 'bg-slate-100 text-slate-300 border-slate-200/60 dark:bg-slate-800/60 dark:text-slate-600 dark:border-slate-700/50 cursor-not-allowed'
                                                 : isScopeActive
-                                                ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs'
+                                                ? 'bg-primary hover:bg-primary-hover text-white border-primary shadow-2xs cursor-pointer'
                                                 : isPopoverOpen
-                                                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20'
-                                                : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300'
+                                                ? 'bg-slate-100 dark:bg-slate-800 text-primary dark:text-blue-300 border-slate-300 ring-2 ring-primary/20 cursor-pointer'
+                                                : 'bg-white hover:bg-slate-100 text-slate-600 dark:text-slate-400 border-slate-200 hover:border-slate-300 cursor-pointer'
                                             }`}
                                           >
                                             <span>{scope.label}</span>
