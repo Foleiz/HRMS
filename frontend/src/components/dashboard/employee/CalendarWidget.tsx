@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { ChevronLeft, ChevronRight, ChevronDown, Sparkles, CalendarDays, X } from 'lucide-react';
 import { workCalendarService } from '@/services/workCalendarService';
 import { announcementService } from '@/services/announcementService';
 import { Holiday } from '@/types/workCalendar';
@@ -64,6 +64,11 @@ export const CalendarWidget: React.FC = () => {
   const [, setIsLoading] = useState<boolean>(false);
   const [isAllEventsModalOpen, setIsAllEventsModalOpen] = useState<boolean>(false);
   const [selectedDetail, setSelectedDetail] = useState<EventDetailData | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+  const [pickerTab, setPickerTab] = useState<'MONTH' | 'YEAR'>('MONTH');
+  const [yearGridStart, setYearGridStart] = useState<number>(() => new Date().getFullYear() + 543 - 4);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const headerControlsRef = useRef<HTMLDivElement>(null);
 
   const handleOpenEventDetail = useCallback((ev: CalendarEvent) => {
     const fullDateStr = `${ev.day} ${TH_MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear() + 543}`;
@@ -147,15 +152,86 @@ export const CalendarWidget: React.FC = () => {
     fetchCalendarEvents(year);
   }, [year, fetchCalendarEvents]);
 
+  const handleTogglePicker = (tab: 'MONTH' | 'YEAR') => {
+    if (isPickerOpen && pickerTab === tab) {
+      setIsPickerOpen(false);
+    } else {
+      setPickerTab(tab);
+      if (tab === 'YEAR') {
+        setYearGridStart(year + 543 - 4);
+      }
+      setIsPickerOpen(true);
+    }
+  };
+
+  const handleSelectMonth = (newMonth: number) => {
+    const isTodayMonth = year === today.getFullYear() && newMonth === today.getMonth();
+    setCurrentDate(new Date(year, newMonth, 1));
+    setSelectedDay(isTodayMonth ? today.getDate() : null);
+    setIsPickerOpen(false);
+  };
+
+  const handleSelectYear = (newYear: number) => {
+    const isTodayYearMonth = newYear === today.getFullYear() && month === today.getMonth();
+    setCurrentDate(new Date(newYear, month, 1));
+    setSelectedDay(isTodayYearMonth ? today.getDate() : null);
+    setIsPickerOpen(false);
+  };
+
+  const handleGoToToday = () => {
+    const now = new Date();
+    setCurrentDate(now);
+    setSelectedDay(now.getDate());
+    setIsPickerOpen(false);
+  };
+
   const prevMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
-    setSelectedDay(null);
+    setIsPickerOpen(false);
+    setCurrentDate((prev) => {
+      const nextDate = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+      const isTodayMonth = nextDate.getFullYear() === today.getFullYear() && nextDate.getMonth() === today.getMonth();
+      setSelectedDay(isTodayMonth ? today.getDate() : null);
+      return nextDate;
+    });
   };
 
   const nextMonth = () => {
-    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
-    setSelectedDay(null);
+    setIsPickerOpen(false);
+    setCurrentDate((prev) => {
+      const nextDate = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+      const isTodayMonth = nextDate.getFullYear() === today.getFullYear() && nextDate.getMonth() === today.getMonth();
+      setSelectedDay(isTodayMonth ? today.getDate() : null);
+      return nextDate;
+    });
   };
+
+  // ปิดตัวเลือกเดือน/ปีเมื่อคลิกนอกพื้นที่หรือกด Escape
+  useEffect(() => {
+    if (!isPickerOpen) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        pickerRef.current?.contains(target) ||
+        headerControlsRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setIsPickerOpen(false);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsPickerOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPickerOpen]);
 
   const monthNames = TH_MONTHS;
   const yearThai = year + 543;
@@ -310,9 +386,9 @@ export const CalendarWidget: React.FC = () => {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs overflow-hidden transition-all h-full flex flex-col relative">
       {/* Calendar Header: Deep Red (#94292B) */}
-      <div className="bg-[#94292B] text-white px-4 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-[#94292B] text-white px-3 sm:px-4 py-3 flex items-center justify-between shrink-0">
         <h3 className="text-sm font-bold tracking-wide">ปฏิทิน</h3>
-        <div className="flex items-center gap-2">
+        <div ref={headerControlsRef} className="flex items-center gap-1 sm:gap-1.5">
           <button
             type="button"
             onClick={prevMonth}
@@ -321,9 +397,47 @@ export const CalendarWidget: React.FC = () => {
           >
             <ChevronLeft className="w-3.5 h-3.5 text-white" />
           </button>
-          <span className="text-xs font-semibold px-0.5 text-white/95">
-            {monthName} {yearThai}
-          </span>
+
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            {/* ปุ่มเลือกเดือน */}
+            <button
+              type="button"
+              onClick={() => handleTogglePicker('MONTH')}
+              className={`px-1.5 sm:px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                isPickerOpen && pickerTab === 'MONTH'
+                  ? 'bg-white/30 text-white shadow-2xs ring-1 ring-white/50'
+                  : 'text-white/95 hover:bg-white/20 hover:text-white'
+              }`}
+              title="คลิกเพื่อเลือกเดือน"
+            >
+              <span className="truncate">{monthName}</span>
+              <ChevronDown
+                className={`w-3 h-3 text-white/80 transition-transform duration-200 shrink-0 ${
+                  isPickerOpen && pickerTab === 'MONTH' ? 'rotate-180 text-white' : ''
+                }`}
+              />
+            </button>
+
+            {/* ปุ่มเลือกปี พ.ศ. */}
+            <button
+              type="button"
+              onClick={() => handleTogglePicker('YEAR')}
+              className={`px-1.5 sm:px-2 py-0.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                isPickerOpen && pickerTab === 'YEAR'
+                  ? 'bg-white/30 text-white shadow-2xs ring-1 ring-white/50'
+                  : 'text-white/95 hover:bg-white/20 hover:text-white'
+              }`}
+              title="คลิกเพื่อเลือกปี พ.ศ."
+            >
+              <span className="shrink-0">{yearThai}</span>
+              <ChevronDown
+                className={`w-3 h-3 text-white/80 transition-transform duration-200 shrink-0 ${
+                  isPickerOpen && pickerTab === 'YEAR' ? 'rotate-180 text-white' : ''
+                }`}
+              />
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={nextMonth}
@@ -336,7 +450,7 @@ export const CalendarWidget: React.FC = () => {
       </div>
 
       {/* Calendar Grid & Details Container (Fixed height layout matching previous form) */}
-      <div className="p-3 flex-1 flex flex-col justify-between">
+      <div className="p-3 flex-1 flex flex-col justify-between relative">
         <div>
           {/* Day Headers */}
           <div className="grid grid-cols-7 text-center mb-1.5">
@@ -486,7 +600,13 @@ export const CalendarWidget: React.FC = () => {
           <div className="mt-1 flex-1 min-h-[52px] p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 text-[10.5px] flex flex-col justify-center gap-1 overflow-hidden">
             {/* Top row: Status message */}
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-slate-500 dark:text-slate-400 font-medium">ไม่มีวันหยุดหรือกิจกรรมในวันนี้</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium">
+                {selectedDay
+                  ? isCurrentMonth && selectedDay === today.getDate()
+                    ? 'ไม่มีวันหยุดหรือกิจกรรมในวันนี้'
+                    : `ไม่มีวันหยุดหรือกิจกรรมในวันที่ ${selectedDay} ${monthName}`
+                  : 'ไม่มีวันหยุดหรือกิจกรรมในวันนี้'}
+              </span>
             </div>
 
             {/* Bottom row: Next upcoming event */}
@@ -508,6 +628,159 @@ export const CalendarWidget: React.FC = () => {
                 ไม่มีกิจกรรมที่เหลือในเดือนนี้
               </div>
             )}
+          </div>
+        )}
+
+        {/* Month & Year Picker Overlay */}
+        {isPickerOpen && (
+          <div
+            ref={pickerRef}
+            className="absolute inset-0 z-20 bg-white dark:bg-slate-800 flex flex-col p-3 shadow-lg animate-in fade-in duration-150 rounded-b-2xl"
+          >
+            {/* Header: Tabs + Close Button */}
+            <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-slate-100 dark:border-slate-700/70 shrink-0">
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700/50 p-0.5 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setPickerTab('MONTH')}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                    pickerTab === 'MONTH'
+                      ? 'bg-white dark:bg-slate-800 text-[#94292B] dark:text-rose-400 shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  เลือกเดือน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickerTab('YEAR');
+                    setYearGridStart(year + 543 - 4);
+                  }}
+                  className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                    pickerTab === 'YEAR'
+                      ? 'bg-white dark:bg-slate-800 text-[#94292B] dark:text-rose-400 shadow-2xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  เลือกปี พ.ศ.
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsPickerOpen(false)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                title="ปิด"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Content: Month Grid or Year Grid */}
+            <div className="flex-1 overflow-y-auto min-h-0 flex flex-col justify-center">
+              {pickerTab === 'MONTH' ? (
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2 py-1">
+                  {monthNames.map((m, idx) => {
+                    const isSelectedMonth = idx === month;
+                    const isRealCurrentMonth = idx === today.getMonth() && year === today.getFullYear();
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => handleSelectMonth(idx)}
+                        className={`h-9 sm:h-10 rounded-xl text-xs font-semibold transition-all cursor-pointer flex flex-col items-center justify-center relative ${
+                          isSelectedMonth
+                            ? 'bg-[#94292B] text-white shadow-xs'
+                            : isRealCurrentMonth
+                            ? 'text-[#94292B] dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border border-[#94292B]/30 hover:bg-rose-100/70'
+                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                        }`}
+                      >
+                        <span className="leading-tight">{m}</span>
+                        {isRealCurrentMonth && !isSelectedMonth && (
+                          <span className="text-[9px] text-rose-500 font-normal leading-none mt-0.5">เดือนนี้</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col h-full justify-between">
+                  {/* Year Range Pagination */}
+                  <div className="flex items-center justify-between mb-1 px-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setYearGridStart((prev) => prev - 12)}
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                      title="12 ปีก่อนหน้า"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      พ.ศ. {yearGridStart} – {yearGridStart + 11}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setYearGridStart((prev) => prev + 12)}
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
+                      title="12 ปีถัดไป"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* 12 Years Grid */}
+                  <div className="grid grid-cols-4 gap-1.5 sm:gap-2 py-1 flex-1 items-center">
+                    {Array.from({ length: 12 }, (_, i) => yearGridStart + i).map((yThai) => {
+                      const yAd = yThai - 543;
+                      const isSelectedYear = yAd === year;
+                      const isRealCurrentYear = yAd === today.getFullYear();
+                      return (
+                        <button
+                          key={yThai}
+                          type="button"
+                          onClick={() => handleSelectYear(yAd)}
+                          className={`h-9 sm:h-10 rounded-xl text-xs font-semibold transition-all cursor-pointer flex flex-col items-center justify-center relative ${
+                            isSelectedYear
+                              ? 'bg-[#94292B] text-white shadow-xs'
+                              : isRealCurrentYear
+                              ? 'text-[#94292B] dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 border border-[#94292B]/30 hover:bg-rose-100/70'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60'
+                          }`}
+                        >
+                          <span className="leading-tight">{yThai}</span>
+                          {isRealCurrentYear && !isSelectedYear && (
+                            <span className="text-[9px] text-rose-500 font-normal leading-none mt-0.5">ปีนี้</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Overlay Footer: Quick Today & Close */}
+            <div className="pt-2 mt-1.5 border-t border-slate-100 dark:border-slate-700/70 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={handleGoToToday}
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium text-[#94292B] dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                title="กลับไปที่เดือนและปีปัจจุบัน"
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
+                <span>วันนี้ ({today.getDate()} {monthNames[today.getMonth()]} {today.getFullYear() + 543})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPickerOpen(false)}
+                className="px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+              >
+                ปิด
+              </button>
+            </div>
           </div>
         )}
       </div>
