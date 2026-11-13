@@ -492,11 +492,13 @@ export const CalendarWidget: React.FC = () => {
                   title={tooltipText}
                   className={`h-7.5 w-7.5 mx-auto rounded-full text-xs flex flex-col items-center justify-center transition-all cursor-pointer relative ${
                     isSelected
-                      ? 'bg-[#FCE8E9] text-slate-900 font-bold border border-[#F3B6B9] shadow-2xs'
+                      ? `bg-[#FCE8E9] dark:bg-[#94292B] text-slate-900 dark:text-white font-bold border border-[#F3B6B9] dark:border-rose-400/80 shadow-2xs ${
+                          isToday ? 'ring-2 ring-[#94292B]/40 dark:ring-rose-300/80' : ''
+                        }`
                       : isToday
-                      ? 'text-[#94292B] font-bold ring-1.5 ring-[#94292B]/50'
+                      ? 'text-[#94292B] dark:text-rose-400 font-bold ring-1.5 ring-[#94292B]/50 dark:ring-rose-400/70 hover:bg-rose-50/50 dark:hover:bg-rose-950/30'
                       : isWeekend
-                      ? 'text-rose-500 font-medium hover:bg-slate-100 dark:hover:bg-slate-700/50'
+                      ? 'text-rose-500 dark:text-rose-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-700/50'
                       : 'text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700/50'
                   }`}
                 >
@@ -506,10 +508,22 @@ export const CalendarWidget: React.FC = () => {
                     {hasEvents ? (
                       <>
                         {hasHoliday && (
-                          <span className="w-1.5 h-1.5 bg-rose-600 rotate-45 shrink-0" />
+                          <span
+                            className={`w-1.5 h-1.5 rotate-45 shrink-0 ${
+                              isSelected
+                                ? 'bg-rose-600 dark:bg-rose-200'
+                                : 'bg-rose-600 dark:bg-rose-400'
+                            }`}
+                          />
                         )}
                         {hasActivity && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              isSelected
+                                ? 'bg-blue-600 dark:bg-sky-200'
+                                : 'bg-blue-600 dark:bg-sky-400'
+                            }`}
+                          />
                         )}
                       </>
                     ) : (
