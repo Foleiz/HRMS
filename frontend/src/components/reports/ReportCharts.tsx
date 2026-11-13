@@ -330,6 +330,129 @@ export function ColumnChart({
 }
 
 // ---------------------------------------------------------------------------
+// 2B) กราฟแท่งแนวนอนเรียงลำดับ — เหมาะกับชื่อหมวดภาษาไทยยาว ๆ เช่น ชื่อแผนก
+// ---------------------------------------------------------------------------
+export function HorizontalBarChart({
+  items,
+  color = VIZ.s1,
+  unit = 'คน',
+  emptyText = 'ไม่มีข้อมูล',
+  targetLabel = 'ตามแผน',
+  onItemClick,
+}: {
+  items: ColumnItem[];
+  color?: string;
+  unit?: string;
+  emptyText?: string;
+  targetLabel?: string;
+  onItemClick?: (item: ColumnItem) => void;
+}) {
+  const tt = useTooltip();
+  const [hover, setHover] = useState<string | number | null>(null);
+  if (items.length === 0) return <div className="py-10 text-center text-xs text-slate-400">{emptyText}</div>;
+
+  const totalValue = items.reduce((s, i) => s + i.value, 0);
+  const max = Math.max(1, ...items.map((i) => Math.max(i.value, i.target ?? 0)));
+  const hasTarget = items.some((i) => i.target != null);
+
+  return (
+    <div ref={tt.ref} className="relative" onMouseLeave={() => { tt.hide(); setHover(null); }}>
+      <div className="space-y-3">
+        {items.map((it) => {
+          const pctWidth = Math.min(100, Math.round((it.value / max) * 100));
+          const sharePct = totalValue > 0 ? ((it.value / totalValue) * 100).toFixed(1) : '0.0';
+          const targetPct = it.target != null ? Math.min(100, Math.round((it.target / max) * 100)) : null;
+          const clickable = Boolean(onItemClick);
+          const isHovered = hover === it.id;
+
+          return (
+            <div
+              key={it.id}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              onClick={clickable ? () => onItemClick?.(it) : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onItemClick?.(it);
+                      }
+                    }
+                  : undefined
+              }
+              onMouseMove={(e) => {
+                setHover(it.id);
+                tt.show(
+                  e,
+                  it.tip ?? (
+                    <div>
+                      <div className="mb-1 font-semibold text-slate-900">{it.label}</div>
+                      <TipRow color={color} label="จำนวน" value={`${fmtNumber(it.value)} ${unit} (${sharePct}%)`} />
+                      {it.target != null && <TipRow label={targetLabel} value={`${fmtNumber(it.target)} ${unit}`} />}
+                    </div>
+                  )
+                );
+              }}
+              className={`group rounded-xl px-2.5 py-2 -mx-2.5 transition-colors ${
+                clickable ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'
+              }`}
+            >
+              <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                <div className="min-w-0 flex flex-wrap items-baseline gap-x-2">
+                  <span
+                    className={`text-xs font-semibold transition-colors ${
+                      clickable ? 'text-slate-800 group-hover:text-blue-600' : 'text-slate-800'
+                    }`}
+                  >
+                    {it.label}
+                  </span>
+                  {it.sub && <span className="truncate text-[11px] text-slate-400">{it.sub}</span>}
+                </div>
+                <div className="shrink-0 flex items-center gap-1.5 text-xs tabular-nums">
+                  <span className="font-bold text-slate-900">
+                    {it.valueLabel ?? fmtNumber(it.value)} {unit}
+                  </span>
+                  <span className="text-[11px] text-slate-400">({sharePct}%)</span>
+                </div>
+              </div>
+              <div className="relative h-2.5 w-full rounded-full bg-slate-100 border border-slate-200/70">
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${it.value > 0 ? Math.max(2, pctWidth) : 0}%`,
+                    background: color,
+                    opacity: hover == null || isHovered ? 1 : 0.55,
+                  }}
+                />
+                {targetPct != null && (
+                  <div
+                    className="pointer-events-none absolute -top-1 -bottom-1 border-r-2 border-dashed"
+                    style={{ left: `${targetPct}%`, borderColor: 'var(--viz-axis)' }}
+                  />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {hasTarget && (
+        <div className="mt-4 flex items-center justify-end gap-4 border-t border-slate-100 pt-3 text-[11px] text-slate-500">
+          <span className="inline-flex items-center gap-1.5">
+            <Swatch color={color} /> จำนวนจริง
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: 'var(--viz-axis)' }} /> {targetLabel}
+          </span>
+        </div>
+      )}
+      {tt.node}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 3) กราฟแท่งแนวตั้งแบบซ้อน — สถานะหลายกลุ่มต่อหมวด (เช่น มา/สาย/ขาด/ลา ต่อแผนก)
 // ---------------------------------------------------------------------------
 export function StackedColumnChart({
