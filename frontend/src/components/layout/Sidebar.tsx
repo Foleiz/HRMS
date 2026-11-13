@@ -8,6 +8,7 @@ import { useSidebar } from '@/context/SidebarContext';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import {
   LayoutDashboard,
+  LogOut,
   Compass,
   Users,
   Clock,
@@ -173,9 +174,10 @@ const menuGroups: MenuGroup[] = [
         href: '/documents',
         matchPrefix: '/documents',
         icon: FileText,
-        requiredPermissions: ['ESS_DOCS_VIEW'],
+        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE', 'ESS_RESIGN_VIEW', 'ESS_RESIGN_CREATE'],
         children: [
           { title: 'รายการเอกสาร', href: '/documents', icon: FileText },
+          { title: 'ยื่นคำขอลาออก', href: '/documents/resignation', icon: LogOut, requiredPermissions: ['ESS_RESIGN_CREATE', 'ESS_RESIGN_VIEW'] },
           { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History },
         ],
       },

@@ -15,7 +15,8 @@ import {
   Megaphone,
   Clock,
   Eye,
-  Info
+  Info,
+  MoveHorizontal
 } from 'lucide-react';
 import { announcementService } from '@/services/announcementService';
 import { Announcement, AnnouncementCategory, AnnouncementPriority } from '@/types/announcement';
@@ -384,17 +385,6 @@ export default function MyNewsCalendarPage() {
 
       {/* Calendar View Container */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs overflow-hidden">
-        {/* Weekday Headers (Month & Week views only) */}
-        {viewMode !== 'DAY' && (
-          <div className="grid grid-cols-7 border-b border-slate-200 text-center bg-slate-50/50">
-            {WEEKDAYS.map((wd) => (
-              <div key={wd.key} className="py-3 px-1 text-xs font-bold uppercase tracking-wider">
-                <span className={wd.color}>{wd.label}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* View Mode Router: DAY | MONTH | WEEK */}
         {viewMode === 'DAY' ? (
           /* Day View */
@@ -542,8 +532,30 @@ export default function MyNewsCalendarPage() {
               </div>
             )}
           </div>
-        ) : viewMode === 'MONTH' ? (
-          <div className="grid grid-cols-7 divide-x divide-y divide-slate-200 border-b border-slate-200">
+        ) : (
+          <div>
+            {/* Mobile Swipe Hint */}
+            <div className="sm:hidden px-3.5 py-1.5 bg-blue-50/70 dark:bg-blue-950/40 border-b border-blue-100 dark:border-blue-900/50 flex items-center justify-between text-[11px] text-blue-700 dark:text-blue-300 font-medium">
+              <span className="flex items-center gap-1.5">
+                <MoveHorizontal className="w-3.5 h-3.5" />
+                เลื่อนซ้าย-ขวา เพื่อดูปฏิทินเต็มสัปดาห์
+              </span>
+              <span className="text-[10px] text-blue-500 font-normal">ปัดหน้าจอ</span>
+            </div>
+
+            <div className="overflow-x-auto overscroll-x-contain">
+              <div className="min-w-[720px]">
+                {/* Weekday Headers (Month & Week views only) */}
+                <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700 text-center bg-slate-50/50 dark:bg-slate-900/40">
+                  {WEEKDAYS.map((wd) => (
+                    <div key={wd.key} className="py-3 px-1 text-xs font-bold uppercase tracking-wider">
+                      <span className={wd.color}>{wd.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {viewMode === 'MONTH' ? (
+                  <div className="grid grid-cols-7 divide-x divide-y divide-slate-200 dark:divide-slate-700 border-b border-slate-200 dark:border-slate-700">
             {calendarDays.map((dayItem, idx) => {
               const dayOfWeek = dayItem.date.getDay();
               const isSun = dayOfWeek === 0;
@@ -691,6 +703,10 @@ export default function MyNewsCalendarPage() {
                 </div>
               );
             })}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

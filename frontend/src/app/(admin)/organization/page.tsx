@@ -2082,7 +2082,7 @@ function OrganizationPageContent() {
                       <tr key={acc.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="py-3 px-4 whitespace-nowrap">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-primary shrink-0 font-bold text-xs">
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center text-primary dark:text-blue-300 shrink-0 font-bold text-xs">
                               {acc.bankCode || 'BK'}
                             </div>
                             <div>

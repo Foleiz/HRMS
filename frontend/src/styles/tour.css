@@ -66,7 +66,7 @@ body.driver-active * {
   background-color: #ffffff !important;
   box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
   padding: 1.15rem !important;
-  max-width: 300px !important;
+  max-width: 320px !important;
   font-family: var(--font-sans), system-ui, sans-serif !important;
   z-index: 100010 !important;
 }
@@ -78,10 +78,10 @@ body.driver-active * {
 }
 
 .hrms-driver-popover .driver-popover-title {
-  font-size: 0.9375rem !important;
+  font-size: 1rem !important;
   font-weight: 700 !important;
   color: #0f172a !important;
-  margin-bottom: 0.4rem !important;
+  margin-bottom: 0.45rem !important;
   display: flex !important;
   align-items: center !important;
   gap: 0.5rem !important;
@@ -92,8 +92,8 @@ body.driver-active * {
 }
 
 .hrms-driver-popover .driver-popover-description {
-  font-size: 0.8125rem !important;
-  line-height: 1.55 !important;
+  font-size: 0.875rem !important;
+  line-height: 1.6 !important;
   color: #475569 !important;
   margin-bottom: 0.75rem !important;
 }
@@ -129,13 +129,13 @@ body.driver-active * {
 }
 
 .hrms-driver-popover .driver-popover-prev-btn {
-  font-size: 0.75rem !important;
+  font-size: 0.8125rem !important;
   font-weight: 600 !important;
   color: #475569 !important;
   background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   border-radius: 0.75rem !important;
-  padding: 0.4rem 0.75rem !important;
+  padding: 0.45rem 0.85rem !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
 }
@@ -163,13 +163,13 @@ body.driver-active * {
 }
 
 .hrms-driver-popover .driver-popover-next-btn {
-  font-size: 0.75rem !important;
+  font-size: 0.8125rem !important;
   font-weight: 600 !important;
   color: #ffffff !important;
   background-color: #2563eb !important;
   border: 1px solid transparent !important;
   border-radius: 0.75rem !important;
-  padding: 0.4rem 0.85rem !important;
+  padding: 0.45rem 0.95rem !important;
   cursor: pointer !important;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
   transition: all 0.15s ease !important;
@@ -253,4 +253,60 @@ body.driver-modal-active .driver-active-element {
   outline: none !important;
   box-shadow: none !important;
   animation: none !important;
+}
+
+
+/* ==========================================================================
+   4. Mobile Responsive Optimization for Driver.js Popover
+   ปรับปรุงขนาดตัวอักษร ความกว้างกล่อง และปุ่มกดให้ชัดเจน อ่านง่าย และแตะสะดวกบนโทรศัพท์มือถือ
+   ========================================================================== */
+@media (max-width: 640px) {
+  .hrms-driver-popover {
+    max-width: min(360px, calc(100vw - 1.5rem)) !important;
+    padding: 1.25rem 1.15rem !important;
+    border-radius: 1.25rem !important;
+  }
+
+  .hrms-driver-popover .driver-popover-title {
+    font-size: 1.0625rem !important; /* 17px - หัวข้อเด่นชัด */
+    line-height: 1.4 !important;
+    margin-bottom: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .hrms-driver-popover .driver-popover-description {
+    font-size: 0.9375rem !important; /* 15px - อ่านสบายตาสำหรับภาษาไทย */
+    line-height: 1.6 !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .hrms-driver-popover .driver-popover-footer {
+    margin-top: 0.85rem !important;
+    padding-top: 0.85rem !important;
+  }
+
+  .hrms-driver-popover .driver-popover-navigation-btns {
+    gap: 0.625rem !important;
+  }
+
+  .hrms-driver-popover .driver-popover-prev-btn {
+    font-size: 0.875rem !important; /* 14px */
+    padding: 0.55rem 1rem !important;
+    border-radius: 0.75rem !important;
+    min-height: 40px !important;
+  }
+
+  .hrms-driver-popover .driver-popover-next-btn {
+    font-size: 0.875rem !important; /* 14px */
+    padding: 0.55rem 1.15rem !important;
+    border-radius: 0.75rem !important;
+    min-height: 40px !important;
+  }
+
+  .hrms-driver-popover .driver-popover-close-btn {
+    width: 34px !important;
+    height: 34px !important;
+    top: -10px !important;
+    right: -10px !important;
+  }
 }

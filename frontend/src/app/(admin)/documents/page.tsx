@@ -50,7 +50,9 @@ const DOCUMENT_OPTIONS: DocumentOption[] = [
 export default function DocumentsHubPage() {
   const { setBreadcrumb } = useBreadcrumb();
   const { hasPermission, hasRole } = useAuth();
-  const canCreateDoc = hasRole('ADMIN') || hasRole('SYSTEM_SUPER') || hasPermission('ESS_DOCS_CREATE');
+  const isAdmin = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
+  const canCreateDoc = isAdmin || hasPermission('ESS_DOCS_CREATE');
+  const canCreateResign = isAdmin || hasPermission('ESS_RESIGN_CREATE');
 
   useEffect(() => {
     setBreadcrumb({ section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' });
@@ -65,7 +67,8 @@ export default function DocumentsHubPage() {
       {/* Option Cards — ตารางเต็มความกว้างของเนื้อหา (ชิดแนวเดียวกับแถบเมนูด้านบน): ชื่อเอกสาร / ไอคอน / ปุ่มถัดไป */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {DOCUMENT_OPTIONS.map((opt) => {
-          const isAllowed = opt.available && canCreateDoc;
+          const hasPerm = opt.href === '/documents/resignation' ? canCreateResign : canCreateDoc;
+          const isAllowed = opt.available && hasPerm;
           const card = (
             <div
               className={`group relative h-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm p-6 flex flex-col items-center justify-between gap-5 text-center transition-all ${
@@ -90,7 +93,7 @@ export default function DocumentsHubPage() {
                   </div>
                 ))}
               </div>
-              {canCreateDoc ? (
+              {hasPerm ? (
                 <span className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary group-hover:bg-primary-hover text-white text-xs font-semibold shadow-xs transition-colors">
                   ถัดไป
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />

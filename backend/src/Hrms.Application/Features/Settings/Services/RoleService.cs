@@ -81,6 +81,7 @@ public class RoleService : IRoleService
 
         // 8. ยื่นเอกสาร (MY_DOCS)
         new("ESS_DOCS", "ยื่นคำร้องและเอกสาร", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
+        new("ESS_RESIGN", "ยื่นคำขอลาออก", "ESS_RESIGN", "MY_DOCS", "ยื่นเอกสาร", "ESS_RESIGN"),
 
         // 8.1 สวัสดิการของฉัน (MY_BENEFITS)
         new("ESS_BENEFIT", "ยอดสวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
@@ -93,10 +94,10 @@ public class RoleService : IRoleService
         // 10. การจัดตารางงาน (ATTENDANCE_SCHEDULE)
         new("TIME_SCHEDULE", "ตารางกะและการจัดกะการทำงาน", "TIME_SCHEDULE", "ATTENDANCE_SCHEDULE", "การจัดตารางงาน", "TIME"),
 
-        // 11. การลา (LEAVE)
-        new("LEAVE_BALANCE", "สิทธิ์วันลาคงเหลือ & ธุรกรรมวันลา", "LEAVE_BALANCE", "LEAVE", "การลา", "LEAVE"),
-        new("LEAVE_TYPE", "ประเภทการลา", "LEAVE_TYPE", "LEAVE", "การลา", "LEAVE"),
-        new("LEAVE_POLICY", "นโยบายและเงื่อนไขการลา", "LEAVE_POLICY", "LEAVE", "การลา", "LEAVE"),
+        // 11. สิทธิ์การลา (LEAVE)
+        new("LEAVE_TYPE", "ประเภทการลา", "LEAVE_TYPE", "LEAVE", "สิทธิ์การลา", "LEAVE"),
+        new("LEAVE_POLICY", "กำหนดสิทธิ์การลา", "LEAVE_POLICY", "LEAVE", "สิทธิ์การลา", "LEAVE"),
+        new("LEAVE_BALANCE", "ยอดวันลาพนักงาน", "LEAVE_BALANCE", "LEAVE", "สิทธิ์การลา", "LEAVE"),
 
         // 12. เงินเดือน (PAYROLL)
         new("PAYROLL_PERIOD", "รอบเงินเดือน (Payroll Periods)", "PAYROLL_PERIOD", "PAYROLL", "เงินเดือน", "PAYROLL"),
@@ -225,24 +226,32 @@ public class RoleService : IRoleService
                 foreach (var act in actions)
                 {
                     var code = $"{mod.Prefix}_{act}";
-                    if (!existingPerms.Contains(code))
+                    string actionLabel = act switch
                     {
-                        string actionLabel = act switch
-                        {
-                            "VIEW" => "ดูข้อมูล",
-                            "CREATE" => "สร้าง/เพิ่ม",
-                            "EDIT" => "แก้ไข",
-                            "APPROVE" => "อนุมัติ",
-                            _ => act
-                        };
+                        "VIEW" => "ดูข้อมูล",
+                        "CREATE" => "สร้าง/เพิ่ม",
+                        "EDIT" => "แก้ไข",
+                        "APPROVE" => "อนุมัติ",
+                        _ => act
+                    };
 
+                    var expectedName = $"{mod.Name} ({actionLabel})";
+                    var existing = permissions.FirstOrDefault(p => p.PermissionCode == code);
+                    if (existing == null)
+                    {
                         toAdd.Add(new Permission
                         {
                             PermissionCode = code,
-                            PermissionName = $"{mod.Name} ({actionLabel})",
+                            PermissionName = expectedName,
                             Description = $"สิทธิ์ระดับระบบสำหรับ {mod.Name} ({actionLabel})"
                         });
                         existingPerms.Add(code);
+                    }
+                    else if (existing.PermissionName != expectedName)
+                    {
+                        existing.PermissionName = expectedName;
+                        existing.Description = $"สิทธิ์ระดับระบบสำหรับ {mod.Name} ({actionLabel})";
+                        _dbContext.Permissions.Update(existing);
                     }
                 }
             }
@@ -397,6 +406,66 @@ public class RoleService : IRoleService
                                         DataVisibilityScope = ms.DataVisibilityScope
                                     });
                                 }
+                            }
+                        }
+                    }
+                }
+
+                if (newRolePerms.Count > 0) _dbContext.RolePermissions.AddRange(newRolePerms);
+                if (newRoleScopes.Count > 0) _dbContext.RoleDataScopes.AddRange(newRoleScopes);
+                if (newRolePerms.Count > 0 || newRoleScopes.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            // Auto-migrate existing roles that have ESS_DOCS permissions to ESS_RESIGN if not already present
+            var existingEssDocsPerms = await _dbContext.RolePermissions
+                .Include(rp => rp.Permission)
+                .Where(rp => rp.Permission.PermissionCode.StartsWith("ESS_DOCS_"))
+                .ToListAsync(cancellationToken);
+
+            if (existingEssDocsPerms.Count > 0)
+            {
+                var newRolePerms = new List<RolePermission>();
+                var newRoleScopes = new List<RoleDataScope>();
+
+                var essDocsPermIds = existingEssDocsPerms.Select(lp => lp.PermissionId).ToHashSet();
+                var essDocsScopes = await _dbContext.RoleDataScopes
+                    .Where(rds => essDocsPermIds.Contains(rds.PermissionId))
+                    .ToListAsync(cancellationToken);
+
+                var existingRolePermKeys = (await _dbContext.RolePermissions
+                    .Select(rp => $"{rp.RoleId}_{rp.PermissionId}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                var existingScopeKeys = (await _dbContext.RoleDataScopes
+                    .Select(rds => $"{rds.RoleId}_{rds.PermissionId}_{rds.DataVisibilityScope}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                foreach (var lp in existingEssDocsPerms)
+                {
+                    var action = lp.Permission.PermissionCode.Replace("ESS_DOCS_", "");
+                    var targetCode = $"ESS_RESIGN_{action}";
+
+                    if (_cachedPermMap.TryGetValue(targetCode, out var tcId))
+                    {
+                        if (existingRolePermKeys.Add($"{lp.RoleId}_{tcId}"))
+                        {
+                            newRolePerms.Add(new RolePermission { RoleId = lp.RoleId, PermissionId = tcId });
+                        }
+
+                        var matchedScopes = essDocsScopes.Where(ls => ls.RoleId == lp.RoleId && ls.PermissionId == lp.PermissionId);
+                        foreach (var ms in matchedScopes)
+                        {
+                            if (existingScopeKeys.Add($"{lp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))
+                            {
+                                newRoleScopes.Add(new RoleDataScope
+                                {
+                                    RoleId = lp.RoleId,
+                                    PermissionId = tcId,
+                                    DataVisibilityScope = ms.DataVisibilityScope
+                                });
                             }
                         }
                     }

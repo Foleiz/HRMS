@@ -79,7 +79,7 @@ export const ROUTE_RULES: RouteRule[] = [
   {
     matchPrefix: '/documents/resignation',
     title: 'ยื่นคำขอลาออก',
-    requiredPermissions: ['ESS_DOCS_CREATE'],
+    requiredPermissions: ['ESS_RESIGN_CREATE', 'ESS_RESIGN_VIEW'],
   },
   {
     matchPrefix: '/documents/general',

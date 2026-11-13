@@ -824,7 +824,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
 
         {/* 3. วันที่ลา + รูปแบบ (Row 2 คอลัมน์ซ้าย) */}
         <div id="tour-step-leave-dates" className="order-2 lg:order-3 min-w-0 flex flex-col">
-            <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4">
               <div className="flex-1 min-w-0">
                 <span className={labelCls}>
                   วันที่ลา <span className="text-rose-600">*</span>
@@ -845,9 +845,9 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                 </p>
               </div>
 
-              <div className="shrink-0">
+              <div className="w-full sm:w-auto shrink-0">
                 <span className={labelCls}>รูปแบบ</span>
-                <div role="radiogroup" aria-label="รูปแบบการลา" className="inline-flex rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
+                <div role="radiogroup" aria-label="รูปแบบการลา" className="inline-flex w-full sm:w-auto rounded-xl p-1 bg-slate-100 dark:bg-slate-900">
                   {([
                     ['FULL_DAY', 'เต็มวัน', Sun],
                     ['HALF_DAY', 'ครึ่งวัน', Clock3],
@@ -858,7 +858,7 @@ export const MyLeaveRequestForm = React.forwardRef<MyLeaveRequestFormHandle, MyL
                       role="radio"
                       aria-checked={leaveFormat === val}
                       onClick={() => setLeaveFormat(val)}
-                      className={`inline-flex items-center gap-1.5 h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
+                      className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 h-10 sm:h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap ${
                         leaveFormat === val
                           ? 'bg-white dark:bg-slate-700 text-primary dark:text-white font-semibold shadow-xs'
                           : 'text-slate-600 dark:text-slate-400 font-medium'

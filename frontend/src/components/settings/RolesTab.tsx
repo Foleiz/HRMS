@@ -154,7 +154,7 @@ const CATEGORY_NAMES: Record<string, string> = {
   MY_BENEFITS: 'สวัสดิการของฉัน',
   ATTENDANCE_DAILY: 'ตรวจบันทึกเวลา',
   ATTENDANCE_SCHEDULE: 'การจัดตารางงาน',
-  LEAVE: 'การลา',
+  LEAVE: 'สิทธิ์การลา',
   PAYROLL: 'เงินเดือน',
   APPROVALS: 'การอนุมัติ',
   ORGANIZATION: 'โครงสร้างองค์กร',
@@ -294,10 +294,10 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
     steps: [
       {
         step: 1,
-        targetModuleCode: 'ESS_DOCS',
+        targetModuleCode: 'ESS_RESIGN',
         label: '1. ประวัติเอกสาร (คำขอลาออก)',
         route: '/documents/history',
-        badge: 'ยื่นคำร้องและเอกสาร',
+        badge: 'ยื่นคำขอลาออก',
         icon: FileText,
       },
       {

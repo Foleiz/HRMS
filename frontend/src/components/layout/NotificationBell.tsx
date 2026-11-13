@@ -319,18 +319,30 @@ export const NotificationBell: React.FC = () => {
 
       {/* Notifications Popover Dropdown */}
       {shouldRenderNotifications && (
-        <div
-          className={`absolute right-0 mt-2.5 w-[360px] sm:w-[440px] max-w-[calc(100vw-1rem)] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl z-50 origin-top-right transition-all duration-150 ease-out overflow-visible font-sans ${
-            isNotificationsActive
-              ? 'opacity-100 scale-100 translate-y-0'
-              : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
-          }`}
-        >
-          {/* Top Pointer Arrow */}
-          <div className="absolute -top-1.5 right-3 w-3 h-3 bg-white dark:bg-slate-900 border-t border-l border-slate-200/90 dark:border-slate-800 rotate-45 z-10" />
+        <>
+          {/* Mobile Backdrop Overlay */}
+          <div
+            className={`fixed inset-0 z-40 bg-black/25 backdrop-blur-2xs sm:hidden transition-opacity duration-150 ${
+              isNotificationsActive ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => {
+              setIsOpen(false);
+              setShowSettings(false);
+            }}
+          />
 
-          {/* 1. Header Bar */}
-          <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 relative z-20">
+          <div
+            className={`fixed left-3 right-3 top-14 mt-1.5 sm:mt-2.5 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:w-[440px] sm:max-w-[calc(100vw-1rem)] max-h-[calc(100vh-4.5rem)] sm:max-h-[85vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl z-50 origin-top sm:origin-top-right transition-all duration-150 ease-out font-sans ${
+              isNotificationsActive
+                ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto'
+                : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
+            }`}
+          >
+            {/* Top Pointer Arrow (Desktop only) */}
+            <div className="hidden sm:block absolute -top-1.5 right-3 w-3 h-3 bg-white dark:bg-slate-900 border-t border-l border-slate-200/90 dark:border-slate-800 rotate-45 z-10" />
+
+            {/* 1. Header Bar */}
+            <div className="px-4 sm:px-5 pt-3.5 sm:pt-4 pb-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 relative z-20 shrink-0">
             {/* Title & Badge */}
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
@@ -380,7 +392,7 @@ export const NotificationBell: React.FC = () => {
             <div
               ref={settingsRef}
               onClick={(e) => e.stopPropagation()}
-              className="absolute top-14 right-4 z-40 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
+              className="absolute top-14 right-3 sm:right-4 z-40 w-[calc(100%-1.5rem)] sm:w-72 max-w-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-3.5 space-y-2.5 animate-in fade-in zoom-in-95 duration-150"
             >
               {/* Header Action Banner */}
               <button
@@ -434,7 +446,7 @@ export const NotificationBell: React.FC = () => {
           )}
 
           {/* 2. Filter Pill Tabs (ตัดหัวข้อ "คิว" ออกตามที่ขอ) */}
-          <div className="px-5 py-2.5 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto">
+          <div className="px-4 sm:px-5 py-2.5 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto shrink-0">
             {(
               [
                 { key: 'ALL', label: 'ทั้งหมด' },
@@ -458,7 +470,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           {/* 3. Notification List Items */}
-          <div className={`${showAll ? 'max-h-[360px] overflow-y-auto' : 'overflow-hidden'} divide-y divide-slate-100 dark:divide-slate-800 transition-all duration-200`}>
+          <div className={`${showAll ? 'max-h-[380px] sm:max-h-[420px]' : 'max-h-[280px] sm:max-h-[360px]'} flex-1 overflow-y-auto overscroll-contain divide-y divide-slate-100 dark:divide-slate-800 transition-all duration-200`}>
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
                 <Loader2 className="w-5 h-5 animate-spin text-primary" />
@@ -491,7 +503,7 @@ export const NotificationBell: React.FC = () => {
                       <div
                         key={item.id}
                         onClick={() => handleItemClick(item)}
-                        className={`p-4 transition-all cursor-pointer flex items-start gap-3 relative ${theme.bg}`}
+                        className={`p-3.5 sm:p-4 transition-all cursor-pointer flex items-start gap-2.5 sm:gap-3 relative ${theme.bg}`}
                       >
                         {/* Icon */}
                         <div className="mt-0.5 shrink-0">{theme.icon}</div>
@@ -526,7 +538,7 @@ export const NotificationBell: React.FC = () => {
           </div>
 
           {/* 4. Footer Link */}
-          <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-white dark:bg-slate-900 rounded-b-3xl">
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-center bg-white dark:bg-slate-900 rounded-b-3xl shrink-0">
             {filteredNotifications.length > 3 && !showAll ? (
               <button
                 type="button"
@@ -554,6 +566,7 @@ export const NotificationBell: React.FC = () => {
             )}
           </div>
         </div>
+      </>
       )}
     </div>
   );

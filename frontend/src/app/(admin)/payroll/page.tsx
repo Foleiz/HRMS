@@ -4431,64 +4431,11 @@ export default function PayrollPage() {
                   </div>
                   <div className="min-w-0">
                     <div className="text-[11px] text-slate-400 dark:text-slate-500 leading-tight">ตัดรอบเงินเบิก</div>
-                    {selectedPeriod && claimCutoffEditing ? (
-                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                        <ThaiDatePicker
-                          value={claimCutoffDraft}
-                          max={selectedPeriod.paymentDate || selectedPeriod.endDate}
-                          onChange={setClaimCutoffDraft}
-                          className="px-1.5 py-0.5 text-[11px] border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200"
-                        />
-                        <button
-                          type="button"
-                          disabled={isSavingClaimCutoff}
-                          onClick={() => handleSaveClaimCutoff(claimCutoffDraft || null)}
-                          className="text-[11px] font-semibold text-blue-700 dark:text-blue-400 hover:underline cursor-pointer disabled:opacity-50"
-                        >
-                          บันทึก
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isSavingClaimCutoff}
-                          onClick={() => handleSaveClaimCutoff(null)}
-                          className="text-[11px] text-slate-500 hover:underline cursor-pointer disabled:opacity-50"
-                          title="ใช้วันกำหนดจ่ายเงินเป็นวันตัดรอบ"
-                        >
-                          ใช้วันจ่ายเงิน
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setClaimCutoffEditing(false)}
-                          className="text-[11px] text-slate-400 hover:underline cursor-pointer"
-                        >
-                          ยกเลิก
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[13px] font-bold text-slate-800 dark:text-slate-100 truncate">
-                          {selectedPeriod?.effectiveClaimCutoffDate
-                            ? formatThaiShortDate(selectedPeriod.effectiveClaimCutoffDate)
-                            : '-'}
-                        </span>
-                        {selectedPeriod &&
-                          (isHR || isAdmin) &&
-                          !['APPROVED', 'PROCESSING', 'PAID', 'CLOSED'].includes(selectedPeriod.status) && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setClaimCutoffDraft(
-                                  selectedPeriod.claimCutoffDate || selectedPeriod.effectiveClaimCutoffDate || ''
-                                );
-                                setClaimCutoffEditing(true);
-                              }}
-                              className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer shrink-0"
-                            >
-                              แก้ไข
-                            </button>
-                          )}
-                      </div>
-                    )}
+                    <div className="text-[13px] font-bold text-slate-800 dark:text-slate-100 mt-0.5 truncate">
+                      {selectedPeriod?.effectiveClaimCutoffDate
+                        ? formatThaiShortDate(selectedPeriod.effectiveClaimCutoffDate)
+                        : '-'}
+                    </div>
                   </div>
                 </div>
 
