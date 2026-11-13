@@ -200,7 +200,7 @@ const menuGroups: MenuGroup[] = [
         icon: Clock,
         requiredPermissions: ['ESS_TIME_VIEW'],
         children: [
-          { title: 'ตรวจบันทึกเวลาของฉัน', href: '/ess/attendance', icon: CalendarCheck },
+          { title: 'ตรวจบันทึกเวลาของฉัน', href: '/ess/attendance?tab=history', icon: CalendarCheck },
           { title: 'คำขอปรับปรุงเวลา', href: '/ess/attendance?tab=adjustments', icon: FileEdit },
         ],
       },

@@ -119,16 +119,13 @@ function EssAttendancePageContent() {
   // State: Data
   // ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<'history' | 'adjustments'>(() => {
-    const tabParam = searchParams?.get('tab') as 'history' | 'adjustments';
-    if (tabParam && ['history', 'adjustments'].includes(tabParam)) return tabParam;
-    return 'history';
+    const tabParam = searchParams?.get('tab');
+    return tabParam === 'adjustments' ? 'adjustments' : 'history';
   });
 
   useEffect(() => {
-    const tabParam = searchParams?.get('tab') as 'history' | 'adjustments';
-    if (tabParam && ['history', 'adjustments'].includes(tabParam)) {
-      setActiveTab(tabParam);
-    }
+    const tabParam = searchParams?.get('tab');
+    setActiveTab(tabParam === 'adjustments' ? 'adjustments' : 'history');
   }, [searchParams]);
 
   // Sync breadcrumb with activeTab
