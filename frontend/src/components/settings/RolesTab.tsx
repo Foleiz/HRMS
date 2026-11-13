@@ -1807,41 +1807,44 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                                 เฉพาะข้อมูลตนเอง (Self Only)
                               </span>
                             )}
-                            <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                isGuideCat
-                                  ? guideActiveFlowsCount > 0
-                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
-                                    : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-                                  : activeModulesCount > 0
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
-                                  : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
-                              }`}
-                            >
-                              {isGuideCat
-                                ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} ไกด์เปิดใช้`
-                                : `${activeModulesCount}/${cat.modules.length} เปิดใช้`}
-                            </span>
                           </div>
                         </div>
 
-                        {/* Master Category Toggle */}
-                        <div
-                          className="flex items-center gap-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 hidden sm:inline">
-                            {isCatAllActive
-                              ? 'เปิดทั้งหมด'
-                              : isCatPartial
-                              ? 'เปิดบางส่วน'
-                              : 'ปิดทั้งหมด'}
+                        {/* Status Badge & Master Category Toggle */}
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          <span
+                            className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                              isGuideCat
+                                ? guideActiveFlowsCount > 0
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
+                                  : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                                : activeModulesCount > 0
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
+                                : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500'
+                            }`}
+                          >
+                            {isGuideCat
+                              ? `${guideActiveFlowsCount}/${GUIDE_FLOW_CONFIGS.length} ไกด์เปิดใช้`
+                              : `${activeModulesCount}/${cat.modules.length} เปิดใช้`}
                           </span>
-                          <ToggleSwitch
-                            checked={isGuideCat ? guideActiveFlowsCount > 0 : activeModulesCount > 0}
-                            onChange={() => handleToggleCategory(cat.code)}
-                            disabled={!canEditRole}
-                          />
+
+                          <div
+                            className="flex items-center gap-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 whitespace-nowrap hidden sm:inline">
+                              {isCatAllActive
+                                ? 'เปิดทั้งหมด'
+                                : isCatPartial
+                                ? 'เปิดบางส่วน'
+                                : 'ปิดทั้งหมด'}
+                            </span>
+                            <ToggleSwitch
+                              checked={isGuideCat ? guideActiveFlowsCount > 0 : activeModulesCount > 0}
+                              onChange={() => handleToggleCategory(cat.code)}
+                              disabled={!canEditRole}
+                            />
+                          </div>
                         </div>
                       </div>
 
