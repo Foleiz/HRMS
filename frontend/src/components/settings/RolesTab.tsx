@@ -523,6 +523,26 @@ const ESS_CATEGORY_CODES = new Set<string>([
   'MY_BENEFITS',
 ]);
 
+/** ตรวจสอบว่าโมดูลถูกเปิดสิทธิ์ครบทุกขอบเขตที่ใช้ได้ (ตรงกับตรรกะของ handleSelectAll) */
+function isModuleFullSelected(m: ModulePermissionScope): boolean {
+  if (m.categoryCode === 'DASHBOARD' || m.groupName === 'DASHBOARD') {
+    return Boolean(
+      m.canView ||
+        m.self?.view ||
+        m.team?.view ||
+        m.department?.view ||
+        m.division?.view ||
+        m.organization?.view
+    );
+  }
+  const isEss =
+    ESS_CATEGORY_CODES.has(m.categoryCode || '') || ESS_CATEGORY_CODES.has(m.groupName || '');
+  const scopes = isEss
+    ? (['self'] as const)
+    : (['self', 'team', 'department', 'division', 'organization'] as const);
+  return scopes.every((s) => Boolean(m[s]?.view && m[s]?.create && m[s]?.edit));
+}
+
 const SCOPES_CONFIG: {
   key: 'self' | 'team' | 'department' | 'division' | 'organization';
   label: string;
@@ -950,12 +970,16 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     });
   };
 
-  const handleExpandAll = () => {
-    setExpandedCategories(new Set(categories.map((c) => c.code)));
-  };
+  const visibleCategories = searchModuleQuery.trim() ? filteredCategories : categories;
+  const areAllExpanded =
+    visibleCategories.length > 0 && visibleCategories.every((c) => expandedCategories.has(c.code));
 
-  const handleCollapseAll = () => {
-    setExpandedCategories(new Set());
+  const handleToggleExpandAll = () => {
+    if (areAllExpanded) {
+      setExpandedCategories(new Set());
+    } else {
+      setExpandedCategories(new Set(visibleCategories.map((c) => c.code)));
+    }
   };
 
   // Master switch per module
@@ -1373,6 +1397,19 @@ export const RolesTab: React.FC<RolesTabProps> = ({
     toast.info('ยกเลิกสิทธิ์ทั้งหมดเรียบร้อยแล้ว');
   };
 
+  const areAllModulesSelected = useMemo(
+    () => localModules.length > 0 && localModules.every(isModuleFullSelected),
+    [localModules]
+  );
+
+  const handleToggleSelectAll = () => {
+    if (areAllModulesSelected) {
+      handleDeselectAll();
+    } else {
+      handleSelectAll();
+    }
+  };
+
   /* ── Save ── */
   const handleSave = async () => {
     if (!selectedRoleMatrix) return;
@@ -1662,35 +1699,34 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={handleCollapseAll}
+                  disabled={visibleCategories.length === 0}
+                  onClick={handleToggleExpandAll}
+                  icon={
+                    areAllExpanded ? (
+                      <ChevronUp className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    )
+                  }
                 >
-                  หุบทั้งหมด
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleExpandAll}
-                >
-                  ขยายทั้งหมด
+                  {areAllExpanded ? 'หุบทั้งหมด' : 'ขยายทั้งหมด'}
                 </Button>
                 <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block" />
                 <Button
                   type="button"
                   variant="secondary"
                   size="sm"
-                  onClick={handleSelectAll}
-                  icon={<CheckSquare className="w-3.5 h-3.5 text-emerald-600" />}
+                  disabled={!canEditRole || localModules.length === 0}
+                  onClick={handleToggleSelectAll}
+                  icon={
+                    areAllModulesSelected ? (
+                      <X className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+                    ) : (
+                      <CheckSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    )
+                  }
                 >
-                  เลือกทั้งหมด
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleDeselectAll}
-                >
-                  ยกเลิกทั้งหมด
+                  {areAllModulesSelected ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด'}
                 </Button>
               </div>
             </div>
