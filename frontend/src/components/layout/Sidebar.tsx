@@ -658,6 +658,14 @@ export const Sidebar: React.FC = () => {
         const currentTab = searchParams.get('tab');
         return pathname === '/ess/attendance' && (!currentTab || currentTab === 'history');
       }
+      if (child.href === '/ess/benefits') {
+        return (
+          pathname === '/ess/benefits' ||
+          (pathname.startsWith('/ess/benefits/') &&
+            !pathname.startsWith('/ess/benefits/history') &&
+            !pathname.startsWith('/ess/benefits/claims'))
+        );
+      }
       return pathname === child.href || pathname.startsWith(`${child.href}/`);
     },
     [pathname, searchParams]
