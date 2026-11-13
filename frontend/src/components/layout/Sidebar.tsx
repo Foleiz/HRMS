@@ -8,7 +8,6 @@ import { useSidebar } from '@/context/SidebarContext';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import {
   LayoutDashboard,
-  LogOut,
   Compass,
   Users,
   Clock,
@@ -167,17 +166,16 @@ const menuGroups: MenuGroup[] = [
         href: '/documents/leave',
         matchPrefix: '/documents/leave',
         icon: CalendarX2,
-        requiredPermissions: ['ESS_DOCS_CREATE', 'ESS_DOCS_VIEW', 'ESS_LEAVE_VIEW'],
+        requiredPermissions: ['ESS_LEAVE_REQUEST_VIEW', 'ESS_LEAVE_REQUEST_CREATE', 'ESS_LEAVE_REQUEST_EDIT'],
       },
       {
         title: 'ยื่นเอกสาร',
         href: '/documents',
         matchPrefix: '/documents',
         icon: FileText,
-        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE', 'ESS_RESIGN_VIEW', 'ESS_RESIGN_CREATE'],
+        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE'],
         children: [
           { title: 'รายการเอกสาร', href: '/documents', icon: FileText },
-          { title: 'ยื่นคำขอลาออก', href: '/documents/resignation', icon: LogOut, requiredPermissions: ['ESS_RESIGN_CREATE', 'ESS_RESIGN_VIEW'] },
           { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History },
         ],
       },

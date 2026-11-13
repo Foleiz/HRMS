@@ -32,7 +32,7 @@ public class ResignationController : ControllerBase
     /// ดึงรายการคำขอลาออกของพนักงานที่ล็อกอินอยู่
     /// </summary>
     [HttpGet("my-requests")]
-    [RequirePermission("ESS_RESIGN_VIEW,ESS_DOCS_VIEW")]
+    [RequirePermission("ESS_DOCS_VIEW")]
     public async Task<ActionResult<ApiResponse<List<ResignationRequestDto>>>> GetMyRequests(CancellationToken cancellationToken)
     {
         var result = await _resignationService.GetMyRequestsAsync(cancellationToken);
@@ -71,7 +71,7 @@ public class ResignationController : ControllerBase
     /// ยื่นคำขอลาออกใหม่
     /// </summary>
     [HttpPost("requests")]
-    [RequirePermission("ESS_RESIGN_CREATE,ESS_DOCS_CREATE")]
+    [RequirePermission("ESS_DOCS_CREATE")]
     public async Task<ActionResult<ApiResponse<ResignationRequestDto>>> CreateRequest(
         [FromBody] CreateResignationRequestDto dto,
         CancellationToken cancellationToken)
@@ -84,7 +84,7 @@ public class ResignationController : ControllerBase
     /// ขอยกเลิกคำขอลาออก
     /// </summary>
     [HttpPost("requests/{id:long}/cancel")]
-    [RequirePermission("ESS_RESIGN_CREATE,ESS_DOCS_CREATE,ESS_RESIGN_EDIT,ESS_DOCS_EDIT")]
+    [RequirePermission("ESS_DOCS_CREATE,ESS_DOCS_EDIT")]
     public async Task<ActionResult<ApiResponse<bool>>> CancelRequest(
         long id,
         [FromBody] CancelResignationRequestDto? body,

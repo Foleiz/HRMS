@@ -31,6 +31,7 @@ import {
   User,
   CalendarDays,
   CalendarRange,
+  CalendarX2,
   CheckCircle2,
   FileText,
   Megaphone,
@@ -118,6 +119,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
 
   MY_SALARY: Wallet,
   MY_PROFILE: User,
+  MY_LEAVE_REQUEST: CalendarX2,
   MY_LEAVE: CalendarCheck,
   MY_ATTENDANCE: CalendarDays,
   MY_NEWS: Megaphone,
@@ -147,6 +149,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 
   MY_SALARY: 'เงินเดือนของฉัน',
   MY_PROFILE: 'โปรไฟล์ของฉัน',
+  MY_LEAVE_REQUEST: 'การลา',
   MY_LEAVE: 'ยอดวันลาคงเหลือ',
   MY_ATTENDANCE: 'บันทึกเวลาของฉัน',
   MY_NEWS: 'ข่าวสารสำหรับฉัน',
@@ -294,7 +297,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
     steps: [
       {
         step: 1,
-        targetModuleCode: 'ESS_RESIGN',
+        targetModuleCode: 'ESS_DOCS',
         label: '1. ประวัติเอกสาร (คำขอลาออก)',
         route: '/documents/history',
         badge: 'ยื่นคำขอลาออก',
@@ -517,6 +520,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
 const ESS_CATEGORY_CODES = new Set<string>([
   'MY_SALARY',
   'MY_PROFILE',
+  'MY_LEAVE_REQUEST',
   'MY_LEAVE',
   'MY_ATTENDANCE',
   'MY_DOCS',
