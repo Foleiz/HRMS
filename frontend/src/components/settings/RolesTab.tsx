@@ -1808,6 +1808,11 @@ export const RolesTab: React.FC<RolesTabProps> = ({
 
                         {/* Status Badge & Master Category Toggle */}
                         <div className="flex items-center gap-2.5 shrink-0">
+                          {ESS_CATEGORY_CODES.has(cat.code) && (
+                            <span className="text-[10px] font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200/60 px-2 py-0.5 rounded-full whitespace-nowrap hidden sm:inline">
+                              Self Only
+                            </span>
+                          )}
                           <span
                             className={`text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${
                               isGuideCat
