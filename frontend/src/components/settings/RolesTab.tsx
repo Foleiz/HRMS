@@ -142,13 +142,13 @@ const CATEGORY_NAMES: Record<string, string> = {
   DASHBOARD: 'แดชบอร์ด',
   ORG_CHART: 'แผนผังองค์กร',
   EMPLOYEE: 'พนักงาน',
-  BENEFIT: 'สวัสดิการ',
+  BENEFIT: 'ยอดสวัสดิการพนักงาน',
   BENEFIT_BALANCE: 'ยอดสวัสดิการพนักงาน',
 
   MY_SALARY: 'เงินเดือนของฉัน',
-  MY_PROFILE: 'โปรไฟล์ของฉัน (ESS)',
+  MY_PROFILE: 'โปรไฟล์ของฉัน',
   MY_LEAVE: 'ยอดวันลาคงเหลือ',
-  MY_ATTENDANCE: 'บันทึกเวลาของฉัน (ESS)',
+  MY_ATTENDANCE: 'บันทึกเวลาของฉัน',
   MY_NEWS: 'ข่าวสารสำหรับฉัน',
   MY_DOCS: 'ยื่นเอกสาร',
   MY_BENEFITS: 'สวัสดิการของฉัน',
@@ -161,8 +161,8 @@ const CATEGORY_NAMES: Record<string, string> = {
   WORK_CALENDAR: 'วันทำงานและวันหยุด',
   REPORT: 'รายงาน',
   ANNOUNCEMENTS: 'จัดการประกาศ',
-  MASTER_DATA: 'ข้อมูลหลัก (Master Data)',
-  SETTINGS: 'ตั้งค่า',
+  MASTER_DATA: 'ข้อมูลหลัก',
+  SETTINGS: 'ตั้งค่าระบบ',
   GUIDE: 'วิธีการใช้งาน',
 };
 

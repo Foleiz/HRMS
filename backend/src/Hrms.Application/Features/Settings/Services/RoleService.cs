@@ -53,28 +53,27 @@ public class RoleService : IRoleService
         new("ORG_CHART", "แผนผังองค์กร", "ORG_CHART", "ORG_CHART", "แผนผังองค์กร", "ORG_CHART"),
 
         // 2. พนักงาน (EMPLOYEE)
-        new("EMP_PROFILE", "ทะเบียนประวัติพนักงาน", "EMP_PROFILE", "EMPLOYEE", "พนักงาน", "EMP"),
-        new("EMP_CONTRACT", "สัญญาจ้างงาน", "EMP_CONTRACT", "EMPLOYEE", "พนักงาน", "EMP"),
-        new("EMP_TRANSFER", "การโอนย้าย / ปรับตำแหน่ง", "EMP_TRANSFER", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_PROFILE", "จัดการพนักงาน", "EMP_PROFILE", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_CONTRACT", "สัญญาจ้าง", "EMP_CONTRACT", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_TRANSFER", "การย้ายแผนก/เลื่อนตำแหน่ง", "EMP_TRANSFER", "EMPLOYEE", "พนักงาน", "EMP"),
         new("EMP_TYPE", "ประเภทพนักงาน", "EMP_TYPE", "EMPLOYEE", "พนักงาน", "EMP"),
-        new("EMP_DOC", "แฟ้มเอกสารพนักงาน", "EMP_DOC", "EMPLOYEE", "พนักงาน", "EMP"),
+        new("EMP_DOC", "เอกสารใกล้หมดอายุ", "EMP_DOC", "EMPLOYEE", "พนักงาน", "EMP"),
         new("EMP_HISTORY", "ประวัติการเปลี่ยนแปลง", "EMP_HISTORY", "EMPLOYEE", "พนักงาน", "EMP"),
 
-        // 2.1 สวัสดิการ (BENEFIT)
-        new("BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE", "BENEFIT", "สวัสดิการ", "BENEFIT"),
-
+        // 2.1 ยอดสวัสดิการพนักงาน (BENEFIT)
+        new("BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE", "BENEFIT", "ยอดสวัสดิการพนักงาน", "BENEFIT"),
 
         // 3. เงินเดือนของฉัน (MY_SALARY)
         new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "ESS_SALARY", "MY_SALARY", "เงินเดือนของฉัน", "ESS_SALARY"),
 
-        // 4. โปรไฟล์ของฉัน (ESS) (MY_PROFILE)
-        new("ESS_PROFILE", "ข้อมูลและแก้ไขโปรไฟล์ส่วนบุคคล", "ESS_PROFILE", "MY_PROFILE", "โปรไฟล์ของฉัน (ESS)", "ESS_PROFILE"),
+        // 4. โปรไฟล์ของฉัน (MY_PROFILE)
+        new("ESS_PROFILE", "ข้อมูลส่วนบุคคล", "ESS_PROFILE", "MY_PROFILE", "โปรไฟล์ของฉัน", "ESS_PROFILE"),
 
         // 5. ยอดวันลาคงเหลือ (MY_LEAVE)
         new("ESS_LEAVE", "ยอดวันลาคงเหลือและประวัติการลา", "ESS_LEAVE", "MY_LEAVE", "ยอดวันลาคงเหลือ", "ESS_LEAVE"),
 
-        // 6. บันทึกเวลาของฉัน (ESS) (MY_ATTENDANCE)
-        new("ESS_TIME", "ประวัติบันทึกเวลาของตนเอง", "ESS_TIME", "MY_ATTENDANCE", "บันทึกเวลาของฉัน (ESS)", "ESS_TIME"),
+        // 6. บันทึกเวลาของฉัน (MY_ATTENDANCE)
+        new("ESS_TIME", "ตรวจบันทึกเวลาของฉัน", "ESS_TIME", "MY_ATTENDANCE", "บันทึกเวลาของฉัน", "ESS_TIME"),
 
         // 7. ข่าวสารสำหรับฉัน (MY_NEWS)
         new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ESS_NEWS", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ESS_NEWS"),
@@ -84,12 +83,12 @@ public class RoleService : IRoleService
         new("ESS_RESIGN", "ยื่นคำขอลาออก", "ESS_RESIGN", "MY_DOCS", "ยื่นเอกสาร", "ESS_RESIGN"),
 
         // 8.1 สวัสดิการของฉัน (MY_BENEFITS)
-        new("ESS_BENEFIT", "ยอดสวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
-        new("ESS_BENEFIT_CLAIM", "ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ", "ESS_BENEFIT_CLAIM", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
+        new("ESS_BENEFIT", "สวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
+        new("ESS_BENEFIT_CLAIM", "ประวัติการเบิกจ่ายและใช้สิทธิ์", "ESS_BENEFIT_CLAIM", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
 
         // 9. ตรวจบันทึกเวลา (ATTENDANCE_DAILY)
         new("TIME_DAILY", "ตรวจบันทึกเวลาประจำวัน", "TIME_DAILY", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
-        new("TIME_IMPORT", "นำเข้าเวลาสแกนนิ้ว / ไฟล์เวลา", "TIME_IMPORT", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
+        new("TIME_IMPORT", "นำเข้าไฟล์บันทึกเวลา", "TIME_IMPORT", "ATTENDANCE_DAILY", "ตรวจบันทึกเวลา", "TIME"),
 
         // 10. การจัดตารางงาน (ATTENDANCE_SCHEDULE)
         new("TIME_SCHEDULE", "ตารางกะและการจัดกะการทำงาน", "TIME_SCHEDULE", "ATTENDANCE_SCHEDULE", "การจัดตารางงาน", "TIME"),
@@ -100,17 +99,17 @@ public class RoleService : IRoleService
         new("LEAVE_BALANCE", "ยอดวันลาพนักงาน", "LEAVE_BALANCE", "LEAVE", "สิทธิ์การลา", "LEAVE"),
 
         // 12. เงินเดือน (PAYROLL)
-        new("PAYROLL_PERIOD", "รอบเงินเดือน (Payroll Periods)", "PAYROLL_PERIOD", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_PERIOD", "รอบเงินเดือน", "PAYROLL_PERIOD", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_HR", "หน้าต่างเงินเดือนฝ่ายบุคคล (HR)", "PAYROLL_HR", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_FINANCE", "หน้าต่างเงินเดือนฝ่ายการเงิน (Finance)", "PAYROLL_FINANCE", "PAYROLL", "เงินเดือน", "PAYROLL"),
         new("PAYROLL_ADMIN", "หน้าต่างเงินเดือนผู้ดูแลระบบ/ผู้อนุมัติ (Admin & CEO)", "PAYROLL_ADMIN", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_CALC", "ประมวลผลเงินเดือน / ปิดงวด", "PAYROLL_CALC", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_STRUCTURE", "โครงสร้างเงินเดือน (Salary Structure)", "PAYROLL_STRUCTURE", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_ITEMS", "รายการรายได้และรายหัก (Payroll Items)", "PAYROLL_ITEMS", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_BONUS", "การจัดสรรโบนัสประจำปี (Bonus Management)", "PAYROLL_BONUS", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_BANK", "การโอนเงินธนาคารและแนบสลิป (Bank Transfer)", "PAYROLL_BANK", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_TAX", "สรุปภาษีและประกันสังคม (Tax & SSO)", "PAYROLL_TAX", "PAYROLL", "เงินเดือน", "PAYROLL"),
-        new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน (Payslip)", "PAYROLL_SLIP", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_CALC", "ประมวลเงินเดือน", "PAYROLL_CALC", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_STRUCTURE", "ฐานเงินเดือนพนักงาน", "PAYROLL_STRUCTURE", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_ITEMS", "รายได้และรายหัก", "PAYROLL_ITEMS", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_BONUS", "โบนัส", "PAYROLL_BONUS", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_BANK", "การโอนเงินธนาคารและแนบสลิป", "PAYROLL_BANK", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_TAX", "ภาษีและประกันสังคม", "PAYROLL_TAX", "PAYROLL", "เงินเดือน", "PAYROLL"),
+        new("PAYROLL_SLIP", "สลิปเงินเดือนพนักงาน", "PAYROLL_SLIP", "PAYROLL", "เงินเดือน", "PAYROLL"),
 
         // 13. การอนุมัติ (APPROVALS)
         new("APPROVAL_LEAVE", "อนุมัติคำขอลา", "APPROVAL_LEAVE", "APPROVALS", "การอนุมัติ", "APPROVALS"),
@@ -121,28 +120,28 @@ public class RoleService : IRoleService
         // 14. โครงสร้างองค์กร (ORGANIZATION)
         new("ORG_STRUCT", "ฝ่ายและแผนก", "ORG_STRUCT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
         new("ORG_POS", "ตำแหน่งและระดับงาน", "ORG_POS", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
-        new("ORG_BENEFIT", "สวัสดิการพนักงาน", "ORG_BENEFIT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
+        new("ORG_BENEFIT", "สวัสดิการและสิทธิประโยชน์", "ORG_BENEFIT", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
         new("ORG_COMP", "ข้อมูลบริษัทและสาขา", "ORG_COMP", "ORGANIZATION", "โครงสร้างองค์กร", "ORG"),
 
         // 15. วันทำงานและวันหยุด (WORK_CALENDAR)
         new("WORK_CALENDAR", "ปฏิทินวันทำงานและวันหยุดประจำปี", "WORK_CALENDAR", "WORK_CALENDAR", "วันทำงานและวันหยุด", "WORK_CALENDAR"),
 
         // 16. รายงาน (REPORT)
-        new("REPORT_ATT", "รายงานการลงเวลาและวันลา", "REPORT_ATT", "REPORT", "รายงาน", "REPORT"),
-        new("REPORT_HEADCOUNT", "รายงานกำลังพลและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT"),
-        new("REPORT_LEAVE", "รายงานสรุปการลา", "REPORT_LEAVE", "REPORT", "รายงาน", "REPORT"),
+        new("REPORT_ATT", "การเข้าออกงาน", "REPORT_ATT", "REPORT", "รายงาน", "REPORT"),
+        new("REPORT_HEADCOUNT", "พนักงานแยกตามแผนกและอัตราการลาออก", "REPORT_HEADCOUNT", "REPORT", "รายงาน", "REPORT"),
+        new("REPORT_LEAVE", "การลา", "REPORT_LEAVE", "REPORT", "รายงาน", "REPORT"),
 
         // 17. จัดการประกาศ (ANNOUNCEMENTS)
         new("ANNOUNCEMENTS_GENERAL", "ประกาศข่าวสารทั่วไป", "ANNOUNCEMENTS_GENERAL", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),
         new("ANNOUNCEMENTS_ACTIVITY", "ประกาศกิจกรรม", "ANNOUNCEMENTS_ACTIVITY", "ANNOUNCEMENTS", "จัดการประกาศ", "ANNOUNCEMENTS"),
 
-        // 18. ข้อมูลหลัก (Master Data) (MASTER_DATA)
-        new("MASTER_DATA", "จัดการข้อมูลหลักระบบและธนาคาร", "MASTER_DATA", "MASTER_DATA", "ข้อมูลหลัก (Master Data)", "MASTER_DATA"),
+        // 18. ข้อมูลหลัก (MASTER_DATA)
+        new("MASTER_DATA", "ข้อมูลหลัก", "MASTER_DATA", "MASTER_DATA", "ข้อมูลหลัก", "MASTER_DATA"),
 
-        // 19. ตั้งค่า (SETTINGS)
-        new("SETTINGS_USERS", "บัญชีผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่า", "SETTINGS"),
-        new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "ตั้งค่า", "SETTINGS"),
-        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ (Audit Log)", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่า", "SETTINGS"),
+        // 19. ตั้งค่าระบบ (SETTINGS)
+        new("SETTINGS_USERS", "ผู้ใช้งาน", "SETTINGS_USERS", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
+        new("SETTINGS_ROLES", "บทบาทและสิทธิ์", "SETTINGS_ROLES", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
+        new("SETTINGS_AUDIT", "บันทึกการใช้งานระบบ", "SETTINGS_AUDIT", "SETTINGS", "ตั้งค่าระบบ", "SETTINGS"),
 
         // 20. วิธีการใช้งาน (GUIDE)
         new("GUIDE_ONBOARDING", "ไกด์: เพิ่มพนักงานใหม่", "GUIDE_ONBOARDING", "GUIDE", "วิธีการใช้งาน", "GUIDE"),
