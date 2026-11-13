@@ -1801,17 +1801,9 @@ export const RolesTab: React.FC<RolesTabProps> = ({
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isCatOff ? 'bg-slate-200/70 text-slate-400 dark:bg-slate-800' : 'bg-primary/10 text-primary dark:text-blue-300'}`}>
                             <IconComp className="w-4 h-4" />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-bold text-xs tracking-tight ${isCatOff ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                              {cat.name}
-                            </span>
-
-                            {ESS_CATEGORY_CODES.has(cat.code) && (
-                              <span className="text-[10px] font-medium text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 border border-blue-200/60 px-2 py-0.5 rounded-full hidden sm:inline">
-                                เฉพาะข้อมูลตนเอง (Self Only)
-                              </span>
-                            )}
-                          </div>
+                          <span className={`font-bold text-xs tracking-tight ${isCatOff ? 'text-slate-500 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>
+                            {cat.name}
+                          </span>
                         </div>
 
                         {/* Status Badge & Master Category Toggle */}
