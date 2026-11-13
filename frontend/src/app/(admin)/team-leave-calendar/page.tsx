@@ -8,6 +8,8 @@ import { Department, Division } from '@/types/organization';
 import { LeaveCalendarItem, LeaveCalendarResult } from '@/types/leaveInsights';
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Loader2, Users, X } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ModalShell } from '@/components/ui/ModalShell';
+import { Button } from '@/components/ui/Button';
 import { TH_MONTHS, TH_MONTHS_SHORT, formatThaiDate } from '@/lib/thaiDate';
 
 type ViewMode = 'month' | 'week';
@@ -73,6 +75,16 @@ export default function TeamLeaveCalendarPage() {
     setBreadcrumb({ section: 'การลา', page: 'ปฏิทินการลาของทีม' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
+
+  // ปิดป๊อปอัปเมื่อกดปุ่ม Escape
+  useEffect(() => {
+    if (!selectedDay) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedDay(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [selectedDay]);
 
   // ช่วงวันที่ที่แสดง
   const { days, from, to, title } = useMemo(() => {
@@ -319,100 +331,176 @@ export default function TeamLeaveCalendarPage() {
         </div>
       )}
 
-      <div className="flex flex-col xl:flex-row gap-4">
-        {/* Calendar grid */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <div className="min-w-[700px]">
-              <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-                {WEEK_DAYS.map((d, i) => (
-                  <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500'}`}>
-                    {d}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7">
-                {days.map((d) => {
-                  const key = ymd(d);
-                  const list = itemsByDay.get(key) ?? [];
-                  const outside = view === 'month' && d.getMonth() !== anchor.getMonth();
-                  const max = view === 'month' ? 3 : 50;
-                  return (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      key={key}
-                      onClick={() => setSelectedDay(key === selectedDay ? null : key)}
-                      className={`text-left border-b border-r border-slate-100 p-1.5 align-top flex flex-col gap-1 ${
-                        view === 'month' ? 'min-h-[104px]' : 'min-h-[320px]'
-                      } ${outside ? 'bg-slate-50/60' : 'bg-white'} ${
-                        key === selectedDay ? 'ring-2 ring-inset ring-blue-400' : 'hover:bg-blue-50/40'
+      {/* Calendar grid */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <div className="min-w-[700px]">
+            <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+              {WEEK_DAYS.map((d, i) => (
+                <div key={d} className={`py-2 text-center text-xs font-semibold ${i >= 5 ? 'text-rose-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                  {d}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {days.map((d) => {
+                const key = ymd(d);
+                const list = itemsByDay.get(key) ?? [];
+                const outside = view === 'month' && d.getMonth() !== anchor.getMonth();
+                const max = view === 'month' ? 3 : 50;
+                return (
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    key={key}
+                    onClick={() => setSelectedDay(key)}
+                    className={`text-left border-b border-r border-slate-100 dark:border-slate-700/60 p-1.5 align-top flex flex-col gap-1 cursor-pointer transition-colors ${
+                      view === 'month' ? 'min-h-[104px]' : 'min-h-[320px]'
+                    } ${outside ? 'bg-slate-50/60 dark:bg-slate-900/40' : 'bg-white dark:bg-slate-800'} ${
+                      key === selectedDay ? 'ring-2 ring-inset ring-blue-400 dark:ring-blue-500' : 'hover:bg-blue-50/40 dark:hover:bg-slate-700/50'
+                    }`}
+                  >
+                    <span
+                      className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
+                        key === todayKey ? 'bg-primary text-white' : outside ? 'text-slate-300 dark:text-slate-600' : 'text-slate-600 dark:text-slate-300'
                       }`}
                     >
-                      <span
-                        className={`text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full ${
-                          key === todayKey ? 'bg-primary text-white' : outside ? 'text-slate-300' : 'text-slate-600'
-                        }`}
-                      >
-                        {d.getDate()}
-                      </span>
-                      {list.slice(0, max).map((it) => (
-                        <Chip key={`${it.id}-${key}`} item={it} compact={view === 'month'} />
-                      ))}
-                      {list.length > max && (
-                        <span className="text-[11px] text-blue-600 font-medium">+{list.length - max} คน</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                      {d.getDate()}
+                    </span>
+                    {list.slice(0, max).map((it) => (
+                      <Chip key={`${it.id}-${key}`} item={it} compact={view === 'month'} />
+                    ))}
+                    {list.length > max && (
+                      <span className="text-[11px] text-blue-600 dark:text-blue-400 font-medium">+{list.length - max} คน</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
-
-        {/* Day detail */}
-        {selectedDay && (
-          <div className="w-full xl:w-80 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 h-fit">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">ผู้ลาวันที่ {thaiDate(selectedDay)}</h2>
-              <button onClick={() => setSelectedDay(null)} className="p-1 rounded-lg hover:bg-slate-100 text-slate-400">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            {selectedItems.length === 0 ? (
-              <p className="text-sm text-slate-400">ไม่มีผู้ลา</p>
-            ) : (
-              <ul className="space-y-2">
-                {selectedItems.map((it) => {
-                  const c = colorOf.map.get(it.leaveTypeId) ?? PALETTE[PALETTE.length - 1];
-                  return (
-                    <li key={it.id} className="flex gap-2">
-                      <span className={`mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${c.dot}`} />
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
-                          {it.employeeName}
-                          {it.status === 'PENDING' && (
-                            <span className="ml-1.5 rounded bg-amber-50 border border-amber-200 px-1.5 text-[10px] text-amber-700">
-                              รออนุมัติ
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {it.leaveTypeName} · {it.departmentName || '-'}
-                        </div>
-                        <div className="text-xs text-slate-400">
-                          {thaiDate(it.startDate)}
-                          {it.endDate !== it.startDate ? ` – ${thaiDate(it.endDate)}` : ''} ({it.leaveDays} วัน)
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Pop-up Modal แสดงรายการลาประจำวัน */}
+      {selectedDay && (
+        <ModalShell
+          className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
+          innerClassName="items-center justify-center p-4"
+          onBackdropClick={() => setSelectedDay(null)}
+        >
+          <div className="relative w-full max-w-lg max-h-[85vh] my-auto flex flex-col animate-in zoom-in-95 duration-200">
+            {/* ปุ่มกากบาทที่มุมขวาบน */}
+            <button
+              type="button"
+              onClick={() => setSelectedDay(null)}
+              aria-label="ปิดหน้าต่าง"
+              className="absolute -top-3 -right-3 z-50 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all cursor-pointer"
+            >
+              <X className="w-4 h-4 stroke-[2.5]" />
+            </button>
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full flex-1 flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700">
+              {/* Modal Header */}
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between shrink-0 bg-slate-50/60 dark:bg-slate-800/80">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900 flex items-center justify-center text-primary dark:text-blue-400 shrink-0">
+                    <CalendarDays className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                      รายการลาประจำวัน
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {formatThaiDate(selectedDay, 'long')}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900">
+                  {selectedItems.length} คน
+                </span>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-5 overflow-y-auto max-h-[calc(85vh-135px)]">
+                {selectedItems.length === 0 ? (
+                  <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center text-slate-400">
+                      <CalendarDays className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                      ไม่มีพนักงานลาในวันที่นี้
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedItems.map((it) => {
+                      const c = colorOf.map.get(it.leaveTypeId) ?? PALETTE[PALETTE.length - 1];
+                      const pending = it.status === 'PENDING';
+                      return (
+                        <div
+                          key={it.id}
+                          className="p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/60 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors flex flex-col gap-2.5"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className={`w-3 h-3 rounded-full shrink-0 ${c.dot}`} />
+                              <div className="min-w-0">
+                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate block">
+                                  {it.employeeName}
+                                </span>
+                                {it.employeeCode && (
+                                  <span className="text-[11px] text-slate-400 dark:text-slate-500 block">
+                                    รหัสพนักงาน: {it.employeeCode}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {pending ? (
+                              <span className="shrink-0 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800">
+                                รออนุมัติ
+                              </span>
+                            ) : (
+                              <span className="shrink-0 text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                                อนุมัติแล้ว
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                            <div>
+                              <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ประเภทการลา</span>
+                              <span className={`font-semibold ${c.text}`}>{it.leaveTypeName}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 dark:text-slate-500 block text-[11px]">แผนก</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-medium">
+                                {it.departmentName || '-'}
+                              </span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-slate-400 dark:text-slate-500 block text-[11px]">ช่วงเวลาที่ลา</span>
+                              <span className="text-slate-700 dark:text-slate-300 font-medium">
+                                {formatThaiDate(it.startDate)} {it.endDate !== it.startDate ? `– ${formatThaiDate(it.endDate)}` : ''} ({it.leaveDays} วัน)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-5 py-3.5 bg-slate-50/70 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-700/60 flex justify-end shrink-0">
+                <Button variant="secondary" onClick={() => setSelectedDay(null)}>
+                  ปิด
+                </Button>
+              </div>
+            </div>
+          </div>
+        </ModalShell>
+      )}
     </div>
   );
 }
