@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
@@ -291,7 +291,7 @@ const menuGroups: MenuGroup[] = [
         icon: Gift,
         requiredPermissions: [
           'BENEFIT_BALANCE_VIEW',
-          'BENEFIT_CLAIM_VIEW',
+
           'BENEFIT_VIEW',
         ],
       },

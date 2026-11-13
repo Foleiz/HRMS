@@ -62,7 +62,7 @@ public class RoleService : IRoleService
 
         // 2.1 สวัสดิการ (BENEFIT)
         new("BENEFIT_BALANCE", "ยอดสวัสดิการพนักงาน", "BENEFIT_BALANCE", "BENEFIT", "สวัสดิการ", "BENEFIT"),
-        new("BENEFIT_CLAIM", "ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ", "BENEFIT_CLAIM", "BENEFIT", "สวัสดิการ", "BENEFIT"),
+
 
         // 3. เงินเดือนของฉัน (MY_SALARY)
         new("ESS_SALARY", "สลิปและเงินเดือนส่วนบุคคล", "ESS_SALARY", "MY_SALARY", "เงินเดือนของฉัน", "ESS_SALARY"),
@@ -456,6 +456,66 @@ public class RoleService : IRoleService
                         }
 
                         var matchedScopes = essDocsScopes.Where(ls => ls.RoleId == lp.RoleId && ls.PermissionId == lp.PermissionId);
+                        foreach (var ms in matchedScopes)
+                        {
+                            if (existingScopeKeys.Add($"{lp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))
+                            {
+                                newRoleScopes.Add(new RoleDataScope
+                                {
+                                    RoleId = lp.RoleId,
+                                    PermissionId = tcId,
+                                    DataVisibilityScope = ms.DataVisibilityScope
+                                });
+                            }
+                        }
+                    }
+                }
+
+                if (newRolePerms.Count > 0) _dbContext.RolePermissions.AddRange(newRolePerms);
+                if (newRoleScopes.Count > 0) _dbContext.RoleDataScopes.AddRange(newRoleScopes);
+                if (newRolePerms.Count > 0 || newRoleScopes.Count > 0)
+                {
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            // Auto-migrate existing roles that have BENEFIT_CLAIM permissions to BENEFIT_BALANCE if not already present
+            var existingBenefitClaimPerms = await _dbContext.RolePermissions
+                .Include(rp => rp.Permission)
+                .Where(rp => rp.Permission.PermissionCode.StartsWith("BENEFIT_CLAIM_"))
+                .ToListAsync(cancellationToken);
+
+            if (existingBenefitClaimPerms.Count > 0)
+            {
+                var newRolePerms = new List<RolePermission>();
+                var newRoleScopes = new List<RoleDataScope>();
+
+                var benefitClaimPermIds = existingBenefitClaimPerms.Select(lp => lp.PermissionId).ToHashSet();
+                var benefitClaimScopes = await _dbContext.RoleDataScopes
+                    .Where(rds => benefitClaimPermIds.Contains(rds.PermissionId))
+                    .ToListAsync(cancellationToken);
+
+                var existingRolePermKeys = (await _dbContext.RolePermissions
+                    .Select(rp => $"{rp.RoleId}_{rp.PermissionId}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                var existingScopeKeys = (await _dbContext.RoleDataScopes
+                    .Select(rds => $"{rds.RoleId}_{rds.PermissionId}_{rds.DataVisibilityScope}")
+                    .ToListAsync(cancellationToken)).ToHashSet();
+
+                foreach (var lp in existingBenefitClaimPerms)
+                {
+                    var action = lp.Permission.PermissionCode.Replace("BENEFIT_CLAIM_", "");
+                    var targetCode = $"BENEFIT_BALANCE_{action}";
+
+                    if (_cachedPermMap.TryGetValue(targetCode, out var tcId))
+                    {
+                        if (existingRolePermKeys.Add($"{lp.RoleId}_{tcId}"))
+                        {
+                            newRolePerms.Add(new RolePermission { RoleId = lp.RoleId, PermissionId = tcId });
+                        }
+
+                        var matchedScopes = benefitClaimScopes.Where(ls => ls.RoleId == lp.RoleId && ls.PermissionId == lp.PermissionId);
                         foreach (var ms in matchedScopes)
                         {
                             if (existingScopeKeys.Add($"{lp.RoleId}_{tcId}_{ms.DataVisibilityScope}"))

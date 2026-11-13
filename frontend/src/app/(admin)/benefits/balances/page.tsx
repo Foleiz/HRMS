@@ -39,7 +39,7 @@ export default function EmployeeBenefitBalancesPage() {
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canView = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
   const canEdit = hasPermission('BENEFIT_BALANCE_EDIT') || hasPermission('BENEFIT_VIEW') || isSuper;
-  const canViewClaims = hasPermission('BENEFIT_CLAIM_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
+  const canViewClaims = hasPermission('BENEFIT_BALANCE_VIEW') || hasPermission('BENEFIT_VIEW') || isSuper;
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
 

@@ -115,7 +115,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>
   EMPLOYEE: Users,
   BENEFIT: Gift,
   BENEFIT_BALANCE: Gift,
-  BENEFIT_CLAIM: Gift,
+
   MY_SALARY: Wallet,
   MY_PROFILE: User,
   MY_LEAVE: CalendarCheck,
@@ -144,7 +144,7 @@ const CATEGORY_NAMES: Record<string, string> = {
   EMPLOYEE: 'พนักงาน',
   BENEFIT: 'สวัสดิการ',
   BENEFIT_BALANCE: 'ยอดสวัสดิการพนักงาน',
-  BENEFIT_CLAIM: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ',
+
   MY_SALARY: 'เงินเดือนของฉัน',
   MY_PROFILE: 'โปรไฟล์ของฉัน (ESS)',
   MY_LEAVE: 'ยอดวันลาคงเหลือ',
