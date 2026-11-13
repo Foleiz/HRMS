@@ -7,6 +7,7 @@ namespace Hrms.Application.Features.Settings.Services;
 /// </summary>
 public interface IRoleService
 {
+    Task EnsurePermissionsInitializedAsync(CancellationToken cancellationToken = default);
     Task<List<RoleSummaryDto>> GetAllRolesAsync(CancellationToken cancellationToken = default);
     Task<RoleDetailDto> GetRoleMatrixAsync(long roleId, CancellationToken cancellationToken = default);
     Task<RoleSummaryDto> CreateRoleAsync(CreateRoleRequestDto request, long? currentUserId, string? ipAddress, CancellationToken cancellationToken = default);

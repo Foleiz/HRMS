@@ -173,10 +173,10 @@ const menuGroups: MenuGroup[] = [
         href: '/documents',
         matchPrefix: '/documents',
         icon: FileText,
-        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE'],
+        requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE', 'ESS_DOCS_HISTORY_VIEW'],
         children: [
-          { title: 'รายการเอกสาร', href: '/documents', icon: FileText },
-          { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History },
+          { title: 'รายการเอกสาร', href: '/documents', icon: FileText, requiredPermissions: ['ESS_DOCS_VIEW', 'ESS_DOCS_CREATE'] },
+          { title: 'ประวัติเอกสาร', href: '/documents/history', icon: History, requiredPermissions: ['ESS_DOCS_HISTORY_VIEW'] },
         ],
       },
       {

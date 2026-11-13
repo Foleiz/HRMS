@@ -297,7 +297,7 @@ const GUIDE_FLOW_CONFIGS: GuideFlowConfig[] = [
     steps: [
       {
         step: 1,
-        targetModuleCode: 'ESS_DOCS',
+        targetModuleCode: 'ESS_DOCS_HISTORY',
         label: '1. ประวัติเอกสาร (คำขอลาออก)',
         route: '/documents/history',
         badge: 'ยื่นคำขอลาออก',

@@ -82,7 +82,8 @@ public class RoleService : IRoleService
         new("ESS_NEWS", "ข่าวสารและประกาศสำหรับฉัน", "ESS_NEWS", "MY_NEWS", "ข่าวสารสำหรับฉัน", "ESS_NEWS"),
 
         // 8. ยื่นเอกสาร (MY_DOCS)
-        new("ESS_DOCS", "รายการเอกสารและประวัติเอกสาร (รวมคำขอลาออก)", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
+        new("ESS_DOCS", "รายการเอกสาร", "ESS_DOCS", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS"),
+        new("ESS_DOCS_HISTORY", "ประวัติเอกสาร", "ESS_DOCS_HISTORY", "MY_DOCS", "ยื่นเอกสาร", "ESS_DOCS_HISTORY"),
 
         // 8.1 สวัสดิการของฉัน (MY_BENEFITS)
         new("ESS_BENEFIT", "สวัสดิการของฉัน", "ESS_BENEFIT", "MY_BENEFITS", "สวัสดิการของฉัน", "ESS_BENEFIT"),
@@ -193,6 +194,9 @@ public class RoleService : IRoleService
         _allRolesCache = (DateTime.UtcNow.Add(CacheTtl), roles);
         return roles;
     }
+
+    public Task EnsurePermissionsInitializedAsync(CancellationToken cancellationToken = default)
+        => GetOrInitPermissionsCacheAsync(cancellationToken);
 
     private static volatile bool _permissionsInitialized = false;
     private static readonly SemaphoreSlim _permInitLock = new(1, 1);
@@ -440,6 +444,19 @@ public class RoleService : IRoleService
                     cancellationToken);
             }
 
+            // 3. ย้ายสิทธิ์เริ่มต้นให้เมนูย่อย "ประวัติเอกสาร" (ESS_DOCS_HISTORY_*) ครั้งเดียว สำหรับบทบาทที่เคยมีสิทธิ์ ESS_DOCS_* อยู่แล้ว
+            var hasAnyDocsHistoryPerm = await _dbContext.RolePermissions
+                .AnyAsync(rp => rp.Permission.PermissionCode.StartsWith("ESS_DOCS_HISTORY_"), cancellationToken);
+
+            if (!hasAnyDocsHistoryPerm)
+            {
+                await MigrateRolePermissionsByPrefixAsync(
+                    new[] { "ESS_DOCS_" },
+                    "ESS_DOCS_HISTORY",
+                    removeSource: false,
+                    cancellationToken);
+            }
+
             // Auto-migrate existing roles that have BENEFIT_CLAIM permissions to BENEFIT_BALANCE if not already present
             var existingBenefitClaimPerms = await _dbContext.RolePermissions
                 .Include(rp => rp.Permission)
@@ -509,6 +526,11 @@ public class RoleService : IRoleService
         }
     }
 
+    private static readonly HashSet<string> StandardActions = new(StringComparer.Ordinal)
+    {
+        "VIEW", "CREATE", "EDIT", "APPROVE"
+    };
+
     /// <summary>ย้ายสิทธิ์และขอบเขตข้อมูลจาก prefix เดิมไปยัง prefix เป้าหมาย และสามารถลบสิทธิ์เดิมออกเมื่อควบรวมเมนู</summary>
     private async Task MigrateRolePermissionsByPrefixAsync(
         string[] sourcePrefixes,
@@ -520,7 +542,7 @@ public class RoleService : IRoleService
 
         var sourcePermMap = _cachedPermMap
             .Where(kvp => !kvp.Key.StartsWith(targetPrefix + "_")
-                       && sourcePrefixes.Any(pref => kvp.Key.StartsWith(pref)))
+                       && sourcePrefixes.Any(pref => kvp.Key.StartsWith(pref) && StandardActions.Contains(kvp.Key.Substring(pref.Length))))
             .ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
 
         if (sourcePermMap.Count == 0) return;

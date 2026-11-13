@@ -340,6 +340,10 @@ using (var scope = app.Services.CreateScope())
             }
             await db.SaveChangesAsync();
         }
+
+        // ตรวจสอบและซิงก์สิทธิ์มาตรฐานของระบบตั้งแต่ตอนสตาร์ทเซิร์ฟเวอร์
+        var roleService = scope.ServiceProvider.GetRequiredService<Hrms.Application.Features.Settings.Services.IRoleService>();
+        await roleService.EnsurePermissionsInitializedAsync();
     }
     catch (Exception ex)
     {
