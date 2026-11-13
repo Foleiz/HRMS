@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 
 export interface BreadcrumbItem {
-  section: string;
+  section?: string;
   page: string;
 }
 

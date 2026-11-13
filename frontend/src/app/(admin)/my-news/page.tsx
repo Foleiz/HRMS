@@ -124,7 +124,6 @@ export default function MyNewsCalendarPage() {
   // Set Breadcrumb
   useEffect(() => {
     setBreadcrumb({
-      section: 'บริการตนเอง (ESS)',
       page: 'ข่าวสารสำหรับฉัน',
     });
   }, [setBreadcrumb]);

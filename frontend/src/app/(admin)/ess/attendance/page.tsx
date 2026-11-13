@@ -131,7 +131,7 @@ function EssAttendancePageContent() {
   // Sync breadcrumb with activeTab
   useEffect(() => {
     setBreadcrumb({
-      section: 'บันทึกเวลาของฉัน (ESS)',
+      section: 'บันทึกเวลาของฉัน',
       page: activeTab === 'adjustments' ? 'คำขอปรับปรุงเวลา' : 'ตรวจบันทึกเวลาของฉัน',
     });
     return () => setBreadcrumb(null);

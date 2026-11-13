@@ -15,7 +15,7 @@ export default function OrgChartPage() {
   const canView = hasPermission('ORG_CHART_VIEW') || hasPermission('ORG_STRUCT_VIEW') || hasPermission('ORG_VIEW') || isSuper;
 
   useEffect(() => {
-    setBreadcrumb({ section: 'ภาพรวม', page: 'แผนผังองค์กร' });
+    setBreadcrumb({ page: 'แผนผังองค์กร' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 

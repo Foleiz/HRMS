@@ -72,7 +72,7 @@ function GuidePageContent() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    setBreadcrumb({ section: 'ภาพรวม', page: 'วิธีการใช้งาน' });
+    setBreadcrumb({ page: 'วิธีการใช้งาน' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 

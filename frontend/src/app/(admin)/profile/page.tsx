@@ -93,7 +93,7 @@ function ProfileContent() {
   });
 
   useEffect(() => {
-    setBreadcrumb({ section: 'โปรไฟล์', page: 'ข้อมูลพนักงาน' });
+    setBreadcrumb({ page: 'โปรไฟล์ของฉัน' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 

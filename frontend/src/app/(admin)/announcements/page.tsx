@@ -80,7 +80,7 @@ function AnnouncementsPageContent() {
   // Breadcrumb synchronization
   useEffect(() => {
     setBreadcrumb({
-      section: 'องค์กร',
+      section: 'จัดการประกาศ',
       page: activeTab === 'activities' ? 'ประกาศกิจกรรม' : 'ประกาศข่าวสารทั่วไป',
     });
   }, [setBreadcrumb, activeTab]);

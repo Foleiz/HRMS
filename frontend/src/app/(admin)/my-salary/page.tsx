@@ -112,8 +112,7 @@ function MySalaryContent() {
       });
     } else {
       setBreadcrumb({
-        section: 'เงินเดือนของฉัน',
-        page: 'ภาพรวมเงินเดือน',
+        page: 'เงินเดือนของฉัน',
       });
     }
     return () => setBreadcrumb(null);

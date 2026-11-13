@@ -71,7 +71,7 @@ export default function TeamLeaveCalendarPage() {
   const [selectedDay, setSelectedDay] = useState<string | null>(() => ymd(new Date()));
 
   useEffect(() => {
-    setBreadcrumb({ section: 'การลา', page: 'ปฏิทินการลาของทีม' });
+    setBreadcrumb({ page: 'ปฏิทินการลาของทีม' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 

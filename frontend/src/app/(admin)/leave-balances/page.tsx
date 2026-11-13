@@ -38,7 +38,7 @@ export default function LeaveBalancesPage() {
 
   // Set breadcrumbs
   useEffect(() => {
-    setBreadcrumb({ section: 'ยอดวันลาคงเหลือ', page: 'ภาพรวมยอดวันลา' });
+    setBreadcrumb({ page: 'ยอดวันลาคงเหลือ' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 

@@ -66,6 +66,19 @@ function formatTimeFromApi(dateOrTimeStr?: string | null): string {
   return '';
 }
 
+/** ชื่อกลุ่มหมวดหมู่ในแถบข้างที่เป็นเพียงป้ายจัดกลุ่ม (ไม่ใช่หน้าจริง ไม่ควรแสดงใน breadcrumb) */
+const SIDEBAR_CATEGORY_HEADERS = new Set([
+  'ภาพรวม',
+  'บริการตนเอง (ESS)',
+  'บริการตนเอง',
+  'การเงินและค่าตอบแทน',
+  'การจัดการบุคคล',
+  'เวลาและการลา',
+  'การอนุมัติและรายงาน',
+  'ระบบและการตั้งค่า',
+  'หน้าหลัก',
+]);
+
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
@@ -202,44 +215,47 @@ export const Navbar: React.FC = () => {
   }, []);
 
   // Dynamic Breadcrumb based on route
-  const getBreadcrumb = () => {
+  const getBreadcrumb = (): { section?: string; page: string } => {
     if (customBreadcrumb) return customBreadcrumb;
 
     // 1. หน้าหลัก (Dashboard)
-    if (pathname === '/') return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
+    if (pathname === '/') return { page: 'แดชบอร์ด' };
 
     // 2. ข้อมูลหลัก (Master Data)
     if (pathname.startsWith('/master/banks')) return { section: 'ข้อมูลหลัก', page: 'จัดการข้อมูลธนาคาร' };
 
     // 3. พนักงาน (Employees) - เรียงลำดับ sub-routes ก่อน
-    if (pathname.match(/^\/employees\/\d+\/edit/)) return { section: 'พนักงาน', page: 'แก้ไขข้อมูลพนักงาน' };
-    if (pathname.match(/^\/employees\/\d+/)) return { section: 'พนักงาน', page: 'ดูข้อมูลพนักงาน' };
-    if (pathname.startsWith('/employees/types')) return { section: 'พนักงาน', page: 'ประเภทพนักงาน' };
-    if (pathname.startsWith('/employees/contracts')) return { section: 'พนักงาน', page: 'สัญญาจ้าง' };
-    if (pathname.startsWith('/employees/transfers')) return { section: 'พนักงาน', page: 'การโอนย้ายพนักงาน' };
-    if (pathname.startsWith('/employees/documents')) return { section: 'พนักงาน', page: 'เอกสารใกล้หมดอายุ' };
-    if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
+    if (pathname.match(/^\/employees\/\d+\/edit/)) return { section: 'จัดการพนักงาน', page: 'แก้ไขข้อมูลพนักงาน' };
+    if (pathname.match(/^\/employees\/\d+/)) return { section: 'จัดการพนักงาน', page: 'ดูข้อมูลพนักงาน' };
+    if (pathname.startsWith('/employees/types')) return { section: 'จัดการพนักงาน', page: 'ประเภทพนักงาน' };
+    if (pathname.startsWith('/employees/contracts')) return { section: 'จัดการพนักงาน', page: 'สัญญาจ้าง' };
+    if (pathname.startsWith('/employees/transfers')) return { section: 'จัดการพนักงาน', page: 'การโอนย้ายพนักงาน' };
+    if (pathname.startsWith('/employees/documents')) return { section: 'จัดการพนักงาน', page: 'เอกสารใกล้หมดอายุ' };
+    if (pathname.startsWith('/employees')) return { page: 'จัดการพนักงาน' };
 
     // โปรไฟล์ (Profile / ESS)
-    if (pathname.startsWith('/profile')) return { section: 'โปรไฟล์', page: 'แก้ไขโปรไฟล์' };
+    if (pathname.startsWith('/profile')) return { page: 'โปรไฟล์ของฉัน' };
 
-    // ยอดวันลาคงเหลือ (ESS)
-    if (pathname.startsWith('/team-leave-calendar')) return { section: 'การลา', page: 'ปฏิทินการลาของทีม' };
-    if (pathname.startsWith('/leave-balances')) return { section: 'ยอดวันลาคงเหลือ', page: 'ภาพรวมยอดวันลา' };
+    // ยอดวันลาคงเหลือ & ปฏิทินการลา (ESS)
+    if (pathname.startsWith('/team-leave-calendar')) return { page: 'ปฏิทินการลาของทีม' };
+    if (pathname.startsWith('/leave-balances')) return { page: 'ยอดวันลาคงเหลือ' };
 
     // เงินเดือนของฉัน (ESS)
-    if (pathname.startsWith('/my-salary')) return { section: 'เงินเดือนของฉัน', page: 'ภาพรวมเงินเดือน' };
+    if (pathname.startsWith('/my-salary')) return { page: 'เงินเดือนของฉัน' };
 
     // 4. บันทึกเวลาของฉัน (ESS)
-    if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน (ESS)', page: 'ตรวจบันทึกเวลาของฉัน' };
+    if (pathname.startsWith('/ess/attendance')) return { section: 'บันทึกเวลาของฉัน', page: 'ตรวจบันทึกเวลาของฉัน' };
 
     // สวัสดิการของฉัน (ESS)
     if (pathname.startsWith('/ess/benefits/history')) return { section: 'สวัสดิการของฉัน', page: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ' };
-    if (pathname.startsWith('/ess/benefits')) return { section: 'สวัสดิการของฉัน', page: 'สวัสดิการของฉัน' };
+    if (pathname.startsWith('/ess/benefits')) return { page: 'สวัสดิการของฉัน' };
 
     // 5. ยื่นเอกสาร (Documents)
     if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
-    if (pathname.startsWith('/documents/leave')) return { section: 'การลา', page: 'ยื่นคำขอลา' };
+    if (pathname.startsWith('/documents/leave')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลา' };
+    if (pathname.startsWith('/documents/certificate')) return { section: 'ยื่นเอกสาร', page: 'ขอหนังสือรับรอง' };
+    if (pathname.startsWith('/documents/resignation')) return { section: 'ยื่นเอกสาร', page: 'เอกสารขอลาออก' };
+    if (pathname.startsWith('/documents/general')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำร้องทั่วไป' };
     if (pathname.startsWith('/documents')) return { section: 'ยื่นเอกสาร', page: 'รายการเอกสาร' };
 
     // 6. ตรวจบันทึกเวลา & การจัดตารางงาน (Attendance)
@@ -270,9 +286,16 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/reports')) return { section: 'รายงาน', page: 'อัตรากำลังคนประจำวัน' };
 
     // 13. ตั้งค่าระบบ (Settings)
-    if (pathname.startsWith('/settings')) return { section: 'ตั้งค่า', page: 'ผู้ใช้งาน' };
+    if (pathname.startsWith('/settings')) return { section: 'ตั้งค่าระบบ', page: 'ผู้ใช้งาน' };
 
-    return { section: 'หน้าหลัก', page: 'แดชบอร์ด' };
+    // 14. หน้าเดี่ยวอื่นๆ
+    if (pathname.startsWith('/guide')) return { page: 'วิธีการใช้งาน' };
+    if (pathname.startsWith('/my-news')) return { page: 'ข่าวสารสำหรับฉัน' };
+    if (pathname.startsWith('/org-chart')) return { page: 'แผนผังองค์กร' };
+    if (pathname.startsWith('/announcements')) return { section: 'จัดการประกาศ', page: 'ประกาศข่าวสารทั่วไป' };
+    if (pathname.startsWith('/benefits/balances')) return { section: 'สวัสดิการ', page: 'ยอดคงเหลือสวัสดิการ' };
+
+    return { page: 'แดชบอร์ด' };
   };
 
   const displayWorkHours = (() => {
@@ -314,6 +337,17 @@ export const Navbar: React.FC = () => {
     'SHIFT101';
 
   const breadcrumb = getBreadcrumb();
+  const cleanSection = (() => {
+    let sec = (breadcrumb.section || '').trim();
+    if (!sec) return '';
+    // ลบคำต่อท้าย ' (ESS)' ออกถ้ามี เช่น 'บันทึกเวลาของฉัน (ESS)' -> 'บันทึกเวลาของฉัน'
+    sec = sec.replace(/\s*\(ESS\)$/i, '').trim();
+    // ถ้าตรงกับชื่อหมวดหมู่กลุ่มแถบข้าง หรือตรงกับชื่อหน้า ให้ไม่แสดง section
+    if (SIDEBAR_CATEGORY_HEADERS.has(sec) || sec === breadcrumb.page) {
+      return '';
+    }
+    return sec;
+  })();
 
   return (
     <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between px-3 sm:px-6 shrink-0 relative z-30 transition-colors duration-200">
@@ -346,10 +380,14 @@ export const Navbar: React.FC = () => {
           <ChevronLeft className="w-5 h-5" />
         </button>
 
-        {/* Breadcrumb: Mobile shows page only, Desktop shows section / page */}
+        {/* Breadcrumb: แสดง section เฉพาะเมื่อมี section จริงที่ไม่ใช่ชื่อหมวดหมู่และไม่ซ้ำกับ page */}
         <div className="flex items-center gap-1.5 text-sm min-w-0">
-          <span className="text-slate-500 dark:text-slate-400 font-normal hidden sm:inline">{breadcrumb.section}</span>
-          <span className="text-slate-400 dark:text-slate-600 hidden sm:inline">/</span>
+          {cleanSection ? (
+            <>
+              <span className="text-slate-500 dark:text-slate-400 font-normal hidden sm:inline">{cleanSection}</span>
+              <span className="text-slate-400 dark:text-slate-600 hidden sm:inline">/</span>
+            </>
+          ) : null}
           <span className="text-slate-900 dark:text-slate-100 font-semibold truncate">{breadcrumb.page}</span>
         </div>
       </div>
