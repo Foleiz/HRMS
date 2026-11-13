@@ -62,9 +62,9 @@ export default function EmployeeBenefitBalancesPage() {
 
   useEffect(() => {
     setBreadcrumb({
-      section: 'สวัสดิการ',
       page: 'ยอดสวัสดิการพนักงาน',
     });
+    return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
   const fetchOverview = useCallback(async () => {

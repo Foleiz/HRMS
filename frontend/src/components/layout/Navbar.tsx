@@ -250,9 +250,9 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/ess/benefits/history')) return { section: 'สวัสดิการของฉัน', page: 'ประวัติการเบิกจ่ายและใช้สิทธิ์สวัสดิการ' };
     if (pathname.startsWith('/ess/benefits')) return { page: 'สวัสดิการของฉัน' };
 
-    // 5. ยื่นเอกสาร (Documents)
+    // 5. ยื่นเอกสาร (Documents) & การลา
     if (pathname.startsWith('/documents/history')) return { section: 'ยื่นเอกสาร', page: 'ประวัติเอกสาร' };
-    if (pathname.startsWith('/documents/leave')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำขอลา' };
+    if (pathname.startsWith('/documents/leave')) return { page: 'การลา' };
     if (pathname.startsWith('/documents/certificate')) return { section: 'ยื่นเอกสาร', page: 'ขอหนังสือรับรอง' };
     if (pathname.startsWith('/documents/resignation')) return { section: 'ยื่นเอกสาร', page: 'เอกสารขอลาออก' };
     if (pathname.startsWith('/documents/general')) return { section: 'ยื่นเอกสาร', page: 'ยื่นคำร้องทั่วไป' };
@@ -293,7 +293,7 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/my-news')) return { page: 'ข่าวสารสำหรับฉัน' };
     if (pathname.startsWith('/org-chart')) return { page: 'แผนผังองค์กร' };
     if (pathname.startsWith('/announcements')) return { section: 'จัดการประกาศ', page: 'ประกาศข่าวสารทั่วไป' };
-    if (pathname.startsWith('/benefits/balances')) return { section: 'สวัสดิการ', page: 'ยอดคงเหลือสวัสดิการ' };
+    if (pathname.startsWith('/benefits/balances')) return { page: 'ยอดสวัสดิการพนักงาน' };
 
     return { page: 'แดชบอร์ด' };
   };

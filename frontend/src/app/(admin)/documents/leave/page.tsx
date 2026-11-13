@@ -46,7 +46,7 @@ function MyLeaveRequestPageContent() {
 
   // Sync breadcrumb
   useEffect(() => {
-    setBreadcrumb({ section: 'การลา', page: 'ยื่นคำขอลา' });
+    setBreadcrumb({ page: 'การลา' });
     return () => setBreadcrumb(null);
   }, [setBreadcrumb]);
 
