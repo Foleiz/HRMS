@@ -263,7 +263,12 @@ export default function AttendanceReportTab({
             }
           >
             {modeSwitch}
-            <ThaiDatePicker value={selectedDate} onChange={setSelectedDate} />
+            <ThaiDatePicker
+              value={selectedDate}
+              onChange={setSelectedDate}
+              className="w-[140px] shrink-0"
+              buttonClassName="h-9 !py-0 !px-3 !text-xs !rounded-xl shadow-2xs"
+            />
 
             <CustomSelect
               value={selectedDivision}
