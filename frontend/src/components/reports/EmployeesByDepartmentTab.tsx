@@ -14,11 +14,12 @@ import {
 import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
 import type { Department, Division, Position } from '@/types/organization';
-import type { EmployeesByDepartmentReport } from '@/types/reports';
+import type { DepartmentEmployees, EmployeesByDepartmentReport } from '@/types/reports';
 import { ColumnChart, DonutChart, VIZ, toSegments } from './ReportCharts';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { printReport } from '@/lib/printReport';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { TablePagination, TableToolbar } from '@/components/ui';
 import {
   AvatarName,
   BarList,
@@ -542,59 +543,14 @@ export default function EmployeesByDepartmentTab({
                       </tr>
                       {open && (
                         <tr>
-                          <td colSpan={5} className="bg-slate-50/80 px-6 py-4 dark:bg-slate-900/50">
+                          <td colSpan={5} className="bg-slate-50/80 px-4 py-3 sm:px-6 sm:py-4 dark:bg-slate-900/50">
                             {d.employees.length === 0 ? (
-                              <div className="text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
+                              <div className="py-4 text-center text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
                             ) : (
-                              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-                                <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
-                                  <thead className="bg-primary text-white font-semibold">
-                                    <tr className="whitespace-nowrap">
-                                      <th className="py-3 px-4 whitespace-nowrap">พนักงาน</th>
-                                      <th className="py-3 px-4 whitespace-nowrap">รหัสพนักงาน</th>
-                                      <th className="py-3 px-4 whitespace-nowrap">ตำแหน่ง</th>
-                                      <th className="py-3 px-4 whitespace-nowrap">ประเภท</th>
-                                      <th className="py-3 px-4 whitespace-nowrap">ระดับ</th>
-                                      <th className="py-3 px-4 whitespace-nowrap">เพศ</th>
-                                      <th className="py-3 px-4 whitespace-nowrap">วันเริ่มงาน</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
-                                    {d.employees.map((e) => (
-                                      <tr
-                                        key={e.employeeId}
-                                        className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
-                                      >
-                                        <td className="py-3 px-4 whitespace-nowrap">
-                                          <AvatarName
-                                            id={e.employeeId}
-                                            name={e.employeeName}
-                                            avatarUrl={e.avatarUrl}
-                                          />
-                                        </td>
-                                        <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                                          {e.employeeCode}
-                                        </td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {e.positionName}
-                                        </td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {e.employeeTypeName === '-' || !e.employeeTypeName ? 'ไม่ระบุ' : e.employeeTypeName}
-                                        </td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {resolveLevelName(d.departmentId, e.positionName, e.levelName)}
-                                        </td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {e.gender}
-                                        </td>
-                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {fmtDate(e.startDate)}
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
+                              <DepartmentEmployeesSubTable
+                                department={d}
+                                resolveLevelName={resolveLevelName}
+                              />
                             )}
                           </td>
                         </tr>
@@ -607,17 +563,254 @@ export default function EmployeesByDepartmentTab({
             <tfoot className="border-t border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-800 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100">
               <tr>
                 <td className="py-3 px-4">รวมทั้งสิ้น ({data.totalDepartments} แผนก)</td>
-                <td className="py-3 px-4 text-right">{data.totalEmployees} คน</td>
-                <td className="py-3 px-4 text-center">{data.totalHeadcountPlan ?? '-'}</td>
+                <td className="py-3 px-4 text-center">
+                  {data.totalEmployees} / {data.totalHeadcountPlan ?? '-'}
+                </td>
                 <td className="py-3 px-4 text-center">{data.maleCount}</td>
                 <td className="py-3 px-4 text-center">{data.femaleCount}</td>
                 <td className="py-3 px-4 text-center">{data.newHiresThisYear}</td>
-                <td className="py-3 px-4" />
               </tr>
             </tfoot>
           </ReportTableCard>
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ตารางย่อยรายชื่อพนักงานในแผนก (พร้อมค้นหา, ตัวกรองประเภท/ระดับ/เพศ, และ Row Per Page)
+// ---------------------------------------------------------------------------
+interface DepartmentEmployeesSubTableProps {
+  department: DepartmentEmployees;
+  resolveLevelName: (deptId: number, posName: string, rawLevel?: string | null) => string;
+}
+
+function DepartmentEmployeesSubTable({
+  department,
+  resolveLevelName,
+}: DepartmentEmployeesSubTableProps) {
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [levelFilter, setLevelFilter] = useState('ALL');
+  const [genderFilter, setGenderFilter] = useState('ALL');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // ตัวเลือกประเภทพนักงานที่มีจริงในแผนกนี้
+  const typeOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of department.employees) {
+      const t = !e.employeeTypeName || e.employeeTypeName === '-' ? 'ไม่ระบุ' : e.employeeTypeName;
+      set.add(t);
+    }
+    return Array.from(set).sort();
+  }, [department.employees]);
+
+  // ตัวเลือกระดับที่มีจริงในแผนกนี้
+  const levelOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of department.employees) {
+      const lv = resolveLevelName(department.departmentId, e.positionName, e.levelName);
+      set.add(lv === '-' ? 'ไม่ระบุ' : lv);
+    }
+    return Array.from(set).sort();
+  }, [department, resolveLevelName]);
+
+  // ตัวเลือกเพศที่มีจริงในแผนกนี้
+  const genderOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of department.employees) {
+      if (e.gender) set.add(e.gender);
+    }
+    return Array.from(set).sort();
+  }, [department.employees]);
+
+  // กรองรายชื่อพนักงานตามเงื่อนไขค้นหาและฟิลเตอร์
+  const filteredEmployees = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return department.employees.filter((e) => {
+      // ค้นหาจากชื่อ รหัส หรือตำแหน่ง
+      if (
+        q &&
+        !e.employeeName.toLowerCase().includes(q) &&
+        !e.employeeCode.toLowerCase().includes(q) &&
+        !e.positionName.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+
+      // กรองตามประเภท
+      if (typeFilter !== 'ALL') {
+        const t = !e.employeeTypeName || e.employeeTypeName === '-' ? 'ไม่ระบุ' : e.employeeTypeName;
+        if (t !== typeFilter) return false;
+      }
+
+      // กรองตามระดับ
+      if (levelFilter !== 'ALL') {
+        const lv = resolveLevelName(department.departmentId, e.positionName, e.levelName);
+        const resolved = lv === '-' ? 'ไม่ระบุ' : lv;
+        if (resolved !== levelFilter) return false;
+      }
+
+      // กรองตามเพศ
+      if (genderFilter !== 'ALL') {
+        if (e.gender !== genderFilter) return false;
+      }
+
+      return true;
+    });
+  }, [department, search, typeFilter, levelFilter, genderFilter, resolveLevelName]);
+
+  // ตัดข้อมูลตามหน้าและจำนวนต่อหน้า (Pagination)
+  const pagedEmployees = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredEmployees.slice(start, start + pageSize);
+  }, [filteredEmployees, page, pageSize]);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      {/* แถบค้นหาและตัวกรอง */}
+      <TableToolbar
+        searchValue={search}
+        onSearchChange={(v) => {
+          setSearch(v);
+          setPage(1);
+        }}
+        searchPlaceholder="ค้นหาชื่อ, รหัส, ตำแหน่ง..."
+        searchContainerClassName="w-full sm:w-64"
+        className="mb-3"
+        filters={
+          <div className="flex flex-wrap items-center gap-2">
+            {typeOptions.length > 1 && (
+              <CustomSelect
+                value={typeFilter}
+                onChange={(e) => {
+                  setTypeFilter(e.target.value);
+                  setPage(1);
+                }}
+                size="sm"
+                className="w-36"
+              >
+                <option value="ALL">ทุกประเภท</option>
+                {typeOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </CustomSelect>
+            )}
+
+            {levelOptions.length > 1 && (
+              <CustomSelect
+                value={levelFilter}
+                onChange={(e) => {
+                  setLevelFilter(e.target.value);
+                  setPage(1);
+                }}
+                size="sm"
+                className="w-40"
+              >
+                <option value="ALL">ทุกระดับ</option>
+                {levelOptions.map((lv) => (
+                  <option key={lv} value={lv}>
+                    {lv}
+                  </option>
+                ))}
+              </CustomSelect>
+            )}
+
+            {genderOptions.length > 1 && (
+              <CustomSelect
+                value={genderFilter}
+                onChange={(e) => {
+                  setGenderFilter(e.target.value);
+                  setPage(1);
+                }}
+                size="sm"
+                className="w-28"
+              >
+                <option value="ALL">ทุกเพศ</option>
+                {genderOptions.map((g) => (
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
+                ))}
+              </CustomSelect>
+            )}
+          </div>
+        }
+      />
+
+      {/* ตารางข้อมูลพนักงาน */}
+      <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+        <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
+          <thead className="bg-primary text-white font-semibold">
+            <tr className="whitespace-nowrap">
+              <th className="py-3 px-4 whitespace-nowrap">พนักงาน</th>
+              <th className="py-3 px-4 whitespace-nowrap">รหัสพนักงาน</th>
+              <th className="py-3 px-4 whitespace-nowrap">ตำแหน่ง</th>
+              <th className="py-3 px-4 whitespace-nowrap">ประเภท</th>
+              <th className="py-3 px-4 whitespace-nowrap">ระดับ</th>
+              <th className="py-3 px-4 whitespace-nowrap">เพศ</th>
+              <th className="py-3 px-4 whitespace-nowrap">วันเริ่มงาน</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+            {pagedEmployees.length === 0 ? (
+              <TableEmpty colSpan={7} text="ไม่พบข้อมูลพนักงานตามเงื่อนไขที่ค้นหา" />
+            ) : (
+              pagedEmployees.map((e) => (
+                <tr
+                  key={e.employeeId}
+                  className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                >
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <AvatarName
+                      id={e.employeeId}
+                      name={e.employeeName}
+                      avatarUrl={e.avatarUrl}
+                    />
+                  </td>
+                  <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                    {e.employeeCode}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {e.positionName}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {e.employeeTypeName === '-' || !e.employeeTypeName ? 'ไม่ระบุ' : e.employeeTypeName}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {resolveLevelName(department.departmentId, e.positionName, e.levelName)}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {e.gender}
+                  </td>
+                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    {fmtDate(e.startDate)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* แถบแบ่งหน้า + กำหนดจำนวนแถวต่อหน้า (Row Per Page) */}
+      <TablePagination
+        total={filteredEmployees.length}
+        page={page}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(newSize) => {
+          setPageSize(newSize);
+          setPage(1);
+        }}
+        pageSizeOptions={[5, 10, 20, 50]}
+        totalLabel="คน"
+        className="border-t border-slate-100 pt-3 dark:border-slate-800"
+      />
     </div>
   );
 }
