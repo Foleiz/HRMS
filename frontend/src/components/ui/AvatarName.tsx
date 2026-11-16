@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getAvatarUrl } from '@/lib/api-client';
+import { employeeService } from '@/services/employeeService';
 
 /** สีวงกลมตัวอักษรแรก — ชุดเดียวกับหน้าจัดการพนักงาน (เลือกตาม id) */
 export const AVATAR_COLORS = [
@@ -17,24 +18,72 @@ export const AVATAR_COLORS = [
 export const avatarColorFor = (id?: number | null) =>
   AVATAR_COLORS[(((id ?? 1) - 1) % AVATAR_COLORS.length + AVATAR_COLORS.length) % AVATAR_COLORS.length];
 
+let cachedAvatarById: Map<number, string | null> | null = null;
+let pendingAvatarFetch: Promise<Map<number, string | null>> | null = null;
+
+function fetchAvatarMap(): Promise<Map<number, string | null>> {
+  if (cachedAvatarById) return Promise.resolve(cachedAvatarById);
+  if (pendingAvatarFetch) return pendingAvatarFetch;
+  pendingAvatarFetch = employeeService
+    .getAll()
+    .then((list) => {
+      const m = new Map<number, string | null>();
+      for (const e of list) {
+        m.set(e.id, e.avatarUrl ?? null);
+      }
+      cachedAvatarById = m;
+      return m;
+    })
+    .catch(() => {
+      const empty = new Map<number, string | null>();
+      cachedAvatarById = empty;
+      return empty;
+    });
+  return pendingAvatarFetch;
+}
+
 interface AvatarNameProps {
-  /** ใช้เลือกสีวงกลม */
+  /** ใช้เลือกสีวงกลม และดึงรูปโปรไฟล์อัตโนมัติหากไม่ได้ส่ง avatarUrl มา */
   id?: number | null;
   /** ข้อความหลัก เช่น ชื่อ-นามสกุล หรือชื่อประเภท */
   name: string;
   /** คำนำหน้า (นาย/นาง/นางสาว) — แสดงหน้าชื่อ */
   prefix?: string | null;
-  /** ตัวอักษรในวงกลม (ค่าเริ่มต้น = ตัวแรกของ name) */
+  /** ตัวอักษรในวงกลม (ค่าเริ่มต้น = ตัวแรกของชื่อจริงหลังตัดคำนำหน้า) */
   initial?: string;
   avatarUrl?: string | null;
   className?: string;
 }
 
-/** วงกลมรูป/ตัวอักษรแรก + ชื่อ — รูปแบบเดียวกับคอลัมน์ชื่อในหน้าจัดการพนักงาน */
+/** วงกลมรูปโปรไฟล์จริง (หรือตัวอักษรแรกเมื่อไม่มีรูป) + ชื่อ — รูปแบบเดียวกับหน้าจัดการพนักงาน */
 export function AvatarName({ id, name, prefix, initial, avatarUrl, className = '' }: AvatarNameProps) {
   const [imgFailed, setImgFailed] = useState(false);
-  const src = avatarUrl && !imgFailed ? getAvatarUrl(avatarUrl) : null;
-  const letter = (initial ?? name?.trim().charAt(0)) || '?';
+  const [autoAvatarUrl, setAutoAvatarUrl] = useState<string | null>(() =>
+    id != null && cachedAvatarById ? cachedAvatarById.get(id) ?? null : null
+  );
+
+  useEffect(() => {
+    if (avatarUrl !== undefined || id == null) return;
+    if (cachedAvatarById) {
+      setAutoAvatarUrl(cachedAvatarById.get(id) ?? null);
+      return;
+    }
+    let active = true;
+    fetchAvatarMap().then((m) => {
+      if (active) setAutoAvatarUrl(m.get(id) ?? null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [id, avatarUrl]);
+
+  const resolvedUrl = avatarUrl ?? autoAvatarUrl;
+  const src = resolvedUrl && !imgFailed ? getAvatarUrl(resolvedUrl) : null;
+  const cleanName = (name ?? '')
+    .replace(/^(นาย|นางสาว|นาง|น\.ส\.|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Ms\.|Miss)\s*/i, '')
+    .trim();
+  const letter = (initial ?? cleanName.charAt(0).toUpperCase()) || (name?.trim().charAt(0).toUpperCase() ?? '?');
+
   return (
     <div className={`flex items-center gap-2.5 min-w-0 ${className}`}>
       <span

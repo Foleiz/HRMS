@@ -34,6 +34,7 @@ export interface MonthlyAttendanceLateness {
   employeeId: number;
   employeeCode: string;
   employeeName: string;
+  avatarUrl?: string | null;
   departmentName: string;
   positionName: string;
   totalWorkDays: number;
@@ -60,6 +61,7 @@ export interface PayrollTaxItem {
   employeeId: number;
   employeeCode: string;
   employeeName: string;
+  avatarUrl?: string | null;
   departmentName: string;
   positionName: string;
   citizenIdMasked: string;
@@ -107,6 +109,7 @@ export interface TurnoverEventLog {
   employeeId: number;
   employeeCode: string;
   employeeName: string;
+  avatarUrl?: string | null;
   departmentName: string;
   positionName: string;
   eventType: 'JOINED' | 'RESIGNED' | 'TERMINATED' | string;
@@ -138,6 +141,7 @@ export interface DepartmentEmployeeRow {
   employeeId: number;
   employeeCode: string;
   employeeName: string;
+  avatarUrl?: string | null;
   positionName: string;
   employeeTypeName: string;
   levelName: string;

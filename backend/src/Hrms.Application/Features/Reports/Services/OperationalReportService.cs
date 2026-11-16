@@ -104,9 +104,12 @@ public class OperationalReportService : IOperationalReportService
                 a.Employee.FirstName,
                 a.Employee.LastName,
                 a.Employee.Gender,
+                a.Employee.AvatarUpdatedAt,
                 PositionName = a.Position != null ? a.Position.PositionName : null,
                 TypeName = a.EmployeeType != null ? a.EmployeeType.TypeName : null,
-                LevelName = a.EmployeeLevel != null ? a.EmployeeLevel.LevelName : null,
+                LevelName = a.EmployeeLevel != null
+                    ? a.EmployeeLevel.LevelName
+                    : (a.Position != null && a.Position.EmployeeLevel != null ? a.Position.EmployeeLevel.LevelName : null),
             })
             .ToListAsync(cancellationToken);
 
@@ -159,6 +162,9 @@ public class OperationalReportService : IOperationalReportService
                     EmployeeId = p.EmployeeId,
                     EmployeeCode = p.Code,
                     EmployeeName = $"{p.Prefix} {p.FirstName} {p.LastName}".Trim(),
+                    AvatarUrl = p.AvatarUpdatedAt.HasValue
+                        ? $"/api/employees/{p.EmployeeId}/avatar?v={p.AvatarUpdatedAt.Value.Ticks}"
+                        : null,
                     PositionName = p.PositionName ?? "-",
                     EmployeeTypeName = p.TypeName ?? "-",
                     LevelName = p.LevelName ?? "-",
@@ -507,6 +513,9 @@ public class OperationalReportService : IOperationalReportService
                 EmployeeId = emp.EmployeeId,
                 EmployeeCode = emp.Employee?.EmployeeCode ?? "-",
                 EmployeeName = $"{emp.Employee?.FirstName} {emp.Employee?.LastName}".Trim(),
+                AvatarUrl = emp.Employee?.AvatarUpdatedAt.HasValue == true
+                    ? $"/api/employees/{emp.EmployeeId}/avatar?v={emp.Employee.AvatarUpdatedAt.Value.Ticks}"
+                    : null,
                 DepartmentName = emp.Department?.DepartmentName ?? "-",
                 PositionName = emp.Position?.PositionName ?? "-",
                 TotalWorkDays = totalWorkDays,
@@ -649,6 +658,9 @@ public class OperationalReportService : IOperationalReportService
                 EmployeeName = !string.IsNullOrWhiteSpace(p.SnapshotEmployeeName) 
                     ? p.SnapshotEmployeeName 
                     : $"{p.Employee?.FirstName} {p.Employee?.LastName}".Trim(),
+                AvatarUrl = p.Employee?.AvatarUpdatedAt.HasValue == true
+                    ? $"/api/employees/{p.EmployeeId}/avatar?v={p.Employee.AvatarUpdatedAt.Value.Ticks}"
+                    : null,
                 DepartmentName = p.SnapshotDepartmentName ?? "-",
                 PositionName = p.SnapshotPositionName ?? "-",
                 CitizenIdMasked = maskedCitizenId,
@@ -849,6 +861,9 @@ public class OperationalReportService : IOperationalReportService
                         EmployeeId = assign.EmployeeId,
                         EmployeeCode = assign.Employee?.EmployeeCode ?? "-",
                         EmployeeName = $"{assign.Employee?.FirstName} {assign.Employee?.LastName}".Trim(),
+                        AvatarUrl = assign.Employee?.AvatarUpdatedAt.HasValue == true
+                            ? $"/api/employees/{assign.EmployeeId}/avatar?v={assign.Employee.AvatarUpdatedAt.Value.Ticks}"
+                            : null,
                         DepartmentName = dept.DepartmentName,
                         PositionName = assign.Position?.PositionName ?? "-",
                         EventType = "JOINED",
@@ -866,6 +881,9 @@ public class OperationalReportService : IOperationalReportService
                         EmployeeId = assign.EmployeeId,
                         EmployeeCode = assign.Employee?.EmployeeCode ?? "-",
                         EmployeeName = $"{assign.Employee?.FirstName} {assign.Employee?.LastName}".Trim(),
+                        AvatarUrl = assign.Employee?.AvatarUpdatedAt.HasValue == true
+                            ? $"/api/employees/{assign.EmployeeId}/avatar?v={assign.Employee.AvatarUpdatedAt.Value.Ticks}"
+                            : null,
                         DepartmentName = dept.DepartmentName,
                         PositionName = assign.Position?.PositionName ?? "-",
                         EventType = "RESIGNED",

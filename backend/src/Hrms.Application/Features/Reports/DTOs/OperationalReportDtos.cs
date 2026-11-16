@@ -49,6 +49,7 @@ public class MonthlyAttendanceLatenessDto
     public long EmployeeId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public int TotalWorkDays { get; set; }
@@ -88,6 +89,7 @@ public class DepartmentEmployeeRowDto
     public long EmployeeId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string PositionName { get; set; } = "-";
     public string EmployeeTypeName { get; set; } = "-";
     public string LevelName { get; set; } = "-";

@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
-import type { Department, Division } from '@/types/organization';
+import type { Department, Division, Position } from '@/types/organization';
 import type { EmployeesByDepartmentReport } from '@/types/reports';
 import { ColumnChart, DonutChart, VIZ, toSegments } from './ReportCharts';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
@@ -48,6 +48,7 @@ export default function EmployeesByDepartmentTab({
 }) {
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
   const [divisionId, setDivisionId] = useState<number | 'ALL'>('ALL');
   const [departmentId, setDepartmentId] = useState<number | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
@@ -59,10 +60,15 @@ export default function EmployeesByDepartmentTab({
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    Promise.all([organizationService.getDivisions(), organizationService.getDepartments()])
-      .then(([divs, depts]) => {
+    Promise.all([
+      organizationService.getDivisions(),
+      organizationService.getDepartments(),
+      organizationService.getPositions(),
+    ])
+      .then(([divs, depts, posList]) => {
         setDivisions(divs);
         setDepartments(depts);
+        setPositions(posList);
       })
       .catch(() => undefined);
   }, []);
@@ -188,6 +194,44 @@ export default function EmployeesByDepartmentTab({
       peakBucketIdx,
     };
   }, [data]);
+
+  // Map ตำแหน่ง -> ระดับ (จากเมนูโครงสร้างองค์กร > ตำแหน่งงาน)
+  const posLevelMap = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of positions) {
+      if (p.levelName) {
+        m.set(`${p.departmentId}|${p.positionName.trim()}`, p.levelName);
+        if (!m.has(p.positionName.trim())) {
+          m.set(p.positionName.trim(), p.levelName);
+        }
+      }
+    }
+    return m;
+  }, [positions]);
+
+  const resolveLevelName = useCallback(
+    (deptId: number, posName: string, rawLevel?: string | null) => {
+      if (rawLevel && rawLevel !== '-') return rawLevel;
+      const key = (posName || '').trim();
+      return posLevelMap.get(`${deptId}|${key}`) ?? posLevelMap.get(key) ?? '-';
+    },
+    [posLevelMap]
+  );
+
+  const resolvedByLevel = useMemo(() => {
+    if (!data) return [];
+    const counts = new Map<string, number>();
+    for (const d of data.departments) {
+      for (const e of d.employees) {
+        const lv = resolveLevelName(d.departmentId, e.positionName, e.levelName);
+        const label = lv === '-' ? 'ไม่ระบุระดับ' : lv;
+        counts.set(label, (counts.get(label) ?? 0) + 1);
+      }
+    }
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [data, resolveLevelName]);
 
   const filteredDepartments = useMemo(() => {
     if (!data) return [];
@@ -358,7 +402,7 @@ export default function EmployeesByDepartmentTab({
 
             <ReportPanel title="ระดับตำแหน่ง" subtitle="จำนวนพนักงานแยกตามระดับ">
               <BarList
-                items={data.byLevel.map((lv, i) => ({
+                items={resolvedByLevel.map((lv, i) => ({
                   label: lv.name,
                   value: lv.count,
                   display: `${lv.count} คน`,
@@ -531,7 +575,11 @@ export default function EmployeesByDepartmentTab({
                                         className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
                                       >
                                         <td className="py-3 px-4 whitespace-nowrap">
-                                          <AvatarName id={e.employeeId} name={e.employeeName} />
+                                          <AvatarName
+                                            id={e.employeeId}
+                                            name={e.employeeName}
+                                            avatarUrl={e.avatarUrl}
+                                          />
                                         </td>
                                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                                           {e.employeeCode}
@@ -543,7 +591,7 @@ export default function EmployeesByDepartmentTab({
                                           {e.employeeTypeName}
                                         </td>
                                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {e.levelName}
+                                          {resolveLevelName(d.departmentId, e.positionName, e.levelName)}
                                         </td>
                                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                           {e.gender}

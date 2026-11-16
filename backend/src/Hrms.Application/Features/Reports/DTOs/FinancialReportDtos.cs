@@ -8,6 +8,7 @@ public class PayrollTaxItemDto
     public long EmployeeId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public string CitizenIdMasked { get; set; } = string.Empty;
@@ -70,6 +71,7 @@ public class TurnoverEventLogDto
     public long EmployeeId { get; set; }
     public string EmployeeCode { get; set; } = string.Empty;
     public string EmployeeName { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
     public string DepartmentName { get; set; } = string.Empty;
     public string PositionName { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty; // JOINED, RESIGNED, TERMINATED
