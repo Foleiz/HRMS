@@ -21,17 +21,14 @@ import { getSmartYearRange } from '@/lib/yearUtils';
 import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 import { printReport } from '@/lib/printReport';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
-import { ColumnChart, DonutChart, Legend, MonthlyColumns, VIZ, fmtNumber } from './ReportCharts';
 import {
   AvatarName,
-  BarList,
   IconButton,
   KpiCard,
   KpiGrid,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
-  ReportPanel,
   ReportTableCard,
   TableEmpty,
 } from './ReportShell';
@@ -571,88 +568,6 @@ export default function AttendanceReportTab({
                   </div>
                 )}
 
-              {/* Chart Row: 100% Stacked Bars per Dept + Overall Donut */}
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                <ReportPanel
-                  title="สัดส่วนสถานะการมาทำงานแต่ละแผนก"
-                  subtitle="แถบสี 100% แสดงสัดส่วน มาปกติ · มาสาย · ขาด · ลา/วันหยุด ของแต่ละแผนก"
-                  className="xl:col-span-2"
-                >
-                  <div className="mb-3 flex flex-wrap gap-4 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                    {[
-                      ['มาปกติ', '#10b981'],
-                      ['มาสาย', '#f59e0b'],
-                      ['ขาดงาน', '#ef4444'],
-                      ['ลา / วันหยุด', '#a78bfa'],
-                    ].map((lg) => (
-                      <span key={lg[0]} className="inline-flex items-center gap-1.5">
-                        <i className="h-2.5 w-2.5 rounded-full" style={{ background: lg[1] }} />
-                        {lg[0]}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="space-y-3.5">
-                    {headcountData.departments.map((d) => {
-                      const tot = Math.max(d.totalHeadcount, 1);
-                      const onTime = Math.max(0, d.presentCount - d.lateCount);
-                      const leaveOff = (d.leaveCount ?? 0) + (d.offCount ?? 0);
-                      const rate = Math.min(100, Math.max(0, d.attendanceRate));
-                      return (
-                        <div key={d.departmentId}>
-                          <div className="mb-1 flex items-center justify-between text-xs">
-                            <span className="font-semibold text-slate-700 dark:text-slate-200">
-                              {d.departmentName}
-                              <span className="ml-1.5 font-normal text-slate-400">({d.totalHeadcount} คน)</span>
-                            </span>
-                            <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{rate}%</span>
-                          </div>
-                          <div className="flex h-3.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                            {[
-                              { val: onTime, color: '#10b981', label: `มาปกติ ${onTime} คน` },
-                              { val: d.lateCount, color: '#f59e0b', label: `มาสาย ${d.lateCount} คน` },
-                              { val: d.absentCount, color: '#ef4444', label: `ขาดงาน ${d.absentCount} คน` },
-                              { val: leaveOff, color: '#a78bfa', label: `ลา/วันหยุด ${leaveOff} คน` },
-                            ].map((seg) =>
-                              seg.val > 0 ? (
-                                <div
-                                  key={seg.label}
-                                  title={`${d.departmentName} · ${seg.label}`}
-                                  className="h-full transition-all duration-500"
-                                  style={{ width: `${(seg.val / tot) * 100}%`, background: seg.color }}
-                                />
-                              ) : null
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </ReportPanel>
-
-                <ReportPanel title="ภาพรวมสถานะวันนี้" subtitle="สัดส่วนพนักงานทั้งหมดในวันที่เลือก">
-                  <DonutChart
-                    size={150}
-                    centerLabel="มาทำงาน"
-                    segments={[
-                      {
-                        key: 'ok',
-                        label: 'มาปกติ',
-                        value: Math.max(0, headcountData.totalPresent - headcountData.totalLate),
-                        color: '#10b981',
-                      },
-                      { key: 'late', label: 'มาสาย', value: headcountData.totalLate, color: '#f59e0b' },
-                      { key: 'absent', label: 'ขาดงาน', value: headcountData.totalAbsent, color: '#ef4444' },
-                      {
-                        key: 'leave',
-                        label: 'ลา / วันหยุด',
-                        value: (headcountData.totalLeave ?? 0) + (headcountData.totalOff ?? 0),
-                        color: '#a78bfa',
-                      },
-                    ]}
-                  />
-                </ReportPanel>
-              </div>
-
               {/* Department Table */}
               <ReportTableCard
                 searchValue={dailySearch}
@@ -857,63 +772,6 @@ export default function AttendanceReportTab({
                   tooltip="จำนวนนาทีที่สายรวมกันทั้งหมดในเดือนนี้"
                 />
               </KpiGrid>
-
-              {/* Chart Row: Top 10 ColumnChart + Top 5 BarList */}
-              {latenessData.items.some((i) => i.lateDays > 0) && (
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                  <ReportPanel
-                    title="10 อันดับพนักงานที่มาสายบ่อยที่สุด"
-                    subtitle="เรียงตามจำนวนครั้ง แล้วตามนาทีรวม · ชี้เพื่อดูรายละเอียด"
-                    className="xl:col-span-2"
-                  >
-                    <ColumnChart
-                      color={VIZ.s2}
-                      unit="ครั้ง"
-                      items={[...latenessData.items]
-                        .filter((i) => i.lateDays > 0)
-                        .sort((a, b) => b.lateDays - a.lateDays || b.totalLateMinutes - a.totalLateMinutes)
-                        .slice(0, 10)
-                        .map((i) => ({
-                          id: i.employeeId,
-                          label: i.employeeName.replace(/^(นาย|นางสาว|นาง|น\.ส\.)\s*/, ''),
-                          sub: i.departmentName,
-                          value: i.lateDays,
-                          valueLabel: `${i.lateDays} ครั้ง`,
-                          tip: (
-                            <div>
-                              <div className="font-semibold text-slate-900">{i.employeeName}</div>
-                              <div className="text-slate-500">
-                                {i.departmentName} · {i.positionName}
-                              </div>
-                              <div className="mt-1">
-                                มาสาย {i.lateDays} ครั้ง รวม {i.totalLateMinutes} นาที
-                              </div>
-                              <div>
-                                ขาดงาน {i.absentDays} วัน · ออกก่อน {i.earlyLeaveDays} ครั้ง
-                              </div>
-                            </div>
-                          ),
-                        }))}
-                    />
-                  </ReportPanel>
-
-                  <ReportPanel title="Top 5 เวลาสายสะสมสูงสุด" subtitle="เรียงตามจำนวนนาทีที่สายรวมในเดือนนี้">
-                    <BarList
-                      color="#f59e0b"
-                      items={[...latenessData.items]
-                        .filter((i) => i.totalLateMinutes > 0)
-                        .sort((a, b) => b.totalLateMinutes - a.totalLateMinutes)
-                        .slice(0, 5)
-                        .map((i) => ({
-                          label: i.employeeName.replace(/^(นาย|นางสาว|นาง|น\.ส\.)\s*/, ''),
-                          sub: `(${i.lateDays} ครั้ง)`,
-                          value: i.totalLateMinutes,
-                          display: `${i.totalLateMinutes} นาที`,
-                        }))}
-                    />
-                  </ReportPanel>
-                </div>
-              )}
 
               {/* Detailed Table per Employee */}
               <ReportTableCard
@@ -1125,49 +983,6 @@ export default function AttendanceReportTab({
                   tooltip="จำนวนนาทีที่สายรวมกันทั้งหมดตลอดทั้งปี"
                 />
               </KpiGrid>
-
-              {/* Chart Row: 12-Month Trend + Top 5 BarList */}
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                <ReportPanel
-                  title={`แนวโน้มการมาสายและขาดงานรายเดือน ปี พ.ศ. ${selectedYear + 543}`}
-                  subtitle="เปรียบเทียบจำนวนครั้งที่มาสายและจำนวนวันขาดงานในแต่ละเดือนของปีที่เลือก"
-                  className="xl:col-span-2"
-                  right={
-                    <Legend
-                      items={[
-                        { label: 'มาสาย (ครั้ง)', color: '#f59e0b' },
-                        { label: 'ขาดงาน (วัน)', color: '#ef4444' },
-                      ]}
-                    />
-                  }
-                >
-                  <MonthlyColumns
-                    minMax={4}
-                    format={fmtNumber}
-                    tipFormat={(v) => `${fmtNumber(v)}`}
-                    series={[
-                      { key: 'late', label: 'มาสาย (ครั้ง)', color: '#f59e0b', values: yearlyData.monthlyLate },
-                      { key: 'absent', label: 'ขาดงาน (วัน)', color: '#ef4444', values: yearlyData.monthlyAbsent },
-                    ]}
-                  />
-                </ReportPanel>
-
-                <ReportPanel title="Top 5 เวลาสายสะสมสูงสุดประจำปี" subtitle="เรียงตามจำนวนนาทีที่สายรวมตลอดทั้งปี">
-                  <BarList
-                    color="#f59e0b"
-                    items={[...yearlyData.items]
-                      .filter((i) => i.totalLateMinutes > 0)
-                      .sort((a, b) => b.totalLateMinutes - a.totalLateMinutes)
-                      .slice(0, 5)
-                      .map((i) => ({
-                        label: i.employeeName.replace(/^(นาย|นางสาว|นาง|น\.ส\.)\s*/, ''),
-                        sub: `(${i.lateDays} ครั้ง)`,
-                        value: i.totalLateMinutes,
-                        display: `${i.totalLateMinutes.toLocaleString('th-TH')} นาที`,
-                      }))}
-                  />
-                </ReportPanel>
-              </div>
 
               {/* Yearly Table per Employee */}
               <ReportTableCard
