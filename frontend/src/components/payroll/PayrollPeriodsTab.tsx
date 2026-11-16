@@ -232,15 +232,9 @@ export default function PayrollPeriodsTab({
         {/* Card 3: รอบที่กำลังดำเนินการ (Solid Amber Panel) */}
         <div className="bg-amber-100/60 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800/80 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="min-w-0 flex-1">
               <span className="text-xs text-amber-700 dark:text-amber-300 font-bold block truncate">
                 รอบที่กำลังดำเนินการ
-              </span>
-              <span
-                className="text-[11px] text-amber-700/85 dark:text-amber-300/80 font-medium block truncate"
-                title={summaryStats.inProgressSubtext}
-              >
-                {summaryStats.inProgressSubtext}
               </span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center shrink-0 shadow-2xs">
