@@ -1,25 +1,55 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, ChevronDown, ChevronRight, Loader2, RefreshCw, UserPlus, Users } from 'lucide-react';
+import Link from 'next/link';
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  RefreshCw,
+  Search,
+  Target,
+  Users,
+} from 'lucide-react';
 import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
 import type { Department, Division } from '@/types/organization';
 import type { EmployeesByDepartmentReport } from '@/types/reports';
-import { ChartCard, ColumnChart, DonutChart, VIZ, toSegments } from './ReportCharts';
+import { ColumnChart, DonutChart, VIZ, toSegments } from './ReportCharts';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { printReport } from '@/lib/printReport';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import {
+  BarList,
+  DeltaBadge,
+  IconButton,
+  KpiCard,
+  KpiGrid,
+  MiniColumns,
+  ReportAvatar,
+  ReportEmpty,
+  ReportFilterBar,
+  ReportLoading,
+  ReportPanel,
+} from './ReportShell';
 
 const fmtDate = (d?: string | null) =>
   d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
-/** รายงานพนักงานแยกตามแผนก (ตามขอบเขต "รายงานพนักงานแยกตามแผนก") */
-export default function EmployeesByDepartmentTab({ canExport, onError }: { canExport: boolean; onError: (msg: string) => void }) {
+/** รายงานพนักงานแยกตามแผนก (Redesign ตามมาตรฐาน Report Shell) */
+export default function EmployeesByDepartmentTab({
+  canExport,
+  onError,
+}: {
+  canExport: boolean;
+  onError: (msg: string) => void;
+}) {
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [divisionId, setDivisionId] = useState<number | 'ALL'>('ALL');
   const [departmentId, setDepartmentId] = useState<number | 'ALL'>('ALL');
+  const [search, setSearch] = useState('');
   const [data, setData] = useState<EmployeesByDepartmentReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -65,7 +95,11 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
       const dept = departments.find((d) => d.id === departmentId)?.departmentName;
       printReport(printRef.current, {
         title: 'รายงานพนักงานแยกตามแผนก',
-        subtitle: [div ? `ฝ่าย: ${div}` : 'ทุกฝ่าย', dept ? `แผนก: ${dept}` : 'ทุกแผนก', data ? `ณ วันที่ ${fmtDate(data.asOfDate)}` : '']
+        subtitle: [
+          div ? `ฝ่าย: ${div}` : 'ทุกฝ่าย',
+          dept ? `แผนก: ${dept}` : 'ทุกแผนก',
+          data ? `ณ วันที่ ${fmtDate(data.asOfDate)}` : '',
+        ]
           .filter(Boolean)
           .join(' · '),
       });
@@ -90,113 +124,205 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
       return next;
     });
 
-  const allExpanded = !!data && data.departments.length > 0 && data.departments.every((d) => expanded.has(d.departmentId));
-  const selectCls =
-    'px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-primary min-w-[160px]';
+  // คำนวณอายุงานจาก startDate ของพนักงานทุกคนในรายงาน
+  const tenureStats = useMemo(() => {
+    if (!data) {
+      return {
+        avgYears: 0,
+        minLabel: '-',
+        maxLabel: '-',
+        buckets: [
+          { label: '<1 ปี', value: 0 },
+          { label: '1–3 ปี', value: 0 },
+          { label: '3–5 ปี', value: 0 },
+          { label: '5–10 ปี', value: 0 },
+          { label: '>10 ปี', value: 0 },
+        ],
+        peakBucketIdx: 0,
+      };
+    }
+    const refDate = data.asOfDate ? new Date(data.asOfDate) : new Date();
+    const yearsList: number[] = [];
+    const counts = [0, 0, 0, 0, 0];
+
+    for (const d of data.departments) {
+      for (const emp of d.employees) {
+        if (!emp.startDate) continue;
+        const st = new Date(emp.startDate);
+        if (isNaN(st.getTime())) continue;
+        const diffYears = Math.max(0, (refDate.getTime() - st.getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+        yearsList.push(diffYears);
+        if (diffYears < 1) counts[0]++;
+        else if (diffYears < 3) counts[1]++;
+        else if (diffYears < 5) counts[2]++;
+        else if (diffYears <= 10) counts[3]++;
+        else counts[4]++;
+      }
+    }
+
+    const avgYears = yearsList.length > 0 ? yearsList.reduce((a, b) => a + b, 0) / yearsList.length : 0;
+    const minY = yearsList.length > 0 ? Math.min(...yearsList) : 0;
+    const maxY = yearsList.length > 0 ? Math.max(...yearsList) : 0;
+
+    const fmtSpan = (y: number) => {
+      if (y < 1) {
+        const m = Math.max(1, Math.round(y * 12));
+        return `${m} เดือน`;
+      }
+      return `${y.toFixed(1)} ปี`;
+    };
+
+    const labels = ['<1 ปี', '1–3 ปี', '3–5 ปี', '5–10 ปี', '>10 ปี'];
+    const buckets = labels.map((label, i) => ({ label, value: counts[i] }));
+    const maxBucketVal = Math.max(...counts, 0);
+    const peakBucketIdx = maxBucketVal > 0 ? counts.indexOf(maxBucketVal) : 0;
+
+    return {
+      avgYears,
+      minLabel: yearsList.length > 0 ? fmtSpan(minY) : '-',
+      maxLabel: yearsList.length > 0 ? fmtSpan(maxY) : '-',
+      buckets,
+      peakBucketIdx,
+    };
+  }, [data]);
+
+  const filteredDepartments = useMemo(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    if (!q) return data.departments;
+    return data.departments.filter(
+      (d) =>
+        d.departmentName.toLowerCase().includes(q) ||
+        d.departmentCode.toLowerCase().includes(q) ||
+        d.divisionName.toLowerCase().includes(q) ||
+        d.employees.some((e) => e.employeeName.toLowerCase().includes(q) || e.employeeCode.toLowerCase().includes(q))
+    );
+  }, [data, search]);
+
+  const allExpanded =
+    filteredDepartments.length > 0 && filteredDepartments.every((d) => expanded.has(d.departmentId));
+
+  const levelPalette = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#3b82f6'];
 
   return (
-    <div className="space-y-4">
-      {/* ตัวกรอง */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <Building2 className="w-4 h-4 text-slate-400" />
-          <CustomSelect
-            value={divisionId}
-            onChange={(e) => {
-              setDivisionId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value));
-              setDepartmentId('ALL');
-            }}
-            className={selectCls}
-          >
-            <option value="ALL">ทุกฝ่าย</option>
-            {divisions.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.divisionName}
-              </option>
-            ))}
-          </CustomSelect>
-          <CustomSelect
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-            className={selectCls}
-          >
-            <option value="ALL">ทุกแผนก</option>
-            {deptOptions.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.departmentName}
-              </option>
-            ))}
-          </CustomSelect>
-          <button
-            type="button"
-            onClick={load}
-            className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50"
-            title="โหลดข้อมูลใหม่"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-        {canExport && <ExportMenu onExport={handleExport} disabled={!data || data.totalEmployees === 0} />}
-      </div>
+    <div className="space-y-5 animate-in fade-in duration-200">
+      <ReportFilterBar
+        loading={loading}
+        right={canExport ? <ExportMenu onExport={handleExport} disabled={!data || data.totalEmployees === 0} /> : undefined}
+      >
+        <CustomSelect
+          value={divisionId}
+          onChange={(e) => {
+            setDivisionId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value));
+            setDepartmentId('ALL');
+          }}
+          className="min-w-[160px]"
+        >
+          <option value="ALL">ทุกฝ่าย</option>
+          {divisions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.divisionName}
+            </option>
+          ))}
+        </CustomSelect>
+
+        <CustomSelect
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+          className="min-w-[160px]"
+        >
+          <option value="ALL">ทุกแผนก</option>
+          {deptOptions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.departmentName}
+            </option>
+          ))}
+        </CustomSelect>
+
+        <IconButton onClick={load} title="โหลดข้อมูลใหม่">
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </IconButton>
+      </ReportFilterBar>
 
       {loading && !data ? (
-        <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary dark:text-blue-300" />
-          กำลังโหลดรายงาน...
-        </div>
+        <ReportLoading />
       ) : !data || data.departments.length === 0 ? (
-        <div className="p-12 text-center text-sm text-slate-400 bg-white rounded-2xl border border-slate-200">ไม่พบแผนกตามตัวกรองที่เลือก</div>
+        <ReportEmpty text="ไม่พบแผนกตามตัวกรองที่เลือก" />
       ) : (
-        <div ref={printRef} className="space-y-4">
-          {/* การ์ดสรุป */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-blue-50/70 dark:bg-blue-950/30 p-4.5 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 shadow-xs space-y-1.5">
-              <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-blue-700 dark:text-blue-300">
-                <Users className="w-4 h-4" /> พนักงานทั้งหมด
-              </span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-blue-950 dark:text-blue-100">
-                {data.totalEmployees} <span className="text-xs sm:text-sm font-normal text-blue-600/70 dark:text-blue-300/70">คน</span>
-              </div>
-              <div className="text-xs text-blue-600/80 dark:text-blue-400/80 font-medium">
-                {data.totalDepartments} แผนก
-                {data.totalHeadcountPlan ? ` · อัตรากำลังตามแผน ${data.totalHeadcountPlan} คน` : ''}
-              </div>
-            </div>
+        <div ref={printRef} className="space-y-5">
+          {/* KPI Cards */}
+          <KpiGrid cols={4}>
+            <KpiCard
+              icon={Users}
+              tone="blue"
+              label="พนักงานทั้งหมด"
+              value={data.totalEmployees.toLocaleString('th-TH')}
+              unit="คน"
+              delta={data.newHiresThisYear > 0 ? <DeltaBadge delta={data.newHiresThisYear} unit=" เข้าใหม่ปีนี้" good /> : undefined}
+              note={`${data.totalDepartments} แผนก${data.totalHeadcountPlan ? ` · แผนรวม ${data.totalHeadcountPlan} คน` : ''}`}
+            />
 
-            <div className="bg-purple-50/70 dark:bg-purple-950/30 p-4.5 rounded-2xl border border-purple-200/80 dark:border-purple-800/60 shadow-xs space-y-1.5">
-              <span className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-300">ชาย / หญิง</span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-purple-950 dark:text-purple-100">
-                {data.maleCount} <span className="text-base sm:text-lg font-semibold text-purple-400">/</span> {data.femaleCount}
-              </div>
-              <div className="text-xs text-purple-600/80 dark:text-purple-400/80 font-medium">ไม่ระบุ {data.otherGenderCount} คน</div>
-            </div>
+            <KpiCard
+              icon={Users}
+              tone="violet"
+              label="ชาย / หญิง"
+              value={`${data.maleCount} / ${data.femaleCount}`}
+              unit="คน"
+              note={
+                data.totalEmployees > 0
+                  ? `${Math.round((data.maleCount / data.totalEmployees) * 100)}% / ${Math.round((data.femaleCount / data.totalEmployees) * 100)}% · ไม่ระบุ ${data.otherGenderCount} คน`
+                  : `ไม่ระบุ ${data.otherGenderCount} คน`
+              }
+            />
 
-            <div className="bg-emerald-50/70 dark:bg-emerald-950/30 p-4.5 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs space-y-1.5">
-              <span className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                <UserPlus className="w-4 h-4" /> เข้าใหม่ปีนี้
-              </span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-950 dark:text-emerald-100">
-                {data.newHiresThisYear} <span className="text-xs sm:text-sm font-normal text-emerald-600/70 dark:text-emerald-300/70">คน</span>
+            {data.totalHeadcountPlan ? (
+              <KpiCard
+                icon={Target}
+                tone="amber"
+                label="ตำแหน่งที่ยังว่าง (ตามแผน)"
+                value={Math.max(0, data.totalHeadcountPlan - data.totalEmployees).toLocaleString('th-TH')}
+                unit="อัตรา"
+                note={`อัตรากำลังตามแผน ${data.totalHeadcountPlan} − พนักงานจริง ${data.totalEmployees}`}
+              />
+            ) : (
+              <div className="flex flex-col justify-between rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4 dark:border-amber-700/60 dark:bg-amber-950/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300">
+                  <Target className="h-5 w-5" />
+                </div>
+                <div>
+                  <div className="mt-3 text-xs font-semibold text-slate-600 dark:text-slate-300">ตำแหน่งที่ยังว่าง (ตามแผน)</div>
+                  <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">ยังไม่ได้กำหนดอัตรากำลังของตำแหน่งงาน</div>
+                  <Link
+                    href="/organization?tab=positions"
+                    data-print-hide
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:underline dark:text-amber-300"
+                  >
+                    ไปกำหนดอัตรากำลัง <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
               </div>
-              <div className="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">นับจากวันเริ่มงานในสัญญาจ้าง</div>
-            </div>
+            )}
 
-            <div className="bg-amber-50/70 dark:bg-amber-950/30 p-4.5 rounded-2xl border border-amber-200/80 dark:border-amber-800/60 shadow-xs space-y-1.5">
-              <span className="text-xs sm:text-sm font-semibold text-amber-700 dark:text-amber-300">ตำแหน่งที่ยังว่าง (ตามแผน)</span>
-              <div className="text-2xl sm:text-3xl font-extrabold text-amber-950 dark:text-amber-100">
-                {data.totalHeadcountPlan ? Math.max(0, data.totalHeadcountPlan - data.totalEmployees) : '-'}{' '}
-                <span className="text-xs sm:text-sm font-normal text-amber-600/70 dark:text-amber-300/70">{data.totalHeadcountPlan ? 'คน' : ''}</span>
-              </div>
-              <div className="text-xs text-amber-600/80 dark:text-amber-400/80 font-medium">{data.totalHeadcountPlan ? 'อัตรากำลังตามแผน − พนักงานจริง' : 'ยังไม่ได้กำหนดอัตรากำลังของตำแหน่ง'}</div>
-            </div>
-          </div>
+            <KpiCard
+              icon={Clock}
+              tone="emerald"
+              label="อายุงานเฉลี่ย"
+              value={tenureStats.avgYears.toFixed(1)}
+              unit="ปี"
+              note={`ต่ำสุด ${tenureStats.minLabel} · สูงสุด ${tenureStats.maxLabel}`}
+            />
+          </KpiGrid>
 
-          {/* กราฟ */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-            <ChartCard title="จำนวนพนักงานแต่ละแผนก" subtitle="แท่ง = พนักงานจริง · เส้นประ = อัตรากำลังตามแผน · ชี้เพื่อดูรายละเอียด" className="xl:col-span-2">
+          {/* Chart Row 1: Department Headcount + Gender */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <ReportPanel
+              title="จำนวนพนักงานแต่ละแผนก"
+              subtitle="แท่ง = พนักงานจริง · เส้นประ = อัตรากำลังตามแผน · ชี้เพื่อดูรายละเอียด"
+              className="xl:col-span-2"
+            >
               <ColumnChart
                 color={VIZ.s1}
-                height={220}
+                height={230}
                 items={[...data.departments]
                   .sort((a, b) => b.employeeCount - a.employeeCount)
                   .map((d) => ({
@@ -207,44 +333,84 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                     target: d.headcountPlan ?? null,
                   }))}
               />
-            </ChartCard>
-            <div className="space-y-4">
-              <ChartCard title="สัดส่วนเพศ">
-                <DonutChart
-                  size={130}
-                  segments={[
-                    { key: 'm', label: 'ชาย', value: data.maleCount, color: VIZ.s1 },
-                    { key: 'f', label: 'หญิง', value: data.femaleCount, color: VIZ.s2 },
-                    { key: 'o', label: 'ไม่ระบุ', value: data.otherGenderCount, color: VIZ.neutral },
-                  ]}
-                />
-              </ChartCard>
-              <ChartCard title="ประเภทพนักงาน">
-                <DonutChart size={130} segments={toSegments(data.byEmployeeType)} />
-              </ChartCard>
-            </div>
+            </ReportPanel>
+
+            <ReportPanel title="สัดส่วนเพศ" subtitle="จำแนกตามเพศของพนักงานที่ปฏิบัติงานอยู่">
+              <DonutChart
+                size={145}
+                segments={[
+                  { key: 'm', label: 'ชาย', value: data.maleCount, color: '#3b82f6' },
+                  { key: 'f', label: 'หญิง', value: data.femaleCount, color: '#f97316' },
+                  { key: 'o', label: 'ไม่ระบุ', value: data.otherGenderCount, color: '#cbd5e1' },
+                ]}
+              />
+            </ReportPanel>
           </div>
 
-          {/* ตาราง */}
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 text-sm">รายละเอียดรายแผนก</h3>
-              <button
-                type="button"
-                data-print-hide
-                onClick={() => setExpanded(allExpanded ? new Set() : new Set(data.departments.map((d) => d.departmentId)))}
-                className="text-xs font-medium text-primary dark:text-blue-300 hover:underline print:hidden"
-              >
-                {allExpanded ? 'ซ่อนรายชื่อทั้งหมด' : 'แสดงรายชื่อทั้งหมด'}
-              </button>
-            </div>
-            <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-              <table className="table-standard w-full min-w-[900px] text-left text-xs whitespace-nowrap">
-                <thead className="bg-primary text-white font-semibold">
+          {/* Chart Row 2: Employee Type + Level + Tenure Distribution */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <ReportPanel title="ประเภทพนักงาน" subtitle="สัดส่วนตามประเภทการจ้างงาน">
+              <DonutChart size={135} segments={toSegments(data.byEmployeeType)} />
+            </ReportPanel>
+
+            <ReportPanel title="ระดับตำแหน่ง" subtitle="จำนวนพนักงานแยกตามระดับ">
+              <BarList
+                items={data.byLevel.map((lv, i) => ({
+                  label: lv.name,
+                  value: lv.count,
+                  display: `${lv.count} คน`,
+                  color: levelPalette[i % levelPalette.length],
+                }))}
+              />
+            </ReportPanel>
+
+            <ReportPanel title="การกระจายตามอายุงาน" subtitle="จำนวนพนักงานในแต่ละช่วงอายุงาน (คำนวณจากวันเริ่มงาน)">
+              <MiniColumns
+                items={tenureStats.buckets}
+                color="#38bdf8"
+                highlightIndex={tenureStats.peakBucketIdx}
+                highlightColor="#2563eb"
+                height={155}
+              />
+            </ReportPanel>
+          </div>
+
+          {/* Detail Table */}
+          <ReportPanel
+            title="รายชื่อแผนกและพนักงาน"
+            subtitle="คลิกแถวแผนกเพื่อดูรายชื่อพนักงานภายในแผนก"
+            right={
+              <div data-print-hide className="flex flex-wrap items-center gap-2">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="ค้นหาแผนก / พนักงาน..."
+                    className="rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-700 focus:border-primary focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpanded(allExpanded ? new Set() : new Set(filteredDepartments.map((d) => d.departmentId)))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
+                >
+                  {allExpanded ? 'ซ่อนรายชื่อทั้งหมด' : 'แสดงรายชื่อทั้งหมด'}
+                </button>
+              </div>
+            }
+          >
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+              <table className="w-full min-w-[880px] text-left text-xs whitespace-nowrap">
+                <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
                   <tr>
-                    <th className="py-3 px-4 sticky left-0 bg-primary text-white z-[1]">แผนก</th>
-                    <th className="py-3 px-4">ฝ่าย</th>
-                    <th className="py-3 px-4 text-center">พนักงาน</th>
+                    <th className="py-3 px-4">แผนก / ฝ่าย</th>
+                    <th className="py-3 px-4" style={{ minWidth: 170 }}>
+                      พนักงานจริง
+                    </th>
                     <th className="py-3 px-4 text-center">อัตรากำลังตามแผน</th>
                     <th className="py-3 px-4 text-center">ชาย</th>
                     <th className="py-3 px-4 text-center">หญิง</th>
@@ -252,59 +418,96 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                     <th className="py-3 px-4">ประเภทพนักงาน</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {data.departments.map((d) => {
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                  {filteredDepartments.map((d) => {
                     const open = expanded.has(d.departmentId);
                     const under = d.headcountPlan != null && d.employeeCount < d.headcountPlan;
                     const over = d.headcountPlan != null && d.employeeCount > d.headcountPlan;
+                    const maxCount = Math.max(...data.departments.map((x) => x.employeeCount), 1);
+
                     return (
                       <React.Fragment key={d.departmentId}>
-                        <tr className="hover:bg-slate-50/60 cursor-pointer" onClick={() => toggle(d.departmentId)}>
-                          <td className="py-3 px-4 sticky left-0 bg-white z-[1]">
-                            <span className="inline-flex items-center gap-1.5 font-medium text-slate-900">
-                              {open ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
-                              {d.departmentName}
-                            </span>
-                            <span className="ml-5 block text-[11px] font-mono text-slate-400">{d.departmentCode}</span>
+                        <tr
+                          className="cursor-pointer transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/40"
+                          onClick={() => toggle(d.departmentId)}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              {open ? (
+                                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                              )}
+                              <div>
+                                <div className="font-bold text-slate-900 dark:text-slate-100">
+                                  {d.departmentName}
+                                  <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
+                                    ({d.departmentCode})
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-slate-400">{d.divisionName}</div>
+                              </div>
+                            </div>
                           </td>
-                          <td className="py-3 px-4 text-xs text-slate-500">{d.divisionName}</td>
-                          <td className="py-3 px-4 text-center font-bold text-slate-900">{d.employeeCount}</td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                                <div
+                                  className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                                  style={{ width: `${(d.employeeCount / maxCount) * 100}%` }}
+                                />
+                              </div>
+                              <span className="w-7 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                                {d.employeeCount}
+                              </span>
+                            </div>
+                          </td>
                           <td className="py-3 px-4 text-center">
                             {d.headcountPlan == null ? (
-                              <span className="text-slate-300">-</span>
+                              <span className="text-slate-300 dark:text-slate-600">ไม่กำหนด</span>
                             ) : (
                               <span
-                                className={`inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                className={`inline-flex rounded-lg border px-2 py-0.5 text-[11px] font-bold ${
                                   under
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                    ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
                                     : over
-                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                    : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                                      : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
                                 }`}
-                                title={under ? 'ยังรับคนไม่ครบตามแผน' : over ? 'คนเกินอัตรากำลังตามแผน' : 'ครบตามแผน'}
                               >
-                                {d.headcountPlan} {under ? `(ขาด ${d.headcountPlan - d.employeeCount})` : over ? `(เกิน ${d.employeeCount - d.headcountPlan})` : '(ครบ)'}
+                                {d.headcountPlan}{' '}
+                                {under
+                                  ? `(ขาด ${d.headcountPlan - d.employeeCount})`
+                                  : over
+                                    ? `(เกิน ${d.employeeCount - d.headcountPlan})`
+                                    : '(ครบ)'}
                               </span>
                             )}
                           </td>
-                          <td className="py-3 px-4 text-center text-slate-700">{d.maleCount}</td>
-                          <td className="py-3 px-4 text-center text-slate-700">{d.femaleCount}</td>
-                          <td className="py-3 px-4 text-center text-slate-700">{d.newHiresThisYear}</td>
-                          <td className="py-3 px-4 text-xs text-slate-500">
+                          <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
+                            {d.maleCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
+                            {d.femaleCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
+                            {d.newHiresThisYear}
+                          </td>
+                          <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
                             {d.byEmployeeType.map((t) => `${t.name} ${t.count}`).join(' · ') || '-'}
                           </td>
                         </tr>
                         {open && (
                           <tr>
-                            <td colSpan={8} className="bg-slate-50 px-4 py-3">
+                            <td colSpan={7} className="bg-slate-50/80 px-6 py-3.5 dark:bg-slate-900/50">
                               {d.employees.length === 0 ? (
                                 <div className="text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
                               ) : (
                                 <table className="w-full text-xs">
-                                  <thead className="text-slate-500">
+                                  <thead className="text-slate-500 dark:text-slate-400">
                                     <tr>
+                                      <th className="py-1.5 pr-3 text-left font-semibold">พนักงาน</th>
                                       <th className="py-1.5 pr-3 text-left font-semibold">รหัส</th>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">ชื่อ-นามสกุล</th>
                                       <th className="py-1.5 pr-3 text-left font-semibold">ตำแหน่ง</th>
                                       <th className="py-1.5 pr-3 text-left font-semibold">ประเภท</th>
                                       <th className="py-1.5 pr-3 text-left font-semibold">ระดับ</th>
@@ -312,16 +515,21 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                                       <th className="py-1.5 text-left font-semibold">วันเริ่มงาน</th>
                                     </tr>
                                   </thead>
-                                  <tbody>
+                                  <tbody className="divide-y divide-slate-200/70 dark:divide-slate-700/60">
                                     {d.employees.map((e) => (
-                                      <tr key={e.employeeId} className="border-t border-slate-200">
-                                        <td className="py-1.5 pr-3 font-mono text-slate-500">{e.employeeCode}</td>
-                                        <td className="py-1.5 pr-3 font-medium text-slate-800">{e.employeeName}</td>
-                                        <td className="py-1.5 pr-3 text-slate-600">{e.positionName}</td>
-                                        <td className="py-1.5 pr-3 text-slate-600">{e.employeeTypeName}</td>
-                                        <td className="py-1.5 pr-3 text-slate-600">{e.levelName}</td>
-                                        <td className="py-1.5 pr-3 text-slate-600">{e.gender}</td>
-                                        <td className="py-1.5 text-slate-600">{fmtDate(e.startDate)}</td>
+                                      <tr key={e.employeeId}>
+                                        <td className="py-2 pr-3 font-semibold text-slate-800 dark:text-slate-100">
+                                          <span className="inline-flex items-center gap-2">
+                                            <ReportAvatar name={e.employeeName} size={24} />
+                                            {e.employeeName}
+                                          </span>
+                                        </td>
+                                        <td className="py-2 pr-3 font-mono text-slate-500">{e.employeeCode}</td>
+                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.positionName}</td>
+                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.employeeTypeName}</td>
+                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.levelName}</td>
+                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.gender}</td>
+                                        <td className="py-2 text-slate-600 dark:text-slate-300">{fmtDate(e.startDate)}</td>
                                       </tr>
                                     ))}
                                   </tbody>
@@ -334,11 +542,10 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                     );
                   })}
                 </tbody>
-                <tfoot className="bg-slate-50 text-xs font-semibold text-slate-700 border-t border-slate-200">
+                <tfoot className="border-t border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-800 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100">
                   <tr>
-                    <td className="py-3 px-4 sticky left-0 bg-slate-50 z-[1]">รวมทั้งสิ้น</td>
-                    <td className="py-3 px-4" />
-                    <td className="py-3 px-4 text-center">{data.totalEmployees}</td>
+                    <td className="py-3 px-4">รวมทั้งสิ้น ({data.totalDepartments} แผนก)</td>
+                    <td className="py-3 px-4 text-right">{data.totalEmployees} คน</td>
                     <td className="py-3 px-4 text-center">{data.totalHeadcountPlan ?? '-'}</td>
                     <td className="py-3 px-4 text-center">{data.maleCount}</td>
                     <td className="py-3 px-4 text-center">{data.femaleCount}</td>
@@ -348,7 +555,7 @@ export default function EmployeesByDepartmentTab({ canExport, onError }: { canEx
                 </tfoot>
               </table>
             </div>
-          </div>
+          </ReportPanel>
         </div>
       )}
     </div>
