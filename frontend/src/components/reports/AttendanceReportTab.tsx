@@ -139,7 +139,7 @@ export default function AttendanceReportTab({
       const prevMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
 
       const [curr, prev] = await Promise.allSettled([
-        reportService.getMonthlyLateness(selectedYear, selectedMonth, deptId, latenessSearch.trim() || undefined),
+        reportService.getMonthlyLateness(selectedYear, selectedMonth, deptId),
         reportService.getMonthlyLateness(prevYear, prevMonth, deptId),
       ]);
 
@@ -156,7 +156,7 @@ export default function AttendanceReportTab({
     } finally {
       setIsLoadingLateness(false);
     }
-  }, [canViewMonthly, selectedYear, selectedMonth, latenessDepartment, latenessSearch]);
+  }, [canViewMonthly, selectedYear, selectedMonth, latenessDepartment]);
 
   useEffect(() => {
     if (mode === 'daily' && canViewDaily) loadDailyHeadcount();
@@ -216,11 +216,23 @@ export default function AttendanceReportTab({
     return headcountData.departments.slice(start, start + headcountPageSize);
   }, [headcountData?.departments, headcountPage, headcountPageSize]);
 
-  const pagedLatenessItems = useMemo(() => {
+  const filteredLatenessItems = useMemo(() => {
     if (!latenessData?.items) return [];
+    const q = latenessSearch.trim().toLowerCase();
+    if (!q) return latenessData.items;
+    return latenessData.items.filter(
+      (i) =>
+        i.employeeName.toLowerCase().includes(q) ||
+        i.employeeCode.toLowerCase().includes(q) ||
+        i.departmentName.toLowerCase().includes(q) ||
+        i.positionName.toLowerCase().includes(q)
+    );
+  }, [latenessData?.items, latenessSearch]);
+
+  const pagedLatenessItems = useMemo(() => {
     const start = (latenessPage - 1) * latenessPageSize;
-    return latenessData.items.slice(start, start + latenessPageSize);
-  }, [latenessData?.items, latenessPage, latenessPageSize]);
+    return filteredLatenessItems.slice(start, start + latenessPageSize);
+  }, [filteredLatenessItems, latenessPage, latenessPageSize]);
 
   const modeSwitch =
     canViewDaily && canViewMonthly ? (
@@ -554,16 +566,6 @@ export default function AttendanceReportTab({
             }
           >
             {modeSwitch}
-            <div className="relative w-full sm:w-60">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
-                value={latenessSearch}
-                onChange={(e) => setLatenessSearch(e.target.value)}
-                className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 shadow-2xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-              />
-            </div>
 
             <CustomSelect
               value={selectedMonth}
@@ -732,11 +734,22 @@ export default function AttendanceReportTab({
               )}
 
               {/* Detailed Table per Employee */}
-              <ReportPanel
-                title="ตารางสรุปเวลาทำงานและการมาสายรายบุคคล"
-                subtitle={`ประจำเดือน${TH_MONTHS[selectedMonth - 1]} พ.ศ. ${selectedYear + 543}`}
-                right={<CountBadge count={latenessData.items.length} />}
-              >
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                <div data-print-hide className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+                      value={latenessSearch}
+                      onChange={(e) => {
+                        setLatenessSearch(e.target.value);
+                        setLatenessPage(1);
+                      }}
+                      className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 shadow-2xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+                </div>
                 <RefreshIndicator active={latenessPhase.refreshing} />
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                   <table className="w-full min-w-[860px] text-left text-xs whitespace-nowrap">
@@ -828,7 +841,7 @@ export default function AttendanceReportTab({
                 </div>
                 <div className="mt-4">
                   <TablePagination
-                    total={latenessData.items.length}
+                    total={filteredLatenessItems.length}
                     page={latenessPage}
                     pageSize={latenessPageSize}
                     onPageChange={setLatenessPage}
@@ -839,7 +852,7 @@ export default function AttendanceReportTab({
                     pageSizeOptions={[10, 20, 50, 100]}
                   />
                 </div>
-              </ReportPanel>
+              </div>
             </div>
           )}
         </>
