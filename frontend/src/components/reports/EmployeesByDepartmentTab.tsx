@@ -504,30 +504,21 @@ export default function EmployeesByDepartmentTab({
                           {d.divisionName}
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-0.5 text-xs font-bold tabular-nums ${
-                              d.headcountPlan == null
-                                ? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                                : under
+                          {d.headcountPlan == null ? (
+                            <span className="text-xs text-slate-400 dark:text-slate-500">ยังไม่ได้ระบุ</span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center rounded-lg border px-2.5 py-0.5 text-xs font-bold tabular-nums ${
+                                under
                                   ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
                                   : over
                                     ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
                                     : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                            }`}
-                          >
-                            <span>
-                              {d.employeeCount} / {d.headcountPlan ?? '-'}
+                              }`}
+                            >
+                              {d.employeeCount} / {d.headcountPlan}
                             </span>
-                            {d.headcountPlan != null && (
-                              <span className="text-[10px] font-medium opacity-80">
-                                {under
-                                  ? `(ขาด ${d.headcountPlan - d.employeeCount})`
-                                  : over
-                                    ? `(เกิน ${d.employeeCount - d.headcountPlan})`
-                                    : '(ครบ)'}
-                              </span>
-                            )}
-                          </span>
+                          )}
                         </td>
                         <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {d.maleCount}
