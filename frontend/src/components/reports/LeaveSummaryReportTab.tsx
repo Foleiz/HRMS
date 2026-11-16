@@ -3,8 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Building2,
-  Calendar,
   CalendarDays,
   FileSpreadsheet,
   RefreshCw,
@@ -21,7 +19,6 @@ import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
 import {
   BarList,
-  FilterChip,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -120,34 +117,30 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
         loading={loading}
         right={canExport ? <ExportMenu onExport={handleExport} disabled={exporting || !data} /> : undefined}
       >
-        <FilterChip icon={Calendar} label="ปี:">
-          <CustomSelect
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-            className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-          >
-            {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
-              <option key={y} value={y}>
-                พ.ศ. {y + 543}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={year}
+          onChange={(e) => setYear(Number(e.target.value))}
+          className="min-w-[130px]"
+        >
+          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
+            <option key={y} value={y}>
+              พ.ศ. {y + 543}
+            </option>
+          ))}
+        </CustomSelect>
 
-        <FilterChip icon={Building2} label="แผนก:">
-          <CustomSelect
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
-            className="min-w-[150px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-          >
-            <option value="">ทุกแผนก</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.departmentName}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
+          className="min-w-[160px]"
+        >
+          <option value="">ทุกแผนก</option>
+          {departments.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.departmentName}
+            </option>
+          ))}
+        </CustomSelect>
 
         <IconButton onClick={load} title="โหลดข้อมูลใหม่">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />

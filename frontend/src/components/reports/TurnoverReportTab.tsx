@@ -2,9 +2,6 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Building2,
-  Calendar,
-  CalendarDays,
   CheckCircle2,
   RefreshCw,
   TrendingUp,
@@ -29,7 +26,6 @@ import { Legend, MonthlyColumns, fmtNumber } from './ReportCharts';
 import {
   BarList,
   DeltaBadge,
-  FilterChip,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -204,68 +200,60 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
           ) : undefined
         }
       >
-        <FilterChip icon={Calendar} label="ปี:">
-          <CustomSelect
-            value={turnoverYear}
-            onChange={(e) => setTurnoverYear(Number(e.target.value))}
-            className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-          >
-            {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: turnoverYear }).map((y) => (
-              <option key={y} value={y}>
-                พ.ศ. {y + 543}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={turnoverYear}
+          onChange={(e) => setTurnoverYear(Number(e.target.value))}
+          className="min-w-[130px]"
+        >
+          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: turnoverYear }).map((y) => (
+            <option key={y} value={y}>
+              พ.ศ. {y + 543}
+            </option>
+          ))}
+        </CustomSelect>
 
-        <FilterChip icon={CalendarDays} label="เดือน:">
-          <CustomSelect
-            value={turnoverMonth}
-            onChange={(e) => setTurnoverMonth(Number(e.target.value))}
-            className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-          >
-            {TH_MONTHS.map((m, idx) => (
-              <option key={idx + 1} value={idx + 1}>
-                {m}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={turnoverMonth}
+          onChange={(e) => setTurnoverMonth(Number(e.target.value))}
+          className="min-w-[140px]"
+        >
+          {TH_MONTHS.map((m, idx) => (
+            <option key={idx + 1} value={idx + 1}>
+              {m}
+            </option>
+          ))}
+        </CustomSelect>
 
-        <FilterChip icon={Building2} label="ฝ่าย:">
-          <CustomSelect
-            value={turnoverDivision}
-            onChange={(val) => {
-              const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-              setTurnoverDivision(parsed);
-              setTurnoverDepartment('ALL');
-            }}
-            placeholder="ฝ่ายทั้งหมด"
-            className="min-w-[145px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-            options={[
-              { value: 'ALL', label: 'ฝ่ายทั้งหมด' },
-              ...divisions.map((div) => ({ value: div.id, label: div.divisionName })),
-            ]}
-          />
-        </FilterChip>
+        <CustomSelect
+          value={turnoverDivision}
+          onChange={(val) => {
+            const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+            setTurnoverDivision(parsed);
+            setTurnoverDepartment('ALL');
+          }}
+          placeholder="ทุกฝ่าย"
+          className="min-w-[160px]"
+          options={[
+            { value: 'ALL', label: 'ทุกฝ่าย' },
+            ...divisions.map((div) => ({ value: div.id, label: div.divisionName })),
+          ]}
+        />
 
-        <FilterChip label="แผนก:">
-          <CustomSelect
-            value={turnoverDepartment}
-            onChange={(val) => {
-              const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-              setTurnoverDepartment(parsed);
-            }}
-            placeholder="แผนกทั้งหมด"
-            className="min-w-[145px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-            options={[
-              { value: 'ALL', label: 'แผนกทั้งหมด' },
-              ...departments
-                .filter((dept) => turnoverDivision === 'ALL' || dept.divisionId === turnoverDivision)
-                .map((dept) => ({ value: dept.id, label: dept.departmentName })),
-            ]}
-          />
-        </FilterChip>
+        <CustomSelect
+          value={turnoverDepartment}
+          onChange={(val) => {
+            const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+            setTurnoverDepartment(parsed);
+          }}
+          placeholder="ทุกแผนก"
+          className="min-w-[160px]"
+          options={[
+            { value: 'ALL', label: 'ทุกแผนก' },
+            ...departments
+              .filter((dept) => turnoverDivision === 'ALL' || dept.divisionId === turnoverDivision)
+              .map((dept) => ({ value: dept.id, label: dept.departmentName })),
+          ]}
+        />
 
         <IconButton onClick={loadTurnover} title="รีเฟรชข้อมูล">
           <RefreshCw className={`h-3.5 w-3.5 ${isLoadingTurnover ? 'animate-spin' : ''}`} />

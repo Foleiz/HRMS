@@ -3,8 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Building2,
-  Calendar,
   CalendarX2,
   CheckCircle2,
   Clock,
@@ -30,7 +28,6 @@ import { ColumnChart, DonutChart, VIZ } from './ReportCharts';
 import {
   BarList,
   DeltaBadge,
-  FilterChip,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -266,48 +263,38 @@ export default function AttendanceReportTab({
             }
           >
             {modeSwitch}
-            <FilterChip icon={Calendar} label="วันที่:">
-              <ThaiDatePicker
-                value={selectedDate}
-                onChange={setSelectedDate}
-                className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-              />
-            </FilterChip>
+            <ThaiDatePicker value={selectedDate} onChange={setSelectedDate} />
 
-            <FilterChip icon={Building2} label="ฝ่าย:">
-              <CustomSelect
-                value={selectedDivision}
-                onChange={(val) => {
-                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-                  setSelectedDivision(parsed);
-                  setSelectedDepartment('ALL');
-                }}
-                placeholder="ฝ่ายทั้งหมด"
-                className="min-w-[145px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-                options={[
-                  { value: 'ALL', label: 'ฝ่ายทั้งหมด' },
-                  ...divisions.map((div) => ({ value: div.id, label: div.divisionName })),
-                ]}
-              />
-            </FilterChip>
+            <CustomSelect
+              value={selectedDivision}
+              onChange={(val) => {
+                const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+                setSelectedDivision(parsed);
+                setSelectedDepartment('ALL');
+              }}
+              placeholder="ทุกฝ่าย"
+              className="min-w-[160px]"
+              options={[
+                { value: 'ALL', label: 'ทุกฝ่าย' },
+                ...divisions.map((div) => ({ value: div.id, label: div.divisionName })),
+              ]}
+            />
 
-            <FilterChip label="แผนก:">
-              <CustomSelect
-                value={selectedDepartment}
-                onChange={(val) => {
-                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-                  setSelectedDepartment(parsed);
-                }}
-                placeholder="แผนกทั้งหมด"
-                className="min-w-[145px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-                options={[
-                  { value: 'ALL', label: 'แผนกทั้งหมด' },
-                  ...departments
-                    .filter((dept) => selectedDivision === 'ALL' || dept.divisionId === selectedDivision)
-                    .map((dept) => ({ value: dept.id, label: dept.departmentName })),
-                ]}
-              />
-            </FilterChip>
+            <CustomSelect
+              value={selectedDepartment}
+              onChange={(val) => {
+                const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+                setSelectedDepartment(parsed);
+              }}
+              placeholder="ทุกแผนก"
+              className="min-w-[160px]"
+              options={[
+                { value: 'ALL', label: 'ทุกแผนก' },
+                ...departments
+                  .filter((dept) => selectedDivision === 'ALL' || dept.divisionId === selectedDivision)
+                  .map((dept) => ({ value: dept.id, label: dept.departmentName })),
+              ]}
+            />
 
             <IconButton onClick={loadDailyHeadcount} title="รีเฟรชข้อมูล">
               <RefreshCw className={`h-3.5 w-3.5 ${isLoadingHeadcount ? 'animate-spin' : ''}`} />
@@ -569,53 +556,47 @@ export default function AttendanceReportTab({
                 placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
                 value={latenessSearch}
                 onChange={(e) => setLatenessSearch(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 focus:border-primary focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 shadow-2xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
 
-            <FilterChip icon={Calendar} label="เดือน:">
-              <CustomSelect
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-              >
-                {TH_MONTHS.map((m, idx) => (
-                  <option key={idx + 1} value={idx + 1}>
-                    {m}
-                  </option>
-                ))}
-              </CustomSelect>
-            </FilterChip>
+            <CustomSelect
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="min-w-[140px]"
+            >
+              {TH_MONTHS.map((m, idx) => (
+                <option key={idx + 1} value={idx + 1}>
+                  {m}
+                </option>
+              ))}
+            </CustomSelect>
 
-            <FilterChip label="ปี:">
-              <CustomSelect
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-              >
-                {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
-                  <option key={y} value={y}>
-                    พ.ศ. {y + 543}
-                  </option>
-                ))}
-              </CustomSelect>
-            </FilterChip>
+            <CustomSelect
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="min-w-[130px]"
+            >
+              {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
+                <option key={y} value={y}>
+                  พ.ศ. {y + 543}
+                </option>
+              ))}
+            </CustomSelect>
 
-            <FilterChip icon={Building2} label="แผนก:">
-              <CustomSelect
-                value={latenessDepartment}
-                onChange={(val) => {
-                  const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-                  setLatenessDepartment(parsed);
-                }}
-                placeholder="แผนกทั้งหมด"
-                className="min-w-[145px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-                options={[
-                  { value: 'ALL', label: 'แผนกทั้งหมด' },
-                  ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
-                ]}
-              />
-            </FilterChip>
+            <CustomSelect
+              value={latenessDepartment}
+              onChange={(val) => {
+                const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+                setLatenessDepartment(parsed);
+              }}
+              placeholder="ทุกแผนก"
+              className="min-w-[160px]"
+              options={[
+                { value: 'ALL', label: 'ทุกแผนก' },
+                ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
+              ]}
+            />
 
             <IconButton onClick={loadMonthlyLateness} title="รีเฟรชข้อมูล">
               <RefreshCw className={`h-3.5 w-3.5 ${isLoadingLateness ? 'animate-spin' : ''}`} />

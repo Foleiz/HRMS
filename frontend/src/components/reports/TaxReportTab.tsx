@@ -3,9 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
-  Building2,
-  Calendar,
-  CalendarDays,
   CheckCircle2,
   DollarSign,
   Receipt,
@@ -29,7 +26,6 @@ import { printReport } from '@/lib/printReport';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { Legend, MonthlyColumns, VIZ, fmtBaht } from './ReportCharts';
 import {
-  FilterChip,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -217,53 +213,47 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
               setTaxSearch(e.target.value);
               setTaxPage(1);
             }}
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-800 focus:border-primary focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 shadow-2xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           />
         </div>
 
-        <FilterChip icon={Calendar} label="ปี:">
-          <CustomSelect
-            value={taxYear}
-            onChange={(e) => setTaxYear(Number(e.target.value))}
-            className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-          >
-            {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: taxYear }).map((y) => (
-              <option key={y} value={y}>
-                พ.ศ. {y + 543}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={taxYear}
+          onChange={(e) => setTaxYear(Number(e.target.value))}
+          className="min-w-[130px]"
+        >
+          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: taxYear }).map((y) => (
+            <option key={y} value={y}>
+              พ.ศ. {y + 543}
+            </option>
+          ))}
+        </CustomSelect>
 
-        <FilterChip icon={CalendarDays} label="งวดเดือน:">
-          <CustomSelect
-            value={taxMonth}
-            onChange={(e) => setTaxMonth(Number(e.target.value))}
-            className="bg-transparent text-xs font-semibold text-slate-800 focus:outline-none dark:text-slate-200"
-          >
-            {TH_MONTHS.map((m, idx) => (
-              <option key={idx + 1} value={idx + 1}>
-                {m}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={taxMonth}
+          onChange={(e) => setTaxMonth(Number(e.target.value))}
+          className="min-w-[140px]"
+        >
+          {TH_MONTHS.map((m, idx) => (
+            <option key={idx + 1} value={idx + 1}>
+              {m}
+            </option>
+          ))}
+        </CustomSelect>
 
-        <FilterChip icon={Building2} label="แผนก:">
-          <CustomSelect
-            value={taxDepartment}
-            onChange={(val) => {
-              const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
-              setTaxDepartment(parsed);
-            }}
-            placeholder="แผนกทั้งหมด"
-            className="min-w-[145px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-            options={[
-              { value: 'ALL', label: 'แผนกทั้งหมด' },
-              ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
-            ]}
-          />
-        </FilterChip>
+        <CustomSelect
+          value={taxDepartment}
+          onChange={(val) => {
+            const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+            setTaxDepartment(parsed);
+          }}
+          placeholder="ทุกแผนก"
+          className="min-w-[160px]"
+          options={[
+            { value: 'ALL', label: 'ทุกแผนก' },
+            ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
+          ]}
+        />
 
         <IconButton onClick={loadPayrollTax} title="รีเฟรชข้อมูล">
           <RefreshCw className={`h-3.5 w-3.5 ${isLoadingTax ? 'animate-spin' : ''}`} />

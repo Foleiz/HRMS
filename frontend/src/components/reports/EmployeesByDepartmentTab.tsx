@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import {
   ArrowRight,
-  Building2,
   ChevronDown,
   ChevronRight,
   Clock,
@@ -24,7 +23,6 @@ import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
   BarList,
   DeltaBadge,
-  FilterChip,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -212,38 +210,34 @@ export default function EmployeesByDepartmentTab({
         loading={loading}
         right={canExport ? <ExportMenu onExport={handleExport} disabled={!data || data.totalEmployees === 0} /> : undefined}
       >
-        <FilterChip icon={Building2} label="ฝ่าย:">
-          <CustomSelect
-            value={divisionId}
-            onChange={(e) => {
-              setDivisionId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value));
-              setDepartmentId('ALL');
-            }}
-            className="min-w-[150px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-          >
-            <option value="ALL">ทุกฝ่าย</option>
-            {divisions.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.divisionName}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={divisionId}
+          onChange={(e) => {
+            setDivisionId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value));
+            setDepartmentId('ALL');
+          }}
+          className="min-w-[160px]"
+        >
+          <option value="ALL">ทุกฝ่าย</option>
+          {divisions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.divisionName}
+            </option>
+          ))}
+        </CustomSelect>
 
-        <FilterChip label="แผนก:">
-          <CustomSelect
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-            className="min-w-[150px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
-          >
-            <option value="ALL">ทุกแผนก</option>
-            {deptOptions.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.departmentName}
-              </option>
-            ))}
-          </CustomSelect>
-        </FilterChip>
+        <CustomSelect
+          value={departmentId}
+          onChange={(e) => setDepartmentId(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
+          className="min-w-[160px]"
+        >
+          <option value="ALL">ทุกแผนก</option>
+          {deptOptions.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.departmentName}
+            </option>
+          ))}
+        </CustomSelect>
 
         <IconButton onClick={load} title="โหลดข้อมูลใหม่">
           <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
