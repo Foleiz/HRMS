@@ -37,7 +37,6 @@ import {
   ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
-  ReportHero,
   ReportLoading,
   ReportPanel,
 } from './ReportShell';
@@ -230,18 +229,6 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      <ReportHero
-        theme="turnover"
-        icon={UserMinus}
-        title="รายงานอัตราการลาออก"
-        description="ติดตามอัตราการเข้า-ออกของพนักงาน อัตราการคงอยู่ เหตุผลการลาออก และความเคลื่อนไหวจำแนกตามแผนก"
-        actions={
-          <span className="rounded-xl bg-white/20 px-3 py-1.5 font-semibold backdrop-blur">
-            เดือน{TH_MONTHS[turnoverMonth - 1]} {turnoverYear + 543}
-          </span>
-        }
-      />
-
       <ReportFilterBar
         loading={isLoadingTurnover}
         right={

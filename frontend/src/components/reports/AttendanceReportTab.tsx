@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Building2,
   Calendar,
-  CalendarCheck,
   CalendarX2,
   CheckCircle2,
   Clock,
@@ -32,7 +31,6 @@ import {
   BarList,
   DeltaBadge,
   FilterChip,
-  HeroSwitch,
   IconButton,
   InsightBox,
   KpiCard,
@@ -40,7 +38,6 @@ import {
   ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
-  ReportHero,
   ReportLoading,
   ReportPanel,
 } from './ReportShell';
@@ -299,31 +296,36 @@ export default function AttendanceReportTab({
     return list.slice(0, 3);
   }, [latenessData]);
 
+  const modeSwitch =
+    canViewDaily && canViewMonthly ? (
+      <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
+        <button
+          type="button"
+          onClick={() => setMode('daily')}
+          className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+            mode === 'daily'
+              ? 'bg-primary text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+          }`}
+        >
+          รายวัน
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode('monthly')}
+          className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+            mode === 'monthly'
+              ? 'bg-primary text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+          }`}
+        >
+          รายเดือน
+        </button>
+      </div>
+    ) : null;
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      <ReportHero
-        theme="attendance"
-        icon={CalendarCheck}
-        title="รายงานการเข้าออกงาน"
-        description={
-          mode === 'daily'
-            ? 'ติดตามสถานะการมาทำงาน มาสาย ขาดงาน และวันลาของแต่ละแผนกแบบรายวัน'
-            : 'สรุปสถิติเวลาทำงาน การมาสาย ออกก่อน และขาดงานรายบุคคลตลอดทั้งเดือน'
-        }
-        actions={
-          canViewDaily && canViewMonthly ? (
-            <HeroSwitch
-              value={mode}
-              onChange={setMode}
-              options={[
-                { value: 'daily', label: 'รายวัน' },
-                { value: 'monthly', label: 'รายเดือน' },
-              ]}
-            />
-          ) : undefined
-        }
-      />
-
       {mode === 'daily' && canViewDaily && (
         <>
           <ReportFilterBar
@@ -334,6 +336,7 @@ export default function AttendanceReportTab({
               ) : undefined
             }
           >
+            {modeSwitch}
             <FilterChip icon={Calendar} label="วันที่:">
               <ThaiDatePicker
                 value={selectedDate}
@@ -631,6 +634,7 @@ export default function AttendanceReportTab({
               ) : undefined
             }
           >
+            {modeSwitch}
             <div className="relative w-full sm:w-60">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
               <input

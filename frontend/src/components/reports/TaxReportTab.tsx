@@ -36,7 +36,6 @@ import {
   ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
-  ReportHero,
   ReportLoading,
   ReportPanel,
 } from './ReportShell';
@@ -186,18 +185,6 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      <ReportHero
-        theme="tax"
-        icon={Receipt}
-        title="รายงานภาษีและประกันสังคม"
-        description="สรุปภาษีเงินได้หัก ณ ที่จ่าย (ภ.ง.ด.1) และเงินสมทบกองทุนประกันสังคม (สปส. 1-10) ประจำงวดเดือน"
-        actions={
-          <span className="rounded-xl bg-white/20 px-3 py-1.5 font-semibold backdrop-blur">
-            งวดเดือน{TH_MONTHS[taxMonth - 1]} {taxYear + 543}
-          </span>
-        }
-      />
-
       <ReportFilterBar
         loading={isLoadingTax}
         right={

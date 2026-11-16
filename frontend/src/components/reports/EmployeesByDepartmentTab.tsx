@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronRight,
   Clock,
-  PieChart,
   RefreshCw,
   Search,
   Target,
@@ -34,7 +33,6 @@ import {
   ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
-  ReportHero,
   ReportLoading,
   ReportPanel,
 } from './ReportShell';
@@ -255,20 +253,6 @@ export default function EmployeesByDepartmentTab({
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      <ReportHero
-        theme="dept"
-        icon={PieChart}
-        title="พนักงานแยกตามแผนก"
-        description="ภาพรวมโครงสร้างกำลังคน สัดส่วนเพศ ประเภทพนักงาน ระดับตำแหน่ง อายุงาน และอัตรากำลังตามแผน"
-        actions={
-          data?.asOfDate ? (
-            <span className="rounded-xl bg-white/20 px-3 py-1.5 font-semibold backdrop-blur">
-              ข้อมูล ณ วันที่ {fmtDate(data.asOfDate)}
-            </span>
-          ) : undefined
-        }
-      />
-
       <ReportFilterBar
         loading={loading}
         right={canExport ? <ExportMenu onExport={handleExport} disabled={!data || data.totalEmployees === 0} /> : undefined}

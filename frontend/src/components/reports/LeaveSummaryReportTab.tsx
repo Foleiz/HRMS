@@ -6,7 +6,6 @@ import {
   Building2,
   Calendar,
   CalendarDays,
-  CalendarX2,
   FileSpreadsheet,
   RefreshCw,
   Users,
@@ -31,7 +30,6 @@ import {
   ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
-  ReportHero,
   ReportLoading,
   ReportPanel,
 } from './ReportShell';
@@ -164,18 +162,6 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      <ReportHero
-        theme="leave"
-        icon={CalendarX2}
-        title="รายงานการลา"
-        description="สถิติวันลา สัดส่วนประเภทการลา แนวโน้มรายเดือน และสรุปวันลาแยกตามแผนกและรายบุคคล"
-        actions={
-          <span className="rounded-xl bg-white/20 px-3 py-1.5 font-semibold backdrop-blur">
-            ปี พ.ศ. {year + 543}
-          </span>
-        }
-      />
-
       <ReportFilterBar
         loading={loading}
         right={canExport ? <ExportMenu onExport={handleExport} disabled={exporting || !data} /> : undefined}

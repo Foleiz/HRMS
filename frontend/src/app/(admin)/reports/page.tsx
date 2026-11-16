@@ -1,16 +1,7 @@
 'use client';
 
 import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import {
-  CalendarCheck,
-  CalendarX2,
-  LayoutGrid,
-  PieChart,
-  Receipt,
-  UserMinus,
-  type LucideIcon,
-} from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { useToast } from '@/context/ToastContext';
@@ -24,17 +15,8 @@ import TaxReportTab from '@/components/reports/TaxReportTab';
 
 type ReportView = 'hub' | 'department' | 'attendance' | 'leave' | 'turnover' | 'tax';
 
-interface NavPill {
-  key: ReportView;
-  label: string;
-  icon: LucideIcon;
-  dotColor: string;
-  visible: boolean;
-}
-
 function ReportsPageContent() {
   const { hasPermission, hasRole } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
@@ -145,91 +127,8 @@ function ReportsPageContent() {
     return <AccessDenied message="คุณไม่มีสิทธิ์เข้าถึงรายงานสรุปและสถิติ" />;
   }
 
-  const navPills: NavPill[] = [
-    {
-      key: 'hub',
-      label: 'ภาพรวม',
-      icon: LayoutGrid,
-      dotColor: '#4f46e5',
-      visible: true,
-    },
-    {
-      key: 'department',
-      label: 'พนักงานแยกตามแผนก',
-      icon: PieChart,
-      dotColor: '#2563eb',
-      visible: canViewHeadcount,
-    },
-    {
-      key: 'attendance',
-      label: 'การเข้าออกงาน',
-      icon: CalendarCheck,
-      dotColor: '#059669',
-      visible: canViewAttendance,
-    },
-    {
-      key: 'leave',
-      label: 'การลา',
-      icon: CalendarX2,
-      dotColor: '#7c3aed',
-      visible: canViewLeave,
-    },
-    {
-      key: 'turnover',
-      label: 'อัตราการลาออก',
-      icon: UserMinus,
-      dotColor: '#e11d48',
-      visible: canViewTurnover,
-    },
-    {
-      key: 'tax',
-      label: 'ภาษีและประกันสังคม',
-      icon: Receipt,
-      dotColor: '#d97706',
-      visible: canViewTax && activeView === 'tax',
-    },
-  ];
-
-  const switchView = (view: ReportView) => {
-    setActiveView(view);
-    router.push(`/reports?tab=${view}`);
-  };
-
   return (
     <div className="space-y-5 pb-12">
-      {/* แถบสลับรายงานด่วน (Quick Report Switcher) */}
-      <div
-        data-print-hide
-        className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm dark:border-slate-700 dark:bg-slate-800"
-      >
-        {navPills
-          .filter((p) => p.visible)
-          .map((p) => {
-            const Icon = p.icon;
-            const isActive = activeView === p.key;
-            return (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => switchView(p.key)}
-                className={`inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-900'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/60 dark:hover:text-white'
-                }`}
-              >
-                <span
-                  className="h-2 w-2 rounded-full shrink-0"
-                  style={{ background: isActive ? '#ffffff' : p.dotColor }}
-                />
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                <span>{p.label}</span>
-              </button>
-            );
-          })}
-      </div>
-
-      {/* เนื้อหารายงานแต่ละตัว */}
       {activeView === 'hub' && (
         <ReportsHub
           canDept={canViewHeadcount}
