@@ -309,10 +309,7 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
               value={turnoverData.overallTurnoverRate}
               unit="%"
               spark={sparkRates}
-              source="ข้อมูลการเริ่มงานและพ้นสภาพของพนักงานในงวดเดือนที่เลือก"
-              formula="อัตราลาออก (%) = [จำนวนลาออกในเดือน ÷ ((พนักงานต้นงวด + พนักงานสิ้นงวด) ÷ 2)] × 100"
-              delta={prevMonthRateDelta != null ? <DeltaBadge delta={prevMonthRateDelta} unit="%" invert /> : undefined}
-              note="เทียบจากพนักงานเฉลี่ยต้น-สิ้นงวด"
+              tooltip="(คนลาออก ÷ พนักงานเฉลี่ยต้น-สิ้นเดือน) × 100"
             />
 
             <KpiCard
@@ -321,9 +318,7 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
               label="อัตราคงอยู่"
               value={turnoverData.overallRetentionRate}
               unit="%"
-              source="สัดส่วนพนักงานที่ยังคงปฏิบัติงานอยู่เทียบกับอัตราการลาออกประจำงวด"
-              formula="อัตราคงอยู่ (%) = 100% − อัตราการลาออกประจำเดือน (%)"
-              note="สัดส่วนพนักงานที่ยังคงปฏิบัติงาน"
+              tooltip="100% − อัตราลาออกของเดือนนี้"
             />
 
             <KpiCard
@@ -332,9 +327,7 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
               label="ลาออกสะสมปีนี้"
               value={ytdTotals.resignedYtd}
               unit="คน"
-              source="ประวัติการลาออก/พ้นสภาพสะสมตั้งแต่เดือนมกราคมถึงเดือนปัจจุบันของปีที่เลือก"
-              formula={`ลาออกสะสม (YTD) = ผลรวมจำนวนพนักงานที่พ้นสภาพในแต่ละเดือนตั้งแต่ต้นปี พ.ศ. ${turnoverYear + 543}`}
-              note={`เข้าใหม่สะสมปีนี้ ${ytdTotals.joinedYtd} คน`}
+              tooltip="จำนวนคนลาออกรวมตั้งแต่ต้นปีถึงปัจจุบัน"
             />
 
             <KpiCard
@@ -343,9 +336,7 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
               label="เข้าใหม่ / ลาออก"
               value={`${turnoverData.totalJoinedCount} / ${turnoverData.totalResignedCount}`}
               unit="คน"
-              source="ทะเบียนพนักงานที่มีวันเริ่มงาน (Start Date) หรือวันพ้นสภาพ (Exit Date) อยู่ในเดือนที่เลือก"
-              formula={`นับจำนวนพนักงานเริ่มงานใหม่ : จำนวนพนักงานที่ลาออก/พ้นสภาพ ในเดือน${TH_MONTHS[turnoverMonth - 1]}`}
-              note={`ในเดือน${TH_MONTHS[turnoverMonth - 1]}`}
+              tooltip="คนเริ่มงานใหม่ เทียบกับ คนลาออกในเดือนนี้"
             />
 
             <KpiCard
@@ -354,9 +345,7 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
               label="ต้นงวด → สิ้นงวด"
               value={`${turnoverData.totalBeginningHeadcount} → ${turnoverData.totalEndingHeadcount}`}
               unit="คน"
-              source="จำนวนพนักงานที่ปฏิบัติงานอยู่ ณ วันแรกของเดือน และวันสิ้นสุดของเดือน"
-              formula="พนักงานสิ้นงวด = พนักงานต้นงวด + เข้าใหม่ในเดือน − ลาออกในเดือน"
-              note={`ต้นงวด ${turnoverData.totalBeginningHeadcount} + เข้าใหม่ ${turnoverData.totalJoinedCount} − ลาออก ${turnoverData.totalResignedCount} = สิ้นงวด ${turnoverData.totalEndingHeadcount} คน`}
+              tooltip="คนต้นเดือน + คนเข้าใหม่ − คนลาออก = คนสิ้นเดือน"
             />
           </KpiGrid>
 

@@ -8,8 +8,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Calculator,
-  Database,
   Sparkles,
   TrendingUp,
   TrendingDown,
@@ -208,10 +206,7 @@ export function KpiCard({
   value,
   unit,
   tone = 'blue',
-  delta,
-  note,
-  source,
-  formula,
+  tooltip,
   spark,
   className = '',
 }: {
@@ -220,33 +215,25 @@ export function KpiCard({
   value: React.ReactNode;
   unit?: string;
   tone?: KpiTone;
-  /** ป้ายเปรียบเทียบ (ส่ง <DeltaBadge/>) — แสดงในกล่องคำอธิบายเมื่อชี้เมาส์ */
-  delta?: React.ReactNode;
-  /** ข้อมูลประกอบเพิ่มเติม — แสดงในกล่องคำอธิบายเมื่อชี้เมาส์ */
-  note?: React.ReactNode;
-  /** ที่มาของข้อมูลตัวเลขที่แสดง */
-  source?: React.ReactNode;
-  /** สูตรการคำนวณ หรือหลักการคิดคำนวณ */
-  formula?: React.ReactNode;
+  /** ข้อความสั้นๆ อธิบายที่มาหรือวิธีคิดเมื่อชี้เมาส์ */
+  tooltip?: React.ReactNode;
   spark?: number[];
   className?: string;
 }) {
   const t = TONES[tone];
   const cardRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ left: number; top: number; above: boolean } | null>(null);
-  const hasTooltip = Boolean(source || formula || note || delta);
+  const hasTooltip = Boolean(tooltip);
 
   const showTooltip = useCallback(() => {
     const el = cardRef.current;
     if (!el || !hasTooltip) return;
     const r = el.getBoundingClientRect();
-    const tooltipWidth = 320;
-    const estHeight = 190;
-    const above = r.bottom + 10 + estHeight > window.innerHeight && r.top - 10 - estHeight > 0;
-    const left = Math.max(12, Math.min(r.left, window.innerWidth - tooltipWidth - 12));
+    const above = r.bottom + 48 > window.innerHeight;
+    const left = Math.max(12, Math.min(r.left, window.innerWidth - 280));
     setPos({
       left,
-      top: above ? r.top - 10 : r.bottom + 10,
+      top: above ? r.top - 6 : r.bottom + 6,
       above,
     });
   }, [hasTooltip]);
@@ -272,9 +259,7 @@ export function KpiCard({
         onFocus={showTooltip}
         onBlur={hideTooltip}
         tabIndex={hasTooltip ? 0 : undefined}
-        className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-150 hover:border-slate-300 hover:shadow-md focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-600 ${
-          hasTooltip ? 'cursor-help' : ''
-        } ${className}`}
+        className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 ${className}`}
       >
         <div className="flex items-start justify-between">
           <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${t.box}`}>
@@ -301,52 +286,9 @@ export function KpiCard({
               top: pos.top,
               transform: pos.above ? 'translateY(-100%)' : undefined,
             }}
-            className="pointer-events-none z-[120] w-80 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-2xl dark:border-slate-700 dark:bg-slate-800 animate-in fade-in zoom-in-95 duration-150"
+            className="pointer-events-none z-[120] max-w-xs rounded-lg bg-slate-800 px-3 py-1.5 text-xs leading-relaxed text-white shadow-md dark:bg-slate-700"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5 dark:border-slate-700/70">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${t.box}`}>
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span className="truncate text-xs font-extrabold text-slate-800 dark:text-slate-100">{label}</span>
-              </div>
-              <div className="shrink-0 flex items-baseline gap-1">
-                <span className="text-sm font-extrabold text-slate-900 dark:text-white">{value}</span>
-                {unit && <span className="text-[11px] text-slate-400">{unit}</span>}
-              </div>
-            </div>
-
-            <div className="mt-2.5 space-y-2 text-xs">
-              {source && (
-                <div className="flex items-start gap-2">
-                  <Database className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-500" />
-                  <div className="min-w-0">
-                    <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">ที่มาของตัวเลข</div>
-                    <div className="text-xs leading-relaxed text-slate-700 dark:text-slate-200">{source}</div>
-                  </div>
-                </div>
-              )}
-
-              {formula && (
-                <div className="flex items-start gap-2">
-                  <Calculator className="mt-0.5 h-3.5 w-3.5 shrink-0 text-violet-500" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400">สูตร / หลักการคำนวณ</div>
-                    <div className="mt-1 rounded-xl border border-slate-200/80 bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold leading-relaxed text-slate-800 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
-                      {formula}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {(delta || note) && (
-                <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2 text-[11px] text-slate-500 dark:border-slate-700/70 dark:text-slate-400">
-                  {delta}
-                  {note && <span>{note}</span>}
-                </div>
-              )}
-            </div>
+            {tooltip}
           </div>,
           document.body
         )}
