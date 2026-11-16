@@ -201,18 +201,6 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
         }
       >
         <CustomSelect
-          value={turnoverYear}
-          onChange={(e) => setTurnoverYear(Number(e.target.value))}
-          className="min-w-[130px]"
-        >
-          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: turnoverYear }).map((y) => (
-            <option key={y} value={y}>
-              พ.ศ. {y + 543}
-            </option>
-          ))}
-        </CustomSelect>
-
-        <CustomSelect
           value={turnoverMonth}
           onChange={(e) => setTurnoverMonth(Number(e.target.value))}
           className="min-w-[140px]"
@@ -220,6 +208,18 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
           {TH_MONTHS.map((m, idx) => (
             <option key={idx + 1} value={idx + 1}>
               {m}
+            </option>
+          ))}
+        </CustomSelect>
+
+        <CustomSelect
+          value={turnoverYear}
+          onChange={(e) => setTurnoverYear(Number(e.target.value))}
+          className="min-w-[130px]"
+        >
+          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: turnoverYear }).map((y) => (
+            <option key={y} value={y}>
+              พ.ศ. {y + 543}
             </option>
           ))}
         </CustomSelect>

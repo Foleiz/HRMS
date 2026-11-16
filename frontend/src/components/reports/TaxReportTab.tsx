@@ -218,18 +218,6 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
         </div>
 
         <CustomSelect
-          value={taxYear}
-          onChange={(e) => setTaxYear(Number(e.target.value))}
-          className="min-w-[130px]"
-        >
-          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: taxYear }).map((y) => (
-            <option key={y} value={y}>
-              พ.ศ. {y + 543}
-            </option>
-          ))}
-        </CustomSelect>
-
-        <CustomSelect
           value={taxMonth}
           onChange={(e) => setTaxMonth(Number(e.target.value))}
           className="min-w-[140px]"
@@ -237,6 +225,18 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
           {TH_MONTHS.map((m, idx) => (
             <option key={idx + 1} value={idx + 1}>
               {m}
+            </option>
+          ))}
+        </CustomSelect>
+
+        <CustomSelect
+          value={taxYear}
+          onChange={(e) => setTaxYear(Number(e.target.value))}
+          className="min-w-[130px]"
+        >
+          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: taxYear }).map((y) => (
+            <option key={y} value={y}>
+              พ.ศ. {y + 543}
             </option>
           ))}
         </CustomSelect>
