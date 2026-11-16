@@ -7,12 +7,9 @@ import {
   CheckCircle2,
   Clock,
   RefreshCw,
-  Search,
   Users,
 } from 'lucide-react';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
-import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { CountBadge, TablePagination } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { useToast } from '@/context/ToastContext';
@@ -26,16 +23,18 @@ import { printReport } from '@/lib/printReport';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { ColumnChart, DonutChart, VIZ } from './ReportCharts';
 import {
+  AvatarName,
   BarList,
   DeltaBadge,
   IconButton,
   KpiCard,
   KpiGrid,
-  ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
   ReportPanel,
+  ReportTableCard,
+  TableEmpty,
 } from './ReportShell';
 
 export interface AttendanceReportTabProps {
@@ -84,6 +83,7 @@ export default function AttendanceReportTab({
   const [selectedDate, setSelectedDate] = useState<string>(localToday);
   const [selectedDivision, setSelectedDivision] = useState<number | 'ALL'>('ALL');
   const [selectedDepartment, setSelectedDepartment] = useState<number | 'ALL'>('ALL');
+  const [dailySearch, setDailySearch] = useState<string>('');
   const [headcountData, setHeadcountData] = useState<DailyHeadcountSummary | null>(null);
   const [headcountPage, setHeadcountPage] = useState(1);
   const [headcountPageSize, setHeadcountPageSize] = useState(10);
@@ -210,11 +210,22 @@ export default function AttendanceReportTab({
     }
   };
 
-  const pagedHeadcountDepts = useMemo(() => {
+  const filteredHeadcountDepts = useMemo(() => {
     if (!headcountData?.departments) return [];
+    const q = dailySearch.trim().toLowerCase();
+    if (!q) return headcountData.departments;
+    return headcountData.departments.filter(
+      (d) =>
+        d.departmentName.toLowerCase().includes(q) ||
+        d.departmentCode.toLowerCase().includes(q) ||
+        d.divisionName.toLowerCase().includes(q)
+    );
+  }, [headcountData?.departments, dailySearch]);
+
+  const pagedHeadcountDepts = useMemo(() => {
     const start = (headcountPage - 1) * headcountPageSize;
-    return headcountData.departments.slice(start, start + headcountPageSize);
-  }, [headcountData?.departments, headcountPage, headcountPageSize]);
+    return filteredHeadcountDepts.slice(start, start + headcountPageSize);
+  }, [filteredHeadcountDepts, headcountPage, headcountPageSize]);
 
   const filteredLatenessItems = useMemo(() => {
     if (!latenessData?.items) return [];
@@ -465,91 +476,105 @@ export default function AttendanceReportTab({
               </div>
 
               {/* Department Table */}
-              <ReportPanel
-                title="ตารางสรุปอัตรากำลังคนจำแนกตามแผนก"
-                subtitle={`ข้อมูลประจำวันที่ ${formatThaiDate(selectedDate)}`}
-                right={<CountBadge count={headcountData.departments.length} />}
+              <ReportTableCard
+                searchValue={dailySearch}
+                onSearchChange={(val) => {
+                  setDailySearch(val);
+                  setHeadcountPage(1);
+                }}
+                searchPlaceholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
+                refreshing={headcountPhase.refreshing}
+                minWidthClassName="min-w-[960px]"
+                pagination={{
+                  total: filteredHeadcountDepts.length,
+                  page: headcountPage,
+                  pageSize: headcountPageSize,
+                  onPageChange: setHeadcountPage,
+                  onPageSizeChange: (newSize) => {
+                    setHeadcountPageSize(newSize);
+                    setHeadcountPage(1);
+                  },
+                  pageSizeOptions: [10, 20, 50, 100],
+                  totalLabel: 'แผนก',
+                }}
               >
-                <RefreshIndicator active={headcountPhase.refreshing} />
-                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                  <table className="w-full min-w-[960px] text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                      <tr>
-                        <th className="py-3 px-4">แผนก / ฝ่าย</th>
-                        <th className="py-3 px-4 text-center">พนักงานทั้งหมด</th>
-                        <th className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400">มาทำงาน</th>
-                        <th className="py-3 px-4 text-center text-amber-600 dark:text-amber-400">มาสาย</th>
-                        <th className="py-3 px-4 text-center text-orange-600 dark:text-orange-400">ออกก่อน</th>
-                        <th className="py-3 px-4 text-center text-violet-600 dark:text-violet-400">ลา</th>
-                        <th className="py-3 px-4 text-center">วันหยุด</th>
-                        <th className="py-3 px-4 text-center text-rose-600 dark:text-rose-400">ขาดงาน</th>
-                        <th className="py-3 px-4 text-right" style={{ minWidth: 150 }}>
-                          อัตราการเข้างาน
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                      {pagedHeadcountDepts.map((dept) => {
-                        const rate = Math.min(100, Math.max(0, dept.attendanceRate));
-                        return (
-                          <tr key={dept.departmentId} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                            <td className="py-3 px-4">
-                              <div className="font-bold text-slate-900 dark:text-slate-100">
-                                {dept.departmentName}
-                                <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
-                                  ({dept.departmentCode})
-                                </span>
+                <thead className="bg-primary text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ฝ่าย</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">พนักงานทั้งหมด</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">มาทำงาน</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">มาสาย</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ออกก่อน</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ลา</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">วันหยุด</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ขาดงาน</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap" style={{ minWidth: 150 }}>
+                      อัตราการเข้างาน
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+                  {pagedHeadcountDepts.length === 0 ? (
+                    <TableEmpty colSpan={9} text="ไม่พบข้อมูลแผนกที่ค้นหา" />
+                  ) : (
+                    pagedHeadcountDepts.map((dept) => {
+                      const rate = Math.min(100, Math.max(0, dept.attendanceRate));
+                      return (
+                        <tr
+                          key={dept.departmentId}
+                          className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                        >
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="font-bold text-slate-900 dark:text-slate-100">
+                              {dept.departmentName}
+                              <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
+                                ({dept.departmentCode})
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-400">{dept.divisionName}</div>
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                            {dept.totalHeadcount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-emerald-600 whitespace-nowrap">
+                            {dept.presentCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-semibold text-amber-600 whitespace-nowrap">
+                            {dept.lateCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-semibold text-orange-600 whitespace-nowrap">
+                            {dept.earlyLeaveCount}
+                          </td>
+                          <td className="py-3 px-4 text-center font-semibold text-violet-600 whitespace-nowrap">
+                            {dept.leaveCount ?? 0}
+                          </td>
+                          <td className="py-3 px-4 text-center text-slate-500 whitespace-nowrap">
+                            {dept.offCount ?? 0}
+                          </td>
+                          <td className="py-3 px-4 text-center font-semibold text-rose-600 whitespace-nowrap">
+                            {dept.absentCount}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    rate >= 90 ? 'bg-emerald-500' : rate >= 75 ? 'bg-amber-500' : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${rate}%` }}
+                                />
                               </div>
-                              <div className="text-[11px] text-slate-400">{dept.divisionName}</div>
-                            </td>
-                            <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
-                              {dept.totalHeadcount}
-                            </td>
-                            <td className="py-3 px-4 text-center font-bold text-emerald-600">{dept.presentCount}</td>
-                            <td className="py-3 px-4 text-center font-semibold text-amber-600">{dept.lateCount}</td>
-                            <td className="py-3 px-4 text-center font-semibold text-orange-600">
-                              {dept.earlyLeaveCount}
-                            </td>
-                            <td className="py-3 px-4 text-center font-semibold text-violet-600">
-                              {dept.leaveCount ?? 0}
-                            </td>
-                            <td className="py-3 px-4 text-center text-slate-500">{dept.offCount ?? 0}</td>
-                            <td className="py-3 px-4 text-center font-semibold text-rose-600">{dept.absentCount}</td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                                  <div
-                                    className={`h-full rounded-full ${
-                                      rate >= 90 ? 'bg-emerald-500' : rate >= 75 ? 'bg-amber-500' : 'bg-rose-500'
-                                    }`}
-                                    style={{ width: `${rate}%` }}
-                                  />
-                                </div>
-                                <span className="w-11 text-right font-extrabold text-slate-900 dark:text-slate-100">
-                                  {rate}%
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-4">
-                  <TablePagination
-                    total={headcountData.departments.length}
-                    page={headcountPage}
-                    pageSize={headcountPageSize}
-                    onPageChange={setHeadcountPage}
-                    onPageSizeChange={(newSize) => {
-                      setHeadcountPageSize(newSize);
-                      setHeadcountPage(1);
-                    }}
-                    pageSizeOptions={[10, 20, 50, 100]}
-                  />
-                </div>
-              </ReportPanel>
+                              <span className="w-11 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                                {rate}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </ReportTableCard>
             </div>
           )}
         </>
@@ -734,125 +759,119 @@ export default function AttendanceReportTab({
               )}
 
               {/* Detailed Table per Employee */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-                <div data-print-hide className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
-                      value={latenessSearch}
-                      onChange={(e) => {
-                        setLatenessSearch(e.target.value);
-                        setLatenessPage(1);
-                      }}
-                      className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 shadow-2xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                    />
-                  </div>
-                </div>
-                <RefreshIndicator active={latenessPhase.refreshing} />
-                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                  <table className="w-full min-w-[860px] text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                      <tr>
-                        <th className="py-3 px-4">พนักงาน</th>
-                        <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
-                        <th className="py-3 px-4 text-center">วันทำงาน</th>
-                        <th className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400">มาทำงาน</th>
-                        <th className="py-3 px-4 text-center text-amber-600 dark:text-amber-400">มาสาย</th>
-                        <th className="py-3 px-4 text-center text-orange-600 dark:text-orange-400">ออกก่อน</th>
-                        <th className="py-3 px-4 text-center text-rose-600 dark:text-rose-400">ขาดงาน</th>
-                        <th className="py-3 px-4 text-right" style={{ minWidth: 150 }}>
-                          อัตราการเข้างาน
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                      {pagedLatenessItems.map((item) => {
-                        const rate = Math.min(100, Math.max(0, item.attendanceRate));
-                        return (
-                          <tr key={item.employeeId} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                            <td className="py-3 px-4">
-                              <div className="flex items-center gap-2.5">
-                                <ReportAvatar name={item.employeeName} size={28} />
-                                <div>
-                                  <div className="font-bold text-slate-900 dark:text-slate-100">{item.employeeName}</div>
-                                  <div className="font-mono text-[11px] text-slate-400">รหัส {item.employeeCode}</div>
-                                </div>
+              <ReportTableCard
+                searchValue={latenessSearch}
+                onSearchChange={(val) => {
+                  setLatenessSearch(val);
+                  setLatenessPage(1);
+                }}
+                searchPlaceholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+                refreshing={latenessPhase.refreshing}
+                minWidthClassName="min-w-[880px]"
+                pagination={{
+                  total: filteredLatenessItems.length,
+                  page: latenessPage,
+                  pageSize: latenessPageSize,
+                  onPageChange: setLatenessPage,
+                  onPageSizeChange: (newSize) => {
+                    setLatenessPageSize(newSize);
+                    setLatenessPage(1);
+                  },
+                  pageSizeOptions: [10, 20, 50, 100],
+                }}
+              >
+                <thead className="bg-primary text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3.5 px-4 whitespace-nowrap">พนักงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">วันทำงาน</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">มาทำงาน</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">มาสาย</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ออกก่อน</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ขาดงาน</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap" style={{ minWidth: 150 }}>
+                      อัตราการเข้างาน
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+                  {pagedLatenessItems.length === 0 ? (
+                    <TableEmpty colSpan={9} text="ไม่พบข้อมูลพนักงานที่ค้นหา" />
+                  ) : (
+                    pagedLatenessItems.map((item) => {
+                      const rate = Math.min(100, Math.max(0, item.attendanceRate));
+                      return (
+                        <tr
+                          key={item.employeeId}
+                          className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                        >
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <AvatarName id={item.employeeId} name={item.employeeName} />
+                          </td>
+                          <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {item.employeeCode}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200">
+                              {item.departmentName}
+                            </div>
+                            <div className="text-[11px] text-slate-400">{item.positionName}</div>
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                            {item.totalWorkDays} วัน
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-emerald-600 whitespace-nowrap">
+                            {item.presentDays} วัน
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {item.lateDays > 0 ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                {item.lateDays} ครั้ง / {item.totalLateMinutes} น.
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {item.earlyLeaveDays > 0 ? (
+                              <span className="font-semibold text-orange-600">
+                                {item.earlyLeaveDays} ครั้ง ({item.totalEarlyLeaveMinutes} น.)
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {item.absentDays > 0 ? (
+                              <span className="rounded-lg bg-rose-50 px-2 py-0.5 font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+                                {item.absentDays} วัน
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    rate >= 95 ? 'bg-emerald-500' : rate >= 80 ? 'bg-amber-500' : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${rate}%` }}
+                                />
                               </div>
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="font-semibold text-slate-800 dark:text-slate-200">
-                                {item.departmentName}
-                              </div>
-                              <div className="text-[11px] text-slate-400">{item.positionName}</div>
-                            </td>
-                            <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">
-                              {item.totalWorkDays} วัน
-                            </td>
-                            <td className="py-3 px-4 text-center font-bold text-emerald-600">{item.presentDays} วัน</td>
-                            <td className="py-3 px-4 text-center">
-                              {item.lateDays > 0 ? (
-                                <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                                  {item.lateDays} ครั้ง / {item.totalLateMinutes} น.
-                                </span>
-                              ) : (
-                                <span className="text-slate-300 dark:text-slate-600">-</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              {item.earlyLeaveDays > 0 ? (
-                                <span className="font-semibold text-orange-600">
-                                  {item.earlyLeaveDays} ครั้ง ({item.totalEarlyLeaveMinutes} น.)
-                                </span>
-                              ) : (
-                                <span className="text-slate-300 dark:text-slate-600">-</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              {item.absentDays > 0 ? (
-                                <span className="rounded-lg bg-rose-50 px-2 py-0.5 font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
-                                  {item.absentDays} วัน
-                                </span>
-                              ) : (
-                                <span className="text-slate-300 dark:text-slate-600">-</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4">
-                              <div className="flex items-center justify-end gap-2">
-                                <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                                  <div
-                                    className={`h-full rounded-full ${
-                                      rate >= 95 ? 'bg-emerald-500' : rate >= 80 ? 'bg-amber-500' : 'bg-rose-500'
-                                    }`}
-                                    style={{ width: `${rate}%` }}
-                                  />
-                                </div>
-                                <span className="w-11 text-right font-extrabold text-slate-900 dark:text-slate-100">
-                                  {rate}%
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-4">
-                  <TablePagination
-                    total={filteredLatenessItems.length}
-                    page={latenessPage}
-                    pageSize={latenessPageSize}
-                    onPageChange={setLatenessPage}
-                    onPageSizeChange={(newSize) => {
-                      setLatenessPageSize(newSize);
-                      setLatenessPage(1);
-                    }}
-                    pageSizeOptions={[10, 20, 50, 100]}
-                  />
-                </div>
-              </div>
+                              <span className="w-11 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                                {rate}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </ReportTableCard>
             </div>
           )}
         </>

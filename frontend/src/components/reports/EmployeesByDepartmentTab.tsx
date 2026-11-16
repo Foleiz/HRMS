@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Clock,
   RefreshCw,
-  Search,
   Target,
   Users,
 } from 'lucide-react';
@@ -21,17 +20,19 @@ import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { printReport } from '@/lib/printReport';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import {
+  AvatarName,
   BarList,
   DeltaBadge,
   IconButton,
   KpiCard,
   KpiGrid,
   MiniColumns,
-  ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
   ReportPanel,
+  ReportTableCard,
+  TableEmpty,
 } from './ReportShell';
 
 const fmtDate = (d?: string | null) =>
@@ -50,6 +51,8 @@ export default function EmployeesByDepartmentTab({
   const [divisionId, setDivisionId] = useState<number | 'ALL'>('ALL');
   const [departmentId, setDepartmentId] = useState<number | 'ALL'>('ALL');
   const [search, setSearch] = useState('');
+  const [deptPage, setDeptPage] = useState(1);
+  const [deptPageSize, setDeptPageSize] = useState(10);
   const [data, setData] = useState<EmployeesByDepartmentReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -198,6 +201,11 @@ export default function EmployeesByDepartmentTab({
         d.employees.some((e) => e.employeeName.toLowerCase().includes(q) || e.employeeCode.toLowerCase().includes(q))
     );
   }, [data, search]);
+
+  const pagedDepartments = useMemo(() => {
+    const start = (deptPage - 1) * deptPageSize;
+    return filteredDepartments.slice(start, start + deptPageSize);
+  }, [filteredDepartments, deptPage, deptPageSize]);
 
   const allExpanded =
     filteredDepartments.length > 0 && filteredDepartments.every((d) => expanded.has(d.departmentId));
@@ -376,186 +384,204 @@ export default function EmployeesByDepartmentTab({
           </div>
 
           {/* Detail Table */}
-          <ReportPanel
-            title="รายชื่อแผนกและพนักงาน"
-            subtitle="คลิกแถวแผนกเพื่อดูรายชื่อพนักงานภายในแผนก"
-            right={
-              <div data-print-hide className="flex flex-wrap items-center gap-2">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="ค้นหาแผนก / พนักงาน..."
-                    className="rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs text-slate-700 focus:border-primary focus:bg-white focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setExpanded(allExpanded ? new Set() : new Set(filteredDepartments.map((d) => d.departmentId)))
-                  }
-                  className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700"
-                >
-                  {allExpanded ? 'ซ่อนรายชื่อทั้งหมด' : 'แสดงรายชื่อทั้งหมด'}
-                </button>
-              </div>
+          <ReportTableCard
+            searchValue={search}
+            onSearchChange={(val) => {
+              setSearch(val);
+              setDeptPage(1);
+            }}
+            searchPlaceholder="ค้นหาชื่อแผนก รหัสแผนก หรือชื่อพนักงาน..."
+            actions={
+              <button
+                type="button"
+                onClick={() =>
+                  setExpanded(allExpanded ? new Set() : new Set(filteredDepartments.map((d) => d.departmentId)))
+                }
+                className="rounded-xl border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 cursor-pointer"
+              >
+                {allExpanded ? 'ซ่อนรายชื่อทั้งหมด' : 'แสดงรายชื่อทั้งหมด'}
+              </button>
             }
+            minWidthClassName="min-w-[880px]"
+            pagination={{
+              total: filteredDepartments.length,
+              page: deptPage,
+              pageSize: deptPageSize,
+              onPageChange: setDeptPage,
+              onPageSizeChange: (newSize) => {
+                setDeptPageSize(newSize);
+                setDeptPage(1);
+              },
+              totalLabel: 'แผนก',
+            }}
           >
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full min-w-[880px] text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                  <tr>
-                    <th className="py-3 px-4">แผนก / ฝ่าย</th>
-                    <th className="py-3 px-4" style={{ minWidth: 170 }}>
-                      พนักงานจริง
-                    </th>
-                    <th className="py-3 px-4 text-center">อัตรากำลังตามแผน</th>
-                    <th className="py-3 px-4 text-center">ชาย</th>
-                    <th className="py-3 px-4 text-center">หญิง</th>
-                    <th className="py-3 px-4 text-center">เข้าใหม่ปีนี้</th>
-                    <th className="py-3 px-4">ประเภทพนักงาน</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {filteredDepartments.map((d) => {
-                    const open = expanded.has(d.departmentId);
-                    const under = d.headcountPlan != null && d.employeeCount < d.headcountPlan;
-                    const over = d.headcountPlan != null && d.employeeCount > d.headcountPlan;
-                    const maxCount = Math.max(...data.departments.map((x) => x.employeeCount), 1);
+            <thead className="bg-primary text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ฝ่าย</th>
+                <th className="py-3.5 px-4 whitespace-nowrap" style={{ minWidth: 170 }}>
+                  พนักงานจริง
+                </th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">อัตรากำลังตามแผน</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">ชาย</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">หญิง</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">เข้าใหม่ปีนี้</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">ประเภทพนักงาน</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+              {pagedDepartments.length === 0 ? (
+                <TableEmpty colSpan={7} text="ไม่พบข้อมูลแผนกหรือพนักงานที่ค้นหา" />
+              ) : (
+                pagedDepartments.map((d) => {
+                  const open = expanded.has(d.departmentId);
+                  const under = d.headcountPlan != null && d.employeeCount < d.headcountPlan;
+                  const over = d.headcountPlan != null && d.employeeCount > d.headcountPlan;
+                  const maxCount = Math.max(...data.departments.map((x) => x.employeeCount), 1);
 
-                    return (
-                      <React.Fragment key={d.departmentId}>
-                        <tr
-                          className="cursor-pointer transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-700/40"
-                          onClick={() => toggle(d.departmentId)}
-                        >
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              {open ? (
-                                <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
-                              ) : (
-                                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
-                              )}
-                              <div>
-                                <div className="font-bold text-slate-900 dark:text-slate-100">
-                                  {d.departmentName}
-                                  <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
-                                    ({d.departmentCode})
-                                  </span>
-                                </div>
-                                <div className="text-[11px] text-slate-400">{d.divisionName}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                                <div
-                                  className="h-full rounded-full bg-blue-600 transition-all duration-500"
-                                  style={{ width: `${(d.employeeCount / maxCount) * 100}%` }}
-                                />
-                              </div>
-                              <span className="w-7 text-right font-extrabold text-slate-900 dark:text-slate-100">
-                                {d.employeeCount}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            {d.headcountPlan == null ? (
-                              <span className="text-slate-300 dark:text-slate-600">ไม่กำหนด</span>
+                  return (
+                    <React.Fragment key={d.departmentId}>
+                      <tr
+                        className="cursor-pointer transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+                        onClick={() => toggle(d.departmentId)}
+                      >
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            {open ? (
+                              <ChevronDown className="h-4 w-4 shrink-0 text-slate-400" />
                             ) : (
-                              <span
-                                className={`inline-flex rounded-lg border px-2 py-0.5 text-[11px] font-bold ${
-                                  under
-                                    ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
-                                    : over
-                                      ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
-                                      : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                }`}
-                              >
-                                {d.headcountPlan}{' '}
-                                {under
-                                  ? `(ขาด ${d.headcountPlan - d.employeeCount})`
-                                  : over
-                                    ? `(เกิน ${d.employeeCount - d.headcountPlan})`
-                                    : '(ครบ)'}
-                              </span>
+                              <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                             )}
-                          </td>
-                          <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
-                            {d.maleCount}
-                          </td>
-                          <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
-                            {d.femaleCount}
-                          </td>
-                          <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
-                            {d.newHiresThisYear}
-                          </td>
-                          <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">
-                            {d.byEmployeeType.map((t) => `${t.name} ${t.count}`).join(' · ') || '-'}
-                          </td>
-                        </tr>
-                        {open && (
-                          <tr>
-                            <td colSpan={7} className="bg-slate-50/80 px-6 py-3.5 dark:bg-slate-900/50">
-                              {d.employees.length === 0 ? (
-                                <div className="text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
-                              ) : (
-                                <table className="w-full text-xs">
-                                  <thead className="text-slate-500 dark:text-slate-400">
-                                    <tr>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">พนักงาน</th>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">รหัส</th>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">ตำแหน่ง</th>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">ประเภท</th>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">ระดับ</th>
-                                      <th className="py-1.5 pr-3 text-left font-semibold">เพศ</th>
-                                      <th className="py-1.5 text-left font-semibold">วันเริ่มงาน</th>
+                            <div>
+                              <div className="font-bold text-slate-900 dark:text-slate-100">
+                                {d.departmentName}
+                                <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
+                                  ({d.departmentCode})
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-400">{d.divisionName}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                              <div
+                                className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                                style={{ width: `${(d.employeeCount / maxCount) * 100}%` }}
+                              />
+                            </div>
+                            <span className="w-7 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                              {d.employeeCount}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center whitespace-nowrap">
+                          {d.headcountPlan == null ? (
+                            <span className="text-slate-300 dark:text-slate-600">ไม่กำหนด</span>
+                          ) : (
+                            <span
+                              className={`inline-flex rounded-lg border px-2 py-0.5 text-[11px] font-bold ${
+                                under
+                                  ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                                  : over
+                                    ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                                    : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              }`}
+                            >
+                              {d.headcountPlan}{' '}
+                              {under
+                                ? `(ขาด ${d.headcountPlan - d.employeeCount})`
+                                : over
+                                  ? `(เกิน ${d.employeeCount - d.headcountPlan})`
+                                  : '(ครบ)'}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {d.maleCount}
+                        </td>
+                        <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {d.femaleCount}
+                        </td>
+                        <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {d.newHiresThisYear}
+                        </td>
+                        <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          {d.byEmployeeType.map((t) => `${t.name} ${t.count}`).join(' · ') || '-'}
+                        </td>
+                      </tr>
+                      {open && (
+                        <tr>
+                          <td colSpan={7} className="bg-slate-50/80 px-6 py-4 dark:bg-slate-900/50">
+                            {d.employees.length === 0 ? (
+                              <div className="text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
+                            ) : (
+                              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                <table className="table-standard w-full text-left text-xs border-collapse whitespace-nowrap">
+                                  <thead className="bg-primary text-white font-semibold">
+                                    <tr className="whitespace-nowrap">
+                                      <th className="py-3 px-4 whitespace-nowrap">พนักงาน</th>
+                                      <th className="py-3 px-4 whitespace-nowrap">รหัสพนักงาน</th>
+                                      <th className="py-3 px-4 whitespace-nowrap">ตำแหน่ง</th>
+                                      <th className="py-3 px-4 whitespace-nowrap">ประเภท</th>
+                                      <th className="py-3 px-4 whitespace-nowrap">ระดับ</th>
+                                      <th className="py-3 px-4 whitespace-nowrap">เพศ</th>
+                                      <th className="py-3 px-4 whitespace-nowrap">วันเริ่มงาน</th>
                                     </tr>
                                   </thead>
-                                  <tbody className="divide-y divide-slate-200/70 dark:divide-slate-700/60">
+                                  <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
                                     {d.employees.map((e) => (
-                                      <tr key={e.employeeId}>
-                                        <td className="py-2 pr-3 font-semibold text-slate-800 dark:text-slate-100">
-                                          <span className="inline-flex items-center gap-2">
-                                            <ReportAvatar name={e.employeeName} size={24} />
-                                            {e.employeeName}
-                                          </span>
+                                      <tr
+                                        key={e.employeeId}
+                                        className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                                      >
+                                        <td className="py-3 px-4 whitespace-nowrap">
+                                          <AvatarName id={e.employeeId} name={e.employeeName} />
                                         </td>
-                                        <td className="py-2 pr-3 font-mono text-slate-500">{e.employeeCode}</td>
-                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.positionName}</td>
-                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.employeeTypeName}</td>
-                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.levelName}</td>
-                                        <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{e.gender}</td>
-                                        <td className="py-2 text-slate-600 dark:text-slate-300">{fmtDate(e.startDate)}</td>
+                                        <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                                          {e.employeeCode}
+                                        </td>
+                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                          {e.positionName}
+                                        </td>
+                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                          {e.employeeTypeName}
+                                        </td>
+                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                          {e.levelName}
+                                        </td>
+                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                          {e.gender}
+                                        </td>
+                                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                                          {fmtDate(e.startDate)}
+                                        </td>
                                       </tr>
                                     ))}
                                   </tbody>
                                 </table>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-                <tfoot className="border-t border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-800 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100">
-                  <tr>
-                    <td className="py-3 px-4">รวมทั้งสิ้น ({data.totalDepartments} แผนก)</td>
-                    <td className="py-3 px-4 text-right">{data.totalEmployees} คน</td>
-                    <td className="py-3 px-4 text-center">{data.totalHeadcountPlan ?? '-'}</td>
-                    <td className="py-3 px-4 text-center">{data.maleCount}</td>
-                    <td className="py-3 px-4 text-center">{data.femaleCount}</td>
-                    <td className="py-3 px-4 text-center">{data.newHiresThisYear}</td>
-                    <td className="py-3 px-4" />
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </ReportPanel>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+            <tfoot className="border-t border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-800 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100">
+              <tr>
+                <td className="py-3 px-4">รวมทั้งสิ้น ({data.totalDepartments} แผนก)</td>
+                <td className="py-3 px-4 text-right">{data.totalEmployees} คน</td>
+                <td className="py-3 px-4 text-center">{data.totalHeadcountPlan ?? '-'}</td>
+                <td className="py-3 px-4 text-center">{data.maleCount}</td>
+                <td className="py-3 px-4 text-center">{data.femaleCount}</td>
+                <td className="py-3 px-4 text-center">{data.newHiresThisYear}</td>
+                <td className="py-3 px-4" />
+              </tr>
+            </tfoot>
+          </ReportTableCard>
         </div>
       )}
     </div>

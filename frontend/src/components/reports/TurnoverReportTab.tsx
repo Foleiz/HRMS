@@ -10,8 +10,6 @@ import {
   Users,
 } from 'lucide-react';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
-import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { CountBadge, TablePagination } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useToast } from '@/context/ToastContext';
 import { reportService } from '@/services/reportService';
@@ -24,16 +22,18 @@ import { printReport } from '@/lib/printReport';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { Legend, MonthlyColumns, fmtNumber } from './ReportCharts';
 import {
+  AvatarName,
   BarList,
   DeltaBadge,
   IconButton,
   KpiCard,
   KpiGrid,
-  ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
   ReportPanel,
+  ReportTableCard,
+  TableEmpty,
 } from './ReportShell';
 
 export interface TurnoverReportTabProps {
@@ -59,6 +59,10 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
   const [turnoverDivision, setTurnoverDivision] = useState<number | 'ALL'>('ALL');
   const [turnoverDepartment, setTurnoverDepartment] = useState<number | 'ALL'>('ALL');
   const [turnoverData, setTurnoverData] = useState<MonthlyTurnoverSummary | null>(null);
+  const [deptSearch, setDeptSearch] = useState('');
+  const [deptPage, setDeptPage] = useState(1);
+  const [deptPageSize, setDeptPageSize] = useState(10);
+  const [logSearch, setLogSearch] = useState('');
   const [turnoverPage, setTurnoverPage] = useState(1);
   const [turnoverPageSize, setTurnoverPageSize] = useState(10);
   const [isLoadingTurnover, setIsLoadingTurnover] = useState(false);
@@ -179,11 +183,41 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
       .sort((a, b) => b.value - a.value);
   }, [turnoverData]);
 
-  const pagedTurnoverLogs = useMemo(() => {
+  const filteredTurnoverDepts = useMemo(() => {
+    if (!turnoverData?.departmentTurnovers) return [];
+    const q = deptSearch.trim().toLowerCase();
+    if (!q) return turnoverData.departmentTurnovers;
+    return turnoverData.departmentTurnovers.filter(
+      (d) =>
+        d.departmentName.toLowerCase().includes(q) ||
+        d.departmentCode.toLowerCase().includes(q) ||
+        d.divisionName.toLowerCase().includes(q)
+    );
+  }, [turnoverData?.departmentTurnovers, deptSearch]);
+
+  const pagedTurnoverDepts = useMemo(() => {
+    const start = (deptPage - 1) * deptPageSize;
+    return filteredTurnoverDepts.slice(start, start + deptPageSize);
+  }, [filteredTurnoverDepts, deptPage, deptPageSize]);
+
+  const filteredTurnoverLogs = useMemo(() => {
     if (!turnoverData?.eventLogs) return [];
+    const q = logSearch.trim().toLowerCase();
+    if (!q) return turnoverData.eventLogs;
+    return turnoverData.eventLogs.filter(
+      (ev) =>
+        ev.employeeName.toLowerCase().includes(q) ||
+        ev.employeeCode.toLowerCase().includes(q) ||
+        ev.departmentName.toLowerCase().includes(q) ||
+        ev.positionName.toLowerCase().includes(q) ||
+        (ev.reason || '').toLowerCase().includes(q)
+    );
+  }, [turnoverData?.eventLogs, logSearch]);
+
+  const pagedTurnoverLogs = useMemo(() => {
     const start = (turnoverPage - 1) * turnoverPageSize;
-    return turnoverData.eventLogs.slice(start, start + turnoverPageSize);
-  }, [turnoverData?.eventLogs, turnoverPage, turnoverPageSize]);
+    return filteredTurnoverLogs.slice(start, start + turnoverPageSize);
+  }, [filteredTurnoverLogs, turnoverPage, turnoverPageSize]);
 
   const sparkRates = useMemo(
     () => (turnoverTrend ? turnoverTrend.rate.filter((v): v is number => v != null) : []),
@@ -423,151 +457,173 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
           </div>
 
           {/* Department Breakdown Table */}
-          <ReportPanel
-            title="ตารางสรุปอัตราการเข้า-ออกจำแนกตามแผนก"
-            subtitle={`ประจำเดือน${TH_MONTHS[turnoverMonth - 1]} พ.ศ. ${turnoverYear + 543}`}
-            right={<CountBadge count={turnoverData.departmentTurnovers.length} />}
+          <ReportTableCard
+            searchValue={deptSearch}
+            onSearchChange={(val) => {
+              setDeptSearch(val);
+              setDeptPage(1);
+            }}
+            searchPlaceholder="ค้นหาชื่อแผนก หรือรหัสแผนก..."
+            refreshing={turnoverPhase.refreshing}
+            minWidthClassName="min-w-[880px]"
+            pagination={{
+              total: filteredTurnoverDepts.length,
+              page: deptPage,
+              pageSize: deptPageSize,
+              onPageChange: setDeptPage,
+              onPageSizeChange: (newSize) => {
+                setDeptPageSize(newSize);
+                setDeptPage(1);
+              },
+              pageSizeOptions: [10, 20, 50, 100],
+              totalLabel: 'แผนก',
+            }}
           >
-            <RefreshIndicator active={turnoverPhase.refreshing} />
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="w-full min-w-[880px] text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                  <tr>
-                    <th className="py-3 px-4">แผนก / ฝ่าย</th>
-                    <th className="py-3 px-4 text-center">ต้นงวด (คน)</th>
-                    <th className="py-3 px-4 text-center text-emerald-600 dark:text-emerald-400">เข้าใหม่</th>
-                    <th className="py-3 px-4 text-center text-rose-600 dark:text-rose-400">ลาออก</th>
-                    <th className="py-3 px-4 text-center font-extrabold">สิ้นงวด (คน)</th>
-                    <th className="py-3 px-4 text-center">อัตราลาออก (%)</th>
-                    <th className="py-3 px-4 text-center">อัตราคงอยู่ (%)</th>
+            <thead className="bg-primary text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ฝ่าย</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">ต้นงวด (คน)</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">เข้าใหม่</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">ลาออก</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">สิ้นงวด (คน)</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">อัตราลาออก (%)</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">อัตราคงอยู่ (%)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+              {pagedTurnoverDepts.length === 0 ? (
+                <TableEmpty colSpan={7} text="ไม่พบข้อมูลแผนกที่ค้นหา" />
+              ) : (
+                pagedTurnoverDepts.map((dept) => (
+                  <tr
+                    key={dept.departmentId}
+                    className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                  >
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                        {dept.departmentName}
+                        <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
+                          ({dept.departmentCode})
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-400">{dept.divisionName}</div>
+                    </td>
+                    <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                      {dept.beginningHeadcount}
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-emerald-600 whitespace-nowrap">
+                      {dept.joinedCount > 0 ? `+${dept.joinedCount}` : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-center font-bold text-rose-600 whitespace-nowrap">
+                      {dept.resignedCount > 0 ? `-${dept.resignedCount}` : '-'}
+                    </td>
+                    <td className="py-3 px-4 text-center font-extrabold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                      {dept.endingHeadcount}
+                    </td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${
+                          dept.turnoverRate === 0
+                            ? 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                            : dept.turnoverRate <= 5
+                              ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                              : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                        }`}
+                      >
+                        {dept.turnoverRate}%
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      <span
+                        className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${
+                          dept.retentionRate >= 95
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : dept.retentionRate >= 80
+                              ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300'
+                              : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                        }`}
+                      >
+                        {dept.retentionRate}%
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                  {turnoverData.departmentTurnovers.map((dept) => (
-                    <tr key={dept.departmentId} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900 dark:text-slate-100">
-                          {dept.departmentName}
-                          <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
-                            ({dept.departmentCode})
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400">{dept.divisionName}</div>
-                      </td>
-                      <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300">
-                        {dept.beginningHeadcount}
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-emerald-600">
-                        {dept.joinedCount > 0 ? `+${dept.joinedCount}` : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-center font-bold text-rose-600">
-                        {dept.resignedCount > 0 ? `-${dept.resignedCount}` : '-'}
-                      </td>
-                      <td className="py-3 px-4 text-center font-extrabold text-slate-900 dark:text-slate-100">
-                        {dept.endingHeadcount}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${
-                            dept.turnoverRate === 0
-                              ? 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
-                              : dept.turnoverRate <= 5
-                                ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
-                                : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
-                          }`}
-                        >
-                          {dept.turnoverRate}%
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span
-                          className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${
-                            dept.retentionRate >= 95
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                              : dept.retentionRate >= 80
-                                ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300'
-                                : 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
-                          }`}
-                        >
-                          {dept.retentionRate}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </ReportPanel>
+                ))
+              )}
+            </tbody>
+          </ReportTableCard>
 
           {/* Event Logs Table */}
-          {turnoverData.eventLogs.length > 0 && (
-            <ReportPanel
-              title="บันทึกประวัติการเคลื่อนไหวพนักงานประจำงวดเดือน"
-              subtitle="รายละเอียดพนักงานเริ่มงานใหม่และลาออก/พ้นสภาพ"
-              right={<CountBadge count={turnoverData.eventLogs.length} />}
-            >
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                <table className="w-full min-w-[800px] text-left text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                    <tr>
-                      <th className="py-3 px-4">วันที่</th>
-                      <th className="py-3 px-4">พนักงาน</th>
-                      <th className="py-3 px-4">แผนก / ตำแหน่ง</th>
-                      <th className="py-3 px-4 text-center">ประเภทเหตุการณ์</th>
-                      <th className="py-3 px-4">เหตุผล / หมายเหตุ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {pagedTurnoverLogs.map((ev, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                        <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400">
-                          {ev.eventDate}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <ReportAvatar name={ev.employeeName} size={28} />
-                            <div>
-                              <div className="font-bold text-slate-900 dark:text-slate-100">{ev.employeeName}</div>
-                              <div className="font-mono text-[11px] text-slate-400">รหัส {ev.employeeCode}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">{ev.departmentName}</div>
-                          <div className="text-[11px] text-slate-400">{ev.positionName}</div>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {ev.eventType === 'JOINED' ? (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-                              <UserPlus className="h-3 w-3" /> เริ่มงานใหม่
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
-                              <UserMinus className="h-3 w-3" /> {ev.eventType === 'TERMINATED' ? 'เลิกจ้าง' : 'ลาออก'}
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400">{ev.reason || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-4">
-                <TablePagination
-                  total={turnoverData.eventLogs.length}
-                  page={turnoverPage}
-                  pageSize={turnoverPageSize}
-                  onPageChange={setTurnoverPage}
-                  onPageSizeChange={(newSize) => {
-                    setTurnoverPageSize(newSize);
-                    setTurnoverPage(1);
-                  }}
-                  pageSizeOptions={[10, 20, 50, 100]}
-                />
-              </div>
-            </ReportPanel>
-          )}
+          <ReportTableCard
+            searchValue={logSearch}
+            onSearchChange={(val) => {
+              setLogSearch(val);
+              setTurnoverPage(1);
+            }}
+            searchPlaceholder="ค้นหาชื่อพนักงาน รหัส หรือแผนก..."
+            minWidthClassName="min-w-[850px]"
+            pagination={{
+              total: filteredTurnoverLogs.length,
+              page: turnoverPage,
+              pageSize: turnoverPageSize,
+              onPageChange: setTurnoverPage,
+              onPageSizeChange: (newSize) => {
+                setTurnoverPageSize(newSize);
+                setTurnoverPage(1);
+              },
+              pageSizeOptions: [10, 20, 50, 100],
+            }}
+          >
+            <thead className="bg-primary text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="py-3.5 px-4 whitespace-nowrap">วันที่</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">พนักงาน</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">ประเภทเหตุการณ์</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">เหตุผล / หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+              {pagedTurnoverLogs.length === 0 ? (
+                <TableEmpty colSpan={6} text="ไม่มีประวัติความเคลื่อนไหวพนักงานในเดือนที่เลือก" />
+              ) : (
+                pagedTurnoverLogs.map((ev, idx) => (
+                  <tr
+                    key={`${ev.employeeId}-${idx}`}
+                    className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                  >
+                    <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                      {ev.eventDate}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <AvatarName id={ev.employeeId} name={ev.employeeName} />
+                    </td>
+                    <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                      {ev.employeeCode}
+                    </td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <div className="font-semibold text-slate-800 dark:text-slate-200">{ev.departmentName}</div>
+                      <div className="text-[11px] text-slate-400">{ev.positionName}</div>
+                    </td>
+                    <td className="py-3 px-4 text-center whitespace-nowrap">
+                      {ev.eventType === 'JOINED' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                          <UserPlus className="h-3 w-3" /> เริ่มงานใหม่
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+                          <UserMinus className="h-3 w-3" /> {ev.eventType === 'TERMINATED' ? 'เลิกจ้าง' : 'ลาออก'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      {ev.reason || '-'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </ReportTableCard>
         </div>
       )}
     </div>

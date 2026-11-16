@@ -13,6 +13,16 @@ import {
   Loader2,
   type LucideIcon,
 } from 'lucide-react';
+import {
+  AvatarName,
+  RefreshIndicator,
+  TableEmpty,
+  TableLoading,
+  TablePagination,
+  TableToolbar,
+} from '@/components/ui';
+
+export { AvatarName, TableEmpty, TableLoading };
 
 /* ───────────────────────── Theme ───────────────────────── */
 export type ReportThemeKey = 'dept' | 'attendance' | 'leave' | 'turnover' | 'tax';
@@ -392,5 +402,87 @@ export function IconButton({ onClick, title, children }: { onClick: () => void; 
     >
       {children}
     </button>
+  );
+}
+
+export interface ReportTableCardProps {
+  /** ค่าค้นหาใน TableToolbar (ถ้าส่งมาจะแสดงช่องค้นหาด้านซ้ายสุดของตาราง) */
+  searchValue?: string;
+  onSearchChange?: (val: string) => void;
+  searchPlaceholder?: string;
+  /** ตัวกรองเพิ่มเติมใน TableToolbar (ต่อจากช่องค้นหา) */
+  filters?: React.ReactNode;
+  /** ปุ่มหรือองค์ประกอบด้านขวาใน TableToolbar */
+  actions?: React.ReactNode;
+  /** สถานะกำลังรีเฟรชข้อมูล */
+  refreshing?: boolean;
+  /** ความกว้างขั้นต่ำของตาราง เช่น min-w-[880px] */
+  minWidthClassName?: string;
+  /** เนื้อหาภายใน <table> (<thead>...</thead><tbody>...</tbody><tfoot>...</tfoot>) */
+  children: React.ReactNode;
+  /** ข้อมูลการแบ่งหน้า (TablePagination มาตรฐานของระบบ) */
+  pagination?: {
+    total: number;
+    page: number;
+    pageSize: number;
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (size: number) => void;
+    pageSizeOptions?: number[];
+    totalLabel?: string;
+  };
+}
+
+/**
+ * การ์ดตารางมาตรฐานกลางสำหรับรายงาน — ใช้โครงสร้างและ Component เดียวกับส่วนอื่นของระบบ:
+ * [TableToolbar] -> [RefreshIndicator] -> [table.table-standard] -> [TablePagination]
+ */
+export function ReportTableCard({
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = 'ค้นหา...',
+  filters,
+  actions,
+  refreshing = false,
+  minWidthClassName = 'min-w-[850px]',
+  children,
+  pagination,
+}: ReportTableCardProps) {
+  const showToolbar = searchValue !== undefined || filters !== undefined || actions !== undefined;
+  return (
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 shadow-sm space-y-4">
+      {showToolbar && (
+        <div data-print-hide>
+          <TableToolbar
+            searchValue={searchValue}
+            onSearchChange={onSearchChange}
+            searchPlaceholder={searchPlaceholder}
+            filters={filters}
+            actions={actions}
+          />
+        </div>
+      )}
+
+      <RefreshIndicator active={refreshing} />
+
+      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+        <table className={`table-standard w-full ${minWidthClassName} text-left text-xs border-collapse whitespace-nowrap`}>
+          {children}
+        </table>
+      </div>
+
+      {pagination && pagination.total > 0 && (
+        <div data-print-hide>
+          <TablePagination
+            total={pagination.total}
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            onPageChange={pagination.onPageChange}
+            onPageSizeChange={pagination.onPageSizeChange}
+            pageSizeOptions={pagination.pageSizeOptions}
+            totalLabel={pagination.totalLabel}
+          />
+        </div>
+      )}
+    </div>
   );
 }

@@ -7,13 +7,10 @@ import {
   DollarSign,
   Receipt,
   RefreshCw,
-  Search,
   ShieldCheck,
   TrendingDown,
 } from 'lucide-react';
 import { useLoadPhase } from '@/hooks/useLoadPhase';
-import { RefreshIndicator } from '@/components/ui/RefreshIndicator';
-import { CountBadge, TablePagination } from '@/components/ui';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { useToast } from '@/context/ToastContext';
 import { reportService } from '@/services/reportService';
@@ -26,14 +23,16 @@ import { printReport } from '@/lib/printReport';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { Legend, MonthlyColumns, VIZ, fmtBaht } from './ReportCharts';
 import {
+  AvatarName,
   IconButton,
   KpiCard,
   KpiGrid,
-  ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
   ReportPanel,
+  ReportTableCard,
+  TableEmpty,
 } from './ReportShell';
 
 export interface TaxReportTabProps {
@@ -203,20 +202,6 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
           </div>
         }
       >
-        <div className="relative w-full sm:w-60">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            placeholder="ค้นหาชื่อ/รหัส/บัตรประชาชน..."
-            value={taxSearch}
-            onChange={(e) => {
-              setTaxSearch(e.target.value);
-              setTaxPage(1);
-            }}
-            className="h-9 w-full rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-xs text-slate-800 shadow-2xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-          />
-        </div>
-
         <CustomSelect
           value={taxMonth}
           onChange={(e) => setTaxMonth(Number(e.target.value))}
@@ -364,117 +349,113 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
           )}
 
           {/* Detailed Tax & SSO Table */}
-          <ReportPanel
-            title="ตารางจำแนกภาษีเงินได้หัก ณ ที่จ่าย และเงินสมทบประกันสังคมรายบุคคล"
-            subtitle={`งวดประจำเดือน${TH_MONTHS[taxMonth - 1]} พ.ศ. ${taxYear + 543}`}
-            right={<CountBadge count={filteredTaxItems.length} />}
+          <ReportTableCard
+            searchValue={taxSearch}
+            onSearchChange={(val) => {
+              setTaxSearch(val);
+              setTaxPage(1);
+            }}
+            searchPlaceholder="ค้นหาชื่อ รหัสพนักงาน หรือเลขบัตรประชาชน..."
+            refreshing={taxPhase.refreshing}
+            minWidthClassName="min-w-[1100px]"
+            pagination={{
+              total: filteredTaxItems.length,
+              page: currentTaxPage,
+              pageSize: taxRowsPerPage,
+              onPageChange: setTaxPage,
+              onPageSizeChange: (newSize) => {
+                setTaxRowsPerPage(newSize);
+                setTaxPage(1);
+              },
+              pageSizeOptions: [10, 20, 50, 100, 200],
+            }}
           >
-            <RefreshIndicator active={taxPhase.refreshing} />
-            {filteredTaxItems.length === 0 ? (
-              <div className="py-10 text-center text-xs text-slate-400">
-                {taxData.periodStatus === 'NONE'
-                  ? `ไม่พบข้อมูลงวดการจ่ายเงินเดือนประจำเดือน${TH_MONTHS[taxMonth - 1]} ${taxYear + 543}`
-                  : 'ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา'}
-              </div>
-            ) : (
-              <>
-                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                  <table className="w-full min-w-[1050px] text-left text-xs whitespace-nowrap">
-                    <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                      <tr>
-                        <th className="w-10 py-3 px-3 text-center">#</th>
-                        <th className="py-3 px-3">พนักงาน</th>
-                        <th className="py-3 px-3">เลขประจำตัวประชาชน</th>
-                        <th className="py-3 px-3">แผนก / ตำแหน่ง</th>
-                        <th className="py-3 px-3 text-right">เงินได้พึงประเมิน (+)</th>
-                        <th className="py-3 px-3 text-right text-rose-600 dark:text-rose-400">ภาษี ภ.ง.ด.1 (−)</th>
-                        <th className="py-3 px-3 text-right text-sky-600 dark:text-sky-400">ปกส. ลูกจ้าง (−)</th>
-                        <th className="py-3 px-3 text-right text-amber-600 dark:text-amber-400">หักอื่นๆ (−)</th>
-                        <th className="py-3 px-3 text-right">รวมรายการหัก</th>
-                        <th className="py-3 px-3 text-right font-extrabold text-emerald-700 dark:text-emerald-300">
-                          เงินเดือนสุทธิ (=)
-                        </th>
-                        <th className="py-3 px-3 text-right text-indigo-600 dark:text-indigo-400">ปกส. นายจ้าง</th>
-                        <th className="py-3 px-3 text-right font-bold">รวมนำส่ง ปกส.</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                      {pagedTaxItems.map((item, idx) => {
-                        const rowNum = (currentTaxPage - 1) * taxRowsPerPage + idx + 1;
-                        const ssoTotal = item.ssoEmployee + item.ssoEmployer;
-                        const otherDed =
-                          item.otherDeductions ??
-                          Math.max(0, (item.totalDeductions || 0) - (item.withholdingTax || 0) - (item.ssoEmployee || 0));
-                        const totalDed =
-                          item.totalDeductions ?? (item.withholdingTax || 0) + (item.ssoEmployee || 0) + otherDed;
+            <thead className="bg-primary text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="w-10 py-3.5 px-3 text-center whitespace-nowrap">#</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">พนักงาน</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">รหัสพนักงาน</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">เลขประจำตัวประชาชน</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">เงินได้พึงประเมิน (+)</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">ภาษี ภ.ง.ด.1 (−)</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">ปกส. ลูกจ้าง (−)</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">หักอื่นๆ (−)</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">รวมรายการหัก</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">เงินเดือนสุทธิ (=)</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">ปกส. นายจ้าง</th>
+                <th className="py-3.5 px-3 text-right whitespace-nowrap">รวมนำส่ง ปกส.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+              {pagedTaxItems.length === 0 ? (
+                <TableEmpty
+                  colSpan={13}
+                  text={
+                    taxData.periodStatus === 'NONE'
+                      ? `ไม่พบข้อมูลงวดการจ่ายเงินเดือนประจำเดือน${TH_MONTHS[taxMonth - 1]} ${taxYear + 543}`
+                      : 'ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา'
+                  }
+                />
+              ) : (
+                pagedTaxItems.map((item, idx) => {
+                  const rowNum = (currentTaxPage - 1) * taxRowsPerPage + idx + 1;
+                  const ssoTotal = item.ssoEmployee + item.ssoEmployer;
+                  const otherDed =
+                    item.otherDeductions ??
+                    Math.max(0, (item.totalDeductions || 0) - (item.withholdingTax || 0) - (item.ssoEmployee || 0));
+                  const totalDed =
+                    item.totalDeductions ?? (item.withholdingTax || 0) + (item.ssoEmployee || 0) + otherDed;
 
-                        return (
-                          <tr key={item.employeeId} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                            <td className="py-3 px-3 text-center text-slate-400">{rowNum}</td>
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2.5">
-                                <ReportAvatar name={item.employeeName} size={28} />
-                                <div>
-                                  <div className="font-bold text-slate-900 dark:text-slate-100">{item.employeeName}</div>
-                                  <div className="font-mono text-[11px] text-slate-400">รหัส {item.employeeCode}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-3 px-3 font-mono text-slate-600 dark:text-slate-400">
-                              {item.citizenIdMasked}
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="font-semibold text-slate-800 dark:text-slate-200">
-                                {item.departmentName}
-                              </div>
-                              <div className="text-[11px] text-slate-400">{item.positionName}</div>
-                            </td>
-                            <td className="py-3 px-3 text-right font-semibold text-slate-900 dark:text-slate-100">
-                              {fmtCurrency(item.grossIncome)}
-                            </td>
-                            <td className="py-3 px-3 text-right font-semibold text-rose-600 dark:text-rose-400">
-                              {item.withholdingTax > 0 ? fmtCurrency(item.withholdingTax) : '-'}
-                            </td>
-                            <td className="py-3 px-3 text-right font-medium text-sky-600 dark:text-sky-400">
-                              {fmtCurrency(item.ssoEmployee)}
-                            </td>
-                            <td className="py-3 px-3 text-right font-medium text-amber-600 dark:text-amber-400">
-                              {otherDed > 0 ? fmtCurrency(otherDed) : '-'}
-                            </td>
-                            <td className="py-3 px-3 text-right font-semibold text-slate-700 dark:text-slate-300">
-                              {fmtCurrency(totalDed)}
-                            </td>
-                            <td className="bg-emerald-50/40 py-3 px-3 text-right font-extrabold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300">
-                              {fmtCurrency(item.netSalary)}
-                            </td>
-                            <td className="py-3 px-3 text-right font-medium text-indigo-600 dark:text-indigo-400">
-                              {fmtCurrency(item.ssoEmployer)}
-                            </td>
-                            <td className="py-3 px-3 text-right font-bold text-slate-800 dark:text-slate-200">
-                              {fmtCurrency(ssoTotal)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-4">
-                  <TablePagination
-                    total={filteredTaxItems.length}
-                    page={currentTaxPage}
-                    pageSize={taxRowsPerPage}
-                    onPageChange={setTaxPage}
-                    onPageSizeChange={(newSize) => {
-                      setTaxRowsPerPage(newSize);
-                      setTaxPage(1);
-                    }}
-                    pageSizeOptions={[10, 20, 50, 100, 200]}
-                  />
-                </div>
-              </>
-            )}
-          </ReportPanel>
+                  return (
+                    <tr
+                      key={item.employeeId}
+                      className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                    >
+                      <td className="py-3 px-3 text-center text-slate-400 whitespace-nowrap">{rowNum}</td>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <AvatarName id={item.employeeId} name={item.employeeName} />
+                      </td>
+                      <td className="py-3 px-3 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                        {item.employeeCode}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                        {item.citizenIdMasked}
+                      </td>
+                      <td className="py-3 px-3 whitespace-nowrap">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{item.departmentName}</div>
+                        <div className="text-[11px] text-slate-400">{item.positionName}</div>
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                        {fmtCurrency(item.grossIncome)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                        {item.withholdingTax > 0 ? fmtCurrency(item.withholdingTax) : '-'}
+                      </td>
+                      <td className="py-3 px-3 text-right font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap">
+                        {fmtCurrency(item.ssoEmployee)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-medium text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        {otherDed > 0 ? fmtCurrency(otherDed) : '-'}
+                      </td>
+                      <td className="py-3 px-3 text-right font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {fmtCurrency(totalDed)}
+                      </td>
+                      <td className="bg-emerald-50/40 py-3 px-3 text-right font-extrabold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300 whitespace-nowrap">
+                        {fmtCurrency(item.netSalary)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-medium text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                        {fmtCurrency(item.ssoEmployer)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {fmtCurrency(ssoTotal)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </ReportTableCard>
         </div>
       )}
     </div>

@@ -18,16 +18,18 @@ import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
 import {
+  AvatarName,
   BarList,
   IconButton,
   KpiCard,
   KpiGrid,
   MiniColumns,
-  ReportAvatar,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
   ReportPanel,
+  ReportTableCard,
+  TableEmpty,
 } from './ReportShell';
 
 interface Props {
@@ -47,6 +49,12 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [matrixSearch, setMatrixSearch] = useState('');
+  const [matrixPage, setMatrixPage] = useState(1);
+  const [matrixPageSize, setMatrixPageSize] = useState(10);
+  const [empSearch, setEmpSearch] = useState('');
+  const [empPage, setEmpPage] = useState(1);
+  const [empPageSize, setEmpPageSize] = useState(10);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -87,6 +95,35 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     data.departmentByType.forEach((c) => cell.set(`${c.departmentName}|${c.leaveTypeName}`, c.days));
     return { types, depts, cell };
   }, [data]);
+
+  const filteredMatrixDepts = useMemo(() => {
+    if (!data) return [];
+    const q = matrixSearch.trim().toLowerCase();
+    if (!q) return data.byDepartment;
+    return data.byDepartment.filter((d) => d.label.toLowerCase().includes(q));
+  }, [data, matrixSearch]);
+
+  const pagedMatrixDepts = useMemo(() => {
+    const start = (matrixPage - 1) * matrixPageSize;
+    return filteredMatrixDepts.slice(start, start + matrixPageSize);
+  }, [filteredMatrixDepts, matrixPage, matrixPageSize]);
+
+  const filteredTopEmployees = useMemo(() => {
+    if (!data) return [];
+    const q = empSearch.trim().toLowerCase();
+    if (!q) return data.topEmployees;
+    return data.topEmployees.filter(
+      (e) =>
+        e.employeeName.toLowerCase().includes(q) ||
+        e.employeeCode.toLowerCase().includes(q) ||
+        (e.departmentName || '').toLowerCase().includes(q)
+    );
+  }, [data, empSearch]);
+
+  const pagedTopEmployees = useMemo(() => {
+    const start = (empPage - 1) * empPageSize;
+    return filteredTopEmployees.slice(start, start + empPageSize);
+  }, [filteredTopEmployees, empPage, empPageSize]);
 
   const peakMonthIdx = useMemo(() => {
     if (!data || data.byMonth.length === 0) return -1;
@@ -267,118 +304,146 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
           </div>
 
           {/* Matrix Table: Department x Leave Type */}
-          <ReportPanel
-            title="ตารางสรุปวันลาแยกแผนก × ประเภทการลา"
-            subtitle="หน่วย: วันทำงาน (เฉพาะใบลาที่อนุมัติแล้ว)"
+          <ReportTableCard
+            searchValue={matrixSearch}
+            onSearchChange={(val) => {
+              setMatrixSearch(val);
+              setMatrixPage(1);
+            }}
+            searchPlaceholder="ค้นหาชื่อแผนก..."
+            minWidthClassName="min-w-[680px]"
+            pagination={{
+              total: filteredMatrixDepts.length,
+              page: matrixPage,
+              pageSize: matrixPageSize,
+              onPageChange: setMatrixPage,
+              onPageSizeChange: (newSize) => {
+                setMatrixPageSize(newSize);
+                setMatrixPage(1);
+              },
+              totalLabel: 'แผนก',
+            }}
           >
-            {matrix.depts.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                <table className="w-full min-w-[640px] text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                    <tr>
-                      <th className="py-3 px-4 text-left">แผนก</th>
-                      {matrix.types.map((t) => (
-                        <th key={t} className="py-3 px-4 text-right">
-                          {t}
-                        </th>
-                      ))}
-                      <th className="py-3 px-4 text-right">รวม (วัน)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {data.byDepartment.map((d) => (
-                      <tr key={d.key} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                        <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-100">{d.label}</td>
-                        {matrix.types.map((t) => {
-                          const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
-                          return (
-                            <td
-                              key={t}
-                              title={`${d.label} · ${t}: ${fmt(v)} วัน`}
-                              className={`py-2.5 px-4 text-right tabular-nums ${
-                                v > 0
-                                  ? 'font-semibold text-slate-800 dark:text-slate-200'
-                                  : 'text-slate-300 dark:text-slate-600'
-                              }`}
-                            >
-                              {fmt(v)}
-                            </td>
-                          );
-                        })}
-                        <td className="py-2.5 px-4 text-right font-extrabold text-violet-700 dark:text-violet-300">
-                          {fmt(d.days)}
+            <thead className="bg-primary text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">แผนก</th>
+                {matrix.types.map((t) => (
+                  <th key={t} className="py-3.5 px-4 text-right whitespace-nowrap">
+                    {t}
+                  </th>
+                ))}
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">รวม (วัน)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+              {pagedMatrixDepts.length === 0 ? (
+                <TableEmpty colSpan={matrix.types.length + 2} text="ไม่พบข้อมูลวันลาแยกแผนก" />
+              ) : (
+                pagedMatrixDepts.map((d) => (
+                  <tr key={d.key} className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40">
+                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                      {d.label}
+                    </td>
+                    {matrix.types.map((t) => {
+                      const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
+                      return (
+                        <td
+                          key={t}
+                          title={`${d.label} · ${t}: ${fmt(v)} วัน`}
+                          className={`py-3 px-4 text-right tabular-nums whitespace-nowrap ${
+                            v > 0
+                              ? 'font-semibold text-slate-800 dark:text-slate-200'
+                              : 'text-slate-300 dark:text-slate-600'
+                          }`}
+                        >
+                          {fmt(v)}
+                        </td>
+                      );
+                    })}
+                    <td className="py-3 px-4 text-right font-extrabold text-violet-700 dark:text-violet-300 whitespace-nowrap">
+                      {fmt(d.days)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </ReportTableCard>
+
+          {/* Top Employees on Leave */}
+          <ReportTableCard
+            searchValue={empSearch}
+            onSearchChange={(val) => {
+              setEmpSearch(val);
+              setEmpPage(1);
+            }}
+            searchPlaceholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+            minWidthClassName="min-w-[680px]"
+            pagination={{
+              total: filteredTopEmployees.length,
+              page: empPage,
+              pageSize: empPageSize,
+              onPageChange: setEmpPage,
+              onPageSizeChange: (newSize) => {
+                setEmpPageSize(newSize);
+                setEmpPage(1);
+              },
+            }}
+          >
+            <thead className="bg-primary text-white font-semibold">
+              <tr className="whitespace-nowrap">
+                <th className="w-12 py-3.5 px-4 text-center whitespace-nowrap">อันดับ</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">พนักงาน</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">รหัสพนักงาน</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">แผนก</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">จำนวนใบลา</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap" style={{ minWidth: 160 }}>
+                  วันลารวม
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+              {pagedTopEmployees.length === 0 ? (
+                <TableEmpty colSpan={6} text="ไม่พบข้อมูลการลาของพนักงาน" />
+              ) : (
+                (() => {
+                  const maxEmpDays = Math.max(...data.topEmployees.map((x) => x.days), 1);
+                  return pagedTopEmployees.map((e, i) => {
+                    const rank = (empPage - 1) * empPageSize + i + 1;
+                    return (
+                      <tr key={e.employeeId} className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40">
+                        <td className="py-3 px-4 text-center font-bold text-slate-400 whitespace-nowrap">#{rank}</td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <AvatarName id={e.employeeId} name={e.employeeName} />
+                        </td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                          {e.employeeCode}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          {e.departmentName || '-'}
+                        </td>
+                        <td className="py-3 px-4 text-right font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                          {e.requests} ใบ
+                        </td>
+                        <td className="py-3 px-4 whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2.5">
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                              <div
+                                className="h-full rounded-full bg-violet-600"
+                                style={{ width: `${(e.days / maxEmpDays) * 100}%` }}
+                              />
+                            </div>
+                            <span className="w-14 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                              {fmt(e.days)} วัน
+                            </span>
+                          </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </ReportPanel>
-
-          {/* Top 10 Employees */}
-          <ReportPanel
-            title="พนักงานที่ลามากที่สุด 10 อันดับ"
-            subtitle="เรียงลำดับตามจำนวนวันลารวมที่อนุมัติแล้วในปีที่เลือก"
-          >
-            {data.topEmployees.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400">ไม่มีข้อมูลการลาของพนักงาน</div>
-            ) : (
-              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-                <table className="w-full min-w-[560px] text-xs whitespace-nowrap">
-                  <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
-                    <tr>
-                      <th className="w-12 py-3 px-4 text-center">อันดับ</th>
-                      <th className="py-3 px-4 text-left">พนักงาน</th>
-                      <th className="py-3 px-4 text-left">แผนก</th>
-                      <th className="py-3 px-4 text-right">จำนวนใบลา</th>
-                      <th className="py-3 px-4 text-right" style={{ minWidth: 160 }}>
-                        วันลารวม
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
-                    {(() => {
-                      const maxEmpDays = Math.max(...data.topEmployees.map((x) => x.days), 1);
-                      return data.topEmployees.map((e, i) => (
-                        <tr key={e.employeeId} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
-                          <td className="py-2.5 px-4 text-center font-bold text-slate-400">#{i + 1}</td>
-                          <td className="py-2.5 px-4">
-                            <div className="flex items-center gap-2.5">
-                              <ReportAvatar name={e.employeeName} size={28} />
-                              <div>
-                                <div className="font-bold text-slate-800 dark:text-slate-100">{e.employeeName}</div>
-                                <div className="font-mono text-[11px] text-slate-400">{e.employeeCode}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">{e.departmentName || '-'}</td>
-                          <td className="py-2.5 px-4 text-right font-medium text-slate-700 dark:text-slate-300">
-                            {e.requests} ใบ
-                          </td>
-                          <td className="py-2.5 px-4">
-                            <div className="flex items-center justify-end gap-2.5">
-                              <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                                <div
-                                  className="h-full rounded-full bg-violet-600"
-                                  style={{ width: `${(e.days / maxEmpDays) * 100}%` }}
-                                />
-                              </div>
-                              <span className="w-14 text-right font-extrabold text-slate-900 dark:text-slate-100">
-                                {fmt(e.days)} วัน
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </ReportPanel>
+                    );
+                  });
+                })()
+              )}
+            </tbody>
+          </ReportTableCard>
         </div>
       )}
     </div>
