@@ -21,11 +21,10 @@ import { getSmartYearRange } from '@/lib/yearUtils';
 import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 import { printReport } from '@/lib/printReport';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
-import { ColumnChart, DonutChart, VIZ } from './ReportCharts';
+import { ColumnChart, DonutChart, Legend, MonthlyColumns, VIZ, fmtNumber } from './ReportCharts';
 import {
   AvatarName,
   BarList,
-  DeltaBadge,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -42,7 +41,7 @@ export interface AttendanceReportTabProps {
   canViewMonthly: boolean;
   canExportDaily: boolean;
   canExportMonthly: boolean;
-  initialMode?: 'daily' | 'monthly';
+  initialMode?: 'daily' | 'monthly' | 'yearly';
 }
 
 const formatThaiDate = (dateStr: string) => fmtThaiDate(dateStr, 'numeric');
@@ -52,7 +51,13 @@ const localToday = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-/** รายงานการเข้าออกงาน: รวมมุมมองรายวันและรายเดือนในหน้าเดียว */
+const monthsUpTo = (year: number) => {
+  const now = new Date();
+  const last = year < now.getFullYear() ? 12 : year === now.getFullYear() ? now.getMonth() + 1 : 0;
+  return Array.from({ length: 12 }, (_, i) => i + 1).filter((m) => m <= last);
+};
+
+/** รายงานการเข้าออกงาน: รวมมุมมองรายวัน รายเดือน และรายปีในหน้าเดียว */
 export default function AttendanceReportTab({
   canViewDaily,
   canViewMonthly,
@@ -64,14 +69,14 @@ export default function AttendanceReportTab({
   const toastRef = useRef(toast);
   toastRef.current = toast;
 
-  const [mode, setMode] = useState<'daily' | 'monthly'>(() => {
-    if (initialMode === 'monthly' && canViewMonthly) return 'monthly';
+  const [mode, setMode] = useState<'daily' | 'monthly' | 'yearly'>(() => {
+    if ((initialMode === 'monthly' || initialMode === 'yearly') && canViewMonthly) return initialMode;
     if (canViewDaily) return 'daily';
     return 'monthly';
   });
 
   useEffect(() => {
-    if (initialMode === 'monthly' && canViewMonthly) setMode('monthly');
+    if ((initialMode === 'monthly' || initialMode === 'yearly') && canViewMonthly) setMode(initialMode);
     else if (initialMode === 'daily' && canViewDaily) setMode('daily');
   }, [initialMode, canViewDaily, canViewMonthly]);
 
@@ -97,12 +102,28 @@ export default function AttendanceReportTab({
   const [latenessDepartment, setLatenessDepartment] = useState<number | 'ALL'>('ALL');
   const [latenessSearch, setLatenessSearch] = useState<string>('');
   const [latenessData, setLatenessData] = useState<MonthlyLatenessReport | null>(null);
-  const [prevLatenessData, setPrevLatenessData] = useState<MonthlyLatenessReport | null>(null);
+  const [, setPrevLatenessData] = useState<MonthlyLatenessReport | null>(null);
   const [latenessPage, setLatenessPage] = useState(1);
   const [latenessPageSize, setLatenessPageSize] = useState(10);
   const [isLoadingLateness, setIsLoadingLateness] = useState(false);
   const latenessPhase = useLoadPhase(isLoadingLateness);
   const [isExportingLateness, setIsExportingLateness] = useState(false);
+
+  // Yearly State
+  const [yearlySearch, setYearlySearch] = useState<string>('');
+  const [yearlyPage, setYearlyPage] = useState(1);
+  const [yearlyPageSize, setYearlyPageSize] = useState(10);
+  const [isLoadingYearly, setIsLoadingYearly] = useState(false);
+  const yearlyPhase = useLoadPhase(isLoadingYearly);
+  const [yearlyData, setYearlyData] = useState<{
+    totalAuditedEmployees: number;
+    overallAttendanceRate: number;
+    totalLateOccurrences: number;
+    totalLateMinutes: number;
+    monthlyLate: (number | null)[];
+    monthlyAbsent: (number | null)[];
+    items: MonthlyLatenessReport['items'];
+  } | null>(null);
 
   useEffect(() => {
     Promise.all([organizationService.getDivisions(), organizationService.getDepartments()])
@@ -158,10 +179,83 @@ export default function AttendanceReportTab({
     }
   }, [canViewMonthly, selectedYear, selectedMonth, latenessDepartment]);
 
+  const loadYearlyLateness = useCallback(async () => {
+    if (!canViewMonthly) return;
+    try {
+      setIsLoadingYearly(true);
+      const deptId = latenessDepartment === 'ALL' ? undefined : Number(latenessDepartment);
+      const months = monthsUpTo(selectedYear);
+      const results = await Promise.allSettled(
+        months.map((m) => reportService.getMonthlyLateness(selectedYear, m, deptId))
+      );
+
+      const monthlyLate: (number | null)[] = Array(12).fill(null);
+      const monthlyAbsent: (number | null)[] = Array(12).fill(null);
+      const empMap = new Map<number, MonthlyLatenessReport['items'][number]>();
+
+      results.forEach((res, idx) => {
+        if (res.status !== 'fulfilled') return;
+        const mIdx = months[idx] - 1;
+        monthlyLate[mIdx] = res.value.totalLateOccurrences;
+        monthlyAbsent[mIdx] = res.value.items.reduce((s, it) => s + (it.absentDays || 0), 0);
+
+        for (const it of res.value.items) {
+          const prev = empMap.get(it.employeeId);
+          if (!prev) {
+            empMap.set(it.employeeId, { ...it });
+          } else {
+            const totalWorkDays = prev.totalWorkDays + it.totalWorkDays;
+            const presentDays = prev.presentDays + it.presentDays;
+            empMap.set(it.employeeId, {
+              ...prev,
+              departmentName: it.departmentName || prev.departmentName,
+              positionName: it.positionName || prev.positionName,
+              totalWorkDays,
+              presentDays,
+              lateDays: prev.lateDays + it.lateDays,
+              totalLateMinutes: prev.totalLateMinutes + it.totalLateMinutes,
+              earlyLeaveDays: prev.earlyLeaveDays + it.earlyLeaveDays,
+              totalEarlyLeaveMinutes: prev.totalEarlyLeaveMinutes + it.totalEarlyLeaveMinutes,
+              absentDays: prev.absentDays + it.absentDays,
+              attendanceRate: totalWorkDays > 0 ? Math.round((presentDays / totalWorkDays) * 1000) / 10 : 0,
+            });
+          }
+        }
+      });
+
+      const items = Array.from(empMap.values()).sort(
+        (a, b) => b.lateDays - a.lateDays || b.totalLateMinutes - a.totalLateMinutes
+      );
+      const totalWorkSum = items.reduce((s, i) => s + i.totalWorkDays, 0);
+      const totalPresentSum = items.reduce((s, i) => s + i.presentDays, 0);
+      const totalLateOccurrences = items.reduce((s, i) => s + i.lateDays, 0);
+      const totalLateMinutes = items.reduce((s, i) => s + i.totalLateMinutes, 0);
+      const overallAttendanceRate =
+        totalWorkSum > 0 ? Math.round((totalPresentSum / totalWorkSum) * 1000) / 10 : 0;
+
+      setYearlyData({
+        totalAuditedEmployees: items.length,
+        overallAttendanceRate,
+        totalLateOccurrences,
+        totalLateMinutes,
+        monthlyLate,
+        monthlyAbsent,
+        items,
+      });
+      setYearlyPage(1);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'ไม่สามารถโหลดรายงานการเข้าออกงานรายปีได้';
+      toastRef.current.error(msg);
+    } finally {
+      setIsLoadingYearly(false);
+    }
+  }, [canViewMonthly, selectedYear, latenessDepartment]);
+
   useEffect(() => {
     if (mode === 'daily' && canViewDaily) loadDailyHeadcount();
     else if (mode === 'monthly' && canViewMonthly) loadMonthlyLateness();
-  }, [mode, canViewDaily, canViewMonthly, loadDailyHeadcount, loadMonthlyLateness]);
+    else if (mode === 'yearly' && canViewMonthly) loadYearlyLateness();
+  }, [mode, canViewDaily, canViewMonthly, loadDailyHeadcount, loadMonthlyLateness, loadYearlyLateness]);
 
   const handleExportDaily = async (format: ReportExportFormat = 'csv') => {
     if (format === 'pdf') {
@@ -245,31 +339,120 @@ export default function AttendanceReportTab({
     return filteredLatenessItems.slice(start, start + latenessPageSize);
   }, [filteredLatenessItems, latenessPage, latenessPageSize]);
 
+  const filteredYearlyItems = useMemo(() => {
+    if (!yearlyData?.items) return [];
+    const q = yearlySearch.trim().toLowerCase();
+    if (!q) return yearlyData.items;
+    return yearlyData.items.filter(
+      (i) =>
+        i.employeeName.toLowerCase().includes(q) ||
+        i.employeeCode.toLowerCase().includes(q) ||
+        i.departmentName.toLowerCase().includes(q) ||
+        i.positionName.toLowerCase().includes(q)
+    );
+  }, [yearlyData?.items, yearlySearch]);
+
+  const pagedYearlyItems = useMemo(() => {
+    const start = (yearlyPage - 1) * yearlyPageSize;
+    return filteredYearlyItems.slice(start, start + yearlyPageSize);
+  }, [filteredYearlyItems, yearlyPage, yearlyPageSize]);
+
+  const handleExportYearly = (format: ReportExportFormat = 'csv') => {
+    if (format === 'pdf') {
+      printReport(printRef.current, {
+        title: 'รายงานการเข้าออกงาน (รายปี)',
+        subtitle: `ปี พ.ศ. ${selectedYear + 543}`,
+      });
+      return;
+    }
+    if (!yearlyData || filteredYearlyItems.length === 0) return;
+    const headers = [
+      'รหัสพนักงาน',
+      'ชื่อ-นามสกุล',
+      'แผนก',
+      'ตำแหน่ง',
+      'วันทำงานทั้งปี',
+      'วันมาทำงาน',
+      'มาสาย (ครั้ง)',
+      'เวลาสายรวม (นาที)',
+      'ออกก่อน (ครั้ง)',
+      'เวลาออกก่อนรวม (นาที)',
+      'ขาดงาน (วัน)',
+      'อัตราการเข้างาน (%)',
+    ];
+    const rows = filteredYearlyItems.map((it) => [
+      it.employeeCode,
+      it.employeeName,
+      it.departmentName,
+      it.positionName,
+      it.totalWorkDays,
+      it.presentDays,
+      it.lateDays,
+      it.totalLateMinutes,
+      it.earlyLeaveDays,
+      it.totalEarlyLeaveMinutes,
+      it.absentDays,
+      it.attendanceRate,
+    ]);
+    const csvContent =
+      '\uFEFF' +
+      [headers, ...rows]
+        .map((r) => r.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const href = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.setAttribute('download', `Yearly_Attendance_${selectedYear + 543}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(href);
+    toast.success('ดาวน์โหลดรายงานการเข้าออกงาน (รายปี) สำเร็จ');
+  };
+
   const modeSwitch =
-    canViewDaily && canViewMonthly ? (
+    canViewDaily || canViewMonthly ? (
       <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
-        <button
-          type="button"
-          onClick={() => setMode('daily')}
-          className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
-            mode === 'daily'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-          }`}
-        >
-          รายวัน
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('monthly')}
-          className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
-            mode === 'monthly'
-              ? 'bg-primary text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
-          }`}
-        >
-          รายเดือน
-        </button>
+        {canViewDaily && (
+          <button
+            type="button"
+            onClick={() => setMode('daily')}
+            className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+              mode === 'daily'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+            }`}
+          >
+            รายวัน
+          </button>
+        )}
+        {canViewMonthly && (
+          <>
+            <button
+              type="button"
+              onClick={() => setMode('monthly')}
+              className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+                mode === 'monthly'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              รายเดือน
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('yearly')}
+              className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+                mode === 'yearly'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+              }`}
+            >
+              รายปี
+            </button>
+          </>
+        )}
       </div>
     ) : null;
 
@@ -811,6 +994,260 @@ export default function AttendanceReportTab({
                             {item.earlyLeaveDays > 0 ? (
                               <span className="font-semibold text-orange-600">
                                 {item.earlyLeaveDays} ครั้ง ({item.totalEarlyLeaveMinutes} น.)
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {item.absentDays > 0 ? (
+                              <span className="rounded-lg bg-rose-50 px-2 py-0.5 font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">
+                                {item.absentDays} วัน
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              <div className="h-2 w-16 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    rate >= 95 ? 'bg-emerald-500' : rate >= 80 ? 'bg-amber-500' : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${rate}%` }}
+                                />
+                              </div>
+                              <span className="w-11 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                                {rate}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </ReportTableCard>
+            </div>
+          )}
+        </>
+      )}
+
+      {mode === 'yearly' && canViewMonthly && (
+        <>
+          <ReportFilterBar
+            loading={isLoadingYearly}
+            right={
+              canExportMonthly ? (
+                <ExportMenu
+                  formats={['csv', 'pdf']}
+                  onExport={handleExportYearly}
+                  disabled={isLoadingYearly || !yearlyData || yearlyData.items.length === 0}
+                />
+              ) : undefined
+            }
+          >
+            {modeSwitch}
+
+            <CustomSelect
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="min-w-[130px]"
+            >
+              {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear }).map((y) => (
+                <option key={y} value={y}>
+                  พ.ศ. {y + 543}
+                </option>
+              ))}
+            </CustomSelect>
+
+            <CustomSelect
+              value={latenessDepartment}
+              onChange={(val) => {
+                const parsed = String(val) === 'ALL' ? 'ALL' : Number(val);
+                setLatenessDepartment(parsed);
+              }}
+              placeholder="ทุกแผนก"
+              className="min-w-[160px]"
+              options={[
+                { value: 'ALL', label: 'ทุกแผนก' },
+                ...departments.map((dept) => ({ value: dept.id, label: dept.departmentName })),
+              ]}
+            />
+
+            <IconButton onClick={loadYearlyLateness} title="รีเฟรชข้อมูล">
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoadingYearly ? 'animate-spin' : ''}`} />
+            </IconButton>
+          </ReportFilterBar>
+
+          {yearlyPhase.initialLoading && !yearlyData ? (
+            <ReportLoading text="กำลังโหลดรายงานการเข้าออกงานรายปี..." />
+          ) : !yearlyData || yearlyData.items.length === 0 ? (
+            <ReportEmpty text="ไม่พบข้อมูลพนักงานในปีที่เลือก" />
+          ) : (
+            <div ref={printRef} className="space-y-5">
+              {/* 4 KPI Cards */}
+              <KpiGrid cols={4}>
+                <KpiCard
+                  icon={Users}
+                  tone="blue"
+                  label="พนักงานที่ตรวจสอบ"
+                  value={yearlyData.totalAuditedEmployees}
+                  unit="คน"
+                  tooltip="จำนวนพนักงานทั้งหมดที่นำมาคิดเวลาทำงานในปีนี้"
+                />
+
+                <KpiCard
+                  icon={CheckCircle2}
+                  tone="emerald"
+                  label="อัตราการเข้างานเฉลี่ยทั้งปี"
+                  value={Math.min(100, Math.max(0, yearlyData.overallAttendanceRate))}
+                  unit="%"
+                  tooltip="(วันมาทำงานจริงรวมทั้งปี ÷ วันทำงานรวมทั้งปี) × 100"
+                />
+
+                <KpiCard
+                  icon={Clock}
+                  tone="amber"
+                  label="มาสายสะสมทั้งปี"
+                  value={yearlyData.totalLateOccurrences.toLocaleString('th-TH')}
+                  unit="ครั้ง"
+                  tooltip="จำนวนครั้งที่เข้างานสายรวมทุกคนตลอดทั้งปี"
+                />
+
+                <KpiCard
+                  icon={AlertTriangle}
+                  tone="rose"
+                  label="เวลาสายสะสมทั้งปี"
+                  value={yearlyData.totalLateMinutes.toLocaleString('th-TH')}
+                  unit="นาที"
+                  tooltip="จำนวนนาทีที่สายรวมกันทั้งหมดตลอดทั้งปี"
+                />
+              </KpiGrid>
+
+              {/* Chart Row: 12-Month Trend + Top 5 BarList */}
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+                <ReportPanel
+                  title={`แนวโน้มการมาสายและขาดงานรายเดือน ปี พ.ศ. ${selectedYear + 543}`}
+                  subtitle="เปรียบเทียบจำนวนครั้งที่มาสายและจำนวนวันขาดงานในแต่ละเดือนของปีที่เลือก"
+                  className="xl:col-span-2"
+                  right={
+                    <Legend
+                      items={[
+                        { label: 'มาสาย (ครั้ง)', color: '#f59e0b' },
+                        { label: 'ขาดงาน (วัน)', color: '#ef4444' },
+                      ]}
+                    />
+                  }
+                >
+                  <MonthlyColumns
+                    minMax={4}
+                    format={fmtNumber}
+                    tipFormat={(v) => `${fmtNumber(v)}`}
+                    series={[
+                      { key: 'late', label: 'มาสาย (ครั้ง)', color: '#f59e0b', values: yearlyData.monthlyLate },
+                      { key: 'absent', label: 'ขาดงาน (วัน)', color: '#ef4444', values: yearlyData.monthlyAbsent },
+                    ]}
+                  />
+                </ReportPanel>
+
+                <ReportPanel title="Top 5 เวลาสายสะสมสูงสุดประจำปี" subtitle="เรียงตามจำนวนนาทีที่สายรวมตลอดทั้งปี">
+                  <BarList
+                    color="#f59e0b"
+                    items={[...yearlyData.items]
+                      .filter((i) => i.totalLateMinutes > 0)
+                      .sort((a, b) => b.totalLateMinutes - a.totalLateMinutes)
+                      .slice(0, 5)
+                      .map((i) => ({
+                        label: i.employeeName.replace(/^(นาย|นางสาว|นาง|น\.ส\.)\s*/, ''),
+                        sub: `(${i.lateDays} ครั้ง)`,
+                        value: i.totalLateMinutes,
+                        display: `${i.totalLateMinutes.toLocaleString('th-TH')} นาที`,
+                      }))}
+                  />
+                </ReportPanel>
+              </div>
+
+              {/* Yearly Table per Employee */}
+              <ReportTableCard
+                searchValue={yearlySearch}
+                onSearchChange={(val) => {
+                  setYearlySearch(val);
+                  setYearlyPage(1);
+                }}
+                searchPlaceholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
+                refreshing={yearlyPhase.refreshing}
+                minWidthClassName="min-w-[880px]"
+                pagination={{
+                  total: filteredYearlyItems.length,
+                  page: yearlyPage,
+                  pageSize: yearlyPageSize,
+                  onPageChange: setYearlyPage,
+                  onPageSizeChange: (newSize) => {
+                    setYearlyPageSize(newSize);
+                    setYearlyPage(1);
+                  },
+                  pageSizeOptions: [10, 20, 50, 100],
+                }}
+              >
+                <thead className="bg-primary text-white font-semibold">
+                  <tr className="whitespace-nowrap">
+                    <th className="py-3.5 px-4 whitespace-nowrap">พนักงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">รหัสพนักงาน</th>
+                    <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">วันทำงานทั้งปี</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">มาทำงาน</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">มาสายสะสม</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ออกก่อนสะสม</th>
+                    <th className="py-3.5 px-4 text-center whitespace-nowrap">ขาดงานสะสม</th>
+                    <th className="py-3.5 px-4 text-right whitespace-nowrap" style={{ minWidth: 150 }}>
+                      อัตราการเข้างาน
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
+                  {pagedYearlyItems.length === 0 ? (
+                    <TableEmpty colSpan={9} text="ไม่พบข้อมูลพนักงานที่ค้นหา" />
+                  ) : (
+                    pagedYearlyItems.map((item) => {
+                      const rate = Math.min(100, Math.max(0, item.attendanceRate));
+                      return (
+                        <tr
+                          key={item.employeeId}
+                          className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                        >
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <AvatarName id={item.employeeId} name={item.employeeName} />
+                          </td>
+                          <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                            {item.employeeCode}
+                          </td>
+                          <td className="py-3 px-4 whitespace-nowrap">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200">
+                              {item.departmentName}
+                            </div>
+                            <div className="text-[11px] text-slate-400">{item.positionName}</div>
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                            {item.totalWorkDays} วัน
+                          </td>
+                          <td className="py-3 px-4 text-center font-bold text-emerald-600 whitespace-nowrap">
+                            {item.presentDays} วัน
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {item.lateDays > 0 ? (
+                              <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2 py-0.5 font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                {item.lateDays} ครั้ง / {item.totalLateMinutes.toLocaleString('th-TH')} น.
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center whitespace-nowrap">
+                            {item.earlyLeaveDays > 0 ? (
+                              <span className="font-semibold text-orange-600">
+                                {item.earlyLeaveDays} ครั้ง ({item.totalEarlyLeaveMinutes.toLocaleString('th-TH')} น.)
                               </span>
                             ) : (
                               <span className="text-slate-300 dark:text-slate-600">-</span>
