@@ -523,52 +523,33 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
         <ReportEmpty text="ไม่พบข้อมูลรายงานอัตราการลาออกตามเงื่อนไขที่เลือก" />
       ) : (
         <div ref={printRef} className="space-y-5">
-          {/* 5 KPI Cards */}
-          <KpiGrid cols={5}>
+          {/* 3 KPI Cards: เข้าใหม่, ลาออก, อัตราลาออก */}
+          <KpiGrid cols={3}>
             <KpiCard
-              icon={UserMinus}
-              tone="rose"
-              label={`อัตราลาออก (${periodLabel})`}
-              value={turnoverData.overallTurnoverRate}
-              unit="%"
-              spark={sparkRates}
-              tooltip="(คนลาออก ÷ พนักงานเฉลี่ยต้น-สิ้นงวด) × 100"
+              icon={UserPlus}
+              tone="emerald"
+              label="เข้าใหม่"
+              value={turnoverData.totalJoinedCount}
+              unit="คน"
+              tooltip="จำนวนพนักงานที่เริ่มงานใหม่ในช่วงที่เลือก"
             />
 
             <KpiCard
-              icon={CheckCircle2}
-              tone="emerald"
-              label="อัตราคงอยู่"
-              value={turnoverData.overallRetentionRate}
-              unit="%"
-              tooltip="100% − อัตราลาออก"
+              icon={UserMinus}
+              tone="amber"
+              label="ลาออก"
+              value={turnoverData.totalResignedCount}
+              unit="คน"
+              tooltip="จำนวนพนักงานที่ลาออกหรือพ้นสภาพในช่วงที่เลือก"
             />
 
             <KpiCard
               icon={TrendingUp}
-              tone="amber"
-              label="ลาออกสะสมปีนี้"
-              value={ytdTotals.resignedYtd}
-              unit="คน"
-              tooltip="จำนวนคนลาออกรวมตั้งแต่ต้นปีถึงปัจจุบัน"
-            />
-
-            <KpiCard
-              icon={UserPlus}
-              tone="blue"
-              label={`เข้าใหม่ / ลาออก (${periodLabel})`}
-              value={`${turnoverData.totalJoinedCount} / ${turnoverData.totalResignedCount}`}
-              unit="คน"
-              tooltip="คนเริ่มงานใหม่ เทียบกับ คนลาออกในช่วงที่เลือก"
-            />
-
-            <KpiCard
-              icon={Users}
-              tone="violet"
-              label="ต้นงวด → สิ้นงวด"
-              value={`${turnoverData.totalBeginningHeadcount} → ${turnoverData.totalEndingHeadcount}`}
-              unit="คน"
-              tooltip="คนต้นงวด + คนเข้าใหม่ − คนลาออก = คนสิ้นงวด"
+              tone="rose"
+              label="อัตราลาออก"
+              value={turnoverData.overallTurnoverRate}
+              unit="%"
+              tooltip="(คนลาออก ÷ พนักงานเฉลี่ยต้น-สิ้นงวด) × 100"
             />
           </KpiGrid>
 
