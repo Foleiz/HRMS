@@ -163,16 +163,16 @@ export default function PayrollPeriodsTab({
       inProgressSubtext = parts.join(' · ');
     }
 
-    // Employee count per period (Option A)
-    const empCounts = filteredPeriods
-      .map((p) => p.employeeCount ?? p.totalEmployees ?? 0)
-      .filter((c) => c > 0);
-    const avgEmployees =
-      empCounts.length > 0
-        ? Math.round(empCounts.reduce((acc, c) => acc + c, 0) / empCounts.length)
-        : 0;
-    const maxEmployees = empCounts.length > 0 ? Math.max(...empCounts) : 0;
-    const minEmployees = empCounts.length > 0 ? Math.min(...empCounts) : 0;
+    // Employee count for the latest period (Option A)
+    const latestPeriod = filteredPeriods.length > 0 ? filteredPeriods[0] : null;
+    const latestEmpCount = latestPeriod
+      ? (latestPeriod.employeeCount ?? latestPeriod.totalEmployees ?? 0)
+      : 0;
+    const latestPeriodName = latestPeriod?.periodName
+      ? (latestPeriod.periodName.startsWith('รอบ') ? latestPeriod.periodName : `รอบ ${latestPeriod.periodName}`)
+      : latestPeriod?.month
+        ? `รอบเดือน ${THAI_MONTH_NAMES[latestPeriod.month - 1]} ${latestPeriod.year + 543}`
+        : '';
 
     return {
       totalPeriodsCount,
@@ -180,10 +180,9 @@ export default function PayrollPeriodsTab({
       completedPercent,
       inProgressPeriodsCount,
       inProgressSubtext,
-      avgEmployees,
-      maxEmployees,
-      minEmployees,
-      hasEmpData: empCounts.length > 0,
+      latestPeriod,
+      latestEmpCount,
+      latestPeriodName,
     };
   }, [filteredPeriods]);
 
@@ -252,24 +251,22 @@ export default function PayrollPeriodsTab({
           </div>
         </div>
 
-        {/* Card 4: จำนวนพนักงานในระบบเงินเดือน เฉลี่ยต่อรอบ (Solid Purple Panel) */}
+        {/* Card 4: พนักงานในรอบล่าสุด (Solid Purple Panel) */}
         <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">พนักงานในระบบเงินเดือน</span>
+              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">พนักงานในรอบล่าสุด</span>
               <div className="text-2xl font-bold text-purple-950 dark:text-white tracking-tight">
-                {summaryStats.hasEmpData ? `${summaryStats.avgEmployees} คน / รอบ` : '-'}
+                {summaryStats.latestPeriod ? `${summaryStats.latestEmpCount.toLocaleString()} คน` : '-'}
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs text-purple-700/80 dark:text-purple-300 font-medium">
-            <span>
-              {summaryStats.hasEmpData
-                ? `สูงสุด ${summaryStats.maxEmployees} คน · ต่ำสุด ${summaryStats.minEmployees} คน`
-                : 'ยังไม่มีข้อมูลพนักงาน'}
+          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs text-purple-700/80 dark:text-purple-300 font-medium truncate">
+            <span title={summaryStats.latestPeriodName}>
+              {summaryStats.latestPeriod ? summaryStats.latestPeriodName : 'ยังไม่มีข้อมูลรอบเงินเดือน'}
             </span>
           </div>
         </div>
