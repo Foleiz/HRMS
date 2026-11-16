@@ -465,7 +465,8 @@ export default function EmployeesByDepartmentTab({
           >
             <thead className="bg-primary text-white font-semibold">
               <tr className="whitespace-nowrap">
-                <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ฝ่าย</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">แผนก</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">ฝ่าย</th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">อัตรากำลังตามแผน</th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">ชาย</th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">หญิง</th>
@@ -474,7 +475,7 @@ export default function EmployeesByDepartmentTab({
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
               {pagedDepartments.length === 0 ? (
-                <TableEmpty colSpan={5} text="ไม่พบข้อมูลแผนกหรือพนักงานที่ค้นหา" />
+                <TableEmpty colSpan={6} text="ไม่พบข้อมูลแผนกหรือพนักงานที่ค้นหา" />
               ) : (
                 pagedDepartments.map((d) => {
                   const open = expanded.has(d.departmentId);
@@ -494,16 +495,13 @@ export default function EmployeesByDepartmentTab({
                             ) : (
                               <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
                             )}
-                            <div>
-                              <div className="font-bold text-slate-900 dark:text-slate-100">
-                                {d.departmentName}
-                                <span className="ml-1.5 font-mono text-[11px] font-normal text-slate-400">
-                                  ({d.departmentCode})
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-slate-400">{d.divisionName}</div>
-                            </div>
+                            <span className="font-bold text-slate-900 dark:text-slate-100">
+                              {d.departmentName}
+                            </span>
                           </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                          {d.divisionName}
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span
@@ -543,7 +541,7 @@ export default function EmployeesByDepartmentTab({
                       </tr>
                       {open && (
                         <tr>
-                          <td colSpan={5} className="bg-slate-50/80 px-4 py-3 sm:px-6 sm:py-4 dark:bg-slate-900/50">
+                          <td colSpan={6} className="bg-slate-50/80 px-4 py-3 sm:px-6 sm:py-4 dark:bg-slate-900/50">
                             {d.employees.length === 0 ? (
                               <div className="py-4 text-center text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
                             ) : (
@@ -563,6 +561,7 @@ export default function EmployeesByDepartmentTab({
             <tfoot className="border-t border-slate-200 bg-slate-50 text-xs font-extrabold text-slate-800 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100">
               <tr>
                 <td className="py-3 px-4">รวมทั้งสิ้น ({data.totalDepartments} แผนก)</td>
+                <td className="py-3 px-4" />
                 <td className="py-3 px-4 text-center">
                   {data.totalEmployees} / {data.totalHeadcountPlan ?? '-'}
                 </td>
