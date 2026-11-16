@@ -249,15 +249,12 @@ export default function PayrollPeriodsTab({
         {/* Card 4: พนักงานในรอบล่าสุด (Solid Purple Panel) */}
         <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-0.5">
-              <span className="text-xs text-purple-700 dark:text-purple-300 font-bold block truncate">
-                พนักงานในรอบล่าสุด
-              </span>
+            <div className="min-w-0 flex-1">
               <span
-                className="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium block truncate"
-                title={summaryStats.latestPeriod ? summaryStats.latestPeriodName : 'ยังไม่มีข้อมูลรอบเงินเดือน'}
+                className="text-xs text-purple-700 dark:text-purple-300 font-bold block truncate"
+                title={summaryStats.latestPeriod ? `พนักงานใน${summaryStats.latestPeriodName}` : 'พนักงานในรอบล่าสุด'}
               >
-                {summaryStats.latestPeriod ? summaryStats.latestPeriodName : 'ยังไม่มีข้อมูลรอบเงินเดือน'}
+                {summaryStats.latestPeriod ? `พนักงานใน${summaryStats.latestPeriodName}` : 'พนักงานในรอบล่าสุด'}
               </span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
