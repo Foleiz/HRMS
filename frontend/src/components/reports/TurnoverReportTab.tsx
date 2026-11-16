@@ -406,10 +406,11 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
                         <span className="ml-1.5 text-[11px] text-slate-400">({d.divisionName})</span>
                       </div>
                       <span
-                        className="w-16 rounded-lg px-2 py-1 text-center font-extrabold"
+                        className={`w-16 rounded-lg px-2 py-1 text-center font-extrabold ${
+                          d.turnoverRate > 12 ? 'text-white' : 'text-rose-900 dark:text-rose-200'
+                        }`}
                         style={{
                           background: `rgba(225, 29, 72, ${intensity})`,
-                          color: d.turnoverRate > 12 ? '#ffffff' : '#9f1239',
                         }}
                       >
                         {d.turnoverRate}%

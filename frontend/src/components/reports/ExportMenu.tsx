@@ -62,7 +62,7 @@ export default function ExportMenu({
         <ChevronDown className="w-3.5 h-3.5 opacity-70" />
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1.5 w-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+        <div className="absolute right-0 z-30 mt-1.5 w-60 rounded-xl border border-slate-200 bg-white p-1 shadow-lg dark:border-slate-700 dark:bg-slate-800">
           {items
             .filter((i) => formats.includes(i.key))
             .map((i) => (
@@ -70,12 +70,12 @@ export default function ExportMenu({
                 key={i.key}
                 type="button"
                 onClick={() => run(i.key)}
-                className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-slate-50"
+                className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-700/60"
               >
                 <span className="mt-0.5">{i.icon}</span>
                 <span>
-                  <span className="block text-xs font-semibold text-slate-800">{i.label}</span>
-                  <span className="block text-[10px] text-slate-400">{i.hint}</span>
+                  <span className="block text-xs font-semibold text-slate-800 dark:text-slate-100">{i.label}</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-400">{i.hint}</span>
                 </span>
               </button>
             ))}

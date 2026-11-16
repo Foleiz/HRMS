@@ -72,10 +72,10 @@ function ReportsPageContent() {
   // แปลง query ?tab= เป็น view และโหมดเริ่มต้นของการเข้าออกงาน
   const resolveFromTabParam = useCallback(
     (tabParam: string | null): { view: ReportView; attMode: 'daily' | 'monthly' } => {
-      if (tabParam === 'hub') return { view: 'hub', attMode: 'daily' };
+      if (!tabParam || tabParam === 'hub') return { view: 'hub', attMode: 'daily' };
       if (tabParam === 'department' && canViewHeadcount) return { view: 'department', attMode: 'daily' };
       if (tabParam === 'attendance' && canViewAttendance) {
-        return { view: 'attendance', attMode: canViewHeadcount ? 'daily' : 'monthly' };
+        return { view: 'attendance', attMode: 'daily' };
       }
       if (tabParam === 'headcount' && canViewAttendance) {
         return { view: 'attendance', attMode: 'daily' };
@@ -87,11 +87,7 @@ function ReportsPageContent() {
       if (tabParam === 'turnover' && canViewTurnover) return { view: 'turnover', attMode: 'daily' };
       if (tabParam === 'tax' && canViewTax) return { view: 'tax', attMode: 'daily' };
 
-      // ค่าเริ่มต้นเมื่อเข้ามาที่ /reports
-      if (canViewHeadcount) return { view: 'department', attMode: 'daily' };
-      if (canViewAttendance) return { view: 'attendance', attMode: 'monthly' };
-      if (canViewLeave) return { view: 'leave', attMode: 'daily' };
-      if (canViewTurnover) return { view: 'turnover', attMode: 'daily' };
+      // ค่าเริ่มต้นเมื่อ tabParam ไม่ตรงกับสิทธิ์ที่กำหนด
       return { view: 'hub', attMode: 'daily' };
     },
     [canViewHeadcount, canViewAttendance, canViewLeave, canViewTurnover, canViewTax]
@@ -145,9 +141,9 @@ function ReportsPageContent() {
 
       {activeView === 'attendance' && canViewAttendance && (
         <AttendanceReportTab
-          canViewDaily={canViewHeadcount}
+          canViewDaily={canViewHeadcount || canViewLateness}
           canViewMonthly={canViewLateness}
-          canExportDaily={canExportHeadcount}
+          canExportDaily={canExportHeadcount || canExportLateness}
           canExportMonthly={canExportLateness}
           initialMode={attendanceMode}
         />

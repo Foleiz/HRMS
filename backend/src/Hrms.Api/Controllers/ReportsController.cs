@@ -24,7 +24,7 @@ public class ReportsController : ControllerBase
     /// ดึงข้อมูลรายงานอัตรากำลังคนประจำวัน (Daily Department Headcount Snapshot)
     /// </summary>
     [HttpGet("headcount/daily")]
-    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW,DASHBOARD_DEPT_VIEW,DASHBOARD_DIV_VIEW,DASHBOARD_CEO_VIEW,DASHBOARD_ADMIN_VIEW")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_ATT_VIEW,REPORT_VIEW,DASHBOARD_DEPT_VIEW,DASHBOARD_DIV_VIEW,DASHBOARD_CEO_VIEW,DASHBOARD_ADMIN_VIEW")]
     public async Task<ActionResult<ApiResponse<DailyHeadcountSummaryDto>>> GetDailyHeadcountSnapshot(
         [FromQuery] string? date,
         [FromQuery] long? divisionId,
@@ -45,7 +45,7 @@ public class ReportsController : ControllerBase
     /// ส่งออกรายงานอัตรากำลังคนประจำวันเป็นไฟล์ CSV
     /// </summary>
     [HttpGet("headcount/daily/export")]
-    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_VIEW")]
+    [RequirePermission("REPORT_HEADCOUNT_VIEW,REPORT_ATT_VIEW,REPORT_ATT_EXPORT,REPORT_VIEW")]
     public async Task<IActionResult> ExportDailyHeadcountCsv(
         [FromQuery] string? date,
         [FromQuery] long? divisionId,

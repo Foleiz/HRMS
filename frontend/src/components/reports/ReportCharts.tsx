@@ -60,7 +60,7 @@ function useTooltip() {
   const hide = () => setTip(null);
   const node = tip ? (
     <div
-      className="pointer-events-none absolute z-20 min-w-[140px] max-w-[260px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-700 shadow-lg"
+      className="pointer-events-none absolute z-20 min-w-[140px] max-w-[260px] rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] text-slate-700 shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
       style={{ left: tip.x + 12, top: tip.y + 12, transform: tip.x > (ref.current?.clientWidth ?? 0) - 200 ? 'translateX(calc(-100% - 24px))' : undefined }}
     >
       {tip.content}
@@ -692,11 +692,11 @@ export function ChartCard({
   className?: string;
 }) {
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800/90 ${className}`}>
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h3 className="text-sm font-bold text-slate-800">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-[11px] text-slate-400">{subtitle}</p>}
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">{title}</h3>
+          {subtitle && <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-400">{subtitle}</p>}
         </div>
         {legend}
       </div>
