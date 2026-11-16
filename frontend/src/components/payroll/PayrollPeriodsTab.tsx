@@ -193,81 +193,97 @@ export default function PayrollPeriodsTab({
         {/* Card 1: รอบเงินเดือนทั้งหมด (Solid Blue Panel) */}
         <div className="bg-blue-100/60 dark:bg-blue-950/40 rounded-2xl border border-blue-200 dark:border-blue-800/80 p-5 shadow-xs hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <span className="text-xs text-blue-700 dark:text-blue-300 font-semibold">รอบเงินเดือนทั้งหมด</span>
-              <div className="text-2xl font-bold text-blue-950 dark:text-white tracking-tight">
-                {summaryStats.totalPeriodsCount} รอบ
-              </div>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <span className="text-xs text-blue-700 dark:text-blue-300 font-bold block truncate">
+                รอบเงินเดือนทั้งหมด
+              </span>
+              <span className="text-[11px] text-blue-700/80 dark:text-blue-300/80 font-medium block truncate">
+                {yearFilter === 'ALL'
+                  ? 'รวมทุกปีในระบบ'
+                  : `ประจำปี พ.ศ. ${Number(yearFilter) + 543}`}
+              </span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Calendar className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/60 text-xs text-blue-700/80 dark:text-blue-300 font-medium">
-            <span>
-              {yearFilter === 'ALL'
-                ? 'รวมทุกปีในระบบ'
-                : `ประจำปี พ.ศ. ${Number(yearFilter) + 543}`}
-            </span>
+          <div className="mt-3 text-2xl font-extrabold text-blue-950 dark:text-white tracking-tight">
+            {summaryStats.totalPeriodsCount} <span className="text-sm font-semibold text-blue-800/80 dark:text-blue-200/80">รอบ</span>
           </div>
         </div>
 
         {/* Card 2: ปิดรอบ / จ่ายสำเร็จแล้ว (Solid Emerald Panel) */}
         <div className="bg-emerald-100/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">ปิดรอบ / จ่ายสำเร็จแล้ว</span>
-              <div className="text-2xl font-bold text-emerald-950 dark:text-white tracking-tight">
-                {summaryStats.completedPeriodsCount} / {summaryStats.totalPeriodsCount} รอบ
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <span className="text-xs text-emerald-700 dark:text-emerald-300 font-bold block truncate">
+                ปิดรอบ / จ่ายสำเร็จแล้ว
+              </span>
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-700/85 dark:text-emerald-300/80 font-medium">
+                <span>ความคืบหน้า</span>
+                <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs text-[10px]">
+                  ครบถ้วน {summaryStats.completedPercent}%
+                </span>
               </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/60 flex items-center justify-between text-xs text-emerald-700/80 dark:text-emerald-300">
-            <span>ความคืบหน้า</span>
-            <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
-              ครบถ้วน {summaryStats.completedPercent}%
-            </span>
+          <div className="mt-3 text-2xl font-extrabold text-emerald-950 dark:text-white tracking-tight">
+            {summaryStats.completedPeriodsCount} / {summaryStats.totalPeriodsCount} <span className="text-sm font-semibold text-emerald-800/80 dark:text-emerald-200/80">รอบ</span>
           </div>
         </div>
 
         {/* Card 3: รอบที่กำลังดำเนินการ (Solid Amber Panel) */}
         <div className="bg-amber-100/60 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800/80 p-5 shadow-xs hover:border-amber-300 dark:hover:border-amber-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <span className="text-xs text-amber-700 dark:text-amber-300 font-semibold">รอบที่กำลังดำเนินการ</span>
-              <div className="text-2xl font-bold text-amber-950 dark:text-white tracking-tight">
-                {summaryStats.inProgressPeriodsCount} รอบ
-              </div>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <span className="text-xs text-amber-700 dark:text-amber-300 font-bold block truncate">
+                รอบที่กำลังดำเนินการ
+              </span>
+              <span
+                className="text-[11px] text-amber-700/85 dark:text-amber-300/80 font-medium block truncate"
+                title={summaryStats.inProgressSubtext}
+              >
+                {summaryStats.inProgressSubtext}
+              </span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Clock className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-700/80 dark:text-amber-300 font-medium">
-            <span>{summaryStats.inProgressSubtext}</span>
+          <div className="mt-3 text-2xl font-extrabold text-amber-950 dark:text-white tracking-tight">
+            {summaryStats.inProgressPeriodsCount} <span className="text-sm font-semibold text-amber-800/80 dark:text-amber-200/80">รอบ</span>
           </div>
         </div>
 
         {/* Card 4: พนักงานในรอบล่าสุด (Solid Purple Panel) */}
         <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="space-y-1">
-              <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">พนักงานในรอบล่าสุด</span>
-              <div className="text-2xl font-bold text-purple-950 dark:text-white tracking-tight">
-                {summaryStats.latestPeriod ? `${summaryStats.latestEmpCount.toLocaleString()} คน` : '-'}
-              </div>
+            <div className="min-w-0 flex-1 space-y-0.5">
+              <span className="text-xs text-purple-700 dark:text-purple-300 font-bold block truncate">
+                พนักงานในรอบล่าสุด
+              </span>
+              <span
+                className="text-[11px] text-purple-700/80 dark:text-purple-300/80 font-medium block truncate"
+                title={summaryStats.latestPeriod ? summaryStats.latestPeriodName : 'ยังไม่มีข้อมูลรอบเงินเดือน'}
+              >
+                {summaryStats.latestPeriod ? summaryStats.latestPeriodName : 'ยังไม่มีข้อมูลรอบเงินเดือน'}
+              </span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-purple-200/60 dark:border-purple-800/60 text-xs text-purple-700/80 dark:text-purple-300 font-medium truncate">
-            <span title={summaryStats.latestPeriodName}>
-              {summaryStats.latestPeriod ? summaryStats.latestPeriodName : 'ยังไม่มีข้อมูลรอบเงินเดือน'}
-            </span>
+          <div className="mt-3 text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight">
+            {summaryStats.latestPeriod ? (
+              <>
+                {summaryStats.latestEmpCount.toLocaleString()} <span className="text-sm font-semibold text-purple-800/80 dark:text-purple-200/80">คน</span>
+              </>
+            ) : (
+              '-'
+            )}
           </div>
         </div>
       </div>
