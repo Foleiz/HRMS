@@ -343,6 +343,8 @@ export default function AttendanceReportTab({
                   label="พนักงานทั้งหมด"
                   value={headcountData.totalEmployees}
                   unit="คน"
+                  source="ทะเบียนพนักงานที่มีสถานะทำงานอยู่ (ACTIVE) ในฝ่าย/แผนกที่เลือก ณ วันที่ระบุ"
+                  formula={`นับจำนวนพนักงานทั้งหมดในสังกัด (ต้องมาทำงานตามกะ ${headcountData.totalExpected ?? headcountData.totalEmployees} คน)`}
                   note={`ต้องมาทำงาน ${headcountData.totalExpected ?? headcountData.totalEmployees} คน`}
                 />
                 <KpiCard
@@ -351,12 +353,14 @@ export default function AttendanceReportTab({
                   label="มาปฏิบัติงาน"
                   value={headcountData.totalPresent}
                   unit="คน"
+                  source="บันทึกเวลาเข้า-ออกงานประจำวัน (Attendance Logs) ของวันที่เลือก"
+                  formula="นับพนักงานที่มีเวลาสแกนเข้างาน (รวมมาปกติ + มาสาย) · อัตราเข้างาน = (มาทำงาน ÷ ต้องมาทำงาน) × 100"
                   delta={
                     <span className="rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
                       {Math.min(100, Math.max(0, headcountData.overallAttendanceRate))}%
                     </span>
                   }
-                  note={`สาย ${headcountData.totalLate} · ออกก่อน ${headcountData.totalEarlyLeave}`}
+                  note={`มาสาย ${headcountData.totalLate} คน · ออกก่อน ${headcountData.totalEarlyLeave} คน`}
                 />
                 <KpiCard
                   icon={Clock}
@@ -364,7 +368,9 @@ export default function AttendanceReportTab({
                   label="มาสาย"
                   value={headcountData.totalLate}
                   unit="คน"
-                  note="นับรวมในมาปฏิบัติงาน"
+                  source="บันทึกเวลาสแกนเข้างานเทียบกับเวลาเริ่มกะทำงาน (Shift Schedule)"
+                  formula="นับพนักงานที่สแกนเข้างานหลังเวลาเริ่มกะเกินระยะผ่อนผัน (Grace Period)"
+                  note="นับรวมอยู่ในยอดผู้มาปฏิบัติงานแล้ว"
                 />
                 <KpiCard
                   icon={AlertTriangle}
@@ -372,7 +378,9 @@ export default function AttendanceReportTab({
                   label="ขาด / ยังไม่ลงเวลา"
                   value={headcountData.totalAbsent}
                   unit="คน"
-                  note={headcountData.totalAbsent > 0 ? 'ควรตรวจสอบรายชื่อ' : 'ครบถ้วน'}
+                  source="ตารางกะทำงานเทียบกับบันทึกเวลาเข้างานและใบลาที่อนุมัติแล้ว"
+                  formula="ขาดงาน = พนักงานที่ต้องมาทำงานตามกะ − มาปฏิบัติงาน − ลาที่อนุมัติแล้ว"
+                  note={headcountData.totalAbsent > 0 ? 'ควรตรวจสอบรายชื่อพนักงานที่ยังไม่ลงเวลา' : 'ลงเวลาครบถ้วน'}
                 />
                 <KpiCard
                   icon={CalendarX2}
@@ -380,7 +388,9 @@ export default function AttendanceReportTab({
                   label="ลา / วันหยุด"
                   value={(headcountData.totalLeave ?? 0) + (headcountData.totalOff ?? 0)}
                   unit="คน"
-                  note={`ลา ${headcountData.totalLeave ?? 0} · หยุด ${headcountData.totalOff ?? 0}`}
+                  source="ข้อมูลใบลาที่อนุมัติแล้ว (Approved Leave) และตารางวันหยุดประจำกะ/วันหยุดนักขัตฤกษ์"
+                  formula={`ลา/วันหยุด = ลา (${headcountData.totalLeave ?? 0} คน) + วันหยุด (${headcountData.totalOff ?? 0} คน)`}
+                  note={`ลา ${headcountData.totalLeave ?? 0} คน · วันหยุด ${headcountData.totalOff ?? 0} คน`}
                 />
               </KpiGrid>
 
@@ -649,7 +659,9 @@ export default function AttendanceReportTab({
                   label="พนักงานที่ตรวจสอบ"
                   value={latenessData.totalAuditedEmployees}
                   unit="คน"
-                  note={`เดือน${TH_MONTHS[selectedMonth - 1]} ${selectedYear + 543}`}
+                  source="ทะเบียนพนักงานที่มีตารางเวลาทำงานในงวดเดือนที่เลือก"
+                  formula="นับจำนวนพนักงานทั้งหมดที่นำมาคำนวณสรุปเวลาทำงานในงวดเดือน"
+                  note={`เดือน${TH_MONTHS[selectedMonth - 1]} พ.ศ. ${selectedYear + 543}`}
                 />
 
                 <KpiCard
@@ -658,6 +670,8 @@ export default function AttendanceReportTab({
                   label="อัตราการเข้างานเฉลี่ย"
                   value={Math.min(100, Math.max(0, latenessData.overallAttendanceRate))}
                   unit="%"
+                  source="สรุปวันมาทำงานจริงเทียบกับวันทำงานตามกะของพนักงานทุกคนในเดือนที่เลือก"
+                  formula="อัตราการเข้างานเฉลี่ย (%) = (ผลรวมวันมาทำงานจริง ÷ ผลรวมวันทำงานทั้งหมด) × 100"
                   delta={
                     prevLatenessData && prevLatenessData.totalAuditedEmployees > 0 ? (
                       <DeltaBadge
@@ -666,7 +680,7 @@ export default function AttendanceReportTab({
                       />
                     ) : undefined
                   }
-                  note={prevLatenessData ? 'เทียบเดือนก่อนหน้า' : 'ค่าเฉลี่ยทั้งเดือน'}
+                  note={prevLatenessData ? 'เทียบกับเดือนก่อนหน้า' : 'ค่าเฉลี่ยทั้งเดือน'}
                 />
 
                 <KpiCard
@@ -675,6 +689,8 @@ export default function AttendanceReportTab({
                   label="มาสายรวม"
                   value={latenessData.totalLateOccurrences}
                   unit="ครั้ง"
+                  source="บันทึกการเข้างานสายรายวันตลอดทั้งเดือนของพนักงานทุกคนในแผนกที่เลือก"
+                  formula="มาสายรวม = ผลรวมจำนวนวันที่เข้างานสาย (Late Days) ของพนักงานทุกคนในเดือนนั้น"
                   delta={
                     prevLatenessData && prevLatenessData.totalAuditedEmployees > 0 ? (
                       <DeltaBadge
@@ -684,7 +700,7 @@ export default function AttendanceReportTab({
                       />
                     ) : undefined
                   }
-                  note={prevLatenessData ? 'เทียบเดือนก่อนหน้า' : 'รวมทุกแผนก'}
+                  note={prevLatenessData ? 'เทียบกับเดือนก่อนหน้า' : 'รวมทุกแผนกที่เลือก'}
                 />
 
                 <KpiCard
@@ -693,6 +709,8 @@ export default function AttendanceReportTab({
                   label="เวลาสายสะสม"
                   value={latenessData.totalLateMinutes.toLocaleString('th-TH')}
                   unit="นาที"
+                  source="ส่วนต่างเวลาสแกนเข้างานจริงกับเวลาเริ่มกะทำงาน (หน่วย: นาที)"
+                  formula="เวลาสายสะสม = ผลรวมนาทีที่สายทั้งหมดในเดือน · เฉลี่ยต่อครั้ง = เวลาสายสะสม ÷ จำนวนครั้งที่มาสาย"
                   note={
                     latenessData.totalLateOccurrences > 0
                       ? `เฉลี่ย ${Math.round(latenessData.totalLateMinutes / latenessData.totalLateOccurrences)} นาที/ครั้ง`

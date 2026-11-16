@@ -205,6 +205,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               value={fmt(data.totalDays)}
               unit="วัน"
               spark={data.byMonth.map((m) => m.days)}
+              source="รายการใบลาที่มีสถานะอนุมัติแล้ว (APPROVED) ในปีและแผนกที่เลือก"
+              formula="วันลารวม = ผลรวมจำนวนวันลา (Total Days) ของใบลาที่อนุมัติแล้วทั้งหมดในปีที่เลือก"
               note={`ปี พ.ศ. ${year + 543}`}
             />
 
@@ -214,6 +216,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               label="จำนวนใบลา"
               value={fmt(data.totalRequests)}
               unit="ใบ"
+              source="ระบบคำขอใบลา (Leave Requests) ที่ได้รับอนุมัติแล้วในปีที่เลือก"
+              formula="นับจำนวนรายการคำขอใบลาสถานะ APPROVED ทั้งหมด · เฉลี่ยต่อคน = จำนวนใบลา ÷ จำนวนพนักงานที่ลา"
               note={
                 data.employeesOnLeave > 0
                   ? `เฉลี่ย ${(data.totalRequests / data.employeesOnLeave).toFixed(1)} ใบ/คนที่ลา`
@@ -227,6 +231,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               label="พนักงานที่ลา"
               value={fmt(data.employeesOnLeave)}
               unit="คน"
+              source="รายชื่อพนักงานที่มีใบลาอนุมัติแล้วอย่างน้อย 1 รายการในปีที่เลือก"
+              formula="นับจำนวนพนักงานแบบไม่ซ้ำคน (Distinct Employees) ที่มีการลา · วันลาเฉลี่ย = วันลารวม ÷ พนักงานที่ลา"
               note={
                 data.employeesOnLeave > 0
                   ? `เฉลี่ย ${(data.totalDays / data.employeesOnLeave).toFixed(1)} วัน/คน`
@@ -240,6 +246,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               label="รออนุมัติ"
               value={fmt(data.pendingRequests)}
               unit="ใบ"
+              source="รายการคำขอใบลาที่อยู่ระหว่างรออนุมัติตามสายบังคับบัญชา"
+              formula="นับจำนวนใบลาที่มีสถานะรออนุมัติ (PENDING / IN_PROGRESS) ในปีที่เลือก"
               note={data.pendingRequests > 0 ? 'รอดำเนินการอนุมัติ' : 'อนุมัติครบทุกรายการ'}
             />
           </KpiGrid>

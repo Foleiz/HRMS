@@ -266,6 +266,8 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
                   label="เงินได้พึงประเมินรวม"
                   value={fmtCurrency(taxData.totalGrossIncome)}
                   unit="บาท"
+                  source="ข้อมูลสลิปเงินเดือน (Payroll Items) ของงวดเดือนที่เลือก"
+                  formula="เงินได้พึงประเมินรวม = ผลรวม (ฐานเงินเดือน + ค่าล่วงเวลา OT + เงินได้อื่นๆ) ของพนักงานทุกคนในงวด"
                   note="ฐานคำนวณค่าจ้างและภาษี"
                 />
                 <KpiCard
@@ -274,6 +276,8 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
                   label="ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1)"
                   value={fmtCurrency(taxData.totalWithholdingTax)}
                   unit="บาท"
+                  source="การคำนวณภาษีเงินได้บุคคลธรรมดาหัก ณ ที่จ่ายประจำเดือน (ภ.ง.ด.1)"
+                  formula="ภาษี ภ.ง.ด.1 รวม = ผลรวมภาษีหัก ณ ที่จ่ายรายเดือนของพนักงานที่เข้าเกณฑ์เสียภาษีทุกคน"
                   note={`ผู้ถูกหักภาษี ${taxData.taxableEmployeesCount}/${taxData.totalEmployees} คน`}
                 />
                 <KpiCard
@@ -282,7 +286,9 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
                   label="ปกส. หักจากลูกจ้าง (5%)"
                   value={fmtCurrency(taxData.totalSsoEmployee)}
                   unit="บาท"
-                  note={`รวมส่ง สปส. ${fmtCurrency(taxData.totalSsoRemittance)} บ.`}
+                  source="การคำนวณเงินสมทบกองทุนประกันสังคมส่วนลูกจ้าง (สปส. 1-10)"
+                  formula="ปกส. ลูกจ้าง = 5% ของฐานค่าจ้างจริง (ฐานขั้นต่ำ 1,650 บ. สูงสุดไม่เกินเพดาน 15,000 บ. หรือสูงสุด 750 บ./คน)"
+                  note={`รวมนำส่ง สปส. (ลูกจ้าง + นายจ้าง) ${fmtCurrency(taxData.totalSsoRemittance)} บาท`}
                 />
                 <KpiCard
                   icon={TrendingDown}
@@ -290,7 +296,9 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
                   label="รายการหักอื่นๆ"
                   value={fmtCurrency(totalOtherDeductions)}
                   unit="บาท"
-                  note="มาสาย ขาดงาน กองทุน ฯลฯ"
+                  source="รายการหักเงินเดือนนอกเหนือจากภาษีหัก ณ ที่จ่าย และประกันสังคม"
+                  formula="รายการหักอื่นๆ = รวมรายการหักทั้งหมด − ภาษีหัก ณ ที่จ่าย (ภ.ง.ด.1) − ปกส. ลูกจ้าง"
+                  note="มาสาย ขาดงาน กองทุน หรือรายการหักสวัสดิการอื่นๆ"
                 />
                 <KpiCard
                   icon={CheckCircle2}
@@ -298,7 +306,9 @@ export default function TaxReportTab({ canExportTax, canExportSso }: TaxReportTa
                   label="เงินเดือนสุทธินำจ่าย"
                   value={fmtCurrency(taxData.totalNetSalary)}
                   unit="บาท"
-                  note={`สถานะ: ${taxData.periodStatus}`}
+                  source="ยอดเงินเดือนสุทธิ (Net Pay) ในรอบการจ่ายเงินเดือนที่เลือก"
+                  formula="เงินเดือนสุทธิ = เงินได้พึงประเมินรวม − (ภาษี ภ.ง.ด.1 + ปกส. ลูกจ้าง + รายการหักอื่นๆ)"
+                  note={`สถานะงวดเงินเดือน: ${taxData.periodStatus}`}
                 />
               </KpiGrid>
             );

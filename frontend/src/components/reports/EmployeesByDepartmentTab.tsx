@@ -266,6 +266,8 @@ export default function EmployeesByDepartmentTab({
               label="พนักงานทั้งหมด"
               value={data.totalEmployees.toLocaleString('th-TH')}
               unit="คน"
+              source="ฐานข้อมูลทะเบียนพนักงานที่มีสถานะทำงานอยู่ (ACTIVE) ตามฝ่ายและแผนกที่เลือก"
+              formula="พนักงานทั้งหมด = ผลรวมพนักงานสถานะ ACTIVE ในทุกแผนกที่แสดงผล"
               delta={data.newHiresThisYear > 0 ? <DeltaBadge delta={data.newHiresThisYear} unit=" เข้าใหม่ปีนี้" good /> : undefined}
               note={`${data.totalDepartments} แผนก${data.totalHeadcountPlan ? ` · แผนรวม ${data.totalHeadcountPlan} คน` : ''}`}
             />
@@ -276,9 +278,11 @@ export default function EmployeesByDepartmentTab({
               label="ชาย / หญิง"
               value={`${data.maleCount} / ${data.femaleCount}`}
               unit="คน"
+              source="ข้อมูลเพศในทะเบียนประวัติพนักงานที่ปฏิบัติงานอยู่ (ACTIVE)"
+              formula="นับแยกตามเพศ ชาย : หญิง · สัดส่วน (%) = (จำนวนเพศ ÷ พนักงานทั้งหมด) × 100"
               note={
                 data.totalEmployees > 0
-                  ? `${Math.round((data.maleCount / data.totalEmployees) * 100)}% / ${Math.round((data.femaleCount / data.totalEmployees) * 100)}% · ไม่ระบุ ${data.otherGenderCount} คน`
+                  ? `ชาย ${Math.round((data.maleCount / data.totalEmployees) * 100)}% / หญิง ${Math.round((data.femaleCount / data.totalEmployees) * 100)}% · ไม่ระบุ ${data.otherGenderCount} คน`
                   : `ไม่ระบุ ${data.otherGenderCount} คน`
               }
             />
@@ -290,7 +294,9 @@ export default function EmployeesByDepartmentTab({
                 label="ตำแหน่งที่ยังว่าง (ตามแผน)"
                 value={Math.max(0, data.totalHeadcountPlan - data.totalEmployees).toLocaleString('th-TH')}
                 unit="อัตรา"
-                note={`อัตรากำลังตามแผน ${data.totalHeadcountPlan} − พนักงานจริง ${data.totalEmployees}`}
+                source="ข้อมูลอัตรากำลังตามแผน (Headcount Plan) จากเมนูโครงสร้างองค์กร > ตำแหน่งงาน"
+                formula={`ตำแหน่งว่าง = max(0, อัตรากำลังตามแผนรวม (${data.totalHeadcountPlan}) − พนักงานจริง (${data.totalEmployees}))`}
+                note={`อัตรากำลังตามแผน ${data.totalHeadcountPlan} อัตรา − พนักงานจริง ${data.totalEmployees} คน`}
               />
             ) : (
               <div className="flex flex-col justify-between rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4 dark:border-amber-700/60 dark:bg-amber-950/20">
@@ -317,7 +323,9 @@ export default function EmployeesByDepartmentTab({
               label="อายุงานเฉลี่ย"
               value={tenureStats.avgYears.toFixed(1)}
               unit="ปี"
-              note={`ต่ำสุด ${tenureStats.minLabel} · สูงสุด ${tenureStats.maxLabel}`}
+              source="คำนวณจากวันเริ่มงาน (Start Date) ในทะเบียนพนักงานเทียบกับวันที่ออกรายงาน"
+              formula="อายุงานเฉลี่ย = ผลรวมอายุงานของพนักงานทุกคน (ปี) ÷ จำนวนพนักงานที่มีวันเริ่มงาน"
+              note={`อายุงานต่ำสุด ${tenureStats.minLabel} · สูงสุด ${tenureStats.maxLabel}`}
             />
           </KpiGrid>
 
