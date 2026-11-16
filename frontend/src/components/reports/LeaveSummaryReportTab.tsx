@@ -11,9 +11,11 @@ import {
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
-import { LeaveSummaryReport } from '@/types/leaveInsights';
+import { LeaveCalendarItem, LeaveReportCell, LeaveReportRow, LeaveReportTopEmployee, LeaveSummaryReport } from '@/types/leaveInsights';
 import { CustomSelect } from '@/components/ui/CustomSelect';
+import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { getSmartYearRange } from '@/lib/yearUtils';
+import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
@@ -39,10 +41,104 @@ interface Props {
 
 const fmt = (n: number) => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
 
-/** แท็บรายงานการลา (Redesign ตามมาตรฐาน Report Shell) */
+const localToday = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+function buildSummaryFromCalendar(items: LeaveCalendarItem[], year: number): LeaveSummaryReport {
+  const approved = items.filter((i) => i.status === 'APPROVED');
+  const pendingRequests = items.filter((i) => i.status !== 'APPROVED').length;
+  const totalDays = approved.reduce((s, i) => s + (Number(i.leaveDays) || 0), 0);
+  const totalRequests = approved.length;
+  const employeesOnLeave = new Set(approved.map((i) => i.employeeId)).size;
+
+  const typeMap = new Map<string, { days: number; requests: number; empSet: Set<number> }>();
+  const deptMap = new Map<string, { days: number; requests: number; empSet: Set<number> }>();
+  const cellMap = new Map<string, number>();
+  const empMap = new Map<number, LeaveReportTopEmployee>();
+
+  for (const it of approved) {
+    const days = Number(it.leaveDays) || 0;
+    const tName = it.leaveTypeName || 'อื่นๆ';
+    const dName = it.departmentName || 'ไม่ระบุแผนก';
+
+    const tRec = typeMap.get(tName) ?? { days: 0, requests: 0, empSet: new Set<number>() };
+    tRec.days += days;
+    tRec.requests += 1;
+    tRec.empSet.add(it.employeeId);
+    typeMap.set(tName, tRec);
+
+    const dRec = deptMap.get(dName) ?? { days: 0, requests: 0, empSet: new Set<number>() };
+    dRec.days += days;
+    dRec.requests += 1;
+    dRec.empSet.add(it.employeeId);
+    deptMap.set(dName, dRec);
+
+    const cellKey = `${dName}|${tName}`;
+    cellMap.set(cellKey, (cellMap.get(cellKey) ?? 0) + days);
+
+    const eRec = empMap.get(it.employeeId) ?? {
+      employeeId: it.employeeId,
+      employeeCode: it.employeeCode,
+      employeeName: it.employeeName,
+      departmentName: dName,
+      days: 0,
+      requests: 0,
+    };
+    eRec.days += days;
+    eRec.requests += 1;
+    empMap.set(it.employeeId, eRec);
+  }
+
+  const byType: LeaveReportRow[] = Array.from(typeMap.entries()).map(([label, v]) => ({
+    key: label,
+    label,
+    days: v.days,
+    requests: v.requests,
+    employees: v.empSet.size,
+  }));
+
+  const byDepartment: LeaveReportRow[] = Array.from(deptMap.entries()).map(([label, v]) => ({
+    key: label,
+    label,
+    days: v.days,
+    requests: v.requests,
+    employees: v.empSet.size,
+  }));
+
+  const departmentByType: LeaveReportCell[] = Array.from(cellMap.entries()).map(([k, days]) => {
+    const [departmentName, leaveTypeName] = k.split('|');
+    return { departmentName, leaveTypeName, days };
+  });
+
+  const topEmployees: LeaveReportTopEmployee[] = Array.from(empMap.values()).sort(
+    (a, b) => b.days - a.days || b.requests - a.requests
+  );
+
+  return {
+    year,
+    totalDays,
+    totalRequests,
+    employeesOnLeave,
+    pendingRequests,
+    byType,
+    byDepartment,
+    byMonth: [],
+    departmentByType,
+    topEmployees,
+  };
+}
+
+/** แท็บรายงานการลา: รองรับ 3 มุมมอง [รายวัน | รายเดือน | รายปี] */
 export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
-  const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear);
+  const now = new Date();
+  const [mode, setMode] = useState<'daily' | 'monthly' | 'yearly'>('yearly');
+  const [selectedDate, setSelectedDate] = useState<string>(localToday);
+  const [month, setMonth] = useState<number>(now.getMonth() + 1);
+  const [year, setYear] = useState<number>(now.getFullYear());
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [data, setData] = useState<LeaveSummaryReport | null>(null);
@@ -72,15 +168,40 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     setLoading(true);
     setFailed(false);
     try {
-      const res = await leaveInsightsService.getSummary(year, departmentId === '' ? undefined : departmentId);
-      setData(res);
+      const deptParam = departmentId === '' ? undefined : departmentId;
+      if (mode === 'yearly') {
+        const res = await leaveInsightsService.getSummary(year, deptParam);
+        setData(res);
+      } else if (mode === 'monthly') {
+        const lastDay = new Date(year, month, 0).getDate();
+        const from = `${year}-${pad2(month)}-01`;
+        const to = `${year}-${pad2(month)}-${pad2(lastDay)}`;
+        const cal = await leaveInsightsService.getCalendar({
+          from,
+          to,
+          departmentId: deptParam,
+          includePending: true,
+        });
+        setData(buildSummaryFromCalendar(cal.items ?? [], year));
+      } else {
+        const cal = await leaveInsightsService.getCalendar({
+          from: selectedDate,
+          to: selectedDate,
+          departmentId: deptParam,
+          includePending: true,
+        });
+        const y = Number(selectedDate.slice(0, 4)) || year;
+        setData(buildSummaryFromCalendar(cal.items ?? [], y));
+      }
+      setMatrixPage(1);
+      setEmpPage(1);
     } catch (e: unknown) {
       setFailed(true);
       onError((e as { message?: string })?.message || 'โหลดรายงานการลาไม่สำเร็จ');
     } finally {
       setLoading(false);
     }
-  }, [year, departmentId, onError]);
+  }, [mode, selectedDate, month, year, departmentId, onError]);
 
   useEffect(() => {
     load();
@@ -131,40 +252,136 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     return maxVal > 0 ? data.byMonth.findIndex((m) => m.days === maxVal) : -1;
   }, [data]);
 
+  const periodSubtitle =
+    mode === 'daily'
+      ? `วันที่ ${fmtThaiDate(selectedDate, 'numeric')}`
+      : mode === 'monthly'
+        ? `เดือน ${TH_MONTHS[month - 1]} พ.ศ. ${year + 543}`
+        : `ปี พ.ศ. ${year + 543}`;
+
   const handleExport = async (format: ReportExportFormat = 'csv') => {
     if (format === 'pdf') {
-      printReport(rootRef.current, { title: 'รายงานการลา', subtitle: `ปี พ.ศ. ${year + 543}` });
+      printReport(rootRef.current, { title: 'รายงานการลา', subtitle: periodSubtitle });
       return;
     }
-    setExporting(true);
-    try {
-      await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId, format);
-    } catch (e: unknown) {
-      onError((e as { message?: string })?.message || 'ส่งออกไฟล์ไม่สำเร็จ');
-    } finally {
-      setExporting(false);
+    if (mode === 'yearly') {
+      setExporting(true);
+      try {
+        await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId, format);
+      } catch (e: unknown) {
+        onError((e as { message?: string })?.message || 'ส่งออกไฟล์ไม่สำเร็จ');
+      } finally {
+        setExporting(false);
+      }
+      return;
     }
+    if (!data) return;
+    const headers = ['รหัสพนักงาน', 'ชื่อ-นามสกุล', 'แผนก', 'จำนวนใบลา', 'วันลารวม'];
+    const rows = data.topEmployees.map((e) => [
+      e.employeeCode,
+      e.employeeName,
+      e.departmentName || '-',
+      e.requests,
+      e.days,
+    ]);
+    const csvContent =
+      '\uFEFF' +
+      [headers, ...rows]
+        .map((r) => r.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+        .join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const href = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.setAttribute(
+      'download',
+      mode === 'daily' ? `Leave_Daily_${selectedDate}.csv` : `Leave_Monthly_${year + 543}_${pad2(month)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(href);
   };
 
   const typeColors = ['#8b5cf6', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
+
+  const modeSwitch = (
+    <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
+      {(
+        [
+          { key: 'daily', label: 'รายวัน' },
+          { key: 'monthly', label: 'รายเดือน' },
+          { key: 'yearly', label: 'รายปี' },
+        ] as const
+      ).map((m) => (
+        <button
+          key={m.key}
+          type="button"
+          onClick={() => setMode(m.key)}
+          className={`rounded-lg px-3.5 py-1 text-xs font-bold transition-colors cursor-pointer ${
+            mode === m.key
+              ? 'bg-primary text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+          }`}
+        >
+          {m.label}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
       <ReportFilterBar
         loading={loading}
-        right={canExport ? <ExportMenu onExport={handleExport} disabled={exporting || !data} /> : undefined}
+        right={
+          canExport ? (
+            <ExportMenu
+              formats={mode === 'yearly' ? ['xlsx', 'csv', 'pdf'] : ['csv', 'pdf']}
+              onExport={handleExport}
+              disabled={exporting || !data}
+            />
+          ) : undefined
+        }
       >
-        <CustomSelect
-          value={year}
-          onChange={(e) => setYear(Number(e.target.value))}
-          className="min-w-[130px]"
-        >
-          {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
-            <option key={y} value={y}>
-              พ.ศ. {y + 543}
-            </option>
-          ))}
-        </CustomSelect>
+        {modeSwitch}
+
+        {mode === 'daily' && (
+          <ThaiDatePicker
+            value={selectedDate}
+            onChange={setSelectedDate}
+            className="w-[140px] shrink-0"
+            buttonClassName="h-9 !py-0 !px-3 !text-xs !rounded-xl shadow-2xs"
+          />
+        )}
+
+        {mode === 'monthly' && (
+          <CustomSelect
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            className="min-w-[140px]"
+          >
+            {TH_MONTHS.map((m, idx) => (
+              <option key={idx + 1} value={idx + 1}>
+                {m}
+              </option>
+            ))}
+          </CustomSelect>
+        )}
+
+        {(mode === 'monthly' || mode === 'yearly') && (
+          <CustomSelect
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="min-w-[130px]"
+          >
+            {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
+              <option key={y} value={y}>
+                พ.ศ. {y + 543}
+              </option>
+            ))}
+          </CustomSelect>
+        )}
 
         <CustomSelect
           value={departmentId}
@@ -204,8 +421,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               label="วันลารวม (อนุมัติแล้ว)"
               value={fmt(data.totalDays)}
               unit="วัน"
-              spark={data.byMonth.map((m) => m.days)}
-              tooltip="ผลรวมวันลาจากใบลาที่อนุมัติแล้วในปีนี้"
+              spark={data.byMonth.length > 1 ? data.byMonth.map((m) => m.days) : undefined}
+              tooltip="ผลรวมวันลาจากใบลาที่อนุมัติแล้วในช่วงที่เลือก"
             />
 
             <KpiCard
@@ -214,7 +431,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               label="จำนวนใบลา"
               value={fmt(data.totalRequests)}
               unit="ใบ"
-              tooltip="จำนวนใบลาที่อนุมัติแล้วทั้งหมดในปีนี้"
+              tooltip="จำนวนใบลาที่อนุมัติแล้วทั้งหมดในช่วงที่เลือก"
             />
 
             <KpiCard
@@ -223,7 +440,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               label="พนักงานที่ลา"
               value={fmt(data.employeesOnLeave)}
               unit="คน"
-              tooltip="จำนวนพนักงานที่มีการลาในปีนี้ (นับไม่ซ้ำคน)"
+              tooltip="จำนวนพนักงานที่มีการลาในช่วงที่เลือก (นับไม่ซ้ำคน)"
             />
 
             <KpiCard
@@ -236,38 +453,40 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
             />
           </KpiGrid>
 
-          {/* Chart Row 1: Monthly Trend + By Type Donut */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <ReportPanel
-              title="แนวโน้มวันลารายเดือน"
-              subtitle="จำนวนวันลารวมในแต่ละเดือนของปีที่เลือก (แท่งสีเข้ม = เดือนที่ลาสูงสุด)"
-              className="xl:col-span-2"
-            >
-              <MiniColumns
-                items={data.byMonth.map((m) => ({ label: m.label, value: Number(m.days.toFixed(1)) }))}
-                color="#c4b5fd"
-                highlightIndex={peakMonthIdx}
-                highlightColor="#7c3aed"
-                height={185}
-              />
-            </ReportPanel>
-
-            <ReportPanel title="สัดส่วนตามประเภทการลา" subtitle="เปรียบเทียบจำนวนวันลาแยกตามประเภท">
-              {data.byType.length === 0 ? (
-                <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
-              ) : (
-                <DonutChart
-                  unit="วัน"
-                  centerLabel="วันลารวม"
-                  size={145}
-                  segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
+          {/* Chart Row 1: Monthly Trend (เฉพาะโหมดรายปี) + By Type Donut */}
+          {mode === 'yearly' && data.byMonth.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              <ReportPanel
+                title="แนวโน้มวันลารายเดือน"
+                subtitle="จำนวนวันลารวมในแต่ละเดือนของปีที่เลือก (แท่งสีเข้ม = เดือนที่ลาสูงสุด)"
+                className="xl:col-span-2"
+              >
+                <MiniColumns
+                  items={data.byMonth.map((m) => ({ label: m.label, value: Number(m.days.toFixed(1)) }))}
+                  color="#c4b5fd"
+                  highlightIndex={peakMonthIdx}
+                  highlightColor="#7c3aed"
+                  height={185}
                 />
-              )}
-            </ReportPanel>
-          </div>
+              </ReportPanel>
+
+              <ReportPanel title="สัดส่วนตามประเภทการลา" subtitle="เปรียบเทียบจำนวนวันลาแยกตามประเภท">
+                {data.byType.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
+                ) : (
+                  <DonutChart
+                    unit="วัน"
+                    centerLabel="วันลารวม"
+                    size={145}
+                    segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
+                  />
+                )}
+              </ReportPanel>
+            </div>
+          ) : null}
 
           {/* Chart Row 2: By Department + By Leave Type Details */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <div className={`grid grid-cols-1 gap-4 ${mode === 'yearly' ? 'xl:grid-cols-2' : 'xl:grid-cols-3'}`}>
             <ReportPanel title="วันลาแยกตามแผนก" subtitle="เรียงตามจำนวนวันลารวม (อนุมัติแล้ว)">
               <BarList
                 items={[...data.byDepartment]
@@ -293,6 +512,21 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                   }))}
               />
             </ReportPanel>
+
+            {mode !== 'yearly' && (
+              <ReportPanel title="สัดส่วนตามประเภทการลา" subtitle="เปรียบเทียบจำนวนวันลาแยกตามประเภท">
+                {data.byType.length === 0 ? (
+                  <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
+                ) : (
+                  <DonutChart
+                    unit="วัน"
+                    centerLabel="วันลารวม"
+                    size={145}
+                    segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
+                  />
+                )}
+              </ReportPanel>
+            )}
           </div>
 
           {/* Matrix Table: Department x Leave Type */}
