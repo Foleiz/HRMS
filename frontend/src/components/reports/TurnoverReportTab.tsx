@@ -31,7 +31,6 @@ import {
   DeltaBadge,
   FilterChip,
   IconButton,
-  InsightBox,
   KpiCard,
   KpiGrid,
   ReportAvatar,
@@ -184,38 +183,6 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
       .sort((a, b) => b.value - a.value);
   }, [turnoverData]);
 
-  // ข้อสังเกตอัตโนมัติ
-  const insights = useMemo(() => {
-    if (!turnoverData) return [];
-    const list: React.ReactNode[] = [];
-    list.push(
-      <>
-        อัตราลาออกประจำเดือน{TH_MONTHS[turnoverMonth - 1]}อยู่ที่ <b>{turnoverData.overallTurnoverRate}%</b> (อัตราคงอยู่{' '}
-        <b>{turnoverData.overallRetentionRate}%</b>)
-      </>
-    );
-
-    const highDept = [...turnoverData.departmentTurnovers].sort((a, b) => b.turnoverRate - a.turnoverRate)[0];
-    if (highDept && highDept.turnoverRate > 0) {
-      list.push(
-        <>
-          แผนกที่มีอัตราการลาออกสูงสุดคือ <b>{highDept.departmentName}</b> ({highDept.turnoverRate}% · ลาออก{' '}
-          {highDept.resignedCount} คน)
-        </>
-      );
-    } else {
-      list.push(<>ไม่มีพนักงานลาออกในทุกแผนกสำหรับเดือนที่เลือก</>);
-    }
-
-    list.push(
-      <>
-        สะสมตั้งแต่ต้นปี พ.ศ. {turnoverYear + 543} มีพนักงานเข้าใหม่รวม <b>{ytdTotals.joinedYtd} คน</b> และลาออกรวม{' '}
-        <b>{ytdTotals.resignedYtd} คน</b>
-      </>
-    );
-    return list.slice(0, 3);
-  }, [turnoverData, turnoverMonth, turnoverYear, ytdTotals]);
-
   const pagedTurnoverLogs = useMemo(() => {
     if (!turnoverData?.eventLogs) return [];
     const start = (turnoverPage - 1) * turnoverPageSize;
@@ -360,8 +327,6 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
               note="จำนวนพนักงานทั้งหมด"
             />
           </KpiGrid>
-
-          <InsightBox theme="turnover" items={insights} />
 
           {/* Chart Row 1: 12-Month Trend + Resignation Reasons */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

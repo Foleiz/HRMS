@@ -23,7 +23,6 @@ import {
   BarList,
   FilterChip,
   IconButton,
-  InsightBox,
   KpiCard,
   KpiGrid,
   MiniColumns,
@@ -97,51 +96,6 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     const maxVal = Math.max(...data.byMonth.map((m) => m.days), 0);
     return maxVal > 0 ? data.byMonth.findIndex((m) => m.days === maxVal) : -1;
   }, [data]);
-
-  // สร้างข้อสังเกตอัตโนมัติจากข้อมูลจริง
-  const insights = useMemo(() => {
-    if (!data) return [];
-    const list: React.ReactNode[] = [];
-
-    if (peakMonthIdx >= 0 && data.byMonth[peakMonthIdx]) {
-      const pm = data.byMonth[peakMonthIdx];
-      list.push(
-        <>
-          เดือนที่มีสถิติวันลาสูงสุดคือ <b>{pm.label}</b> รวม <b>{fmt(pm.days)} วัน</b> ({pm.requests} ใบลา)
-        </>
-      );
-    }
-
-    if (data.byType.length > 0 && data.totalDays > 0) {
-      const sortedTypes = [...data.byType].sort((a, b) => b.days - a.days);
-      const topType = sortedTypes[0];
-      const pct = Math.round((topType.days / data.totalDays) * 100);
-      list.push(
-        <>
-          ประเภทการลาที่ใช้มากที่สุดคือ <b>{topType.label}</b> รวม <b>{fmt(topType.days)} วัน</b> คิดเป็น <b>{pct}%</b> ของวันลาทั้งหมด
-        </>
-      );
-    }
-
-    if (data.pendingRequests > 0) {
-      list.push(
-        <>
-          มีใบลาที่ยังรออนุมัติอยู่ <b>{fmt(data.pendingRequests)} ใบ</b> ควรตรวจสอบเพื่อดำเนินการให้ครบถ้วน
-        </>
-      );
-    } else if (data.byDepartment.length > 0) {
-      const topDept = [...data.byDepartment].sort((a, b) => b.days - a.days)[0];
-      if (topDept && topDept.days > 0) {
-        list.push(
-          <>
-            แผนกที่มีจำนวนวันลาสูงสุดคือ <b>{topDept.label}</b> รวม <b>{fmt(topDept.days)} วัน</b>
-          </>
-        );
-      }
-    }
-
-    return list.slice(0, 3);
-  }, [data, peakMonthIdx]);
 
   const handleExport = async (format: ReportExportFormat = 'csv') => {
     if (format === 'pdf') {
@@ -259,9 +213,6 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               note={data.pendingRequests > 0 ? 'รอดำเนินการอนุมัติ' : 'อนุมัติครบทุกรายการ'}
             />
           </KpiGrid>
-
-          {/* Auto Insights */}
-          <InsightBox theme="leave" items={insights} />
 
           {/* Chart Row 1: Monthly Trend + By Type Donut */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

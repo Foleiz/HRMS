@@ -26,7 +26,6 @@ import {
   DeltaBadge,
   FilterChip,
   IconButton,
-  InsightBox,
   KpiCard,
   KpiGrid,
   MiniColumns,
@@ -189,50 +188,6 @@ export default function EmployeesByDepartmentTab({
     };
   }, [data]);
 
-  // สร้างข้อสังเกตอัตโนมัติจากข้อมูลจริง
-  const insights = useMemo(() => {
-    if (!data || data.departments.length === 0) return [];
-    const list: React.ReactNode[] = [];
-    const sorted = [...data.departments].sort((a, b) => b.employeeCount - a.employeeCount);
-    const top = sorted[0];
-    if (top && data.totalEmployees > 0) {
-      const pct = Math.round((top.employeeCount / data.totalEmployees) * 100);
-      list.push(
-        <>
-          แผนก <b>{top.departmentName}</b> มีพนักงานมากที่สุด <b>{top.employeeCount} คน</b> คิดเป็น <b>{pct}%</b> ของกำลังคนทั้งหมด
-        </>
-      );
-    }
-
-    const emptyDepts = data.departments.filter((d) => d.employeeCount === 0);
-    const underDepts = data.departments.filter((d) => d.headcountPlan != null && d.employeeCount < d.headcountPlan);
-    if (underDepts.length > 0) {
-      const totalShort = underDepts.reduce((acc, d) => acc + Math.max(0, (d.headcountPlan ?? 0) - d.employeeCount), 0);
-      list.push(
-        <>
-          มี <b>{underDepts.length} แผนก</b> ที่ยังมีอัตราว่างรวม <b>{totalShort} อัตรา</b> ตามแผนอัตรากำลังที่ตั้งไว้
-        </>
-      );
-    } else if (emptyDepts.length > 0) {
-      list.push(
-        <>
-          มี <b>{emptyDepts.length} แผนก</b> ที่ยังไม่มีพนักงานบรรจุในปัจจุบัน ({emptyDepts.map((d) => d.departmentName).slice(0, 2).join(', ')})
-        </>
-      );
-    }
-
-    if (data.totalEmployees > 0) {
-      const mPct = Math.round((data.maleCount / data.totalEmployees) * 100);
-      const fPct = Math.round((data.femaleCount / data.totalEmployees) * 100);
-      list.push(
-        <>
-          สัดส่วนชาย <b>{mPct}%</b> ต่อหญิง <b>{fPct}%</b> และมีพนักงานเข้าใหม่ในปีนี้รวม <b>{data.newHiresThisYear} คน</b>
-        </>
-      );
-    }
-    return list.slice(0, 3);
-  }, [data]);
-
   const filteredDepartments = useMemo(() => {
     if (!data) return [];
     const q = search.trim().toLowerCase();
@@ -363,9 +318,6 @@ export default function EmployeesByDepartmentTab({
               note={`ต่ำสุด ${tenureStats.minLabel} · สูงสุด ${tenureStats.maxLabel}`}
             />
           </KpiGrid>
-
-          {/* Auto Insights */}
-          <InsightBox theme="dept" items={insights} />
 
           {/* Chart Row 1: Department Headcount + Gender */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">

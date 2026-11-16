@@ -32,7 +32,6 @@ import {
   DeltaBadge,
   FilterChip,
   IconButton,
-  InsightBox,
   KpiCard,
   KpiGrid,
   ReportAvatar,
@@ -226,76 +225,6 @@ export default function AttendanceReportTab({
     return latenessData.items.slice(start, start + latenessPageSize);
   }, [latenessData?.items, latenessPage, latenessPageSize]);
 
-  // ข้อสังเกตรายวัน
-  const dailyInsights = useMemo(() => {
-    if (!headcountData) return [];
-    const list: React.ReactNode[] = [];
-    const rate = Math.min(100, Math.max(0, headcountData.overallAttendanceRate));
-    const expected = headcountData.totalExpected ?? headcountData.totalEmployees;
-    list.push(
-      <>
-        อัตราการมาปฏิบัติงานรวมวันนี้ <b>{rate}%</b> (มาทำงาน <b>{headcountData.totalPresent}</b> จากที่ต้องมา{' '}
-        <b>{expected} คน</b>)
-      </>
-    );
-    if (headcountData.totalLate > 0) {
-      list.push(
-        <>
-          มีพนักงานมาสาย <b>{headcountData.totalLate} คน</b> และออกก่อนเวลา <b>{headcountData.totalEarlyLeave} คน</b>
-        </>
-      );
-    }
-    if (headcountData.totalAbsent > 0) {
-      list.push(
-        <>
-          มีพนักงานขาดงานหรือยังไม่ลงเวลา <b>{headcountData.totalAbsent} คน</b> ควรติดตามตรวจสอบ
-        </>
-      );
-    } else {
-      list.push(
-        <>
-          ไม่มีพนักงานขาดงานในวันที่เลือก (ลาอนุมัติแล้ว <b>{headcountData.totalLeave ?? 0} คน</b>)
-        </>
-      );
-    }
-    return list.slice(0, 3);
-  }, [headcountData]);
-
-  // ข้อสังเกตรายเดือน
-  const monthlyInsights = useMemo(() => {
-    if (!latenessData) return [];
-    const list: React.ReactNode[] = [];
-    const rate = Math.min(100, Math.max(0, latenessData.overallAttendanceRate));
-    list.push(
-      <>
-        อัตราการมาทำงานเฉลี่ยทั้งเดือน <b>{rate}%</b> จากพนักงานที่ตรวจสอบทั้งหมด{' '}
-        <b>{latenessData.totalAuditedEmployees} คน</b>
-      </>
-    );
-    const latePeople = latenessData.items.filter((i) => i.lateDays > 0);
-    if (latePeople.length > 0) {
-      const frequent = latePeople.filter((i) => i.lateDays >= 3);
-      list.push(
-        <>
-          มีพนักงานมาสายรวม <b>{latePeople.length} คน</b> ({latenessData.totalLateOccurrences} ครั้ง) โดยมาสายตั้งแต่ 3 ครั้งขึ้นไป{' '}
-          <b>{frequent.length} คน</b>
-        </>
-      );
-    } else {
-      list.push(<>ไม่มีประวัติพนักงานมาสายในเดือนที่เลือก</>);
-    }
-    const absentPeople = latenessData.items.filter((i) => i.absentDays > 0);
-    if (absentPeople.length > 0) {
-      const totalAbsentDays = absentPeople.reduce((s, x) => s + x.absentDays, 0);
-      list.push(
-        <>
-          พบรายการขาดงานรวม <b>{totalAbsentDays} วัน</b> จากพนักงาน <b>{absentPeople.length} คน</b>
-        </>
-      );
-    }
-    return list.slice(0, 3);
-  }, [latenessData]);
-
   const modeSwitch =
     canViewDaily && canViewMonthly ? (
       <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
@@ -448,8 +377,6 @@ export default function AttendanceReportTab({
                     วันที่ {formatThaiDate(selectedDate)} ยังไม่มีการลงเวลาทำงานในระบบ — หากเป็นวันที่ผ่านมาแล้ว โปรดตรวจสอบการนำเข้าข้อมูลเวลาสแกนนิ้ว
                   </div>
                 )}
-
-              <InsightBox theme="attendance" items={dailyInsights} />
 
               {/* Chart Row: 100% Stacked Bars per Dept + Overall Donut */}
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
@@ -760,8 +687,6 @@ export default function AttendanceReportTab({
                   }
                 />
               </KpiGrid>
-
-              <InsightBox theme="attendance" items={monthlyInsights} />
 
               {/* Chart Row: Top 10 ColumnChart + Top 5 BarList */}
               {latenessData.items.some((i) => i.lateDays > 0) && (
