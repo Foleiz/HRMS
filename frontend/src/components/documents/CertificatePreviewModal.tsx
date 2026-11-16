@@ -543,8 +543,8 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
   return (
     <>
       <ModalShell className="cert-modal no-print z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-2 sm:p-4" portal={false}>
-        <div className="relative bg-white rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white dark:bg-slate-800">
+        <div className="relative bg-white dark:bg-slate-800 rounded-2xl w-full max-w-[900px] max-h-[94vh] flex flex-col shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200">
               <FileText className="w-5 h-5 text-primary dark:text-blue-400" />
               <h3 className="text-base font-bold">ตัวอย่างหนังสือรับรอง</h3>
@@ -580,7 +580,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto bg-slate-200/70 py-6 px-4">
+          <div className="flex-1 overflow-auto bg-slate-200/70 dark:bg-slate-900/70 py-6 px-4">
             {loading ? (
               <div className="py-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 gap-3">
                 <Loader2 className="w-8 h-8 animate-spin text-primary dark:text-blue-400" />
@@ -595,7 +595,7 @@ export const CertificatePreviewModal: React.FC<CertificatePreviewModalProps> = (
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white border-t border-gray-100 flex-wrap">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-white dark:bg-slate-800 border-t border-gray-100 dark:border-slate-700 flex-wrap">
             <div className="flex items-center gap-2">
               <Button
                 variant="secondary"

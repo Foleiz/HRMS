@@ -1961,20 +1961,20 @@ function DailyAttendanceContent() {
                       <TableEmpty colSpan={6} text="ไม่พบรายการข้อผิดพลาดในชุดนี้" />
                     ) : (
                       errorLogs.map((err) => (
-                        <tr key={err.id} className="hover:bg-rose-50/30 transition-colors">
-                          <td className="py-3 px-3.5 text-center font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap dark:text-slate-300">
+                        <tr key={err.id} className="hover:bg-rose-50/30 dark:hover:bg-rose-950/20 transition-colors">
+                          <td className="py-3 px-3.5 text-center font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             {err.rowNumber}
                           </td>
-                          <td className="py-3 px-3.5 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap dark:text-slate-100">
+                          <td className="py-3 px-3.5 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                             {err.employeeCode || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-800 dark:text-slate-200 whitespace-nowrap dark:text-slate-200">
+                          <td className="py-3 px-3.5 text-slate-800 dark:text-slate-200 whitespace-nowrap">
                             {err.employeeName || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">
+                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                             {err.departmentName || '-'}
                           </td>
-                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap dark:text-slate-400">
+                          <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400 whitespace-nowrap">
                             {err.rawPunchTimestamp || '-'}
                           </td>
                           <td className="py-3 px-3.5 font-semibold text-rose-600 whitespace-nowrap">
@@ -2155,7 +2155,7 @@ function DailyAttendanceContent() {
             </div>
 
             {/* Footer Pagination */}
-            <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3 text-xs dark:border-slate-700">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 flex flex-wrap items-center justify-between gap-3 text-xs">
               <TablePagination
                 total={batchRecordTotalCount}
                 page={batchRecordPage}

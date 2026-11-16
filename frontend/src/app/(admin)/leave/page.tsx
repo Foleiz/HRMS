@@ -874,10 +874,10 @@ function LeaveManagementPageContent() {
                         </>
                       }
                     >
-                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 bg-white shadow-xs">
+                          <div className="overflow-x-auto rounded-xl border border-gray-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xs">
                             <table className="table-standard w-full min-w-[650px] text-left border-collapse text-xs whitespace-nowrap">
                               <thead>
-                                <tr className="bg-gray-50 border-b border-gray-100 font-semibold text-gray-500 whitespace-nowrap">
+                                <tr className="bg-gray-50 dark:bg-slate-800/90 border-b border-gray-100 dark:border-slate-700 font-semibold text-gray-500 dark:text-slate-400 whitespace-nowrap">
                                   <th className="py-2.5 px-4">ประเภทการลา</th>
                                   <th className="py-2.5 px-3 text-center">สิทธิ์ปีนี้</th>
                                   <th className="py-2.5 px-3 text-center">ยกมา</th>
@@ -888,9 +888,9 @@ function LeaveManagementPageContent() {
                                   <th className="py-2.5 px-3 text-center">จัดการ</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-gray-100">
+                              <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60">
                                 {emp.balances.map((b) => (
-                                  <tr key={b.id} className="hover:bg-blue-50/30 transition-colors">
+                                  <tr key={b.id} className="hover:bg-blue-50/30 dark:hover:bg-slate-700/50 transition-colors">
                                     <td className="py-3 px-4">
                                       <LeaveTypeChip size="sm" name={b.leaveTypeName} color={colorOfType(b.leaveTypeId, b.leaveTypeCode)} />
                                     </td>

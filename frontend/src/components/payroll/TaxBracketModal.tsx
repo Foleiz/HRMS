@@ -267,7 +267,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                             type="text"
                             value={b.bracketName}
                             onChange={(e) => handleFieldChange(idx, 'bracketName', e.target.value)}
-                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs font-medium text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-700"
                           />
                         </td>
                         <td className="py-2.5 px-3">
@@ -277,14 +277,14 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                             value={b.incomeFrom}
                             disabled={idx === 0} // ขั้นแรกบังคับ 0
                             onChange={(e) => handleFieldChange(idx, 'incomeFrom', parseFloat(e.target.value) || 0)}
-                            className={`w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                              idx === 0 ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'
+                            className={`w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs text-right font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                              idx === 0 ? 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 cursor-not-allowed' : 'bg-white dark:bg-slate-700'
                             }`}
                           />
                         </td>
                         <td className="py-2.5 px-3">
                           {isLast ? (
-                            <div className="py-1.5 px-2.5 bg-slate-100 rounded-lg text-slate-500 text-right font-medium italic">
+                            <div className="py-1.5 px-2.5 bg-slate-100 dark:bg-slate-800/60 rounded-lg text-slate-500 dark:text-slate-400 text-right font-medium italic">
                               ขึ้นไป (ไม่จำกัดเพดาน)
                             </div>
                           ) : (
@@ -299,7 +299,7 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                                   e.target.value === '' ? null : parseFloat(e.target.value) || 0
                                 )
                               }
-                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs text-right font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                              className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-xs text-right font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-700"
                             />
                           )}
                         </td>
@@ -314,12 +314,12 @@ export const TaxBracketModal: React.FC<TaxBracketModalProps> = ({
                               onChange={(e) =>
                                 handleFieldChange(idx, 'taxRatePercent', parseFloat(e.target.value) || 0)
                               }
-                              className="w-full px-2.5 py-1.5 pr-6 rounded-lg border border-slate-200 text-xs text-center font-bold text-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                              className="w-full px-2.5 py-1.5 pr-6 rounded-lg border border-slate-200 dark:border-slate-600 text-xs text-center font-bold text-blue-700 dark:text-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-700"
                             />
                             <span className="absolute right-2 top-1.5 text-xs text-slate-400 font-bold">%</span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-700">
+                        <td className="py-2.5 px-3 text-right font-mono font-semibold text-slate-700 dark:text-slate-300">
                           ฿{b.baseTaxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="py-2.5 px-2 text-center">

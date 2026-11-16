@@ -357,7 +357,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
         aria-hidden="false"
       >
         {/* Drawer Header */}
-        <div className="p-4 border-b border-slate-200 flex items-start gap-3 shrink-0 bg-white">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-start gap-3 shrink-0 bg-white dark:bg-slate-800">
           {/* Icon (36x36) */}
           <span
             className={`w-9 h-9 rounded-full ${bg} flex items-center justify-center shrink-0 mt-0.5`}
@@ -366,29 +366,29 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           </span>
 
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-bold text-slate-900 leading-snug">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 leading-snug">
               <strong>{log.fullName || log.username}</strong>{' '}
               <span className="font-normal">{log.description || log.action}</span>
             </h2>
-            <div className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
               <span>{formatDisplayDateGroup(log.createdAt).replace('วันนี้ · ', '')}</span>
               <span>·</span>
               <span>{formatTimeHHmm(log.createdAt)} น.</span>
               <span>·</span>
-              <span className="bg-slate-100 text-slate-600 rounded px-1.5 py-0.2 text-[11px] font-mono">
+              <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded px-1.5 py-0.2 text-[11px] font-mono">
                 #{log.id}
               </span>
               <span
                 className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
                   isFail
-                    ? 'bg-rose-100 text-rose-700'
-                    : 'bg-emerald-100 text-emerald-800'
+                    ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                    : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                 }`}
               >
                 {isFail ? 'ล้มเหลว' : 'สำเร็จ'}
               </span>
               {isImp && !isFail && (
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
                   สำคัญ
                 </span>
               )}
@@ -399,7 +399,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
+            className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-500 dark:text-slate-300 flex items-center justify-center shrink-0 transition-colors cursor-pointer"
             aria-label="ปิด"
           >
             <X className="w-4 h-4" />
@@ -410,18 +410,18 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 text-xs text-slate-800 dark:text-slate-200 min-w-0">
           {/* 1. ผู้ดำเนินการ */}
           <div>
-            <h3 className="text-xs font-semibold text-slate-500 mb-1.5">
+            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
               ผู้ดำเนินการ
             </h3>
-            <div className="flex items-center gap-2.5 border border-slate-200 rounded-xl p-2.5 bg-white shadow-2xs">
+            <div className="flex items-center gap-2.5 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 bg-white dark:bg-slate-800/80 shadow-2xs">
               <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shrink-0">
                 {userInitial}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-slate-900 truncate">
+                <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
                   {log.fullName || log.username}
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   {log.userId ? `ผู้ดูแลระบบ · ผู้ใช้ #${log.userId}` : 'งานอัตโนมัติของระบบ'}
                 </div>
               </div>
@@ -429,7 +429,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
                 <button
                   type="button"
                   onClick={() => onFilterByUser(log.userId)}
-                  className="text-xs text-blue-600 hover:underline cursor-pointer font-medium shrink-0 flex items-center gap-0.5"
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline cursor-pointer font-medium shrink-0 flex items-center gap-0.5"
                 >
                   <span>ดูประวัติ</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -441,18 +441,18 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           {/* 1.5 เจ้าของข้อมูล (พนักงานที่ข้อมูลนี้เป็นของ) */}
           {targetUser && (
             <div>
-              <h3 className="text-xs font-semibold text-slate-500 mb-1.5">
+              <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                 เจ้าของข้อมูล
               </h3>
-              <div className="flex items-center gap-2.5 border border-slate-200 rounded-xl p-2.5 bg-white shadow-2xs">
+              <div className="flex items-center gap-2.5 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 bg-white dark:bg-slate-800/80 shadow-2xs">
                 <div className="w-8 h-8 rounded-full bg-slate-700 text-white flex items-center justify-center font-bold text-xs shrink-0">
                   {targetInitial}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-bold text-slate-900 truncate">
+                  <div className="font-bold text-slate-900 dark:text-slate-100 truncate">
                     {targetUser.name}
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
                     {targetUser.code ? `รหัสพนักงาน ${targetUser.code}` : `พนักงาน #${targetUser.id}`}
                   </div>
                 </div>
@@ -612,25 +612,25 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
           )}
 
           {/* 5. ข้อมูลเชิงเทคนิค (Collapsible details) */}
-          <details className="border border-slate-200 rounded-xl p-3 bg-white">
-            <summary className="text-xs text-slate-600 font-semibold cursor-pointer select-none">
+          <details className="border border-slate-200 dark:border-slate-700 rounded-xl p-3 bg-white dark:bg-slate-800/80">
+            <summary className="text-xs text-slate-600 dark:text-slate-300 font-semibold cursor-pointer select-none">
               ข้อมูลเชิงเทคนิค
             </summary>
 
-            <div className="grid grid-cols-[140px_1fr] gap-y-1 gap-x-2 text-xs mt-3 pt-2 border-t border-slate-100">
-              <span className="text-slate-500">การกระทำ (Action)</span>
-              <span className="font-mono font-bold text-slate-800">{log.action}</span>
+            <div className="grid grid-cols-[140px_1fr] gap-y-1 gap-x-2 text-xs mt-3 pt-2 border-t border-slate-100 dark:border-slate-700">
+              <span className="text-slate-500 dark:text-slate-400">การกระทำ (Action)</span>
+              <span className="font-mono font-bold text-slate-800 dark:text-slate-200">{log.action}</span>
 
-              <span className="text-slate-500">ชนิดข้อมูล (Entity)</span>
-              <span className="font-mono text-slate-800">{log.entityType}</span>
+              <span className="text-slate-500 dark:text-slate-400">ชนิดข้อมูล (Entity)</span>
+              <span className="font-mono text-slate-800 dark:text-slate-200">{log.entityType}</span>
 
-              <span className="text-slate-500">รหัสข้อมูล</span>
-              <span className="font-mono text-slate-800">#{log.entityId || '-'}</span>
+              <span className="text-slate-500 dark:text-slate-400">รหัสข้อมูล</span>
+              <span className="font-mono text-slate-800 dark:text-slate-200">#{log.entityId || '-'}</span>
 
               {log.fieldName && !log.fieldName.startsWith('BULK|') && (
                 <>
-                  <span className="text-slate-500">ฟิลด์</span>
-                  <span className="font-mono text-slate-800">{log.fieldName}</span>
+                  <span className="text-slate-500 dark:text-slate-400">ฟิลด์</span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">{log.fieldName}</span>
                 </>
               )}
             </div>
@@ -659,7 +659,7 @@ export const AuditLogDetailModal: React.FC<AuditLogDetailModalProps> = ({
             <button
               type="button"
               onClick={handleCopyJson}
-              className="mt-2 h-7 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="mt-2 h-7 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               {copied ? (
                 <>

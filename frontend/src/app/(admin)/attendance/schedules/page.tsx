@@ -1381,13 +1381,13 @@ function SchedulesContent() {
                       </div>
 
                       {/* Month days cells */}
-                      <div className="grid grid-cols-7 auto-rows-[142px] bg-slate-200 gap-px">
+                      <div className="grid grid-cols-7 auto-rows-[142px] bg-slate-200 dark:bg-slate-700 gap-px">
                         {monthCalendarGrid.map((cell, cellIdx) => {
                           if (!cell.isCurrentMonth) {
                             return (
                               <div
                                 key={`empty-${cellIdx}`}
-                                className="bg-slate-50/50 p-2 h-[142px] text-slate-300 select-none"
+                                className="bg-slate-50/50 dark:bg-slate-800/40 p-2 h-[142px] text-slate-300 dark:text-slate-600 select-none"
                               >
                                 <span className="text-xs font-medium">{cell.dayNumber}</span>
                               </div>
@@ -1414,8 +1414,8 @@ function SchedulesContent() {
                           return (
                             <div
                               key={`day-${cell.dayNumber}`}
-                              className={`bg-white p-2 h-[142px] overflow-hidden flex flex-col justify-between transition group hover:bg-slate-50/80 cursor-pointer ${
-                                cell.isWeekend ? 'bg-amber-50/20' : ''
+                              className={`bg-white dark:bg-slate-800 p-2 h-[142px] overflow-hidden flex flex-col justify-between transition group hover:bg-slate-50/80 dark:hover:bg-slate-700/60 cursor-pointer ${
+                                cell.isWeekend ? 'bg-amber-50/20 dark:bg-amber-950/20' : ''
                               }`}
                               onClick={() =>
                                 setSelectedCalendarDay({
@@ -1433,8 +1433,8 @@ function SchedulesContent() {
                                     cell.isToday
                                       ? 'w-6 h-6 bg-primary text-white shadow-xs'
                                       : cell.isWeekend
-                                      ? 'text-amber-800'
-                                      : 'text-slate-800'
+                                      ? 'text-amber-800 dark:text-amber-300'
+                                      : 'text-slate-800 dark:text-slate-200'
                                   }`}
                                 >
                                   {cell.dayNumber}
@@ -1442,7 +1442,7 @@ function SchedulesContent() {
 
                                 <div className="flex items-center gap-1">
                                   {dayShifts.length > 0 && (
-                                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-full">
                                       {dayShifts.length} คน
                                     </span>
                                   )}
@@ -1475,7 +1475,7 @@ function SchedulesContent() {
                                 )}
 
                                 {dayShifts.length === 0 && (
-                                  <div className="h-full flex items-center justify-center text-[11px] text-slate-300 select-none">
+                                  <div className="h-full flex items-center justify-center text-[11px] text-slate-300 dark:text-slate-600 select-none">
                                     {cell.isWeekend ? 'วันหยุด' : '-'}
                                   </div>
                                 )}
