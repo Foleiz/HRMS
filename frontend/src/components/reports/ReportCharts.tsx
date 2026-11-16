@@ -329,7 +329,7 @@ export function ColumnChart({
 
               {/* แท่งจำนวนจริง */}
               <div
-                className="relative flex w-full max-w-[48px] items-center justify-center transition-opacity"
+                className="w-full max-w-[48px] transition-opacity"
                 style={{
                   height: `${Math.max(it.value > 0 ? 1.5 : 0, h)}%`,
                   background: color,
@@ -339,14 +339,7 @@ export function ColumnChart({
                   borderBottomRightRadius: 2,
                   opacity: hover == null || hover === it.id ? 1 : 0.55,
                 }}
-              >
-                {/* แสดงตัวเลขจำนวนจริงสีขาวชัดเจนในแท่งเมื่อแท่งมีความสูงเพียงพอ */}
-                {targetExceeds && h >= 12 && (
-                  <span className="select-none text-[10px] font-bold text-white drop-shadow-sm">
-                    {it.valueLabel ?? fmtNumber(it.value)}
-                  </span>
-                )}
-              </div>
+              />
 
               {/* เส้นประกรณีจำนวนจริงบรรลุหรือเกินเป้าหมาย (target <= value) */}
               {hasTarget && !targetExceeds && (
