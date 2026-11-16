@@ -9,27 +9,24 @@ import {
   Users,
 } from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
+import { reportService } from '@/services/reportService';
 import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
-import { LeaveCalendarItem, LeaveReportCell, LeaveReportRow, LeaveReportTopEmployee, LeaveSummaryReport } from '@/types/leaveInsights';
+import { LeaveCalendarItem } from '@/types/leaveInsights';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { getSmartYearRange } from '@/lib/yearUtils';
 import { TH_MONTHS, formatThaiDate as fmtThaiDate } from '@/lib/thaiDate';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
-import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
 import {
   AvatarName,
-  BarList,
   IconButton,
   KpiCard,
   KpiGrid,
-  MiniColumns,
   ReportEmpty,
   ReportFilterBar,
   ReportLoading,
-  ReportPanel,
   ReportTableCard,
   TableEmpty,
 } from './ReportShell';
@@ -37,6 +34,18 @@ import {
 interface Props {
   canExport: boolean;
   onError: (message: string) => void;
+}
+
+interface EmployeeLeaveSummaryRow {
+  employeeId: number;
+  employeeCode: string;
+  employeeName: string;
+  departmentName: string;
+  positionName: string;
+  approvedRequests: number;
+  pendingRequests: number;
+  approvedDays: number;
+  byTypeText: string;
 }
 
 const fmt = (n: number) => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
@@ -48,91 +57,7 @@ const localToday = () => {
 
 const pad2 = (n: number) => String(n).padStart(2, '0');
 
-function buildSummaryFromCalendar(items: LeaveCalendarItem[], year: number): LeaveSummaryReport {
-  const approved = items.filter((i) => i.status === 'APPROVED');
-  const pendingRequests = items.filter((i) => i.status !== 'APPROVED').length;
-  const totalDays = approved.reduce((s, i) => s + (Number(i.leaveDays) || 0), 0);
-  const totalRequests = approved.length;
-  const employeesOnLeave = new Set(approved.map((i) => i.employeeId)).size;
-
-  const typeMap = new Map<string, { days: number; requests: number; empSet: Set<number> }>();
-  const deptMap = new Map<string, { days: number; requests: number; empSet: Set<number> }>();
-  const cellMap = new Map<string, number>();
-  const empMap = new Map<number, LeaveReportTopEmployee>();
-
-  for (const it of approved) {
-    const days = Number(it.leaveDays) || 0;
-    const tName = it.leaveTypeName || 'อื่นๆ';
-    const dName = it.departmentName || 'ไม่ระบุแผนก';
-
-    const tRec = typeMap.get(tName) ?? { days: 0, requests: 0, empSet: new Set<number>() };
-    tRec.days += days;
-    tRec.requests += 1;
-    tRec.empSet.add(it.employeeId);
-    typeMap.set(tName, tRec);
-
-    const dRec = deptMap.get(dName) ?? { days: 0, requests: 0, empSet: new Set<number>() };
-    dRec.days += days;
-    dRec.requests += 1;
-    dRec.empSet.add(it.employeeId);
-    deptMap.set(dName, dRec);
-
-    const cellKey = `${dName}|${tName}`;
-    cellMap.set(cellKey, (cellMap.get(cellKey) ?? 0) + days);
-
-    const eRec = empMap.get(it.employeeId) ?? {
-      employeeId: it.employeeId,
-      employeeCode: it.employeeCode,
-      employeeName: it.employeeName,
-      departmentName: dName,
-      days: 0,
-      requests: 0,
-    };
-    eRec.days += days;
-    eRec.requests += 1;
-    empMap.set(it.employeeId, eRec);
-  }
-
-  const byType: LeaveReportRow[] = Array.from(typeMap.entries()).map(([label, v]) => ({
-    key: label,
-    label,
-    days: v.days,
-    requests: v.requests,
-    employees: v.empSet.size,
-  }));
-
-  const byDepartment: LeaveReportRow[] = Array.from(deptMap.entries()).map(([label, v]) => ({
-    key: label,
-    label,
-    days: v.days,
-    requests: v.requests,
-    employees: v.empSet.size,
-  }));
-
-  const departmentByType: LeaveReportCell[] = Array.from(cellMap.entries()).map(([k, days]) => {
-    const [departmentName, leaveTypeName] = k.split('|');
-    return { departmentName, leaveTypeName, days };
-  });
-
-  const topEmployees: LeaveReportTopEmployee[] = Array.from(empMap.values()).sort(
-    (a, b) => b.days - a.days || b.requests - a.requests
-  );
-
-  return {
-    year,
-    totalDays,
-    totalRequests,
-    employeesOnLeave,
-    pendingRequests,
-    byType,
-    byDepartment,
-    byMonth: [],
-    departmentByType,
-    topEmployees,
-  };
-}
-
-/** แท็บรายงานการลา: รองรับ 3 มุมมอง [รายวัน | รายเดือน | รายปี] */
+/** แท็บรายงานการลา: แสดงเฉพาะแดชบอร์ดและตารางข้อมูลพนักงานทั้งหมดตามแผนกที่เลือก */
 export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   const now = new Date();
   const [mode, setMode] = useState<'daily' | 'monthly' | 'yearly'>('yearly');
@@ -141,13 +66,18 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   const [year, setYear] = useState<number>(now.getFullYear());
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [data, setData] = useState<LeaveSummaryReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [matrixSearch, setMatrixSearch] = useState('');
-  const [matrixPage, setMatrixPage] = useState(1);
-  const [matrixPageSize, setMatrixPageSize] = useState(10);
+
+  const [summaryStats, setSummaryStats] = useState<{
+    totalDays: number;
+    totalRequests: number;
+    employeesOnLeave: number;
+    pendingRequests: number;
+    employees: EmployeeLeaveSummaryRow[];
+  } | null>(null);
+
   const [empSearch, setEmpSearch] = useState('');
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
@@ -169,31 +99,124 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     setFailed(false);
     try {
       const deptParam = departmentId === '' ? undefined : departmentId;
-      if (mode === 'yearly') {
-        const res = await leaveInsightsService.getSummary(year, deptParam);
-        setData(res);
+      let from = `${year}-01-01`;
+      let to = `${year}-12-31`;
+
+      if (mode === 'daily') {
+        from = selectedDate;
+        to = selectedDate;
       } else if (mode === 'monthly') {
         const lastDay = new Date(year, month, 0).getDate();
-        const from = `${year}-${pad2(month)}-01`;
-        const to = `${year}-${pad2(month)}-${pad2(lastDay)}`;
-        const cal = await leaveInsightsService.getCalendar({
+        from = `${year}-${pad2(month)}-01`;
+        to = `${year}-${pad2(month)}-${pad2(lastDay)}`;
+      }
+
+      const [deptReport, calResult] = await Promise.all([
+        reportService.getEmployeesByDepartment(undefined, deptParam),
+        leaveInsightsService.getCalendar({
           from,
           to,
           departmentId: deptParam,
           includePending: true,
-        });
-        setData(buildSummaryFromCalendar(cal.items ?? [], year));
-      } else {
-        const cal = await leaveInsightsService.getCalendar({
-          from: selectedDate,
-          to: selectedDate,
-          departmentId: deptParam,
-          includePending: true,
-        });
-        const y = Number(selectedDate.slice(0, 4)) || year;
-        setData(buildSummaryFromCalendar(cal.items ?? [], y));
+        }),
+      ]);
+
+      const leaveItems: LeaveCalendarItem[] = calResult.items ?? [];
+      const approvedItems = leaveItems.filter((i) => i.status === 'APPROVED');
+      const pendingItems = leaveItems.filter((i) => i.status !== 'APPROVED');
+
+      const totalDays = approvedItems.reduce((s, i) => s + (Number(i.leaveDays) || 0), 0);
+      const totalRequests = approvedItems.length;
+      const employeesOnLeave = new Set(approvedItems.map((i) => i.employeeId)).size;
+      const pendingRequests = pendingItems.length;
+
+      // รวบรวมรายชื่อพนักงานทั้งหมดจากแผนกที่เลือก
+      const empMap = new Map<
+        number,
+        {
+          employeeId: number;
+          employeeCode: string;
+          employeeName: string;
+          departmentName: string;
+          positionName: string;
+          approvedRequests: number;
+          pendingRequests: number;
+          approvedDays: number;
+          typeDays: Map<string, number>;
+        }
+      >();
+
+      for (const dept of deptReport.departments) {
+        for (const emp of dept.employees) {
+          empMap.set(emp.employeeId, {
+            employeeId: emp.employeeId,
+            employeeCode: emp.employeeCode,
+            employeeName: emp.employeeName,
+            departmentName: dept.departmentName,
+            positionName: emp.positionName || '-',
+            approvedRequests: 0,
+            pendingRequests: 0,
+            approvedDays: 0,
+            typeDays: new Map<string, number>(),
+          });
+        }
       }
-      setMatrixPage(1);
+
+      // เติมข้อมูลการลาของพนักงานแต่ละคน
+      for (const it of leaveItems) {
+        let rec = empMap.get(it.employeeId);
+        if (!rec) {
+          rec = {
+            employeeId: it.employeeId,
+            employeeCode: it.employeeCode,
+            employeeName: it.employeeName,
+            departmentName: it.departmentName || 'ไม่ระบุแผนก',
+            positionName: '-',
+            approvedRequests: 0,
+            pendingRequests: 0,
+            approvedDays: 0,
+            typeDays: new Map<string, number>(),
+          };
+          empMap.set(it.employeeId, rec);
+        }
+
+        if (it.status === 'APPROVED') {
+          const d = Number(it.leaveDays) || 0;
+          rec.approvedRequests += 1;
+          rec.approvedDays += d;
+          const tName = it.leaveTypeName || 'อื่นๆ';
+          rec.typeDays.set(tName, (rec.typeDays.get(tName) ?? 0) + d);
+        } else {
+          rec.pendingRequests += 1;
+        }
+      }
+
+      const employees: EmployeeLeaveSummaryRow[] = Array.from(empMap.values())
+        .map((r) => ({
+          employeeId: r.employeeId,
+          employeeCode: r.employeeCode,
+          employeeName: r.employeeName,
+          departmentName: r.departmentName,
+          positionName: r.positionName,
+          approvedRequests: r.approvedRequests,
+          pendingRequests: r.pendingRequests,
+          approvedDays: r.approvedDays,
+          byTypeText:
+            r.typeDays.size > 0
+              ? Array.from(r.typeDays.entries())
+                  .map(([k, v]) => `${k} ${fmt(v)} วัน`)
+                  .join(' · ')
+              : '-',
+        }))
+        .sort((a, b) => b.approvedDays - a.approvedDays || a.employeeCode.localeCompare(b.employeeCode, 'th'));
+
+      setSummaryStats({
+        totalDays,
+        totalRequests,
+        employeesOnLeave,
+        pendingRequests,
+        employees,
+      });
       setEmpPage(1);
     } catch (e: unknown) {
       setFailed(true);
@@ -207,50 +230,24 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     load();
   }, [load]);
 
-  // ตาราง แผนก × ประเภท
-  const matrix = useMemo(() => {
-    if (!data) return { types: [] as string[], depts: [] as string[], cell: new Map<string, number>() };
-    const types = data.byType.map((t) => t.label);
-    const depts = data.byDepartment.map((d) => d.label);
-    const cell = new Map<string, number>();
-    data.departmentByType.forEach((c) => cell.set(`${c.departmentName}|${c.leaveTypeName}`, c.days));
-    return { types, depts, cell };
-  }, [data]);
-
-  const filteredMatrixDepts = useMemo(() => {
-    if (!data) return [];
-    const q = matrixSearch.trim().toLowerCase();
-    if (!q) return data.byDepartment;
-    return data.byDepartment.filter((d) => d.label.toLowerCase().includes(q));
-  }, [data, matrixSearch]);
-
-  const pagedMatrixDepts = useMemo(() => {
-    const start = (matrixPage - 1) * matrixPageSize;
-    return filteredMatrixDepts.slice(start, start + matrixPageSize);
-  }, [filteredMatrixDepts, matrixPage, matrixPageSize]);
-
-  const filteredTopEmployees = useMemo(() => {
-    if (!data) return [];
+  const filteredEmployees = useMemo(() => {
+    if (!summaryStats) return [];
     const q = empSearch.trim().toLowerCase();
-    if (!q) return data.topEmployees;
-    return data.topEmployees.filter(
+    if (!q) return summaryStats.employees;
+    return summaryStats.employees.filter(
       (e) =>
         e.employeeName.toLowerCase().includes(q) ||
         e.employeeCode.toLowerCase().includes(q) ||
-        (e.departmentName || '').toLowerCase().includes(q)
+        e.departmentName.toLowerCase().includes(q) ||
+        e.positionName.toLowerCase().includes(q) ||
+        e.byTypeText.toLowerCase().includes(q)
     );
-  }, [data, empSearch]);
+  }, [summaryStats, empSearch]);
 
-  const pagedTopEmployees = useMemo(() => {
+  const pagedEmployees = useMemo(() => {
     const start = (empPage - 1) * empPageSize;
-    return filteredTopEmployees.slice(start, start + empPageSize);
-  }, [filteredTopEmployees, empPage, empPageSize]);
-
-  const peakMonthIdx = useMemo(() => {
-    if (!data || data.byMonth.length === 0) return -1;
-    const maxVal = Math.max(...data.byMonth.map((m) => m.days), 0);
-    return maxVal > 0 ? data.byMonth.findIndex((m) => m.days === maxVal) : -1;
-  }, [data]);
+    return filteredEmployees.slice(start, start + empPageSize);
+  }, [filteredEmployees, empPage, empPageSize]);
 
   const periodSubtitle =
     mode === 'daily'
@@ -264,46 +261,54 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
       printReport(rootRef.current, { title: 'รายงานการลา', subtitle: periodSubtitle });
       return;
     }
-    if (mode === 'yearly') {
-      setExporting(true);
-      try {
-        await leaveInsightsService.downloadSummaryCsv(year, departmentId === '' ? undefined : departmentId, format);
-      } catch (e: unknown) {
-        onError((e as { message?: string })?.message || 'ส่งออกไฟล์ไม่สำเร็จ');
-      } finally {
-        setExporting(false);
-      }
-      return;
+    if (!summaryStats) return;
+    setExporting(true);
+    try {
+      const headers = [
+        'รหัสพนักงาน',
+        'ชื่อ-นามสกุล',
+        'แผนก',
+        'ตำแหน่ง',
+        'รายละเอียดประเภทการลา',
+        'ใบลาอนุมัติ (ใบ)',
+        'รออนุมัติ (ใบ)',
+        'วันลารวม (วัน)',
+      ];
+      const rows = filteredEmployees.map((e) => [
+        e.employeeCode,
+        e.employeeName,
+        e.departmentName,
+        e.positionName,
+        e.byTypeText,
+        e.approvedRequests,
+        e.pendingRequests,
+        e.approvedDays,
+      ]);
+      const csvContent =
+        '\uFEFF' +
+        [headers, ...rows]
+          .map((r) => r.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+          .join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const href = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.setAttribute(
+        'download',
+        mode === 'daily'
+          ? `Leave_Daily_${selectedDate}.csv`
+          : mode === 'monthly'
+            ? `Leave_Monthly_${year + 543}_${pad2(month)}.csv`
+            : `Leave_Yearly_${year + 543}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(href);
+    } finally {
+      setExporting(false);
     }
-    if (!data) return;
-    const headers = ['รหัสพนักงาน', 'ชื่อ-นามสกุล', 'แผนก', 'จำนวนใบลา', 'วันลารวม'];
-    const rows = data.topEmployees.map((e) => [
-      e.employeeCode,
-      e.employeeName,
-      e.departmentName || '-',
-      e.requests,
-      e.days,
-    ]);
-    const csvContent =
-      '\uFEFF' +
-      [headers, ...rows]
-        .map((r) => r.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
-        .join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const href = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = href;
-    link.setAttribute(
-      'download',
-      mode === 'daily' ? `Leave_Daily_${selectedDate}.csv` : `Leave_Monthly_${year + 543}_${pad2(month)}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(href);
   };
-
-  const typeColors = ['#8b5cf6', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
 
   const modeSwitch = (
     <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900">
@@ -337,9 +342,9 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
         right={
           canExport ? (
             <ExportMenu
-              formats={mode === 'yearly' ? ['xlsx', 'csv', 'pdf'] : ['csv', 'pdf']}
+              formats={['csv', 'pdf']}
               onExport={handleExport}
-              disabled={exporting || !data}
+              disabled={exporting || !summaryStats || summaryStats.employees.length === 0}
             />
           ) : undefined
         }
@@ -401,9 +406,9 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
         </IconButton>
       </ReportFilterBar>
 
-      {loading && !data ? (
+      {loading && !summaryStats ? (
         <ReportLoading />
-      ) : !data ? (
+      ) : !summaryStats ? (
         <ReportEmpty
           text={
             failed
@@ -419,9 +424,8 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               icon={CalendarDays}
               tone="violet"
               label="วันลารวม (อนุมัติแล้ว)"
-              value={fmt(data.totalDays)}
+              value={fmt(summaryStats.totalDays)}
               unit="วัน"
-              spark={data.byMonth.length > 1 ? data.byMonth.map((m) => m.days) : undefined}
               tooltip="ผลรวมวันลาจากใบลาที่อนุมัติแล้วในช่วงที่เลือก"
             />
 
@@ -429,7 +433,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               icon={FileSpreadsheet}
               tone="blue"
               label="จำนวนใบลา"
-              value={fmt(data.totalRequests)}
+              value={fmt(summaryStats.totalRequests)}
               unit="ใบ"
               tooltip="จำนวนใบลาที่อนุมัติแล้วทั้งหมดในช่วงที่เลือก"
             />
@@ -438,7 +442,7 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               icon={Users}
               tone="emerald"
               label="พนักงานที่ลา"
-              value={fmt(data.employeesOnLeave)}
+              value={fmt(summaryStats.employeesOnLeave)}
               unit="คน"
               tooltip="จำนวนพนักงานที่มีการลาในช่วงที่เลือก (นับไม่ซ้ำคน)"
             />
@@ -447,165 +451,24 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
               icon={AlertTriangle}
               tone="amber"
               label="รออนุมัติ"
-              value={fmt(data.pendingRequests)}
+              value={fmt(summaryStats.pendingRequests)}
               unit="ใบ"
               tooltip="จำนวนใบลาที่ยังรอหัวหน้างานอนุมัติ"
             />
           </KpiGrid>
 
-          {/* Chart Row 1: Monthly Trend (เฉพาะโหมดรายปี) + By Type Donut */}
-          {mode === 'yearly' && data.byMonth.length > 0 ? (
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-              <ReportPanel
-                title="แนวโน้มวันลารายเดือน"
-                subtitle="จำนวนวันลารวมในแต่ละเดือนของปีที่เลือก (แท่งสีเข้ม = เดือนที่ลาสูงสุด)"
-                className="xl:col-span-2"
-              >
-                <MiniColumns
-                  items={data.byMonth.map((m) => ({ label: m.label, value: Number(m.days.toFixed(1)) }))}
-                  color="#c4b5fd"
-                  highlightIndex={peakMonthIdx}
-                  highlightColor="#7c3aed"
-                  height={185}
-                />
-              </ReportPanel>
-
-              <ReportPanel title="สัดส่วนตามประเภทการลา" subtitle="เปรียบเทียบจำนวนวันลาแยกตามประเภท">
-                {data.byType.length === 0 ? (
-                  <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
-                ) : (
-                  <DonutChart
-                    unit="วัน"
-                    centerLabel="วันลารวม"
-                    size={145}
-                    segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
-                  />
-                )}
-              </ReportPanel>
-            </div>
-          ) : null}
-
-          {/* Chart Row 2: By Department + By Leave Type Details */}
-          <div className={`grid grid-cols-1 gap-4 ${mode === 'yearly' ? 'xl:grid-cols-2' : 'xl:grid-cols-3'}`}>
-            <ReportPanel title="วันลาแยกตามแผนก" subtitle="เรียงตามจำนวนวันลารวม (อนุมัติแล้ว)">
-              <BarList
-                items={[...data.byDepartment]
-                  .sort((a, b) => b.days - a.days)
-                  .map((d) => ({
-                    label: d.label,
-                    value: d.days,
-                    display: `${fmt(d.days)} วัน (${d.requests} ใบ)`,
-                    color: '#7c3aed',
-                  }))}
-              />
-            </ReportPanel>
-
-            <ReportPanel title="รายละเอียดตามประเภทการลา" subtitle="จำนวนวันและจำนวนใบลาของแต่ละประเภท">
-              <BarList
-                items={[...data.byType]
-                  .sort((a, b) => b.days - a.days)
-                  .map((t, i) => ({
-                    label: t.label,
-                    value: t.days,
-                    display: `${fmt(t.days)} วัน · ${t.requests} ใบ`,
-                    color: typeColors[i % typeColors.length],
-                  }))}
-              />
-            </ReportPanel>
-
-            {mode !== 'yearly' && (
-              <ReportPanel title="สัดส่วนตามประเภทการลา" subtitle="เปรียบเทียบจำนวนวันลาแยกตามประเภท">
-                {data.byType.length === 0 ? (
-                  <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
-                ) : (
-                  <DonutChart
-                    unit="วัน"
-                    centerLabel="วันลารวม"
-                    size={145}
-                    segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
-                  />
-                )}
-              </ReportPanel>
-            )}
-          </div>
-
-          {/* Matrix Table: Department x Leave Type */}
-          <ReportTableCard
-            searchValue={matrixSearch}
-            onSearchChange={(val) => {
-              setMatrixSearch(val);
-              setMatrixPage(1);
-            }}
-            searchPlaceholder="ค้นหาชื่อแผนก..."
-            minWidthClassName="min-w-[680px]"
-            pagination={{
-              total: filteredMatrixDepts.length,
-              page: matrixPage,
-              pageSize: matrixPageSize,
-              onPageChange: setMatrixPage,
-              onPageSizeChange: (newSize) => {
-                setMatrixPageSize(newSize);
-                setMatrixPage(1);
-              },
-              totalLabel: 'แผนก',
-            }}
-          >
-            <thead className="bg-primary text-white font-semibold">
-              <tr className="whitespace-nowrap">
-                <th className="py-3.5 px-4 text-left whitespace-nowrap">แผนก</th>
-                {matrix.types.map((t) => (
-                  <th key={t} className="py-3.5 px-4 text-right whitespace-nowrap">
-                    {t}
-                  </th>
-                ))}
-                <th className="py-3.5 px-4 text-right whitespace-nowrap">รวม (วัน)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
-              {pagedMatrixDepts.length === 0 ? (
-                <TableEmpty colSpan={matrix.types.length + 2} text="ไม่พบข้อมูลวันลาแยกแผนก" />
-              ) : (
-                pagedMatrixDepts.map((d) => (
-                  <tr key={d.key} className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40">
-                    <td className="py-3 px-4 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                      {d.label}
-                    </td>
-                    {matrix.types.map((t) => {
-                      const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
-                      return (
-                        <td
-                          key={t}
-                          title={`${d.label} · ${t}: ${fmt(v)} วัน`}
-                          className={`py-3 px-4 text-right tabular-nums whitespace-nowrap ${
-                            v > 0
-                              ? 'font-semibold text-slate-800 dark:text-slate-200'
-                              : 'text-slate-300 dark:text-slate-600'
-                          }`}
-                        >
-                          {fmt(v)}
-                        </td>
-                      );
-                    })}
-                    <td className="py-3 px-4 text-right font-extrabold text-violet-700 dark:text-violet-300 whitespace-nowrap">
-                      {fmt(d.days)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </ReportTableCard>
-
-          {/* Top Employees on Leave */}
+          {/* All Employees Leave Table */}
           <ReportTableCard
             searchValue={empSearch}
             onSearchChange={(val) => {
               setEmpSearch(val);
               setEmpPage(1);
             }}
-            searchPlaceholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
-            minWidthClassName="min-w-[680px]"
+            searchPlaceholder="ค้นหาชื่อ รหัสพนักงาน แผนก หรือประเภทการลา..."
+            refreshing={loading}
+            minWidthClassName="min-w-[880px]"
             pagination={{
-              total: filteredTopEmployees.length,
+              total: filteredEmployees.length,
               page: empPage,
               pageSize: empPageSize,
               onPageChange: setEmpPage,
@@ -613,59 +476,73 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
                 setEmpPageSize(newSize);
                 setEmpPage(1);
               },
+              pageSizeOptions: [10, 20, 50, 100],
             }}
           >
             <thead className="bg-primary text-white font-semibold">
               <tr className="whitespace-nowrap">
-                <th className="w-12 py-3.5 px-4 text-center whitespace-nowrap">อันดับ</th>
                 <th className="py-3.5 px-4 text-left whitespace-nowrap">พนักงาน</th>
                 <th className="py-3.5 px-4 text-left whitespace-nowrap">รหัสพนักงาน</th>
-                <th className="py-3.5 px-4 text-left whitespace-nowrap">แผนก</th>
-                <th className="py-3.5 px-4 text-right whitespace-nowrap">จำนวนใบลา</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">แผนก / ตำแหน่ง</th>
+                <th className="py-3.5 px-4 text-left whitespace-nowrap">ประเภทการลาที่ใช้</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">ใบลาอนุมัติ</th>
+                <th className="py-3.5 px-4 text-center whitespace-nowrap">รออนุมัติ</th>
                 <th className="py-3.5 px-4 text-right whitespace-nowrap" style={{ minWidth: 160 }}>
                   วันลารวม
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
-              {pagedTopEmployees.length === 0 ? (
-                <TableEmpty colSpan={6} text="ไม่พบข้อมูลการลาของพนักงาน" />
+              {pagedEmployees.length === 0 ? (
+                <TableEmpty colSpan={7} text="ไม่พบข้อมูลพนักงานตามตัวกรองที่เลือก" />
               ) : (
                 (() => {
-                  const maxEmpDays = Math.max(...data.topEmployees.map((x) => x.days), 1);
-                  return pagedTopEmployees.map((e, i) => {
-                    const rank = (empPage - 1) * empPageSize + i + 1;
-                    return (
-                      <tr key={e.employeeId} className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40">
-                        <td className="py-3 px-4 text-center font-bold text-slate-400 whitespace-nowrap">#{rank}</td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <AvatarName id={e.employeeId} name={e.employeeName} />
-                        </td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                          {e.employeeCode}
-                        </td>
-                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                          {e.departmentName || '-'}
-                        </td>
-                        <td className="py-3 px-4 text-right font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                          {e.requests} ใบ
-                        </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-2.5">
-                            <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                              <div
-                                className="h-full rounded-full bg-violet-600"
-                                style={{ width: `${(e.days / maxEmpDays) * 100}%` }}
-                              />
-                            </div>
-                            <span className="w-14 text-right font-extrabold text-slate-900 dark:text-slate-100">
-                              {fmt(e.days)} วัน
-                            </span>
+                  const maxEmpDays = Math.max(...summaryStats.employees.map((x) => x.approvedDays), 1);
+                  return pagedEmployees.map((e) => (
+                    <tr
+                      key={e.employeeId}
+                      className="hover:bg-slate-50/80 transition-colors dark:hover:bg-slate-800/40"
+                    >
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <AvatarName id={e.employeeId} name={e.employeeName} />
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                        {e.employeeCode}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{e.departmentName}</div>
+                        <div className="text-[11px] text-slate-400">{e.positionName}</div>
+                      </td>
+                      <td className="py-3 px-4 text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        {e.byTypeText}
+                      </td>
+                      <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        {e.approvedRequests > 0 ? `${e.approvedRequests} ใบ` : '-'}
+                      </td>
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        {e.pendingRequests > 0 ? (
+                          <span className="inline-flex rounded-lg bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                            {e.pendingRequests} ใบ
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600">-</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2.5">
+                          <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                            <div
+                              className="h-full rounded-full bg-violet-600"
+                              style={{ width: `${e.approvedDays > 0 ? (e.approvedDays / maxEmpDays) * 100 : 0}%` }}
+                            />
                           </div>
-                        </td>
-                      </tr>
-                    );
-                  });
+                          <span className="w-14 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                            {fmt(e.approvedDays)} วัน
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ));
                 })()
               )}
             </tbody>
