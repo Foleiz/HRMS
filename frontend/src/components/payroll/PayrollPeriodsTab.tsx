@@ -215,16 +215,10 @@ export default function PayrollPeriodsTab({
         {/* Card 2: ปิดรอบ / จ่ายสำเร็จแล้ว (Solid Emerald Panel) */}
         <div className="bg-emerald-100/60 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800/80 p-5 shadow-xs hover:border-emerald-300 dark:hover:border-emerald-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="min-w-0 flex-1">
               <span className="text-xs text-emerald-700 dark:text-emerald-300 font-bold block truncate">
                 ปิดรอบ / จ่ายสำเร็จแล้ว
               </span>
-              <div className="flex items-center gap-1.5 text-[11px] text-emerald-700/85 dark:text-emerald-300/80 font-medium">
-                <span>ความคืบหน้า</span>
-                <span className="font-bold text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-slate-800 px-1.5 py-0.2 rounded border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs text-[10px]">
-                  ครบถ้วน {summaryStats.completedPercent}%
-                </span>
-              </div>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 flex items-center justify-center shrink-0 shadow-2xs">
               <CheckCircle2 className="w-5 h-5" />
