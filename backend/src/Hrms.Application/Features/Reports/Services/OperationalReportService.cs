@@ -166,7 +166,7 @@ public class OperationalReportService : IOperationalReportService
                         ? $"/api/employees/{p.EmployeeId}/avatar?v={p.AvatarUpdatedAt.Value.Ticks}"
                         : null,
                     PositionName = p.PositionName ?? "-",
-                    EmployeeTypeName = p.TypeName ?? "-",
+                    EmployeeTypeName = string.IsNullOrWhiteSpace(p.TypeName) ? "ไม่ระบุ" : p.TypeName,
                     LevelName = p.LevelName ?? "-",
                     Gender = gender,
                     StartDate = start,

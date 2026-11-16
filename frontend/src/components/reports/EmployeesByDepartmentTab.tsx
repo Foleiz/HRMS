@@ -397,7 +397,15 @@ export default function EmployeesByDepartmentTab({
           {/* Chart Row 2: Employee Type + Level + Tenure Distribution */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
             <ReportPanel title="ประเภทพนักงาน" subtitle="สัดส่วนตามประเภทการจ้างงาน">
-              <DonutChart size={135} segments={toSegments(data.byEmployeeType)} />
+              <DonutChart
+                size={135}
+                segments={toSegments(
+                  data.byEmployeeType.map((t) => ({
+                    name: !t.name || t.name === '-' ? 'ไม่ระบุ' : t.name,
+                    count: t.count,
+                  }))
+                )}
+              />
             </ReportPanel>
 
             <ReportPanel title="ระดับตำแหน่ง" subtitle="จำนวนพนักงานแยกตามระดับ">
@@ -546,7 +554,9 @@ export default function EmployeesByDepartmentTab({
                           {d.newHiresThisYear}
                         </td>
                         <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                          {d.byEmployeeType.map((t) => `${t.name} ${t.count}`).join(' · ') || '-'}
+                          {d.byEmployeeType
+                            .map((t) => `${!t.name || t.name === '-' ? 'ไม่ระบุ' : t.name} ${t.count}`)
+                            .join(' · ') || '-'}
                         </td>
                       </tr>
                       {open && (
@@ -588,7 +598,7 @@ export default function EmployeesByDepartmentTab({
                                           {e.positionName}
                                         </td>
                                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                          {e.employeeTypeName}
+                                          {e.employeeTypeName === '-' || !e.employeeTypeName ? 'ไม่ระบุ' : e.employeeTypeName}
                                         </td>
                                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                           {resolveLevelName(d.departmentId, e.positionName, e.levelName)}
