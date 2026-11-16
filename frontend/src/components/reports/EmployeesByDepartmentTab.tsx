@@ -607,13 +607,13 @@ function DepartmentEmployeesSubTable({
     return Array.from(set).sort();
   }, [department, resolveLevelName]);
 
-  // ตัวเลือกเพศที่มีจริงในแผนกนี้
+  // ตัวเลือกเพศ (แสดง ชาย / หญิง เสมอ)
   const genderOptions = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(['ชาย', 'หญิง']);
     for (const e of department.employees) {
       if (e.gender) set.add(e.gender);
     }
-    return Array.from(set).sort();
+    return Array.from(set);
   }, [department.employees]);
 
   // กรองรายชื่อพนักงานตามเงื่อนไขค้นหาและฟิลเตอร์
@@ -672,62 +672,56 @@ function DepartmentEmployeesSubTable({
         className="mb-3"
         filters={
           <div className="flex flex-wrap items-center gap-2">
-            {typeOptions.length > 1 && (
-              <CustomSelect
-                value={typeFilter}
-                onChange={(e) => {
-                  setTypeFilter(e.target.value);
-                  setPage(1);
-                }}
-                size="sm"
-                className="w-36"
-              >
-                <option value="ALL">ทุกประเภท</option>
-                {typeOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </CustomSelect>
-            )}
+            <CustomSelect
+              value={typeFilter}
+              onChange={(e) => {
+                setTypeFilter(e.target.value);
+                setPage(1);
+              }}
+              size="sm"
+              className="w-36"
+            >
+              <option value="ALL">ทุกประเภท</option>
+              {typeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </CustomSelect>
 
-            {levelOptions.length > 1 && (
-              <CustomSelect
-                value={levelFilter}
-                onChange={(e) => {
-                  setLevelFilter(e.target.value);
-                  setPage(1);
-                }}
-                size="sm"
-                className="w-40"
-              >
-                <option value="ALL">ทุกระดับ</option>
-                {levelOptions.map((lv) => (
-                  <option key={lv} value={lv}>
-                    {lv}
-                  </option>
-                ))}
-              </CustomSelect>
-            )}
+            <CustomSelect
+              value={levelFilter}
+              onChange={(e) => {
+                setLevelFilter(e.target.value);
+                setPage(1);
+              }}
+              size="sm"
+              className="w-40"
+            >
+              <option value="ALL">ทุกระดับ</option>
+              {levelOptions.map((lv) => (
+                <option key={lv} value={lv}>
+                  {lv}
+                </option>
+              ))}
+            </CustomSelect>
 
-            {genderOptions.length > 1 && (
-              <CustomSelect
-                value={genderFilter}
-                onChange={(e) => {
-                  setGenderFilter(e.target.value);
-                  setPage(1);
-                }}
-                size="sm"
-                className="w-28"
-              >
-                <option value="ALL">ทุกเพศ</option>
-                {genderOptions.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </CustomSelect>
-            )}
+            <CustomSelect
+              value={genderFilter}
+              onChange={(e) => {
+                setGenderFilter(e.target.value);
+                setPage(1);
+              }}
+              size="sm"
+              className="w-28"
+            >
+              <option value="ALL">ทุกเพศ</option>
+              {genderOptions.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </CustomSelect>
           </div>
         }
       />
