@@ -1,7 +1,16 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Building2, Calendar, CalendarDays, FileSpreadsheet, Loader2, Users } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  Building2,
+  Calendar,
+  CalendarDays,
+  CalendarX2,
+  FileSpreadsheet,
+  RefreshCw,
+  Users,
+} from 'lucide-react';
 import { leaveInsightsService } from '@/services/leaveInsightsService';
 import { organizationService } from '@/services/organizationService';
 import { Department } from '@/types/organization';
@@ -11,6 +20,21 @@ import { getSmartYearRange } from '@/lib/yearUtils';
 import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { DonutChart, toSegments } from './ReportCharts';
 import { printReport } from '@/lib/printReport';
+import {
+  BarList,
+  FilterChip,
+  IconButton,
+  InsightBox,
+  KpiCard,
+  KpiGrid,
+  MiniColumns,
+  ReportAvatar,
+  ReportEmpty,
+  ReportFilterBar,
+  ReportHero,
+  ReportLoading,
+  ReportPanel,
+} from './ReportShell';
 
 interface Props {
   canExport: boolean;
@@ -19,43 +43,46 @@ interface Props {
 
 const fmt = (n: number) => n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
 
-/** แท็บรายงานการลา: วันลาแยกประเภท × แผนก × เดือน, พนักงานที่ลามากสุด, ส่งออก CSV */
+/** แท็บรายงานการลา (Redesign ตามมาตรฐาน Report Shell) */
 export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [departmentId, setDepartmentId] = useState<number | ''>('');
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [report, setReport] = useState<{ key: string; data: LeaveSummaryReport } | null>(null);
-  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const [data, setData] = useState<LeaveSummaryReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
-
-  const key = `${year}|${departmentId}`;
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let active = true;
-    organizationService.getDepartments().then((d) => active && setDepartments(d)).catch(() => {});
+    organizationService
+      .getDepartments()
+      .then((d) => active && setDepartments(d))
+      .catch(() => {});
     return () => {
       active = false;
     };
   }, []);
 
-  useEffect(() => {
-    let active = true;
-    leaveInsightsService
-      .getSummary(year, departmentId === '' ? undefined : departmentId)
-      .then((data) => active && setReport({ key, data }))
-      .catch((e: unknown) => {
-        if (!active) return;
-        setFailedKey(key);
-        onError((e as { message?: string })?.message || 'โหลดรายงานการลาไม่สำเร็จ');
-      });
-    return () => {
-      active = false;
-    };
-  }, [year, departmentId, key, onError]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setFailed(false);
+    try {
+      const res = await leaveInsightsService.getSummary(year, departmentId === '' ? undefined : departmentId);
+      setData(res);
+    } catch (e: unknown) {
+      setFailed(true);
+      onError((e as { message?: string })?.message || 'โหลดรายงานการลาไม่สำเร็จ');
+    } finally {
+      setLoading(false);
+    }
+  }, [year, departmentId, onError]);
 
-  const data = report?.key === key ? report.data : null;
-  const loading = !data && failedKey !== key;
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // ตาราง แผนก × ประเภท
   const matrix = useMemo(() => {
@@ -67,13 +94,60 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     return { types, depts, cell };
   }, [data]);
 
-  const maxMonth = Math.max(1, ...(data?.byMonth.map((m) => m.days) ?? [0]));
+  const peakMonthIdx = useMemo(() => {
+    if (!data || data.byMonth.length === 0) return -1;
+    const maxVal = Math.max(...data.byMonth.map((m) => m.days), 0);
+    return maxVal > 0 ? data.byMonth.findIndex((m) => m.days === maxVal) : -1;
+  }, [data]);
 
-  const rootRef = useRef<HTMLDivElement>(null);
+  // สร้างข้อสังเกตอัตโนมัติจากข้อมูลจริง
+  const insights = useMemo(() => {
+    if (!data) return [];
+    const list: React.ReactNode[] = [];
+
+    if (peakMonthIdx >= 0 && data.byMonth[peakMonthIdx]) {
+      const pm = data.byMonth[peakMonthIdx];
+      list.push(
+        <>
+          เดือนที่มีสถิติวันลาสูงสุดคือ <b>{pm.label}</b> รวม <b>{fmt(pm.days)} วัน</b> ({pm.requests} ใบลา)
+        </>
+      );
+    }
+
+    if (data.byType.length > 0 && data.totalDays > 0) {
+      const sortedTypes = [...data.byType].sort((a, b) => b.days - a.days);
+      const topType = sortedTypes[0];
+      const pct = Math.round((topType.days / data.totalDays) * 100);
+      list.push(
+        <>
+          ประเภทการลาที่ใช้มากที่สุดคือ <b>{topType.label}</b> รวม <b>{fmt(topType.days)} วัน</b> คิดเป็น <b>{pct}%</b> ของวันลาทั้งหมด
+        </>
+      );
+    }
+
+    if (data.pendingRequests > 0) {
+      list.push(
+        <>
+          มีใบลาที่ยังรออนุมัติอยู่ <b>{fmt(data.pendingRequests)} ใบ</b> ควรตรวจสอบเพื่อดำเนินการให้ครบถ้วน
+        </>
+      );
+    } else if (data.byDepartment.length > 0) {
+      const topDept = [...data.byDepartment].sort((a, b) => b.days - a.days)[0];
+      if (topDept && topDept.days > 0) {
+        list.push(
+          <>
+            แผนกที่มีจำนวนวันลาสูงสุดคือ <b>{topDept.label}</b> รวม <b>{fmt(topDept.days)} วัน</b>
+          </>
+        );
+      }
+    }
+
+    return list.slice(0, 3);
+  }, [data, peakMonthIdx]);
 
   const handleExport = async (format: ReportExportFormat = 'csv') => {
     if (format === 'pdf') {
-      printReport(rootRef.current, { title: 'รายงานการลา', subtitle: `ปี ${year + 543}` });
+      printReport(rootRef.current, { title: 'รายงานการลา', subtitle: `ปี พ.ศ. ${year + 543}` });
       return;
     }
     setExporting(true);
@@ -86,234 +160,295 @@ export default function LeaveSummaryReportTab({ canExport, onError }: Props) {
     }
   };
 
+  const typeColors = ['#8b5cf6', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#ec4899'];
+
   return (
-    <div ref={rootRef} className="space-y-6 animate-in fade-in duration-200">
-      {/* Filter Bar */}
-      <div data-print-hide className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">ปี:</span>
-            <CustomSelect
-              value={year}
-              onChange={(e) => setYear(Number(e.target.value))}
-              className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-            >
-              {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
-                <option key={y} value={y}>
-                  พ.ศ. {y + 543}
-                </option>
-              ))}
-            </CustomSelect>
-          </div>
-          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-1.5">
-            <Building2 className="w-4 h-4 text-slate-400 dark:text-slate-500 dark:text-slate-400" />
-            <CustomSelect
-              value={departmentId}
-              onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
-              className="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-            >
-              <option value="">ทุกแผนก</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.departmentName}
-                </option>
-              ))}
-            </CustomSelect>
-          </div>
-          {loading && <Loader2 className="w-4 h-4 animate-spin text-slate-400 dark:text-slate-500 dark:text-slate-400" />}
-        </div>
-        {canExport && <ExportMenu onExport={handleExport} disabled={exporting || !data} />}
-      </div>
+    <div className="space-y-5 animate-in fade-in duration-200">
+      <ReportHero
+        theme="leave"
+        icon={CalendarX2}
+        title="รายงานการลา"
+        description="สถิติวันลา สัดส่วนประเภทการลา แนวโน้มรายเดือน และสรุปวันลาแยกตามแผนกและรายบุคคล"
+        actions={
+          <span className="rounded-xl bg-white/20 px-3 py-1.5 font-semibold backdrop-blur">
+            ปี พ.ศ. {year + 543}
+          </span>
+        }
+      />
 
-      {data && (
-        <>
-          {/* KPI */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                label: 'วันลารวม (อนุมัติแล้ว)',
-                value: fmt(data.totalDays),
-                unit: 'วัน',
-                icon: CalendarDays,
-                cardCls: 'bg-blue-50/70 dark:bg-blue-950/30 border-blue-200/80 dark:border-blue-800/60',
-                iconCls: 'text-blue-700 bg-white dark:bg-blue-900/50 shadow-xs',
-                labelCls: 'text-blue-700 dark:text-blue-300',
-                valCls: 'text-blue-950 dark:text-blue-100',
-              },
-              {
-                label: 'จำนวนใบลา',
-                value: fmt(data.totalRequests),
-                unit: 'ใบ',
-                icon: FileSpreadsheet,
-                cardCls: 'bg-purple-50/70 dark:bg-purple-950/30 border-purple-200/80 dark:border-purple-800/60',
-                iconCls: 'text-purple-700 bg-white dark:bg-purple-900/50 shadow-xs',
-                labelCls: 'text-purple-700 dark:text-purple-300',
-                valCls: 'text-purple-950 dark:text-purple-100',
-              },
-              {
-                label: 'พนักงานที่ลา',
-                value: fmt(data.employeesOnLeave),
-                unit: 'คน',
-                icon: Users,
-                cardCls: 'bg-teal-50/70 dark:bg-teal-950/30 border-teal-200/80 dark:border-teal-800/60',
-                iconCls: 'text-teal-700 bg-white dark:bg-teal-900/50 shadow-xs',
-                labelCls: 'text-teal-700 dark:text-teal-300',
-                valCls: 'text-teal-950 dark:text-teal-100',
-              },
-              {
-                label: 'รออนุมัติ',
-                value: fmt(data.pendingRequests),
-                unit: 'ใบ',
-                icon: Loader2,
-                cardCls: 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/60',
-                iconCls: 'text-amber-700 bg-white dark:bg-amber-900/50 shadow-xs',
-                labelCls: 'text-amber-700 dark:text-amber-300',
-                valCls: 'text-amber-950 dark:text-amber-100',
-              },
-            ].map((k) => (
-              <div key={k.label} className={`${k.cardCls} rounded-2xl border shadow-xs p-4.5 flex items-center gap-3.5`}>
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${k.iconCls}`}>
-                  <k.icon className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <div className={`text-xs sm:text-sm font-semibold truncate ${k.labelCls}`}>{k.label}</div>
-                  <div className={`text-2xl sm:text-3xl font-extrabold ${k.valCls}`}>
-                    {k.value} <span className="text-xs sm:text-sm font-normal opacity-70">{k.unit}</span>
-                  </div>
-                </div>
-              </div>
+      <ReportFilterBar
+        loading={loading}
+        right={canExport ? <ExportMenu onExport={handleExport} disabled={exporting || !data} /> : undefined}
+      >
+        <FilterChip icon={Calendar} label="ปี:">
+          <CustomSelect
+            value={year}
+            onChange={(e) => setYear(Number(e.target.value))}
+            className="bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
+          >
+            {getSmartYearRange({ forwardYears: 1, backYears: 5, selectedYear: year }).map((y) => (
+              <option key={y} value={y}>
+                พ.ศ. {y + 543}
+              </option>
             ))}
-          </div>
+          </CustomSelect>
+        </FilterChip>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Monthly trend */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">แนวโน้มวันลารายเดือน (วัน)</h3>
-              <div className="flex items-end gap-2 h-44">
-                {data.byMonth.map((m) => (
-                  <div key={m.key} className="flex-1 flex flex-col items-center gap-1 h-full justify-end" title={`${m.label}: ${fmt(m.days)} วัน / ${m.requests} ใบ`}>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.days > 0 ? fmt(m.days) : ''}</span>
-                    <div
-                      className="w-full rounded-t-md bg-primary/80 dark:bg-primary/70"
-                      style={{ height: `${(m.days / maxMonth) * 100}%`, minHeight: m.days > 0 ? 4 : 0 }}
-                    />
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{m.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <FilterChip icon={Building2} label="แผนก:">
+          <CustomSelect
+            value={departmentId}
+            onChange={(e) => setDepartmentId(e.target.value === '' ? '' : Number(e.target.value))}
+            className="min-w-[150px] bg-transparent text-xs font-semibold text-slate-700 focus:outline-none dark:text-slate-200"
+          >
+            <option value="">ทุกแผนก</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.departmentName}
+              </option>
+            ))}
+          </CustomSelect>
+        </FilterChip>
 
-            {/* By type */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">แยกตามประเภทการลา</h3>
+        <IconButton onClick={load} title="โหลดข้อมูลใหม่">
+          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+        </IconButton>
+      </ReportFilterBar>
+
+      {loading && !data ? (
+        <ReportLoading />
+      ) : !data ? (
+        <ReportEmpty
+          text={
+            failed
+              ? 'คุณไม่มีสิทธิ์เข้าถึงรายงานการลา หรือโหลดข้อมูลไม่สำเร็จ'
+              : 'ไม่มีข้อมูลรายงานการลาในช่วงเวลาที่เลือก'
+          }
+        />
+      ) : (
+        <div ref={rootRef} className="space-y-5">
+          {/* KPI Cards */}
+          <KpiGrid cols={4}>
+            <KpiCard
+              icon={CalendarDays}
+              tone="violet"
+              label="วันลารวม (อนุมัติแล้ว)"
+              value={fmt(data.totalDays)}
+              unit="วัน"
+              spark={data.byMonth.map((m) => m.days)}
+              note={`ปี พ.ศ. ${year + 543}`}
+            />
+
+            <KpiCard
+              icon={FileSpreadsheet}
+              tone="blue"
+              label="จำนวนใบลา"
+              value={fmt(data.totalRequests)}
+              unit="ใบ"
+              note={
+                data.employeesOnLeave > 0
+                  ? `เฉลี่ย ${(data.totalRequests / data.employeesOnLeave).toFixed(1)} ใบ/คนที่ลา`
+                  : 'ใบลาที่อนุมัติแล้ว'
+              }
+            />
+
+            <KpiCard
+              icon={Users}
+              tone="emerald"
+              label="พนักงานที่ลา"
+              value={fmt(data.employeesOnLeave)}
+              unit="คน"
+              note={
+                data.employeesOnLeave > 0
+                  ? `เฉลี่ย ${(data.totalDays / data.employeesOnLeave).toFixed(1)} วัน/คน`
+                  : 'ไม่มีประวัติการลา'
+              }
+            />
+
+            <KpiCard
+              icon={AlertTriangle}
+              tone="amber"
+              label="รออนุมัติ"
+              value={fmt(data.pendingRequests)}
+              unit="ใบ"
+              note={data.pendingRequests > 0 ? 'รอดำเนินการอนุมัติ' : 'อนุมัติครบทุกรายการ'}
+            />
+          </KpiGrid>
+
+          {/* Auto Insights */}
+          <InsightBox theme="leave" items={insights} />
+
+          {/* Chart Row 1: Monthly Trend + By Type Donut */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <ReportPanel
+              title="แนวโน้มวันลารายเดือน"
+              subtitle="จำนวนวันลารวมในแต่ละเดือนของปีที่เลือก (แท่งสีเข้ม = เดือนที่ลาสูงสุด)"
+              className="xl:col-span-2"
+            >
+              <MiniColumns
+                items={data.byMonth.map((m) => ({ label: m.label, value: Number(m.days.toFixed(1)) }))}
+                color="#c4b5fd"
+                highlightIndex={peakMonthIdx}
+                highlightColor="#7c3aed"
+                height={185}
+              />
+            </ReportPanel>
+
+            <ReportPanel title="สัดส่วนตามประเภทการลา" subtitle="เปรียบเทียบจำนวนวันลาแยกตามประเภท">
               {data.byType.length === 0 ? (
-                <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
+                <div className="py-10 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
               ) : (
                 <DonutChart
                   unit="วัน"
                   centerLabel="วันลารวม"
+                  size={145}
                   segments={toSegments(data.byType.map((t) => ({ name: t.label, count: t.days })))}
                 />
               )}
-            </div>
+            </ReportPanel>
           </div>
 
-          {/* Department x Type */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">วันลาแยกแผนก × ประเภทการลา (วัน)</h3>
-            </div>
+          {/* Chart Row 2: By Department + By Leave Type Details */}
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <ReportPanel title="วันลาแยกตามแผนก" subtitle="เรียงตามจำนวนวันลารวม (อนุมัติแล้ว)">
+              <BarList
+                items={[...data.byDepartment]
+                  .sort((a, b) => b.days - a.days)
+                  .map((d) => ({
+                    label: d.label,
+                    value: d.days,
+                    display: `${fmt(d.days)} วัน (${d.requests} ใบ)`,
+                    color: '#7c3aed',
+                  }))}
+              />
+            </ReportPanel>
+
+            <ReportPanel title="รายละเอียดตามประเภทการลา" subtitle="จำนวนวันและจำนวนใบลาของแต่ละประเภท">
+              <BarList
+                items={[...data.byType]
+                  .sort((a, b) => b.days - a.days)
+                  .map((t, i) => ({
+                    label: t.label,
+                    value: t.days,
+                    display: `${fmt(t.days)} วัน · ${t.requests} ใบ`,
+                    color: typeColors[i % typeColors.length],
+                  }))}
+              />
+            </ReportPanel>
+          </div>
+
+          {/* Matrix Table: Department x Leave Type */}
+          <ReportPanel
+            title="ตารางสรุปวันลาแยกแผนก × ประเภทการลา"
+            subtitle="หน่วย: วันทำงาน (เฉพาะใบลาที่อนุมัติแล้ว)"
+          >
             {matrix.depts.length === 0 ? (
-              <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
+              <div className="py-8 text-center text-xs text-slate-400">ไม่มีข้อมูล</div>
             ) : (
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                <table className="table-standard w-full min-w-[600px] text-xs whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-primary text-white font-semibold whitespace-nowrap text-xs">
-                      <th className="text-left py-2 px-3">แผนก</th>
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <table className="w-full min-w-[640px] text-xs whitespace-nowrap">
+                  <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+                    <tr>
+                      <th className="py-3 px-4 text-left">แผนก</th>
                       {matrix.types.map((t) => (
-                        <th key={t} className="text-right py-2 px-3 whitespace-nowrap">
+                        <th key={t} className="py-3 px-4 text-right">
                           {t}
                         </th>
                       ))}
-                      <th className="text-right py-2 px-3">รวม</th>
+                      <th className="py-3 px-4 text-right">รวม (วัน)</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {data.byDepartment.map((d) => (
-                      <tr key={d.key} className="border-t border-slate-100 dark:border-slate-700/60">
-                        <td className="py-2 px-3 font-medium text-slate-700 dark:text-slate-300">{d.label}</td>
+                      <tr key={d.key} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
+                        <td className="py-2.5 px-4 font-bold text-slate-800 dark:text-slate-100">{d.label}</td>
                         {matrix.types.map((t) => {
                           const v = matrix.cell.get(`${d.label}|${t}`) ?? 0;
                           return (
                             <td
                               key={t}
                               title={`${d.label} · ${t}: ${fmt(v)} วัน`}
-                              className={`py-2 px-3 text-right tabular-nums ${v > 0 ? 'text-slate-800 dark:text-slate-200 font-medium' : 'text-slate-300 dark:text-slate-600'}`}
+                              className={`py-2.5 px-4 text-right tabular-nums ${
+                                v > 0
+                                  ? 'font-semibold text-slate-800 dark:text-slate-200'
+                                  : 'text-slate-300 dark:text-slate-600'
+                              }`}
                             >
                               {fmt(v)}
                             </td>
                           );
                         })}
-                        <td className="py-2 px-3 text-right font-semibold text-slate-800 dark:text-slate-200">{fmt(d.days)}</td>
+                        <td className="py-2.5 px-4 text-right font-extrabold text-violet-700 dark:text-violet-300">
+                          {fmt(d.days)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
-          </div>
+          </ReportPanel>
 
-          {/* Top employees */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4">พนักงานที่ลามากที่สุด 10 อันดับ</h3>
+          {/* Top 10 Employees */}
+          <ReportPanel
+            title="พนักงานที่ลามากที่สุด 10 อันดับ"
+            subtitle="เรียงลำดับตามจำนวนวันลารวมที่อนุมัติแล้วในปีที่เลือก"
+          >
             {data.topEmployees.length === 0 ? (
-              <p className="text-sm text-slate-400 dark:text-slate-500 dark:text-slate-400">ไม่มีข้อมูล</p>
+              <div className="py-8 text-center text-xs text-slate-400">ไม่มีข้อมูลการลาของพนักงาน</div>
             ) : (
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
-                <table className="table-standard w-full min-w-[500px] text-xs whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-primary text-white font-semibold whitespace-nowrap text-xs">
-                      <th className="text-left py-2 px-3 w-10">#</th>
-                      <th className="text-left py-2 px-3">พนักงาน</th>
-                      <th className="text-left py-2 px-3">แผนก</th>
-                      <th className="text-right py-2 px-3">วันลา</th>
-                      <th className="text-right py-2 px-3">ใบลา</th>
+              <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <table className="w-full min-w-[560px] text-xs whitespace-nowrap">
+                  <thead className="bg-slate-50 font-bold text-slate-600 dark:bg-slate-900/60 dark:text-slate-300">
+                    <tr>
+                      <th className="w-12 py-3 px-4 text-center">อันดับ</th>
+                      <th className="py-3 px-4 text-left">พนักงาน</th>
+                      <th className="py-3 px-4 text-left">แผนก</th>
+                      <th className="py-3 px-4 text-right">จำนวนใบลา</th>
+                      <th className="py-3 px-4 text-right" style={{ minWidth: 160 }}>
+                        วันลารวม
+                      </th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {data.topEmployees.map((e, i) => (
-                    <tr key={e.employeeId} className="border-t border-slate-100">
-                      <td className="py-2 px-3 text-slate-400">{i + 1}</td>
-                      <td className="py-2 px-3">
-                        <div className="font-medium text-slate-800 dark:text-slate-200">{e.employeeName}</div>
-                        <div className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">{e.employeeCode}</div>
-                      </td>
-                      <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{e.departmentName || '-'}</td>
-                      <td className="py-2 px-3 text-right font-semibold">{fmt(e.days)}</td>
-                      <td className="py-2 px-3 text-right">{e.requests}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    {(() => {
+                      const maxEmpDays = Math.max(...data.topEmployees.map((x) => x.days), 1);
+                      return data.topEmployees.map((e, i) => (
+                        <tr key={e.employeeId} className="hover:bg-slate-50/70 dark:hover:bg-slate-700/30">
+                          <td className="py-2.5 px-4 text-center font-bold text-slate-400">#{i + 1}</td>
+                          <td className="py-2.5 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <ReportAvatar name={e.employeeName} size={28} />
+                              <div>
+                                <div className="font-bold text-slate-800 dark:text-slate-100">{e.employeeName}</div>
+                                <div className="font-mono text-[11px] text-slate-400">{e.employeeCode}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-600 dark:text-slate-300">{e.departmentName || '-'}</td>
+                          <td className="py-2.5 px-4 text-right font-medium text-slate-700 dark:text-slate-300">
+                            {e.requests} ใบ
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <div className="flex items-center justify-end gap-2.5">
+                              <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                                <div
+                                  className="h-full rounded-full bg-violet-600"
+                                  style={{ width: `${(e.days / maxEmpDays) * 100}%` }}
+                                />
+                              </div>
+                              <span className="w-14 text-right font-extrabold text-slate-900 dark:text-slate-100">
+                                {fmt(e.days)} วัน
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
               </div>
             )}
-          </div>
-        </>
-      )}
-
-      {!loading && !data && (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-12 text-center">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 mb-3">
-            <FileSpreadsheet className="w-6 h-6" />
-          </div>
-          <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
-            {failedKey ? 'คุณไม่มีสิทธิ์เข้าถึงรายงานการลา หรือโหลดข้อมูลไม่สำเร็จ' : 'ไม่มีข้อมูลรายงานการลา'}
-          </h3>
-          <p className="mt-1 text-sm text-slate-500">
-            {failedKey ? 'โปรดติดต่อผู้ดูแลระบบเพื่อขอสิทธิ์เข้าถึง (REPORT_LEAVE_VIEW)' : 'ไม่พบข้อมูลการลาในช่วงเวลาที่เลือก'}
-          </p>
+          </ReportPanel>
         </div>
       )}
     </div>

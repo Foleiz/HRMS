@@ -444,7 +444,6 @@ const menuGroups: MenuGroup[] = [
           { title: 'การเข้าออกงาน', href: '/reports?tab=attendance', icon: CalendarCheck, requiredPermissions: ['REPORT_ATT_VIEW', 'REPORT_VIEW'] },
           { title: 'การลา', href: '/reports?tab=leave', icon: CalendarX2, requiredPermissions: ['REPORT_LEAVE_VIEW', 'REPORT_VIEW'] },
           { title: 'อัตราการลาออก', href: '/reports?tab=turnover', icon: UserMinus, requiredPermissions: ['REPORT_HEADCOUNT_VIEW', 'REPORT_VIEW'] },
-          { title: 'ภาษีและประกันสังคม', href: '/reports?tab=tax', icon: Receipt, requiredPermissions: ['REPORT_VIEW'] },
         ],
       },
     ],
