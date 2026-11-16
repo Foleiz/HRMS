@@ -213,6 +213,8 @@ export interface PayrollPeriod {
   employeeCount: number;
   totalEmployees?: number;
   totalNetSalary: number;
+  totalBenefitClaimsAmount?: number;
+  benefitClaimsCount?: number;
   // Payment Workflow
   paymentMethod?: 'BANK_BATCH' | 'DIRECT_TRANSFER' | null;
   paymentMethodText?: string | null;

@@ -5055,17 +5055,15 @@ export default function PayrollPage() {
 
                   <div className="bg-indigo-100 dark:bg-indigo-950/60 rounded-2xl border border-indigo-300 dark:border-indigo-800 p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[116px]">
                     <span className="text-xs text-indigo-800 dark:text-indigo-300 font-bold tracking-tight">
-                      สถานะการตรวจทาน
+                      ยอดเบิกสวัสดิการในงวด
                     </span>
-                    <div className="text-lg font-extrabold text-indigo-900 dark:text-indigo-200 text-center tracking-tight my-1.5">
-                      {selectedPeriod?.status === 'FINANCE_VERIFIED' || selectedPeriod?.status === 'PENDING_APPROVAL'
-                        ? 'รอ CEO อนุมัติ'
-                        : selectedPeriod?.status === 'APPROVED'
-                        ? 'อนุมัติเรียบร้อยแล้ว'
-                        : selectedPeriod?.statusText || '-'}
+                    <div className="text-2xl font-extrabold text-indigo-700 dark:text-indigo-300 text-center tabular-nums tracking-tight my-1.5">
+                      ฿{(selectedPeriod?.totalBenefitClaimsAmount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <span className="text-[11px] text-indigo-700/85 dark:text-indigo-400 text-center font-medium">
-                      {selectedPeriod?.periodName || 'งวดปัจจุบัน'}
+                      {(selectedPeriod?.benefitClaimsCount ?? 0) > 0
+                        ? `อนุมัติจ่าย ${(selectedPeriod?.benefitClaimsCount ?? 0).toLocaleString()} รายการ${selectedPeriod?.claimCutoffDate ? ` · ตัดรอบ ${formatThaiShortDate(selectedPeriod.claimCutoffDate)}` : ''}`
+                        : 'ไม่มีรายการเบิกจ่ายในงวดนี้'}
                     </span>
                   </div>
                 </div>

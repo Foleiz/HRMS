@@ -17,6 +17,10 @@ public class PayrollPeriodDto
     public string StatusText { get; set; } = "รอตรวจสอบ";
     public int EmployeeCount { get; set; }
     public decimal TotalNetSalary { get; set; }
+    /// <summary>ยอดรวมเงินเบิกสวัสดิการที่จ่ายในรอบนี้</summary>
+    public decimal TotalBenefitClaimsAmount { get; set; }
+    /// <summary>จำนวนรายการเบิกสวัสดิการที่จ่ายในรอบนี้</summary>
+    public int BenefitClaimsCount { get; set; }
     // Payment Workflow
     public string? PaymentMethod { get; set; }
     public string? PaymentMethodText { get; set; }

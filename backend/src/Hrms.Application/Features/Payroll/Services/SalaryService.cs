@@ -1481,14 +1481,14 @@ public class SalaryService : ISalaryService
     {
         var permittedIds = await GetPermittedEmployeeIdsAsync(cancellationToken);
         var rows = await LoadPeriodSummariesAsync(_context.PayrollPeriods, cancellationToken);
-        return rows.Select(r => MapPeriodToDto(r.Period, permittedIds, r.HasReceipt)).ToList();
+        return rows.Select(r => MapPeriodToDto(r.Period, permittedIds, r.HasReceipt, r.BenefitClaimsAmount, r.BenefitClaimsCount)).ToList();
     }
 
     /// <summary>
     /// โหลดรอบเงินเดือนแบบเบา — ไม่ดึงไฟล์ใบเสร็จธนาคาร (bank_receipt_data) และสลิปรายคน (slip_data)
     /// เดิม Include(Payrolls) ดึงไฟล์ใบเสร็จซ้ำทุกแถวพนักงาน (JOIN) ทำให้ /salary/periods ช้า 10–45 วินาที
     /// </summary>
-    private static async Task<List<(PayrollPeriod Period, bool HasReceipt)>> LoadPeriodSummariesAsync(
+    private async Task<List<(PayrollPeriod Period, bool HasReceipt, decimal BenefitClaimsAmount, int BenefitClaimsCount)>> LoadPeriodSummariesAsync(
         IQueryable<PayrollPeriod> source, CancellationToken cancellationToken)
     {
         var rows = await source.AsNoTracking()
@@ -1528,10 +1528,39 @@ public class SalaryService : ISalaryService
             })
             .ToListAsync(cancellationToken);
 
+        var periodIds = rows.Select(r => r.Period.Id).ToList();
+        var claimsByPeriod = await _context.EmployeeBenefitClaims.AsNoTracking()
+            .Where(c => c.PayrollPeriodId.HasValue && periodIds.Contains(c.PayrollPeriodId.Value) && c.Status == "APPROVED")
+            .GroupBy(c => c.PayrollPeriodId!.Value)
+            .Select(g => new
+            {
+                PeriodId = g.Key,
+                Count = g.Count(),
+                TotalAmount = g.Sum(c => c.Amount)
+            })
+            .ToDictionaryAsync(g => g.PeriodId, g => (Count: g.Count, TotalAmount: g.TotalAmount), cancellationToken);
+
+        var draftPeriods = rows.Where(r => (r.Period.Status == "DRAFT" || r.Period.Status == "REVIEW") && !claimsByPeriod.ContainsKey(r.Period.Id)).ToList();
+        foreach (var dp in draftPeriods)
+        {
+            var cutoff = dp.Period.EffectiveClaimCutoffDate;
+            var cutoffUtc = DateTime.SpecifyKind(cutoff.AddDays(1).ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc).AddHours(-7);
+            var pending = await _context.EmployeeBenefitClaims.AsNoTracking()
+                .Where(c => c.Status == "APPROVED" && c.ApprovedAt != null && c.ApprovedAt < cutoffUtc && c.PaymentStatus == BenefitPayCode.PaymentUnpaid)
+                .GroupBy(_ => 1)
+                .Select(g => new { Count = g.Count(), Total = g.Sum(c => c.Amount) })
+                .FirstOrDefaultAsync(cancellationToken);
+            if (pending != null && pending.Count > 0)
+            {
+                claimsByPeriod[dp.Period.Id] = (pending.Count, pending.Total);
+            }
+        }
+
         return rows.Select(r =>
         {
             r.Period.Payrolls = r.Payrolls;
-            return (r.Period, r.HasReceipt);
+            claimsByPeriod.TryGetValue(r.Period.Id, out var cs);
+            return (r.Period, r.HasReceipt, cs.TotalAmount, cs.Count);
         }).ToList();
     }
 
@@ -1541,7 +1570,7 @@ public class SalaryService : ISalaryService
         var rows = await LoadPeriodSummariesAsync(_context.PayrollPeriods.Where(x => x.Id == id), cancellationToken);
         if (rows.Count == 0) return null;
 
-        return MapPeriodToDto(rows[0].Period, permittedIds, rows[0].HasReceipt);
+        return MapPeriodToDto(rows[0].Period, permittedIds, rows[0].HasReceipt, rows[0].BenefitClaimsAmount, rows[0].BenefitClaimsCount);
     }
 
     public async Task<List<PayrollRecordDto>> GetPayrollsByPeriodIdAsync(long periodId, CancellationToken cancellationToken = default)
@@ -4617,7 +4646,12 @@ public class SalaryService : ISalaryService
         _ => status
     };
 
-    private static PayrollPeriodDto MapPeriodToDto(PayrollPeriod period, List<long>? permittedEmployeeIds = null, bool? hasBankReceipt = null)
+    private static PayrollPeriodDto MapPeriodToDto(
+        PayrollPeriod period,
+        List<long>? permittedEmployeeIds = null,
+        bool? hasBankReceipt = null,
+        decimal totalBenefitClaimsAmount = 0,
+        int benefitClaimsCount = 0)
     {
         var statusText = period.Status switch
         {
@@ -4660,6 +4694,8 @@ public class SalaryService : ISalaryService
             StatusText = statusText,
             EmployeeCount = payrolls.Count,
             TotalNetSalary = payrolls.Sum(p => p.NetPayableSalary),
+            TotalBenefitClaimsAmount = totalBenefitClaimsAmount,
+            BenefitClaimsCount = benefitClaimsCount,
             PaymentMethod = period.PaymentMethod,
             PaymentMethodText = methodText,
             FinanceVerifiedAt = period.FinanceVerifiedAt,
