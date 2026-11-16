@@ -275,6 +275,10 @@ export function ColumnChart({
         {items.map((it) => {
           const h = (it.value / max) * 100;
           const th = it.target != null ? (it.target / max) * 100 : null;
+          const hasTarget = th != null;
+          const targetExceeds = hasTarget && th > h;
+          const vacant = hasTarget && it.target! > it.value ? it.target! - it.value : 0;
+
           return (
             <div
               key={it.id}
@@ -285,28 +289,69 @@ export function ColumnChart({
                   e,
                   it.tip ?? (
                     <div>
-                      <div className="mb-1 font-semibold text-slate-900">{it.label}</div>
-                      <TipRow color={color} label="จำนวน" value={`${fmtNumber(it.value)} ${unit}`} />
-                      {it.target != null && <TipRow label={targetLabel} value={`${fmtNumber(it.target)} ${unit}`} />}
+                      <div className="mb-1 font-semibold text-slate-900 dark:text-slate-100">{it.label}</div>
+                      <TipRow color={color} label="จำนวนจริง" value={`${fmtNumber(it.value)} ${unit}`} />
+                      {hasTarget && (
+                        <>
+                          <TipRow label={targetLabel} value={`${fmtNumber(it.target!)} ${unit}`} />
+                          {vacant > 0 && <TipRow label="อัตราว่าง" value={`${fmtNumber(vacant)} ${unit}`} />}
+                        </>
+                      )}
                     </div>
                   )
                 );
               }}
             >
-              {/* ป้ายค่าอยู่เหนือแท่งหรือเส้นแผน (ที่สูงกว่า) ไม่ให้ทับกัน */}
+              {/* ป้ายค่าตัวเลข */}
               <span
-                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums text-slate-700"
+                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold tabular-nums text-slate-700 dark:text-slate-200"
                 style={{ bottom: `calc(${Math.max(h, th ?? 0)}% + 4px)` }}
               >
-                {it.valueLabel ?? fmtNumber(it.value)}
+                {targetExceeds
+                  ? `${it.valueLabel ?? fmtNumber(it.value)} / ${fmtNumber(it.target!)}`
+                  : (it.valueLabel ?? fmtNumber(it.value))}
               </span>
-              <div
-                className="w-full max-w-[48px] rounded-t-[4px] transition-opacity"
-                style={{ height: `${Math.max(it.value > 0 ? 1.5 : 0, h)}%`, background: color, opacity: hover == null || hover === it.id ? 1 : 0.55 }}
-              />
-              {th != null && (
+
+              {/* ก้อนเส้นประอัตรากำลังตามแผน (ส่วนที่ยังไม่เต็มอัตรากำลัง: บริเวณที่ไม่ใช่ส่วนของพนักงานจริง) */}
+              {targetExceeds && (
                 <div
-                  className="pointer-events-none absolute left-1/2 w-full max-w-[60px] -translate-x-1/2 border-t-2 border-dashed"
+                  className="pointer-events-none absolute left-1/2 w-full max-w-[48px] -translate-x-1/2 rounded-t-[4px] border-2 border-dashed transition-opacity"
+                  style={{
+                    bottom: `${h}%`,
+                    height: `${th - h}%`,
+                    borderColor: 'var(--viz-s1)',
+                    backgroundColor: 'rgba(42, 120, 214, 0.08)',
+                    borderBottomWidth: h > 0 ? 0 : 2,
+                    opacity: hover == null || hover === it.id ? 1 : 0.55,
+                  }}
+                />
+              )}
+
+              {/* แท่งจำนวนจริง */}
+              <div
+                className="relative flex w-full max-w-[48px] items-center justify-center transition-opacity"
+                style={{
+                  height: `${Math.max(it.value > 0 ? 1.5 : 0, h)}%`,
+                  background: color,
+                  borderTopLeftRadius: targetExceeds ? 0 : 4,
+                  borderTopRightRadius: targetExceeds ? 0 : 4,
+                  borderBottomLeftRadius: 2,
+                  borderBottomRightRadius: 2,
+                  opacity: hover == null || hover === it.id ? 1 : 0.55,
+                }}
+              >
+                {/* แสดงตัวเลขจำนวนจริงสีขาวชัดเจนในแท่งเมื่อแท่งมีความสูงเพียงพอ */}
+                {targetExceeds && h >= 12 && (
+                  <span className="select-none text-[10px] font-bold text-white drop-shadow-sm">
+                    {it.valueLabel ?? fmtNumber(it.value)}
+                  </span>
+                )}
+              </div>
+
+              {/* เส้นประกรณีจำนวนจริงบรรลุหรือเกินเป้าหมาย (target <= value) */}
+              {hasTarget && !targetExceeds && (
+                <div
+                  className="pointer-events-none absolute left-1/2 w-full max-w-[56px] -translate-x-1/2 border-t-2 border-dashed"
                   style={{ bottom: `${th}%`, borderColor: 'var(--viz-axis)' }}
                 />
               )}
@@ -315,12 +360,16 @@ export function ColumnChart({
         })}
       </ColumnFrame>
       {items.some((i) => i.target != null) && (
-        <div className="mt-3 flex items-center justify-end gap-4 text-[11px] text-slate-500">
+        <div className="mt-3 flex items-center justify-end gap-4 text-[11px] text-slate-500 dark:text-slate-400">
           <span className="inline-flex items-center gap-1.5">
             <Swatch color={color} /> จำนวนจริง
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: 'var(--viz-axis)' }} /> {targetLabel}
+            <span
+              className="inline-block h-3.5 w-3.5 rounded-[2px] border-2 border-dashed bg-blue-500/10 dark:bg-blue-400/20"
+              style={{ borderColor: 'var(--viz-s1)' }}
+            />{' '}
+            {targetLabel}
           </span>
         </div>
       )}
