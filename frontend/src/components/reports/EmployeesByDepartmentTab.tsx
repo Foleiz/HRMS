@@ -465,25 +465,20 @@ export default function EmployeesByDepartmentTab({
             <thead className="bg-primary text-white font-semibold">
               <tr className="whitespace-nowrap">
                 <th className="py-3.5 px-4 whitespace-nowrap">แผนก / ฝ่าย</th>
-                <th className="py-3.5 px-4 whitespace-nowrap" style={{ minWidth: 170 }}>
-                  พนักงานจริง
-                </th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">อัตรากำลังตามแผน</th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">ชาย</th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">หญิง</th>
                 <th className="py-3.5 px-4 text-center whitespace-nowrap">เข้าใหม่ปีนี้</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">ประเภทพนักงาน</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
               {pagedDepartments.length === 0 ? (
-                <TableEmpty colSpan={7} text="ไม่พบข้อมูลแผนกหรือพนักงานที่ค้นหา" />
+                <TableEmpty colSpan={5} text="ไม่พบข้อมูลแผนกหรือพนักงานที่ค้นหา" />
               ) : (
                 pagedDepartments.map((d) => {
                   const open = expanded.has(d.departmentId);
                   const under = d.headcountPlan != null && d.employeeCount < d.headcountPlan;
                   const over = d.headcountPlan != null && d.employeeCount > d.headcountPlan;
-                  const maxCount = Math.max(...data.departments.map((x) => x.employeeCount), 1);
 
                   return (
                     <React.Fragment key={d.departmentId}>
@@ -509,40 +504,31 @@ export default function EmployeesByDepartmentTab({
                             </div>
                           </div>
                         </td>
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2.5">
-                            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
-                              <div
-                                className="h-full rounded-full bg-blue-600 transition-all duration-500"
-                                style={{ width: `${(d.employeeCount / maxCount) * 100}%` }}
-                              />
-                            </div>
-                            <span className="w-7 text-right font-extrabold text-slate-900 dark:text-slate-100">
-                              {d.employeeCount}
-                            </span>
-                          </div>
-                        </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          {d.headcountPlan == null ? (
-                            <span className="text-slate-300 dark:text-slate-600">ไม่กำหนด</span>
-                          ) : (
-                            <span
-                              className={`inline-flex rounded-lg border px-2 py-0.5 text-[11px] font-bold ${
-                                under
+                          <span
+                            className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-0.5 text-xs font-bold tabular-nums ${
+                              d.headcountPlan == null
+                                ? 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                                : under
                                   ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
                                   : over
                                     ? 'border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
                                     : 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                              }`}
-                            >
-                              {d.headcountPlan}{' '}
-                              {under
-                                ? `(ขาด ${d.headcountPlan - d.employeeCount})`
-                                : over
-                                  ? `(เกิน ${d.employeeCount - d.headcountPlan})`
-                                  : '(ครบ)'}
+                            }`}
+                          >
+                            <span>
+                              {d.employeeCount} / {d.headcountPlan ?? '-'}
                             </span>
-                          )}
+                            {d.headcountPlan != null && (
+                              <span className="text-[10px] font-medium opacity-80">
+                                {under
+                                  ? `(ขาด ${d.headcountPlan - d.employeeCount})`
+                                  : over
+                                    ? `(เกิน ${d.employeeCount - d.headcountPlan})`
+                                    : '(ครบ)'}
+                              </span>
+                            )}
+                          </span>
                         </td>
                         <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {d.maleCount}
@@ -553,15 +539,10 @@ export default function EmployeesByDepartmentTab({
                         <td className="py-3 px-4 text-center font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {d.newHiresThisYear}
                         </td>
-                        <td className="py-3 px-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                          {d.byEmployeeType
-                            .map((t) => `${!t.name || t.name === '-' ? 'ไม่ระบุ' : t.name} ${t.count}`)
-                            .join(' · ') || '-'}
-                        </td>
                       </tr>
                       {open && (
                         <tr>
-                          <td colSpan={7} className="bg-slate-50/80 px-6 py-4 dark:bg-slate-900/50">
+                          <td colSpan={5} className="bg-slate-50/80 px-6 py-4 dark:bg-slate-900/50">
                             {d.employees.length === 0 ? (
                               <div className="text-xs text-slate-400">ยังไม่มีพนักงานในแผนกนี้</div>
                             ) : (
