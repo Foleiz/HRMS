@@ -133,10 +133,10 @@ function MySalaryContent() {
   };
 
   useEffect(() => {
-    if (!isAuthLoading) {
+    if (!isAuthLoading && isUnlocked) {
       fetchOverview();
     }
-  }, [isAuthLoading]);
+  }, [isAuthLoading, isUnlocked]);
 
   // Load detail helper
   const loadDetail = async (payrollId: number) => {
@@ -156,16 +156,16 @@ function MySalaryContent() {
   // Sync with URL query parameter (?id=...)
   const idFromQuery = searchParams.get('id');
   useEffect(() => {
-    if (idFromQuery) {
+    if (idFromQuery && isUnlocked) {
       const pid = parseInt(idFromQuery, 10);
       if (!isNaN(pid) && pid !== selectedPayrollId) {
         loadDetail(pid);
       }
-    } else if (selectedPayrollId !== null) {
+    } else if (selectedPayrollId !== null && !idFromQuery) {
       setSelectedPayrollId(null);
       setDetailData(null);
     }
-  }, [idFromQuery]);
+  }, [idFromQuery, isUnlocked]);
 
   // Handle navigate to detail
   const handleSelectSlip = (payrollId: number) => {
@@ -219,6 +219,30 @@ function MySalaryContent() {
   };
 
   // ─────────────────────────────────────────────────────────────
+  // SECURITY CHECK: PIN REQUIRED BEFORE RENDERING SENSITIVE DATA
+  // ─────────────────────────────────────────────────────────────
+  if (isCheckingPin) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="text-center space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">กำลังตรวจสอบความปลอดภัย...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    return (
+      <SalaryPinModal
+        hasPin={hasPin}
+        onUnlocked={handleUnlock}
+        onPinConfigured={() => setHasPin(true)}
+      />
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // VIEW 2: DETAIL BREAKDOWN
   // ─────────────────────────────────────────────────────────────
   if (selectedPayrollId) {
@@ -237,15 +261,7 @@ function MySalaryContent() {
     const isTransferred = detailData?.status === 'โอนแล้ว';
 
     return (
-      <>
-        {!isUnlocked && !isCheckingPin && (
-          <SalaryPinModal
-            hasPin={hasPin}
-            onUnlocked={handleUnlock}
-            onPinConfigured={() => setHasPin(true)}
-          />
-        )}
-        <div className={`space-y-6 font-sans transition-all duration-300 ${!isUnlocked ? 'filter blur-md pointer-events-none select-none' : ''}`}>
+      <div className="space-y-6 font-sans transition-all duration-300">
         {/* ========================================================= */}
         {/* B1: TOP HEADER: เหลือชุดเดียว ชื่อพนักงาน · ตำแหน่ง · แผนก และปุ่มดาวน์โหลด */}
         {/* ========================================================= */}
@@ -454,7 +470,6 @@ function MySalaryContent() {
           </div>
         </div>
       </div>
-      </>
     );
   }
 
@@ -462,15 +477,7 @@ function MySalaryContent() {
   // VIEW 1: OVERVIEW & HISTORY
   // ─────────────────────────────────────────────────────────────
   return (
-    <>
-      {!isUnlocked && !isCheckingPin && (
-        <SalaryPinModal
-          hasPin={hasPin}
-          onUnlocked={handleUnlock}
-          onPinConfigured={() => setHasPin(true)}
-        />
-      )}
-      <div className={`space-y-6 font-sans transition-all duration-300 ${!isUnlocked ? 'filter blur-md pointer-events-none select-none' : ''}`}>
+    <div className="space-y-6 font-sans transition-all duration-300">
 
       {/* ========================================================= */}
       {/* MAIN SECTION: History Table (8 cols) + Visual Charts (4 cols) */}
@@ -987,6 +994,5 @@ function MySalaryContent() {
         </div>
       </div>
     </div>
-    </>
   );
 }

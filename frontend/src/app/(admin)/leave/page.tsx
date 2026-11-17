@@ -214,24 +214,28 @@ function LeaveManagementPageContent() {
 
   // Initial load
   useEffect(() => {
-    fetchInitialData();
-  }, []);
+    if (canViewAnyLeave) {
+      fetchInitialData();
+    }
+  }, [canViewAnyLeave]);
 
   // Fetch balances when year changes
   useEffect(() => {
-    if (activeTab === 'balances') {
+    if (canViewAnyLeave && activeTab === 'balances') {
       fetchBalances(selectedYear);
     }
-  }, [selectedYear, activeTab]);
+  }, [canViewAnyLeave, selectedYear, activeTab]);
 
   const fetchInitialData = async () => {
+    if (!canViewAnyLeave) return;
     setLoading(true);
     try {
+      const canViewEmployees = isSuper || hasPermission('EMPLOYEE_VIEW') || hasRole('HR_ADMIN') || hasRole('HR_OFFICER');
       const [typesData, policiesData, levelsData, employeesData] = await Promise.all([
         leaveService.getLeaveTypes(),
         leaveService.getLeavePolicies(),
         organizationService.getLevels(),
-        employeeService.getAll(),
+        canViewEmployees ? employeeService.getAll().catch(() => []) : Promise.resolve([]),
       ]);
       setLeaveTypes(typesData);
       setLeavePolicies(policiesData);

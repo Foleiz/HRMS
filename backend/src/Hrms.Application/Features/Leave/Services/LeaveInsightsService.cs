@@ -102,7 +102,7 @@ public class LeaveInsightsService : ILeaveInsightsService
     public async Task<LeaveCalendarResult> GetCalendarAsync(DateOnly from, DateOnly to, long? departmentId, long? divisionId, bool includePending, CancellationToken cancellationToken = default)
     {
         if (to < from) (from, to) = (to, from);
-        if (to.DayNumber - from.DayNumber > 92) to = from.AddDays(92);
+        if (to.DayNumber - from.DayNumber > 370) to = from.AddDays(370);
 
         // ขอบเขตที่ผู้ใช้เห็น (ตรวจสอบจากสิทธิ์ LEAVE_BALANCE_VIEW หรือ ESS_LEAVE_VIEW)
         string scope;

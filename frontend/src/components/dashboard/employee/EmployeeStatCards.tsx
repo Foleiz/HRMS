@@ -172,43 +172,43 @@ export const EmployeeStatCards: React.FC = () => {
       title: 'สิทธิ์ลาพักร้อนคงเหลือ',
       value: `${show(stats.vacationRemaining)}/${show(stats.vacationQuota)}`,
       unit: 'วัน',
-      bgClass: 'bg-[#FEF6D8]',
-      borderClass: 'border-[#F6E5A6]',
+      bgClass: 'bg-[#FEF6D8] dark:bg-amber-950/30',
+      borderClass: 'border-[#F6E5A6] dark:border-amber-800/50',
     },
     {
       title: 'สิทธิ์ลาป่วยคงเหลือ',
       value: `${show(stats.sickRemaining)}/${show(stats.sickQuota)}`,
       unit: 'วัน',
-      bgClass: 'bg-[#FDE2E4]',
-      borderClass: 'border-[#F9C3C8]',
+      bgClass: 'bg-[#FDE2E4] dark:bg-rose-950/30',
+      borderClass: 'border-[#F9C3C8] dark:border-rose-800/50',
     },
     {
       title: 'สิทธิ์ลากิจคงเหลือ',
       value: `${show(stats.businessRemaining)}/${show(stats.businessQuota)}`,
       unit: 'วัน',
-      bgClass: 'bg-[#D8F3DC]',
-      borderClass: 'border-[#B7E4C7]',
+      bgClass: 'bg-[#D8F3DC] dark:bg-emerald-950/30',
+      borderClass: 'border-[#B7E4C7] dark:border-emerald-800/50',
     },
     {
       title: 'สิทธิ์ลาพิเศษคงเหลือ',
       value: `${show(stats.specialRemaining)}/${show(stats.specialQuota)}`,
       unit: 'วัน',
-      bgClass: 'bg-[#D9EAFD]',
-      borderClass: 'border-[#BFDBFE]',
+      bgClass: 'bg-[#D9EAFD] dark:bg-sky-950/30',
+      borderClass: 'border-[#BFDBFE] dark:border-sky-800/50',
     },
     {
       title: 'วันลาที่ใช้ไปปีนี้',
       value: show(stats.totalLeaveUsed),
       unit: 'วัน',
-      bgClass: 'bg-[#D7F9D9]',
-      borderClass: 'border-[#BCE7BF]',
+      bgClass: 'bg-[#D7F9D9] dark:bg-green-950/30',
+      borderClass: 'border-[#BCE7BF] dark:border-green-800/50',
     },
     {
       title: 'เอกสารของฉันรออนุมัติ',
       value: show(stats.pendingRequestsCount),
       unit: 'รายการ',
-      bgClass: 'bg-[#FFE5D9]',
-      borderClass: 'border-[#FCD2BE]',
+      bgClass: 'bg-[#FFE5D9] dark:bg-orange-950/30',
+      borderClass: 'border-[#FCD2BE] dark:border-orange-800/50',
     },
   ];
 
@@ -223,16 +223,16 @@ export const EmployeeStatCards: React.FC = () => {
           className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[96px] h-full transition-all`}
         >
           <div className="min-h-[38px] sm:min-h-[42px] flex flex-col justify-start">
-            <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
               {card.title}
             </span>
           </div>
           <div className="flex items-baseline justify-center gap-1 sm:gap-1.5 min-h-[32px] sm:min-h-[36px] mt-auto">
-            <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
               {typeof card.value === 'number' ? <CountUp value={card.value} /> : card.value}
             </span>
             {card.unit && (
-              <span className="text-[11px] sm:text-xs font-semibold text-slate-600">
+              <span className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400">
                 {card.unit}
               </span>
             )}

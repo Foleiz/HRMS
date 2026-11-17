@@ -175,11 +175,13 @@ public class EmployeesController : ControllerBase
         CancellationToken cancellationToken)
     {
         var avatar = await _employeeService.GetAvatarAsync(id, cancellationToken);
+        Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
         if (avatar == null)
         {
             return NotFound();
         }
 
+        Response.Headers.Append("Cache-Control", "public, max-age=86400");
         return File(avatar.Value.ImageData, avatar.Value.MimeType);
     }
 

@@ -242,6 +242,13 @@ SensitiveFieldCipher.Service = app.Services.GetRequiredService<IAesEncryptionSer
 
 app.UseCors("AllowFrontend");
 
+// อนุญาตให้เบราว์เซอร์โหลด Subresource (รูปภาพโปรไฟล์, เอกสาร) ข้าม Origin ได้โดยไม่ติด Chrome ORB
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("Cross-Origin-Resource-Policy", "cross-origin");
+    await next();
+});
+
 // วัดเวลา + จำนวน query ต่อคำขอ (log [SLOW] และ header Server-Timing)
 app.UseMiddleware<RequestTimingMiddleware>();
 

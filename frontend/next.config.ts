@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         destination: '/master?tab=banks',
         permanent: true,
       },
+      {
+        source: '/ess/leave',
+        destination: '/documents/leave',
+        permanent: false,
+      },
     ];
   },
 };

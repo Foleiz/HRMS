@@ -336,44 +336,44 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             title: 'จำนวนพนักงานในแผนก',
             value: show(statsData.headcount),
             unit: 'คน',
-            bgClass: 'bg-[#FEF6D8]',
-            borderClass: 'border-[#F6E5A6]',
+            bgClass: 'bg-[#FEF6D8] dark:bg-amber-950/30',
+            borderClass: 'border-[#F6E5A6] dark:border-amber-800/50',
           },
           {
             title: 'คนในแผนกลาวันนี้',
             value: show(statsData.onLeaveToday),
             unit: 'คน',
-            bgClass: 'bg-[#FDE2E4]',
-            borderClass: 'border-[#F9C3C8]',
+            bgClass: 'bg-[#FDE2E4] dark:bg-rose-950/30',
+            borderClass: 'border-[#F9C3C8] dark:border-rose-800/50',
           },
           {
             title: 'ใบลาอนุมัติแล้วเดือนนี้',
             value: show(statsData.approvedThisMonth),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D8F3DC]',
-            borderClass: 'border-[#B7E4C7]',
+            bgClass: 'bg-[#D8F3DC] dark:bg-emerald-950/30',
+            borderClass: 'border-[#B7E4C7] dark:border-emerald-800/50',
           },
           {
             title: 'ใบลาในแผนกรออนุมัติ',
             value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D9EAFD]',
-            borderClass: 'border-[#BFDBFE]',
+            bgClass: 'bg-[#D9EAFD] dark:bg-sky-950/30',
+            borderClass: 'border-[#BFDBFE] dark:border-sky-800/50',
           },
           {
             title: 'เอกสารยื่นใหม่วันนี้',
             value: show(statsData.submittedToday),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D7F9D9]',
-            borderClass: 'border-[#BCE7BF]',
+            bgClass: 'bg-[#D7F9D9] dark:bg-green-950/30',
+            borderClass: 'border-[#BCE7BF] dark:border-green-800/50',
           },
           {
             title: 'ลูกทีมใกล้พ้นทดลองงาน',
             subtitle: '(7 วัน)',
             value: show(statsData.probationExpiring7Days),
             unit: 'คน',
-            bgClass: 'bg-[#FFE5D9]',
-            borderClass: 'border-[#FCD2BE]',
+            bgClass: 'bg-[#FFE5D9] dark:bg-orange-950/30',
+            borderClass: 'border-[#FCD2BE] dark:border-orange-800/50',
           },
         ];
 
@@ -383,92 +383,94 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             title: 'จำนวนพนักงานในฝ่ายทั้งหมด',
             value: show(statsData.headcount),
             unit: 'คน',
-            bgClass: 'bg-[#FEF6D8]',
-            borderClass: 'border-[#F6E5A6]',
+            bgClass: 'bg-[#FEF6D8] dark:bg-amber-950/30',
+            borderClass: 'border-[#F6E5A6] dark:border-amber-800/50',
           },
           {
             title: 'คนในฝ่ายลาวันนี้',
             value: show(statsData.onLeaveToday),
             unit: 'คน',
-            bgClass: 'bg-[#FDE2E4]',
-            borderClass: 'border-[#F9C3C8]',
+            bgClass: 'bg-[#FDE2E4] dark:bg-rose-950/30',
+            borderClass: 'border-[#F9C3C8] dark:border-rose-800/50',
           },
           {
             title: 'ใบลาอนุมัติแล้วเดือนนี้',
             value: show(statsData.approvedThisMonth),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D8F3DC]',
-            borderClass: 'border-[#B7E4C7]',
+            bgClass: 'bg-[#D8F3DC] dark:bg-emerald-950/30',
+            borderClass: 'border-[#B7E4C7] dark:border-emerald-800/50',
           },
           {
             title: 'ใบลาในฝ่ายรออนุมัติ',
             value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D9EAFD]',
-            borderClass: 'border-[#BFDBFE]',
+            bgClass: 'bg-[#D9EAFD] dark:bg-sky-950/30',
+            borderClass: 'border-[#BFDBFE] dark:border-sky-800/50',
           },
           {
             title: 'เอกสารยื่นใหม่วันนี้',
             value: show(statsData.submittedToday),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D7F9D9]',
-            borderClass: 'border-[#BCE7BF]',
+            bgClass: 'bg-[#D7F9D9] dark:bg-green-950/30',
+            borderClass: 'border-[#BCE7BF] dark:border-green-800/50',
           },
           {
             title: 'ใกล้ครบกำหนดทดลองงาน',
             subtitle: '(7 วัน)',
             value: show(statsData.probationExpiring7Days),
             unit: 'คน',
-            bgClass: 'bg-[#FFE5D9]',
-            borderClass: 'border-[#FCD2BE]',
+            bgClass: 'bg-[#FFE5D9] dark:bg-orange-950/30',
+            borderClass: 'border-[#FCD2BE] dark:border-orange-800/50',
           },
         ];
 
-      case 'CEO':
+      case 'CEO': {
+        const availableToday = Math.max(0, statsData.headcount - statsData.onLeaveToday);
         return [
           {
             title: 'พนักงานทั้งหมดในองค์กร',
             value: show(statsData.headcount),
             unit: 'คน',
-            bgClass: 'bg-[#FEF6D8]',
-            borderClass: 'border-[#F6E5A6]',
+            bgClass: 'bg-[#FEF6D8] dark:bg-amber-950/30',
+            borderClass: 'border-[#F6E5A6] dark:border-amber-800/50',
           },
           {
             title: 'พนักงานลาออกเดือนนี้',
             value: show(statsData.resignedThisMonth),
             unit: 'คน',
-            bgClass: 'bg-[#FDE2E4]',
-            borderClass: 'border-[#F9C3C8]',
+            bgClass: 'bg-[#FDE2E4] dark:bg-rose-950/30',
+            borderClass: 'border-[#F9C3C8] dark:border-rose-800/50',
           },
           {
             title: 'ความพร้อมกำลังคนวันนี้',
-            value: loading ? '–' : `${statsData.presentToday} / ${statsData.headcount}`,
+            value: loading ? '–' : `${availableToday} / ${statsData.headcount}`,
             unit: 'คน',
-            bgClass: 'bg-[#D8F3DC]',
-            borderClass: 'border-[#B7E4C7]',
+            bgClass: 'bg-[#D8F3DC] dark:bg-emerald-950/30',
+            borderClass: 'border-[#B7E4C7] dark:border-emerald-800/50',
           },
           {
             title: 'คำขอเอกสารค้างอนุมัติทั้งองค์กร',
             value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D9EAFD]',
-            borderClass: 'border-[#BFDBFE]',
+            bgClass: 'bg-[#D9EAFD] dark:bg-sky-950/30',
+            borderClass: 'border-[#BFDBFE] dark:border-sky-800/50',
           },
           {
             title: 'คำร้องขอลาออกรออนุมัติ',
             value: show(statsData.pendingResignations),
             unit: 'รายการ',
-            bgClass: 'bg-[#D7F9D9]',
-            borderClass: 'border-[#BCE7BF]',
+            bgClass: 'bg-[#D7F9D9] dark:bg-green-950/30',
+            borderClass: 'border-[#BCE7BF] dark:border-green-800/50',
           },
           {
             title: 'สถานะงวดเงินเดือนล่าสุด',
             value: show(statsData.latestPayrollStatus),
             unit: '',
-            bgClass: 'bg-[#FFE5D9]',
-            borderClass: 'border-[#FCD2BE]',
+            bgClass: 'bg-[#FFE5D9] dark:bg-orange-950/30',
+            borderClass: 'border-[#FCD2BE] dark:border-orange-800/50',
           },
         ];
+      }
 
       case 'ADMIN':
       default:
@@ -477,45 +479,45 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             title: 'พนักงานทั้งหมดในองค์กร',
             value: show(statsData.headcount),
             unit: 'คน',
-            bgClass: 'bg-[#FEF6D8]',
-            borderClass: 'border-[#F6E5A6]',
+            bgClass: 'bg-[#FEF6D8] dark:bg-amber-950/30',
+            borderClass: 'border-[#F6E5A6] dark:border-amber-800/50',
           },
           {
             title: 'พนักงานที่ลาวันนี้',
             value: show(statsData.onLeaveToday),
             unit: 'คน',
-            bgClass: 'bg-[#FDE2E4]',
-            borderClass: 'border-[#F9C3C8]',
+            bgClass: 'bg-[#FDE2E4] dark:bg-rose-950/30',
+            borderClass: 'border-[#F9C3C8] dark:border-rose-800/50',
           },
           {
             title: 'ใบลาและรับรองรออนุมัติ (ทั้งองค์กร)',
             value: show(statsData.pendingDocs),
             unit: 'เอกสาร',
-            bgClass: 'bg-[#D8F3DC]',
-            borderClass: 'border-[#B7E4C7]',
+            bgClass: 'bg-[#D8F3DC] dark:bg-emerald-950/30',
+            borderClass: 'border-[#B7E4C7] dark:border-emerald-800/50',
           },
           {
             title: 'สัญญาจ้างใกล้หมด',
             subtitle: '(30 วัน)',
             value: show(statsData.contractExpiring30Days),
             unit: 'สัญญา',
-            bgClass: 'bg-[#D9EAFD]',
-            borderClass: 'border-[#BFDBFE]',
+            bgClass: 'bg-[#D9EAFD] dark:bg-sky-950/30',
+            borderClass: 'border-[#BFDBFE] dark:border-sky-800/50',
           },
           {
             title: 'ครบกำหนดทดลองงาน',
             subtitle: '(7 วัน)',
             value: show(statsData.probationExpiring7Days),
             unit: 'คน',
-            bgClass: 'bg-[#D7F9D9]',
-            borderClass: 'border-[#BCE7BF]',
+            bgClass: 'bg-[#D7F9D9] dark:bg-green-950/30',
+            borderClass: 'border-[#BCE7BF] dark:border-green-800/50',
           },
           {
             title: 'สถานะงวดเงินเดือนล่าสุด',
             value: show(statsData.latestPayrollStatus),
             unit: '',
-            bgClass: 'bg-[#FFE5D9]',
-            borderClass: 'border-[#FCD2BE]',
+            bgClass: 'bg-[#FFE5D9] dark:bg-orange-950/30',
+            borderClass: 'border-[#FCD2BE] dark:border-orange-800/50',
           },
         ];
     }
@@ -536,11 +538,11 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
             className={`${card.bgClass} border ${card.borderClass} rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between shadow-xs min-h-[96px] h-full transition-all`}
           >
             <div className="min-h-[38px] sm:min-h-[42px] flex flex-col justify-start">
-              <span className="text-[11px] sm:text-xs font-bold text-slate-700 leading-tight">
+              <span className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-300 leading-tight">
                 {card.title}
               </span>
               {card.subtitle && (
-                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 leading-tight mt-0.5 whitespace-nowrap">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-600 dark:text-slate-400 leading-tight mt-0.5 whitespace-nowrap">
                   {card.subtitle}
                 </span>
               )}
@@ -549,14 +551,14 @@ export const ManagerStatCards: React.FC<ManagerStatCardsProps> = ({ role }) => {
               <span
                 className={
                   isTextValue
-                    ? 'text-base sm:text-lg font-bold text-slate-800 tracking-tight'
-                    : 'text-xl sm:text-2xl font-black text-slate-900 tracking-tight'
+                    ? 'text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200 tracking-tight'
+                    : 'text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight'
                 }
               >
                 {typeof card.value === 'number' ? <CountUp value={card.value} /> : card.value}
               </span>
               {card.unit && (
-                <span className="text-[11px] sm:text-xs font-semibold text-slate-600">
+                <span className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400">
                   {card.unit}
                 </span>
               )}
