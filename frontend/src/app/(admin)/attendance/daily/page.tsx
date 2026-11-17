@@ -1168,7 +1168,7 @@ function DailyAttendanceContent() {
               </div>
               <div className="mt-2">
                 <div className="text-2xl font-black text-amber-700 dark:text-amber-300">{summary?.lateCount ?? 0}</div>
-                <div className="text-2xs text-amber-700 dark:text-amber-400 mt-0.5 font-medium">เกินระยะเวลาผ่อนปรน</div>
+                <div className="text-2xs text-amber-700 dark:text-amber-400 mt-0.5 font-medium">หลังเวลาเริ่มต้นกะ</div>
               </div>
             </div>
 

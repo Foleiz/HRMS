@@ -813,7 +813,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         {
             var actualInLocal = ToThaiLocalTime(record.ActualIn.Value);
             var scheduledStartLocal = ToThaiLocalTime(record.ScheduledStart.Value);
-            var lateGrace = shift?.LateGraceMinutes ?? 10;
+            var lateGrace = shift?.LateGraceMinutes ?? 0;
             var lateThreshold = scheduledStartLocal.AddMinutes(lateGrace);
 
             if (actualInLocal > lateThreshold)
@@ -828,7 +828,7 @@ public class AttendanceDailyService : IAttendanceDailyService
         {
             var actualOutLocal = ToThaiLocalTime(record.ActualOut.Value);
             var scheduledEndLocal = ToThaiLocalTime(record.ScheduledEnd.Value);
-            var earlyGrace = shift?.EarlyLeaveGraceMinutes ?? 5;
+            var earlyGrace = shift?.EarlyLeaveGraceMinutes ?? 0;
             var earlyThreshold = scheduledEndLocal.AddMinutes(-earlyGrace);
 
             if (actualOutLocal < earlyThreshold)

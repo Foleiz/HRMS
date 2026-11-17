@@ -1664,7 +1664,7 @@ public class AttendanceImportService : IAttendanceImportService
                 {
                     var actualInLocal = AttendanceDailyService.ToThaiLocalTime(actualInUtc.Value);
                     var schedStartLocal = AttendanceDailyService.ToThaiLocalTime(dailyRecord.ScheduledStart.Value);
-                    var lateGrace = shift?.LateGraceMinutes ?? 10;
+                    var lateGrace = shift?.LateGraceMinutes ?? 0;
                     var lateThreshold = schedStartLocal.AddMinutes(lateGrace);
                     if (actualInLocal > lateThreshold)
                     {
@@ -1685,7 +1685,7 @@ public class AttendanceImportService : IAttendanceImportService
                 {
                     var actualOutLocal = AttendanceDailyService.ToThaiLocalTime(actualOutUtc.Value);
                     var schedEndLocal = AttendanceDailyService.ToThaiLocalTime(dailyRecord.ScheduledEnd.Value);
-                    var earlyGrace = shift?.EarlyLeaveGraceMinutes ?? 5;
+                    var earlyGrace = shift?.EarlyLeaveGraceMinutes ?? 0;
                     var earlyThreshold = schedEndLocal.AddMinutes(-earlyGrace);
                     if (actualOutLocal < earlyThreshold)
                     {
