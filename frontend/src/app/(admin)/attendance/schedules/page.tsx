@@ -332,8 +332,8 @@ function SchedulesContent() {
     isCrossDay: false,
     breakMinutes: 60,
     status: 'ACTIVE',
-    lateGraceMinutes: 10,
-    earlyLeaveGraceMinutes: 5,
+    lateGraceMinutes: 0,
+    earlyLeaveGraceMinutes: 0,
     color: '',
     workDays: [1, 2, 3, 4, 5],
   });
@@ -895,8 +895,8 @@ function SchedulesContent() {
       isCrossDay: false,
       breakMinutes: 60,
       status: 'ACTIVE',
-      lateGraceMinutes: 10,
-      earlyLeaveGraceMinutes: 5,
+      lateGraceMinutes: 0,
+      earlyLeaveGraceMinutes: 0,
       color: '',
       workDays: [1, 2, 3, 4, 5],
     });
@@ -915,8 +915,8 @@ function SchedulesContent() {
       isCrossDay: shift.isCrossDay,
       breakMinutes: shift.breakMinutes,
       status: shift.status,
-      lateGraceMinutes: shift.lateGraceMinutes,
-      earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+      lateGraceMinutes: 0,
+      earlyLeaveGraceMinutes: 0,
       color: shift.color ?? '',
       workDays: shift.workDays && shift.workDays.length > 0 ? [...shift.workDays] : [1, 2, 3, 4, 5],
     });
@@ -934,8 +934,8 @@ function SchedulesContent() {
       isCrossDay: shift.isCrossDay,
       breakMinutes: shift.breakMinutes,
       status: 'ACTIVE',
-      lateGraceMinutes: shift.lateGraceMinutes,
-      earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+      lateGraceMinutes: 0,
+      earlyLeaveGraceMinutes: 0,
       color: '',
       workDays: shift.workDays && shift.workDays.length > 0 ? [...shift.workDays] : [1, 2, 3, 4, 5],
     });
@@ -955,8 +955,8 @@ function SchedulesContent() {
         isCrossDay: shift.isCrossDay,
         breakMinutes: shift.breakMinutes,
         status: nextStatus,
-        lateGraceMinutes: shift.lateGraceMinutes,
-        earlyLeaveGraceMinutes: shift.earlyLeaveGraceMinutes,
+        lateGraceMinutes: 0,
+        earlyLeaveGraceMinutes: 0,
         color: shift.color || null,
         workDays: shift.workDays,
       });
@@ -1014,8 +1014,8 @@ function SchedulesContent() {
           isCrossDay: shiftForm.isCrossDay,
           breakMinutes: shiftForm.breakMinutes,
           status: shiftForm.status,
-          lateGraceMinutes: shiftForm.lateGraceMinutes,
-          earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
+          lateGraceMinutes: 0,
+          earlyLeaveGraceMinutes: 0,
           color: shiftForm.color || null,
           workDays: shiftForm.workDays,
         });
@@ -1028,8 +1028,8 @@ function SchedulesContent() {
           isCrossDay: shiftForm.isCrossDay,
           breakMinutes: shiftForm.breakMinutes,
           status: shiftForm.status,
-          lateGraceMinutes: shiftForm.lateGraceMinutes,
-          earlyLeaveGraceMinutes: shiftForm.earlyLeaveGraceMinutes,
+          lateGraceMinutes: 0,
+          earlyLeaveGraceMinutes: 0,
           color: shiftForm.color || null,
           workDays: shiftForm.workDays,
         });
@@ -1799,22 +1799,6 @@ function SchedulesContent() {
                         </span>
                       </div>
                     </div>
-
-                    {/* Separate Grace Times */}
-                    <div className="grid grid-cols-2 gap-2 text-xs mb-4">
-                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-                        <div className="text-slate-400 text-[11px] dark:text-slate-500 dark:text-slate-400">ผ่อนปรนมาสาย:</div>
-                        <div className="font-semibold text-slate-700 dark:text-slate-300 mt-0.5 dark:text-slate-300">
-                          {shift.lateGraceMinutes > 0 ? `${shift.lateGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
-                        </div>
-                      </div>
-                      <div className="p-2 bg-slate-50 rounded-md border border-slate-100 dark:bg-slate-950 dark:border-slate-700/60">
-                        <div className="text-slate-400 text-[11px] dark:text-slate-500 dark:text-slate-400">ผ่อนปรนกลับก่อน:</div>
-                        <div className="font-semibold text-slate-700 dark:text-slate-300 mt-0.5 dark:text-slate-300">
-                          {shift.earlyLeaveGraceMinutes > 0 ? `${shift.earlyLeaveGraceMinutes} นาที` : 'ไม่ผ่อนปรน'}
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Card Actions Footer */}
@@ -1893,8 +1877,6 @@ function SchedulesContent() {
                       <th className="p-3.5">ประเภทกะ</th>
                       <th className="p-3.5">เวลาทำงาน</th>
                       <th className="p-3.5">พัก (นาที)</th>
-                      <th className="p-3.5">ผ่อนปรนสาย</th>
-                      <th className="p-3.5">ผ่อนปรนกลับก่อน</th>
                       <th className="p-3.5">สถานะ</th>
                       <th className="p-3.5 text-right w-16">จัดการ</th>
                     </tr>
@@ -1928,12 +1910,6 @@ function SchedulesContent() {
                           )}
                         </td>
                         <td className="p-3.5 text-slate-600 dark:text-slate-400">{s.breakMinutes} นาที</td>
-                        <td className="p-3.5 text-slate-700 dark:text-slate-300">
-                          {s.lateGraceMinutes > 0 ? `${s.lateGraceMinutes} นาที` : '-'}
-                        </td>
-                        <td className="p-3.5 text-slate-700 dark:text-slate-300">
-                          {s.earlyLeaveGraceMinutes > 0 ? `${s.earlyLeaveGraceMinutes} นาที` : '-'}
-                        </td>
                         <td className="p-3.5">
                           <ActiveStatus
                             active={s.status === 'ACTIVE'}
@@ -2953,49 +2929,19 @@ function SchedulesContent() {
                 </div>
               </div>
 
-              {/* Break Minutes & Separate Grace Times: Late & Early Leave in 1 Row */}
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    เวลาพัก (นาที)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="180"
-                    value={shiftForm.breakMinutes}
-                    onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ผ่อนปรนมาสาย (นาที)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={shiftForm.lateGraceMinutes}
-                    onChange={(e) => setShiftForm({ ...shiftForm, lateGraceMinutes: Number(e.target.value) })}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    ผ่อนปรนกลับก่อน (นาที)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={shiftForm.earlyLeaveGraceMinutes}
-                    onChange={(e) => setShiftForm({ ...shiftForm, earlyLeaveGraceMinutes: Number(e.target.value) })}
-                    className={inputClass}
-                  />
-                </div>
+              {/* Break Minutes */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  เวลาพัก (นาที)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="180"
+                  value={shiftForm.breakMinutes}
+                  onChange={(e) => setShiftForm({ ...shiftForm, breakMinutes: Number(e.target.value) })}
+                  className={inputClass}
+                />
               </div>
 
               {/* Status (แสดงเฉพาะตอนแก้ไข) */}
