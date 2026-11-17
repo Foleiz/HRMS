@@ -45,7 +45,7 @@ function MySalaryContent() {
   const searchParams = useSearchParams();
   const { isLoading: isAuthLoading } = useAuth();
   const { setBreadcrumb } = useBreadcrumb();
-  const { error, success } = useToast();
+  const { error, success, info } = useToast();
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [overview, setOverview] = useState<MySalaryOverview | null>(null);
@@ -102,6 +102,30 @@ function MySalaryContent() {
   const handleLock = () => {
     setIsUnlocked(false);
   };
+
+  // Auto-lock when inactive for 10 minutes (600,000 ms)
+  useEffect(() => {
+    if (!isUnlocked) return;
+
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const resetTimer = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsUnlocked(false);
+        info('เซสชันหมดเวลาเนื่องจากไม่มีการใช้งานเกิน 10 นาที กรุณากรอกรหัส PIN อีกครั้ง');
+      }, 10 * 60 * 1000);
+    };
+
+    resetTimer();
+
+    const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart'];
+    activityEvents.forEach((ev) => window.addEventListener(ev, resetTimer, { passive: true }));
+
+    return () => {
+      clearTimeout(timeoutId);
+      activityEvents.forEach((ev) => window.removeEventListener(ev, resetTimer));
+    };
+  }, [isUnlocked, info]);
 
   // Breadcrumb sync
   useEffect(() => {

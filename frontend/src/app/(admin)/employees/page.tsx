@@ -392,14 +392,18 @@ function EmployeesPageContent() {
       const saved = localStorage.getItem('hrms_employee_comments');
       if (saved) {
         try {
-          setComments(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed[1] === 'พนักงานคนนี้ป่วยทางจิต') {
+            parsed[1] = 'พนักงานดีเด่นประจำไตรมาส';
+            localStorage.setItem('hrms_employee_comments', JSON.stringify(parsed));
+          }
+          setComments(parsed);
         } catch {
           // ignore error
         }
       } else {
-        // ตัวอย่างตั้งต้นตรงตามภาพ Figma (EMP-001: พนักงานคนนี้ป่วยทางจิต, EMP-002: กำลังทดลองงาน)
         const defaultNotes: Record<number, string> = {
-          1: 'พนักงานคนนี้ป่วยทางจิต',
+          1: 'พนักงานดีเด่นประจำไตรมาส',
           2: 'กำลังอยู่ในช่วงทดลองงาน',
         };
         setComments(defaultNotes);

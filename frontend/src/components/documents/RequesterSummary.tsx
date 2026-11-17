@@ -59,10 +59,13 @@ export function RequesterSummary({ variant = 'general', fullName, positionTitle,
     };
   }, [user?.employeeId]);
 
-  const name = emp?.fullName || fullName || '-';
+  const name = emp?.fullName || fullName || user?.fullName || '-';
   const position = emp?.positionName || positionTitle || '';
   const department = emp?.departmentName || departmentName || '';
-  const avatar = !avatarFailed && emp?.avatarUrl ? getAvatarUrl(emp.avatarUrl) : null;
+  const avatar =
+    !avatarFailed && user?.employeeId
+      ? getAvatarUrl(emp?.avatarUrl || `/api/employees/${user.employeeId}/avatar`)
+      : null;
   const initial = name.replace(/^(นาย|นางสาว|นาง|Mr\.?|Mrs\.?|Ms\.?)\s*/i, '').trim().charAt(0) || '?';
   const iconCls = 'w-3.5 h-3.5 shrink-0 text-slate-400 dark:text-slate-500';
 

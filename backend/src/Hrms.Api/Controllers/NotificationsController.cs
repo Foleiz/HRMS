@@ -40,6 +40,7 @@ public class NotificationsController : ControllerBase
         }
 
         var summary = await _notificationService.GetSummaryAsync(userId.Value, cancellationToken);
+        Response.Headers.Append("Cache-Control", "private, max-age=10");
         return Ok(ApiResponse<NotificationSummaryDto>.Ok(summary, "ดึงข้อมูลสรุปการแจ้งเตือนสำเร็จ"));
     }
 

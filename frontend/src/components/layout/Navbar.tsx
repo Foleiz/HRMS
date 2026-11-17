@@ -445,7 +445,7 @@ export const Navbar: React.FC = () => {
             {/* Dropdown Menu (Clean Card Design ตามรูปเรฟ) */}
             {shouldRenderProfile && (
               <div
-                className={`absolute right-0 mt-2.5 w-[320px] sm:w-[340px] max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl z-50 origin-top-right transition-all duration-150 ease-out font-sans overflow-hidden ${
+                className={`absolute right-0 mt-2 w-[320px] sm:w-[330px] max-w-[calc(100vw-1.5rem)] bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-2xl z-50 origin-top-right transition-all duration-150 ease-out font-sans overflow-hidden ${
                   isProfileActive
                     ? 'opacity-100 scale-100 translate-y-0'
                     : 'opacity-0 scale-95 -translate-y-1 pointer-events-none'
@@ -454,7 +454,7 @@ export const Navbar: React.FC = () => {
                 {/* Top Pointer Arrow */}
                 <div className="absolute -top-1.5 right-6 w-3 h-3 bg-white dark:bg-slate-900 border-t border-l border-slate-200/90 dark:border-slate-800 rotate-45 z-10" />
 
-                <div className="max-h-[85vh] overflow-y-auto p-4 sm:p-5 relative z-20 space-y-4">
+                <div className="max-h-[calc(100vh-5rem)] overflow-y-auto p-3.5 sm:p-4 relative z-20 space-y-3">
                   {/* 1. Top Section: Employee Code Badge & Centered Avatar */}
                   <div className="relative pt-1">
                     {/* Employee Code Top-Right */}
