@@ -49,7 +49,6 @@ function MySalaryContent() {
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [overview, setOverview] = useState<MySalaryOverview | null>(null);
-  const [rightChartTab, setRightChartTab] = useState<'composition' | 'trend'>('composition');
   const otherIncomeAmount = Math.max(
     0,
     (overview?.latestGrossIncome || 0) -
@@ -815,44 +814,16 @@ function MySalaryContent() {
             })()}
           </div>
 
-          {/* Card 2: โครงสร้างรายได้ & แนวโน้มเงินเดือน */}
+          {/* Card 2: โครงสร้างรายได้ของฉัน */}
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-primary" />
-                {rightChartTab === 'composition' ? 'โครงสร้างรายได้ของฉัน' : 'แนวโน้มเงินเดือนรายงวด'}
+                โครงสร้างรายได้ของฉัน
               </h3>
-              
-              {/* Tab Switcher */}
-              <div className="inline-flex rounded-lg bg-slate-100 dark:bg-slate-700/60 p-0.5 text-[10px]">
-                <button
-                  type="button"
-                  onClick={() => setRightChartTab('composition')}
-                  className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                    rightChartTab === 'composition'
-                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
-                  }`}
-                >
-                  โครงสร้าง
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRightChartTab('trend')}
-                  className={`px-2 py-0.5 rounded-md font-medium transition-all ${
-                    rightChartTab === 'trend'
-                      ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 shadow-xs'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800'
-                  }`}
-                >
-                  แนวโน้ม
-                </button>
-              </div>
             </div>
 
-            {rightChartTab === 'composition' ? (
-              // TAB A: โครงสร้างรายได้ (Earnings Composition)
-              (() => {
+            {(() => {
                 const base = overview?.chartData?.baseSalaryAmount || 0;
                 const ot = (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0);
                 const other = otherIncomeAmount;
@@ -947,73 +918,7 @@ function MySalaryContent() {
                     </div>
                   </div>
                 );
-              })()
-            ) : (
-              // TAB B: แนวโน้มเงินเดือน (Monthly Trend with Dynamic Scale)
-              (() => {
-                const trends = overview?.chartData?.monthlyTrends || [];
-                if (trends.length === 0) {
-                  return (
-                    <div className="h-44 flex items-center justify-center text-xs text-slate-400">
-                      ไม่มีข้อมูลแนวโน้มรายงวด
-                    </div>
-                  );
-                }
-
-                const maxVal = Math.max(...trends.map((t) => Math.max(t.grossIncome, t.netPay)), 1000) * 1.15;
-                const avgNet = trends.reduce((acc, t) => acc + t.netPay, 0) / trends.length;
-
-                return (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span>เปรียบเทียบ {trends.length} งวดล่าสุด</span>
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                        เฉลี่ย ฿{formatMoney(avgNet)}/งวด
-                      </span>
-                    </div>
-
-                    {/* Bar Chart Container */}
-                    <div className="h-36 flex items-end justify-center gap-3 pt-4 px-2 border-b border-slate-200 dark:border-slate-700">
-                      {trends.map((t, idx) => {
-                        const grossHeight = Math.min(100, Math.max(12, (t.grossIncome / maxVal) * 100));
-                        const netHeight = Math.min(100, Math.max(10, (t.netPay / maxVal) * 100));
-                        return (
-                          <div key={idx} className="flex flex-col items-center gap-1.5 flex-1 max-w-[65px] group">
-                            <div className="w-full flex items-end justify-center gap-1.5 h-24">
-                              {/* Gross Bar */}
-                              <div
-                                style={{ height: `${grossHeight}%` }}
-                                title={`รายได้รวม: ฿${formatMoney(t.grossIncome)}`}
-                                className="w-3.5 bg-slate-300 dark:bg-slate-600 rounded-t transition-all group-hover:bg-slate-400"
-                              />
-                              {/* Net Bar */}
-                              <div
-                                style={{ height: `${netHeight}%` }}
-                                title={`รับสุทธิ: ฿${formatMoney(t.netPay)}`}
-                                className="w-3.5 bg-emerald-500 rounded-t transition-all group-hover:bg-emerald-600 shadow-xs"
-                              />
-                            </div>
-                            <span className="text-[10px] text-slate-600 dark:text-slate-300 font-semibold">
-                              {t.monthLabel}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Legend */}
-                    <div className="flex items-center justify-center gap-5 text-[11px] text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-slate-300 dark:bg-slate-600" /> รายได้รวม
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded bg-emerald-500" /> เงินเดือนสุทธิ
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()
-            )}
+              })()}
           </div>
         </div>
       </div>
