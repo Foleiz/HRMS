@@ -212,7 +212,7 @@ export default function EmployeeTimelineModal({
       className="z-50 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200 font-sans"
       innerClassName="items-center justify-center p-3 sm:p-5"
     >
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[88vh]">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl sm:w-[680px] h-[640px] max-h-[88vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
         <ModalHeader
           title={
             <>
@@ -223,13 +223,13 @@ export default function EmployeeTimelineModal({
         />
 
         {/* Toolbar: Filter Tabs & Sort Toggle */}
-        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/40 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-between gap-2.5 shrink-0">
           {/* Tabs */}
           <div className="inline-flex items-center gap-1 p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl text-xs font-medium">
             <button
               type="button"
               onClick={() => setActiveTab('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`h-8 px-3 inline-flex items-center justify-center rounded-lg transition-all cursor-pointer ${
                 activeTab === 'ALL'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -240,7 +240,7 @@ export default function EmployeeTimelineModal({
             <button
               type="button"
               onClick={() => setActiveTab('CONTRACT')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`h-8 inline-flex items-center justify-center gap-1.5 px-3 rounded-lg transition-all cursor-pointer ${
                 activeTab === 'CONTRACT'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -252,7 +252,7 @@ export default function EmployeeTimelineModal({
             <button
               type="button"
               onClick={() => setActiveTab('CAREER')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`h-8 inline-flex items-center justify-center gap-1.5 px-3 rounded-lg transition-all cursor-pointer ${
                 activeTab === 'CAREER'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -267,7 +267,7 @@ export default function EmployeeTimelineModal({
           <button
             type="button"
             onClick={() => setSortOrder((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'))}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
+            className="h-8 inline-flex items-center justify-center gap-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer"
             title="สลับลำดับการแสดงผล"
           >
             <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
@@ -276,9 +276,9 @@ export default function EmployeeTimelineModal({
         </div>
 
         {/* Content Body: Unified Timeline */}
-        <div className="p-7 overflow-y-auto flex-1">
+        <div className="p-6 sm:p-7 overflow-y-auto flex-1 [scrollbar-gutter:stable]">
           {loading ? (
-            <div className="py-16 text-center text-slate-400 dark:text-slate-500 flex flex-col items-center justify-center gap-2">
+            <div className="h-full flex flex-col items-center justify-center py-16 text-center text-slate-400 dark:text-slate-500 gap-2">
               <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-blue-300" />
               <span className="text-xs">กำลังโหลดไทม์ไลน์และประวัติ...</span>
             </div>
@@ -288,7 +288,7 @@ export default function EmployeeTimelineModal({
               <span>{error}</span>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+            <div className="h-full flex flex-col items-center justify-center py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
               ไม่พบรายการประวัติในหมวดที่เลือก
             </div>
           ) : (
@@ -398,7 +398,7 @@ export default function EmployeeTimelineModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
           <span className="text-xs text-slate-400 dark:text-slate-500">
             รวมประวัติทั้งสัญญาจ้างและการดำรงตำแหน่งงาน
           </span>
