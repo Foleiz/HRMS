@@ -361,39 +361,25 @@ export default function EmployeesByDepartmentTab({
             />
           </KpiGrid>
 
-          {/* Chart Row 1: Department Headcount + Gender */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <ReportPanel
-              title="จำนวนพนักงานแต่ละแผนก"
-              subtitle="แท่ง = พนักงานจริง · เส้นประ = อัตรากำลังตามแผน · ชี้เพื่อดูรายละเอียด"
-              className="xl:col-span-2"
-            >
-              <ColumnChart
-                color={VIZ.s1}
-                height={230}
-                items={[...data.departments]
-                  .sort((a, b) => b.employeeCount - a.employeeCount)
-                  .map((d) => ({
-                    id: d.departmentId,
-                    label: d.departmentName,
-                    sub: d.divisionName,
-                    value: d.employeeCount,
-                    target: d.headcountPlan ?? null,
-                  }))}
-              />
-            </ReportPanel>
-
-            <ReportPanel title="สัดส่วนเพศ" subtitle="จำแนกตามเพศของพนักงานที่ปฏิบัติงานอยู่">
-              <DonutChart
-                size={145}
-                segments={[
-                  { key: 'm', label: 'ชาย', value: data.maleCount, color: '#3b82f6' },
-                  { key: 'f', label: 'หญิง', value: data.femaleCount, color: '#f97316' },
-                  { key: 'o', label: 'ไม่ระบุ', value: data.otherGenderCount, color: '#cbd5e1' },
-                ]}
-              />
-            </ReportPanel>
-          </div>
+          {/* Chart Row 1: Department Headcount */}
+          <ReportPanel
+            title="จำนวนพนักงานแต่ละแผนก"
+            subtitle="แท่ง = พนักงานจริง · เส้นประ = อัตรากำลังตามแผน · ชี้เพื่อดูรายละเอียด"
+          >
+            <ColumnChart
+              color={VIZ.s1}
+              height={230}
+              items={[...data.departments]
+                .sort((a, b) => b.employeeCount - a.employeeCount)
+                .map((d) => ({
+                  id: d.departmentId,
+                  label: d.departmentName,
+                  sub: d.divisionName,
+                  value: d.employeeCount,
+                  target: d.headcountPlan ?? null,
+                }))}
+            />
+          </ReportPanel>
 
           {/* Chart Row 2: Employee Type + Level + Tenure Distribution */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
