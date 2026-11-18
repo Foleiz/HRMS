@@ -53,10 +53,11 @@ interface AvatarNameProps {
   initial?: string;
   avatarUrl?: string | null;
   className?: string;
+  hideName?: boolean;
 }
 
 /** วงกลมรูปโปรไฟล์จริง (หรือตัวอักษรแรกเมื่อไม่มีรูป) + ชื่อ — รูปแบบเดียวกับหน้าจัดการพนักงาน */
-export function AvatarName({ id, name, prefix, initial, avatarUrl, className = '' }: AvatarNameProps) {
+export function AvatarName({ id, name, prefix, initial, avatarUrl, className = '', hideName = false }: AvatarNameProps) {
   const [imgFailed, setImgFailed] = useState(false);
   const [autoAvatarUrl, setAutoAvatarUrl] = useState<string | null>(() =>
     id != null && cachedAvatarById ? cachedAvatarById.get(id) ?? null : null
@@ -83,6 +84,22 @@ export function AvatarName({ id, name, prefix, initial, avatarUrl, className = '
     .replace(/^(นาย|นางสาว|นาง|น\.ส\.|เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Ms\.|Miss)\s*/i, '')
     .trim();
   const letter = (initial ?? cleanName.charAt(0).toUpperCase()) || (name?.trim().charAt(0).toUpperCase() ?? '?');
+
+  if (hideName) {
+    return (
+      <span
+        className={`relative w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center font-bold text-xs shadow-2xs ${avatarColorFor(id)} ${className}`}
+        aria-hidden="true"
+      >
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt="" className="w-full h-full object-cover" onError={() => setImgFailed(true)} />
+        ) : (
+          letter
+        )}
+      </span>
+    );
+  }
 
   return (
     <div className={`flex items-center gap-2.5 min-w-0 ${className}`}>
