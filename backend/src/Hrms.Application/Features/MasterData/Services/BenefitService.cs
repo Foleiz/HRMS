@@ -320,6 +320,8 @@ public class BenefitService : IBenefitService
                     statusText = $"ใกล้ครบโควตา ({percentage}%)";
                 else if (used > 0)
                     statusText = $"ยังไม่ครบโควตา ({percentage}%)";
+                else if (pending > 0)
+                    statusText = "มีรายการรออนุมัติ";
                 else
                     statusText = "ยังไม่ได้ใช้สิทธิ์";
             }

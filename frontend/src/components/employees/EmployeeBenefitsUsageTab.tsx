@@ -5,6 +5,7 @@ import { EmployeeBenefitUsageSummary, BenefitClaim, BenefitUsageItem } from '@/t
 import { benefitService } from '@/services/benefitService';
 import { RecordBenefitClaimModal } from './RecordBenefitClaimModal';
 import BenefitAttachmentPreviewModal from '@/components/benefits/BenefitAttachmentPreviewModal';
+import { ModalShell, Button } from '@/components/ui';
 import { useToast } from '@/context/ToastContext';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -30,6 +31,8 @@ import {
   Ban,
   Paperclip,
   Search,
+  Eye,
+  X,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { confirmAction } from '@/lib/sweetalert';
@@ -124,6 +127,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
   const [selectedBenefitForClaim, setSelectedBenefitForClaim] = useState<number | null>(null);
   const [deletingClaimId, setDeletingClaimId] = useState<number | null>(null);
   const [previewClaim, setPreviewClaim] = useState<BenefitClaim | null>(null);
+  const [selectedDetailClaim, setSelectedDetailClaim] = useState<BenefitClaim | null>(null);
   const [searchClaimText, setSearchClaimText] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
@@ -326,10 +330,10 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
             <div className="min-w-0">
               <p className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">โควตาคงเหลือ</p>
               <p className="text-base font-bold text-emerald-800 dark:text-emerald-200 font-mono">
-                {fmtBaht(summary.totalRemainingAmount + yearlyPendingAmount)} <span className="text-xs font-medium text-emerald-700/80 dark:text-emerald-300/80">บาท</span>
+                {fmtBaht(summary.totalRemainingAmount)} <span className="text-xs font-medium text-emerald-700/80 dark:text-emerald-300/80">บาท</span>
               </p>
               {yearlyPendingAmount > 0 && (
-                <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">รออนุมัติ {fmtBaht(yearlyPendingAmount)} บาท</p>
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 font-medium">รออนุมัติ {fmtBaht(yearlyPendingAmount)} บาท</p>
               )}
             </div>
           </div>
@@ -447,8 +451,14 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                       {/* Remaining / Claims Count */}
                       <div className="flex items-center justify-between text-[11px] pt-1">
                         <span className="text-slate-400 dark:text-slate-500">
-                          {b.claimCount > 0 ? `บันทึกแล้ว ${b.claimCount} ครั้ง` : 'ยังไม่มีประวัติการเบิก'}
-                          {!!b.pendingAmount && b.pendingAmount > 0 && (
+                          {b.claimCount > 0 ? (
+                            `บันทึกแล้ว ${b.claimCount} ครั้ง`
+                          ) : b.pendingAmount && b.pendingAmount > 0 ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">รออนุมัติ {b.pendingAmount.toLocaleString()} บ.</span>
+                          ) : (
+                            'ยังไม่มีประวัติการเบิก'
+                          )}
+                          {b.claimCount > 0 && !!b.pendingAmount && b.pendingAmount > 0 && (
                             <span className="ml-1 text-amber-600 dark:text-amber-400">
                               • รออนุมัติ {b.pendingAmount.toLocaleString()} บ.
                             </span>
@@ -466,7 +476,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                           ? 'คำนวณและจ่ายผ่านรอบเงินเดือน Payroll'
                           : 'ได้รับสิทธิ์ตามระเบียบบริษัทและกฎหมายแรงงาน'}
                       </span>
-                      <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                      <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                         ตามสิทธิ์
                       </span>
                     </div>
@@ -476,7 +486,11 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                   {(hasQuota || isYearly) && (!isSelf || (b.category !== 'ALLOWANCE' && b.category !== 'STATUTORY')) && (
                     <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                        {b.lastClaimDate ? `ใช้ล่าสุดเมื่อ: ${formatThaiShortDate(b.lastClaimDate)}` : 'ยังไม่เคยใช้สิทธิ์ในปีนี้'}
+                        {b.lastClaimDate
+                          ? `ใช้ล่าสุดเมื่อ: ${formatThaiShortDate(b.lastClaimDate)}`
+                          : b.pendingAmount && b.pendingAmount > 0
+                          ? 'มีคำขอรออนุมัติ'
+                          : 'ยังไม่เคยใช้สิทธิ์ในปีนี้'}
                       </span>
                       {canCreateClaim && (
                         <button
@@ -634,7 +648,15 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                           )}
                         </div>
 
-                        <div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDetailClaim(c)}
+                            className="px-2 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-blue-500" />
+                            ดูรายละเอียด
+                          </button>
                           {isSelf ? (
                             c.status === 'PENDING' && canDeleteClaim && (
                               <button
@@ -670,7 +692,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
 
               {/* Desktop Table View (>= md) */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="table-standard w-full min-w-[960px] text-left text-xs border-collapse whitespace-nowrap">
+                <table className="table-standard w-full min-w-[1050px] text-left text-xs border-collapse whitespace-nowrap">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200/70 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
                       <th className="py-3.5 px-4 min-w-[100px]">เลขที่คำขอ</th>
@@ -681,7 +703,7 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                       <th className="py-3.5 px-4 min-w-[160px] max-w-xs">รายละเอียด / หมายเหตุ</th>
                       <th className="py-3.5 px-4 min-w-[110px] text-right">จำนวนเงิน</th>
                       <th className="py-3.5 px-4 min-w-[110px] text-center">สถานะ</th>
-                      <th className="py-3.5 px-4 min-w-[80px] text-center">จัดการ</th>
+                      <th className="py-3.5 px-4 min-w-[110px] text-center">จัดการ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -750,37 +772,43 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
                           )}
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
-                          {isSelf ? (
-                            c.status === 'PENDING' && canDeleteClaim ? (
-                              <button
-                                type="button"
-                                onClick={() => handleCancelRequest(c.id)}
-                                disabled={deletingClaimId === c.id}
-                                className="px-2 py-1 rounded-md text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                                title="ยกเลิกคำขอเบิก"
-                              >
-                                {deletingClaimId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยกเลิก'}
-                              </button>
-                            ) : (
-                              <span className="text-slate-300 dark:text-slate-600">-</span>
-                            )
-                          ) : canDeleteClaim && (c.status || 'APPROVED') !== 'APPROVED' ? (
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
                               type="button"
-                              onClick={() => handleDeleteClaim(c.id)}
-                              disabled={deletingClaimId === c.id}
-                              className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                              title="ยกเลิก/ลบรายการนี้"
+                              onClick={() => setSelectedDetailClaim(c)}
+                              className="p-1 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+                              title="ดูรายละเอียดคำขอ"
                             >
-                              {deletingClaimId === c.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Trash2 className="w-3.5 h-3.5" />
-                              )}
+                              <Eye className="w-4 h-4" />
                             </button>
-                          ) : (
-                            <span className="text-slate-300 dark:text-slate-600">-</span>
-                          )}
+                            {isSelf ? (
+                              c.status === 'PENDING' && canDeleteClaim ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelRequest(c.id)}
+                                  disabled={deletingClaimId === c.id}
+                                  className="px-2 py-1 rounded-md text-[11px] font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                  title="ยกเลิกคำขอเบิก"
+                                >
+                                  {deletingClaimId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'ยกเลิก'}
+                                </button>
+                              ) : null
+                            ) : canDeleteClaim && (c.status || 'APPROVED') !== 'APPROVED' ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClaim(c.id)}
+                                disabled={deletingClaimId === c.id}
+                                className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                title="ยกเลิก/ลบรายการนี้"
+                              >
+                                {deletingClaimId === c.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            ) : null}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -824,6 +852,161 @@ export const EmployeeBenefitsUsageTab: React.FC<EmployeeBenefitsUsageTabProps> =
         fileName={previewClaim?.attachmentFileName || previewClaim?.fileName}
         requestNo={previewClaim?.requestNo}
       />
+
+      {/* Benefit Claim Detail Modal */}
+      {selectedDetailClaim && (
+        <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="claim-detail-modal-title"
+            className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+          >
+            <div className="p-5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <Receipt className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="claim-detail-modal-title" className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    รายละเอียดคำขอเบิกสวัสดิการ
+                  </h3>
+                  <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    {selectedDetailClaim.requestNo || `BC-${String(selectedDetailClaim.id).padStart(4, '0')}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDetailClaim(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                title="ปิด"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+              {/* Status Banner */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/60">
+                <span className="text-slate-500 dark:text-slate-400 font-medium">สถานะคำขอ</span>
+                {(() => {
+                  const badge = CLAIM_STATUS_BADGE[selectedDetailClaim.status] ?? CLAIM_STATUS_BADGE.APPROVED;
+                  const Icon =
+                    selectedDetailClaim.status === 'PENDING'
+                      ? Clock
+                      : selectedDetailClaim.status === 'REJECTED'
+                      ? XCircle
+                      : selectedDetailClaim.status === 'CANCELLED'
+                      ? Ban
+                      : CheckCircle2;
+                  return (
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${badge.className}`}>
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{badge.label}</span>
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {/* Reject Reason Banner if any */}
+              {selectedDetailClaim.status === 'REJECTED' && selectedDetailClaim.rejectReason && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300">
+                  <p className="font-semibold text-xs mb-0.5">เหตุผลที่ไม่อนุมัติ:</p>
+                  <p className="text-[11px]">{selectedDetailClaim.rejectReason}</p>
+                </div>
+              )}
+
+              {/* Key Details Grid */}
+              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700/60 bg-white dark:bg-slate-900/30">
+                <div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">สวัสดิการ</p>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">{selectedDetailClaim.benefitName}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">ยอดเงินที่ขอเบิก</p>
+                  <p className="font-bold text-slate-900 dark:text-slate-100 font-mono text-sm text-blue-600 dark:text-blue-400 mt-0.5">
+                    {selectedDetailClaim.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })} บาท
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">วันที่ใช้สิทธิ์ / วันที่ตามใบเสร็จ</p>
+                  <p className="font-medium text-slate-700 dark:text-slate-300 font-mono mt-0.5">
+                    {formatThaiShortDate(selectedDetailClaim.claimDate)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">เลขที่ใบเสร็จ / ใบแจ้งหนี้</p>
+                  <p className="font-medium text-slate-700 dark:text-slate-300 font-mono mt-0.5">
+                    {selectedDetailClaim.receiptNumber || '-'}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">สถานพยาบาล / ผู้ให้บริการ</p>
+                  <p className="font-medium text-slate-700 dark:text-slate-300 mt-0.5">
+                    {selectedDetailClaim.serviceProvider || '-'}
+                  </p>
+                </div>
+                {selectedDetailClaim.remarks && (
+                  <div className="col-span-2">
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">หมายเหตุ / อาการ / รายละเอียด</p>
+                    <p className="text-slate-700 dark:text-slate-300 mt-0.5 whitespace-pre-wrap">
+                      {selectedDetailClaim.remarks}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Attachment Preview Card */}
+              {(selectedDetailClaim.attachmentFileName || selectedDetailClaim.fileName) && (
+                <div className="p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 flex items-center justify-between">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Paperclip className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
+                      {selectedDetailClaim.attachmentFileName || selectedDetailClaim.fileName}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreviewClaim(selectedDetailClaim);
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shrink-0 cursor-pointer"
+                  >
+                    เปิดดูเอกสาร
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-between shrink-0">
+              {isSelf && selectedDetailClaim.status === 'PENDING' && canDeleteClaim ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const cid = selectedDetailClaim.id;
+                    setSelectedDetailClaim(null);
+                    handleCancelRequest(cid);
+                  }}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                >
+                  ยกเลิกคำขอนี้
+                </button>
+              ) : (
+                <div />
+              )}
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setSelectedDetailClaim(null)}
+              >
+                ปิดหน้าต่าง
+              </Button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
     </div>
   );
 };

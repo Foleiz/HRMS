@@ -15,6 +15,8 @@ import {
   Loader2,
   Sparkles,
   Paperclip,
+  Building,
+  Receipt,
 } from 'lucide-react';
 import { ThaiDatePicker } from '@/components/ui/ThaiDatePicker';
 import { CustomSelect } from '@/components/ui/CustomSelect';
@@ -197,7 +199,12 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
 
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={isSelf ? 'ยื่นเบิกสวัสดิการ' : 'บันทึกการใช้สิทธิ์ / เบิกสวัสดิการ'}
+        className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden flex flex-col max-h-[90vh]"
+      >
         {/* Header */}
         <ModalHeader
           icon={Sparkles}
@@ -207,7 +214,8 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
         />
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+          <div className="p-6 space-y-4 overflow-y-auto flex-1">
 
           {/* สวัสดิการที่ต้องการใช้สิทธิ์ */}
           <div>
@@ -298,6 +306,7 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                 type="number"
                 step="0.01"
                 min="0.01"
+                max={activeBenefit && activeBenefit.quotaAmount > 0 ? activeBenefit.remainingAmount : undefined}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
@@ -308,6 +317,11 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
                 บาท
               </span>
             </div>
+            {activeBenefit && activeBenefit.quotaAmount > 0 && (
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
+                วงเงินคงเหลือสูงสุดที่เบิกได้: <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono">{activeBenefit.remainingAmount.toLocaleString()}</span> บาท
+              </p>
+            )}
           </div>
 
           {/* วันที่ใช้สิทธิ์ */}
@@ -321,6 +335,36 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               onChange={(val) => setClaimDate(val)}
               required
             />
+          </div>
+
+          {/* สถานพยาบาล / ผู้ให้บริการ & เลขที่ใบเสร็จ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Building className="w-3.5 h-3.5 text-slate-400" />
+                สถานพยาบาล / ผู้ให้บริการ
+              </label>
+              <input
+                type="text"
+                value={serviceProvider}
+                onChange={(e) => setServiceProvider(e.target.value)}
+                placeholder="เช่น รพ.กรุงเทพ, คลินิกทันตกรรม"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                <Receipt className="w-3.5 h-3.5 text-slate-400" />
+                เลขที่ใบเสร็จ / ใบแจ้งหนี้
+              </label>
+              <input
+                type="text"
+                value={receiptNumber}
+                onChange={(e) => setReceiptNumber(e.target.value)}
+                placeholder="เช่น INV-2026-001"
+                className={inputClass}
+              />
+            </div>
           </div>
 
           {!isSelf && activeBenefit?.payoutType !== 'IN_KIND' && (
@@ -430,9 +474,10 @@ export const RecordBenefitClaimModal: React.FC<RecordBenefitClaimModalProps> = (
               <span>{errorMsg}</span>
             </div>
           )}
+          </div>
 
-          {/* Footer Actions */}
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-end gap-2.5">
+          {/* Sticky Footer Actions */}
+          <div className="p-4 border-t border-slate-100 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-end gap-2.5 shrink-0">
             <Button
               type="button"
               variant="secondary"
