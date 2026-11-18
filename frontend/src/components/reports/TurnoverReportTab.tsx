@@ -24,7 +24,6 @@ import ExportMenu, { ReportExportFormat } from './ExportMenu';
 import { Legend, MonthlyColumns, fmtNumber } from './ReportCharts';
 import {
   AvatarName,
-  BarList,
   IconButton,
   KpiCard,
   KpiGrid,
@@ -346,20 +345,6 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
     return { resignedYtd, joinedYtd };
   }, [turnoverTrend, turnoverData]);
 
-  // สรุปเหตุผลการลาออกจาก eventLogs
-  const resignationReasons = useMemo(() => {
-    if (!turnoverData) return [];
-    const map = new Map<string, number>();
-    for (const ev of turnoverData.eventLogs) {
-      if (ev.eventType === 'JOINED') continue;
-      const r = (ev.reason || 'ไม่ระบุเหตุผล').trim();
-      map.set(r, (map.get(r) ?? 0) + 1);
-    }
-    return Array.from(map.entries())
-      .map(([label, value]) => ({ label, value, display: `${value} คน` }))
-      .sort((a, b) => b.value - a.value);
-  }, [turnoverData]);
-
   const filteredTurnoverDepts = useMemo(() => {
     if (!turnoverData?.departmentTurnovers) return [];
     const q = deptSearch.trim().toLowerCase();
@@ -553,46 +538,35 @@ export default function TurnoverReportTab({ canExport }: TurnoverReportTabProps)
             />
           </KpiGrid>
 
-          {/* Chart Row 1: 12-Month Trend + Resignation Reasons */}
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <ReportPanel
-              title={`แนวโน้มพนักงานเข้าใหม่และลาออก ปี พ.ศ. ${activeYear + 543}`}
-              subtitle="เปรียบเทียบจำนวนคนเข้าใหม่และลาออกในแต่ละเดือน"
-              className="xl:col-span-2"
-              right={
-                <Legend
-                  items={[
-                    { label: 'เข้าใหม่', color: '#10b981' },
-                    { label: 'ลาออก', color: '#f43f5e' },
-                  ]}
-                />
-              }
-            >
-              {turnoverTrend &&
-              (turnoverTrend.joined.some((v) => v != null) || turnoverTrend.resigned.some((v) => v != null)) ? (
-                <MonthlyColumns
-                  highlightMonth={mode === 'monthly' ? turnoverMonth : undefined}
-                  minMax={4}
-                  format={fmtNumber}
-                  tipFormat={(v) => `${fmtNumber(v)} คน`}
-                  series={[
-                    { key: 'joined', label: 'เข้าใหม่', color: '#10b981', values: turnoverTrend.joined },
-                    { key: 'resigned', label: 'ลาออก', color: '#f43f5e', values: turnoverTrend.resigned },
-                  ]}
-                />
-              ) : (
-                <div className="py-10 text-center text-xs text-slate-400">กำลังโหลดแนวโน้มรายเดือน...</div>
-              )}
-            </ReportPanel>
-
-            <ReportPanel title="เหตุผลการลาออก / พ้นสภาพ" subtitle="สรุปจากรายการพ้นสภาพในช่วงที่เลือก">
-              <BarList
-                color="#f43f5e"
-                items={resignationReasons}
-                emptyText="ไม่มีรายการพนักงานลาออกในช่วงนี้"
+          {/* Chart Row 1: 12-Month Trend */}
+          <ReportPanel
+            title={`แนวโน้มพนักงานเข้าใหม่และลาออก ปี พ.ศ. ${activeYear + 543}`}
+            subtitle="เปรียบเทียบจำนวนคนเข้าใหม่และลาออกในแต่ละเดือน"
+            right={
+              <Legend
+                items={[
+                  { label: 'เข้าใหม่', color: '#10b981' },
+                  { label: 'ลาออก', color: '#f43f5e' },
+                ]}
               />
-            </ReportPanel>
-          </div>
+            }
+          >
+            {turnoverTrend &&
+            (turnoverTrend.joined.some((v) => v != null) || turnoverTrend.resigned.some((v) => v != null)) ? (
+              <MonthlyColumns
+                highlightMonth={mode === 'monthly' ? turnoverMonth : undefined}
+                minMax={4}
+                format={fmtNumber}
+                tipFormat={(v) => `${fmtNumber(v)} คน`}
+                series={[
+                  { key: 'joined', label: 'เข้าใหม่', color: '#10b981', values: turnoverTrend.joined },
+                  { key: 'resigned', label: 'ลาออก', color: '#f43f5e', values: turnoverTrend.resigned },
+                ]}
+              />
+            ) : (
+              <div className="py-10 text-center text-xs text-slate-400">กำลังโหลดแนวโน้มรายเดือน...</div>
+            )}
+          </ReportPanel>
 
           {/* Chart Row 2: Department Heatmap List + Recent Movements */}
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
