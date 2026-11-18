@@ -126,15 +126,9 @@ function ContractsPageContent() {
   const fetchData = async (activeSettings: ContractSettings = contractSettings) => {
     try {
       setLoading(true);
-      const isCustomFilter =
-        selectedStatus === 'CONTRACT_EXPIRING' || selectedStatus === 'PROBATION_EXPIRING';
 
       const [contractsData, statsData, employeesData] = await Promise.all([
-        contractService.getAll({
-          search: searchTerm || undefined,
-          contractType: selectedContractType !== 'ALL' ? selectedContractType : undefined,
-          status: selectedStatus !== 'ALL' && !isCustomFilter ? selectedStatus : undefined,
-        }),
+        contractService.getAll(),
         contractService.getStats({
           probationAlertDays: activeSettings.probationAlertDays,
           contractAlertDays: activeSettings.contractAlertDays,
@@ -152,29 +146,10 @@ function ContractsPageContent() {
           uniqueByEmp.set(c.employeeId, c);
         }
       }
-      let filtered = Array.from(uniqueByEmp.values());
+      const uniqueList = Array.from(uniqueByEmp.values());
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      if (selectedStatus === 'CONTRACT_EXPIRING') {
-        filtered = filtered.filter((c) => {
-          if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED') return false;
-          const cEnd = new Date(c.contractEndDate);
-          cEnd.setHours(0, 0, 0, 0);
-          const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return diffDays >= 0 && diffDays <= activeSettings.contractAlertDays;
-        });
-      } else if (selectedStatus === 'PROBATION_EXPIRING') {
-        filtered = filtered.filter((c) => {
-          if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED') return false;
-          const pEnd = new Date(c.probationEndDate);
-          pEnd.setHours(0, 0, 0, 0);
-          const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-          return diffDays >= 0 && diffDays <= activeSettings.probationAlertDays;
-        });
-      }
-
-      const uniqueList = Array.from(uniqueByEmp.values());
       const computedContractExpiringCount = uniqueList.filter((c) => {
         if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
           return false;
@@ -193,7 +168,7 @@ function ContractsPageContent() {
         return diffDays >= 0 && diffDays <= activeSettings.probationAlertDays;
       }).length;
 
-      setContracts(filtered);
+      setContracts(uniqueList);
       setStats({
         ...statsData,
         fixedTermCount:
@@ -214,7 +189,7 @@ function ContractsPageContent() {
   useEffect(() => {
     fetchData(contractSettings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, selectedContractType, selectedStatus, contractSettings]);
+  }, [contractSettings]);
 
   // Handle Save Settings
   const handleSaveSettings = (newSettings: ContractSettings) => {
@@ -244,9 +219,86 @@ function ContractsPageContent() {
     await fetchData();
   };
 
+  // Filter and Search Contracts
+  const filteredContracts = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const term = searchTerm.trim().toLowerCase();
+    const termClean = term.replace(/[-\s]/g, '');
+
+    return contracts.filter((c) => {
+      // 1. Status Filter
+      if (selectedStatus === 'ACTIVE') {
+        if (c.status !== 'ACTIVE') return false;
+      } else if (selectedStatus === 'TERMINATED') {
+        if (c.status !== 'TERMINATED' && c.status !== 'COMPLETED' && c.status !== 'CANCELLED') return false;
+      } else if (selectedStatus === 'CONTRACT_EXPIRING') {
+        if (!c.contractEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
+          return false;
+        const cEnd = new Date(c.contractEndDate);
+        cEnd.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((cEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0 || diffDays > contractSettings.contractAlertDays) return false;
+      } else if (selectedStatus === 'PROBATION_EXPIRING') {
+        if (!c.probationEndDate || c.status === 'TERMINATED' || c.status === 'COMPLETED' || c.status === 'CANCELLED')
+          return false;
+        const pEnd = new Date(c.probationEndDate);
+        pEnd.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((pEnd.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0 || diffDays > contractSettings.probationAlertDays) return false;
+      } else if (selectedStatus !== 'ALL') {
+        if (c.status !== selectedStatus) return false;
+      }
+
+      // 2. Contract Type Filter
+      if (selectedContractType !== 'ALL') {
+        if (c.contractType !== selectedContractType) return false;
+      }
+
+      // 3. Search Filter (รองรับคำนำหน้า, ชื่อ-สกุล, รหัสพนักงานทั้งมี/ไม่มีขีด, แผนก, ตำแหน่ง, ประเภทสัญญา)
+      if (term) {
+        const emp = employeeById.get(c.employeeId);
+        const prefix = (c.employeePrefix ?? emp?.prefix ?? '').toLowerCase();
+        const name = (c.employeeName || '').toLowerCase();
+        const code = (c.employeeCode || emp?.employeeCode || '').toLowerCase();
+        const codeClean = code.replace(/[-\s]/g, '');
+        const fullNameWithPrefix = `${prefix} ${name}`.trim();
+        const fullNameTight = `${prefix}${name}`.replace(/\s+/g, '');
+        const dept = (c.departmentName || emp?.departmentName || '').toLowerCase();
+        const pos = (c.positionTitle || emp?.positionName || '').toLowerCase();
+        const typeName = (c.employeeTypeName || c.contractTypeDisplay || '').toLowerCase();
+
+        const match =
+          name.includes(term) ||
+          fullNameWithPrefix.includes(term) ||
+          fullNameTight.includes(termClean) ||
+          code.includes(term) ||
+          (termClean.length > 0 && codeClean.includes(termClean)) ||
+          prefix.includes(term) ||
+          dept.includes(term) ||
+          pos.includes(term) ||
+          typeName.includes(term);
+
+        if (!match) return false;
+      }
+
+      return true;
+    });
+  }, [contracts, searchTerm, selectedContractType, selectedStatus, contractSettings, employeeById]);
+
   // Pagination logic
-  const totalPages = Math.ceil(contracts.length / pageSize) || 1;
-  const paginatedContracts = contracts.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const totalPages = Math.ceil(filteredContracts.length / pageSize) || 1;
+  const paginatedContracts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredContracts.slice(start, start + pageSize);
+  }, [filteredContracts, currentPage, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
@@ -565,7 +617,10 @@ function ContractsPageContent() {
           {/* Toolbar: ค้นหา & ฟิลเตอร์ด้านซ้าย, ปุ่มตั้งค่าและปุ่มเพิ่มด้านขวา */}
           <TableToolbar
             searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
+            onSearchChange={(val) => {
+              setSearchTerm(val);
+              setCurrentPage(1);
+            }}
             searchPlaceholder="ค้นหาชื่อ หรือรหัสพนักงาน..."
             filters={
               <>
@@ -700,9 +755,9 @@ function ContractsPageContent() {
           </div>
 
           {/* Table Footer with TablePagination มาตรฐานระบบ */}
-          {contracts.length > 0 && (
+          {filteredContracts.length > 0 && (
             <TablePagination
-              total={contracts.length}
+              total={filteredContracts.length}
               page={currentPage}
               pageSize={pageSize}
               onPageChange={setCurrentPage}
