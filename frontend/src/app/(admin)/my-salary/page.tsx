@@ -827,7 +827,15 @@ function MySalaryContent() {
                 const base = overview?.chartData?.baseSalaryAmount || 0;
                 const ot = (overview?.chartData?.overtimeAmount || 0) + (overview?.chartData?.allowanceAmount || 0);
                 const other = otherIncomeAmount;
-                const totalGross = base + ot + other || overview?.latestGrossIncome || 1;
+                const totalGross = base + ot + other || overview?.latestGrossIncome || 0;
+
+                if (totalGross <= 0) {
+                  return (
+                    <div className="h-44 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
+                      ยังไม่มีข้อมูลโครงสร้างเงินเดือน
+                    </div>
+                  );
+                }
 
                 const basePct = Math.min(100, (base / totalGross) * 100);
                 const otPct = Math.min(100, (ot / totalGross) * 100);

@@ -74,6 +74,23 @@ public class MySalaryService : IMySalaryService
         var latestPayroll = allPayrolls.FirstOrDefault();
         var currentYearPayrolls = allPayrolls.Where(p => p.Period != null && p.Period.Year == selectedYear).ToList();
 
+        // ฐานเงินเดือนสัญญาจ้างสำหรับแสดงโครงสร้างรายได้ แม้รอบเงินเดือนยังไม่ถึงสถานะอนุมัติ/จ่าย
+        var activeContractSalary = await _context.EmployeeSalaries
+            .AsNoTracking()
+            .Where(s => s.EmployeeId == employeeId && s.EffectiveTo == null)
+            .OrderByDescending(s => s.EffectiveFrom)
+            .Select(s => (decimal?)s.BaseSalary)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (activeContractSalary == null)
+        {
+            activeContractSalary = await _context.EmployeeSalaries
+                .AsNoTracking()
+                .Where(s => s.EmployeeId == employeeId)
+                .OrderByDescending(s => s.EffectiveFrom)
+                .Select(s => (decimal?)s.BaseSalary)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         // 3. Calculate Summary Cards
         var targetPayrolls = currentYearPayrolls.Any() ? currentYearPayrolls : allPayrolls;
         decimal totalNetPay = targetPayrolls.Sum(p => p.NetPayableSalary);
@@ -144,11 +161,11 @@ public class MySalaryService : IMySalaryService
         }).ToList();
 
         // 6. Chart Data
-        decimal baseSalary = latestItems.FirstOrDefault(i => i.ItemName.Contains("พื้นฐาน") || i.ItemName.Contains("เงินเดือน"))?.Amount ?? latestGross;
+        decimal baseSalary = latestItems.FirstOrDefault(i => i.ItemName.Contains("พื้นฐาน") || i.ItemName.Contains("เงินเดือน"))?.Amount
+            ?? (latestGross > 0 ? latestGross : (activeContractSalary ?? 0m));
         decimal otAmount = latestItems.Where(i => i.ItemName.Contains("OT") || i.ItemName.Contains("ล่วงเวลา")).Sum(i => i.Amount);
         decimal bonusAmount = latestItems.Where(i => i.ItemName.Contains("โบนัส")).Sum(i => i.Amount);
-        decimal allowanceAmount = latestGross - baseSalary - otAmount - bonusAmount;
-        if (allowanceAmount < 0) allowanceAmount = 0;
+        decimal allowanceAmount = latestGross > 0 ? Math.Max(0, latestGross - baseSalary - otAmount - bonusAmount) : 0m;
 
         var trends = allPayrolls.Take(6).Reverse().Select(p => new MonthlySalaryTrendDto
         {
