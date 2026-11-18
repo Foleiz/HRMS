@@ -45,7 +45,7 @@ public class AttendanceImportService : IAttendanceImportService
         // 2. Check Duplicate File Hash
         var existingBatch = await _context.AttendanceImportBatches
             .Include(b => b.ImportedByUser)
-            .FirstOrDefaultAsync(b => b.FileHash == fileHash && b.Status != RevertedStatus, cancellationToken);
+            .FirstOrDefaultAsync(b => b.FileHash == fileHash && b.Status != RevertedStatus && b.Status != "FAILED", cancellationToken);
 
         if (existingBatch != null && !allowDuplicate)
         {
@@ -461,7 +461,7 @@ public class AttendanceImportService : IAttendanceImportService
 
         if (rangeStart.HasValue && rangeEnd.HasValue && rowCtx.ProcessedEmployeeIds.Count > 0)
         {
-            var effectiveEnd = rangeEnd.Value < todayThai ? rangeEnd.Value : todayThai;
+            var effectiveEnd = (rangeStart > todayThai) ? rangeEnd.Value : (rangeEnd.Value < todayThai ? rangeEnd.Value : todayThai);
             foreach (var empId in rowCtx.ProcessedEmployeeIds)
             {
                 for (var curDate = rangeStart.Value; curDate <= effectiveEnd; curDate = curDate.AddDays(1))
@@ -1446,17 +1446,6 @@ public class AttendanceImportService : IAttendanceImportService
                 AddError(batch.Id, rowNumber, rawRowJson,
                     $"วันที่ {workDate.Day:D2}/{workDate.Month:D2}/{workDate.Year + 543} อยู่นอกช่วงที่เลือก ({customDateFrom.Value.Day:D2}/{customDateFrom.Value.Month:D2}/{customDateFrom.Value.Year + 543} – {customDateTo.Value.Day:D2}/{customDateTo.Value.Month:D2}/{customDateTo.Value.Year + 543}) กรุณาตรวจว่าเลือกเดือนตรงกับไฟล์",
                     "DATE_OUT_OF_RANGE", empCodeRaw, empName, deptName, null, stateRaw, errorsList, errorDtos);
-                continue;
-            }
-
-            // ไม่รับเวลาของวันที่ยังมาไม่ถึง (กันไฟล์ทดสอบ/ไฟล์ผิดเดือน ทำให้มีเวลาทำงานล่วงหน้า)
-            var todayThaiRow = DateOnly.FromDateTime(AttendanceDailyService.ToThaiLocalTime(DateTime.UtcNow));
-            if (workDate > todayThaiRow)
-            {
-                failedRecords++;
-                AddError(batch.Id, rowNumber, rawRowJson,
-                    $"วันที่ {workDate.Day:D2}/{workDate.Month:D2}/{workDate.Year + 543} ยังมาไม่ถึง ระบบไม่นำเข้าเวลาของวันในอนาคต",
-                    "FUTURE_DATE", empCodeRaw, empName, deptName, null, stateRaw, errorsList, errorDtos);
                 continue;
             }
 
