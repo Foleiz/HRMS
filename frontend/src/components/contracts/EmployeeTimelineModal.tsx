@@ -24,6 +24,7 @@ interface EmployeeTimelineModalProps {
   employeeId: number | null;
   employeeName: string;
   employeeCode: string;
+  mode?: 'CONTRACT_ONLY' | 'CAREER_ONLY' | 'ALL';
   onViewContractDoc?: (contract: EmploymentContract) => void;
 }
 
@@ -56,6 +57,7 @@ export default function EmployeeTimelineModal({
   employeeId,
   employeeName,
   employeeCode,
+  mode = 'ALL',
   onViewContractDoc,
 }: EmployeeTimelineModalProps) {
   const toast = useToast();
@@ -75,12 +77,23 @@ export default function EmployeeTimelineModal({
         try {
           setLoading(true);
           setError(null);
-          const [careerData, contractData] = await Promise.all([
-            contractService.getCareerTimeline(employeeId),
-            contractService.getByEmployeeId(employeeId),
-          ]);
-          setCareerList(careerData || []);
-          setContractsList(contractData || []);
+
+          if (mode === 'CONTRACT_ONLY') {
+            const contractData = await contractService.getByEmployeeId(employeeId);
+            setContractsList(contractData || []);
+            setCareerList([]);
+          } else if (mode === 'CAREER_ONLY') {
+            const careerData = await contractService.getCareerTimeline(employeeId);
+            setCareerList(careerData || []);
+            setContractsList([]);
+          } else {
+            const [careerData, contractData] = await Promise.all([
+              contractService.getCareerTimeline(employeeId),
+              contractService.getByEmployeeId(employeeId),
+            ]);
+            setCareerList(careerData || []);
+            setContractsList(contractData || []);
+          }
         } catch (err: any) {
           console.error('Failed to load employee timeline:', err);
           setError(err.message || 'ไม่สามารถโหลดประวัติและไทม์ไลน์ได้');
@@ -90,7 +103,7 @@ export default function EmployeeTimelineModal({
       };
       fetchData();
     }
-  }, [isOpen, employeeId]);
+  }, [isOpen, employeeId, mode]);
 
   // รวมรายการเหตุการณ์ทั้งหมดเข้าเป็น Unified Timeline
   const unifiedItems: UnifiedTimelineItem[] = useMemo(() => {
@@ -179,6 +192,12 @@ export default function EmployeeTimelineModal({
 
   // กรองตามแท็บที่เลือก
   const filteredItems = useMemo(() => {
+    if (mode === 'CONTRACT_ONLY') {
+      return unifiedItems.filter((i) => i.type === 'CONTRACT');
+    }
+    if (mode === 'CAREER_ONLY') {
+      return unifiedItems.filter((i) => i.type === 'CAREER');
+    }
     if (activeTab === 'CONTRACT') {
       return unifiedItems.filter((i) => i.type === 'CONTRACT');
     }
@@ -186,7 +205,7 @@ export default function EmployeeTimelineModal({
       return unifiedItems.filter((i) => i.type === 'CAREER');
     }
     return unifiedItems;
-  }, [unifiedItems, activeTab]);
+  }, [unifiedItems, activeTab, mode]);
 
   const handleDownloadDoc = async (ct: EmploymentContract) => {
     try {
@@ -216,7 +235,14 @@ export default function EmployeeTimelineModal({
         <ModalHeader
           title={
             <>
-              ไทม์ไลน์และประวัติของ <span className="text-emerald-600 dark:text-emerald-400">{employeeName} · {employeeCode}</span>
+              {mode === 'CONTRACT_ONLY'
+                ? 'ประวัติสัญญาจ้างงานของ '
+                : mode === 'CAREER_ONLY'
+                ? 'ประวัติการดำรงตำแหน่งของ '
+                : 'ไทม์ไลน์และประวัติของ '}
+              <span className="text-emerald-600 dark:text-emerald-400">
+                {employeeName} · {employeeCode}
+              </span>
             </>
           }
           onClose={onClose}
@@ -224,44 +250,60 @@ export default function EmployeeTimelineModal({
 
         {/* Toolbar: Filter Tabs & Sort Toggle */}
         <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-between gap-2.5 shrink-0">
-          {/* Tabs */}
-          <div className="inline-flex items-center gap-1 p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={`h-8 px-3 inline-flex items-center justify-center rounded-lg transition-all cursor-pointer ${
-                activeTab === 'ALL'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              ทั้งหมด ({unifiedItems.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('CONTRACT')}
-              className={`h-8 inline-flex items-center justify-center gap-1.5 px-3 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'CONTRACT'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5 text-blue-500" />
-              สัญญาจ้าง ({contractsList.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('CAREER')}
-              className={`h-8 inline-flex items-center justify-center gap-1.5 px-3 rounded-lg transition-all cursor-pointer ${
-                activeTab === 'CAREER'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5 text-amber-500" />
-              ตำแหน่งงาน ({careerList.length})
-            </button>
-          </div>
+          {mode === 'ALL' ? (
+            /* Tabs */
+            <div className="inline-flex items-center gap-1 p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setActiveTab('ALL')}
+                className={`h-8 px-3 inline-flex items-center justify-center rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'ALL'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                ทั้งหมด ({unifiedItems.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('CONTRACT')}
+                className={`h-8 inline-flex items-center justify-center gap-1.5 px-3 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'CONTRACT'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-blue-500" />
+                สัญญาจ้าง ({contractsList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('CAREER')}
+                className={`h-8 inline-flex items-center justify-center gap-1.5 px-3 rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'CAREER'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5 text-amber-500" />
+                ตำแหน่งงาน ({careerList.length})
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              {mode === 'CONTRACT_ONLY' ? (
+                <>
+                  <FileText className="w-4 h-4 text-blue-500" />
+                  <span>ประวัติสัญญาจ้างทั้งหมด ({unifiedItems.length} ฉบับ)</span>
+                </>
+              ) : (
+                <>
+                  <Briefcase className="w-4 h-4 text-amber-500" />
+                  <span>ประวัติการดำรงตำแหน่งทั้งหมด ({unifiedItems.length} รายการ)</span>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Sort order toggle */}
           <button
@@ -289,7 +331,11 @@ export default function EmployeeTimelineModal({
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
-              ไม่พบรายการประวัติในหมวดที่เลือก
+              {mode === 'CONTRACT_ONLY'
+                ? 'ไม่พบประวัติสัญญาจ้างงานของพนักงาน'
+                : mode === 'CAREER_ONLY'
+                ? 'ไม่พบประวัติการดำรงตำแหน่งของพนักงาน'
+                : 'ไม่พบรายการประวัติในหมวดที่เลือก'}
             </div>
           ) : (
             <div className="relative pl-6 space-y-7">
@@ -400,7 +446,11 @@ export default function EmployeeTimelineModal({
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
           <span className="text-xs text-slate-400 dark:text-slate-500">
-            รวมประวัติทั้งสัญญาจ้างและการดำรงตำแหน่งงาน
+            {mode === 'CONTRACT_ONLY'
+              ? 'ประวัติสัญญาจ้างงานและเอกสารสัญญาแนบทั้งหมดของพนักงาน'
+              : mode === 'CAREER_ONLY'
+              ? 'ประวัติการดำรงตำแหน่งและการย้ายฝ่ายของพนักงาน'
+              : 'รวมประวัติทั้งสัญญาจ้างและการดำรงตำแหน่งงาน'}
           </span>
           <button
             type="button"

@@ -832,6 +832,7 @@ function ContractsPageContent() {
         employeeId={selectedTimelineEmployee?.id ?? null}
         employeeName={selectedTimelineEmployee?.name ?? ''}
         employeeCode={selectedTimelineEmployee?.code ?? ''}
+        mode="CONTRACT_ONLY"
         onViewContractDoc={(ct) => {
           setSelectedContractForDocPreview(ct);
           setIsDocPreviewModalOpen(true);

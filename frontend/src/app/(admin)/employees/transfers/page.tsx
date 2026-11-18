@@ -360,6 +360,7 @@ export default function TransfersPage() {
         employeeId={selectedTimelineEmployee.id}
         employeeName={selectedTimelineEmployee.name}
         employeeCode={selectedTimelineEmployee.code}
+        mode="CAREER_ONLY"
       />
     </div>
   );
