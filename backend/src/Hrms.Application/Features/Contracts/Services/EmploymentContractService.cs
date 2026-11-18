@@ -570,7 +570,12 @@ public class EmploymentContractService : IEmploymentContractService
         if (oldContract.Status == "ACTIVE")
         {
             oldContract.Status = "COMPLETED";
-            oldContract.TerminationDate = request.StartDate.AddDays(-1);
+            var termDate = request.StartDate.AddDays(-1);
+            if (termDate < oldContract.StartDate)
+            {
+                termDate = oldContract.StartDate;
+            }
+            oldContract.TerminationDate = termDate;
             oldContract.TerminationReason = !string.IsNullOrWhiteSpace(request.Notes)
                 ? $"ต่ออายุสัญญา: {request.Notes}"
                 : "ต่ออายุสัญญาจ้างงานใหม่";
@@ -629,7 +634,7 @@ public class EmploymentContractService : IEmploymentContractService
         {
             EmployeeId = oldContract.EmployeeId,
             SourceContractId = newContract.Id,
-            Status = "ACTIVE",
+            Status = request.ContractType,
             EffectiveFrom = request.StartDate,
             Reason = !string.IsNullOrWhiteSpace(request.Notes)
                 ? $"ต่ออายุสัญญา: {request.Notes}"
