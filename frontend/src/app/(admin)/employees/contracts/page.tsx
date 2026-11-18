@@ -300,6 +300,16 @@ function ContractsPageContent() {
     }
   }, [currentPage, totalPages]);
 
+  // รายชื่อพนักงานที่ยังไม่มีสัญญาจ้างที่ใช้งานอยู่ (สำหรับสร้างสัญญาใหม่)
+  const employeesWithoutContract = useMemo(() => {
+    const contractedEmpIds = new Set(
+      contracts
+        .filter((c) => c.status === 'ACTIVE' || c.status === 'PENDING_APPROVAL')
+        .map((c) => c.employeeId)
+    );
+    return employees.filter((emp) => !contractedEmpIds.has(emp.id));
+  }, [employees, contracts]);
+
   const isSuper = hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW') || isSuper;
   const canViewTypes = hasPermission('EMP_TYPE_VIEW') || isSuper;
@@ -795,7 +805,7 @@ function ContractsPageContent() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={handleCreateContract}
-        employees={employees}
+        employees={employeesWithoutContract}
         contractSettings={contractSettings}
       />
 

@@ -232,6 +232,19 @@ export default function CreateContractModal({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
+          {/* ข้อมูลแจ้งเตือนเมื่อพนักงานทุกคนมีสัญญาแล้ว */}
+          {employees.length === 0 && (
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-xs">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">พนักงานทุกคนมีสัญญาจ้างงานแล้ว</span>
+                <p className="mt-0.5 text-[11px] text-amber-700/90 dark:text-amber-400/90 leading-relaxed">
+                  ไม่พบพนักงานที่ยังไม่มีสัญญาจ้างในระบบ (หากต้องการต่ออายุหรือปรับสัญญา กรุณาใช้เมนู &ldquo;ต่ออายุสัญญา&rdquo; หรือแก้ไขในรายการสัญญาของพนักงาน)
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* 1. พนักงาน * */}
           <div id="tour-contract-employee-field">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
@@ -241,7 +254,9 @@ export default function CreateContractModal({
               employees={employees}
               value={employeeId}
               onChange={(newEmpId) => setEmployeeId(newEmpId)}
-              placeholder="เลือกพนักงาน หรือพิมพ์ค้นหา..."
+              placeholder={employees.length === 0 ? 'พนักงานทุกคนมีสัญญาจ้างแล้ว' : 'เลือกพนักงาน หรือพิมพ์ค้นหา...'}
+              emptyListText="พนักงานทุกคนมีสัญญาจ้างงานในระบบแล้ว"
+              disabled={employees.length === 0}
               required
             />
           </div>
@@ -368,6 +383,7 @@ export default function CreateContractModal({
               type="submit"
               variant="primary"
               loading={isSubmitting}
+              disabled={isSubmitting || employees.length === 0 || !employeeId}
             >
               บันทึก
             </Button>

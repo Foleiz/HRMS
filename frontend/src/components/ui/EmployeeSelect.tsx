@@ -15,6 +15,7 @@ interface EmployeeSelectProps {
   emptyLabel?: string;
   excludeEmployeeIds?: number[];
   buttonClassName?: string;
+  emptyListText?: string;
 }
 
 export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
@@ -28,6 +29,7 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
   emptyLabel = 'ไม่ระบุ / คงเดิม',
   excludeEmployeeIds,
   buttonClassName = '',
+  emptyListText,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -178,8 +180,10 @@ export const EmployeeSelect: React.FC<EmployeeSelectProps> = ({
               </li>
             )}
             {filteredEmployees.length === 0 ? (
-              <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400">
-                {searchQuery ? `ไม่พบข้อมูลพนักงานที่ตรงกับ "${searchQuery}"` : 'ไม่พบข้อมูลพนักงานในสังกัดที่เลือก'}
+              <li className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                {searchQuery
+                  ? `ไม่พบข้อมูลพนักงานที่ตรงกับ "${searchQuery}"`
+                  : emptyListText || 'ไม่พบข้อมูลพนักงานในสังกัดที่เลือก'}
               </li>
             ) : (
               filteredEmployees.map((emp, idx) => {
