@@ -19,7 +19,7 @@ export interface BenefitPolicyValue {
 const NO_CLAIM_CATEGORIES = ['STATUTORY', 'ALLOWANCE'];
 
 const PAYOUTS = [
-  { key: 'REIMBURSEMENT', title: 'เบิกตามจริง', desc: 'พนักงานยื่นคำขอพร้อมหลักฐาน อนุมัติแล้วจ่ายในงวดถัดไป', icon: ReceiptText },
+  { key: 'REIMBURSEMENT', title: 'เบิกตามจริง', desc: 'ยื่นเบิกพร้อมหลักฐาน อนุมัติแล้วจ่ายในงวดถัดไป', icon: ReceiptText },
   { key: 'PAYROLL', title: 'จ่ายในเงินเดือน', desc: 'จ่ายอัตโนมัติในสลิปทุกงวด ไม่ต้องยื่นเบิก', icon: Wallet },
   { key: 'IN_KIND', title: 'ไม่ใช่ตัวเงิน', desc: 'บริการหรือสิทธิ์ เช่น รถรับส่ง ประกันกลุ่ม', icon: Gift },
 ] as const;
@@ -97,8 +97,8 @@ export function BenefitPolicyFields({
           onClick={() => setStatutory(!value.isStatutory)}
           className={`h-[42px] flex items-center gap-2.5 px-3.5 rounded-xl border text-left transition-colors cursor-pointer ${
             value.isStatutory
-              ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/30 dark:border-indigo-700'
-              : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700'
+              ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-600'
+              : 'bg-white border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600'
           }`}
         >
           <span
@@ -235,7 +235,11 @@ export function BenefitPolicyFields({
           role="checkbox"
           aria-checked={!!value.isDocumentRequired}
           onClick={() => onChange({ isDocumentRequired: !value.isDocumentRequired })}
-          className="w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border border-slate-200 bg-white text-left cursor-pointer hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700"
+          className={`w-full flex items-center gap-2.5 px-3.5 py-3 rounded-xl border text-left cursor-pointer transition-colors ${
+            value.isDocumentRequired
+              ? 'bg-indigo-50/60 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-600'
+              : 'border-slate-200 bg-white hover:border-slate-300 dark:bg-slate-800 dark:border-slate-700 dark:hover:border-slate-600'
+          }`}
         >
           <span
             className={`w-[18px] h-[18px] rounded-[5px] border-[1.5px] flex items-center justify-center shrink-0 ${

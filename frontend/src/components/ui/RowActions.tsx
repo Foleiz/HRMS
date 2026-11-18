@@ -42,16 +42,21 @@ export const RowActionButton: React.FC<{
   loading?: boolean;
 }> = ({ action, onClick, title, disabled, loading }) => {
   const { icon: Icon, title: defaultTitle, cls } = STYLE[action];
+  const isDisabled = disabled || loading;
   return (
     <button
       type="button"
       title={title ?? defaultTitle}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className={`p-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${cls}`}
+      className={`p-1.5 rounded-lg transition-colors ${
+        isDisabled
+          ? 'text-slate-300 dark:text-slate-600 opacity-40 cursor-not-allowed'
+          : `cursor-pointer ${cls}`
+      }`}
     >
       {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Icon className="w-4 h-4" />}
     </button>

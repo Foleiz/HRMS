@@ -161,13 +161,14 @@ function OrganizationPageContent() {
   const [filterDeptId, setFilterDeptId] = useState<string>('ALL');
   const [filterBenefitCategory, setFilterBenefitCategory] = useState<string>('ALL');
   const [filterBenefitPayout, setFilterBenefitPayout] = useState<string>('ALL');
+  const [filterBenefitStatus, setFilterBenefitStatus] = useState<string>('ALL');
   const [employeeTypes, setEmployeeTypes] = useState<EmployeeType[]>([]);
   // แบ่งหน้าตาราง (ใช้ร่วมกันทุกแท็บ) — กลับไปหน้า 1 เมื่อเปลี่ยนแท็บ/ค้นหา/กรอง
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   useEffect(() => {
     setPage(1);
-  }, [activeTab, searchQuery, filterDivisionId, filterDeptId, filterBenefitCategory, filterBenefitPayout]);
+  }, [activeTab, searchQuery, filterDivisionId, filterDeptId, filterBenefitCategory, filterBenefitPayout, filterBenefitStatus]);
 
   const tabTitles: Record<TabType, string> = {
     divisions: 'จัดการฝ่าย',
@@ -1134,6 +1135,7 @@ function OrganizationPageContent() {
   const filteredBenefits = benefits
     .filter((b) => (filterBenefitCategory === 'ALL' ? true : b.category === filterBenefitCategory))
     .filter((b) => (filterBenefitPayout === 'ALL' ? true : (b.payoutType || 'REIMBURSEMENT') === filterBenefitPayout))
+    .filter((b) => (filterBenefitStatus === 'ALL' ? true : b.status === filterBenefitStatus))
     .filter((b) =>
       b.benefitName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.benefitCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1627,6 +1629,16 @@ function OrganizationPageContent() {
                       ...Object.entries(BENEFIT_PAYOUT_MAP).map(([key, item]) => ({ value: key, label: item.label })),
                     ]}
                   />
+                  <CustomSelect
+                    value={filterBenefitStatus}
+                    onChange={(val) => setFilterBenefitStatus(String(val))}
+                    placeholder="ทุกสถานะ"
+                    options={[
+                      { value: 'ALL', label: 'ทุกสถานะ' },
+                      { value: 'ACTIVE', label: 'เปิดใช้งาน' },
+                      { value: 'INACTIVE', label: 'ปิดใช้งาน' },
+                    ]}
+                  />
                 </>
               }
               actions={
@@ -1639,16 +1651,16 @@ function OrganizationPageContent() {
             />
 
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
-              <table className="table-standard w-full min-w-[900px] text-left text-xs border-collapse whitespace-nowrap">
+              <table className="table-standard w-full min-w-[840px] text-left text-xs border-collapse whitespace-nowrap">
                 <thead className="bg-primary text-white font-semibold">
                   <tr className="whitespace-nowrap">
                     <th className="py-3.5 px-4">ชื่อสวัสดิการ</th>
-                    <th className="py-3.5 px-4">หมวดหมู่</th>
-                    <th className="py-3.5 px-4">วิธีจ่าย</th>
-                    <th className="py-3.5 px-4">วงเงินเริ่มต้น</th>
-                    <th className="py-3.5 px-4">ใช้กับ</th>
-                    <th className="py-3.5 px-4">สถานะ</th>
-                    <th className="py-3.5 px-4 text-right">จัดการ</th>
+                    <th className="py-3.5 px-4 w-40">หมวดหมู่</th>
+                    <th className="py-3.5 px-4 w-36">วิธีจ่าย</th>
+                    <th className="py-3.5 px-4 w-40">วงเงินเริ่มต้น</th>
+                    <th className="py-3.5 px-4 w-32">ใช้กับ</th>
+                    <th className="py-3.5 px-4 w-28">สถานะ</th>
+                    <th className="py-3.5 px-4 w-20 text-right">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-700/60 dark:bg-slate-900">
@@ -1681,7 +1693,12 @@ function OrganizationPageContent() {
                       return (
                         <tr key={ben.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60 transition-colors">
                           <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">
-                            {ben.benefitName}
+                            <div className="font-semibold text-slate-900 dark:text-slate-100">{ben.benefitName}</div>
+                            {ben.description && (
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal line-clamp-1 max-w-xs" title={ben.description}>
+                                {ben.description}
+                              </div>
+                            )}
                           </td>
                           <td className="py-3 px-4">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium border ${catInfo.color}`}>
@@ -2519,6 +2536,19 @@ function OrganizationPageContent() {
               onChange={(e) => setBenefitForm({ ...benefitForm, benefitName: e.target.value })}
               placeholder="เช่น รถรับส่งพนักงาน"
               className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              คำอธิบาย / รายละเอียดสวัสดิการ
+            </label>
+            <textarea
+              value={benefitForm.description || ''}
+              onChange={(e) => setBenefitForm({ ...benefitForm, description: e.target.value })}
+              rows={2}
+              placeholder="ระบุเงื่อนไข รายละเอียด หรือหมายเหตุเพิ่มเติม (ถ้ามี)"
+              className={`${inputClass} resize-none`}
             />
           </div>
 
