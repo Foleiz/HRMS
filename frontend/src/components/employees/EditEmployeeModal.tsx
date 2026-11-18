@@ -75,7 +75,7 @@ function FieldInfoTooltip({
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (ref.current && e.target && e.target instanceof Node && !ref.current.contains(e.target)) {
         setOpen(false);
       }
     };
@@ -570,21 +570,12 @@ export default function EditEmployeeModal({
   return (
     <ModalShell className="z-50 bg-slate-900/60 backdrop-blur-xs" innerClassName="items-center justify-center p-3 sm:p-5">
       <div className="relative w-full max-w-5xl shrink-0 my-auto flex flex-col h-[92vh] max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
-        {/* ปุ่มกากบาทที่ด้านนอกมุมขวาบน คล้ายแบบรูปที่ 1 */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="ปิดหน้าต่าง"
-          className="absolute -top-3 -right-3 z-50 w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg flex items-center justify-center text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white hover:scale-105 transition-all cursor-pointer"
-        >
-          <X className="w-4 h-4 stroke-[2.5]" />
-        </button>
-
         <div className="w-full flex-1 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col min-h-0">
           {/* Header */}
           <ModalHeader
             icon={UserCog}
             title={<>แก้ไขข้อมูลพนักงาน {employeeInfo?.code && (<span className="text-xs px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200 font-mono font-bold">{employeeInfo.code}</span>)}</>}
+            onClose={onClose}
           />
 
         {/* Modal Tab Switcher — แถบแท็บมาตรฐานของระบบ */}
@@ -810,9 +801,15 @@ export default function EditEmployeeModal({
                         onFocus={() => {
                           if (/[xX*]/.test(formData.citizenId || '')) setFormData({ ...formData, citizenId: '' });
                         }}
+                        onBlur={() => {
+                          if (!formData.citizenId?.trim() && initialEmployee?.citizenIdMasked) {
+                            setFormData((f) => ({ ...f, citizenId: initialEmployee.citizenIdMasked || '' }));
+                          }
+                        }}
                         onChange={(e) => setFormData({ ...formData, citizenId: onlyDigits(e.target.value, 13) })}
                         className="w-full h-10 px-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-primary font-mono"
                       />
+                      <p className="text-[11px] text-slate-400 mt-1">ข้อมูลถูกปกปิดตาม PDPA (หากไม่ต้องการเปลี่ยนให้คงค่าเดิมไว้)</p>
                     </div>
 
                     {/* วันเกิด */}

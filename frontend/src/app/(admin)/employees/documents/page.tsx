@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Search, Download, Loader2, AlertTriangle, BellRing, FileClock, FileX2, ExternalLink } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { useBreadcrumb } from '@/context/BreadcrumbContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
 import { Button, TabBar , TableToolbar } from '@/components/ui';
 import { employeeDocumentService } from '@/services/employeeDocumentService';
@@ -25,6 +26,7 @@ const apiMessage = (err: unknown, fallback: string): string =>
 /** เอกสารพนักงานใกล้หมดอายุ / หมดอายุแล้ว (ฝ่ายบุคคล) */
 export default function ExpiringDocumentsPage() {
   const { hasPermission, hasRole } = useAuth();
+  const { setBreadcrumb } = useBreadcrumb();
   const toast = useToast();
   const [documents, setDocuments] = useState<EmployeeDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,11 +37,16 @@ export default function ExpiringDocumentsPage() {
   const [checking, setChecking] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
+  useEffect(() => {
+    setBreadcrumb({ section: 'พนักงาน', page: 'เอกสารใกล้หมดอายุ' });
+    return () => setBreadcrumb(null);
+  }, [setBreadcrumb]);
+
   const canViewProfile = hasPermission('EMP_PROFILE_VIEW');
   const canViewTypes = hasPermission('EMP_TYPE_VIEW');
   const canViewTransfers = hasPermission('EMP_TRANSFER_VIEW');
   const canViewContracts = hasPermission('EMP_CONTRACT_VIEW');
-  const canViewDocs = hasPermission('EMP_DOC_VIEW');
+  const canViewDocs = hasPermission('EMP_DOC_VIEW') || hasRole('ADMIN') || hasRole('SYSTEM_SUPER');
   const isHr = canViewDocs;
 
   const subNavTabs = [

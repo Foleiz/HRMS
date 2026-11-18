@@ -32,6 +32,7 @@ import { BenefitItem } from '@/types/benefit';
 import { CreateEmployeeTypeModal } from '@/components/employees/CreateEmployeeTypeModal';
 import { ActionDropdown } from '@/components/ui/ActionDropdown';
 import { Button, TabBar, TableToolbar } from '@/components/ui';
+import { hrmsSwal } from '@/lib/sweetalert';
 
 import { useAuth } from '@/context/AuthContext';
 import { AccessDenied } from '@/components/common/AccessDenied';
@@ -241,7 +242,33 @@ export default function EmployeeTypesPage() {
 
   const handleToggleStatus = async (type: EmployeeType) => {
     try {
-      const newStatus = type.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const isCurrentlyActive = type.status === 'ACTIVE';
+      const newStatus = isCurrentlyActive ? 'INACTIVE' : 'ACTIVE';
+
+      if (isCurrentlyActive) {
+        if ((type.activeContractsCount ?? 0) > 0) {
+          const result = await hrmsSwal.fire({
+            icon: 'warning',
+            title: 'ประเภทพนักงานนี้ยังมีสัญญาใช้งานอยู่',
+            html: `ประเภทพนักงาน <b>"${type.typeName}"</b> ปัจจุบันมีสัญญาจ้างที่กำลังใช้งานอยู่ <b>${type.activeContractsCount} สัญญา</b><br/><br/>การปิดใช้งานจะทำให้ไม่สามารถสร้างสัญญาหรือเลือกประเภทนี้ให้พนักงานใหม่ได้ แต่สัญญาเดิมจะยังคงอยู่<br/><br/>คุณต้องการยืนยันปิดการใช้งานหรือไม่?`,
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยันปิดการใช้งาน',
+            cancelButtonText: 'ยกเลิก',
+          });
+          if (!result.isConfirmed) return;
+        } else {
+          const result = await hrmsSwal.fire({
+            icon: 'question',
+            title: 'ยืนยันการปิดใช้งาน',
+            text: `คุณต้องการปิดการใช้งานประเภทพนักงาน "${type.typeName}" ใช่หรือไม่?`,
+            showCancelButton: true,
+            confirmButtonText: 'ยืนยันปิดการใช้งาน',
+            cancelButtonText: 'ยกเลิก',
+          });
+          if (!result.isConfirmed) return;
+        }
+      }
+
       await employeeTypeService.update(type.id, {
         typeName: type.typeName,
         wageType: type.wageType,
@@ -359,16 +386,16 @@ export default function EmployeeTypesPage() {
               <p className="text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1">ลองเปลี่ยนคำค้นหา หรือกดปุ่มเพิ่มประเภทพนักงาน</p>
             </div>
           ) : (
-            <table className="table-standard w-full min-w-[850px] text-left text-xs border-collapse whitespace-nowrap">
+            <table className="table-standard w-full min-w-[760px] text-left text-xs border-collapse whitespace-nowrap">
               <thead className="bg-primary text-white font-semibold">
                 <tr className="whitespace-nowrap">
-                  <th className="py-3 px-5 whitespace-nowrap">รหัสประเภท</th>
-                  <th className="py-3 px-4 whitespace-nowrap">ชื่อประเภทพนักงาน</th>
-                  <th className="py-3 px-4 whitespace-nowrap">รูปแบบค่าตอบแทน</th>
-                  <th className="py-3 px-4 whitespace-nowrap">สิทธิประโยชน์และสวัสดิการ</th>
-                  <th className="py-3 px-4 text-center whitespace-nowrap">สัญญาที่ใช้งานอยู่</th>
-                  <th className="py-3 px-4 whitespace-nowrap">สถานะ</th>
-                  <th className="py-3 px-4 text-right whitespace-nowrap">จัดการ</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap w-24">รหัสประเภท</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap">ชื่อประเภทพนักงาน</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap w-28">รูปแบบค่าตอบแทน</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap">สิทธิประโยชน์และสวัสดิการ</th>
+                  <th className="py-3 px-3.5 text-center whitespace-nowrap w-28">สัญญาที่ใช้งานอยู่</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap w-28">สถานะ</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap w-20">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 dark:text-slate-300">
@@ -378,24 +405,24 @@ export default function EmployeeTypesPage() {
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
                       {/* รหัสประเภท */}
-                      <td className="py-3.5 px-5 font-mono font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                      <td className="py-3 px-3.5 font-mono font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-[11px] font-bold border border-slate-200 dark:border-slate-700">
                           {item.typeCode}
                         </span>
                       </td>
 
                       {/* ชื่อประเภท */}
-                      <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
+                      <td className="py-3 px-3.5 font-medium text-slate-900 dark:text-slate-100 whitespace-nowrap">
                         {item.typeName}
                       </td>
 
                       {/* รูปแบบค่าตอบแทน */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3 px-3.5 whitespace-nowrap">
                         <span className="text-slate-700 dark:text-slate-300">{wage.label}</span>
                       </td>
 
                       {/* สิทธิประโยชน์ */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3 px-3.5 whitespace-nowrap">
                         {item.benefits && item.benefits.length > 0 ? (
                           <button
                             type="button"
@@ -451,19 +478,19 @@ export default function EmployeeTypesPage() {
                       </td>
 
                       {/* จำนวนสัญญาที่ใช้งาน */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
                         <span className="inline-flex items-center justify-center min-w-[28px] h-6 px-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">
                           {item.activeContractsCount}
                         </span>
                       </td>
 
                       {/* สถานะ */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-3 px-3.5 whitespace-nowrap">
                         <ActiveStatus active={item.status === 'ACTIVE'} activeText="เปิดใช้งาน" inactiveText="ปิดการใช้งาน" />
                       </td>
 
                       {/* จัดการ (3 Dots Action Menu) */}
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         {canEditTypes ? (
                           <ActionDropdown
                             menuClassName="w-44"

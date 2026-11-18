@@ -37,13 +37,76 @@ export const emptyAddressPair = (): AddressPair => ({
   sameAsRegistered: false,
 });
 
-const toFields = (a?: Partial<EmployeeAddress> | null): AddressFields => ({
-  addressLine: a?.addressLine || '',
-  subDistrict: a?.subDistrict || '',
-  district: a?.district || '',
-  province: a?.province || '',
-  postalCode: a?.postalCode || '',
-});
+const parseThaiAddress = (rawLine: string): Partial<AddressFields> => {
+  if (!rawLine) return {};
+  let line = rawLine;
+  let postalCode = '';
+  let province = '';
+  let district = '';
+  let subDistrict = '';
+
+  const postMatch = line.match(/\b(\d{5})\b\s*$/);
+  if (postMatch) {
+    postalCode = postMatch[1];
+    line = line.replace(/\b\d{5}\b\s*$/, '').trim();
+  }
+
+  const provMatch = line.match(/(?:จ\.|จังหวัด)\s*([^\s,]+)/);
+  if (provMatch) {
+    province = provMatch[1].trim();
+    line = line.replace(/(?:จ\.|จังหวัด)\s*[^\s,]+/, '').trim();
+  }
+
+  const distMatch = line.match(/(?:อ\.|อำเภอ|เขต)\s*([^\s,]+)/);
+  if (distMatch) {
+    district = distMatch[1].trim();
+    line = line.replace(/(?:อ\.|อำเภอ|เขต)\s*[^\s,]+/, '').trim();
+  }
+
+  const subMatch = line.match(/(?:ต\.|ตำบล|แขวง)\s*([^\s,]+)/);
+  if (subMatch) {
+    subDistrict = subMatch[1].trim();
+    line = line.replace(/(?:ต\.|ตำบล|แขวง)\s*[^\s,]+/, '').trim();
+  }
+
+  return {
+    addressLine: line.replace(/,\s*$/, '').trim(),
+    subDistrict,
+    district,
+    province,
+    postalCode,
+  };
+};
+
+const toFields = (a?: Partial<EmployeeAddress> | null): AddressFields => {
+  if (!a) return emptyAddress();
+  const subDistrict = a.subDistrict || '';
+  const district = a.district || '';
+  const province = a.province || '';
+  const postalCode = a.postalCode || '';
+  const addressLine = a.addressLine || '';
+
+  if (!subDistrict && !district && !province && addressLine) {
+    const parsed = parseThaiAddress(addressLine);
+    if (parsed.province || parsed.district || parsed.subDistrict) {
+      return {
+        addressLine: parsed.addressLine || addressLine,
+        subDistrict: parsed.subDistrict || '',
+        district: parsed.district || '',
+        province: parsed.province || '',
+        postalCode: parsed.postalCode || postalCode,
+      };
+    }
+  }
+
+  return {
+    addressLine,
+    subDistrict,
+    district,
+    province,
+    postalCode,
+  };
+};
 
 const isEmpty = (f: AddressFields) => !Object.values(f).some((v) => v.trim());
 const sameFields = (a: AddressFields, b: AddressFields) =>

@@ -225,13 +225,13 @@ export const Navbar: React.FC = () => {
     if (pathname.startsWith('/master/banks')) return { section: 'ข้อมูลหลัก', page: 'จัดการข้อมูลธนาคาร' };
 
     // 3. พนักงาน (Employees) - เรียงลำดับ sub-routes ก่อน
-    if (pathname.match(/^\/employees\/\d+\/edit/)) return { section: 'จัดการพนักงาน', page: 'แก้ไขข้อมูลพนักงาน' };
-    if (pathname.match(/^\/employees\/\d+/)) return { section: 'จัดการพนักงาน', page: 'ดูข้อมูลพนักงาน' };
-    if (pathname.startsWith('/employees/types')) return { section: 'จัดการพนักงาน', page: 'ประเภทพนักงาน' };
-    if (pathname.startsWith('/employees/contracts')) return { section: 'จัดการพนักงาน', page: 'สัญญาจ้าง' };
-    if (pathname.startsWith('/employees/transfers')) return { section: 'จัดการพนักงาน', page: 'การโอนย้ายพนักงาน' };
-    if (pathname.startsWith('/employees/documents')) return { section: 'จัดการพนักงาน', page: 'เอกสารใกล้หมดอายุ' };
-    if (pathname.startsWith('/employees')) return { page: 'จัดการพนักงาน' };
+    if (pathname.match(/^\/employees\/\d+\/edit/)) return { section: 'พนักงาน', page: 'แก้ไขข้อมูลพนักงาน' };
+    if (pathname.match(/^\/employees\/\d+/)) return { section: 'พนักงาน', page: 'ดูข้อมูลพนักงาน' };
+    if (pathname.startsWith('/employees/types')) return { section: 'พนักงาน', page: 'ประเภทพนักงาน' };
+    if (pathname.startsWith('/employees/contracts')) return { section: 'พนักงาน', page: 'สัญญาจ้าง' };
+    if (pathname.startsWith('/employees/transfers')) return { section: 'พนักงาน', page: 'การโอนย้ายพนักงาน' };
+    if (pathname.startsWith('/employees/documents')) return { section: 'พนักงาน', page: 'เอกสารใกล้หมดอายุ' };
+    if (pathname.startsWith('/employees')) return { section: 'พนักงาน', page: 'จัดการพนักงาน' };
 
     // โปรไฟล์ (Profile / ESS)
     if (pathname.startsWith('/profile')) return { page: 'โปรไฟล์ของฉัน' };

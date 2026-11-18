@@ -247,7 +247,7 @@ export default function TransfersPage() {
                   <th className="py-3.5 px-5 font-medium">พนักงาน</th>
                   <th className="py-3.5 px-5 font-medium">ก่อน → หลัง</th>
                   <th className="py-3.5 px-5 font-medium">ประเภท</th>
-                  <th className="py-3.5 px-5 font-medium text-center w-20">จัดการ</th>
+                  <th className="py-3.5 px-6 font-medium text-center min-w-[90px]">จัดการ</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
@@ -308,7 +308,7 @@ export default function TransfersPage() {
                             <div className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">{item.statusDisplay}</div>
                           )}
                         </td>
-                        <td className="py-3.5 px-5 text-center">
+                        <td className="py-3.5 px-6 text-center whitespace-nowrap">
                           <ActionDropdown
                             menuClassName="w-52"
                             title="การจัดการ"

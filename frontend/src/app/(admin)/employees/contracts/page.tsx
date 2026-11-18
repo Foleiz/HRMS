@@ -171,6 +171,7 @@ function ContractsPageContent() {
       setContracts(uniqueList);
       setStats({
         ...statsData,
+        totalActiveCount: uniqueList.filter((c) => c.status === 'ACTIVE').length,
         fixedTermCount:
           statsData.fixedTermCount ??
           uniqueList.filter((c) => c.contractType === 'FIXED_TERM' && c.status === 'ACTIVE').length,

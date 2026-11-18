@@ -1123,7 +1123,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                         {renderSortIcon('status')}
                       </div>
                     </th>
-                    <th className="py-3 px-3.5 whitespace-nowrap font-medium text-center">จัดการ</th>
+                    <th className="py-3 px-6 whitespace-nowrap font-medium text-center min-w-[90px]">จัดการ</th>
                   </tr>
                 </thead>
               );
@@ -1306,7 +1306,7 @@ const sliceToMaxWords = (t: string, maxWords: number = 20): string => {
                       </td>
 
                       {/* 12. ปุ่มจัดการ (จุด 3 จุด ⋮ พร้อม Dropdown ตามภาพ 2 ใน Figma) */}
-                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                      <td className="py-3 px-6 text-center whitespace-nowrap">
                         <ActionDropdown menuClassName="w-48">
                           {(close) => (
                             <>
