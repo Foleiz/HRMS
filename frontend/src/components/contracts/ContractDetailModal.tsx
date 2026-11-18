@@ -14,7 +14,6 @@ import {
   Plus,
   ImageIcon,
   History,
-  Clock,
 } from 'lucide-react';
 import { EmploymentContract, ContractDocument } from '@/types/contract';
 import { contractService } from '@/services/contractService';
@@ -376,30 +375,6 @@ export default function ContractDetailModal({
                     <dd className="m-0 font-semibold text-right break-words">{currentContract.terminationReason || '-'}</dd>
                   </div>
                 </dl>
-              </div>
-            )}
-
-            {/* กล่องแจ้งเตือนหากกำลังดูสัญญาเดิม */}
-            {!isActive && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/80 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-300 px-3.5 py-2.5 text-xs flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span className="truncate">
-                    กำลังดูสัญญาฉบับเดิม ({currentContract.status === 'TERMINATED' ? 'ยกเลิก' : 'สิ้นสุดแล้ว'})
-                  </span>
-                </div>
-                {contractHistory.some((c) => c.status === 'ACTIVE') && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const activeC = contractHistory.find((c) => c.status === 'ACTIVE');
-                      if (activeC) handleSelectContract(activeC);
-                    }}
-                    className="shrink-0 px-2 py-0.5 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-medium text-[11px] transition cursor-pointer"
-                  >
-                    กลับสัญญาปัจจุบัน
-                  </button>
-                )}
               </div>
             )}
 
