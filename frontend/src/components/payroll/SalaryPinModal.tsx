@@ -84,18 +84,35 @@ export const SalaryPinModal: React.FC<SalaryPinModalProps> = ({
     setPin('');
   }, [isLoading]);
 
-  // Listen to physical keyboard typing
+  // Listen to physical keyboard typing (Standard numbers + Numpad)
   useEffect(() => {
     if (mode === 'RESET') return; // Reset mode uses standard text inputs
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isLoading) return;
 
+      // Ignore if typing in a standard input or textarea
+      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea') return;
+
+      let digit: string | null = null;
       if (e.key >= '0' && e.key <= '9') {
-        handleDigit(e.key);
+        digit = e.key;
+      } else if (e.code && e.code.startsWith('Numpad') && e.code.length === 7) {
+        const lastChar = e.code.charAt(6);
+        if (lastChar >= '0' && lastChar <= '9') {
+          digit = lastChar;
+        }
+      }
+
+      if (digit !== null) {
+        e.preventDefault();
+        handleDigit(digit);
       } else if (e.key === 'Backspace') {
+        e.preventDefault();
         handleBackspace();
       } else if (e.key === 'Escape') {
+        e.preventDefault();
         handleClear();
       }
     };

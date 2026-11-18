@@ -4656,7 +4656,7 @@ public class SalaryService : ISalaryService
         var statusText = period.Status switch
         {
             "DRAFT" => "ร่าง",
-            "REVIEW" => "รอตรวจสอบ",
+            "REVIEW" => "รอฝ่ายบุคคลส่งตรวจ",
             "SUBMITTED_TO_FINANCE" => "ส่งการเงินตรวจสอบ",
             "FINANCE_VERIFIED" => "การเงินตรวจสอบแล้ว",
             "PENDING_APPROVAL" => "รออนุมัติ",

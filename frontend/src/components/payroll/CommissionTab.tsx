@@ -1693,7 +1693,16 @@ export default function CommissionTab() {
                 </div>
 
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  แสดง {filteredBatchRecords.length} จาก {batchRecords.length} รายการ
+                  {filteredBatchRecords.length > 10 ? (
+                    <>
+                      แสดง {(batchRecordsPage - 1) * 10 + 1} -{' '}
+                      {Math.min(batchRecordsPage * 10, filteredBatchRecords.length)} จาก{' '}
+                      {filteredBatchRecords.length} รายการ (หน้า {batchRecordsPage}/
+                      {Math.ceil(filteredBatchRecords.length / 10)})
+                    </>
+                  ) : (
+                    <>แสดง {filteredBatchRecords.length} รายการ</>
+                  )}
                 </div>
               </div>
 

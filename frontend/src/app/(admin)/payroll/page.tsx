@@ -4084,6 +4084,10 @@ export default function PayrollPage() {
                         ? 'จ่ายเงินแล้ว'
                         : selectedPeriod.status === 'CLOSED'
                         ? 'ปิดรอบแล้ว'
+                        : selectedPeriod.status === 'DRAFT'
+                        ? 'ร่าง (รอคำนวณ)'
+                        : selectedPeriod.status === 'REVIEW'
+                        ? 'รอฝ่ายบุคคลส่งตรวจ'
                         : selectedPeriod.statusText}
                     </span>
                   ) : (
@@ -4963,7 +4967,12 @@ export default function PayrollPage() {
                                     : '-'}
                                 </td>
                                 <td className="py-4 px-5">
-                                  {pr.paymentStatus === 'TRANSFERRED' ? (
+                                  {(pr.netPayableSalary ?? 0) <= 0 ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                                      <span>ไม่มียอดจ่าย</span>
+                                    </span>
+                                  ) : pr.paymentStatus === 'TRANSFERRED' ? (
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                       <span>โอนแล้ว</span>
@@ -5588,7 +5597,12 @@ export default function PayrollPage() {
                                 </td>
                                 {/* Status Badge */}
                                 <td className="py-3.5 px-4 text-center">
-                                  {item.paymentStatus === 'TRANSFERRED' ? (
+                                  {(item.netPayableSalary ?? 0) <= 0 ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
+                                      <span>ไม่มียอดจ่าย</span>
+                                    </span>
+                                  ) : item.paymentStatus === 'TRANSFERRED' ? (
                                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                                       <span>โอนแล้ว</span>
@@ -5608,7 +5622,9 @@ export default function PayrollPage() {
                                 {/* Action */}
                                 {selectedPeriod?.status !== 'PAID' && (isCEO || isFinance || isAdmin) && (
                                   <td className="py-3.5 px-4 text-center">
-                                    {!item.accountNumber || !item.bankName ? (
+                                    {(item.netPayableSalary ?? 0) <= 0 ? (
+                                      <span className="text-slate-400 text-xs font-mono">-</span>
+                                    ) : !item.accountNumber || !item.bankName ? (
                                       <span
                                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-medium bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 cursor-not-allowed"
                                         title="ไม่สามารถโอนได้เนื่องจากไม่มีข้อมูลบัญชีธนาคาร"
@@ -5931,7 +5947,9 @@ export default function PayrollPage() {
                 <div className="space-y-1">
                   <span className="text-xs text-purple-700 dark:text-purple-300 font-semibold">สถานะการใช้งาน</span>
                   <div className="text-2xl font-bold text-purple-950 dark:text-white tracking-tight font-mono">
-                    {taxBrackets.filter((b) => (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length} / {taxBrackets.length || 8}{' '}
+                    {taxBrackets.length === 0
+                      ? '–'
+                      : `${taxBrackets.filter((b) => (b.status || 'ACTIVE').toUpperCase() === 'ACTIVE').length} / ${taxBrackets.length}`}{' '}
                     <span className="text-sm font-normal text-purple-700 dark:text-purple-300 font-sans">ขั้นใช้งาน</span>
                   </div>
                 </div>
@@ -6068,6 +6086,81 @@ export default function PayrollPage() {
                             {(t.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ใช้งาน' : 'ไม่ได้ใช้งาน'}
                           </span>
                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ตารางอัตราเงินสมทบกองทุนประกันสังคม */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  อัตราเงินสมทบกองทุนประกันสังคม
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  กำหนดอัตราสมทบฝ่ายพนักงาน ฝ่ายนายจ้าง และเพดานฐานค่าจ้างสูงสุดตามกฎหมาย
+                </p>
+              </div>
+              {canEditSso && ssoRates.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleOpenEditSsoRate(ssoRates[0])}
+                  icon={<Edit2 className="w-4 h-4" />}
+                >
+                  แก้ไขอัตราประกันสังคม
+                </Button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-slate-50/60 dark:bg-slate-900/40">
+                    <th className="py-3 px-4 font-semibold">ชื่ออัตรา</th>
+                    <th className="py-3 px-4 font-semibold text-center">ฝ่ายพนักงาน (%)</th>
+                    <th className="py-3 px-4 font-semibold text-center">ฝ่ายนายจ้าง (%)</th>
+                    <th className="py-3 px-4 font-semibold text-right">ฐานค่าจ้างต่ำสุด</th>
+                    <th className="py-3 px-4 font-semibold text-right">ฐานค่าจ้างสูงสุด (เพดาน)</th>
+                    <th className="py-3 px-4 font-semibold text-right">เงินสมทบสูงสุด/เดือน</th>
+                    <th className="py-3 px-4 font-semibold text-center">สถานะ</th>
+                    {canEditSso && <th className="py-3 px-4 font-semibold text-center">จัดการ</th>}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {ssoRates.map((r) => {
+                    const empPct = r.employeeContributionPercent >= 1 ? r.employeeContributionPercent : r.employeeContributionPercent * 100;
+                    const compPct = r.employerContributionPercent >= 1 ? r.employerContributionPercent : r.employerContributionPercent * 100;
+                    const maxContribution = Math.round(r.maxWageBaseAmount * (empPct / 100));
+                    return (
+                      <tr key={r.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{r.rateName}</td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">{empPct}%</td>
+                        <td className="py-3 px-4 text-center font-bold text-slate-800 dark:text-slate-200">{compPct}%</td>
+                        <td className="py-3 px-4 text-right font-mono text-slate-700 dark:text-slate-300">฿{r.minWageBaseAmount.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">฿{r.maxWageBaseAmount.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">฿{maxContribution.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            ใช้งาน
+                          </span>
+                        </td>
+                        {canEditSso && (
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              onClick={() => handleOpenEditSsoRate(r)}
+                              className="px-2.5 py-1 text-xs font-semibold text-primary hover:text-primary-hover hover:underline cursor-pointer"
+                            >
+                              แก้ไข
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -6282,8 +6375,8 @@ export default function PayrollPage() {
                   )}
                 </div>
               ) : (
-                <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden shadow-2xs">
-                  <table className="table-standard w-full text-left border-collapse text-xs">
+                <div className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-x-auto shadow-2xs">
+                  <table className="table-standard w-full min-w-[720px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700 font-semibold text-slate-500 dark:text-slate-400">
                         <th className="py-3 px-4">รอบเงินเดือน</th>
@@ -6348,7 +6441,11 @@ export default function PayrollPage() {
                                     : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'
                                 }`}
                               >
-                                {p.statusText || p.status}
+                                {p.status === 'REVIEW'
+                                  ? 'รอฝ่ายบุคคลส่งตรวจ'
+                                  : p.status === 'DRAFT'
+                                  ? 'ร่าง (รอคำนวณ)'
+                                  : (p.statusText || p.status)}
                               </span>
                             </td>
                             <td className="py-3 px-4 text-center">

@@ -590,6 +590,14 @@ public class CommissionService : ICommissionService
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
+        var batchIds = batches.Select(b => b.Id).ToList();
+        var actualAmounts = await _context.EmployeeCommissionEntries
+            .AsNoTracking()
+            .Where(e => e.BatchId.HasValue && batchIds.Contains(e.BatchId.Value))
+            .GroupBy(e => e.BatchId!.Value)
+            .Select(g => new { BatchId = g.Key, Total = g.Sum(x => x.TotalAmount) })
+            .ToDictionaryAsync(x => x.BatchId, x => x.Total, cancellationToken);
+
         var items = batches.Select(b => new CommissionBatchDto
         {
             Id = b.Id,
@@ -604,7 +612,7 @@ public class CommissionService : ICommissionService
             FailedRows = b.FailedRows,
             EmployeeCount = b.EmployeeCount,
             ReplacedEntries = b.ReplacedEntries,
-            TotalAmount = b.TotalAmount,
+            TotalAmount = actualAmounts.TryGetValue(b.Id, out var actual) && actual > 0 ? actual : b.TotalAmount,
             Status = b.Status,
             ImportedByUserName = b.ImportedByUser != null ? (b.ImportedByUser.Employee != null ? $"{b.ImportedByUser.Employee.FirstName} {b.ImportedByUser.Employee.LastName}".Trim() : b.ImportedByUser.Username) : "-",
             ImportedAt = b.ImportedAt,

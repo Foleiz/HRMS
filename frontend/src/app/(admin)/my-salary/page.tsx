@@ -19,6 +19,7 @@ import {
   Loader2,
   TrendingUp,
   PieChart as PieChartIcon,
+  Info,
 } from 'lucide-react';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, StatusBadge, RowActions, RowActionButton, inputClass, TableToolbar } from '@/components/ui';
@@ -530,6 +531,24 @@ function MySalaryContent() {
                 </Button>
               }
             />
+
+            {/* Empty State Informational Banner */}
+            {!searchTerm && (!overview?.history || overview.history.length === 0) && (
+              <div className="p-4 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/50 flex items-start gap-3">
+                <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1">
+                  <p className="font-semibold text-blue-900 dark:text-blue-200">
+                    ยังไม่มีสลิปเงินเดือนที่จ่ายแล้ว
+                  </p>
+                  <p className="text-blue-700/80 dark:text-blue-300/80 leading-relaxed">
+                    ระบบจะสร้างและแสดงสลิปเงินเดือนอัตโนมัติเมื่อฝ่ายบุคคลและการเงินทำรายการจ่ายเงินเดือนในแต่ละงวดเสร็จสมบูรณ์ (สถานะจ่ายเงินแล้ว)
+                  </p>
+                  <p className="text-blue-800 dark:text-blue-200 leading-relaxed font-medium pt-0.5">
+                    💡 รหัสผ่านสำหรับเปิดดูไฟล์สลิปเงินเดือน (PDF): เลขประจำตัวประชาชน 4 หลักสุดท้าย
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Desktop View: Slips History Table */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-700 hidden md:block overflow-x-auto">

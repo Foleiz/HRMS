@@ -127,8 +127,8 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
         <div className="p-6 border-b border-slate-100 dark:border-slate-700/60 flex items-start justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">{record.employeeName}</h3>
-            <p className="text-xs text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-1 font-medium">
-              {record.employeeCode} · {record.departmentName} · payroll_detail
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 font-medium">
+              {record.employeeCode} · {record.departmentName} · รายละเอียดสลิปเงินเดือน
             </p>
           </div>
           <button
@@ -219,9 +219,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* เงินเดือนสุทธิ (net_salary) */}
+              {/* เงินเดือนสุทธิ */}
               <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 flex items-center justify-between bg-white dark:bg-slate-800 shadow-2xs">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">เงินเดือนสุทธิ (net_salary)</span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">เงินเดือนสุทธิ</span>
                 <span className="text-sm font-bold text-slate-900 dark:text-slate-100 font-mono">
                   {netSalary > 0
                     ? `฿${netSalary.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`
