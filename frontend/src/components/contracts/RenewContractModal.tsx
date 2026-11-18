@@ -254,7 +254,6 @@ export default function RenewContractModal({
         <ModalHeader
           icon={CalendarClock}
           title="ต่ออายุสัญญาจ้างงาน"
-          subtitle={`ดำเนินการต่อสัญญาฉบับใหม่สำหรับ ${contract.employeeName}`}
           onClose={onClose}
         />
 
@@ -325,10 +324,10 @@ export default function RenewContractModal({
                   }
                 }}
                 options={[
-                  { value: 'FIXED_TERM', label: '1. สัญญาจ้าง (มีกำหนดระยะเวลา - ระบุวันสิ้นสุด)' },
-                  { value: 'PROBATION', label: '2. ขยายระยะเวลาทดลองงาน (ระบุวันสิ้นสุด)' },
-                  { value: 'PERMANENT', label: '3. บรรจุเป็นพนักงานประจำ (ไม่มีกำหนดวันสิ้นสุดสัญญา)' },
-                  { value: 'OTHER', label: '4. อื่นๆ / ฝึกงาน' },
+                  { value: 'FIXED_TERM', label: 'สัญญาจ้างมีกำหนดระยะเวลา (Fixed-term)' },
+                  { value: 'PROBATION', label: 'ขยายระยะเวลาทดลองงาน (Probation)' },
+                  { value: 'PERMANENT', label: 'บรรจุเป็นพนักงานประจำ (Permanent)' },
+                  { value: 'OTHER', label: 'สัญญาจ้างประเภทอื่นๆ / ฝึกงาน' },
                 ]}
                 className="w-full"
               />
@@ -336,14 +335,11 @@ export default function RenewContractModal({
 
             {/* แจ้งเตือนเมื่อเป็นการปรับเปลี่ยนลดสถานะจากพนักงานประจำ */}
             {isDowngrading && (
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-start gap-2.5 text-amber-800 dark:text-amber-300 text-xs">
-                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold">ข้อควรระวัง (การปรับลดประเภทสัญญา):</span>
-                  <p className="mt-0.5 text-[11px] text-amber-700 dark:text-amber-400/90 leading-relaxed">
-                    สัญญาเดิมของพนักงานเป็น &ldquo;พนักงานประจำ&rdquo; การเปลี่ยนเป็นสัญญาจ้างมีกำหนดระยะเวลาหรือทดลองงานถือเป็นการปรับเปลี่ยนสถานะสัญญา โปรดตรวจสอบข้อตกลงและนโยบายขององค์กรก่อนดำเนินการ
-                  </p>
-                </div>
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-xl flex items-center gap-2 text-amber-800 dark:text-amber-300 text-xs">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>
+                  <strong className="font-semibold">ข้อควรระวัง:</strong> สัญญาเดิมเป็น &ldquo;พนักงานประจำ&rdquo; การเลือกประเภทนี้ถือเป็นการปรับลดสถานะสัญญา
+                </span>
               </div>
             )}
 
@@ -401,9 +397,17 @@ export default function RenewContractModal({
                   )}
                 </div>
               ) : (
-                <div className="flex items-center p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mr-2" />
-                  <span className="text-xs">บรรจุเป็นพนักงานประจำ (ไม่มีกำหนดวันสิ้นสุดสัญญา)</span>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    วันสิ้นสุดสัญญาใหม่
+                  </label>
+                  <div className="h-10 px-3 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-2 text-emerald-800 dark:text-emerald-300 text-xs font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="truncate">ไม่มีกำหนดวันสิ้นสุด (พนักงานประจำ)</span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400 font-normal">
+                    สัญญาจ้างต่อเนื่องแบบไม่มีกำหนดระยะเวลา
+                  </p>
                 </div>
               )}
             </div>
