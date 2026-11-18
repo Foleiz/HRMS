@@ -163,16 +163,25 @@ export default function PayrollPeriodsTab({
       inProgressSubtext = parts.join(' · ');
     }
 
-    // Employee count for the latest period (Option A)
-    const latestPeriod = filteredPeriods.length > 0 ? filteredPeriods[0] : null;
-    const latestEmpCount = latestPeriod
-      ? (latestPeriod.employeeCount ?? latestPeriod.totalEmployees ?? 0)
+    // ให้ความสำคัญกับ "รอบปัจจุบัน" (เดือน/ปีจริงบนปฏิทิน) เป็นหลัก เพื่อให้สอดคล้องกับป้าย [ปัจจุบัน] ในตาราง
+    const currentPeriod = filteredPeriods.find(
+      (p) => p.year === currentRealYear && p.month === currentRealMonth
+    );
+    const targetPeriod = currentPeriod || (filteredPeriods.length > 0 ? filteredPeriods[0] : null);
+    const targetEmpCount = targetPeriod
+      ? (targetPeriod.employeeCount ?? targetPeriod.totalEmployees ?? 0)
       : 0;
-    const latestPeriodName = latestPeriod?.periodName
-      ? (latestPeriod.periodName.startsWith('รอบ') ? latestPeriod.periodName : `รอบ ${latestPeriod.periodName}`)
-      : latestPeriod?.month
-        ? `รอบเดือน ${THAI_MONTH_NAMES[latestPeriod.month - 1]} ${latestPeriod.year + 543}`
+    const isCurrent = targetPeriod && targetPeriod.year === currentRealYear && targetPeriod.month === currentRealMonth;
+    const targetPeriodName = targetPeriod?.periodName
+      ? (targetPeriod.periodName.startsWith('รอบ') ? targetPeriod.periodName : `รอบ ${targetPeriod.periodName}`)
+      : targetPeriod?.month
+        ? `รอบเดือน ${THAI_MONTH_NAMES[targetPeriod.month - 1]} ${targetPeriod.year + 543}`
         : '';
+    const cardTitle = targetPeriod
+      ? isCurrent
+        ? `พนักงานใน${targetPeriodName} (ปัจจุบัน)`
+        : `พนักงานใน${targetPeriodName}`
+      : 'พนักงานในรอบปัจจุบัน';
 
     return {
       totalPeriodsCount,
@@ -180,11 +189,12 @@ export default function PayrollPeriodsTab({
       completedPercent,
       inProgressPeriodsCount,
       inProgressSubtext,
-      latestPeriod,
-      latestEmpCount,
-      latestPeriodName,
+      targetPeriod,
+      targetEmpCount,
+      targetPeriodName,
+      cardTitle,
     };
-  }, [filteredPeriods]);
+  }, [filteredPeriods, currentRealYear, currentRealMonth]);
 
   return (
     <div className="space-y-4 animate-in fade-in duration-200">
@@ -246,15 +256,15 @@ export default function PayrollPeriodsTab({
           </div>
         </div>
 
-        {/* Card 4: พนักงานในรอบล่าสุด (Solid Purple Panel) */}
+        {/* Card 4: พนักงานในรอบปัจจุบัน / ล่าสุด (Solid Purple Panel) */}
         <div className="bg-purple-100/60 dark:bg-purple-950/40 rounded-2xl border border-purple-200 dark:border-purple-800/80 p-5 shadow-xs hover:border-purple-300 dark:hover:border-purple-700 transition-all flex flex-col justify-between">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <span
                 className="text-xs text-purple-700 dark:text-purple-300 font-bold block truncate"
-                title={summaryStats.latestPeriod ? `พนักงานใน${summaryStats.latestPeriodName}` : 'พนักงานในรอบล่าสุด'}
+                title={summaryStats.cardTitle}
               >
-                {summaryStats.latestPeriod ? `พนักงานใน${summaryStats.latestPeriodName}` : 'พนักงานในรอบล่าสุด'}
+                {summaryStats.cardTitle}
               </span>
             </div>
             <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex items-center justify-center shrink-0 shadow-2xs">
@@ -262,9 +272,9 @@ export default function PayrollPeriodsTab({
             </div>
           </div>
           <div className="mt-3 text-2xl font-extrabold text-purple-950 dark:text-white tracking-tight">
-            {summaryStats.latestPeriod ? (
+            {summaryStats.targetPeriod ? (
               <>
-                {summaryStats.latestEmpCount.toLocaleString()} <span className="text-sm font-semibold text-purple-800/80 dark:text-purple-200/80">คน</span>
+                {summaryStats.targetEmpCount.toLocaleString()} <span className="text-sm font-semibold text-purple-800/80 dark:text-purple-200/80">คน</span>
               </>
             ) : (
               '-'
