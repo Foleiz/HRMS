@@ -18,8 +18,10 @@ import {
   Download,
   Loader2,
   TrendingUp,
+  ArrowLeft,
   PieChart as PieChartIcon,
 } from 'lucide-react';
+import { getThaiInitial } from '@/components/ui/AvatarName';
 import { CustomSelect } from '@/components/ui/CustomSelect';
 import { Button, StatusBadge, RowActions, RowActionButton, inputClass, TableToolbar } from '@/components/ui';
 import { TablePagination } from '@/components/ui/TablePagination';
@@ -286,40 +288,75 @@ function MySalaryContent() {
     return (
       <div className="space-y-6 font-sans transition-all duration-300">
         {/* ========================================================= */}
-        {/* B1: TOP HEADER: เหลือชุดเดียว ชื่อพนักงาน · ตำแหน่ง · แผนก และปุ่มดาวน์โหลด */}
+        {/* B1: TOP HEADER: ข้อมูลพนักงาน ปุ่มย้อนกลับ และเครื่องมือดาวน์โหลด/ล็อก */}
         {/* ========================================================= */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-              {detailData?.employeeName} ({detailData?.employeeCode}) · {detailData?.positionName} · {detailData?.departmentName}
-            </p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+          {/* ซ้าย: ปุ่มย้อนกลับ + รูป/ตัวย่อ + ข้อมูลพนักงาน */}
+          <div className="flex items-center gap-3.5 min-w-0">
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/my-salary');
+                setSelectedPayrollId(null);
+                setDetailData(null);
+              }}
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700 transition-colors shrink-0 cursor-pointer"
+              title="ย้อนกลับไปหน้ารวมสลิปเงินเดือน"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+
+            <div className="w-10 h-10 rounded-full bg-primary/10 text-primary dark:bg-primary/20 dark:text-blue-300 font-bold text-sm flex items-center justify-center shrink-0 border border-primary/20">
+              {getThaiInitial(detailData?.employeeName)}
+            </div>
+
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                  {detailData?.employeeName}
+                </h1>
+                <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-mono font-semibold">
+                  {detailData?.employeeCode}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-x-2 flex-wrap">
+                <span>{detailData?.positionName || '-'}</span>
+                {detailData?.departmentName && (
+                  <span className="before:content-['•'] before:mr-2 before:text-slate-300 dark:before:text-slate-600">
+                    {detailData?.departmentName}
+                  </span>
+                )}
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Download PDF Button */}
-            <Button
-              size="sm"
-              onClick={() => handleDownloadPdf(selectedPayrollId, detailData?.periodMonthName, detailData?.passwordHint)}
-              loading={downloadingId === selectedPayrollId}
-              icon={downloadingId === selectedPayrollId ? undefined : <Download className="w-4 h-4 text-emerald-400" />}
-            >
-              {downloadingId === selectedPayrollId ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดสลิปเงินเดือน (PDF)'}
-            </Button>
+          {/* ขวา: กลุ่มปุ่ม Action และคำแนะนำรหัสผ่าน */}
+          <div className="flex flex-col sm:items-end gap-1.5 shrink-0">
+            <div className="flex items-center gap-2">
+              {/* Download PDF Button */}
+              <Button
+                size="sm"
+                onClick={() => handleDownloadPdf(selectedPayrollId, detailData?.periodMonthName, detailData?.passwordHint)}
+                loading={downloadingId === selectedPayrollId}
+                icon={downloadingId === selectedPayrollId ? undefined : <Download className="w-4 h-4 text-emerald-400" />}
+              >
+                {downloadingId === selectedPayrollId ? 'กำลังสร้าง PDF...' : 'ดาวน์โหลดสลิปเงินเดือน (PDF)'}
+              </Button>
 
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleLock}
-              icon={<Lock className="w-3.5 h-3.5 text-amber-500" />}
-              title="ล็อกหน้าจอเพื่อความปลอดภัย"
-            >
-              ล็อกหน้าจอ
-            </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleLock}
+                icon={<Lock className="w-3.5 h-3.5 text-amber-500" />}
+                title="ล็อกหน้าจอเพื่อความปลอดภัย"
+              >
+                ล็อกหน้าจอ
+              </Button>
+            </div>
 
-            {/* A3: Top Right Security Notice Pill with dynamic password hint */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-medium shadow-xs">
-              <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span>รหัสเปิดไฟล์: {detailData?.passwordHint || overview?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย'}</span>
+            <div className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+              <Lock className="w-3 h-3 text-amber-500 shrink-0" />
+              <span>รหัสเปิดไฟล์: <strong className="font-semibold text-slate-700 dark:text-slate-300">{detailData?.passwordHint || overview?.passwordHint || 'เลขประจำตัวประชาชน 4 หลักสุดท้าย'}</strong></span>
             </div>
           </div>
         </div>
