@@ -32,6 +32,7 @@ public class AttendanceImportService : IAttendanceImportService
         DateOnly? customDateFrom = null,
         DateOnly? customDateTo = null,
         bool overwriteExistingPeriod = false,
+        string? overlapResolution = null,
         CancellationToken cancellationToken = default)
     {
         // 1. Read Stream and Compute SHA-256 Hash
@@ -184,32 +185,35 @@ public class AttendanceImportService : IAttendanceImportService
             };
         }
 
-        // 4.1 ตรวจสอบขอบเขตวันที่ของไฟล์ (Date Range Discovery)
-        DateOnly? detectedDateFrom = customDateFrom ?? metadataDateFrom;
-        DateOnly? detectedDateTo = customDateTo ?? metadataDateTo;
+        // 4.1 ตรวจสอบขอบเขตวันที่จริงจากข้อมูลในไฟล์ (Actual Date Range from Data Rows)
+        // สแกนวันที่จริงจากแถวข้อมูลในไฟล์เป็นหลัก (ไม่ยึดเพียงข้อความ date from: ... ที่หัวกระดาษ Row 1)
+        DateOnly? actualRowMinDate = null;
+        DateOnly? actualRowMaxDate = null;
 
-        if (detectedDateFrom == null || detectedDateTo == null)
+        foreach (var (_, scanRow) in rawRows)
         {
-            foreach (var (_, scanRow) in rawRows)
+            var d = GetValue(scanRow, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา")
+                ?? GetValue(scanRow, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
+            if (d == null) continue;
+
+            DateOnly? parsed = ParseDate(d);
+            if (parsed == null && ParseDateTime(d) is DateTime pdt)
             {
-                var d = GetValue(scanRow, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา")
-                    ?? GetValue(scanRow, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
-                if (d == null) continue;
-
-                DateOnly? parsed = ParseDate(d);
-                if (parsed == null && ParseDateTime(d) is DateTime pdt)
-                {
-                    var y = pdt.Year > 2400 ? pdt.Year - 543 : pdt.Year;
-                    parsed = new DateOnly(y, pdt.Month, pdt.Day);
-                }
-                if (parsed == null) continue;
-
-                if (detectedDateFrom == null || parsed < detectedDateFrom) detectedDateFrom = parsed;
-                if (detectedDateTo == null || parsed > detectedDateTo) detectedDateTo = parsed;
+                var y = pdt.Year > 2400 ? pdt.Year - 543 : pdt.Year;
+                parsed = new DateOnly(y, pdt.Month, pdt.Day);
             }
+            if (parsed == null) continue;
+
+            if (actualRowMinDate == null || parsed < actualRowMinDate) actualRowMinDate = parsed;
+            if (actualRowMaxDate == null || parsed > actualRowMaxDate) actualRowMaxDate = parsed;
         }
 
-        // 4.2 ตรวจสอบช่วงเดือน/ปีที่ทับซ้อนกับ Batch ที่มีอยู่แล้ว (Date Range / Month Overlap Check)
+        DateOnly? detectedDateFrom = customDateFrom ?? actualRowMinDate ?? metadataDateFrom;
+        DateOnly? detectedDateTo = customDateTo ?? actualRowMaxDate ?? metadataDateTo;
+
+        // 4.2 ตรวจสอบช่วงวันที่ทับซ้อนกับ Batch ที่มีอยู่แล้ว (Date Range Overlap Check)
+        HashSet<DateOnly>? skippedDates = null;
+
         if (detectedDateFrom.HasValue && detectedDateTo.HasValue)
         {
             var overlappingBatch = await _context.AttendanceImportBatches
@@ -221,6 +225,20 @@ public class AttendanceImportService : IAttendanceImportService
 
             if (overlappingBatch != null)
             {
+                var existFrom = overlappingBatch.DateFrom!.Value;
+                var existTo = overlappingBatch.DateTo!.Value;
+                var oFrom = existFrom > detectedDateFrom.Value ? existFrom : detectedDateFrom.Value;
+                var oTo = existTo < detectedDateTo.Value ? existTo : detectedDateTo.Value;
+                var oDaysCount = (oFrom <= oTo) ? (oTo.DayNumber - oFrom.DayNumber + 1) : 0;
+                var oDatesList = new List<string>();
+                if (oDaysCount > 0)
+                {
+                    for (var d = oFrom; d <= oTo; d = d.AddDays(1))
+                    {
+                        oDatesList.Add(d.ToString("yyyy-MM-dd"));
+                    }
+                }
+
                 if (!overwriteExistingPeriod)
                 {
                     var uName = overlappingBatch.ImportedByUser?.Username ?? "ผู้ดูแลระบบ";
@@ -239,13 +257,17 @@ public class AttendanceImportService : IAttendanceImportService
                         ExistingBatchImportedBy = uName,
                         ExistingBatchDateFrom = overlappingBatch.DateFrom?.ToString("yyyy-MM-dd"),
                         ExistingBatchDateTo = overlappingBatch.DateTo?.ToString("yyyy-MM-dd"),
+                        OverlapDateFrom = oFrom.ToString("yyyy-MM-dd"),
+                        OverlapDateTo = oTo.ToString("yyyy-MM-dd"),
+                        OverlapDaysCount = oDaysCount,
+                        OverlapDates = oDatesList,
                         Status = "OVERLAP_CONFIRMATION_REQUIRED",
                         Errors = new List<AttendanceImportErrorDto>
                         {
                             new AttendanceImportErrorDto
                             {
                                 RowNumber = 0,
-                                ErrorMessage = $"พบข้อมูลการลงเวลาของช่วงวันที่ {detectedDateFrom:dd/MM/yyyy} ถึง {detectedDateTo:dd/MM/yyyy} ในระบบแล้ว (ไฟล์เดิม: {overlappingBatch.FileName} นำเข้าโดย {uName})",
+                                ErrorMessage = $"พบข้อมูลการลงเวลาของช่วงวันที่ {oFrom:dd/MM/yyyy} ถึง {oTo:dd/MM/yyyy} ในระบบแล้ว (ไฟล์เดิม: {overlappingBatch.FileName} นำเข้าโดย {uName})",
                                 ErrorCode = "PERIOD_OVERLAP"
                             }
                         }
@@ -253,21 +275,63 @@ public class AttendanceImportService : IAttendanceImportService
                 }
                 else
                 {
-                    // ผู้ใช้ยืนยันเลือก "ใช้ไฟล์ใหม่ (เขียนทับ)" -> ยกเลิก (Revert) ชุดข้อมูลเดิมก่อน
+                    // ผู้ใช้ยืนยันการนำเข้าและผสานข้อมูล (Merge)
                     var allOverlappingBatches = await _context.AttendanceImportBatches
                         .Where(b => b.Status != RevertedStatus && b.Status != "FAILED" && b.DateFrom != null && b.DateTo != null)
                         .Where(b => (b.DateFrom <= detectedDateTo.Value && b.DateTo >= detectedDateFrom.Value))
                         .ToListAsync(cancellationToken);
 
-                    foreach (var oldBatch in allOverlappingBatches)
+                    bool isKeepExisting = string.Equals(overlapResolution, "KEEP_EXISTING", StringComparison.OrdinalIgnoreCase);
+
+                    if (isKeepExisting)
                     {
-                        try
+                        // กรณี "ข้ามข้อมูลไฟล์ใหม่ ให้ใช้ข้อมูลวันที่ซ้อนทับกันเป็นอันเดิม" (KEEP_EXISTING):
+                        // รวบรวมวันที่ที่ซ้อนทับกับทุก Batch เดิมไว้ใน skippedDates เพื่อไม่ให้ ProcessRowsAsync นำเข้าหรือเขียนทับ
+                        skippedDates = new HashSet<DateOnly>();
+                        foreach (var oldBatch in allOverlappingBatches)
                         {
-                            await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
+                            var bFrom = oldBatch.DateFrom!.Value;
+                            var bTo = oldBatch.DateTo!.Value;
+                            var sFrom = bFrom > detectedDateFrom.Value ? bFrom : detectedDateFrom.Value;
+                            var sTo = bTo < detectedDateTo.Value ? bTo : detectedDateTo.Value;
+                            for (var d = sFrom; d <= sTo; d = d.AddDays(1))
+                            {
+                                skippedDates.Add(d);
+                            }
                         }
-                        catch
+                        // Batch เดิมยังคงครอบคลุมช่วงวันเดิมทั้งหมดตามเดิม ไม่ตัดลด DateTo
+                    }
+                    else
+                    {
+                        // กรณี "เขียนทับด้วยข้อมูลจากไฟล์ใหม่" (OVERWRITE)
+                        foreach (var oldBatch in allOverlappingBatches)
                         {
-                            // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                            // หากชุดข้อมูลเดิมถูกครอบคลุมโดยชุดข้อมูลใหม่ทั้งหมด (เช่น นำเข้าทับทั้งงวด / ทั้งเดือน) -> ยกเลิกชุดเก่าทั้งหมด
+                            if (detectedDateFrom.Value <= oldBatch.DateFrom!.Value && detectedDateTo.Value >= oldBatch.DateTo!.Value)
+                            {
+                                try
+                                {
+                                    await RevertBatchAsync(oldBatch.Id, importedByUserId, cancellationToken);
+                                }
+                                catch
+                                {
+                                    // ถ้า revert batch เก่าไม่สำเร็จ ดำเนินการต่อเพื่อให้อัปเดตทับ
+                                }
+                            }
+                            else
+                            {
+                                // กรณีทับซ้อนแค่บางวัน (Partial Overlap):
+                                // ไม่ revert ทั้งชุดข้อมูลเดิม เพื่อรักษาข้อมูลวันที่ไม่ทับซ้อนไว้
+                                // ข้อมูลของวันที่ทับซ้อนจะถูก ProcessRowsAsync อัปเดตทับด้วยข้อมูลจากไฟล์ใหม่โดยอัตโนมัติ
+                                if (oldBatch.DateFrom < detectedDateFrom.Value && oldBatch.DateTo >= detectedDateFrom.Value)
+                                {
+                                    oldBatch.DateTo = detectedDateFrom.Value.AddDays(-1);
+                                }
+                                else if (oldBatch.DateFrom <= detectedDateTo.Value && oldBatch.DateTo > detectedDateTo.Value)
+                                {
+                                    oldBatch.DateFrom = detectedDateTo.Value.AddDays(1);
+                                }
+                            }
                         }
                     }
                 }
@@ -354,8 +418,8 @@ public class AttendanceImportService : IAttendanceImportService
         // ใช้เวลารวมนานเกิน timeout ฝั่ง Frontend) — ถ้าหาช่วงวันที่ไม่ได้เลย จะไม่ preload
         // และใช้วิธี query ทีละแถว (fallback เดิม) เพื่อความปลอดภัยของข้อมูล
         {
-            DateOnly? preloadFrom = customDateFrom ?? metadataDateFrom;
-            DateOnly? preloadTo = customDateTo ?? metadataDateTo;
+            DateOnly? preloadFrom = customDateFrom ?? actualRowMinDate ?? metadataDateFrom;
+            DateOnly? preloadTo = customDateTo ?? actualRowMaxDate ?? metadataDateTo;
 
             if (preloadFrom == null || preloadTo == null)
             {
@@ -427,7 +491,8 @@ public class AttendanceImportService : IAttendanceImportService
             CompanySchedule = await CompanyWorkSchedule.LoadAsync(_context, cancellationToken),
             Holidays = holidays,
             ApprovedLeaves = approvedLeaves,
-            EmploymentWindows = await LoadEmploymentWindowsAsync(cancellationToken)
+            EmploymentWindows = await LoadEmploymentWindowsAsync(cancellationToken),
+            SkippedDates = skippedDates
         };
         await ProcessRowsAsync(rowCtx, cancellationToken);
         totalRecords = rowCtx.TotalRecords;
@@ -1254,6 +1319,8 @@ public class AttendanceImportService : IAttendanceImportService
         public List<LeaveRequest> ApprovedLeaves { get; init; } = new();
         /// <summary>ช่วงที่เป็นพนักงาน (วันเริ่มงาน–วันสุดท้าย) — นอกช่วงนี้ไม่บันทึกเป็นขาดงาน</summary>
         public Dictionary<long, (DateOnly? Start, DateOnly? End)> EmploymentWindows { get; init; } = new();
+        /// <summary>รายการวันที่ซ้อนทับกันที่ผู้ใช้เลือกให้ข้ามการนำเข้า (KEEP_EXISTING)</summary>
+        public HashSet<DateOnly>? SkippedDates { get; init; }
     }
 
     /// <summary>วันเริ่มงาน = วันเริ่มสัญญาแรก (หรือวันที่มีผลของตำแหน่งแรก), วันสุดท้าย = วันลาออก/เลิกจ้าง (เหมือนฝั่งเงินเดือน)</summary>
@@ -1448,6 +1515,14 @@ public class AttendanceImportService : IAttendanceImportService
                 AddError(batch.Id, rowNumber, rawRowJson,
                     $"วันที่ {workDate.Day:D2}/{workDate.Month:D2}/{workDate.Year + 543} อยู่นอกช่วงที่เลือก ({customDateFrom.Value.Day:D2}/{customDateFrom.Value.Month:D2}/{customDateFrom.Value.Year + 543} – {customDateTo.Value.Day:D2}/{customDateTo.Value.Month:D2}/{customDateTo.Value.Year + 543}) กรุณาตรวจว่าเลือกเดือนตรงกับไฟล์",
                     "DATE_OUT_OF_RANGE", empCodeRaw, empName, deptName, null, stateRaw, errorsList, errorDtos);
+                continue;
+            }
+
+            // หากผู้ใช้เลือก "ข้ามข้อมูลไฟล์ใหม่ ให้ใช้ข้อมูลวันที่ซ้อนทับกันเป็นอันเดิม" (KEEP_EXISTING)
+            // ข้ามแถวของวันที่ซ้อนทับนี้ ไม่นำเข้าหรืออัปเดตทับข้อมูลเดิม
+            if (ctx.SkippedDates != null && ctx.SkippedDates.Contains(workDate))
+            {
+                totalRecords--;
                 continue;
             }
 

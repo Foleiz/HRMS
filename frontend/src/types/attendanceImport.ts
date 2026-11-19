@@ -53,6 +53,10 @@ export interface AttendanceImportResult {
   existingBatchImportedBy?: string | null;
   existingBatchDateFrom?: string | null;
   existingBatchDateTo?: string | null;
+  overlapDateFrom?: string | null;
+  overlapDateTo?: string | null;
+  overlapDaysCount?: number;
+  overlapDates?: string[];
   errors: AttendanceImportError[];
 }
 
