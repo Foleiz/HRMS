@@ -1192,7 +1192,7 @@ public class AttendanceImportService : IAttendanceImportService
                 extractedUnit = unitMatch.Groups[1].Value.Trim();
             }
 
-            var dateRangeMatch = Regex.Match(text, @"date\s+from\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})(?:\s+[\d:]+)?\s+to\s+(\d{4}[-/]\d{1,2}[-/]\d{1,2})", RegexOptions.IgnoreCase);
+            var dateRangeMatch = Regex.Match(text, @"date\s+from\s*:\s*(\d{4}[-/]\d{1,2}[-/]\d{1,2})(?:\s+[\d:]+)?\s+to:?\s+(\d{4}[-/]\d{1,2}[-/]\d{1,2})", RegexOptions.IgnoreCase);
             if (dateRangeMatch.Success)
             {
                 if (DateOnly.TryParse(dateRangeMatch.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture, out var df))
