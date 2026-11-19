@@ -339,8 +339,8 @@ public class AttendanceImportService : IAttendanceImportService
         var errorsList = new List<AttendanceImportError>();
         var errorDtos = new List<AttendanceImportErrorDto>();
 
-        // ตรวจสอบว่าเป็นไฟล์ Daily Summary (Syaco deliy) หรือ Punch Log (Syaco record)
-        bool isDailySummary = IsDailySummaryFormat(allRawRows);
+        // ตรวจสอบว่าเป็นไฟล์ Daily Summary (เข้า-ออกคู่ / สรุปรายวัน) หรือ Punch Log (สแกนเวลาทั่วไป)
+        bool isDailySummary = IsDailySummaryFormat(allRawRows, rawRows);
 
         // In-memory collection of AttendanceDaily for updating / creating
         var dailyDict = new Dictionary<(long EmployeeId, DateOnly WorkDate), AttendanceDaily>();
@@ -866,11 +866,13 @@ public class AttendanceImportService : IAttendanceImportService
             or "แผนก" or "ฝ่าย" or "แผนกฝ่าย" or "แผนกฝ่าย."
             or "วันที่" or "เวลา" or "วันที่เวลา" or "สถานะ" or "ประเภท" or "ลงเวลาด้วย" or "เครื่อง" or "การตรวจอุณหภูมิ"
             or "name" or "department" or "date" or "time" or "status"
-            // Daily Summary (Syaco deliy) format columns
+            // Daily Summary (Syaco deliy) & In-Out columns
             or "dkrq" or "sj1" or "yingchu1" or "yingchu2" or "shichu1" or "shichu2"
             or "yfh" or "qjfh" or "kugong" or "cdci" or "cdshi" or "ztci" or "ztshi"
             or "wqd" or "wqt" or "xxr" or "jjr" or "qjcs" or "qjsj" or "shenhe"
-            or "เขาออก" or "กะการทำงาน" or "วันทำงาน" or "สาย" or "ออกก่อน" or "ไมลงเวลา" or "วันหยุด" or "การลา" or "สัญลักษณ์";
+            or "เขาออก" or "เข้าออก" or "เวลาเข้า" or "เวลาออก" or "เวลาเข้าออก" or "เวลาเขาออก"
+            or "timein" or "timeout" or "inout"
+            or "กะการทำงาน" or "วันทำงาน" or "สาย" or "ออกก่อน" or "ไมลงเวลา" or "วันหยุด" or "การลา" or "สัญลักษณ์";
     }
 
 
@@ -952,7 +954,7 @@ public class AttendanceImportService : IAttendanceImportService
                 EmployeeShifts = employeeShifts,
                 CustomDateFrom = singleDay,
                 CustomDateTo = singleDay,
-                IsDailySummary = IsDailySummaryFormat(allRawRows),
+                IsDailySummary = IsDailySummaryFormat(allRawRows, rows),
                 DailyDict = new(),
                 BulkPreloaded = false,
                 TotalRecords = rows.Count,
@@ -1324,7 +1326,7 @@ public class AttendanceImportService : IAttendanceImportService
             var dateRaw = GetValue(row, "workdate", "date", "วันที่", "dkrq", "วันที่ทำงาน", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
             var timeRaw = GetValue(row, "punchtime", "timestamp", "datetime", "time", "เวลา", "เวลาสแกน", "วันเวลา", "วันที่-เวลา", "วันที่เวลา", "วันที่และเวลา");
             var stateRaw = GetStringValue(row, "punchstate", "state", "type", "inout", "status", "สถานะ", "ประเภท", "ประเภทการสแกน", "การเข้าออก",
-                "Sj1", "เข้า-ออก", "เขาออก", "Yfh", "สัญลักษณ์");
+                "Sj1", "เข้า-ออก", "เขาออก", "เข้าออก", "เวลาเข้า-ออก", "เวลาเข้าออก", "เวลาเข้า/ออก", "เข้า/ออก", "in/out", "clockinout", "timeinout", "Yfh", "สัญลักษณ์");
             var timeInRaw = GetValue(row, "timein", "checkin", "in", "เวลาเข้า", "เวลาเข้างาน", "เข้างาน");
             var timeOutRaw = GetValue(row, "timeout", "checkout", "out", "เวลาออก", "เวลาเลิกงาน", "ออกงาน");
             var deviceRaw = GetStringValue(row, "เครื่อง", "ชื่อเครื่อง", "อุปกรณ์", "เครื่องสแกน", "device", "devicename", "machine");
@@ -1478,9 +1480,10 @@ public class AttendanceImportService : IAttendanceImportService
                 // N = ไม่ได้สแกน, ตัวอักษรต่อท้าย (L = สาย, E = ออกก่อน) ไม่ใช้ — ระบบคำนวณสาย/ออกก่อนเองจากเวลาเทียบกะ
                 DateTime? actualInUtc = null;
                 DateTime? actualOutUtc = null;
-                if (!string.IsNullOrWhiteSpace(stateRaw))
+                var timeRangeSource = stateRaw ?? timeRaw?.ToString();
+                if (!string.IsNullOrWhiteSpace(timeRangeSource))
                 {
-                    var timeRangeMatch = Regex.Match(stateRaw, @"(N|\d{1,2}:\d{2})[A-Za-z]*\s*-\s*(N|\d{1,2}:\d{2})[A-Za-z]*");
+                    var timeRangeMatch = Regex.Match(timeRangeSource, @"(N|\d{1,2}:\d{2})[A-Za-z]*\s*[-~–/]\s*(N|\d{1,2}:\d{2})[A-Za-z]*");
                     if (timeRangeMatch.Success)
                     {
                         if (timeRangeMatch.Groups[1].Value != "N") actualInUtc = ParseTimeToUtc(timeRangeMatch.Groups[1].Value, workDate);
@@ -1901,11 +1904,17 @@ public class AttendanceImportService : IAttendanceImportService
     }
 
     /// <summary>
-    /// ตรวจสอบว่าเป็นไฟล์ Daily Summary แบบ Syaco "deliy" หรือไม่
-    /// (แบบสรุปรายวัน 1 แถวต่อพนักงานต่อวัน — ต่างจาก Punch Log ที่บันทึกทีละสแกน)
+    /// ตรวจสอบว่าเป็นไฟล์ Daily Summary (สรุปรายวัน 1 แถวต่อพนักงานต่อวัน ที่มีเวลาเข้า-ออกคู่กัน หรือสถิติรายวัน) หรือไม่
+    /// ตรวจจับแบบชาญฉลาดโดยไม่ต้องพึ่งพาคีย์เวิร์ด deliy / record ที่หัวกระดาษ:
+    /// 1. ตรวจจับคีย์เวิร์ดเดิม (deliy) ใน 5 แถวแรก (Backward-compatible กับไฟล์เดิม 100%)
+    /// 2. ตรวจจับโครงสร้างคอลัมน์ (Column Signature): เช่น เข้า-ออก, Sj1, Shichu2, Cdshi, Ztshi, Kugong
+    /// 3. ตรวจจับรูปแบบข้อมูลจริงในเซลล์ (Data Pattern Sampling): เช่น รูปแบบเวลาช่วง HH:mm-HH:mm หรือ N-HH:mm
     /// </summary>
-    private static bool IsDailySummaryFormat(List<IDictionary<string, object?>> allRawRows)
+    private static bool IsDailySummaryFormat(
+        List<IDictionary<string, object?>> allRawRows,
+        List<(int RowNumber, IDictionary<string, object?> Data)>? dataRows = null)
     {
+        // 1. ตรวจสอบคีย์เวิร์ดเดิม (deliy) ใน 5 แถวแรก (Backward-compatible กับไฟล์เดิม)
         for (int r = 0; r < Math.Min(5, allRawRows.Count); r++)
         {
             var text = string.Join(" ", allRawRows[r].Values
@@ -1913,9 +1922,73 @@ public class AttendanceImportService : IAttendanceImportService
                 .Select(v => v!.ToString()!.Trim()))
                 .Trim().ToLowerInvariant();
 
-            // ไฟล์ Daily Summary มี keyword "deliy" ใน Row 0 หรือ Row 1
             if (text.Contains("deliy")) return true;
         }
+
+        // 2. ตรวจสอบชื่อคอลัมน์เฉพาะของ Daily Summary (Column Signature) จากข้อมูลที่ Parse แล้ว
+        if (dataRows != null && dataRows.Count > 0)
+        {
+            var sampleHeaders = dataRows[0].Data.Keys.Select(NormalizeHeader).ToHashSet();
+
+            // คอลัมน์สถิติเฉพาะของ Daily Summary (Syaco / เครื่องสแกนทั่วไป)
+            bool hasStatColumn = sampleHeaders.Any(h => h is "shichu2" or "cdshi" or "ztshi" or "kugong"
+                or "yingchu1" or "yingchu2" or "shichu1" or "cdci" or "ztci" or "yfh" or "qjfh"
+                or "ชั่วโมงทำงาน" or "นาทีมาสาย" or "นาทีออกก่อน" or "วันทำงาน");
+
+            if (hasStatColumn) return true;
+
+            // มีคอลัมน์ชื่อเกี่ยวกับเข้า-ออกคู่กัน
+            bool hasCombinedInOutColumn = sampleHeaders.Any(h => h is "sj1" or "เขาออก" or "เข้าออก"
+                or "เวลาเขาออก" or "เวลาเข้าออก" or "inout" or "clockinout" or "timeinout");
+
+            if (hasCombinedInOutColumn) return true;
+
+            // 3. สุ่มตรวจสอบข้อมูลจริงในแถวข้อมูล (Data Pattern Sampling)
+            // เช่น ตรวจสอบว่าในเซลล์มีรูปแบบช่วงเวลา เช่น "09:49-18:08", "10:35L-17:30", "N-18:08", "N-N"
+            int checkRows = Math.Min(10, dataRows.Count);
+            for (int i = 0; i < checkRows; i++)
+            {
+                var rowData = dataRows[i].Data;
+                foreach (var kvp in rowData)
+                {
+                    if (kvp.Value == null) continue;
+                    var strVal = kvp.Value.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(strVal)) continue;
+
+                    if (Regex.IsMatch(strVal, @"^(N|\d{1,2}:\d{2})[A-Za-z]*\s*[-~–/]\s*(N|\d{1,2}:\d{2})[A-Za-z]*$"))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Fallback: หากไม่มี dataRows ให้สแกนคอลัมน์และค่าจาก allRawRows โดยตรง
+            for (int r = 0; r < Math.Min(15, allRawRows.Count); r++)
+            {
+                var row = allRawRows[r];
+                foreach (var val in row.Values)
+                {
+                    if (val == null) continue;
+                    var str = val.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(str)) continue;
+
+                    var norm = NormalizeHeader(str);
+                    if (norm is "sj1" or "shichu2" or "cdshi" or "ztshi" or "kugong" or "เขาออก" or "เข้าออก"
+                        or "เวลาเขาออก" or "เวลาเข้าออก")
+                    {
+                        return true;
+                    }
+
+                    if (Regex.IsMatch(str, @"^(N|\d{1,2}:\d{2})[A-Za-z]*\s*[-~–/]\s*(N|\d{1,2}:\d{2})[A-Za-z]*$"))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
         return false;
     }
 
