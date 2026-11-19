@@ -295,13 +295,7 @@ const getDefaultPeriodValues = (year: number, month: number) => {
   };
 };
 
-const isFuturePeriod = (period?: PayrollPeriod | null) => {
-  if (!period) return false;
-  const now = new Date();
-  const currentPeriodVal = now.getFullYear() * 12 + (now.getMonth() + 1);
-  const periodVal = period.year * 12 + period.month;
-  return periodVal > currentPeriodVal;
-};
+const isFuturePeriod = (_period?: PayrollPeriod | null) => false;
 
 /** รายการหลักที่ลบไม่ได้ (แก้ไข/ปิดใช้งานได้ตามปกติ): เงินเดือนพื้นฐาน, เงินประจำตำแหน่ง, โบนัส, ค่าคอมมิชชั่น */
 const UNDELETABLE_ITEM_CODES = ['INC_BASE', 'INC_POSITION', 'INC_BONUS', 'INC_COMMISSION'];
@@ -1103,16 +1097,6 @@ export default function PayrollPage() {
     if (!selectedPeriod || !bankReceiptFile) return;
 
     if (markAsPaid) {
-      if (isFuturePeriod(selectedPeriod)) {
-        const isConfirmed = await confirmAction({
-          title: 'แจ้งเตือน: รอบเงินเดือนล่วงหน้า',
-          text: `รอบเงินเดือน "${selectedPeriod.periodName}" เป็นงวดล่วงหน้าในอนาคต (เกินเดือนปัจจุบัน) คุณแน่ใจหรือไม่ว่าต้องการยืนยันการจ่ายเงินล่วงหน้านี้?`,
-          confirmButtonText: 'ยืนยันจ่ายเงินล่วงหน้า',
-          cancelButtonText: 'ยกเลิก',
-        });
-        if (!isConfirmed) return;
-      }
-
       const empCount = selectedPeriod.employeeCount ?? payrolls.length;
       const totalNet = (selectedPeriod.totalNetSalary ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
       const isConfirmed = await confirmAction({
@@ -1187,16 +1171,6 @@ export default function PayrollPage() {
     if (selectedPeriod.paymentMethod === 'BANK_BATCH' && !selectedPeriod.hasBankReceipt) {
       showToast('ไม่อนุญาตให้กดยืนยัน: ต้องแนบสลิปหรือไฟล์ใบเสร็จของธนาคารก่อน');
       return;
-    }
-
-    if (isFuturePeriod(selectedPeriod)) {
-      const isConfirmed = await confirmAction({
-        title: 'แจ้งเตือน: รอบเงินเดือนล่วงหน้า',
-        text: `รอบเงินเดือน "${selectedPeriod.periodName}" เป็นงวดล่วงหน้าในอนาคต (เกินเดือนปัจจุบัน) คุณแน่ใจหรือไม่ว่าต้องการยืนยันการจ่ายเงินล่วงหน้านี้?`,
-        confirmButtonText: 'ยืนยันจ่ายเงินล่วงหน้า',
-        cancelButtonText: 'ยกเลิก',
-      });
-      if (!isConfirmed) return;
     }
 
     const empCount = selectedPeriod.employeeCount ?? payrolls.length;
@@ -1407,16 +1381,6 @@ export default function PayrollPage() {
   const handleConfirmPayment = async () => {
     if (!selectedPeriod) return;
 
-    if (isFuturePeriod(selectedPeriod)) {
-      const isConfirmed = await confirmAction({
-        title: 'แจ้งเตือน: รอบเงินเดือนล่วงหน้า',
-        text: `รอบเงินเดือน "${selectedPeriod.periodName}" เป็นงวดล่วงหน้าในอนาคต (เกินเดือนปัจจุบัน) คุณแน่ใจหรือไม่ว่าต้องการยืนยันการจ่ายเงินล่วงหน้านี้?`,
-        confirmButtonText: 'ยืนยันจ่ายเงินล่วงหน้า',
-        cancelButtonText: 'ยกเลิก',
-      });
-      if (!isConfirmed) return;
-    }
-
     setIsConfirmingPayment(true);
     try {
       const updated = await salaryService.confirmPayment(selectedPeriod.id, {
@@ -1471,16 +1435,6 @@ export default function PayrollPage() {
 
   const handleConfirmBankTransfer = async () => {
     if (!selectedPeriod) return;
-
-    if (isFuturePeriod(selectedPeriod)) {
-      const isConfirmed = await confirmAction({
-        title: 'แจ้งเตือน: รอบเงินเดือนล่วงหน้า',
-        text: `รอบเงินเดือน "${selectedPeriod.periodName}" เป็นงวดล่วงหน้าในอนาคต (เกินเดือนปัจจุบัน) คุณแน่ใจหรือไม่ว่าต้องการยืนยันผลโอนล่วงหน้านี้?`,
-        confirmButtonText: 'ยืนยันผลโอนล่วงหน้า',
-        cancelButtonText: 'ยกเลิก',
-      });
-      if (!isConfirmed) return;
-    }
 
     setIsConfirmingPayment(true);
     try {
@@ -2123,16 +2077,6 @@ export default function PayrollPage() {
   const handleCalculatePayroll = async () => {
     if (!selectedPeriod) return;
 
-    if (isFuturePeriod(selectedPeriod)) {
-      const isConfirmed = await confirmAction({
-        title: 'แจ้งเตือน: รอบเงินเดือนล่วงหน้า',
-        text: `รอบเงินเดือน "${selectedPeriod.periodName}" เป็นงวดล่วงหน้าในอนาคต (เกินเดือนปัจจุบัน) คุณแน่ใจหรือไม่ว่าต้องการคำนวณเงินเดือนล่วงหน้านี้?`,
-        confirmButtonText: 'ยืนยันคำนวณล่วงหน้า',
-        cancelButtonText: 'ยกเลิก',
-      });
-      if (!isConfirmed) return;
-    }
-
     try {
       setIsCalculating(true);
       const { records: updatedPayrolls, message: calcMessage } = await salaryService.calculatePayrollPeriod(selectedPeriod.id);
@@ -2146,14 +2090,13 @@ export default function PayrollPage() {
       if (updatedOverview) setOverview(updatedOverview);
       const current = updatedPeriods.find((p) => p.id === selectedPeriod.id);
       if (current) setSelectedPeriod(current);
-      const hasWarning = !!calcMessage && calcMessage.includes('ข้อควรตรวจสอบ');
       const bonusCount = (updatedPayrolls || []).filter((p: any) =>
         p.details?.some((d: any) => (d.payrollItemCode === 'INC_BONUS' || d.calculationSource?.includes('BONUS')) && d.amount > 0)
       ).length;
       const successMsg = bonusCount > 0
         ? `คำนวณเงินเดือนประจำรอบสำเร็จแล้ว (รวมโบนัสประจำรอบ ${bonusCount} คน)`
         : 'คำนวณเงินเดือนประจำรอบสำเร็จแล้ว';
-      showToast(hasWarning ? calcMessage : successMsg, hasWarning ? 12000 : 4000);
+      showToast(successMsg, 4000);
     } catch (err: any) {
       console.error('Failed to calculate payroll:', err);
       showToast(err?.response?.data?.message || 'เกิดข้อผิดพลาดในการคำนวณเงินเดือน');
@@ -5802,12 +5745,6 @@ export default function PayrollPage() {
                   </p>
                 </div>
 
-                {isFuturePeriod(selectedPeriod) && (
-                  <div className="text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-start gap-2 leading-relaxed">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                    <span>แจ้งเตือน: รอบเงินเดือนนี้เป็นงวดล่วงหน้าในอนาคต (เกินเดือนปัจจุบัน) กรุณาตรวจสอบความถูกต้องอย่างละเอียดก่อนยืนยัน</span>
-                  </div>
-                )}
 
                 {/* Summary */}
                 <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700/60 rounded-xl p-4 space-y-2">
