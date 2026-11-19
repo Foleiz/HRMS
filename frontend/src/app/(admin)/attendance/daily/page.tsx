@@ -45,7 +45,6 @@ import {
   Pencil,
   FileEdit,
   CalendarRange,
-  ShieldCheck,
 } from 'lucide-react';
 import { attendanceService } from '@/services/attendanceService';
 import { attendanceImportService } from '@/services/attendanceImportService';
@@ -2432,7 +2431,7 @@ function DailyAttendanceContent() {
 
             {/* Strategy Selection Cards */}
             <div className="p-6 pt-2 space-y-2.5">
-              {/* Option 1: OVERWRITE (เขียนทับด้วยข้อมูลจากไฟล์ใหม่) */}
+              {/* Option 1: OVERWRITE (เขียนทับไฟล์เก่า) */}
               <div
                 role="button"
                 tabIndex={0}
@@ -2440,40 +2439,31 @@ function DailyAttendanceContent() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') setOverlapResolution('OVERWRITE');
                 }}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
                   overlapResolution === 'OVERWRITE'
                     ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
                     : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        overlapResolution === 'OVERWRITE'
-                          ? 'border-primary bg-primary'
-                          : 'border-slate-300 dark:border-slate-600 bg-transparent'
-                      }`}
-                    >
-                      {overlapResolution === 'OVERWRITE' && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      )}
-                    </span>
-                    <RefreshCw className={`w-3.5 h-3.5 ${overlapResolution === 'OVERWRITE' ? 'text-primary' : 'text-slate-500'}`} />
-                    <span className={overlapResolution === 'OVERWRITE' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
-                      เขียนทับด้วยข้อมูลจากไฟล์ใหม่
-                    </span>
+                <div className="flex items-center gap-2.5 text-xs font-semibold">
+                  <span
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      overlapResolution === 'OVERWRITE'
+                        ? 'border-primary bg-primary'
+                        : 'border-slate-300 dark:border-slate-600 bg-transparent'
+                    }`}
+                  >
+                    {overlapResolution === 'OVERWRITE' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </span>
-                  <span className="text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded-full">
-                    แนะนำ
+                  <span className={overlapResolution === 'OVERWRITE' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
+                    เขียนทับไฟล์เก่า
                   </span>
-                </div>
-                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  สำหรับวันที่ซ้อนทับ ({overlapInfo?.label || 'วันที่ระบุ'}) จะ<strong>ถูกแทนที่ด้วยข้อมูลจากไฟล์ใหม่</strong> และนำข้อมูลวันที่เหลือของทั้งสองไฟล์มารวมกัน
                 </div>
               </div>
 
-              {/* Option 2: KEEP_EXISTING (ข้ามข้อมูลไฟล์ใหม่ ใช้ข้อมูลเดิม) */}
+              {/* Option 2: KEEP_EXISTING (ใช้ข้อมูลเดิม) */}
               <div
                 role="button"
                 tabIndex={0}
@@ -2481,36 +2471,27 @@ function DailyAttendanceContent() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') setOverlapResolution('KEEP_EXISTING');
                 }}
-                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none ${
                   overlapResolution === 'KEEP_EXISTING'
                     ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
                     : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
                 }`}
               >
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        overlapResolution === 'KEEP_EXISTING'
-                          ? 'border-primary bg-primary'
-                          : 'border-slate-300 dark:border-slate-600 bg-transparent'
-                      }`}
-                    >
-                      {overlapResolution === 'KEEP_EXISTING' && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                      )}
-                    </span>
-                    <ShieldCheck className={`w-3.5 h-3.5 ${overlapResolution === 'KEEP_EXISTING' ? 'text-primary' : 'text-slate-500'}`} />
-                    <span className={overlapResolution === 'KEEP_EXISTING' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
-                      ใช้ข้อมูลเดิมต่อไป (ข้ามข้อมูลในไฟล์ใหม่)
-                    </span>
+                <div className="flex items-center gap-2.5 text-xs font-semibold">
+                  <span
+                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      overlapResolution === 'KEEP_EXISTING'
+                        ? 'border-primary bg-primary'
+                        : 'border-slate-300 dark:border-slate-600 bg-transparent'
+                    }`}
+                  >
+                    {overlapResolution === 'KEEP_EXISTING' && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    )}
                   </span>
-                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 px-2 py-0.5 rounded-full">
-                    คงข้อมูลเดิม
+                  <span className={overlapResolution === 'KEEP_EXISTING' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-200'}>
+                    ใช้ข้อมูลเดิม
                   </span>
-                </div>
-                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                  สำหรับวันที่ซ้อนทับ ({overlapInfo?.label || 'วันที่ระบุ'}) จะ<strong>รักษาข้อมูลเดิมไว้ตามเดิม ไม่แก้ไข</strong> และนำเข้าเฉพาะวันที่ยังไม่มีจากไฟล์ใหม่มารวมกัน
                 </div>
               </div>
             </div>
