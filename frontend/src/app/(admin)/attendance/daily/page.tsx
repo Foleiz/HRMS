@@ -2511,7 +2511,7 @@ function DailyAttendanceContent() {
                 onClick={() => handleUploadSubmit(true, overlapResolution)}
                 icon={!isUploading ? <CheckCircle2 className="w-3.5 h-3.5" /> : undefined}
               >
-                นำเข้าและรวมข้อมูล
+                ตกลง
               </Button>
             </div>
           </div>
