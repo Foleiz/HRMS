@@ -252,8 +252,8 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       size="sm"
                       variant="secondary"
                       onClick={() => openAddForm('EARNING')}
-                      icon={<Plus className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-                      className="mt-2 text-emerald-700 dark:text-emerald-400 border-dashed border-emerald-300 dark:border-emerald-800/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
+                      icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
+                      className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-emerald-300 dark:border-emerald-800/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20"
                     >
                       เพิ่มรายการได้
                     </Button>
@@ -347,8 +347,8 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       size="sm"
                       variant="secondary"
                       onClick={() => openAddForm('DEDUCTION')}
-                      icon={<Plus className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />}
-                      className="mt-2 text-rose-700 dark:text-rose-400 border-dashed border-rose-300 dark:border-rose-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
+                      icon={<Plus className="w-3.5 h-3.5 text-slate-800 dark:text-slate-200" />}
+                      className="mt-2 text-slate-800 dark:text-slate-200 border-dashed border-rose-300 dark:border-rose-800/60 hover:bg-rose-50/50 dark:hover:bg-rose-950/20"
                     >
                       เพิ่มรายการหัก
                     </Button>
