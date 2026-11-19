@@ -258,6 +258,7 @@ function DailyAttendanceContent() {
   // Period Overlap Confirmation Modal State
   const [overlapModalOpen, setOverlapModalOpen] = useState<boolean>(false);
   const [overlapData, setOverlapData] = useState<AttendanceImportResult | null>(null);
+  const [selectedOverlapChoice, setSelectedOverlapChoice] = useState<'existing' | 'new'>('new');
 
   // Batches Table State
   const [batches, setBatches] = useState<AttendanceImportBatch[]>([]);
@@ -658,6 +659,7 @@ function DailyAttendanceContent() {
       // กรณีพบว่าช่วงเดือน/ปีของไฟล์ซ้ำกับที่มีอยู่แล้วในระบบ และยังไม่ได้กดเลือกเขียนทับ
       if (res.data?.isPeriodOverlap && !overwrite) {
         setOverlapData(res.data);
+        setSelectedOverlapChoice('new');
         setOverlapModalOpen(true);
         setIsUploading(false);
         return;
@@ -2363,12 +2365,35 @@ function DailyAttendanceContent() {
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-150">
             <ModalHeader title="ตรวจพบข้อมูลเวลาของเดือนนี้ในระบบแล้ว" onClose={cancelOverlapImport} />
 
-            {/* Comparison Cards */}
+            {/* Comparison Cards (Selectable) */}
             <div className="p-6 pb-0 space-y-3">
               {/* Existing File Info */}
-              <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-1.5">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedOverlapChoice('existing')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setSelectedOverlapChoice('existing');
+                }}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
+                  selectedOverlapChoice === 'existing'
+                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        selectedOverlapChoice === 'existing'
+                          ? 'border-primary bg-primary'
+                          : 'border-slate-300 dark:border-slate-600 bg-transparent'
+                      }`}
+                    >
+                      {selectedOverlapChoice === 'existing' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
+                    </span>
                     <FileText className="w-3.5 h-3.5 text-slate-500" />
                     <span>ไฟล์เดิมในระบบ</span>
                   </span>
@@ -2376,10 +2401,10 @@ function DailyAttendanceContent() {
                     Batch #{overlapData.existingBatchId}
                   </span>
                 </div>
-                <div className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+                <div className="pl-6 text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
                   {overlapData.existingBatchFileName || 'ชุดข้อมูลเดิม'}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400">
                   ช่วงวันที่:{' '}
                   {overlapData.existingBatchDateFrom && overlapData.existingBatchDateTo
                     ? `${formatDateThai(overlapData.existingBatchDateFrom)} ถึง ${formatDateThai(overlapData.existingBatchDateTo)}`
@@ -2388,20 +2413,45 @@ function DailyAttendanceContent() {
               </div>
 
               {/* New Uploading File Info */}
-              <div className="p-3.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-800/50 space-y-1.5">
-                <div className="flex items-center justify-between text-xs font-semibold text-blue-800 dark:text-blue-300">
-                  <span className="flex items-center gap-1.5">
-                    <UploadCloud className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>ไฟล์ใหม่ที่กำลังนำเข้า</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedOverlapChoice('new')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') setSelectedOverlapChoice('new');
+                }}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer select-none space-y-1.5 ${
+                  selectedOverlapChoice === 'new'
+                    ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10 shadow-xs'
+                    : 'border-slate-200/80 bg-slate-50/70 dark:border-slate-700/80 dark:bg-slate-900/40 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        selectedOverlapChoice === 'new'
+                          ? 'border-primary bg-primary'
+                          : 'border-slate-300 dark:border-slate-600 bg-transparent'
+                      }`}
+                    >
+                      {selectedOverlapChoice === 'new' && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                      )}
+                    </span>
+                    <UploadCloud className="w-3.5 h-3.5 text-primary" />
+                    <span className={selectedOverlapChoice === 'new' ? 'text-primary font-bold' : 'text-slate-700 dark:text-slate-300'}>
+                      ไฟล์ใหม่ที่กำลังนำเข้า
+                    </span>
                   </span>
                   <span className="text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300 px-2 py-0.5 rounded-full">
                     ไฟล์ใหม่
                   </span>
                 </div>
-                <div className="text-sm font-bold text-blue-950 dark:text-blue-100 truncate">
+                <div className="pl-6 text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
                   {selectedFile?.name || overlapData.fileName}
                 </div>
-                <div className="text-[11px] text-blue-700 dark:text-blue-300">
+                <div className="pl-6 text-[11px] text-slate-500 dark:text-slate-400">
                   ช่วงวันที่: {overlapData.dateFrom && formatDateThai(overlapData.dateFrom)} ถึง {overlapData.dateTo && formatDateThai(overlapData.dateTo)}
                 </div>
               </div>
@@ -2416,7 +2466,7 @@ function DailyAttendanceContent() {
                 disabled={isUploading}
                 onClick={cancelOverlapImport}
               >
-                ใช้ไฟล์เก่า (ยกเลิกการอัปโหลด)
+                ยกเลิก
               </Button>
               <Button
                 type="button"
@@ -2424,10 +2474,16 @@ function DailyAttendanceContent() {
                 size="sm"
                 disabled={isUploading}
                 loading={isUploading}
-                onClick={() => handleUploadSubmit(true)}
+                onClick={() => {
+                  if (selectedOverlapChoice === 'new') {
+                    handleUploadSubmit(true);
+                  } else {
+                    cancelOverlapImport();
+                  }
+                }}
                 icon={!isUploading ? <CheckCircle2 className="w-3.5 h-3.5" /> : undefined}
               >
-                ใช้ไฟล์ใหม่ (เขียนทับข้อมูลเดิม)
+                ใช้
               </Button>
             </div>
           </div>
