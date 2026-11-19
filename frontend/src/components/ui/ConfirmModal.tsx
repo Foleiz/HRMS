@@ -11,7 +11,8 @@ export interface ConfirmModalProps {
   onClose: () => void;
   onConfirm?: () => void | Promise<void>;
   title: string;
-  message: string;
+  message?: string;
+  html?: string;
   confirmText?: string;
   cancelText?: string;
   type?: ConfirmType;
@@ -27,6 +28,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onConfirm,
   title,
   message,
+  html,
   confirmText = 'ยืนยัน',
   cancelText = 'ยกเลิก',
   type = 'question',
@@ -91,12 +93,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   return (
     <ModalShell className={`${zIndexClassName} bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-150`}>
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 p-6 sm:p-7 animate-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden border border-slate-100 dark:border-slate-700 p-6 animate-in zoom-in-95 duration-200">
         {/* Close icon button */}
         <button
           onClick={onClose}
           disabled={isLoading}
-          className="absolute top-5 right-5 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:cursor-not-allowed"
           aria-label="Close"
         >
           <X className="w-4 h-4" />
@@ -105,19 +107,28 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         {/* Content */}
         <div className="flex flex-col items-center text-center">
           {/* Icon Badge */}
-          <div className={`w-14 h-14 rounded-2xl ${config.bg} flex items-center justify-center mb-4 shadow-2xs`}>
+          <div className={`w-12 h-12 rounded-2xl ${config.bg} flex items-center justify-center mb-3 shadow-2xs`}>
             {icon || config.icon}
           </div>
 
           {/* Title */}
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2 leading-snug px-2">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2.5 leading-snug px-2">
             {title}
           </h3>
 
-          {/* Message (supports multiline / paragraphs) */}
-          <div className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed whitespace-pre-line px-2">
-            {message}
-          </div>
+          {/* Message (supports multiline / paragraphs or HTML) */}
+          {html ? (
+            <div
+              className="w-full text-sm leading-relaxed mb-5"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
+          ) : (
+            message && (
+              <div className="text-sm text-slate-500 dark:text-slate-400 mb-5 leading-relaxed whitespace-pre-line px-2">
+                {message}
+              </div>
+            )
+          )}
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3 w-full">

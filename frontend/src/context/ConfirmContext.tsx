@@ -176,7 +176,8 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           onClose={handleCancel}
           onConfirm={handleConfirm}
           title={config.title}
-          message={config.message || config.text || (config.html ? config.html.replace(/<[^>]*>/g, '') : '')}
+          message={config.message || config.text || ''}
+          html={config.html}
           confirmText={config.confirmButtonText || config.confirmText || (resolvedType === 'danger' ? 'ลบข้อมูล' : 'ยืนยัน')}
           cancelText={config.cancelButtonText || config.cancelText || 'ยกเลิก'}
           type={resolvedType}

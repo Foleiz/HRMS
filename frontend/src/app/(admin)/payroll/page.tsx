@@ -2011,15 +2011,15 @@ export default function PayrollPage() {
       const confirmed = await confirmAction({
         title: 'ยืนยันการอนุมัติรอบเงินเดือน?',
         html: `
-          <div class="text-left bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-2 text-slate-700 dark:text-slate-300">
+          <div class="w-full text-left bg-slate-50 dark:bg-slate-800/80 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-xs space-y-2.5 text-slate-700 dark:text-slate-300">
             <div class="flex justify-between items-center">
-              <span class="text-slate-500">รอบเงินเดือน:</span>
+              <span class="text-slate-500 dark:text-slate-400">รอบเงินเดือน</span>
               <span class="font-bold text-slate-900 dark:text-slate-100">${selectedPeriod.periodName}</span>
             </div>
-            ${totalEmp ? `<div class="flex justify-between items-center"><span class="text-slate-500">จำนวนพนักงาน:</span><span class="font-bold text-slate-800 dark:text-slate-200">${totalEmp}</span></div>` : ''}
-            ${totalNet ? `<div class="flex justify-between items-center"><span class="text-slate-500">ยอดจ่ายสุทธิรวม:</span><span class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">${totalNet}</span></div>` : ''}
+            ${totalEmp ? `<div class="flex justify-between items-center"><span class="text-slate-500 dark:text-slate-400">จำนวนพนักงาน</span><span class="font-bold text-slate-800 dark:text-slate-200">${totalEmp}</span></div>` : ''}
+            ${totalNet ? `<div class="flex justify-between items-center pt-2 border-t border-slate-200/60 dark:border-slate-700/60"><span class="text-slate-500 dark:text-slate-400">ยอดจ่ายสุทธิรวม</span><span class="font-bold text-emerald-600 dark:text-emerald-400 text-sm">${totalNet}</span></div>` : ''}
           </div>
-          <p class="mt-3 text-xs text-slate-500">เมื่ออนุมัติแล้ว ระบบจะส่งต่อไปยังขั้นตอนการโอนเงินธนาคาร</p>
+          <p class="mt-2.5 text-xs text-center text-slate-500 dark:text-slate-400">เมื่ออนุมัติแล้ว ระบบจะส่งต่อไปยังขั้นตอนการโอนเงินธนาคาร</p>
         `,
         icon: 'question',
         confirmButtonText: 'ยืนยันอนุมัติรอบนี้',
