@@ -158,14 +158,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                   {earnings.length > 0 ? (
                     earnings.map((item) => (
                       <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
-                        <div>
-                          <div className="font-medium text-slate-800 dark:text-slate-200">
-                            {item.itemName}
-                            {item.isManual && <ManualBadge source={item.source} />}
-                          </div>
-                          {item.subtext && (
-                            <div className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">{item.subtext}</div>
-                          )}
+                        <div className="font-medium text-slate-800 dark:text-slate-200">
+                          {item.itemName}
+                          {item.isManual && <ManualBadge source={item.source} />}
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
@@ -194,14 +189,9 @@ export const PayrollDetailDrawer: React.FC<Props> = ({
                       const absAmount = Math.abs(item.amount);
                       return (
                         <div key={item.id} className="p-3.5 flex items-center justify-between text-xs">
-                          <div>
-                            <div className="font-medium text-slate-800 dark:text-slate-200">
-                              {item.itemName}
-                              {item.isManual && <ManualBadge source={item.source} />}
-                            </div>
-                            {item.subtext && (
-                              <div className="text-[11px] text-slate-400 dark:text-slate-500 dark:text-slate-400 mt-0.5">{item.subtext}</div>
-                            )}
+                          <div className="font-medium text-slate-800 dark:text-slate-200">
+                            {item.itemName}
+                            {item.isManual && <ManualBadge source={item.source} />}
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="font-semibold text-slate-900 dark:text-slate-100 font-mono">
